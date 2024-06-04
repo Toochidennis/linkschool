@@ -3,6 +3,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:linkschool/ui/dashboard/common/common/bottom_navigation_bar.dart';
 
 import 'create_bottom_nar_icon.dart';
+import 'explore_home.dart';
 
 class ExploreDashboard extends StatefulWidget {
   const ExploreDashboard({super.key});
@@ -56,10 +57,7 @@ class _ExploreDashboardState extends State<ExploreDashboard> {
           ),
         ],
         bodyItems: [
-          Container(
-            height: MediaQuery.of(context).size.height,
-            color: Colors.red,
-          ),
+          const ExploreHome(),
           Container(
             height: MediaQuery.of(context).size.height,
             color: Colors.orange,

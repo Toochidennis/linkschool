@@ -6,6 +6,8 @@ class AppColors {
   static const Color secondaryLight = Color(0xFFFC9338);
   static const Color textLight = Color(0xFF1A1A1A);
   static const Color backgroundLight = Color(0xFFFFFFFF);
+  static const Color textFieldBorderLight = Color.fromRGBO(208, 208, 208, 1);
+  static const Color textFieldLight = Color.fromRGBO(255, 255, 255, 1);
 
   // Dark Theme
   static const Color primaryDark = Color(0xFF040D15);
