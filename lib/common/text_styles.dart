@@ -3,7 +3,7 @@ import 'app_colors.dart';
 
 class AppTextStyles {
   static const TextStyle titleLight = TextStyle(
-    fontSize: 24,
+    fontSize: 20,
     fontWeight: FontWeight.bold,
     color: AppColors.textLight,
   );
@@ -15,15 +15,36 @@ class AppTextStyles {
     color: AppColors.textLight,
   );
 
+  static const TextStyle title3Light = TextStyle(
+      fontSize: 20,
+      fontWeight: FontWeight.bold,
+      color: AppColors.text2Light,
+      fontFamily: 'Urbanist'
+  );
+
   static const TextStyle normalLight = TextStyle(
     fontSize: 16,
     color: AppColors.textLight,
   );
 
+  static const TextStyle normalLight2 = TextStyle(
+    fontSize: 14,
+    color: AppColors.backgroundLight,
+    fontWeight: FontWeight.w600,
+    fontFamily: 'Urbanist'
+  );
+
   static const TextStyle italicLight = TextStyle(
     fontSize: 16,
     fontStyle: FontStyle.italic,
-    color: AppColors.textLight,
+    fontWeight: FontWeight.w500,
+    color: AppColors.text3Light,
+  );
+
+  static const TextStyle buttonsText = TextStyle(
+    fontSize: 14,
+    fontWeight: FontWeight.w500,
+    color: AppColors.backgroundLight,
   );
 
   static const TextStyle titleDark = TextStyle(
