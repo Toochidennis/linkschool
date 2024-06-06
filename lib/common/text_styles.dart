@@ -19,19 +19,38 @@ class AppTextStyles {
       fontSize: 20,
       fontWeight: FontWeight.bold,
       color: AppColors.text2Light,
-      fontFamily: 'Urbanist'
-  );
+      fontFamily: 'Urbanist');
 
   static const TextStyle normalLight = TextStyle(
     fontSize: 16,
     color: AppColors.textLight,
   );
 
-  static const TextStyle normalLight2 = TextStyle(
+  static const TextStyle normal2Light = TextStyle(
+      fontSize: 16,
+      color: AppColors.text2Light,
+      fontFamily: 'Urbanist',
+      fontWeight: FontWeight.w500);
+
+  static const TextStyle normal3Light = TextStyle(
+    fontSize: 14,
+    color: AppColors.text4Light,
+    fontWeight: FontWeight.w500,
+    fontFamily: 'Urbanist',
+  );
+
+  static const TextStyle normal4Light = TextStyle(
+    fontSize: 10,
+    color: AppColors.text4Light,
+    fontWeight: FontWeight.w500,
+    fontFamily: 'Urbanist',
+  );
+
+  static const TextStyle normal5Light = TextStyle(
     fontSize: 14,
     color: AppColors.backgroundLight,
-    fontWeight: FontWeight.w600,
-    fontFamily: 'Urbanist'
+    fontWeight: FontWeight.w500,
+    fontFamily: 'Urbanist',
   );
 
   static const TextStyle italicLight = TextStyle(
@@ -64,7 +83,7 @@ class AppTextStyles {
     color: AppColors.textDark,
   );
 
-  static TextStyle appBarTextStyle(Color color){
+  static TextStyle appBarTextStyle(Color color) {
     return TextStyle(
       color: color,
       fontFamily: 'Urbanist',
