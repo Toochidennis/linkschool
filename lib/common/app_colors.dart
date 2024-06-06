@@ -7,6 +7,7 @@ class AppColors {
   static const Color textLight = Color(0xFF1A1A1A);
   static const Color text2Light = Color.fromRGBO(18, 7, 123, 1);
   static const Color text3Light = Color.fromRGBO(0, 0, 0, 1);
+  static const Color text4Light = Color.fromRGBO(26, 26, 26, 1);
   static const Color backgroundLight = Color(0xFFFFFFFF);
   static const Color textFieldBorderLight = Color.fromRGBO(208, 208, 208, 1);
   static const Color textFieldLight = Color.fromRGBO(255, 255, 255, 1);

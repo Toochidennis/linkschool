@@ -104,7 +104,7 @@ class _ExploreHomeState extends State<ExploreHome> {
                           padding: EdgeInsets.all(4.0),
                           child: Text(
                             'Play',
-                            style: AppTextStyles.normalLight2,
+                            style: AppTextStyles.normal5Light,
                           ),
                         ),
                       ),
