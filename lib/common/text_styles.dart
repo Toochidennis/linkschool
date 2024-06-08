@@ -60,6 +60,21 @@ class AppTextStyles {
     color: AppColors.text3Light,
   );
 
+  static const TextStyle italic2Light = TextStyle(
+    fontSize: 20,
+    fontStyle: FontStyle.italic,
+    fontWeight: FontWeight.w700,
+    color: AppColors.backgroundLight,
+    fontFamily: 'Urbanist'
+  );
+  static const TextStyle italic3Light = TextStyle(
+      fontSize: 20,
+      fontStyle: FontStyle.italic,
+      fontWeight: FontWeight.w700,
+      color: AppColors.secondaryLight,
+      fontFamily: 'Urbanist'
+  );
+
   static const TextStyle buttonsText = TextStyle(
     fontSize: 14,
     fontWeight: FontWeight.w500,
