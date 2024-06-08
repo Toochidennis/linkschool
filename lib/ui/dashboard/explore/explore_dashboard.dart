@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:linkschool/ui/dashboard/common/common/bottom_navigation_bar.dart';
 
-import 'create_bottom_nar_icon.dart';
+import '../common/bottom_nav_item.dart';
 import 'explore_home.dart';
 
 class ExploreDashboard extends StatefulWidget {
-  const ExploreDashboard({super.key});
+  final VoidCallback onSwitch;
+
+  const ExploreDashboard({super.key, required this.onSwitch});
 
   @override
   State<ExploreDashboard> createState() => _ExploreDashboardState();
@@ -16,13 +18,12 @@ class _ExploreDashboardState extends State<ExploreDashboard> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      key: const ValueKey(1),
       appBar: AppBar(
-        title: SvgPicture.asset(
-          'assets/icons/linkskool-logo.svg',
-        ),
+        title: SvgPicture.asset('assets/icons/linkskool-logo.svg'),
         actions: [
           IconButton(
-            onPressed: () {},
+            onPressed: widget.onSwitch,
             icon: SvgPicture.asset(
               'assets/icons/notifications.svg',
               colorFilter: const ColorFilter.mode(
@@ -47,7 +48,7 @@ class _ExploreDashboardState extends State<ExploreDashboard> {
           ),
           createBottomNavIcon(
             imagePath: 'assets/icons/e-books.svg',
-            text: 'E-books',
+            text: 'E-library',
             width: 24.0,
             height: 25.0,
           ),
@@ -71,6 +72,7 @@ class _ExploreDashboardState extends State<ExploreDashboard> {
             color: Colors.blue,
           )
         ],
+        onSwitch: () => widget.onSwitch,
       ),
     );
   }
