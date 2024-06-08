@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:linkschool/common/app_themes.dart';
-import 'package:linkschool/ui/dashboard/explore/explore_dashboard.dart';
+import 'package:linkschool/ui/dashboard/dashboard_switcher.dart';
 
 void main() {
   runApp(const MyApp());
@@ -18,7 +18,7 @@ class MyApp extends StatelessWidget {
       theme: AppThemes.lightTheme,
       darkTheme: AppThemes.darkTheme,
       themeMode: ThemeMode.system,
-      home: const ExploreDashboard(),
+      home: const DashboardSwitcher(),
     );
   }
 }
