@@ -8,12 +8,13 @@ class CustomButton extends StatelessWidget {
   final String iconPath;
   final String text;
 
-  const CustomButton(
-      {super.key,
-      required this.backgroundColor,
-      required this.borderColor,
-      required this.iconPath,
-      required this.text});
+  const CustomButton({
+    super.key,
+    required this.backgroundColor,
+    required this.borderColor,
+    required this.iconPath,
+    required this.text,
+  });
 
   @override
   Widget build(BuildContext context) {

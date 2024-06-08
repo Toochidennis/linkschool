@@ -7,21 +7,25 @@ import 'package:flutter_svg/svg.dart';
 import '../../../../common/app_colors.dart';
 
 class CustomNavigationBar extends StatefulWidget {
+  final VoidCallback onSwitch;
   final String actionButtonImagePath;
   final List<FABBottomAppBarItem> appBarItems;
   final List<Widget> bodyItems;
 
-  const CustomNavigationBar(
-      {super.key,
-      required this.actionButtonImagePath,
-      required this.appBarItems,
-      required this.bodyItems});
+  const CustomNavigationBar({
+    super.key,
+    required this.actionButtonImagePath,
+    required this.appBarItems,
+    required this.bodyItems,
+    required this.onSwitch,
+  });
 
   @override
   State<CustomNavigationBar> createState() => _CustomNavigationBarState();
 }
 
-class _CustomNavigationBarState extends State<CustomNavigationBar> with WidgetsBindingObserver {
+class _CustomNavigationBarState extends State<CustomNavigationBar>
+    with WidgetsBindingObserver {
   Brightness? brightness;
 
   @override
@@ -51,14 +55,13 @@ class _CustomNavigationBarState extends State<CustomNavigationBar> with WidgetsB
 
   @override
   Widget build(BuildContext context) {
-
     return SafeArea(
         child: Column(
-          children: [
-            Expanded(
-                  child: CurvedNavBar(
+      children: [
+        Expanded(
+          child: CurvedNavBar(
             actionButton: CurvedActionBar(
-              onTab: (value) => print(value),
+              onTab:(value)=> widget.onSwitch,
               activeIcon: Container(
                 padding: const EdgeInsets.all(24.0),
                 decoration: BoxDecoration(
@@ -95,9 +98,9 @@ class _CustomNavigationBarState extends State<CustomNavigationBar> with WidgetsB
                 : AppColors.backgroundDark,
             appBarItems: widget.appBarItems,
             bodyItems: widget.bodyItems,
-                  ),
-                ),
-          ],
-        ));
+          ),
+        ),
+      ],
+    ));
   }
 }
