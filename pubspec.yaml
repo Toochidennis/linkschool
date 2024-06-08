@@ -74,6 +74,12 @@ flutter:
     - assets/icons/linkskool-ai.svg
     - assets/icons/linkskool-logo.svg
     - assets/icons/settings.svg
+    - assets/icons/comment.svg
+    - assets/icons/share.svg
+    - assets/icons/result.svg
+    - assets/icons/payment.svg
+    - assets/icons/profile.svg
+    - assets/icons/explore.svg
     - assets/images/img.png
     - assets/images/millionaire.png
     - assets/images/ai.png
