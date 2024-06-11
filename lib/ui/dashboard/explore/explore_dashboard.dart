@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:linkschool/ui/dashboard/common/common/bottom_navigation_bar.dart';
+import 'package:linkschool/ui/dashboard/common/bottom_navigation_bar.dart';
 
 import '../common/bottom_nav_item.dart';
 import 'explore_home.dart';
 
 class ExploreDashboard extends StatefulWidget {
-  final VoidCallback onSwitch;
+  final Function(bool) onSwitch;
 
   const ExploreDashboard({super.key, required this.onSwitch});
 
@@ -23,7 +23,7 @@ class _ExploreDashboardState extends State<ExploreDashboard> {
         title: SvgPicture.asset('assets/icons/linkskool-logo.svg'),
         actions: [
           IconButton(
-            onPressed: widget.onSwitch,
+            onPressed: () {},
             icon: SvgPicture.asset(
               'assets/icons/notifications.svg',
               colorFilter: const ColorFilter.mode(
@@ -72,7 +72,7 @@ class _ExploreDashboardState extends State<ExploreDashboard> {
             color: Colors.blue,
           )
         ],
-        onSwitch: () => widget.onSwitch,
+        onSwitch: widget.onSwitch,
       ),
     );
   }

@@ -22,9 +22,10 @@ class _ExploreHomeState extends State<ExploreHome> {
       height: double.infinity,
       decoration: BoxDecoration(
         image: DecorationImage(
-            image: const AssetImage('assets/images/img.png'),
-            fit: BoxFit.cover,
-            opacity: opacity),
+          image: const AssetImage('assets/images/img.png'),
+          fit: BoxFit.cover,
+          opacity: opacity,
+        ),
       ),
       child: Padding(
         padding: const EdgeInsets.only(bottom: 100.0),
@@ -116,7 +117,7 @@ class _ExploreHomeState extends State<ExploreHome> {
                 ),
               ),
               const Padding(
-                padding: EdgeInsets.only(left: 16.0, right: 16.0),
+                padding: EdgeInsets.symmetric(horizontal: 16.0),
                 child: Text('Explore', style: AppTextStyles.title3Light),
               ),
               const Padding(
@@ -210,10 +211,10 @@ class _ExploreHomeState extends State<ExploreHome> {
                   ),
                   NewsItem(
                     profileImageUrl:
-                    'https://img.freepik.com/free-vector/gradient-human-rights-day-background_52683-149974.jpg?t=st=1717832829~exp=1717833429~hmac=3e938edcacd7fef2a791b36c7d3decbf64248d9760dd7da0a304acee382b8a86',
+                        'https://img.freepik.com/free-vector/gradient-human-rights-day-background_52683-149974.jpg?t=st=1717832829~exp=1717833429~hmac=3e938edcacd7fef2a791b36c7d3decbf64248d9760dd7da0a304acee382b8a86',
                     name: 'Vanguard news',
                     newsContent:
-                    'This is a mock data showing the info details of a recording.',
+                        'This is a mock data showing the info details of a recording.',
                     time: '2 minutes ago',
                     imageUrl: 'https://via.placeholder.com/300',
                   ),
