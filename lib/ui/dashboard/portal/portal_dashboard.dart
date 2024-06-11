@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:linkschool/common/text_styles.dart';
+import 'package:linkschool/ui/dashboard/portal/portal_home.dart';
 
 import '../common/bottom_nav_item.dart';
-import '../common/common/bottom_navigation_bar.dart';
+import '../common/bottom_navigation_bar.dart';
 
 class PortalDashboard extends StatefulWidget {
-  final VoidCallback onSwitch;
+  final Function(bool) onSwitch;
 
   const PortalDashboard({super.key, required this.onSwitch});
 
@@ -23,10 +24,10 @@ class _PortalDashboardState extends State<PortalDashboard> {
             text: const TextSpan(children: [
           TextSpan(text: 'Welcome, ', style: AppTextStyles.italic2Light),
           TextSpan(text: 'ToochiDennis', style: AppTextStyles.italic3Light)
-        ])),
+        ],),),
         actions: [
           IconButton(
-            onPressed:widget.onSwitch,
+            onPressed:(){},
             icon: SvgPicture.asset(
               'assets/icons/notifications.svg',
               colorFilter: const ColorFilter.mode(
@@ -34,7 +35,7 @@ class _PortalDashboardState extends State<PortalDashboard> {
                 BlendMode.srcIn,
               ),
             ),
-          )
+          ),
         ],
         elevation: 0,
       ),
@@ -44,16 +45,20 @@ class _PortalDashboardState extends State<PortalDashboard> {
           createBottomNavIcon(
             imagePath: 'assets/icons/home.svg',
             text: 'Home',
+            width: 20.0,
+            height: 20.0,
           ),
           createBottomNavIcon(
             imagePath: 'assets/icons/result.svg',
             text: 'Results',
+            width: 18.0,
+            height: 18.0,
           ),
           createBottomNavIcon(
             imagePath: 'assets/icons/e-learning.svg',
             text: 'E-learning',
-            width: 24.0,
-            height: 25.0,
+            width: 18.0,
+            height: 18.0,
           ),
           createBottomNavIcon(
             imagePath: 'assets/icons/profile.svg',
@@ -61,10 +66,7 @@ class _PortalDashboardState extends State<PortalDashboard> {
           ),
         ],
         bodyItems: [
-          Container(
-            height: MediaQuery.of(context).size.height,
-            color: Colors.orange,
-          ),
+          const PortalHome(),
           Container(
             height: MediaQuery.of(context).size.height,
             color: Colors.orange,
@@ -78,7 +80,7 @@ class _PortalDashboardState extends State<PortalDashboard> {
             color: Colors.blue,
           )
         ],
-        onSwitch: () => widget.onSwitch,
+        onSwitch:widget.onSwitch,
       ),
     );
   }
