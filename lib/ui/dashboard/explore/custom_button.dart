@@ -7,6 +7,8 @@ class CustomButton extends StatelessWidget {
   final Color borderColor;
   final String iconPath;
   final String text;
+  final double? height;
+  final double? width;
 
   const CustomButton({
     super.key,
@@ -14,6 +16,8 @@ class CustomButton extends StatelessWidget {
     required this.borderColor,
     required this.iconPath,
     required this.text,
+    this.height,
+    this.width,
   });
 
   @override
@@ -39,6 +43,8 @@ class CustomButton extends StatelessWidget {
                 Colors.white,
                 BlendMode.srcIn,
               ),
+              height: height,
+              width: width,
             ),
             const SizedBox(
               width: 10.0,

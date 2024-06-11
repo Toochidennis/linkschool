@@ -14,8 +14,7 @@ class DashboardSwitcher extends StatefulWidget {
 class _DashboardSwitcherState extends State<DashboardSwitcher> {
   bool showPortal = true;
 
-  void switchDashboard() {
-    print('Switched to: ${showPortal ? 'Explore' : 'Portal'} dashboard');
+  void switchDashboard(bool value) {
     setState(() {
       showPortal = !showPortal;
       print('Switched to: ${showPortal ? 'Explore' : 'Portal'} dashboard');
@@ -26,27 +25,19 @@ class _DashboardSwitcherState extends State<DashboardSwitcher> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: AnimatedSwitcher(
-        duration: const Duration(milliseconds: 4600),
-        layoutBuilder: (widget, list) => Stack(
-          children: [widget!, ...list],
-        ),
-        switchInCurve: Curves.easeInBack,
-        switchOutCurve: Curves.easeInBack.flipped,
+        duration: const Duration(milliseconds: 1400),
         transitionBuilder: (Widget child, Animation<double> animation) {
-          final rotateAnimation =
-              Tween(begin: 3.1416, end: 0.0).animate(animation);
+          final rotateAnimation = Tween(begin: pi, end: 0.0).animate(animation);
           return AnimatedBuilder(
             animation: rotateAnimation,
             child: child,
             builder: (context, child) {
               final isUnder = (ValueKey(showPortal) != child!.key);
               final value = isUnder
-                  ? min(rotateAnimation.value, 3.1416 / 2)
+                  ? min(rotateAnimation.value, pi / 2)
                   : rotateAnimation.value;
-              var tilt = ((animation.value - 0.5).abs() - 0.5) * 0.003;
-              tilt *= isUnder ? -1.0 : 1.0;
               return Transform(
-                transform: Matrix4.rotationY(value)..setEntry(3, 0, tilt),
+                transform: Matrix4.rotationY(value)..setEntry(3, 2, 0.015),
                 alignment: Alignment.center,
                 child: child,
               );
@@ -54,14 +45,8 @@ class _DashboardSwitcherState extends State<DashboardSwitcher> {
           );
         },
         child: showPortal
-            ? ExploreDashboard(
-
-                onSwitch: switchDashboard,
-              )
-            : PortalDashboard(
-                key: const ValueKey(false),
-                onSwitch: switchDashboard,
-              ),
+            ? ExploreDashboard(onSwitch: switchDashboard)
+            : PortalDashboard(onSwitch: switchDashboard),
       ),
     );
   }
