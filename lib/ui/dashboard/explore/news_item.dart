@@ -41,25 +41,6 @@ class NewsItem extends StatelessWidget {
               children: [
                 Padding(
                   padding: const EdgeInsets.only(left: 16.0),
-                  child: Row(
-                    children: [
-                      CircleAvatar(
-                        backgroundImage: NetworkImage(profileImageUrl),
-                        radius: 16.0,
-                      ),
-                      const SizedBox(width: 10.0),
-                      Expanded(
-                        child: Text(
-                          name,
-                          style: AppTextStyles.normal2Light,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 10.0),
-                Padding(
-                  padding: const EdgeInsets.only(left: 16.0),
                   child: Text(
                     newsContent,
                     style: AppTextStyles.normal3Light,
@@ -105,7 +86,7 @@ class NewsItem extends StatelessWidget {
           Align(
             alignment: Alignment.topCenter, // Align the image container to the top
             child: Padding(
-              padding: const EdgeInsets.only(right: 16.0, top: 10.0),
+              padding: const EdgeInsets.only(right: 16.0),
               child: Container(
                 width: 140.0,
                 height: 100.0,
