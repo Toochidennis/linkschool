@@ -4,10 +4,10 @@ import 'package:curved_nav_bar/flutter_curved_bottom_nav_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 
-import '../../../../common/app_colors.dart';
+import '../../../common/app_colors.dart';
 
 class CustomNavigationBar extends StatefulWidget {
-  final VoidCallback onSwitch;
+  final Function(bool) onSwitch;
   final String actionButtonImagePath;
   final List<FABBottomAppBarItem> appBarItems;
   final List<Widget> bodyItems;
@@ -61,7 +61,7 @@ class _CustomNavigationBarState extends State<CustomNavigationBar>
         Expanded(
           child: CurvedNavBar(
             actionButton: CurvedActionBar(
-              onTab:(value)=> widget.onSwitch,
+              onTab: widget.onSwitch,
               activeIcon: Container(
                 padding: const EdgeInsets.all(24.0),
                 decoration: BoxDecoration(
