@@ -61,19 +61,17 @@ class AppTextStyles {
   );
 
   static const TextStyle italic2Light = TextStyle(
-    fontSize: 20,
-    fontStyle: FontStyle.italic,
-    fontWeight: FontWeight.w700,
-    color: AppColors.backgroundLight,
-    fontFamily: 'Urbanist'
-  );
+      fontSize: 20,
+      fontStyle: FontStyle.italic,
+      fontWeight: FontWeight.w700,
+      color: AppColors.backgroundLight,
+      fontFamily: 'Urbanist');
   static const TextStyle italic3Light = TextStyle(
       fontSize: 20,
       fontStyle: FontStyle.italic,
       fontWeight: FontWeight.w700,
       color: AppColors.secondaryLight,
-      fontFamily: 'Urbanist'
-  );
+      fontFamily: 'Urbanist');
 
   static const TextStyle buttonsText = TextStyle(
     fontSize: 14,
@@ -90,6 +88,12 @@ class AppTextStyles {
   static const TextStyle normalDark = TextStyle(
     fontSize: 16,
     color: AppColors.textDark,
+  );
+  static const TextStyle normalDark2 = TextStyle(
+    fontSize: 14,
+    color: AppColors.backgroundDark,
+    fontFamily: 'Urbanist',
+    fontWeight: FontWeight.w500,
   );
 
   static const TextStyle italicDark = TextStyle(

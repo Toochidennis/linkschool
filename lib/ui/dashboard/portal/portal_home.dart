@@ -5,7 +5,6 @@ import 'package:linkschool/ui/dashboard/portal/portal_news_item.dart';
 import '../../../common/app_colors.dart';
 import '../../../common/text_styles.dart';
 import '../explore/custom_button.dart';
-import '../explore/news_item.dart';
 import 'history_item.dart';
 
 class PortalHome extends StatefulWidget {
