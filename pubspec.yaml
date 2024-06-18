@@ -80,7 +80,8 @@ flutter:
     - assets/icons/payment.svg
     - assets/icons/profile.svg
     - assets/icons/explore.svg
-    - assets/images/img.png
+    - assets/icons/arrow_back.png
+    - assets/images/background.png
     - assets/images/millionaire.png
     - assets/images/ai.png
     - assets/images/video_1.png

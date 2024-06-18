@@ -3,6 +3,7 @@ import 'package:linkschool/ui/dashboard/portal/portal_news_item.dart';
 
 import '../../../common/app_colors.dart';
 import '../../../common/text_styles.dart';
+import '../common/constants.dart';
 import '../explore/custom_button.dart';
 import 'history_item.dart';
 
@@ -16,19 +17,9 @@ class PortalHome extends StatefulWidget {
 class _PortalHomeState extends State<PortalHome> {
   @override
   Widget build(BuildContext context) {
-    Brightness brightness = Theme.of(context).brightness;
-    final opacity = brightness == Brightness.light ? 0.1 : 0.15;
-
     return Container(
       height: double.infinity,
-      decoration: BoxDecoration(
-        image: DecorationImage(
-          image: const AssetImage(
-            'assets/images/img.png',
-          ),
-          opacity: opacity,
-        ),
-      ),
+      decoration: customBoxDecoration(context),
       child: Padding(
         padding: const EdgeInsets.only(bottom: 100.0),
         child: SingleChildScrollView(
@@ -109,7 +100,7 @@ class _PortalHomeState extends State<PortalHome> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Expanded(
-                      child: CustomButton(
+                      child: CustomIconButton(
                         backgroundColor: AppColors.portalButton1Light,
                         borderColor: AppColors.portalButton1BorderLight,
                         text: 'Check\nResults',
@@ -120,7 +111,7 @@ class _PortalHomeState extends State<PortalHome> {
                     ),
                     SizedBox(width: 14.0),
                     Expanded(
-                      child: CustomButton(
+                      child: CustomIconButton(
                         backgroundColor: AppColors.portalButton2Light,
                         borderColor: AppColors.portalButton2BorderLight,
                         text: 'Make\nPayment',
