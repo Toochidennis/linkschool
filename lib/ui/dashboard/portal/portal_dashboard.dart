@@ -21,13 +21,16 @@ class _PortalDashboardState extends State<PortalDashboard> {
     return Scaffold(
       appBar: AppBar(
         title: RichText(
-            text: const TextSpan(children: [
-          TextSpan(text: 'Welcome, ', style: AppTextStyles.italic2Light),
-          TextSpan(text: 'ToochiDennis', style: AppTextStyles.italic3Light)
-        ],),),
+          text: const TextSpan(
+            children: [
+              TextSpan(text: 'Welcome, ', style: AppTextStyles.italic2Light),
+              TextSpan(text: 'ToochiDennis', style: AppTextStyles.italic3Light)
+            ],
+          ),
+        ),
         actions: [
           IconButton(
-            onPressed:(){},
+            onPressed: () {},
             icon: SvgPicture.asset(
               'assets/icons/notifications.svg',
               colorFilter: const ColorFilter.mode(
@@ -80,7 +83,7 @@ class _PortalDashboardState extends State<PortalDashboard> {
             color: Colors.blue,
           )
         ],
-        onSwitch:widget.onSwitch,
+        onSwitch: widget.onSwitch,
       ),
     );
   }
