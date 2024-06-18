@@ -35,6 +35,8 @@ class AppColors {
 
   static const Color buttonColor1 = Color.fromRGBO(84, 1, 203, 1);
   static const Color buttonBorderColor1 = Color.fromRGBO(159, 92, 255, 1);
+  static const Color booksButtonColor = Color.fromRGBO(224, 224, 224, 1);
+  static const Color booksButtonTextColor = Color.fromRGBO(90, 90, 90, 1);
 
   static const Color newsBorderColor = Color.fromRGBO(211, 211, 211, 1);
   static const Color newsProfilePic = Color.fromRGBO(217, 217, 217, 1);
