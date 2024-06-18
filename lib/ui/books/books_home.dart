@@ -132,7 +132,7 @@ class _BooksHomeState extends State<BooksHome> with TickerProviderStateMixin {
 
                 Container(
                   width: double.maxFinite,
-                  height: 600,
+                  height: 700,
                   child: CustomTabController()
                 )
               ],

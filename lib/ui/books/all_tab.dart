@@ -1,96 +1,66 @@
 import 'package:flutter/material.dart';
-import '../../common/app_colors.dart';
+
+import '../../common/text_styles.dart';
+import '../books/history_item.dart';
+
 
 class AllTab extends StatelessWidget {
-  const AllTab({Key? key}) : super(key: key);
+  const AllTab({super.key});
 
   @override
   Widget build(BuildContext context) {
+    const historyItems = [
+      HistoryItem(),
+      HistoryItem(),
+      HistoryItem(),
+    ];
+
     return Padding(
-      padding: EdgeInsets.all(16.0),
-      child: Row(
+      padding: const EdgeInsets.only(right: 16.0),
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           SizedBox(
-            height: 300,
-            width: 130, // Ensure width is set for the SizedBox containing the image
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            height: 290.0,
+            child: ListView.builder(
+                itemCount: historyItems.length,
+                scrollDirection: Axis.horizontal,
+                itemBuilder: (context, index) {
+                  return historyItems[index];
+            }),
+          ),
+          SizedBox(height: 16.0),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(8.0), // Add back the borderRadius if needed
-                  child: Image.asset(
-                    'assets/images/video_1.png',
-                    fit: BoxFit.cover,
-                    height: 180, // Adjust the height of the image as needed
-                    width: 130,
-                  ),
+                const Text(
+                  'Suggested for you',
+                  style: AppTextStyles.title3Light,
                 ),
-                SizedBox(height: 4.0),
-                LinearProgressIndicator(
-                  value: 0.5, // Adjust the value (0.5 means 50% progress)
-                  color: AppColors.primaryLight,
-                ),
-                SizedBox(height: 4.0),
-                Text(
-                  'Purple Hibicus',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                SizedBox(height: 4.0),
-                Text(
-                  'Chimamanda N. Adichie',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.grey,
+                TextButton(
+                  onPressed: () {},
+                  style: TextButton.styleFrom(),
+                  child: const Text(
+                    'See all',
+                    style: TextStyle(
+                      decoration: TextDecoration.underline,
+                    ),
                   ),
                 ),
               ],
             ),
           ),
-          SizedBox(width: 16.0,),
           SizedBox(
-            height: 300,
-            width: 130, // Ensure width is set for the SizedBox containing the image
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(8.0), // Add back the borderRadius if needed
-                  child: Image.asset(
-                    'assets/images/video_1.png',
-                    fit: BoxFit.cover,
-                    height: 180, // Adjust the height of the image as needed
-                    width: 130,
-                  ),
-                ),
-                SizedBox(height: 4.0),
-                LinearProgressIndicator(
-                  value: 0.5, // Adjust the value (0.5 means 50% progress)
-                  color: AppColors.primaryLight,
-                ),
-                SizedBox(height: 4.0),
-                Text(
-                  'Purple Hibicus',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                SizedBox(height: 4.0),
-                Text(
-                  'Chimamanda N. Adichie',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.grey,
-                  ),
-                ),
-              ],
-            ),
+            height: 290.0,
+            child: ListView.builder(
+                itemCount: historyItems.length,
+                scrollDirection: Axis.horizontal,
+                itemBuilder: (context, index) {
+                  return historyItems[index];
+                }),
           ),
-
         ],
       ),
     );
