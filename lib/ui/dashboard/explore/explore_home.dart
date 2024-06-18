@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:linkschool/common/text_styles.dart';
 
 import '../../../common/app_colors.dart';
+import '../../books/books_home.dart';
+import '../common/constants.dart';
 import 'custom_button.dart';
 import 'news_item.dart';
 
@@ -15,18 +17,9 @@ class ExploreHome extends StatefulWidget {
 class _ExploreHomeState extends State<ExploreHome> {
   @override
   Widget build(BuildContext context) {
-    final Brightness brightness = Theme.of(context).brightness;
-    var opacity = brightness == Brightness.light ? 0.1 : 0.15;
-
     return Container(
       height: double.infinity,
-      decoration: BoxDecoration(
-        image: DecorationImage(
-          image: const AssetImage('assets/images/img.png'),
-          fit: BoxFit.cover,
-          opacity: opacity,
-        ),
-      ),
+      decoration: customBoxDecoration(context),
       child: Padding(
         padding: const EdgeInsets.only(bottom: 100.0),
         child: SingleChildScrollView(
@@ -128,14 +121,14 @@ class _ExploreHomeState extends State<ExploreHome> {
                     Expanded(
                       child: Column(
                         children: [
-                          CustomButton(
+                          CustomIconButton(
                             backgroundColor: AppColors.exploreButton1Light,
                             borderColor: AppColors.exploreButton1BorderLight,
                             text: 'CBT',
                             iconPath: 'assets/icons/cbt.svg',
                           ),
                           SizedBox(height: 14.0),
-                          CustomButton(
+                          CustomIconButton(
                             backgroundColor: AppColors.exploreButton2Light,
                             borderColor: AppColors.exploreButton2BorderLight,
                             text: 'Videos',
@@ -148,14 +141,15 @@ class _ExploreHomeState extends State<ExploreHome> {
                     Expanded(
                       child: Column(
                         children: [
-                          CustomButton(
+                          CustomIconButton(
                             backgroundColor: AppColors.exploreButton3Light,
                             borderColor: AppColors.exploreButton3BorderLight,
                             text: 'E-Books',
                             iconPath: 'assets/icons/e-books.svg',
+                            destination: BooksHome(),
                           ),
                           SizedBox(height: 14.0),
-                          CustomButton(
+                          CustomIconButton(
                             backgroundColor: AppColors.exploreButton4Light,
                             borderColor: AppColors.exploreButton4BorderLight,
                             text: 'Games',
