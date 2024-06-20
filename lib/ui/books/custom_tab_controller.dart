@@ -19,17 +19,15 @@ class CustomTabController extends StatelessWidget {
             indicatorColor: AppColors.primaryLight,
             tabs: const [
               Tab(
-                child: Text('All'),
+                text: 'All',
               ),
-              Tab(
-                child: Text('Library'),
-              )
+              Tab(text: 'Library')
             ],
           ),
           Expanded(
             child: TabBarView(
               children: [
-                AllTab(),
+                const AllTab(),
                 Container(
                   color: Colors.orange,
                   child: Center(

@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:linkschool/common/text_styles.dart';
+import 'package:linkschool/ui/games/games_home.dart';
 
 import '../../../common/app_colors.dart';
 import '../../books/books_home.dart';
-import '../common/constants.dart';
+import '../../../common/constants.dart';
 import 'custom_button.dart';
 import 'news_item.dart';
 
@@ -19,7 +20,7 @@ class _ExploreHomeState extends State<ExploreHome> {
   Widget build(BuildContext context) {
     return Container(
       height: double.infinity,
-      decoration: customBoxDecoration(context),
+      decoration: Constants.customBoxDecoration(context),
       child: Padding(
         padding: const EdgeInsets.only(bottom: 100.0),
         child: SingleChildScrollView(
@@ -53,7 +54,7 @@ class _ExploreHomeState extends State<ExploreHome> {
               ),
               Padding(
                 padding: const EdgeInsets.only(
-                    left: 16.0, right: 16.0, bottom: 16.0),
+                  left: 16.0, right: 16.0, bottom: 16.0,),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -76,11 +77,17 @@ class _ExploreHomeState extends State<ExploreHome> {
                           children: [
                             Text(
                               'Millionaire Game',
-                              style: Theme.of(context).textTheme.titleLarge,
+                              style: Theme
+                                  .of(context)
+                                  .textTheme
+                                  .titleLarge,
                             ),
                             Text(
                               'By Digital Dreams',
-                              style: Theme.of(context).textTheme.titleSmall,
+                              style: Theme
+                                  .of(context)
+                                  .textTheme
+                                  .titleSmall,
                             ),
                           ],
                         ),
@@ -91,7 +98,7 @@ class _ExploreHomeState extends State<ExploreHome> {
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(10.0),
                               side: const BorderSide(
-                                color: AppColors.buttonBorderColor1,
+                                color: AppColors.buttonColor2,
                                 width: 2.0,
                               ),
                             ),
@@ -154,6 +161,7 @@ class _ExploreHomeState extends State<ExploreHome> {
                             borderColor: AppColors.exploreButton4BorderLight,
                             text: 'Games',
                             iconPath: 'assets/icons/games.svg',
+                            destination: GamesHome(),
                           ),
                         ],
                       ),
@@ -189,26 +197,26 @@ class _ExploreHomeState extends State<ExploreHome> {
                     profileImageUrl: 'https://via.placeholder.com/300',
                     name: 'John Doe',
                     newsContent:
-                        'This is a mock data showing the info details of a recording.',
+                    'This is a mock data showing the info details of a recording.',
                     time: '2 hours ago',
                     imageUrl:
-                        'https://img.freepik.com/free-vector/gradient-human-rights-day-background_52683-149974.jpg?t=st=1717832829~exp=1717833429~hmac=3e938edcacd7fef2a791b36c7d3decbf64248d9760dd7da0a304acee382b8a86',
+                    'https://img.freepik.com/free-vector/gradient-human-rights-day-background_52683-149974.jpg?t=st=1717832829~exp=1717833429~hmac=3e938edcacd7fef2a791b36c7d3decbf64248d9760dd7da0a304acee382b8a86',
                   ),
                   NewsItem(
                     profileImageUrl:
-                        'https://img.freepik.com/free-vector/gradient-human-rights-day-background_52683-149974.jpg?t=st=1717832829~exp=1717833429~hmac=3e938edcacd7fef2a791b36c7d3decbf64248d9760dd7da0a304acee382b8a86',
+                    'https://img.freepik.com/free-vector/gradient-human-rights-day-background_52683-149974.jpg?t=st=1717832829~exp=1717833429~hmac=3e938edcacd7fef2a791b36c7d3decbf64248d9760dd7da0a304acee382b8a86',
                     name: 'Vanguard news',
                     newsContent:
-                        'This is a mock data showing the info details of a recording.',
+                    'This is a mock data showing the info details of a recording.',
                     time: '2 minutes ago',
                     imageUrl: 'https://via.placeholder.com/300',
                   ),
                   NewsItem(
                     profileImageUrl:
-                        'https://img.freepik.com/free-vector/gradient-human-rights-day-background_52683-149974.jpg?t=st=1717832829~exp=1717833429~hmac=3e938edcacd7fef2a791b36c7d3decbf64248d9760dd7da0a304acee382b8a86',
+                    'https://img.freepik.com/free-vector/gradient-human-rights-day-background_52683-149974.jpg?t=st=1717832829~exp=1717833429~hmac=3e938edcacd7fef2a791b36c7d3decbf64248d9760dd7da0a304acee382b8a86',
                     name: 'Vanguard news',
                     newsContent:
-                        'This is a mock data showing the info details of a recording.',
+                    'This is a mock data showing the info details of a recording.',
                     time: '2 minutes ago',
                     imageUrl: 'https://via.placeholder.com/300',
                   ),
