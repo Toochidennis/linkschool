@@ -53,6 +53,18 @@ class AppTextStyles {
     fontFamily: 'Urbanist',
   );
 
+  static TextStyle normal500({
+    required double fontSize,
+    required Color color,
+  }) {
+    return TextStyle(
+      fontSize: fontSize,
+      color: color,
+      fontWeight: FontWeight.w500,
+      fontFamily: 'Urbanist',
+    );
+  }
+
   static const TextStyle italicLight = TextStyle(
     fontSize: 16,
     fontStyle: FontStyle.italic,
@@ -66,6 +78,7 @@ class AppTextStyles {
       fontWeight: FontWeight.w700,
       color: AppColors.backgroundLight,
       fontFamily: 'Urbanist');
+
   static const TextStyle italic3Light = TextStyle(
       fontSize: 20,
       fontStyle: FontStyle.italic,
