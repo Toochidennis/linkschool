@@ -8,6 +8,8 @@ class AppColors {
   static const Color text2Light = Color.fromRGBO(18, 7, 123, 1);
   static const Color text3Light = Color.fromRGBO(0, 0, 0, 1);
   static const Color text4Light = Color.fromRGBO(26, 26, 26, 1);
+  static const Color text5Light = Color.fromRGBO(140, 140, 140, 1);
+  static const Color text6Light = Color.fromRGBO(234, 234, 234, 1);
   static const Color backgroundLight = Color(0xFFFFFFFF);
   static const Color textFieldBorderLight = Color.fromRGBO(208, 208, 208, 1);
   static const Color textFieldLight = Color.fromRGBO(255, 255, 255, 1);
@@ -34,10 +36,18 @@ class AppColors {
   static const Color portalButton2Light = Color.fromRGBO(67, 160, 71, 1);
 
   static const Color buttonColor1 = Color.fromRGBO(84, 1, 203, 1);
-  static const Color buttonBorderColor1 = Color.fromRGBO(159, 92, 255, 1);
+  static const Color buttonColor2 = Color.fromRGBO(159, 92, 255, 1);
+  static const Color buttonColor3 = Color.fromRGBO(195, 36, 237, 1);
   static const Color booksButtonColor = Color.fromRGBO(224, 224, 224, 1);
   static const Color booksButtonTextColor = Color.fromRGBO(90, 90, 90, 1);
 
   static const Color newsBorderColor = Color.fromRGBO(211, 211, 211, 1);
   static const Color newsProfilePic = Color.fromRGBO(217, 217, 217, 1);
+
+  static const Color gamesColor1 = Color(0xFF6F5EE2);
+  static const Color gamesColor2 = Color(0xFF6D5ED2);
+  static const Color gamesColor3 = Color.fromRGBO(119, 193, 100, 1);
+  static const Color gamesColor4 = Color.fromRGBO(124, 206, 103, 1);
+  static const Color gamesColor5 = Color.fromRGBO(81, 140, 254, 1);
+  static const Color gamesColor6 = Color.fromRGBO(89, 145, 252, 1);
 }
