@@ -79,8 +79,45 @@ class _GamesHomeState extends State<GamesHome> {
                 ),
               ),
               const SizedBox(height: 16.0),
-              _buildHeading(title: "You may like"),
+              _buildHeading(title: "You might like"),
               const SizedBox(height: 10.0),
+              SizedBox(
+                height: 600.0,
+                child: ListView(
+                  scrollDirection: Axis.vertical,
+                  physics: const NeverScrollableScrollPhysics(),
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                  children: [
+                    _buildYouMightLikeCard(
+                      startColor: AppColors.gamesColor5,
+                      endColor: AppColors.gamesColor6,
+                      imagePath: 'assets/images/games_3.png',
+                      gameName: 'Borderlands 2',
+                      platform: 'Cross-platform',
+                      rating: 3.5,
+                      downloadCount: 10,
+                    ),
+                    _buildYouMightLikeCard(
+                      startColor: AppColors.gamesColor3,
+                      endColor: AppColors.gamesColor4,
+                      imagePath: 'assets/images/games_2.png',
+                      gameName: 'Borderlands 2',
+                      platform: 'Cross-platform',
+                      rating: 3.5,
+                      downloadCount: 10,
+                    ),
+                    _buildYouMightLikeCard(
+                      startColor: AppColors.gamesColor1,
+                      endColor: AppColors.gamesColor2,
+                      imagePath: 'assets/images/games_1.png',
+                      gameName: 'Borderlands 2',
+                      platform: 'Cross-platform',
+                      rating: 3.5,
+                      downloadCount: 10,
+                    ),
+                  ],
+                ),
+              ),
             ],
           ),
         ),
@@ -243,7 +280,7 @@ class _GamesHomeState extends State<GamesHome> {
     );
   }
 
-  Widget _buildYouMayLikeCard({
+  Widget _buildYouMightLikeCard({
     required Color startColor,
     required Color endColor,
     required String imagePath,
@@ -252,15 +289,15 @@ class _GamesHomeState extends State<GamesHome> {
     required double rating,
     required int downloadCount,
   }) {
-    return Padding(
-      padding: EdgeInsets.all(10.0),
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(bottom: 10.0),
       child: Row(
         children: [
           Container(
-            margin: const EdgeInsets.only(left: 16.0),
             padding: const EdgeInsets.only(left: 16.0, right: 16.0, top: 16.0),
-            width: 125.0,
-            height: 125.0,
+            width: 90.0,
+            height: 95.0,
             decoration: BoxDecoration(
                 gradient: LinearGradient(
                   begin: Alignment.topLeft,
@@ -270,12 +307,109 @@ class _GamesHomeState extends State<GamesHome> {
                     endColor,
                   ],
                 ),
-                borderRadius: BorderRadius.circular(16.0)),
+                borderRadius: BorderRadius.circular(10.0)),
             child: Image.asset(
               imagePath,
               fit: BoxFit.contain,
             ),
           ),
+          const SizedBox(width: 10.0),
+          Expanded(
+            child: Container(
+              decoration: const BoxDecoration(
+                border: Border(
+                  bottom: BorderSide(
+                    width: .5,
+                    color: AppColors.gamesColor9,
+                  ),
+                ),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.start,
+                    children: [
+                      Text(
+                        gameName,
+                        style: AppTextStyles.normal500(
+                          fontSize: 16.0,
+                          color: Colors.black,
+                        ),
+                      ),
+                      const SizedBox(height: 2.0),
+                      Text(
+                        platform,
+                        style: AppTextStyles.normal500(
+                          fontSize: 13.0,
+                          color: AppColors.text5Light,
+                        ),
+                      ),
+                      const SizedBox(height: 2.0),
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.star,
+                              color: Colors.amber, size: 16.0),
+                          Text(
+                            "$rating",
+                            style: AppTextStyles.normal500(
+                              fontSize: 14.0,
+                              color: Colors.black,
+                            ),
+                          ),
+                          const SizedBox(width: 16.0),
+                          const Icon(Icons.file_download_outlined, size: 16.0),
+                          Text(
+                            '${downloadCount}k',
+                            style: AppTextStyles.normal500(
+                              fontSize: 14.0,
+                              color: Colors.black,
+                            ),
+                          ),
+                        ],
+                      )
+                    ],
+                  ),
+                  Container(
+                    height: 45.0,
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          AppColors.gamesColor7,
+                          AppColors.gamesColor8,
+                        ],
+                      ),
+                      borderRadius: BorderRadius.circular(4.0),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(2.0),
+                      child: OutlinedButton(
+                        onPressed: () {},
+                        style: OutlinedButton.styleFrom(
+                          backgroundColor: AppColors.backgroundLight,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(4.0),
+                          ),
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                          child: Text(
+                            'Play',
+                            style: AppTextStyles.normal600(
+                                fontSize: 14.0, color: AppColors.buttonColor1),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          )
         ],
       ),
     );
