@@ -83,6 +83,10 @@ flutter:
     - assets/icons/profile.svg
     - assets/icons/explore.svg
     - assets/icons/arrow_back.png
+    - assets/icons/test.png
+    - assets/icons/success.png
+    - assets/icons/average.png
+    - assets/icons/search.png
     - assets/images/background.png
     - assets/images/millionaire.png
     - assets/images/ai.png

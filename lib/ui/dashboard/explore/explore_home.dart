@@ -5,6 +5,7 @@ import 'package:linkschool/ui/games/games_home.dart';
 import '../../../common/app_colors.dart';
 import '../../books/books_home.dart';
 import '../../../common/constants.dart';
+import '../../cbt/cbt_home.dart';
 import 'custom_button.dart';
 import 'news_item.dart';
 
@@ -133,6 +134,7 @@ class _ExploreHomeState extends State<ExploreHome> {
                             borderColor: AppColors.exploreButton1BorderLight,
                             text: 'CBT',
                             iconPath: 'assets/icons/cbt.svg',
+                            destination: CBTHome(),
                           ),
                           SizedBox(height: 14.0),
                           CustomIconButton(
