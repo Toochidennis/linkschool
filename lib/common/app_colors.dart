@@ -22,17 +22,22 @@ class AppColors {
 
   // Button Colors
   static const Color exploreButton1Light = Color.fromRGBO(30, 136, 229, 1);
-  static const Color exploreButton1BorderLight = Color.fromRGBO(153, 207, 255, 1);
+  static const Color exploreButton1BorderLight =
+      Color.fromRGBO(153, 207, 255, 1);
   static const Color exploreButton2Light = Color.fromRGBO(142, 36, 170, 1);
-  static const Color exploreButton2BorderLight = Color.fromRGBO(229, 133, 255, 1);
+  static const Color exploreButton2BorderLight =
+      Color.fromRGBO(229, 133, 255, 1);
   static const Color exploreButton3Light = Color.fromRGBO(229, 57, 53, 1);
-  static const Color exploreButton3BorderLight = Color.fromRGBO(255, 152, 150, 1);
+  static const Color exploreButton3BorderLight =
+      Color.fromRGBO(255, 152, 150, 1);
   static const Color exploreButton4Light = Color.fromRGBO(255, 112, 67, 1);
-  static const Color exploreButton4BorderLight = Color.fromRGBO(255, 191, 171, 1);
+  static const Color exploreButton4BorderLight =
+      Color.fromRGBO(255, 191, 171, 1);
 
   static const Color portalButton1BorderLight = Color.fromRGBO(92, 179, 255, 1);
   static const Color portalButton1Light = Color.fromRGBO(30, 136, 229, 1);
-  static const Color portalButton2BorderLight = Color.fromRGBO(105, 187, 108, 1);
+  static const Color portalButton2BorderLight =
+      Color.fromRGBO(105, 187, 108, 1);
   static const Color portalButton2Light = Color.fromRGBO(67, 160, 71, 1);
 
   static const Color buttonColor1 = Color.fromRGBO(84, 1, 203, 1);
@@ -50,4 +55,13 @@ class AppColors {
   static const Color gamesColor4 = Color.fromRGBO(124, 206, 103, 1);
   static const Color gamesColor5 = Color.fromRGBO(81, 140, 254, 1);
   static const Color gamesColor6 = Color.fromRGBO(89, 145, 252, 1);
+  static const Color gamesColor7 = Color.fromRGBO(77, 0, 187, 1);
+  static const Color gamesColor8 = Color.fromRGBO(140, 59, 255, 1);
+  static const Color gamesColor9 = Color.fromRGBO(168, 132, 218, 1);
+
+  //cbt colors
+  static const Color cbtColor1 = Color.fromRGBO(252, 191, 77, 1);
+  static const Color cbtBorderColor1 = Color.fromRGBO(255, 163, 82, 1);
+  static const Color cbtColor2 = Color.fromRGBO(30, 136, 229, 1);
+  static const Color cbtColor3 = Color.fromRGBO(86, 201, 91, 1);
 }

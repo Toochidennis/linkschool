@@ -30,7 +30,7 @@ class CustomTabController extends StatelessWidget {
                 const AllTab(),
                 Container(
                   color: Colors.orange,
-                  child: Center(
+                  child: const Center(
                     child: Text('Tab 2'),
                   ),
                 ),
