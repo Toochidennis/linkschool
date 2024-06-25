@@ -29,7 +29,7 @@ class _BooksHomeState extends State<BooksHome> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: Constants.customAppBar(context),
+      appBar: Constants.customAppBar(context: context),
       body: Container(
         height: double.infinity,
         decoration: Constants.customBoxDecoration(context),
