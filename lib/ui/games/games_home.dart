@@ -17,7 +17,7 @@ class _GamesHomeState extends State<GamesHome> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: Constants.customAppBar(context),
+      appBar: Constants.customAppBar(context: context),
       body: Container(
         decoration: Constants.customBoxDecoration(context),
         child: SingleChildScrollView(
