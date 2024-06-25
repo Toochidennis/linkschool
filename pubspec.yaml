@@ -87,6 +87,15 @@ flutter:
     - assets/icons/success.png
     - assets/icons/average.png
     - assets/icons/search.png
+    - assets/icons/maths.png
+    - assets/icons/chemistry.png
+    - assets/icons/physics.png
+    - assets/icons/further_maths.png
+    - assets/icons/english.png
+    - assets/icons/biology.png
+    - assets/icons/agric.png
+    - assets/icons/views.png
+    - assets/icons/geography.png
     - assets/images/background.png
     - assets/images/millionaire.png
     - assets/images/ai.png
