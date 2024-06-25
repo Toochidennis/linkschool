@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:linkschool/common/text_styles.dart';
 import 'package:linkschool/ui/games/games_home.dart';
+import 'package:linkschool/ui/videos/videos_home.dart';
 
 import '../../../common/app_colors.dart';
 import '../../books/books_home.dart';
@@ -142,6 +143,7 @@ class _ExploreHomeState extends State<ExploreHome> {
                             borderColor: AppColors.exploreButton2BorderLight,
                             text: 'Videos',
                             iconPath: 'assets/icons/video.svg',
+                            destination: VideosHome(),
                           ),
                         ],
                       ),
