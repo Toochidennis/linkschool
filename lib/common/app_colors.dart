@@ -10,6 +10,10 @@ class AppColors {
   static const Color text4Light = Color.fromRGBO(26, 26, 26, 1);
   static const Color text5Light = Color.fromRGBO(140, 140, 140, 1);
   static const Color text6Light = Color.fromRGBO(234, 234, 234, 1);
+  static const Color text7Light = Color.fromRGBO(106, 106, 106, 1);
+  static const Color text8Light = Color.fromRGBO(202, 202, 202, 1);
+  static const Color text9Light = Color.fromRGBO(127, 127, 127, 1);
+  static const Color text10Light = Color.fromRGBO(139, 139, 139, 1);
   static const Color backgroundLight = Color(0xFFFFFFFF);
   static const Color textFieldBorderLight = Color.fromRGBO(208, 208, 208, 1);
   static const Color textFieldLight = Color.fromRGBO(255, 255, 255, 1);
@@ -63,5 +67,29 @@ class AppColors {
   static const Color cbtColor1 = Color.fromRGBO(252, 191, 77, 1);
   static const Color cbtBorderColor1 = Color.fromRGBO(255, 163, 82, 1);
   static const Color cbtColor2 = Color.fromRGBO(30, 136, 229, 1);
+  static const Color cbtBorderColor2 = Color.fromRGBO(0, 113, 212, 1);
   static const Color cbtColor3 = Color.fromRGBO(86, 201, 91, 1);
+  static const Color cbtBorderColor3 = Color.fromRGBO(0, 185, 8, 1);
+  static const Color cbtColor4 = Color.fromRGBO(255, 154, 154, 1);
+  static const Color cbtColor5 = Color.fromRGBO(210, 210, 210, 1);
+
+  //cbt card color
+  static const Color cbtCardColor1 = Color.fromRGBO(203, 230, 227, 1);
+  static const Color cbtCardColor2 = Color.fromRGBO(205, 211, 227, 1);
+  static const Color cbtCardColor3 = Color.fromRGBO(208, 237, 219, 1);
+  static const Color cbtCardColor4 = Color.fromRGBO(247, 226, 209, 1);
+  static const Color cbtCardColor5 = Color.fromRGBO(222, 209, 244, 1);
+
+  // videos colors
+  static const Color videoCardColor = Color.fromRGBO(253, 253, 253, 1);
+  static const Color videoCardBorderColor = Color.fromRGBO(240, 240, 240, 1);
+  static const Color videoColor1 = Color.fromRGBO(30, 58, 138, 1);
+  static const Color videoColor2 = Color.fromRGBO(13, 148, 136, 1);
+  static const Color videoColor3 = Color.fromRGBO(22, 163, 74, 1);
+  static const Color videoColor4 = Color.fromRGBO(251, 146, 60, 1);
+  static const Color videoColor5 = Color.fromRGBO(124, 58, 237, 1);
+  static const Color videoColor6 = Color.fromRGBO(6, 95, 70, 1);
+  static const Color videoColor7 = Color.fromRGBO(2, 132, 199, 1);
+  static const Color videoColor8 = Color.fromRGBO(146, 64, 14, 1);
+  static const Color videoColor9 = Color.fromRGBO(48, 45, 45, 1);
 }
