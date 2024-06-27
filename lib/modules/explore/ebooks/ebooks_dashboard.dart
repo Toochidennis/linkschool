@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:linkschool/common/search_bar.dart';
-import 'package:linkschool/common/text_styles.dart';
-import 'package:linkschool/ui/books/books_button_item.dart';
 
 import '../../common/app_colors.dart';
 import '../../common/constants.dart';
+import '../../common/search_bar.dart';
+import '../../common/text_styles.dart';
 import 'all_tab.dart';
+import 'books_button_item.dart';
 
 class BooksHome extends StatefulWidget {
   const BooksHome({super.key});
@@ -67,16 +67,15 @@ class _BooksHomeState extends State<BooksHome> {
                 }),
               ),
             ),
-            Expanded(
-              child: _buildTabController()
-            ),
+            const SizedBox(height: 16.0),
+            Expanded(child: _buildTabController()),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildTabController(){
+  Widget _buildTabController() {
     return DefaultTabController(
       length: 2,
       child: Column(
@@ -85,14 +84,14 @@ class _BooksHomeState extends State<BooksHome> {
           TabBar(
             tabAlignment: TabAlignment.start,
             isScrollable: true,
-            unselectedLabelColor: Colors.black.withOpacity(0.3),
-            indicatorColor: AppColors.primaryLight,
-            tabs: const [
-              Tab(
-                text: 'All',
-              ),
-              Tab(text: 'Library')
-            ],
+            unselectedLabelColor: const Color.fromRGBO(90, 90, 90, 1),
+            labelColor: AppColors.text2Light,
+            labelStyle: AppTextStyles.normal600(
+              fontSize: 16.0,
+              color: AppColors.text2Light,
+            ),
+            indicatorColor: AppColors.text2Light,
+            tabs: const [Tab(text: 'All'), Tab(text: 'Library')],
           ),
           Expanded(
             child: TabBarView(

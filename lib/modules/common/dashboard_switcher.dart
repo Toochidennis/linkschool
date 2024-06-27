@@ -1,8 +1,8 @@
 import 'dart:math';
 
 import 'package:flutter/material.dart';
-import 'package:linkschool/ui/dashboard/explore/explore_dashboard.dart';
-import 'package:linkschool/ui/dashboard/portal/portal_dashboard.dart';
+import '../explore/home/explore_dashboard.dart';
+import '../portal/home/portal_dashboard.dart';
 
 class DashboardSwitcher extends StatefulWidget {
   const DashboardSwitcher({super.key});
