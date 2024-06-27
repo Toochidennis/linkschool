@@ -2,23 +2,23 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import '../../common/text_styles.dart';
 
-class CustomIconButton extends StatelessWidget {
+class CustomButtonItem extends StatelessWidget {
   final Color backgroundColor;
   final Color borderColor;
   final String iconPath;
-  final String text;
-  final double? height;
-  final double? width;
+  final String label;
+  final double? iconHeight;
+  final double? iconWidth;
   final Widget? destination;
 
-  const CustomIconButton({
+  const CustomButtonItem({
     super.key,
     required this.backgroundColor,
     required this.borderColor,
     required this.iconPath,
-    required this.text,
-    this.height,
-    this.width,
+    required this.label,
+    this.iconHeight,
+    this.iconWidth,
     this.destination,
   });
 
@@ -28,20 +28,16 @@ class CustomIconButton extends StatelessWidget {
       onTap: () {
         Navigator.of(context).push(
           MaterialPageRoute(
-            builder: (context) {
-              return destination!;
-            },
+            builder: (context) => destination!,
           ),
         );
       },
       child: Container(
-        height: 80.0,
         decoration: BoxDecoration(
           color: backgroundColor,
           borderRadius: BorderRadius.circular(8.0),
           border: Border.all(
             color: borderColor,
-            width: 1.0,
           ),
         ),
         child: Padding(
@@ -55,15 +51,18 @@ class CustomIconButton extends StatelessWidget {
                   Colors.white,
                   BlendMode.srcIn,
                 ),
-                height: height,
-                width: width,
+                height: iconHeight,
+                width: iconWidth,
               ),
               const SizedBox(
                 width: 10.0,
               ),
               Text(
-                text,
-                style: AppTextStyles.buttonsText,
+                label,
+                style: AppTextStyles.normal500(
+                  fontSize: 14.0,
+                  color: Colors.white,
+                ),
               ),
             ],
           ),
