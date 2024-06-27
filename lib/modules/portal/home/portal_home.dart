@@ -4,7 +4,7 @@ import 'package:linkschool/modules/portal/home/portal_news_item.dart';
 import '../../common/app_colors.dart';
 import '../../common/constants.dart';
 import '../../common/text_styles.dart';
-import '../../explore/home/custom_button.dart';
+import '../../explore/home/custom_button_item.dart';
 import 'history_item.dart';
 
 class PortalHome extends StatefulWidget {
@@ -52,27 +52,10 @@ class _PortalHomeState extends State<PortalHome> {
                   ),
                 ),
               ),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text(
-                      'Watch history',
-                      style: AppTextStyles.title3Light,
-                    ),
-                    TextButton(
-                      onPressed: () {},
-                      style: TextButton.styleFrom(),
-                      child: const Text(
-                        'See all',
-                        style: TextStyle(
-                          decoration: TextDecoration.underline,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
+              Constants.headingWithSeeAll600(
+                title: 'Watch history',
+                titleSize: 16.0,
+                titleColor: AppColors.text2Light,
               ),
               SizedBox(
                 height: 175,
@@ -100,24 +83,24 @@ class _PortalHomeState extends State<PortalHome> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Expanded(
-                      child: CustomIconButton(
+                      child: CustomButtonItem(
                         backgroundColor: AppColors.portalButton1Light,
                         borderColor: AppColors.portalButton1BorderLight,
-                        text: 'Check\nResults',
+                        label: 'Check\nResults',
                         iconPath: 'assets/icons/result.svg',
-                        height: 40.0,
-                        width: 36.0,
+                        iconHeight: 40.0,
+                        iconWidth: 36.0,
                       ),
                     ),
                     SizedBox(width: 14.0),
                     Expanded(
-                      child: CustomIconButton(
+                      child: CustomButtonItem(
                         backgroundColor: AppColors.portalButton2Light,
                         borderColor: AppColors.portalButton2BorderLight,
-                        text: 'Make\nPayment',
+                        label: 'Make\nPayment',
                         iconPath: 'assets/icons/payment.svg',
-                        height: 40.0,
-                        width: 36.0,
+                        iconHeight: 40.0,
+                        iconWidth: 36.0,
                       ),
                     ),
                   ],
