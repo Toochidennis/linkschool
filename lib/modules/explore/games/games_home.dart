@@ -6,14 +6,14 @@ import '../../common/constants.dart';
 import '../../common/text_styles.dart';
 import '../../common/app_colors.dart';
 
-class GamesHome extends StatefulWidget {
-  const GamesHome({super.key});
+class GamesDashboard extends StatefulWidget {
+  const GamesDashboard({super.key});
 
   @override
-  State<GamesHome> createState() => _GamesHomeState();
+  State<GamesDashboard> createState() => _GamesDashboardState();
 }
 
-class _GamesHomeState extends State<GamesHome> {
+class _GamesDashboardState extends State<GamesDashboard> {
   @override
   Widget build(BuildContext context) {
     final trendingItems = [
