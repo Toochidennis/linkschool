@@ -4,7 +4,7 @@ import 'package:linkschool/ui/games/games_home.dart';
 import 'package:linkschool/ui/videos/videos_home.dart';
 
 import '../../../common/app_colors.dart';
-import '../../books/books_home.dart';
+import '../../books/ebooks_dashboard.dart';
 import '../../../common/constants.dart';
 import '../../cbt/cbt_home.dart';
 import 'custom_button.dart';

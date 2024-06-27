@@ -1,13 +1,11 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
 import 'package:linkschool/common/search_bar.dart';
 import 'package:linkschool/common/text_styles.dart';
 import 'package:linkschool/ui/books/books_button_item.dart';
-import 'package:linkschool/ui/books/custom_tab_controller.dart';
 
 import '../../common/app_colors.dart';
 import '../../common/constants.dart';
+import 'all_tab.dart';
 
 class BooksHome extends StatefulWidget {
   const BooksHome({super.key});
@@ -69,11 +67,47 @@ class _BooksHomeState extends State<BooksHome> {
                 }),
               ),
             ),
-            const Expanded(
-              child: CustomTabController()
+            Expanded(
+              child: _buildTabController()
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildTabController(){
+    return DefaultTabController(
+      length: 2,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          TabBar(
+            tabAlignment: TabAlignment.start,
+            isScrollable: true,
+            unselectedLabelColor: Colors.black.withOpacity(0.3),
+            indicatorColor: AppColors.primaryLight,
+            tabs: const [
+              Tab(
+                text: 'All',
+              ),
+              Tab(text: 'Library')
+            ],
+          ),
+          Expanded(
+            child: TabBarView(
+              children: [
+                const AllTab(),
+                Container(
+                  color: Colors.orange,
+                  child: const Center(
+                    child: Text('Tab 2'),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
