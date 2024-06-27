@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:linkschool/common/text_styles.dart';
-import 'package:linkschool/ui/games/games_home.dart';
-import 'package:linkschool/ui/videos/videos_home.dart';
 
-import '../../../common/app_colors.dart';
-import '../../books/ebooks_dashboard.dart';
-import '../../../common/constants.dart';
-import '../../cbt/cbt_home.dart';
+import '../../common/text_styles.dart';
+import '../../../modules/explore/games/games_home.dart';
+import '../../../modules/explore/videos/videos_home.dart';
+import '../../common/app_colors.dart';
+import '../../../modules/explore/ebooks/ebooks_dashboard.dart';
+import '../../common/constants.dart';
+import '../../../modules/explore/cbt/cbt_home.dart';
 import 'custom_button.dart';
 import 'news_item.dart';
 

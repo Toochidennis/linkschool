@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:linkschool/ui/dashboard/common/bottom_navigation_bar.dart';
+import '../../common/bottom_navigation_bar.dart';
 
-import '../common/bottom_nav_item.dart';
+import '../../common/bottom_nav_item.dart';
 import 'explore_home.dart';
 
 class ExploreDashboard extends StatefulWidget {
