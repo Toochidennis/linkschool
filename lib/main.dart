@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:linkschool/common/app_themes.dart';
-import 'package:linkschool/ui/dashboard/common/dashboard_switcher.dart';
+
+import 'modules/common/app_themes.dart';
+import 'modules/common/dashboard_switcher.dart';
 
 void main() {
   runApp(const MyApp());

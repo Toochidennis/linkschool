@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:linkschool/common/text_styles.dart';
-import '../../../common/app_colors.dart';
+import '../../common/text_styles.dart';
+import '../../common/app_colors.dart';
 
 class NewsItem extends StatelessWidget {
   final String profileImageUrl;
