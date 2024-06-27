@@ -97,11 +97,6 @@ class AppTextStyles {
       color: AppColors.secondaryLight,
       fontFamily: 'Urbanist');
 
-  static const TextStyle buttonsText = TextStyle(
-    fontSize: 14,
-    fontWeight: FontWeight.w500,
-    color: AppColors.backgroundLight,
-  );
 
   static const TextStyle titleDark = TextStyle(
     fontSize: 24,

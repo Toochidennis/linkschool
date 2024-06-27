@@ -8,14 +8,14 @@ import '../../common/constants.dart';
 import '../../common/search_bar.dart';
 import '../../common/text_styles.dart';
 
-class VideosHome extends StatefulWidget {
-  const VideosHome({super.key});
+class VideosDashboard extends StatefulWidget {
+  const VideosDashboard({super.key});
 
   @override
-  State<VideosHome> createState() => _VideosHomeState();
+  State<VideosDashboard> createState() => _VideosDashboardState();
 }
 
-class _VideosHomeState extends State<VideosHome> {
+class _VideosDashboardState extends State<VideosDashboard> {
   @override
   Widget build(BuildContext context) {
     final categories = [
@@ -111,39 +111,48 @@ class _VideosHomeState extends State<VideosHome> {
                   ),
                   const SliverToBoxAdapter(child: SizedBox(height: 10.0)),
                   SliverToBoxAdapter(
-                    child: Container(
-                      height: 240,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16.0,
-                        vertical: 8.0,
-                      ),
-                      decoration: const BoxDecoration(
-                        color: AppColors.videoCardColor,
-                        border: Border(
-                          bottom: BorderSide(
-                            color: AppColors.videoCardBorderColor,
-                          ),
-                          top: BorderSide(
-                            color: AppColors.videoCardBorderColor,
+                    child: LayoutBuilder(builder: (context, constraints) {
+                      double screenHeight = MediaQuery.of(context).size.height;
+                      double screenWidth = MediaQuery.of(context).size.width;
+
+                      double height = screenHeight * 0.3;
+                      double aspectRatio = (screenWidth / 4) / (height / 2);
+
+                      return Container(
+                        height: height,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16.0,
+                          vertical: 16.0,
+                        ),
+                        decoration: const BoxDecoration(
+                          color: AppColors.videoCardColor,
+                          border: Border(
+                            bottom: BorderSide(
+                              color: AppColors.videoCardBorderColor,
+                            ),
+                            top: BorderSide(
+                              color: AppColors.videoCardBorderColor,
+                            ),
                           ),
                         ),
-                      ),
-                      child: GridView.builder(
-                        physics: const NeverScrollableScrollPhysics(),
-                        gridDelegate:
-                            const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 4,
-                          crossAxisSpacing: 16.0,
-                          mainAxisSpacing: 16.0,
-                          childAspectRatio: .8,
+                        child: GridView.builder(
+                          physics: const NeverScrollableScrollPhysics(),
+                          gridDelegate:
+                              SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 4,
+                            crossAxisSpacing: 16.0,
+                            mainAxisSpacing: 16.0,
+                            childAspectRatio: aspectRatio,
+                          ),
+                          itemCount: categories.length,
+                          itemBuilder: (context, index) {
+                            return categories[index];
+                          },
                         ),
-                        itemCount: categories.length,
-                        itemBuilder: (context, index) {
-                          return categories[index];
-                        },
-                      ),
-                    ),
+                      );
+                    }),
                   ),
+                  const SliverToBoxAdapter(child: SizedBox(height: 20.0)),
                   SliverToBoxAdapter(
                     child: Constants.heading600(
                       title: 'Recommended for you',
