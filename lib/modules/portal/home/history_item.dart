@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:linkschool/common/text_styles.dart';
+import '../../common/text_styles.dart';
 
 class HistoryItem extends StatelessWidget {
   final double? marginRight;

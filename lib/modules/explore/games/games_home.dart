@@ -1,9 +1,9 @@
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
-import 'package:linkschool/common/constants.dart';
-import 'package:linkschool/common/text_styles.dart';
 
+import '../../common/constants.dart';
+import '../../common/text_styles.dart';
 import '../../common/app_colors.dart';
 
 class GamesHome extends StatefulWidget {
@@ -16,54 +16,113 @@ class GamesHome extends StatefulWidget {
 class _GamesHomeState extends State<GamesHome> {
   @override
   Widget build(BuildContext context) {
+    final trendingItems = [
+      _buildTrendingCard(
+        startColor: AppColors.gamesColor1,
+        endColor: AppColors.gamesColor2,
+        imagePath: 'assets/images/games_1.png',
+        gameName: 'Overwatch',
+        platform: 'Cross-platform',
+        rating: 2.5,
+      ),
+      _buildTrendingCard(
+        startColor: AppColors.gamesColor3,
+        endColor: AppColors.gamesColor4,
+        imagePath: 'assets/images/games_2.png',
+        gameName: 'Borderlands 2',
+        platform: 'Cross-platform',
+        rating: 3.5,
+      ),
+      _buildTrendingCard(
+        startColor: AppColors.gamesColor5,
+        endColor: AppColors.gamesColor6,
+        imagePath: 'assets/images/games_3.png',
+        gameName: 'Borderlands 2',
+        platform: 'Cross-platform',
+        rating: 3.5,
+      ),
+    ];
+    final likes = [
+      _buildYouMightLikeCard(
+        startColor: AppColors.gamesColor5,
+        endColor: AppColors.gamesColor6,
+        imagePath: 'assets/images/games_3.png',
+        gameName: 'Borderlands 2',
+        platform: 'Cross-platform',
+        rating: 3.5,
+        downloadCount: 10,
+      ),
+      _buildYouMightLikeCard(
+        startColor: AppColors.gamesColor3,
+        endColor: AppColors.gamesColor4,
+        imagePath: 'assets/images/games_2.png',
+        gameName: 'Borderlands 2',
+        platform: 'Cross-platform',
+        rating: 3.5,
+        downloadCount: 10,
+      ),
+      _buildYouMightLikeCard(
+        startColor: AppColors.gamesColor1,
+        endColor: AppColors.gamesColor2,
+        imagePath: 'assets/images/games_1.png',
+        gameName: 'Borderlands 2',
+        platform: 'Cross-platform',
+        rating: 3.5,
+        downloadCount: 10,
+      ),
+      _buildYouMightLikeCard(
+        startColor: AppColors.gamesColor5,
+        endColor: AppColors.gamesColor6,
+        imagePath: 'assets/images/games_3.png',
+        gameName: 'Borderlands 2',
+        platform: 'Cross-platform',
+        rating: 3.5,
+        downloadCount: 10,
+      ),
+    ];
+
     return Scaffold(
-      appBar: Constants.customAppBar(context: context),
+      appBar: Constants.customAppBar(
+        context: context,
+        iconPath: 'assets/icons/search.png',
+      ),
       body: Container(
         decoration: Constants.customBoxDecoration(context),
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.start,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildHeading(title: "Trending now"),
-              const SizedBox(height: 10.0),
-              SizedBox(
+        child: CustomScrollView(
+          physics: const BouncingScrollPhysics(),
+          slivers: [
+            SliverToBoxAdapter(
+              child: Constants.heading600(
+                title: 'Trending now',
+                titleSize: 20.0,
+                titleColor: Colors.black,
+              ),
+            ),
+            const SliverToBoxAdapter(child: SizedBox(height: 10.0)),
+            SliverToBoxAdapter(
+              child: SizedBox(
                 height: 220,
-                child: ListView(
+                child: ListView.builder(
                   padding: const EdgeInsets.only(right: 16.0),
                   scrollDirection: Axis.horizontal,
-                  children: [
-                    _buildTrendingCard(
-                      startColor: AppColors.gamesColor1,
-                      endColor: AppColors.gamesColor2,
-                      imagePath: 'assets/images/games_1.png',
-                      gameName: 'Overwatch',
-                      platform: 'Cross-platform',
-                      rating: 2.5,
-                    ),
-                    _buildTrendingCard(
-                      startColor: AppColors.gamesColor3,
-                      endColor: AppColors.gamesColor4,
-                      imagePath: 'assets/images/games_2.png',
-                      gameName: 'Borderlands 2',
-                      platform: 'Cross-platform',
-                      rating: 3.5,
-                    ),
-                    _buildTrendingCard(
-                      startColor: AppColors.gamesColor5,
-                      endColor: AppColors.gamesColor6,
-                      imagePath: 'assets/images/games_3.png',
-                      gameName: 'Borderlands 2',
-                      platform: 'Cross-platform',
-                      rating: 3.5,
-                    ),
-                  ],
+                  itemCount: trendingItems.length,
+                  itemBuilder: (context, index) {
+                    return trendingItems[index];
+                  },
                 ),
               ),
-              const SizedBox(height: 16.0),
-              _buildHeading(title: "Suggested for you"),
-              const SizedBox(height: 10.0),
-              CarouselSlider(
+            ),
+            const SliverToBoxAdapter(child: SizedBox(height: 16.0)),
+            SliverToBoxAdapter(
+              child: Constants.heading600(
+                title: 'Suggested for you',
+                titleSize: 20.0,
+                titleColor: Colors.black,
+              ),
+            ),
+            const SliverToBoxAdapter(child: SizedBox(height: 10.0)),
+            SliverToBoxAdapter(
+              child: CarouselSlider(
                 items: [
                   _buildSuggestedCard(left: 16.0),
                   _buildSuggestedCard(),
@@ -78,61 +137,28 @@ class _GamesHomeState extends State<GamesHome> {
                   scrollDirection: Axis.horizontal,
                 ),
               ),
-              const SizedBox(height: 16.0),
-              _buildHeading(title: "You might like"),
-              const SizedBox(height: 10.0),
-              SizedBox(
-                height: 600.0,
-                child: ListView(
-                  scrollDirection: Axis.vertical,
-                  physics: const NeverScrollableScrollPhysics(),
-                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                  children: [
-                    _buildYouMightLikeCard(
-                      startColor: AppColors.gamesColor5,
-                      endColor: AppColors.gamesColor6,
-                      imagePath: 'assets/images/games_3.png',
-                      gameName: 'Borderlands 2',
-                      platform: 'Cross-platform',
-                      rating: 3.5,
-                      downloadCount: 10,
-                    ),
-                    _buildYouMightLikeCard(
-                      startColor: AppColors.gamesColor3,
-                      endColor: AppColors.gamesColor4,
-                      imagePath: 'assets/images/games_2.png',
-                      gameName: 'Borderlands 2',
-                      platform: 'Cross-platform',
-                      rating: 3.5,
-                      downloadCount: 10,
-                    ),
-                    _buildYouMightLikeCard(
-                      startColor: AppColors.gamesColor1,
-                      endColor: AppColors.gamesColor2,
-                      imagePath: 'assets/images/games_1.png',
-                      gameName: 'Borderlands 2',
-                      platform: 'Cross-platform',
-                      rating: 3.5,
-                      downloadCount: 10,
-                    ),
-                  ],
+            ),
+            const SliverToBoxAdapter(child: SizedBox(height: 16.0)),
+            SliverToBoxAdapter(
+              child: Constants.heading600(
+                title: 'You might like',
+                titleSize: 20.0,
+                titleColor: Colors.black,
+              ),
+            ),
+            const SliverToBoxAdapter(child: SizedBox(height: 10.0)),
+            SliverPadding(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+              sliver: SliverList(
+                delegate: SliverChildBuilderDelegate(
+                  (context, index) {
+                    return likes[index];
+                  },
+                  childCount: likes.length,
                 ),
               ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildHeading({required String title}) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16.0),
-      child: Text(
-        title,
-        style: AppTextStyles.normal500(
-          fontSize: 20.0,
-          color: Colors.black,
+            ),
+          ],
         ),
       ),
     );
