@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:linkschool/ui/dashboard/portal/portal_news_item.dart';
+import 'package:linkschool/modules/portal/home/portal_news_item.dart';
 
-import '../../../common/app_colors.dart';
-import '../../../common/constants.dart';
-import '../../../common/text_styles.dart';
-import '../explore/custom_button.dart';
+import '../../common/app_colors.dart';
+import '../../common/constants.dart';
+import '../../common/text_styles.dart';
+import '../../explore/home/custom_button.dart';
 import 'history_item.dart';
 
 class PortalHome extends StatefulWidget {

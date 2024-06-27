@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
-import 'package:linkschool/common/text_styles.dart';
-import 'package:linkschool/ui/dashboard/portal/portal_home.dart';
 
-import '../common/bottom_nav_item.dart';
-import '../common/bottom_navigation_bar.dart';
+import '../../common/text_styles.dart';
+import '../../../modules/portal/home/portal_home.dart';
+import '../../common/bottom_nav_item.dart';
+import '../../common/bottom_navigation_bar.dart';
 
 class PortalDashboard extends StatefulWidget {
   final Function(bool) onSwitch;
