@@ -2,7 +2,8 @@ import 'package:curved_nav_bar/fab_bar/fab_bottom_app_bar_item.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
-import '../../../common/app_colors.dart';
+
+import 'app_colors.dart';
 
 FABBottomAppBarItem createBottomNavIcon({
   required String imagePath,
