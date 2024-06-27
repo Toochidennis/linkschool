@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:linkschool/common/text_styles.dart';
+import '../../common/text_styles.dart';
 
 class CustomIconButton extends StatelessWidget {
   final Color backgroundColor;
