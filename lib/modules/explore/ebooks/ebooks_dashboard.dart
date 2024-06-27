@@ -7,16 +7,16 @@ import '../../common/text_styles.dart';
 import 'all_tab.dart';
 import 'books_button_item.dart';
 
-class BooksHome extends StatefulWidget {
-  const BooksHome({super.key});
+class EbooksDashboard extends StatefulWidget {
+  const EbooksDashboard({super.key});
 
   @override
-  State<BooksHome> createState() => _BooksHomeState();
+  State<EbooksDashboard> createState() => _EbooksDashboardState();
 }
 
 //TickerProviderStateMixin
 
-class _BooksHomeState extends State<BooksHome> {
+class _EbooksDashboardState extends State<EbooksDashboard> {
   int _selectedBookCategoriesIndex = 0;
 
   final bookCategories = [
@@ -56,7 +56,7 @@ class _BooksHomeState extends State<BooksHome> {
                 runSpacing: 10.0,
                 children: List.generate(bookCategories.length, (index) {
                   return BooksButtonItem(
-                    text: bookCategories[index],
+                    label: bookCategories[index],
                     isSelected: _selectedBookCategoriesIndex == index,
                     onPressed: () {
                       setState(() {
