@@ -4,7 +4,7 @@ import 'package:curved_nav_bar/flutter_curved_bottom_nav_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 
-import '../../../common/app_colors.dart';
+import 'app_colors.dart';
 
 class CustomNavigationBar extends StatefulWidget {
   final Function(bool) onSwitch;
