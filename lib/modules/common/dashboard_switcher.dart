@@ -13,11 +13,12 @@ class DashboardSwitcher extends StatefulWidget {
 
 class _DashboardSwitcherState extends State<DashboardSwitcher> {
   bool showPortal = true;
+  bool reverseAnimation = false;
 
   void switchDashboard(bool value) {
     setState(() {
       showPortal = !showPortal;
-      print('Switched to: ${showPortal ? 'Explore' : 'Portal'} dashboard');
+      reverseAnimation = !reverseAnimation;
     });
   }
 
@@ -27,12 +28,18 @@ class _DashboardSwitcherState extends State<DashboardSwitcher> {
       body: AnimatedSwitcher(
         duration: const Duration(milliseconds: 1400),
         layoutBuilder: (widget, list) => Stack(children: [widget!, ...list]),
-        switchInCurve: Curves.easeInCirc,
-        switchOutCurve: Curves.easeOutCirc,
+        switchInCurve: Curves.easeIn,
+        switchOutCurve: Curves.easeOut,
         transitionBuilder: (Widget child, Animation<double> animation) {
           final rotateAnimation = Tween(begin: pi, end: 0.0).animate(animation);
+
+          final tween = Tween<double>(
+            begin: reverseAnimation ? 0.0 : pi,
+            end: reverseAnimation ? pi : 0.0,
+          ).animate(animation);
+
           return AnimatedBuilder(
-            animation: rotateAnimation,
+            animation: tween,
             child: child,
             builder: (context, child) {
               final isUnder = (ValueKey(showPortal) != child!.key);
@@ -50,8 +57,10 @@ class _DashboardSwitcherState extends State<DashboardSwitcher> {
           );
         },
         child: showPortal
-            ? ExploreDashboard(onSwitch: switchDashboard)
-            : PortalDashboard(onSwitch: switchDashboard),
+            ? ExploreDashboard(
+                key: const ValueKey('explore'), onSwitch: switchDashboard)
+            : PortalDashboard(
+                key: const ValueKey('portal'), onSwitch: switchDashboard),
       ),
     );
   }

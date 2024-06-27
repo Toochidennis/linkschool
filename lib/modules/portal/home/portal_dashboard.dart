@@ -19,6 +19,7 @@ class _PortalDashboardState extends State<PortalDashboard> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      key: const ValueKey('portal'),
       appBar: AppBar(
         title: RichText(
           text: const TextSpan(
