@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 
-import '../../../common/app_colors.dart';
-import '../../../common/text_styles.dart';
+import '../../common/app_colors.dart';
+import '../../common/text_styles.dart';
 
 class PortalNewsItem extends StatelessWidget {
   final String profileImageUrl;

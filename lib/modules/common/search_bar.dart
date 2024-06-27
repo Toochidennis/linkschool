@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:linkschool/common/text_styles.dart';
+import 'text_styles.dart';
 
 import 'app_colors.dart';
 
