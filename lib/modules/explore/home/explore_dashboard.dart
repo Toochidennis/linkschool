@@ -18,7 +18,7 @@ class _ExploreDashboardState extends State<ExploreDashboard> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      key: const ValueKey('explore'),
+      key: const ValueKey(true),
       appBar: AppBar(
         title: SvgPicture.asset('assets/icons/linkskool-logo.svg'),
         actions: [
