@@ -130,4 +130,37 @@ class AppTextStyles {
       fontWeight: FontWeight.w700,
     );
   }
+
+  // Added TextStyles 
+  static const TextStyle appBarTitle = TextStyle(
+    color: AppColors.textPrimary,
+    fontSize: 18,
+    fontWeight: FontWeight.w600,);
+
+  static const TextStyle label = TextStyle(
+    color: AppColors.primaryLight,
+    fontSize: 16.0,
+    fontWeight: FontWeight.w600
+  );
+
+
+
+  static const TextStyle inputLabel = TextStyle(
+    color: AppColors.primaryLight,
+    fontSize: 12,
+    fontWeight: FontWeight.w600,
+  );
+
+  static const TextStyle inputText = TextStyle(
+    color: AppColors.textPrimary,
+    fontSize: 14,
+    fontWeight: FontWeight.w400,
+  );
+
+  static const TextStyle normal6Light = TextStyle(
+    fontSize: 14,
+    color: AppColors.backgroundLight,
+    fontWeight: FontWeight.w700,
+    fontFamily: 'Urbanist',
+  );
 }

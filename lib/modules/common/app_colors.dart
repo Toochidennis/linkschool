@@ -92,4 +92,12 @@ class AppColors {
   static const Color videoColor7 = Color.fromRGBO(2, 132, 199, 1);
   static const Color videoColor8 = Color.fromRGBO(146, 64, 14, 1);
   static const Color videoColor9 = Color.fromRGBO(48, 45, 45, 1);
+
+
+  // Assessment Settings colors
+  static const Color border = Color(0xFFCCCCCC);
+  static const Color shadow = Color(0x40000000);
+  static const Color cardBorder = Color(0xFFF6F6F6);
+  static const Color textPrimary = Color(0xFF000000);
+  static const Color shadowColor = Color(0x40000000);
 }
