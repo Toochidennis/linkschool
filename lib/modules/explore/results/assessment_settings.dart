@@ -54,7 +54,7 @@ class _AssessmentSettingScreenState extends State<AssessmentSettingScreen> {
                   BoxShadow(
                     color: AppColors.shadowColor,
                     offset: Offset(0, 1),
-                    blurRadius: 0,
+                    // blurRadius: 0,
                   ),
                 ],
               ),
@@ -79,84 +79,99 @@ class _AssessmentSettingScreenState extends State<AssessmentSettingScreen> {
               ),
             ),
             const SizedBox(height: 16.0),
-            Card(
+            Container(
+              // shadowColor: AppColors.shadowColor,
               // color: AppColors.backgroundLight,
-              color: Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8.0),
-                side: const BorderSide(color: AppColors.cardBorder),
-              ),
-              elevation: 3,
-              shadowColor: AppColors.shadowColor,
+              // color: Colors.white,
+              // shape: RoundedRectangleBorder(
+              //   borderRadius: BorderRadius.circular(8.0),
+              //   side: const BorderSide(color: AppColors.cardBorder),
+              // ),
+              // elevation: 3,
+              decoration: BoxDecoration(
+                  color: AppColors.backgroundLight,
+                  borderRadius: BorderRadius.circular(4.0),
+                  // border: Border.all(color: AppColors.border),
+                  boxShadow: const [
+                    BoxShadow(
+                      color: AppColors.shadowColor,
+                      offset: Offset(1, 2),
+                      blurRadius: 0.3 
+                    )
+                  ]),
               child: Padding(
                 padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          const Text('Assessment name:',
-                              style: AppTextStyles.inputLabel),
-                          const SizedBox(width: 8.0),
-                          Expanded(
-                            child: TextField(
-                              controller: _assessmentNameController,
-                              decoration: const InputDecoration(
-                                border: UnderlineInputBorder(
-                                  borderSide:
-                                      BorderSide(color: AppColors.cardBorder),
-                                ),
-                                contentPadding: EdgeInsets.symmetric(
-                                    vertical: 10.0, horizontal: 10.0),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 16.0),
-                      Row(
-                        children: [
-                          const Text('Assessment score:',
-                              style: AppTextStyles.inputLabel),
-                          const SizedBox(width: 8.0),
-                          Expanded(
-                            child: TextField(
-                              controller: _assessmentScoreController,
-                              decoration: const InputDecoration(
-                                border: UnderlineInputBorder(
-                                  borderSide:
-                                      BorderSide(color: AppColors.cardBorder),
-                                ),
-                                contentPadding: EdgeInsets.symmetric(
-                                    vertical: 10.0, horizontal: 10.0),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 16.0),
-                      Align(
-                        alignment: Alignment.bottomRight,
-                        child: ElevatedButton(
-                          onPressed: () {
-                            // Add your functionality here
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.secondaryLight,
-                            fixedSize: const Size(100, 30),
-                            shape:  RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(4.0),
-                            ),
-                          ),
-                          child: const Text(
-                            'Add +',
-                            style: AppTextStyles.normal6Light,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        const Align(
+                          alignment: Alignment.bottomLeft,
+                          child: Text(
+                            'Assessment name:',
+                            style: AppTextStyles.inputLabel,
                           ),
                         ),
+                        const SizedBox(width: 8.0),
+                        Expanded(
+                          child: TextField(
+                            controller: _assessmentNameController,
+                            decoration: const InputDecoration(
+                              border: UnderlineInputBorder(
+                                borderSide:
+                                    BorderSide(color: AppColors.cardBorder),
+                              ),
+                              contentPadding: EdgeInsets.symmetric(
+                                  vertical: 10.0, horizontal: 10.0),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16.0),
+                    Row(
+                      children: [
+                        const Text('Assessment score:',
+                            style: AppTextStyles.inputLabel),
+                        const SizedBox(width: 8.0),
+                        Expanded(
+                          child: TextField(
+                            controller: _assessmentScoreController,
+                            decoration: const InputDecoration(
+                              border: UnderlineInputBorder(
+                                borderSide:
+                                    BorderSide(color: AppColors.cardBorder),
+                              ),
+                              contentPadding: EdgeInsets.symmetric(
+                                  vertical: 10.0, horizontal: 10.0),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16.0),
+                    Align(
+                      alignment: Alignment.bottomRight,
+                      child: ElevatedButton(
+                        onPressed: () {
+                          // Add your functionality here
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.secondaryLight,
+                          fixedSize: const Size(100, 30),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(4.0),
+                          ),
+                        ),
+                        child: const Text(
+                          'Add +',
+                          style: AppTextStyles.normal6Light,
+                        ),
                       ),
-                    ],
-                  ),
-
+                    ),
+                  ],
+                ),
               ),
             ),
             const SizedBox(height: 24.0),
@@ -168,7 +183,7 @@ class _AssessmentSettingScreenState extends State<AssessmentSettingScreen> {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primaryLight,
                   minimumSize: const Size(262, 40), // Fixed width and height
-                  padding: const EdgeInsets.all(0), 
+                  padding: const EdgeInsets.all(0),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(4.0), // Border radius
                     side: const BorderSide(

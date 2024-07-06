@@ -147,7 +147,7 @@ class AppTextStyles {
 
   static const TextStyle inputLabel = TextStyle(
     color: AppColors.primaryLight,
-    fontSize: 12,
+    fontSize: 14,
     fontWeight: FontWeight.w600,
   );
 
