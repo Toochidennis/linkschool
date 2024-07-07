@@ -32,7 +32,7 @@ class _GradingSettingsScreenState extends State<GradingSettingsScreen> {
           icon: const Icon(Icons.arrow_back),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Center(child: Text('Grading Settings')),
+        title: const Center(child: Text('Grade Settings')),
         backgroundColor: AppColors.backgroundLight,
       ),
       body: Padding(
