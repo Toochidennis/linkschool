@@ -15,6 +15,15 @@ class _GradingSettingsScreenState extends State<GradingSettingsScreen> {
   String? selectedRange;
   String? selectedRemark;
 
+  bool isHoveringEdit = false;
+  bool isHoveringDelete = false;
+  bool isHoveringAdd = false;
+  bool isHoveringSave = false;
+
+  List<Map<String, String>> gradingList = [
+    {'grade': 'A', 'range': '80 - 100', 'remark': 'Excellent'}
+  ];
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -30,35 +39,43 @@ class _GradingSettingsScreenState extends State<GradingSettingsScreen> {
         padding: const EdgeInsets.all(Constants.padding),
         child: ListView(
           children: [
-            buildFirstCard(),
+            ...gradingList.map((item) => buildFirstCard(item)).toList(),
             const SizedBox(height: Constants.gap),
             buildSecondCard(),
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {},
-        backgroundColor: AppColors.primaryLight,
-        shape: const CircleBorder(),
-        child: Container(
-          decoration: BoxDecoration(
-            borderRadius: const BorderRadius.all(Radius.circular(100)),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.3),
-                blurRadius: 7,
-                spreadRadius: 7,
-                offset: const Offset(3, 5)
-              ), 
-            ]
+      floatingActionButton: MouseRegion(
+        onEnter: (_) => setState(() => isHoveringSave = true),
+        onExit: (_) => setState(() => isHoveringSave = false),
+        child: FloatingActionButton(
+          onPressed: () {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Grade settings saved successfully')),
+            );
+          },
+          backgroundColor: isHoveringSave ? Colors.blueGrey : AppColors.primaryLight,
+          shape: const CircleBorder(),
+          child: Container(
+            decoration: BoxDecoration(
+              borderRadius: const BorderRadius.all(Radius.circular(100)),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.3),
+                  blurRadius: 7,
+                  spreadRadius: 7,
+                  offset: const Offset(3, 5)
+                ), 
+              ]
+            ),
+            child: const Icon(Icons.save, color: AppColors.backgroundLight, ),
           ),
-          child: const Icon(Icons.save, color: AppColors.backgroundLight, ),
         ),
       ),
     );
   }
 
-  Widget buildFirstCard() {
+  Widget buildFirstCard(Map<String, String> item) {
     return Card(
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(Constants.borderRadius),
@@ -71,20 +88,49 @@ class _GradingSettingsScreenState extends State<GradingSettingsScreen> {
           children: [
             Row(
               mainAxisAlignment: MainAxisAlignment.end,
-              children: const [
-                Icon(Icons.edit),
-                SizedBox(width: Constants.gap),
-                Icon(Icons.delete, color: AppColors.deleteIcon),
+              children: [
+                MouseRegion(
+                  onEnter: (_) => setState(() => isHoveringEdit = true),
+                  onExit: (_) => setState(() => isHoveringEdit = false),
+                  child: GestureDetector(
+                    onTap: () => editItem(item),
+                    child: Icon(Icons.edit, color: isHoveringEdit ? Colors.blueGrey : Colors.black),
+                  ),
+                ),
+                const SizedBox(width: Constants.gap),
+                MouseRegion(
+                  onEnter: (_) => setState(() => isHoveringDelete = true),
+                  onExit: (_) => setState(() => isHoveringDelete = false),
+                  child: GestureDetector(
+                    onTap: () => deleteItem(item),
+                    child: Icon(Icons.delete, color: isHoveringDelete ? Colors.redAccent : AppColors.deleteIcon),
+                  ),
+                ),
               ],
             ),
             const SizedBox(height: Constants.gap),
-            buildCardTextRow('Grade: A'),
-            buildCardTextRow('Range: 80 - 100 marks'),
-            buildCardTextRow('Remark: Excellent'),
+            buildCardTextRow('Grade: ${item['grade']}'),
+            buildCardTextRow('Range: ${item['range']} marks'),
+            buildCardTextRow('Remark: ${item['remark']}'),
           ],
         ),
       ),
     );
+  }
+
+  void editItem(Map<String, String> item) {
+    setState(() {
+      selectedGrade = item['grade'];
+      selectedRange = item['range'];
+      selectedRemark = item['remark'];
+      gradingList.remove(item);
+    });
+  }
+
+  void deleteItem(Map<String, String> item) {
+    setState(() {
+      gradingList.remove(item);
+    });
   }
 
   Widget buildCardTextRow(String text) {
@@ -126,16 +172,33 @@ class _GradingSettingsScreenState extends State<GradingSettingsScreen> {
             const SizedBox(height: Constants.gap),
             Align(
               alignment: Alignment.bottomRight,
-              child: ElevatedButton(
-                onPressed: () {},
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.secondaryLight,
-                  fixedSize: const Size(100, 30),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(Constants.borderRadius),
+              child: MouseRegion(
+                onEnter: (_) => setState(() => isHoveringAdd = true),
+                onExit: (_) => setState(() => isHoveringAdd = false),
+                child: ElevatedButton(
+                  onPressed: () {
+                    if (selectedGrade != null && selectedRange != null && selectedRemark != null) {
+                      setState(() {
+                        gradingList.add({
+                          'grade': selectedGrade!,
+                          'range': selectedRange!,
+                          'remark': selectedRemark!
+                        });
+                        selectedGrade = null;
+                        selectedRange = null;
+                        selectedRemark = null;
+                      });
+                    }
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: isHoveringAdd ? Colors.blueGrey : AppColors.secondaryLight,
+                    fixedSize: const Size(100, 30),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(Constants.borderRadius),
+                    ),
                   ),
+                  child: const Text('Add +', style: AppTextStyles.normal5Light,),
                 ),
-                child: const Text('Add +'),
               ),
             ),
           ],
