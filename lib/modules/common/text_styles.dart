@@ -163,4 +163,13 @@ class AppTextStyles {
     fontWeight: FontWeight.w700,
     fontFamily: 'Urbanist',
   );
+
+    static const TextStyle cardText = TextStyle(
+    fontFamily: 'Urbanist',
+    fontSize: 12,
+    fontWeight: FontWeight.w600,
+    color: AppColors.primaryLight,
+    height: 1.2,
+  );
+  
 }

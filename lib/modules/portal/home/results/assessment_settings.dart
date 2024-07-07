@@ -1,6 +1,8 @@
+import 'dart:developer';
+
 import 'package:flutter/material.dart';
-import '../../common/app_colors.dart';
-import '../../common/text_styles.dart';
+import '../../../common/app_colors.dart';
+import '../../../common/text_styles.dart';
 
 class AssessmentSettingScreen extends StatefulWidget {
   const AssessmentSettingScreen({super.key});
@@ -49,12 +51,12 @@ class _AssessmentSettingScreenState extends State<AssessmentSettingScreen> {
               decoration: BoxDecoration(
                 color: AppColors.backgroundLight,
                 borderRadius: BorderRadius.circular(4.0),
-                border: Border.all(color: AppColors.border),
+                // border: Border.all(color: AppColors.border),
                 boxShadow: const [
                   BoxShadow(
                     color: AppColors.shadowColor,
                     offset: Offset(0, 1),
-                    // blurRadius: 0,
+                    blurRadius: 0,
                   ),
                 ],
               ),
@@ -80,18 +82,9 @@ class _AssessmentSettingScreenState extends State<AssessmentSettingScreen> {
             ),
             const SizedBox(height: 16.0),
             Container(
-              // shadowColor: AppColors.shadowColor,
-              // color: AppColors.backgroundLight,
-              // color: Colors.white,
-              // shape: RoundedRectangleBorder(
-              //   borderRadius: BorderRadius.circular(8.0),
-              //   side: const BorderSide(color: AppColors.cardBorder),
-              // ),
-              // elevation: 3,
               decoration: BoxDecoration(
                   color: AppColors.backgroundLight,
                   borderRadius: BorderRadius.circular(4.0),
-                  // border: Border.all(color: AppColors.border),
                   boxShadow: const [
                     BoxShadow(
                       color: AppColors.shadowColor,
@@ -179,6 +172,8 @@ class _AssessmentSettingScreenState extends State<AssessmentSettingScreen> {
               child: ElevatedButton(
                 onPressed: () {
                   // Save settings functionality
+                  log('button pressed');
+                 
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primaryLight,

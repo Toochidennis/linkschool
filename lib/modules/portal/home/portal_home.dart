@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:linkschool/modules/explore/results/assessment_settings.dart';
 import 'package:linkschool/modules/portal/home/portal_news_item.dart';
+import 'package:linkschool/modules/portal/home/results/grading_settings.dart';
+// import 'package:linkschool/modules/portal/home/results/assessment_settings.dart';
 
 import '../../common/app_colors.dart';
 import '../../common/constants.dart';
 import '../../common/text_styles.dart';
 import '../../explore/home/custom_button_item.dart';
 import 'history_item.dart';
-import '../../explore/results/assessment_settings.dart';
+import 'results/assessment_settings.dart';
 
 class PortalHome extends StatefulWidget {
   const PortalHome({super.key});
@@ -104,6 +105,7 @@ class _PortalHomeState extends State<PortalHome> {
                         iconPath: 'assets/icons/payment.svg',
                         iconHeight: 40.0,
                         iconWidth: 36.0,
+                        destination: GradingSettingsScreen(),
                       ),
                     ),
                   ],
