@@ -171,5 +171,20 @@ class AppTextStyles {
     color: AppColors.primaryLight,
     height: 1.2,
   );
+
+    static const TextStyle cardTextBlack = TextStyle(
+    fontFamily: 'Urbanist',
+    fontSize: 15,
+    fontWeight: FontWeight.w600,
+    color: AppColors.black40,
+    height: 1.2,
+  );
+
+  static const TextStyle textInput = TextStyle(
+    fontFamily: 'Urbanist',
+    color: Colors.black,
+    fontSize: 16.0,
+    fontWeight: FontWeight.w600
+  );
   
 }

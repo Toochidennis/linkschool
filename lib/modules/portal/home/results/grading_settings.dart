@@ -103,7 +103,7 @@ class _GradingSettingsScreenState extends State<GradingSettingsScreen> {
                   onExit: (_) => setState(() => isHoveringDelete = false),
                   child: GestureDetector(
                     onTap: () => deleteItem(item),
-                    child: Icon(Icons.delete, color: isHoveringDelete ? Colors.redAccent : AppColors.deleteIcon),
+                    child: Icon(Icons.delete, color: isHoveringDelete ? Colors.blueGrey : Colors.black),
                   ),
                 ),
               ],
@@ -138,7 +138,7 @@ class _GradingSettingsScreenState extends State<GradingSettingsScreen> {
       padding: const EdgeInsets.symmetric(vertical: Constants.gap),
       child: Text(
         text,
-        style: AppTextStyles.cardText,
+        style: AppTextStyles.cardTextBlack,
       ),
     );
   }

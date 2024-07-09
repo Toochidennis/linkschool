@@ -1,6 +1,7 @@
 import 'dart:developer';
 
 import 'package:flutter/material.dart';
+import 'package:linkschool/modules/common/constants.dart';
 import '../../../common/app_colors.dart';
 import '../../../common/text_styles.dart';
 
@@ -34,7 +35,8 @@ class _AssessmentSettingScreenState extends State<AssessmentSettingScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Center(
-            child: Text('Assessment Settings', style: AppTextStyles.appBarTitle)),
+            child:
+                Text('Assessment Settings', style: AppTextStyles.appBarTitle)),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
           onPressed: () => Navigator.of(context).pop(),
@@ -65,7 +67,8 @@ class _AssessmentSettingScreenState extends State<AssessmentSettingScreen> {
                 value: _selectedLevel,
                 decoration: const InputDecoration(
                   border: InputBorder.none,
-                  contentPadding: EdgeInsets.symmetric(horizontal: 10.0, vertical: 0.0),
+                  contentPadding:
+                      EdgeInsets.symmetric(horizontal: 10.0, vertical: 0.0),
                 ),
                 items: levels.map((String level) {
                   return DropdownMenuItem<String>(
@@ -84,7 +87,9 @@ class _AssessmentSettingScreenState extends State<AssessmentSettingScreen> {
             Expanded(
               child: ListView(
                 children: [
-                  ..._assessments.map((assessment) => buildAssessmentCard(assessment)),
+                  ..._assessments
+                      .map((assessment) => buildAssessmentCard(assessment)),
+                  const SizedBox(height: 16.0),
                   buildInputCard(),
                 ],
               ),
@@ -97,24 +102,26 @@ class _AssessmentSettingScreenState extends State<AssessmentSettingScreen> {
           // Save settings functionality
           log('Save settings button pressed');
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Assessment settings saved successfully')),
+            const SnackBar(
+                content: Text('Assessment settings saved successfully')),
           );
         },
         shape: const CircleBorder(),
         backgroundColor: AppColors.primaryLight,
         child: Container(
           decoration: BoxDecoration(
-            borderRadius: const BorderRadius.all(Radius.circular(100)),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.3),
-                blurRadius: 7,
-                spreadRadius: 7,
-                offset: const Offset(3, 5)
-              )
-            ]
+              borderRadius: const BorderRadius.all(Radius.circular(100)),
+              boxShadow: [
+                BoxShadow(
+                    color: Colors.black.withOpacity(0.3),
+                    blurRadius: 7,
+                    spreadRadius: 7,
+                    offset: const Offset(3, 5))
+              ]),
+          child: const Icon(
+            Icons.save,
+            color: AppColors.backgroundLight,
           ),
-          child: const Icon(Icons.save, color: AppColors.backgroundLight,),
         ),
       ),
     );
@@ -127,10 +134,9 @@ class _AssessmentSettingScreenState extends State<AssessmentSettingScreen> {
           borderRadius: BorderRadius.circular(4.0),
           boxShadow: const [
             BoxShadow(
-              color: AppColors.shadowColor,
-              offset: Offset(1, 2),
-              blurRadius: 0.3 
-            )
+                color: AppColors.shadowColor,
+                offset: Offset(1, 2),
+                blurRadius: 0.3)
           ]),
       child: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -164,7 +170,8 @@ class _AssessmentSettingScreenState extends State<AssessmentSettingScreen> {
             const SizedBox(height: 16.0),
             Row(
               children: [
-                const Text('Assessment score:', style: AppTextStyles.inputLabel),
+                const Text('Assessment score:',
+                    style: AppTextStyles.inputLabel),
                 const SizedBox(width: 8.0),
                 Expanded(
                   child: TextField(
@@ -220,34 +227,58 @@ class _AssessmentSettingScreenState extends State<AssessmentSettingScreen> {
       ),
       elevation: 3,
       child: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(Constants.padding),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.edit, color: AppColors.primaryDark),
+                  onPressed: () {
+                    editAssessment(assessment);
+                  },
+                ),
+                IconButton(
+                  icon: const Icon(Icons.delete, color: AppColors.primaryDark),
+                  onPressed: () {
+                    deleteAssessment(assessment);
+                  },
+                ),
+              ],
+            ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.start,
               children: [
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Assessment name: ${assessment['name']}', style: AppTextStyles.cardText),
-                    Text('Assessment score: ${assessment['score']}', style: AppTextStyles.cardText),
-                  ],
-                ),
-                Row(
-                  children: [
-                    IconButton(
-                      icon: const Icon(Icons.edit, color: AppColors.secondaryLight),
-                      onPressed: () {
-                        editAssessment(assessment);
-                      },
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.delete, color: AppColors.deleteIcon),
-                      onPressed: () {
-                        deleteAssessment(assessment);
-                      },
-                    ),
+                    RichText(
+                        text: TextSpan(
+                            text: 'Assessment name:  ',
+                            style: AppTextStyles.normal3Light,
+                            children: <TextSpan>[
+                          TextSpan(
+                            text: '${assessment['name']}',
+                            style: AppTextStyles.textInput,
+                          )
+                        ])),
+                    // Text(
+                    //   'Assessment name: ${assessment['name']}',
+                    //   style: AppTextStyles.normalLight,
+                    // ),
+                    const SizedBox(height: 20.0),
+                    RichText(
+                        text: TextSpan(
+                            text: 'Assessment score:  ',
+                            style: AppTextStyles.normal3Light,
+                            children: <TextSpan>[
+                          TextSpan(
+                            text: '${assessment['score']}',
+                            style: AppTextStyles.textInput,
+                          )
+                        ])),
                   ],
                 ),
               ],

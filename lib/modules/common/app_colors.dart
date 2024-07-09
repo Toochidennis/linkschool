@@ -96,12 +96,12 @@ class AppColors {
   // Assessment Settings colors
   static const Color border = Color(0xFFCCCCCC);
   static const Color shadow = Color(0x40000000);
-  static const Color cardBorder = Color(0xFFF6F6F6); // lightGray
+  static const Color cardBorder = Color(0xFFF6F6F6);
   static const Color textPrimary = Color(0xFF000000);
   static const Color shadowColor = Color(0x40000000);
   static const Color black40 = Color(0x66000000);
+  static const Color lightGray = Color(0X5B5B5B);
 
   // Grading Settings colors
-  // static const Color deleteIcon = Color.fromARGB(255, 224, 39, 25););
   static const Color deleteIcon = Color.fromRGBO(209, 10, 10, 1);
 }
