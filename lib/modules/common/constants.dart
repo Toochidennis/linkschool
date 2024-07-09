@@ -12,8 +12,12 @@ class Constants {
   static BoxDecoration customBoxDecoration(BuildContext context) {
     final Brightness brightness = Theme.of(context).brightness;
     var opacity = brightness == Brightness.light ? 0.1 : 0.15;
+    var backgroundColor = brightness == Brightness.light
+        ? AppColors.backgroundLight
+        : AppColors.backgroundDark;
 
     return BoxDecoration(
+      color: backgroundColor,
       image: DecorationImage(
         image: const AssetImage('assets/images/background.png'),
         fit: BoxFit.cover,
@@ -33,19 +37,20 @@ class Constants {
       backgroundColor: Colors.white,
       elevation: 0.0,
       flexibleSpace: FlexibleSpaceBar(
-          background: Stack(
-        children: [
-          Positioned.fill(
-            child: Opacity(
-              opacity: opacity,
-              child: Image.asset(
-                'assets/images/background.png',
-                fit: BoxFit.cover,
+        background: Stack(
+          children: [
+            Positioned.fill(
+              child: Opacity(
+                opacity: opacity,
+                child: Image.asset(
+                  'assets/images/background.png',
+                  fit: BoxFit.cover,
+                ),
               ),
             ),
-          ),
-        ],
-      )),
+          ],
+        ),
+      ),
       leading: IconButton(
         onPressed: () {
           Navigator.of(context).pop();

@@ -15,13 +15,31 @@ class ExploreDashboard extends StatefulWidget {
 }
 
 class _ExploreDashboardState extends State<ExploreDashboard> {
+  bool _showSearchIcon = false;
+
+  void _onSearchIconVisibilityChanged(bool isVisible) {
+    setState(() {
+      _showSearchIcon = isVisible;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      key: const ValueKey('explore'),
+      key: const ValueKey(true),
       appBar: AppBar(
         title: SvgPicture.asset('assets/icons/linkskool-logo.svg'),
         actions: [
+          if (!_showSearchIcon)
+            IconButton(
+              icon: const Icon(
+                Icons.search,
+                color: Colors.white,
+              ),
+              onPressed: () {
+                // Handle search action
+              },
+            ),
           IconButton(
             onPressed: () {},
             icon: SvgPicture.asset(
@@ -58,7 +76,8 @@ class _ExploreDashboardState extends State<ExploreDashboard> {
           ),
         ],
         bodyItems: [
-          const ExploreHome(),
+          ExploreHome(
+              onSearchIconVisibilityChanged: _onSearchIconVisibilityChanged),
           Container(
             height: MediaQuery.of(context).size.height,
             color: Colors.orange,

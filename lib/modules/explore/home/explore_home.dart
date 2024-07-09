@@ -14,13 +14,46 @@ import '../../../modules/explore/cbt/cbt_dashboard.dart';
 import 'custom_button_item.dart';
 
 class ExploreHome extends StatefulWidget {
-  const ExploreHome({super.key});
+  final Function(bool) onSearchIconVisibilityChanged;
+
+  const ExploreHome({super.key, required this.onSearchIconVisibilityChanged});
 
   @override
   State<ExploreHome> createState() => _ExploreHomeState();
 }
 
 class _ExploreHomeState extends State<ExploreHome> {
+  late ScrollController _controller;
+  bool _showSearchBar = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = ScrollController();
+    _controller.addListener(_onScroll);
+  }
+
+  @override
+  void dispose() {
+    _controller.removeListener(_onScroll);
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _onScroll() {
+    if (_controller.offset > 10 && _showSearchBar) {
+      setState(() {
+        _showSearchBar = false;
+        widget.onSearchIconVisibilityChanged(_showSearchBar);
+      });
+    } else if (_controller.offset <= 10 && !_showSearchBar) {
+      setState(() {
+        _showSearchBar = true;
+        widget.onSearchIconVisibilityChanged(_showSearchBar);
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final newsItems = [
@@ -84,79 +117,75 @@ class _ExploreHomeState extends State<ExploreHome> {
     return Container(
       decoration: Constants.customBoxDecoration(context),
       padding: const EdgeInsets.only(bottom: 90.0),
-      child: Column(
-        children: [
-          const CustomSearchBar(),
-          Expanded(
-            child: CustomScrollView(
-              physics: const BouncingScrollPhysics(),
-              slivers: [
-                SliverToBoxAdapter(
-                  child: CarouselSlider(
-                    items: [
-                      _buildSuggestedGameCard(leftPadding: 16.0),
-                      _buildSuggestedGameCard(),
-                      _buildSuggestedGameCard(rightPadding: 16.0),
-                    ],
-                    options: CarouselOptions(
-                      height: 280.0,
-                      padEnds: false,
-                      viewportFraction: 0.95,
-                      autoPlay: true,
-                      enableInfiniteScroll: false,
-                      scrollDirection: Axis.horizontal,
-                    ),
-                  ),
-                ),
-                const SliverToBoxAdapter(child: SizedBox(height: 16.0)),
-                SliverToBoxAdapter(
-                  child: Constants.heading600(
-                    title: 'Explore',
-                    titleSize: 20.0,
-                    titleColor: AppColors.text2Light,
-                  ),
-                ),
-                SliverPadding(
-                  padding: const EdgeInsets.all(16.0),
-                  sliver: SliverGrid(
-                    gridDelegate:
-                        const SliverGridDelegateWithFixedCrossAxisCount(
-                      mainAxisSpacing: 14.0,
-                      crossAxisCount: 2,
-                      childAspectRatio: 2.2,
-                      crossAxisSpacing: 14.0,
-                    ),
-                    delegate: SliverChildBuilderDelegate(
-                      (context, index) {
-                        final item = exploreItemsList[index];
-                        return exploreButtonItem(
-                          backgroundColor: item.backgroundColor,
-                          borderColor: item.backgroundColor,
-                          label: item.label,
-                          iconPath: item.iconPath,
-                          destination: item.destination,
-                        );
-                      },
-                      childCount: exploreItemsList.length,
-                    ),
-                  ),
-                ),
-                SliverToBoxAdapter(
-                  child: Constants.headingWithSeeAll600(
-                    title: 'News',
-                    titleSize: 20.0,
-                    titleColor: AppColors.text2Light,
-                  ),
-                ),
-                SliverList(
-                  delegate: SliverChildBuilderDelegate(
-                    (context, index) {
-                      return newsItems[index];
-                    },
-                    childCount: newsItems.length,
-                  ),
-                ),
+      child: CustomScrollView(
+        physics: const BouncingScrollPhysics(),
+        controller: _controller,
+        slivers: [
+          const SliverToBoxAdapter(
+            child: CustomSearchBar(),
+          ),
+          SliverToBoxAdapter(
+            child: CarouselSlider(
+              items: [
+                _buildSuggestedGameCard(leftPadding: 16.0),
+                _buildSuggestedGameCard(),
+                _buildSuggestedGameCard(rightPadding: 16.0),
               ],
+              options: CarouselOptions(
+                height: 280.0,
+                padEnds: false,
+                viewportFraction: 0.95,
+                autoPlay: true,
+                enableInfiniteScroll: false,
+                scrollDirection: Axis.horizontal,
+              ),
+            ),
+          ),
+          const SliverToBoxAdapter(child: SizedBox(height: 16.0)),
+          SliverToBoxAdapter(
+            child: Constants.heading600(
+              title: 'Explore',
+              titleSize: 20.0,
+              titleColor: AppColors.text2Light,
+            ),
+          ),
+          SliverPadding(
+            padding: const EdgeInsets.all(16.0),
+            sliver: SliverGrid(
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                mainAxisSpacing: 14.0,
+                crossAxisCount: 2,
+                childAspectRatio: 2.2,
+                crossAxisSpacing: 14.0,
+              ),
+              delegate: SliverChildBuilderDelegate(
+                (context, index) {
+                  final item = exploreItemsList[index];
+                  return exploreButtonItem(
+                    backgroundColor: item.backgroundColor,
+                    borderColor: item.backgroundColor,
+                    label: item.label,
+                    iconPath: item.iconPath,
+                    destination: item.destination,
+                  );
+                },
+                childCount: exploreItemsList.length,
+              ),
+            ),
+          ),
+          SliverToBoxAdapter(
+            child: Constants.headingWithSeeAll600(
+              title: 'News',
+              titleSize: 20.0,
+              titleColor: AppColors.text2Light,
+            ),
+          ),
+          SliverList(
+            delegate: SliverChildBuilderDelegate(
+              (context, index) {
+                return newsItems[index];
+              },
+              childCount: newsItems.length,
             ),
           ),
         ],
