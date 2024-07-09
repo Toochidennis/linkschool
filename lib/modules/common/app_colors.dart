@@ -100,7 +100,6 @@ class AppColors {
   static const Color assessmentColor3 = Color.fromRGBO(204, 204, 204, 1);
 
   /// remove these guys
-  static const Color cardBorder = Color(0xFFF6F6F6);
   static const Color shadowColor = Color(0x40000000);
   static const Color black40 = Color(0x66000000);
   static const Color lightGray = Color(0X5B5B5B);
