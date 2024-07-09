@@ -7,7 +7,7 @@ class GradingSettingsScreen extends StatefulWidget {
   const GradingSettingsScreen({super.key});
 
   @override
-  _GradingSettingsScreenState createState() => _GradingSettingsScreenState();
+  State<GradingSettingsScreen> createState() => _GradingSettingsScreenState();
 }
 
 class _GradingSettingsScreenState extends State<GradingSettingsScreen> {
@@ -39,7 +39,7 @@ class _GradingSettingsScreenState extends State<GradingSettingsScreen> {
         padding: const EdgeInsets.all(Constants.padding),
         child: ListView(
           children: [
-            ...gradingList.map((item) => buildFirstCard(item)).toList(),
+            ...gradingList.map((item) => buildFirstCard(item)),
             const SizedBox(height: Constants.gap),
             buildSecondCard(),
           ],
@@ -51,24 +51,27 @@ class _GradingSettingsScreenState extends State<GradingSettingsScreen> {
         child: FloatingActionButton(
           onPressed: () {
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Grade settings saved successfully')),
+              const SnackBar(
+                  content: Text('Grade settings saved successfully')),
             );
           },
-          backgroundColor: isHoveringSave ? Colors.blueGrey : AppColors.primaryLight,
+          backgroundColor:
+              isHoveringSave ? Colors.blueGrey : AppColors.primaryLight,
           shape: const CircleBorder(),
           child: Container(
             decoration: BoxDecoration(
-              borderRadius: const BorderRadius.all(Radius.circular(100)),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.3),
-                  blurRadius: 7,
-                  spreadRadius: 7,
-                  offset: const Offset(3, 5)
-                ), 
-              ]
+                borderRadius: const BorderRadius.all(Radius.circular(100)),
+                boxShadow: [
+                  BoxShadow(
+                      color: Colors.black.withOpacity(0.3),
+                      blurRadius: 7,
+                      spreadRadius: 7,
+                      offset: const Offset(3, 5)),
+                ]),
+            child: const Icon(
+              Icons.save,
+              color: AppColors.backgroundLight,
             ),
-            child: const Icon(Icons.save, color: AppColors.backgroundLight, ),
           ),
         ),
       ),
@@ -94,7 +97,8 @@ class _GradingSettingsScreenState extends State<GradingSettingsScreen> {
                   onExit: (_) => setState(() => isHoveringEdit = false),
                   child: GestureDetector(
                     onTap: () => editItem(item),
-                    child: Icon(Icons.edit, color: isHoveringEdit ? Colors.blueGrey : Colors.black),
+                    child: Icon(Icons.edit,
+                        color: isHoveringEdit ? Colors.blueGrey : Colors.black),
                   ),
                 ),
                 const SizedBox(width: Constants.gap),
@@ -103,7 +107,9 @@ class _GradingSettingsScreenState extends State<GradingSettingsScreen> {
                   onExit: (_) => setState(() => isHoveringDelete = false),
                   child: GestureDetector(
                     onTap: () => deleteItem(item),
-                    child: Icon(Icons.delete, color: isHoveringDelete ? Colors.blueGrey : Colors.black),
+                    child: Icon(Icons.delete,
+                        color:
+                            isHoveringDelete ? Colors.blueGrey : Colors.black),
                   ),
                 ),
               ],
@@ -138,7 +144,7 @@ class _GradingSettingsScreenState extends State<GradingSettingsScreen> {
       padding: const EdgeInsets.symmetric(vertical: Constants.gap),
       child: Text(
         text,
-        style: AppTextStyles.cardTextBlack,
+        style: AppTextStyles.normal600(fontSize: 15.0, color: Colors.black),
       ),
     );
   }
@@ -154,17 +160,23 @@ class _GradingSettingsScreenState extends State<GradingSettingsScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            buildInputRow('Grade', ['A', 'B', 'C', 'D', 'F'], selectedGrade, (value) {
+            buildInputRow('Grade', ['A', 'B', 'C', 'D', 'F'], selectedGrade,
+                (value) {
               setState(() {
                 selectedGrade = value;
               });
             }),
-            buildInputRow('Range', ['80 - 100', '60 - 79', '50 - 69', '40 - 49', '0 - 39'], selectedRange, (value) {
+            buildInputRow(
+                'Range',
+                ['80 - 100', '60 - 79', '50 - 69', '40 - 49', '0 - 39'],
+                selectedRange, (value) {
               setState(() {
                 selectedRange = value;
               });
             }),
-            buildInputRow('Remark', ['Excellent', 'Good', 'Fair', 'Poor'], selectedRemark, (value) {
+            buildInputRow(
+                'Remark', ['Excellent', 'Good', 'Fair', 'Poor'], selectedRemark,
+                (value) {
               setState(() {
                 selectedRemark = value;
               });
@@ -177,7 +189,9 @@ class _GradingSettingsScreenState extends State<GradingSettingsScreen> {
                 onExit: (_) => setState(() => isHoveringAdd = false),
                 child: ElevatedButton(
                   onPressed: () {
-                    if (selectedGrade != null && selectedRange != null && selectedRemark != null) {
+                    if (selectedGrade != null &&
+                        selectedRange != null &&
+                        selectedRemark != null) {
                       setState(() {
                         gradingList.add({
                           'grade': selectedGrade!,
@@ -191,13 +205,19 @@ class _GradingSettingsScreenState extends State<GradingSettingsScreen> {
                     }
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: isHoveringAdd ? Colors.blueGrey : AppColors.secondaryLight,
+                    backgroundColor: isHoveringAdd
+                        ? Colors.blueGrey
+                        : AppColors.secondaryLight,
                     fixedSize: const Size(100, 30),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(Constants.borderRadius),
+                      borderRadius:
+                          BorderRadius.circular(Constants.borderRadius),
                     ),
                   ),
-                  child: const Text('Add +', style: AppTextStyles.normal5Light,),
+                  child: const Text(
+                    'Add +',
+                    style: AppTextStyles.normal5Light,
+                  ),
                 ),
               ),
             ),
@@ -207,7 +227,8 @@ class _GradingSettingsScreenState extends State<GradingSettingsScreen> {
     );
   }
 
-  Widget buildInputRow(String label, List<String> options, String? selectedValue, ValueChanged<String?> onChanged) {
+  Widget buildInputRow(String label, List<String> options,
+      String? selectedValue, ValueChanged<String?> onChanged) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: Constants.gap),
       child: Row(
@@ -215,7 +236,8 @@ class _GradingSettingsScreenState extends State<GradingSettingsScreen> {
         children: [
           Text(
             label,
-            style: AppTextStyles.cardText,
+            style: AppTextStyles.normal600(
+                fontSize: 12.0, color: AppColors.primaryLight),
           ),
           Container(
             width: 208,

@@ -34,22 +34,28 @@ class _AssessmentSettingScreenState extends State<AssessmentSettingScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Center(
-            child:
-                Text('Assessment Settings', style: AppTextStyles.appBarTitle)),
+        title: Text(
+          'Assessment Settings',
+          style: AppTextStyles.normal600(fontSize: 18.0, color: Colors.black),
+        ),
+        centerTitle: true,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
+          icon: const Icon(Icons.arrow_back, color: Colors.black),
           onPressed: () => Navigator.of(context).pop(),
         ),
         backgroundColor: AppColors.backgroundLight,
-        elevation: 1.0,
+        elevation: 0.0,
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Level', style: AppTextStyles.label),
+            Text(
+              'Level',
+              style: AppTextStyles.normal600(
+                  fontSize: 16.0, color: AppColors.primaryLight),
+            ),
             const SizedBox(height: 8.0),
             Container(
               decoration: BoxDecoration(
@@ -145,11 +151,12 @@ class _AssessmentSettingScreenState extends State<AssessmentSettingScreen> {
           children: [
             Row(
               children: [
-                const Align(
+                Align(
                   alignment: Alignment.bottomLeft,
                   child: Text(
                     'Assessment name:',
-                    style: AppTextStyles.inputLabel,
+                    style: AppTextStyles.normal600(
+                        fontSize: 12.0, color: AppColors.primaryLight),
                   ),
                 ),
                 const SizedBox(width: 8.0),
@@ -170,8 +177,13 @@ class _AssessmentSettingScreenState extends State<AssessmentSettingScreen> {
             const SizedBox(height: 16.0),
             Row(
               children: [
-                const Text('Assessment score:',
-                    style: AppTextStyles.inputLabel),
+                Text(
+                  'Assessment score:',
+                  style: AppTextStyles.normal600(
+                    fontSize: 12.0,
+                    color: AppColors.primaryLight,
+                  ),
+                ),
                 const SizedBox(width: 8.0),
                 Expanded(
                   child: TextField(
@@ -208,9 +220,12 @@ class _AssessmentSettingScreenState extends State<AssessmentSettingScreen> {
                     borderRadius: BorderRadius.circular(4.0),
                   ),
                 ),
-                child: const Text(
+                child: Text(
                   'Add +',
-                  style: AppTextStyles.normal6Light,
+                  style: AppTextStyles.normal700(
+                    fontSize: 12.0,
+                    color: Colors.white,
+                  ),
                 ),
               ),
             ),
@@ -261,7 +276,8 @@ class _AssessmentSettingScreenState extends State<AssessmentSettingScreen> {
                             children: <TextSpan>[
                           TextSpan(
                             text: '${assessment['name']}',
-                            style: AppTextStyles.textInput,
+                            style: AppTextStyles.normal600(
+                                fontSize: 16.0, color: Colors.black),
                           )
                         ])),
                     // Text(
@@ -276,7 +292,8 @@ class _AssessmentSettingScreenState extends State<AssessmentSettingScreen> {
                             children: <TextSpan>[
                           TextSpan(
                             text: '${assessment['score']}',
-                            style: AppTextStyles.textInput,
+                            style: AppTextStyles.normal600(
+                                fontSize: 16.0, color: Colors.black),
                           )
                         ])),
                   ],
