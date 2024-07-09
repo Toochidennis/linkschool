@@ -165,7 +165,7 @@ class _AssessmentSettingScreenState extends State<AssessmentSettingScreen> {
                     controller: _assessmentNameController,
                     decoration: const InputDecoration(
                       border: UnderlineInputBorder(
-                        borderSide: BorderSide(color: AppColors.cardBorder),
+                        borderSide: BorderSide(color: AppColors.assessmentColor1),
                       ),
                       contentPadding: EdgeInsets.symmetric(
                           vertical: 10.0, horizontal: 10.0),
@@ -190,7 +190,7 @@ class _AssessmentSettingScreenState extends State<AssessmentSettingScreen> {
                     controller: _assessmentScoreController,
                     decoration: const InputDecoration(
                       border: UnderlineInputBorder(
-                        borderSide: BorderSide(color: AppColors.cardBorder),
+                        borderSide: BorderSide(color: AppColors.assessmentColor1),
                       ),
                       contentPadding: EdgeInsets.symmetric(
                           vertical: 10.0, horizontal: 10.0),

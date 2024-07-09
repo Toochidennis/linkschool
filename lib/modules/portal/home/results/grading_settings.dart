@@ -7,7 +7,7 @@ class GradingSettingsScreen extends StatefulWidget {
   const GradingSettingsScreen({super.key});
 
   @override
-  State<GradingSettingsScreen> createState() => _GradingSettingsScreenState();
+  _GradingSettingsScreenState createState() => _GradingSettingsScreenState();
 }
 
 class _GradingSettingsScreenState extends State<GradingSettingsScreen> {
@@ -39,7 +39,7 @@ class _GradingSettingsScreenState extends State<GradingSettingsScreen> {
         padding: const EdgeInsets.all(Constants.padding),
         child: ListView(
           children: [
-            ...gradingList.map((item) => buildFirstCard(item)),
+            ...gradingList.map((item) => buildFirstCard(item)).toList(),
             const SizedBox(height: Constants.gap),
             buildSecondCard(),
           ],
@@ -141,12 +141,15 @@ class _GradingSettingsScreenState extends State<GradingSettingsScreen> {
 
   Widget buildCardTextRow(String text) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: Constants.gap),
-      child: Text(
-        text,
-        style: AppTextStyles.normal600(fontSize: 15.0, color: Colors.black),
-      ),
-    );
+        padding: const EdgeInsets.symmetric(vertical: Constants.gap),
+        child: RichText(
+            text: TextSpan(children: [
+          TextSpan(
+            text: text,
+            style: AppTextStyles.normal3Light,
+
+          )
+        ])));
   }
 
   Widget buildSecondCard() {
@@ -236,15 +239,14 @@ class _GradingSettingsScreenState extends State<GradingSettingsScreen> {
         children: [
           Text(
             label,
-            style: AppTextStyles.normal600(
-                fontSize: 12.0, color: AppColors.primaryLight),
+            style: AppTextStyles.normal600(fontSize: 12, color: Colors.black),
           ),
           Container(
             width: 208,
             height: 34,
             padding: const EdgeInsets.symmetric(horizontal: Constants.padding),
             decoration: BoxDecoration(
-              border: Border.all(color: AppColors.cardBorder),
+              border: Border.all(color: AppColors.assessmentColor1),
               borderRadius: BorderRadius.circular(4),
               boxShadow: [
                 BoxShadow(
