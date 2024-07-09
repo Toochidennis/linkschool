@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 class AppColors {
   // Light Theme
   static const Color primaryLight = Color(0xFF12077B); //primary
@@ -92,16 +93,16 @@ class AppColors {
   static const Color videoColor8 = Color.fromRGBO(146, 64, 14, 1);
   static const Color videoColor9 = Color.fromRGBO(48, 45, 45, 1);
 
-
+  /// Modified these colors
   // Assessment Settings colors
-  static const Color border = Color(0xFFCCCCCC);
-  static const Color shadow = Color(0x40000000);
+  static const Color assessmentColor1 = Color.fromRGBO(246, 246, 246, 1);
+  static const Color assessmentColor2 = Color.fromRGBO(91, 91, 91, 1);
+  static const Color assessmentColor3 = Color.fromRGBO(204, 204, 204, 1);
+  static const Color assessmentColor4 = Color.fromRGBO(252, 147, 56, 1);
+
+  /// remove these guys
   static const Color cardBorder = Color(0xFFF6F6F6);
-  static const Color textPrimary = Color(0xFF000000);
   static const Color shadowColor = Color(0x40000000);
   static const Color black40 = Color(0x66000000);
   static const Color lightGray = Color(0X5B5B5B);
-
-  // Grading Settings colors
-  static const Color deleteIcon = Color.fromRGBO(209, 10, 10, 1);
 }
