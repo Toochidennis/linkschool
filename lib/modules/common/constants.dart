@@ -4,6 +4,11 @@ import 'package:linkschool/modules/common/text_styles.dart';
 import 'app_colors.dart';
 
 class Constants {
+  
+  static const double padding = 16.0; // newly added const
+  static const double gap = 10.0; // newly added const
+  static const double borderRadius = 8.0; // newly added const
+
   static BoxDecoration customBoxDecoration(BuildContext context) {
     final Brightness brightness = Theme.of(context).brightness;
     var opacity = brightness == Brightness.light ? 0.1 : 0.15;

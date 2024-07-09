@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
-
 class AppColors {
   // Light Theme
-  static const Color primaryLight = Color(0xFF12077B);
-  static const Color secondaryLight = Color(0xFFFC9338);
+  static const Color primaryLight = Color(0xFF12077B); //primary
+  static const Color secondaryLight = Color(0xFFFC9338); //buttonOrange
   static const Color textLight = Color(0xFF1A1A1A);
   static const Color text2Light = Color.fromRGBO(18, 7, 123, 1);
   static const Color text3Light = Color.fromRGBO(0, 0, 0, 1);
@@ -14,7 +13,7 @@ class AppColors {
   static const Color text8Light = Color.fromRGBO(202, 202, 202, 1);
   static const Color text9Light = Color.fromRGBO(127, 127, 127, 1);
   static const Color text10Light = Color.fromRGBO(139, 139, 139, 1);
-  static const Color backgroundLight = Color(0xFFFFFFFF);
+  static const Color backgroundLight = Color(0xFFFFFFFF); // white
   static const Color textFieldBorderLight = Color.fromRGBO(208, 208, 208, 1);
   static const Color textFieldLight = Color.fromRGBO(255, 255, 255, 1);
 
@@ -92,4 +91,17 @@ class AppColors {
   static const Color videoColor7 = Color.fromRGBO(2, 132, 199, 1);
   static const Color videoColor8 = Color.fromRGBO(146, 64, 14, 1);
   static const Color videoColor9 = Color.fromRGBO(48, 45, 45, 1);
+
+
+  // Assessment Settings colors
+  static const Color border = Color(0xFFCCCCCC);
+  static const Color shadow = Color(0x40000000);
+  static const Color cardBorder = Color(0xFFF6F6F6);
+  static const Color textPrimary = Color(0xFF000000);
+  static const Color shadowColor = Color(0x40000000);
+  static const Color black40 = Color(0x66000000);
+  static const Color lightGray = Color(0X5B5B5B);
+
+  // Grading Settings colors
+  static const Color deleteIcon = Color.fromRGBO(209, 10, 10, 1);
 }

@@ -130,4 +130,61 @@ class AppTextStyles {
       fontWeight: FontWeight.w700,
     );
   }
+
+  // Added TextStyles 
+  static const TextStyle appBarTitle = TextStyle(
+    color: AppColors.textPrimary,
+    fontSize: 18,
+    fontWeight: FontWeight.w600,);
+
+  static const TextStyle label = TextStyle(
+    color: AppColors.primaryLight,
+    fontSize: 16.0,
+    fontWeight: FontWeight.w600
+  );
+
+
+
+  static const TextStyle inputLabel = TextStyle(
+    color: AppColors.primaryLight,
+    fontSize: 14,
+    fontWeight: FontWeight.w600,
+  );
+
+  static const TextStyle inputText = TextStyle(
+    color: AppColors.textPrimary,
+    fontSize: 14,
+    fontWeight: FontWeight.w400,
+  );
+
+  static const TextStyle normal6Light = TextStyle(
+    fontSize: 14,
+    color: AppColors.backgroundLight,
+    fontWeight: FontWeight.w700,
+    fontFamily: 'Urbanist',
+  );
+
+    static const TextStyle cardText = TextStyle(
+    fontFamily: 'Urbanist',
+    fontSize: 15,
+    fontWeight: FontWeight.w600,
+    color: AppColors.primaryLight,
+    height: 1.2,
+  );
+
+    static const TextStyle cardTextBlack = TextStyle(
+    fontFamily: 'Urbanist',
+    fontSize: 15,
+    fontWeight: FontWeight.w600,
+    color: AppColors.black40,
+    height: 1.2,
+  );
+
+  static const TextStyle textInput = TextStyle(
+    fontFamily: 'Urbanist',
+    color: Colors.black,
+    fontSize: 16.0,
+    fontWeight: FontWeight.w600
+  );
+  
 }
