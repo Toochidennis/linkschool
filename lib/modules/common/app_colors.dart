@@ -98,7 +98,6 @@ class AppColors {
   static const Color assessmentColor1 = Color.fromRGBO(246, 246, 246, 1);
   static const Color assessmentColor2 = Color.fromRGBO(91, 91, 91, 1);
   static const Color assessmentColor3 = Color.fromRGBO(204, 204, 204, 1);
-  static const Color assessmentColor4 = Color.fromRGBO(252, 147, 56, 1);
 
   /// remove these guys
   static const Color cardBorder = Color(0xFFF6F6F6);

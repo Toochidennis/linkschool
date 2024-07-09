@@ -53,6 +53,19 @@ class AppTextStyles {
     fontFamily: 'Urbanist',
   );
 
+  static TextStyle italicTitle700({
+    required double fontSize,
+    required Color color,
+  }) {
+    return TextStyle(
+      color: color,
+      fontFamily: 'Urbanist',
+      fontSize: fontSize,
+      fontStyle: FontStyle.italic,
+      fontWeight: FontWeight.w700,
+    );
+  }
+
   static TextStyle normal500({
     required double fontSize,
     required Color color,
@@ -64,6 +77,7 @@ class AppTextStyles {
       fontFamily: 'Urbanist',
     );
   }
+
   static TextStyle normal600({
     required double fontSize,
     required Color color,
@@ -72,6 +86,17 @@ class AppTextStyles {
       fontSize: fontSize,
       color: color,
       fontWeight: FontWeight.w600,
+      fontFamily: 'Urbanist',
+    );
+  }
+  static TextStyle normal700({
+    required double fontSize,
+    required Color color,
+  }) {
+    return TextStyle(
+      fontSize: fontSize,
+      color: color,
+      fontWeight: FontWeight.w700,
       fontFamily: 'Urbanist',
     );
   }
@@ -97,7 +122,6 @@ class AppTextStyles {
       color: AppColors.secondaryLight,
       fontFamily: 'Urbanist');
 
-
   static const TextStyle titleDark = TextStyle(
     fontSize: 24,
     fontWeight: FontWeight.bold,
@@ -121,70 +145,4 @@ class AppTextStyles {
     color: AppColors.textDark,
   );
 
-  static TextStyle appBarTextStyle(Color color) {
-    return TextStyle(
-      color: color,
-      fontFamily: 'Urbanist',
-      fontSize: 24.0,
-      fontStyle: FontStyle.italic,
-      fontWeight: FontWeight.w700,
-    );
-  }
-
-  // Added TextStyles 
-  static const TextStyle appBarTitle = TextStyle(
-    color: AppColors.textPrimary,
-    fontSize: 18,
-    fontWeight: FontWeight.w600,);
-
-  static const TextStyle label = TextStyle(
-    color: AppColors.primaryLight,
-    fontSize: 16.0,
-    fontWeight: FontWeight.w600
-  );
-
-
-
-  static const TextStyle inputLabel = TextStyle(
-    color: AppColors.primaryLight,
-    fontSize: 14,
-    fontWeight: FontWeight.w600,
-  );
-
-  static const TextStyle inputText = TextStyle(
-    color: AppColors.textPrimary,
-    fontSize: 14,
-    fontWeight: FontWeight.w400,
-  );
-
-  static const TextStyle normal6Light = TextStyle(
-    fontSize: 14,
-    color: AppColors.backgroundLight,
-    fontWeight: FontWeight.w700,
-    fontFamily: 'Urbanist',
-  );
-
-    static const TextStyle cardText = TextStyle(
-    fontFamily: 'Urbanist',
-    fontSize: 15,
-    fontWeight: FontWeight.w600,
-    color: AppColors.primaryLight,
-    height: 1.2,
-  );
-
-    static const TextStyle cardTextBlack = TextStyle(
-    fontFamily: 'Urbanist',
-    fontSize: 15,
-    fontWeight: FontWeight.w600,
-    color: AppColors.black40,
-    height: 1.2,
-  );
-
-  static const TextStyle textInput = TextStyle(
-    fontFamily: 'Urbanist',
-    color: Colors.black,
-    fontSize: 16.0,
-    fontWeight: FontWeight.w600
-  );
-  
 }
