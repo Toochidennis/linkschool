@@ -32,12 +32,6 @@ class AppTextStyles {
       fontFamily: 'Urbanist',
       fontWeight: FontWeight.w500);
 
-  static const TextStyle normal3Light = TextStyle(
-    fontSize: 14,
-    color: AppColors.text4Light,
-    fontWeight: FontWeight.w500,
-    fontFamily: 'Urbanist',
-  );
 
   static const TextStyle normal4Light = TextStyle(
     fontSize: 10,

@@ -165,7 +165,8 @@ class _AssessmentSettingScreenState extends State<AssessmentSettingScreen> {
                     controller: _assessmentNameController,
                     decoration: const InputDecoration(
                       border: UnderlineInputBorder(
-                        borderSide: BorderSide(color: AppColors.assessmentColor1),
+                        borderSide:
+                            BorderSide(color: AppColors.assessmentColor1),
                       ),
                       contentPadding: EdgeInsets.symmetric(
                           vertical: 10.0, horizontal: 10.0),
@@ -190,7 +191,8 @@ class _AssessmentSettingScreenState extends State<AssessmentSettingScreen> {
                     controller: _assessmentScoreController,
                     decoration: const InputDecoration(
                       border: UnderlineInputBorder(
-                        borderSide: BorderSide(color: AppColors.assessmentColor1),
+                        borderSide:
+                            BorderSide(color: AppColors.assessmentColor1),
                       ),
                       contentPadding: EdgeInsets.symmetric(
                           vertical: 10.0, horizontal: 10.0),
@@ -272,7 +274,9 @@ class _AssessmentSettingScreenState extends State<AssessmentSettingScreen> {
                     RichText(
                         text: TextSpan(
                             text: 'Assessment name:  ',
-                            style: AppTextStyles.normal3Light,
+                            style: AppTextStyles.normal500(
+                                fontSize: 14.0,
+                                color: AppColors.assessmentColor2),
                             children: <TextSpan>[
                           TextSpan(
                             text: '${assessment['name']}',
@@ -288,7 +292,10 @@ class _AssessmentSettingScreenState extends State<AssessmentSettingScreen> {
                     RichText(
                         text: TextSpan(
                             text: 'Assessment score:  ',
-                            style: AppTextStyles.normal3Light,
+                            style: AppTextStyles.normal500(
+                              fontSize: 14.0,
+                              color: AppColors.text4Light,
+                            ),
                             children: <TextSpan>[
                           TextSpan(
                             text: '${assessment['score']}',

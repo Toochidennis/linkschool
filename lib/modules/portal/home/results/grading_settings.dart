@@ -32,7 +32,11 @@ class _GradingSettingsScreenState extends State<GradingSettingsScreen> {
           icon: const Icon(Icons.arrow_back),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Center(child: Text('Grade Settings')),
+        title: Text(
+          'Grade Settings',
+          style: AppTextStyles.normal600(fontSize: 18.0, color: Colors.black),
+        ),
+        centerTitle: true,
         backgroundColor: AppColors.backgroundLight,
       ),
       body: Padding(
@@ -80,6 +84,7 @@ class _GradingSettingsScreenState extends State<GradingSettingsScreen> {
 
   Widget buildFirstCard(Map<String, String> item) {
     return Card(
+      color: Colors.white,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(Constants.borderRadius),
       ),
@@ -115,9 +120,11 @@ class _GradingSettingsScreenState extends State<GradingSettingsScreen> {
               ],
             ),
             const SizedBox(height: Constants.gap),
-            buildCardTextRow('Grade: ${item['grade']}'),
-            buildCardTextRow('Range: ${item['range']} marks'),
-            buildCardTextRow('Remark: ${item['remark']}'),
+            buildCardTextRow(title: 'Grade:', score: '${item['grade']}'),
+            buildCardTextRow(title: 'Range:', score: '${item['range']} marks'),
+            buildCardTextRow(title: 'Remark:', score: '${item['remark']}'),
+            // buildCardTextRow('Range: ${item['range']} marks'),
+            // buildCardTextRow('Remark: ${item['remark']}'),
           ],
         ),
       ),
@@ -139,17 +146,30 @@ class _GradingSettingsScreenState extends State<GradingSettingsScreen> {
     });
   }
 
-  Widget buildCardTextRow(String text) {
+  Widget buildCardTextRow({required String title, required String score}) {
     return Padding(
-        padding: const EdgeInsets.symmetric(vertical: Constants.gap),
-        child: RichText(
-            text: TextSpan(children: [
-          TextSpan(
-            text: text,
-            style: AppTextStyles.normal3Light,
-
-          )
-        ])));
+      padding: const EdgeInsets.symmetric(vertical: Constants.gap),
+      child: RichText(
+        text: TextSpan(
+          children: [
+            TextSpan(
+              text: title,
+              style: AppTextStyles.normal500(
+                fontSize: 12.0,
+                color: AppColors.assessmentColor2,
+              ),
+            ),
+            TextSpan(
+              text: '  $score',
+              style: AppTextStyles.normal500(
+                fontSize: 16.0,
+                color: AppColors.backgroundDark,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   Widget buildSecondCard() {

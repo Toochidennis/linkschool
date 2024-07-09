@@ -62,7 +62,7 @@ class PortalNewsItem extends StatelessWidget {
                   const SizedBox(height: 10.0),
                   Text(
                     newsContent,
-                    style: AppTextStyles.normal3Light,
+                    style: AppTextStyles.normal500(fontSize: 14.0, color: AppColors.text4Light),
                   ),
                   const SizedBox(height: 10.0),
                   Text(
