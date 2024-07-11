@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-// import 'package:flutter/widgets.dart';
 import 'package:percent_indicator/percent_indicator.dart';
 import 'package:fl_chart/fl_chart.dart';
 
@@ -51,7 +50,6 @@ class StudentResultScreen extends StatelessWidget {
                                   fit: BoxFit.cover,
                                   image: NetworkImage(
                                       'https://cdn-icons-png.flaticon.com/512/149/149071.png'))),
-                          //backgroundImage: AssetImage('https://cdn-icons-png.flaticon.com/512/149/149071.png'),
                         ),
                         const SizedBox(height: 10),
                         Text(
@@ -76,8 +74,8 @@ class StudentResultScreen extends StatelessWidget {
                         fontSize: 18, color: AppColors.primaryLight),
                   ),
                   const SizedBox(height: 10),
-                  _buildTermRow('First Term', 0.75),
-                  _buildTermRow('Second Term', 0.75),
+                  _buildTermRow('First Term', 0.75, AppColors.primaryLight),
+                  _buildTermRow('Second Term', 0.75, AppColors.videoColor4),
                   const SizedBox(height: 30),
                   Text(
                     'Session average chart',
@@ -86,7 +84,7 @@ class StudentResultScreen extends StatelessWidget {
                       color: AppColors.primaryLight,
                     ),
                   ),
-                  const SizedBox(height: 15.0),
+                  const SizedBox(height: 30.0), // Increased from 15.0 to 30.0
                   SizedBox(
                     height: 200.0,
                     child: BarChart(
@@ -116,17 +114,25 @@ class StudentResultScreen extends StatelessWidget {
                           rightTitles: const AxisTitles(
                               sideTitles: SideTitles(showTitles: false)),
                         ),
-                        gridData: const FlGridData(show: true),
-                        borderData: FlBorderData(
-                          show: false,
-                          // border: Border.all(
-                          //     color: const Color(0xff37434d), width: 1),
+                        gridData: FlGridData(
+                          show: true,
+                          drawVerticalLine: false,
+                          horizontalInterval: 20,
+                          getDrawingHorizontalLine: (value) {
+                            return FlLine(
+                              color: Colors.grey.withOpacity(0.3),
+                              strokeWidth: 1,
+                              dashArray: [5, 5],
+                            );
+                          },
                         ),
+                        borderData: FlBorderData(show: false),
                         barGroups: [
                           _buildBarGroup(0, 60, AppColors.primaryLight),
                           _buildBarGroup(1, 25, AppColors.videoColor4),
                           _buildBarGroup(2, 75, AppColors.primaryLight),
                         ],
+                        groupsSpace: 2, // Reduced space between bars
                       ),
                     ),
                   ),
@@ -141,7 +147,7 @@ class StudentResultScreen extends StatelessWidget {
 
   Widget _buildInfoRow(String label, String value) {
     return Container(
-      width: double.infinity, // This will make it fill the available width
+      width: double.infinity,
       height: 50,
       decoration: const BoxDecoration(
         border: Border(
@@ -150,30 +156,18 @@ class StudentResultScreen extends StatelessWidget {
         ),
       ),
       child: Padding(
-        padding: const EdgeInsets.symmetric(
-          horizontal: 16.0,
-        ), // Add horizontal padding
+        padding: const EdgeInsets.symmetric(horizontal: 16.0),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
               label,
               style: AppTextStyles.normal700(fontSize: 14, color: Colors.black),
-              // style: const TextStyle(
-
-              //   fontSize: 16, // Adjust font size as needed
-              //   color: Colors.black,
-              // ),
             ),
             Text(
               value,
               style: AppTextStyles.normal700(
                   fontSize: 14, color: AppColors.primaryLight),
-              // style: const TextStyle(
-              //   fontSize: 16, // Adjust font size as needed
-              //   color: Colors.black,
-              //   fontWeight: FontWeight.bold,
-              // ),
             ),
           ],
         ),
@@ -181,7 +175,7 @@ class StudentResultScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildTermRow(String term, double percent) {
+  Widget _buildTermRow(String term, double percent,  Color indicatorColor) {
     return Container(
       width: double.infinity,
       height: 75,
@@ -202,8 +196,8 @@ class StudentResultScreen extends StatelessWidget {
               radius: 20.0,
               lineWidth: 4.92,
               percent: percent,
-              center: Text("${(percent * 100).toInt()}%"),
-              progressColor: AppColors.primaryLight,
+              center: Text("${(percent * 100).toInt()}%", style: AppTextStyles.normal600(fontSize: 10, color: Colors.black),),
+              progressColor: indicatorColor,
               backgroundColor: Colors.transparent,
               circularStrokeCap: CircularStrokeCap.round,
             ),
@@ -231,7 +225,6 @@ class StudentResultScreen extends StatelessWidget {
   }
 
   Widget getTitles(double value, TitleMeta meta) {
-    // TextStyle(
     String text;
     switch (value.toInt()) {
       case 0:
@@ -250,7 +243,7 @@ class StudentResultScreen extends StatelessWidget {
     return SideTitleWidget(
       axisSide: meta.axisSide,
       space: 4.0,
-      child: Text(text, style:  AppTextStyles.normal400(fontSize: 12, color: AppColors.barTextGray),)
+      child: Text(text, style: AppTextStyles.normal400(fontSize: 12, color: AppColors.barTextGray)),
     );
   }
 }
