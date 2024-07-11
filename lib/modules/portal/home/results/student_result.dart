@@ -203,7 +203,7 @@ class StudentResultScreen extends StatelessWidget {
               lineWidth: 4.92,
               percent: percent,
               center: Text("${(percent * 100).toInt()}%"),
-              progressColor: const Color(0xFF1DD66E),
+              progressColor: AppColors.primaryLight,
               backgroundColor: Colors.transparent,
               circularStrokeCap: CircularStrokeCap.round,
             ),
