@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
+import 'package:linkschool/modules/portal/home/result/result_dashboard_screen.dart';
 
 import '../../common/text_styles.dart';
 import '../../../modules/portal/home/portal_home.dart';
@@ -71,10 +72,7 @@ class _PortalDashboardState extends State<PortalDashboard> {
         ],
         bodyItems: [
           const PortalHome(),
-          Container(
-            height: MediaQuery.of(context).size.height,
-            color: Colors.orange,
-          ),
+          const ResultDashboardScreen(),
           Container(
             height: MediaQuery.of(context).size.height,
             color: Colors.black,
