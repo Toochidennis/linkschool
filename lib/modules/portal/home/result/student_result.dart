@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:linkschool/modules/common/constants.dart';
+// import 'package:flutter/widgets.dart';
 import 'package:percent_indicator/percent_indicator.dart';
 import 'package:fl_chart/fl_chart.dart';
 
@@ -23,19 +23,6 @@ class StudentResultScreen extends StatelessWidget {
         ),
         backgroundColor: AppColors.backgroundLight,
         elevation: 0.0,
-        actions: [
-          ElevatedButton(
-            onPressed: () {},
-            style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.secondaryLight,
-                fixedSize: const Size(100, 30),
-                shape: RoundedRectangleBorder(
-                    borderRadius:
-                        BorderRadius.circular(Constants.borderRadius))),
-            child: const Text('See student list',
-                style: AppTextStyles.normal5Light),
-          )
-        ],
       ),
       body: SingleChildScrollView(
         child: ConstrainedBox(
@@ -49,6 +36,9 @@ class StudentResultScreen extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  const SizedBox(
+                    height: 50,
+                  ),
                   Center(
                     child: Column(
                       children: [
@@ -61,6 +51,7 @@ class StudentResultScreen extends StatelessWidget {
                                   fit: BoxFit.cover,
                                   image: NetworkImage(
                                       'https://cdn-icons-png.flaticon.com/512/149/149071.png'))),
+                          //backgroundImage: AssetImage('https://cdn-icons-png.flaticon.com/512/149/149071.png'),
                         ),
                         const SizedBox(height: 10),
                         Text(
@@ -85,8 +76,8 @@ class StudentResultScreen extends StatelessWidget {
                         fontSize: 18, color: AppColors.primaryLight),
                   ),
                   const SizedBox(height: 10),
-                  _buildTermRow('First Term', 0.75, AppColors.primaryLight),
-                  _buildTermRow('Second Term', 0.75, AppColors.videoColor4),
+                  _buildTermRow('First Term', 0.75),
+                  _buildTermRow('Second Term', 0.75),
                   const SizedBox(height: 30),
                   Text(
                     'Session average chart',
@@ -95,7 +86,7 @@ class StudentResultScreen extends StatelessWidget {
                       color: AppColors.primaryLight,
                     ),
                   ),
-                  const SizedBox(height: 30.0), // Increased from 15.0 to 30.0
+                  const SizedBox(height: 15.0),
                   SizedBox(
                     height: 200.0,
                     child: BarChart(
@@ -125,25 +116,17 @@ class StudentResultScreen extends StatelessWidget {
                           rightTitles: const AxisTitles(
                               sideTitles: SideTitles(showTitles: false)),
                         ),
-                        gridData: FlGridData(
-                          show: true,
-                          drawVerticalLine: false,
-                          horizontalInterval: 20,
-                          getDrawingHorizontalLine: (value) {
-                            return FlLine(
-                              color: Colors.grey.withOpacity(0.3),
-                              strokeWidth: 1,
-                              dashArray: [5, 5],
-                            );
-                          },
+                        gridData: const FlGridData(show: true),
+                        borderData: FlBorderData(
+                          show: false,
+                          // border: Border.all(
+                          //     color: const Color(0xff37434d), width: 1),
                         ),
-                        borderData: FlBorderData(show: false),
                         barGroups: [
                           _buildBarGroup(0, 60, AppColors.primaryLight),
                           _buildBarGroup(1, 25, AppColors.videoColor4),
                           _buildBarGroup(2, 75, AppColors.primaryLight),
                         ],
-                        groupsSpace: 0, // Reduced space between bars
                       ),
                     ),
                   ),
@@ -158,27 +141,39 @@ class StudentResultScreen extends StatelessWidget {
 
   Widget _buildInfoRow(String label, String value) {
     return Container(
-      width: double.infinity,
+      width: double.infinity, // This will make it fill the available width
       height: 50,
       decoration: const BoxDecoration(
         border: Border(
-          top: BorderSide(color: AppColors.borderGray, width: 1),
-          bottom: BorderSide(color: AppColors.borderGray, width: 1),
+          top: BorderSide(color: AppColors.shadowColor, width: 1),
+          bottom: BorderSide(color: AppColors.shadowColor, width: 1),
         ),
       ),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16.0),
+        padding: const EdgeInsets.symmetric(
+          horizontal: 16.0,
+        ), // Add horizontal padding
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
               label,
               style: AppTextStyles.normal700(fontSize: 14, color: Colors.black),
+              // style: const TextStyle(
+
+              //   fontSize: 16, // Adjust font size as needed
+              //   color: Colors.black,
+              // ),
             ),
             Text(
               value,
               style: AppTextStyles.normal700(
                   fontSize: 14, color: AppColors.primaryLight),
+              // style: const TextStyle(
+              //   fontSize: 16, // Adjust font size as needed
+              //   color: Colors.black,
+              //   fontWeight: FontWeight.bold,
+              // ),
             ),
           ],
         ),
@@ -186,13 +181,13 @@ class StudentResultScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildTermRow(String term, double percent, Color indicatorColor) {
+  Widget _buildTermRow(String term, double percent) {
     return Container(
       width: double.infinity,
       height: 75,
       decoration: const BoxDecoration(
           border: Border(
-        bottom: BorderSide(color: AppColors.borderGray, width: 1),
+        bottom: BorderSide(color: AppColors.shadowColor, width: 1),
       )),
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 16.0),
@@ -207,12 +202,8 @@ class StudentResultScreen extends StatelessWidget {
               radius: 20.0,
               lineWidth: 4.92,
               percent: percent,
-              center: Text(
-                "${(percent * 100).toInt()}%",
-                style:
-                    AppTextStyles.normal600(fontSize: 10, color: Colors.black),
-              ),
-              progressColor: indicatorColor,
+              center: Text("${(percent * 100).toInt()}%"),
+              progressColor: AppColors.primaryLight,
               backgroundColor: Colors.transparent,
               circularStrokeCap: CircularStrokeCap.round,
             ),
@@ -240,6 +231,7 @@ class StudentResultScreen extends StatelessWidget {
   }
 
   Widget getTitles(double value, TitleMeta meta) {
+    // TextStyle(
     String text;
     switch (value.toInt()) {
       case 0:
@@ -258,9 +250,7 @@ class StudentResultScreen extends StatelessWidget {
     return SideTitleWidget(
       axisSide: meta.axisSide,
       space: 4.0,
-      child: Text(text,
-          style: AppTextStyles.normal400(
-              fontSize: 12, color: AppColors.resultColor1)),
+      child: Text(text, style:  AppTextStyles.normal400(fontSize: 12, color: AppColors.shadowColor),)
     );
   }
 }

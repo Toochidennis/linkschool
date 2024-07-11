@@ -98,8 +98,13 @@ class AppColors {
   static const Color assessmentColor1 = Color.fromRGBO(246, 246, 246, 1);
   static const Color assessmentColor2 = Color.fromRGBO(91, 91, 91, 1);
   static const Color assessmentColor3 = Color.fromRGBO(204, 204, 204, 1);
-  static const Color shadowColor = Color.fromRGBO(64 , 0, 0, 1);
 
+  /// remove these guys
+  static const Color shadowColor = Color(0x40000000);
+  static const Color black40 = Color(0x66000000);
+  static const Color lightGray = Color(0X5B5B5B);
+
+  static const Color resultColor1 = Color.fromRGBO(29, 33, 41, 1);
 
     //student result
   static const Color borderLight = Color.fromRGBO(255, 218, 218, 1);

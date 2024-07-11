@@ -99,8 +99,8 @@ class AppTextStyles {
     return TextStyle(
       fontSize: fontSize,
       color: color,
-      fontWeight: FontWeight.w700,
-      fontFamily: 'Inter',
+      fontWeight: FontWeight.w400,
+      fontFamily: 'Urbanist',
     );
   }
 
