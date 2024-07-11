@@ -5,9 +5,9 @@ import 'app_colors.dart';
 
 class Constants {
   
-  static const double padding = 16.0; // newly added const
-  static const double gap = 10.0; // newly added const
-  static const double borderRadius = 8.0; // newly added const
+  static const double padding = 16.0;
+  static const double gap = 10.0;
+  static const double borderRadius = 8.0;
 
   static BoxDecoration customBoxDecoration(BuildContext context) {
     final Brightness brightness = Theme.of(context).brightness;
@@ -29,6 +29,7 @@ class Constants {
   static AppBar customAppBar({
     required BuildContext context,
     String? iconPath,
+    bool? centerTitle,
   }) {
     final Brightness brightness = Theme.of(context).brightness;
     var opacity = brightness == Brightness.light ? 0.1 : 0.15;
@@ -36,6 +37,7 @@ class Constants {
     return AppBar(
       backgroundColor: Colors.white,
       elevation: 0.0,
+      centerTitle: centerTitle,
       flexibleSpace: FlexibleSpaceBar(
         background: Stack(
           children: [
