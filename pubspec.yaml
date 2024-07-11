@@ -131,22 +131,22 @@ flutter:
   fonts:
      - family: Urbanist
        fonts:
-         - asset: assets/fonts/urbanistFonts/Urbanist-Regular.ttf
+         - asset: assets/fonts/urbanist/Urbanist-Regular.ttf
            weight: 400
-         - asset: assets/fonts/urbanistFonts/Urbanist-Medium.ttf
+         - asset: assets/fonts/urbanist/Urbanist-Medium.ttf
            weight: 500
-         - asset: assets/fonts/urbanistFonts/Urbanist-MediumItalic.ttf
+         - asset: assets/fonts/urbanist/Urbanist-MediumItalic.ttf
            weight: 500
            style: italic
-         - asset: assets/fonts/urbanistFonts/Urbanist-SemiBold.ttf
+         - asset: assets/fonts/urbanist/Urbanist-SemiBold.ttf
            weight: 600
-         - asset: assets/fonts/urbanistFonts/Urbanist-BoldItalic.ttf
+         - asset: assets/fonts/urbanist/Urbanist-BoldItalic.ttf
            weight: 700
-     - family: Inter
-       fonts:
-         - asset: assets/fonts/interFonts/LTInternet-Bold.ttf
-           weight: 700
-         - asset: assets/fonts/interFonts/LTInternet-Regular.ttf
-           weight: 400
+#     - family: Inter
+#       fonts:
+#         - asset: assets/fonts/interFonts/LTInternet-Bold.ttf
+#           weight: 700
+#         - asset: assets/fonts/interFonts/LTInternet-Regular.ttf
+#           weight: 400
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/custom-fonts/#from-packages

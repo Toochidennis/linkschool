@@ -145,8 +145,8 @@ class StudentResultScreen extends StatelessWidget {
       height: 50,
       decoration: const BoxDecoration(
         border: Border(
-          top: BorderSide(color: AppColors.borderGray, width: 1),
-          bottom: BorderSide(color: AppColors.borderGray, width: 1),
+          top: BorderSide(color: AppColors.shadowColor, width: 1),
+          bottom: BorderSide(color: AppColors.shadowColor, width: 1),
         ),
       ),
       child: Padding(
@@ -187,7 +187,7 @@ class StudentResultScreen extends StatelessWidget {
       height: 75,
       decoration: const BoxDecoration(
           border: Border(
-        bottom: BorderSide(color: AppColors.borderGray, width: 1),
+        bottom: BorderSide(color: AppColors.shadowColor, width: 1),
       )),
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 16.0),
@@ -250,7 +250,7 @@ class StudentResultScreen extends StatelessWidget {
     return SideTitleWidget(
       axisSide: meta.axisSide,
       space: 4.0,
-      child: Text(text, style:  AppTextStyles.normal400(fontSize: 12, color: AppColors.barTextGray),)
+      child: Text(text, style:  AppTextStyles.normal400(fontSize: 12, color: AppColors.shadowColor),)
     );
   }
 }
