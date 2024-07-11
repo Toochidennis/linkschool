@@ -35,11 +35,16 @@ dependencies:
   flutter_rating_bar: ^4.0.1
   carousel_slider: ^4.2.1
   flip_card: ^0.7.0
+  percent_indicator: ^4.0.1
+  fl_chart: ^0.68.0
+  # flutter_charts: ^0.5.2
 
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.6
+  # charts_flutter: ^0.12.0
+  community_charts_flutter: ^1.0.0
 
 dev_dependencies:
   flutter_test:
@@ -126,16 +131,22 @@ flutter:
   fonts:
      - family: Urbanist
        fonts:
-         - asset: assets/fonts/Urbanist-Regular.ttf
+         - asset: assets/fonts/urbanistFonts/Urbanist-Regular.ttf
            weight: 400
-         - asset: assets/fonts/Urbanist-Medium.ttf
+         - asset: assets/fonts/urbanistFonts/Urbanist-Medium.ttf
            weight: 500
-         - asset: assets/fonts/Urbanist-MediumItalic.ttf
+         - asset: assets/fonts/urbanistFonts/Urbanist-MediumItalic.ttf
            weight: 500
            style: italic
-         - asset: assets/fonts/Urbanist-SemiBold.ttf
+         - asset: assets/fonts/urbanistFonts/Urbanist-SemiBold.ttf
            weight: 600
-         - asset: assets/fonts/Urbanist-BoldItalic.ttf
+         - asset: assets/fonts/urbanistFonts/Urbanist-BoldItalic.ttf
            weight: 700
+     - family: Inter
+       fonts:
+         - asset: assets/fonts/interFonts/LTInternet-Bold.ttf
+           weight: 700
+         - asset: assets/fonts/interFonts/LTInternet-Regular.ttf
+           weight: 400
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/custom-fonts/#from-packages

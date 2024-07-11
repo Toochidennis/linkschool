@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:linkschool/modules/portal/home/portal_news_item.dart';
 import 'package:linkschool/modules/portal/home/results/grading_settings.dart';
+import 'package:linkschool/modules/portal/home/results/student_result.dart';
 // import 'package:linkschool/modules/portal/home/results/assessment_settings.dart';
 
 import '../../common/app_colors.dart';
@@ -93,7 +94,7 @@ class _PortalHomeState extends State<PortalHome> {
                         iconPath: 'assets/icons/result.svg',
                         iconHeight: 40.0,
                         iconWidth: 36.0,
-                        destination: AssessmentSettingScreen(),
+                        destination: StudentResultScreen(),
                       ),
                     ),
                     SizedBox(width: 14.0),
