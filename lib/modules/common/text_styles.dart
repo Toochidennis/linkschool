@@ -59,7 +59,6 @@ class AppTextStyles {
       fontWeight: FontWeight.w700,
     );
   }
-
   static TextStyle normal500({
     required double fontSize,
     required Color color,
@@ -92,6 +91,16 @@ class AppTextStyles {
       color: color,
       fontWeight: FontWeight.w700,
       fontFamily: 'Urbanist',
+    );
+  }
+
+// newly added styles
+  static TextStyle normal400({required double fontSize, required Color color}){
+    return TextStyle(
+      fontSize: fontSize,
+      color: color,
+      fontWeight: FontWeight.w700,
+      fontFamily: 'Inter',
     );
   }
 
