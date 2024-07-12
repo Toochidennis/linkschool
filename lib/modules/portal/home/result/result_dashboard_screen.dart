@@ -14,74 +14,83 @@ class ResultDashboardScreen extends StatefulWidget {
 class _ResultDashboardScreenState extends State<ResultDashboardScreen> {
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: Constants.customBoxDecoration(context),
-      child: CustomScrollView(
-        physics: const BouncingScrollPhysics(),
-        slivers: [
-          const SliverToBoxAdapter(
-            child: SizedBox(height: 16.0),
-          ),
-          SliverToBoxAdapter(
-            child: Constants.heading600(
-              title: 'Overall Performance',
-              titleSize: 18.0,
-              titleColor: AppColors.resultColor1,
+    return Scaffold(
+      appBar: AppBar(
+        leading: IconButton(onPressed: (){
+          Navigator.of(context).pop();
+        }, icon: const Icon(Icons.arrow_back)),
+        title: Text('Results'),
+        centerTitle: true,
+      ),
+      body: Container(
+        decoration: Constants.customBoxDecoration(context),
+        child: CustomScrollView(
+          physics: const BouncingScrollPhysics(),
+          slivers: [
+            const SliverToBoxAdapter(
+              child: SizedBox(height: 16.0),
             ),
-          ),
-          const SliverToBoxAdapter(
-            child: SizedBox(height: 24.0),
-          ),
-          SliverToBoxAdapter(
-            child: AspectRatio(
-              aspectRatio: 2.0,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                child: BarChart(
-                  BarChartData(
-                    maxY: 100,
-                    titlesData: FlTitlesData(
-                      rightTitles: const AxisTitles(
-                        sideTitles: SideTitles(showTitles: false),
-                      ),
-                      topTitles: const AxisTitles(
-                        sideTitles: SideTitles(showTitles: false),
-                      ),
-                      bottomTitles: AxisTitles(
-                        sideTitles: SideTitles(
+            SliverToBoxAdapter(
+              child: Constants.heading600(
+                title: 'Overall Performance',
+                titleSize: 18.0,
+                titleColor: AppColors.resultColor1,
+              ),
+            ),
+            const SliverToBoxAdapter(
+              child: SizedBox(height: 24.0),
+            ),
+            SliverToBoxAdapter(
+              child: AspectRatio(
+                aspectRatio: 2.0,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                  child: BarChart(
+                    BarChartData(
+                      maxY: 100,
+                      titlesData: FlTitlesData(
+                        rightTitles: const AxisTitles(
+                          sideTitles: SideTitles(showTitles: false),
+                        ),
+                        topTitles: const AxisTitles(
+                          sideTitles: SideTitles(showTitles: false),
+                        ),
+                        bottomTitles: AxisTitles(
+                          sideTitles: SideTitles(
+                              showTitles: true,
+                              reservedSize: 42,
+                              getTitlesWidget: _bottomTitles),
+                        ),
+                        leftTitles: AxisTitles(
+                          sideTitles: SideTitles(
                             showTitles: true,
-                            reservedSize: 42,
-                            getTitlesWidget: _bottomTitles),
-                      ),
-                      leftTitles: AxisTitles(
-                        sideTitles: SideTitles(
-                          showTitles: true,
-                          interval: 1,
-                          reservedSize: 30,
-                          getTitlesWidget: _leftTitles,
+                            interval: 1,
+                            reservedSize: 30,
+                            getTitlesWidget: _leftTitles,
+                          ),
                         ),
                       ),
+                      borderData: FlBorderData(show: false),
+                      gridData: const FlGridData(show: true, drawVerticalLine: false),
+                      barGroups: [
+                        // makeGroupData(0, 30, 70, 60),
+                        makeGroupData(1, 70, 50, 20),
+                        makeGroupData(2, 20, 10, 20),
+                        makeGroupData(3, 20, 80, 90),
+                        makeGroupData(4, 50, 10, 20),
+                        makeGroupData(5, 20, 90, 20),
+                        makeGroupData(6, 20, 60, 20),
+                        makeGroupData(7, 20, 60, 20),
+                      ],
                     ),
-                    borderData: FlBorderData(show: false),
-                    gridData: const FlGridData(show: true, drawVerticalLine: false),
-                    barGroups: [
-                      makeGroupData(0, 30, 70, 60),
-                      makeGroupData(1, 70, 50, 20),
-                      makeGroupData(2, 20, 10, 20),
-                      makeGroupData(3, 20, 80, 90),
-                      makeGroupData(4, 50, 10, 20),
-                      makeGroupData(5, 20, 90, 20),
-                      makeGroupData(6, 20, 60, 20),
-                      makeGroupData(7, 20, 60, 20),
-                    ],
+                    swapAnimationCurve: Curves.linear,
+                    swapAnimationDuration: Duration(milliseconds: 500),
                   ),
-                  swapAnimationCurve: Curves.linear,
-                  swapAnimationDuration: Duration(milliseconds: 500),
                 ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
