@@ -110,4 +110,17 @@ class AppColors {
   static const Color borderLight = Color.fromRGBO(255, 218, 218, 1);
   static const Color borderGray = Color.fromRGBO(218, 218, 218, 1);
   static const Color barTextGray = Color.fromRGBO(65, 65, 65, 1);
+
+  //result dashboard screen
+  static const Color barColor1 = Color.fromRGBO(0, 216, 197, 1);
+  static const Color barColor2 = Color.fromRGBO(30, 136, 229, 1);
+  static const Color barColor3 = Color.fromRGBO(253, 177, 101, 1);
+
+  static const Color boxColor1 = Color.fromRGBO(255, 245, 207, 1);
+  static const Color boxColor2 = Color.fromRGBO(236, 246, 255, 1);
+  static const Color boxColor3 = Color.fromRGBO(241, 240, 255, 1);
+  static const Color boxColor4 = Color.fromRGBO(232, 255, 254, 1);
+  static const Color avatarbgColor = Color.fromRGBO(187, 222, 251, 1);
+  static const Color bgWhite = Color.fromRGBO(255, 255, 255, 1);
+  static const Color grayColor = Color.fromRGBO(238, 238, 238, 1);
 }

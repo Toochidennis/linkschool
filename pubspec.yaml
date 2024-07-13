@@ -114,6 +114,10 @@ flutter:
     - assets/images/games_1.png
     - assets/images/games_2.png
     - assets/images/games_3.png
+    - assets/icons/assessment.png
+    # - assets/icons/result/grading_icon.svg
+    # - assets/icons/result/behaviour_icon.svg
+    # - assets/icons/result/tools_icon.svg
 #     - images/a_dot_burr.jpeg
 #     - images/a_dot_ham.jpeg
 
