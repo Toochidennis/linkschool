@@ -1,5 +1,6 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
@@ -99,9 +100,9 @@ class _ResultDashboardScreenState extends State<ResultDashboardScreen> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
-                    _buildIndicator(AppColors.barColor1, 'Attendance'),
-                    _buildIndicator(AppColors.barColor2, 'Academics'),
-                    _buildIndicator(AppColors.barColor3, 'Behaviour'),
+                    _buildIndicator(AppColors.barColor1, 'attendance'),
+                    _buildIndicator(AppColors.barColor2, 'academics'),
+                    _buildIndicator(AppColors.barColor3, 'behaviour'),
                   ],
                 ),
               ),
@@ -124,9 +125,9 @@ class _ResultDashboardScreenState extends State<ResultDashboardScreen> {
                     mainAxisAlignment: MainAxisAlignment.spaceAround,
                     children: [
                       _buildSettingsBox('assets/icons/assessment.png', 'Assessment', AppColors.boxColor1),
-                      _buildSettingsBox('assets/icons/assessment.png', 'Grading', AppColors.boxColor2),
-                      _buildSettingsBox('assets/icons/assessment.png', 'Behaviour', AppColors.boxColor3),
-                      _buildSettingsBox('assets/icons/assessment.png', 'Tools', AppColors.boxColor4),
+                      _buildSettingsBox('assets/icons/grading.png', 'Grading', AppColors.boxColor2),
+                      _buildSettingsBox('assets/icons/behaviour.png', 'Behaviour', AppColors.boxColor3),
+                      _buildSettingsBox('assets/icons/tools.png', 'Tools', AppColors.boxColor4),
                     ],
                   ),
                 ],
@@ -145,57 +146,17 @@ class _ResultDashboardScreenState extends State<ResultDashboardScreen> {
                     titleSize: 18.0,
                     titleColor: AppColors.resultColor1,
                   ),
-                  const SizedBox(height: 16.0),
+                  const SizedBox(height: 10.0),
                   Column(
-                    children: List.generate(6, (index) {
-                      return Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 8.0),
-                        child: Stack(
-                          children: [
-                            Container(
-                              width: double.infinity,
-                              height: 100,
-                              decoration: BoxDecoration(
-                                color: AppColors.grayColor,
-                                borderRadius: BorderRadius.circular(8.0),
-                                image: const DecorationImage(
-                                  image: NetworkImage('https://via.placeholder.com/300'),
-                                  fit: BoxFit.cover,
-                                  colorFilter: ColorFilter.mode(
-                                    Colors.black26,
-                                    BlendMode.darken,
-                                  ),
-                                ),
-                              ),
-                            ),
-                            Positioned(
-                              left: 16.0,
-                              top: 16.0,
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    'Level ${index + 1}',
-                                    style: AppTextStyles.normal700(fontSize: 20, color: AppColors.bgWhite),
-                                  ),
-                                  const SizedBox(height: 8.0),
-                                  ElevatedButton(
-                                    onPressed: () {
-                                      // Add your onPressed code here!
-                                    },
-                                    style: ElevatedButton.styleFrom(
-                                      // Colors.transparent,
-                                      side: const BorderSide(color: AppColors.bgWhite),
-                                    ),
-                                    child: const Text('Select', style: TextStyle(color: AppColors.bgWhite)),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                      );
-                    }),
+                    children: [
+                      _buildLevelBox('BASIC ONE', 'assets/images/box_bg1.png'),
+                      _buildLevelBox('BASIC TWO', 'assets/images/box_bg2.png'),
+                      _buildLevelBox('JSS ONE', 'assets/images/box_bg3.png'),
+                      _buildLevelBox('JSS TWO', 'assets/images/box_bg4.png'),
+                      _buildLevelBox('JSS THREE', 'assets/images/box_bg5.png'),
+                      // _buildLevelBox('SS ONE', 'assets/images/ss_one_bg.svg'),
+                      // _buildLevelBox('SS TWO', 'assets/images/ss_two_bg.svg'),
+                    ],
                   ),
                 ],
               ),
@@ -295,7 +256,7 @@ class _ResultDashboardScreenState extends State<ResultDashboardScreen> {
           ),
         ),
         const SizedBox(width: 8.0),
-        Text(text, style: AppTextStyles.normal600(fontSize: 14, color: Colors.black)),
+        Text(text, style: AppTextStyles.normal400(fontSize: 12, color: Colors.black)),
       ],
     );
   }
@@ -311,15 +272,76 @@ class _ResultDashboardScreenState extends State<ResultDashboardScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          CircleAvatar(
-            radius: 20,
-            backgroundColor: AppColors.avatarbgColor,
-            child: Image.asset(iconPath, width: 24, height: 24),
+          Container(
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(
+                color: color,
+                width: 2.0
+              )
+            ),
+            child: CircleAvatar(
+              radius: 20,
+              backgroundColor: AppColors.avatarbgColor,
+              child: Image.asset(iconPath, width: 24, height: 24),
+            ),
           ),
           const SizedBox(height: 8.0),
-          Text(text, style: AppTextStyles.normal400(fontSize: 12, color: Colors.black)),
+          Text(text, style: AppTextStyles.normal600(fontSize: 14, color: Colors.black)),
         ],
       ),
     );
   }
+
+Widget _buildLevelBox(String levelText, String backgroundImagePath) {
+  return Padding(
+    padding: const EdgeInsets.symmetric(vertical: 8.0),
+    child: Container(
+      width: 430,
+      height: 108,
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      decoration: BoxDecoration(
+        borderRadius: const BorderRadius.all(Radius.circular(10)),
+        image: DecorationImage(
+          image: AssetImage(backgroundImagePath),
+          fit: BoxFit.cover,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text(
+            levelText,
+            style: AppTextStyles.normal700P(fontSize: 20.0, color: AppColors.backgroundLight, height: 1.04),
+          ),
+          const SizedBox(height: 31), // gap between text and button
+          Container(
+            width: 130,
+            height: 24,
+            decoration: BoxDecoration(
+              border: Border.all(color: AppColors.backgroundLight, width: 1),
+              borderRadius: const BorderRadius.only(topLeft: Radius.circular(2)),
+            ),
+            child: TextButton(
+              onPressed: () {
+                // Add your onPressed code here!
+              },
+              style: TextButton.styleFrom(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                minimumSize: Size.zero,
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                
+              ),
+              child:  Text(
+                'View level performance',
+                style:  AppTextStyles.normal700P(fontSize: 10, color: AppColors.backgroundLight, height: 1.2),
+              ),
+            ),
+          ),
+        ],
+      ),
+    ),
+  );
+}
 }

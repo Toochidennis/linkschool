@@ -114,10 +114,15 @@ flutter:
     - assets/images/games_1.png
     - assets/images/games_2.png
     - assets/images/games_3.png
+    - assets/icons/grading.png
+    - assets/icons/behaviour.png
+    - assets/icons/tools.png
     - assets/icons/assessment.png
-    # - assets/icons/result/grading_icon.svg
-    # - assets/icons/result/behaviour_icon.svg
-    # - assets/icons/result/tools_icon.svg
+    - assets/images/box_bg1.png
+    - assets/images/box_bg2.png
+    - assets/images/box_bg3.png
+    - assets/images/box_bg4.png
+    - assets/images/box_bg5.png
 #     - images/a_dot_burr.jpeg
 #     - images/a_dot_ham.jpeg
 

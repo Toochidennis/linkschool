@@ -104,6 +104,16 @@ class AppTextStyles {
     );
   }
 
+  static TextStyle normal700P({required double fontSize, required Color color, required double height}) {
+    return TextStyle(
+      fontSize: fontSize,
+      color: color,
+      fontWeight: FontWeight.w700,
+      fontFamily: 'Urbanist',
+      height: height
+    );
+  }
+
   static const TextStyle italicLight = TextStyle(
     fontSize: 16,
     fontStyle: FontStyle.italic,
