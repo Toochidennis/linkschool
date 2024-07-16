@@ -64,6 +64,7 @@ class _PortalDashboardState extends State<PortalDashboard> {
             text: 'E-learning',
             width: 18.0,
             height: 18.0,
+            
           ),
           createBottomNavIcon(
             imagePath: 'assets/icons/profile.svg',

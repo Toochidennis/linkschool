@@ -99,8 +99,18 @@ class AppTextStyles {
     return TextStyle(
       fontSize: fontSize,
       color: color,
+      fontWeight: FontWeight.w400,
+      fontFamily: 'Urbanist',
+    );
+  }
+
+  static TextStyle normal700P({required double fontSize, required Color color, required double height}) {
+    return TextStyle(
+      fontSize: fontSize,
+      color: color,
       fontWeight: FontWeight.w700,
-      fontFamily: 'Inter',
+      fontFamily: 'Urbanist',
+      height: height
     );
   }
 

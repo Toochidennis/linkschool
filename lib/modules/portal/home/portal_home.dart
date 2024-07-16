@@ -123,7 +123,9 @@ class _PortalHomeState extends State<PortalHome> {
                       style: AppTextStyles.title3Light,
                     ),
                     TextButton(
-                      onPressed: () {},
+                      onPressed: () {
+                        Navigator.push(context, MaterialPageRoute(builder: (context) => const AssessmentSettingScreen()));
+                      },
                       style: TextButton.styleFrom(),
                       child: const Text(
                         'See all',
