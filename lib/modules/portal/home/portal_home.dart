@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:linkschool/modules/portal/home/portal_news_item.dart';
-import 'package:linkschool/modules/portal/home/result/grading_settings.dart';
 import 'package:linkschool/modules/portal/home/result/student_result.dart';
 // import 'package:linkschool/modules/portal/home/results/assessment_settings.dart';
+//import 'package:linkschool/modules/portal/home/result/grading_settings.dart';
 
 import '../../common/app_colors.dart';
 import '../../common/constants.dart';
@@ -106,7 +106,7 @@ class _PortalHomeState extends State<PortalHome> {
                         iconPath: 'assets/icons/payment.svg',
                         iconHeight: 40.0,
                         iconWidth: 36.0,
-                        destination: GradingSettingsScreen(),
+                        destination: null,
                       ),
                     ),
                   ],
@@ -124,7 +124,7 @@ class _PortalHomeState extends State<PortalHome> {
                     ),
                     TextButton(
                       onPressed: () {
-                        Navigator.push(context, MaterialPageRoute(builder: (context) => const AssessmentSettingScreen()));
+                        // Navigator.push(context, MaterialPageRoute(builder: (context) => const AssessmentSettingScreen()));
                       },
                       style: TextButton.styleFrom(),
                       child: const Text(

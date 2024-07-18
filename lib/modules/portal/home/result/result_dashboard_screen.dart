@@ -1,9 +1,11 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
+
+import 'package:linkschool/modules/portal/home/result/assessment_settings.dart';
+import 'package:linkschool/modules/portal/home/result/grading_settings.dart';
 
 class ResultDashboardScreen extends StatefulWidget {
   const ResultDashboardScreen({super.key});
@@ -12,165 +14,254 @@ class ResultDashboardScreen extends StatefulWidget {
   State<ResultDashboardScreen> createState() => _ResultDashboardScreenState();
 }
 
-class _ResultDashboardScreenState extends State<ResultDashboardScreen> {
+class _ResultDashboardScreenState extends State<ResultDashboardScreen>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _animation;
+  bool _isOverlayVisible = false;
+  String _selectedLevel = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      duration: const Duration(milliseconds: 300),
+      vsync: this,
+    );
+    _animation = Tween<double>(begin: 0, end: 1).animate(_controller);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _toggleOverlay(String level) {
+    setState(() {
+      _selectedLevel = level;
+      _isOverlayVisible = !_isOverlayVisible;
+      if (_isOverlayVisible) {
+        _controller.forward();
+      } else {
+        _controller.reverse();
+      }
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: Constants.customBoxDecoration(context),
-      child: CustomScrollView(
-        physics: const BouncingScrollPhysics(),
-        slivers: [
-          const SliverToBoxAdapter(
-            child: SizedBox(height: 16.0),
-          ),
-          SliverToBoxAdapter(
-            child: Constants.heading600(
-              title: 'Overall Performance',
-              titleSize: 18.0,
-              titleColor: AppColors.resultColor1,
-            ),
-          ),
-          const SliverToBoxAdapter(
-            child: SizedBox(height: 24.0),
-          ),
-          SliverToBoxAdapter(
-            child: AspectRatio(
-              aspectRatio: 2.0,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                child: BarChart(
-                  BarChartData(
-                    maxY: 100,
-                    titlesData: FlTitlesData(
-                      rightTitles: const AxisTitles(
-                        sideTitles: SideTitles(showTitles: false),
-                      ),
-                      topTitles: const AxisTitles(
-                        sideTitles: SideTitles(showTitles: false),
-                      ),
-                      bottomTitles: AxisTitles(
-                        sideTitles: SideTitles(
-                            showTitles: true,
-                            reservedSize: 42,
-                            getTitlesWidget: _bottomTitles),
-                      ),
-                      leftTitles: AxisTitles(
-                        sideTitles: SideTitles(
-                          showTitles: true,
-                          interval: 1,
-                          reservedSize: 30,
-                          getTitlesWidget: _leftTitles,
+    return Stack(
+      children: [
+        Container(
+          decoration: Constants.customBoxDecoration(context),
+          child: CustomScrollView(
+            physics: const BouncingScrollPhysics(),
+            slivers: [
+              const SliverToBoxAdapter(
+                child: SizedBox(height: 16.0),
+              ),
+              SliverToBoxAdapter(
+                child: Constants.heading600(
+                  title: 'Overall Performance',
+                  titleSize: 18.0,
+                  titleColor: AppColors.resultColor1,
+                ),
+              ),
+              const SliverToBoxAdapter(
+                child: SizedBox(height: 24.0),
+              ),
+              SliverToBoxAdapter(
+                child: AspectRatio(
+                  aspectRatio: 2.0,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                    child: BarChart(
+                      BarChartData(
+                        maxY: 100,
+                        titlesData: FlTitlesData(
+                          rightTitles: const AxisTitles(
+                            sideTitles: SideTitles(showTitles: false),
+                          ),
+                          topTitles: const AxisTitles(
+                            sideTitles: SideTitles(showTitles: false),
+                          ),
+                          bottomTitles: AxisTitles(
+                            sideTitles: SideTitles(
+                                showTitles: true,
+                                reservedSize: 42,
+                                getTitlesWidget: _bottomTitles),
+                          ),
+                          leftTitles: AxisTitles(
+                            sideTitles: SideTitles(
+                              showTitles: true,
+                              interval: 1,
+                              reservedSize: 30,
+                              getTitlesWidget: _leftTitles,
+                            ),
+                          ),
                         ),
+                        borderData: FlBorderData(show: false),
+                        gridData: FlGridData(
+                          show: true,
+                          drawVerticalLine: false,
+                          horizontalInterval: 20,
+                          getDrawingHorizontalLine: (value) {
+                            return FlLine(
+                              color: Colors.black.withOpacity(0.3),
+                              strokeWidth: 1,
+                              dashArray: [5, 5],
+                            );
+                          },
+                          checkToShowHorizontalLine: (value) => value % 20 == 0,
+                        ),
+                        barGroups: [
+                          makeGroupData(1, 70, 50, 20),
+                          makeGroupData(2, 20, 10, 20),
+                          makeGroupData(3, 20, 80, 90),
+                          makeGroupData(4, 50, 10, 20),
+                          makeGroupData(5, 20, 90, 20),
+                          makeGroupData(6, 20, 60, 20),
+                          makeGroupData(7, 20, 60, 20),
+                        ],
                       ),
+                      swapAnimationCurve: Curves.linear,
+                      swapAnimationDuration: const Duration(milliseconds: 500),
                     ),
-                    borderData: FlBorderData(show: false),
-                    gridData: FlGridData(
-                      show: true,
-                      drawVerticalLine: false,
-                      horizontalInterval: 20,
-                      getDrawingHorizontalLine: (value) {
-                        return FlLine(
-                          color: Colors.black.withOpacity(0.3),
-                          strokeWidth: 1,
-                          dashArray: [5, 5],
-                        );
-                      },
-                    ),
-                    barGroups: [
-                      makeGroupData(1, 70, 50, 20),
-                      makeGroupData(2, 20, 10, 20),
-                      makeGroupData(3, 20, 80, 90),
-                      makeGroupData(4, 50, 10, 20),
-                      makeGroupData(5, 20, 90, 20),
-                      makeGroupData(6, 20, 60, 20),
-                      makeGroupData(7, 20, 60, 20),
-                    ],
                   ),
-                  swapAnimationCurve: Curves.linear,
-                  swapAnimationDuration: const Duration(milliseconds: 500),
                 ),
               ),
-            ),
-          ),
-          // Color indicators
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 16.0),
-              child: Center(
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    _buildIndicator(AppColors.barColor1, 'attendance'),
-                    _buildIndicator(AppColors.barColor2, 'academics'),
-                    _buildIndicator(AppColors.barColor3, 'behaviour'),
-                  ],
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 24.0, vertical: 16.0),
+                  child: Center(
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        _buildIndicator(AppColors.barColor1, 'attendance'),
+                        _buildIndicator(AppColors.barColor2, 'academics'),
+                        _buildIndicator(AppColors.barColor3, 'behaviour'),
+                      ],
+                    ),
+                  ),
                 ),
               ),
-            ),
-          ),
-          // Settings section
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Constants.heading600(
-                    title: 'Settings',
-                    titleSize: 18.0,
-                    titleColor: AppColors.resultColor1,
+              const SliverToBoxAdapter(
+                child: SizedBox(
+                  height: 28.0,
+                ),
+              ),
+              SliverToBoxAdapter(
+                child: Constants.heading600(
+                  title: 'Settings',
+                  titleSize: 18.0,
+                  titleColor: AppColors.resultColor1,
+                ),
+              ),
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16.0,
                   ),
-                  const SizedBox(height: 16.0),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _buildSettingsBox('assets/icons/assessment.png', 'Assessment', AppColors.boxColor1),
-                      _buildSettingsBox('assets/icons/grading.png', 'Grading', AppColors.boxColor2),
-                      _buildSettingsBox('assets/icons/behaviour.png', 'Behaviour', AppColors.boxColor3),
-                      _buildSettingsBox('assets/icons/tools.png', 'Tools', AppColors.boxColor4),
+                      const SizedBox(height: 16.0),
+                      Row(
+                       // mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Expanded(
+                            child: _buildSettingsBox(
+                                'assets/icons/assessment.png',
+                                'Assessment',
+                                AppColors.boxColor1, () {
+                              Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                      builder: (context) =>
+                                          const AssessmentSettingScreen()));
+                            }),
+                          ),
+                          _buildSettingsBox('assets/icons/grading.png',
+                              'Grading', AppColors.boxColor2, () {
+                            Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (context) =>
+                                        const GradingSettingsScreen()));
+                          }),
+                          _buildSettingsBox('assets/icons/behaviour.png',
+                              'Behaviour', AppColors.boxColor3, () {}),
+                          _buildSettingsBox('assets/icons/tools.png', 'Tools',
+                              AppColors.boxColor4, () {}),
+                        ],
+                      ),
                     ],
                   ),
-                ],
+                ),
               ),
-            ),
-          ),
-          // Select Level section
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Constants.heading600(
-                    title: 'Select Level',
-                    titleSize: 18.0,
-                    titleColor: AppColors.resultColor1,
-                  ),
-                  const SizedBox(height: 10.0),
-                  Column(
+              const SliverToBoxAdapter(
+                child: SizedBox(
+                  height: 48.0,
+                ),
+              ),
+              SliverToBoxAdapter(
+                child: Constants.heading600(
+                  title: 'Select Level',
+                  titleSize: 18.0,
+                  titleColor: AppColors.resultColor1,
+                ),
+              ),
+              SliverPadding(
+                padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                sliver: SliverFillRemaining(
+                  hasScrollBody: false,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      _buildLevelBox('BASIC ONE', 'assets/images/box_bg1.png'),
-                      _buildLevelBox('BASIC TWO', 'assets/images/box_bg2.png'),
-                      _buildLevelBox('JSS ONE', 'assets/images/box_bg3.png'),
-                      _buildLevelBox('JSS TWO', 'assets/images/box_bg4.png'),
-                      _buildLevelBox('JSS THREE', 'assets/images/box_bg5.png'),
-                      // _buildLevelBox('SS ONE', 'assets/images/ss_one_bg.svg'),
-                      // _buildLevelBox('SS TWO', 'assets/images/ss_two_bg.svg'),
+                      Column(
+                        children: [
+                          _buildLevelBox(
+                              'BASIC ONE', 'assets/images/box_bg1.png'),
+                          _buildLevelBox(
+                              'BASIC TWO', 'assets/images/box_bg2.png'),
+                          _buildLevelBox(
+                              'JSS ONE', 'assets/images/box_bg3.png'),
+                          _buildLevelBox(
+                              'JSS TWO', 'assets/images/box_bg4.png'),
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 60.0),
+                            child: _buildLevelBox(
+                                'JSS THREE', 'assets/images/box_bg5.png'),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
                     ],
                   ),
-                ],
+                ),
               ),
+            ],
+          ),
+        ),
+        if (_isOverlayVisible) _buildOverlayCard(),
+        if (_isOverlayVisible)
+          GestureDetector(
+            onTap: () => _toggleOverlay(_selectedLevel),
+            child: Container(
+              color: Colors.black.withOpacity(0.5 * _animation.value),
             ),
           ),
-        ],
-      ),
+      ],
     );
   }
 
   Widget _bottomTitles(double value, TitleMeta meta) {
     final titles = <String>[
       'BASIC 2',
-      'BASIC 1',
+      'BASIC1',
       'JSS1',
       'JSS2',
       'JSS3',
@@ -179,11 +270,14 @@ class _ResultDashboardScreenState extends State<ResultDashboardScreen> {
       'SS3'
     ];
 
-    final Widget text = Text(titles[value.toInt()]);
+    final Widget text = Text(
+      titles[value.toInt()],
+      style: const TextStyle(color: AppColors.barTextGray),
+    );
 
     return SideTitleWidget(
       axisSide: meta.axisSide,
-      space: 16, // margin top
+      space: 16,
       child: text,
     );
   }
@@ -213,8 +307,9 @@ class _ResultDashboardScreenState extends State<ResultDashboardScreen> {
   }
 
   Widget _leftTitles(double value, TitleMeta meta) {
+    const style = TextStyle(fontSize: 10, color: AppColors.barTextGray);
     String text;
-    switch (value) {
+    switch (value.toInt()) {
       case 0:
         text = '00';
         break;
@@ -240,7 +335,12 @@ class _ResultDashboardScreenState extends State<ResultDashboardScreen> {
 
     return SideTitleWidget(
       axisSide: meta.axisSide,
-      child: Text(text),
+      space: 8,
+      child: Text(
+        text,
+        style: style,
+        textAlign: TextAlign.right,
+      ),
     );
   }
 
@@ -248,100 +348,183 @@ class _ResultDashboardScreenState extends State<ResultDashboardScreen> {
     return Row(
       children: [
         Container(
-          width: 16,
-          height: 16,
+          width: 12,
+          height: 12,
           decoration: BoxDecoration(
             color: color,
-            borderRadius: BorderRadius.circular(4.0),
+            borderRadius: BorderRadius.circular(3.0),
           ),
         ),
-        const SizedBox(width: 8.0),
-        Text(text, style: AppTextStyles.normal400(fontSize: 12, color: Colors.black)),
+        const SizedBox(width: 6.0),
+        Text(text,
+            style: AppTextStyles.normal400(fontSize: 12, color: Colors.black)),
       ],
     );
   }
 
-  Widget _buildSettingsBox(String iconPath, String text, Color color) {
-    return Container(
-      width: 80,
-      height: 90,
-      decoration: BoxDecoration(
-        color: color,
-        borderRadius: BorderRadius.circular(8.0),
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Container(
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              border: Border.all(
-                color: color,
-                width: 2.0
-              )
-            ),
-            child: CircleAvatar(
-              radius: 20,
-              backgroundColor: AppColors.avatarbgColor,
-              child: Image.asset(iconPath, width: 24, height: 24),
-            ),
+  Widget _buildSettingsBox(
+      String iconPath, String text, Color color, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 8.0),
+        child: Container(
+          margin: const EdgeInsets.symmetric(horizontal: 4.0),
+          width: 70,
+          height: 90,
+          decoration: BoxDecoration(
+            color: color,
+            borderRadius: BorderRadius.circular(8.0),
           ),
-          const SizedBox(height: 8.0),
-          Text(text, style: AppTextStyles.normal600(fontSize: 14, color: Colors.black)),
-        ],
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(color: color, width: 2.0)),
+                child: CircleAvatar(
+                  radius: 20,
+                  backgroundColor: AppColors.avatarbgColor,
+                  child: Image.asset(iconPath, width: 24, height: 24),
+                ),
+              ),
+              const SizedBox(height: 8.0),
+              Text(
+                text,
+                style:
+                    AppTextStyles.normal600(fontSize: 12, color: Colors.black),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
 
-Widget _buildLevelBox(String levelText, String backgroundImagePath) {
-  return Padding(
-    padding: const EdgeInsets.symmetric(vertical: 8.0),
-    child: Container(
-      width: 430,
-      height: 108,
-      padding: const EdgeInsets.symmetric(horizontal: 12),
-      decoration: BoxDecoration(
-        borderRadius: const BorderRadius.all(Radius.circular(10)),
-        image: DecorationImage(
-          image: AssetImage(backgroundImagePath),
-          fit: BoxFit.cover,
+  Widget _buildLevelBox(String levelText, String backgroundImagePath) {
+    return GestureDetector(
+      onTap: () => _toggleOverlay(levelText),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8.0),
+        child: Container(
+          width: 430,
+          height: 140,
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          decoration: BoxDecoration(
+            borderRadius: const BorderRadius.all(Radius.circular(10)),
+            image: DecorationImage(
+              image: AssetImage(backgroundImagePath),
+              fit: BoxFit.cover,
+            ),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                levelText,
+                style: AppTextStyles.normal700P(
+                    fontSize: 20.0,
+                    color: AppColors.backgroundLight,
+                    height: 1.04),
+              ),
+              const SizedBox(height: 40),
+              Container(
+                width: 148,
+                height: 32,
+                decoration: BoxDecoration(
+                  border:
+                      Border.all(color: AppColors.backgroundLight, width: 1),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: TextButton(
+                  onPressed: () => _toggleOverlay(levelText),
+                  style: TextButton.styleFrom(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                    minimumSize: Size.zero,
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  ),
+                  child: Text(
+                    'View level performance',
+                    style: AppTextStyles.normal700P(
+                        fontSize: 12,
+                        color: AppColors.backgroundLight,
+                        height: 1.2),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Text(
-            levelText,
-            style: AppTextStyles.normal700P(fontSize: 20.0, color: AppColors.backgroundLight, height: 1.04),
-          ),
-          const SizedBox(height: 31), // gap between text and button
-          Container(
-            width: 130,
-            height: 24,
-            decoration: BoxDecoration(
-              border: Border.all(color: AppColors.backgroundLight, width: 1),
-              borderRadius: const BorderRadius.only(topLeft: Radius.circular(2)),
-            ),
-            child: TextButton(
-              onPressed: () {
-                // Add your onPressed code here!
-              },
-              style: TextButton.styleFrom(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                minimumSize: Size.zero,
-                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                
+    );
+  }
+
+  Widget _buildOverlayCard() {
+    final classes = ['A', 'B', 'C'];
+    final levelPrefix = _selectedLevel.split(' ')[0];
+
+    return AnimatedBuilder(
+      animation: _animation,
+      builder: (context, child) {
+        return Positioned(
+          bottom: 0,
+          left: 0,
+          right: 0,
+          height: MediaQuery.of(context).size.height * 0.5 * _animation.value,
+          child: GestureDetector(
+            onTap: () {}, // Prevent taps from passing through
+            child: Card(
+              margin: EdgeInsets.zero,
+              shape: const RoundedRectangleBorder(
+                borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
               ),
-              child:  Text(
-                'View level performance',
-                style:  AppTextStyles.normal700P(fontSize: 10, color: AppColors.backgroundLight, height: 1.2),
+              child: Column(
+                children: [
+                  const SizedBox(height: 16),
+                  Text(
+                    'Select Class',
+                    style: AppTextStyles.normal600(
+                        fontSize: 18, color: Colors.black),
+                  ),
+                  const SizedBox(height: 16),
+                  Expanded(
+                    child: GridView.count(
+                      crossAxisCount: 3,
+                      childAspectRatio: 2.5,
+                      mainAxisSpacing: 8,
+                      crossAxisSpacing: 8,
+                      padding: const EdgeInsets.all(16),
+                      children: [
+                        for (var cls in classes)
+                          OutlinedButton(
+                            onPressed: () {
+                              // Handle class selection
+                              _toggleOverlay(_selectedLevel);
+                            },
+                            style: OutlinedButton.styleFrom(
+                              side: const BorderSide(
+                                  color: AppColors.resultColor1),
+                            ),
+                            child: Text(
+                              '$levelPrefix $cls',
+                              style: AppTextStyles.normal400(
+                                  fontSize: 14, color: AppColors.resultColor1),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
-        ],
-      ),
-    ),
-  );
-}
+        );
+      },
+    );
+  }
 }

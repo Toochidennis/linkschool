@@ -29,8 +29,15 @@ class _GradingSettingsScreenState extends State<GradingSettingsScreen> {
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.pop(context),
+          onPressed: () {
+            Navigator.of(context).pop();
+          },
+          icon: Image.asset(
+            'assets/icons/arrow_back.png',
+            color: AppColors.primaryLight,
+            width: 34.0,
+            height: 34.0,
+          ),
         ),
         title: Text(
           'Grade Settings',
