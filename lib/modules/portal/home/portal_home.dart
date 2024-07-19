@@ -94,7 +94,7 @@ class _PortalHomeState extends State<PortalHome> {
                         iconPath: 'assets/icons/result.svg',
                         iconHeight: 40.0,
                         iconWidth: 36.0,
-                        destination: StudentResultScreen(),
+                        destination: StudentResultScreen(studentName: '', className: '',),
                       ),
                     ),
                     SizedBox(width: 14.0),

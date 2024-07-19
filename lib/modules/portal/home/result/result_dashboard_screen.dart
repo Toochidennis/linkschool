@@ -6,6 +6,7 @@ import 'package:linkschool/modules/common/text_styles.dart';
 
 import 'package:linkschool/modules/portal/home/result/assessment_settings.dart';
 import 'package:linkschool/modules/portal/home/result/grading_settings.dart';
+import 'package:linkschool/modules/portal/home/result/class_detail_screen.dart';
 
 class ResultDashboardScreen extends StatefulWidget {
   const ResultDashboardScreen({super.key});
@@ -43,6 +44,7 @@ class _ResultDashboardScreenState extends State<ResultDashboardScreen>
       _isOverlayVisible = !_isOverlayVisible;
       if (_isOverlayVisible) {
         _controller.forward();
+        _showClassSelectionDialog();
       } else {
         _controller.reverse();
       }
@@ -169,7 +171,7 @@ class _ResultDashboardScreenState extends State<ResultDashboardScreen>
                     children: [
                       const SizedBox(height: 16.0),
                       Row(
-                       // mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        // mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Expanded(
                             child: _buildSettingsBox(
@@ -246,7 +248,6 @@ class _ResultDashboardScreenState extends State<ResultDashboardScreen>
             ],
           ),
         ),
-        if (_isOverlayVisible) _buildOverlayCard(),
         if (_isOverlayVisible)
           GestureDetector(
             onTap: () => _toggleOverlay(_selectedLevel),
@@ -464,67 +465,94 @@ class _ResultDashboardScreenState extends State<ResultDashboardScreen>
     );
   }
 
-  Widget _buildOverlayCard() {
-    final classes = ['A', 'B', 'C'];
+  void _showClassSelectionDialog() {
+    final classes = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I'];
     final levelPrefix = _selectedLevel.split(' ')[0];
 
-    return AnimatedBuilder(
-      animation: _animation,
-      builder: (context, child) {
-        return Positioned(
-          bottom: 0,
-          left: 0,
-          right: 0,
-          height: MediaQuery.of(context).size.height * 0.5 * _animation.value,
-          child: GestureDetector(
-            onTap: () {}, // Prevent taps from passing through
-            child: Card(
-              margin: EdgeInsets.zero,
-              shape: const RoundedRectangleBorder(
-                borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-              ),
-              child: Column(
-                children: [
-                  const SizedBox(height: 16),
-                  Text(
-                    'Select Class',
-                    style: AppTextStyles.normal600(
-                        fontSize: 18, color: Colors.black),
-                  ),
-                  const SizedBox(height: 16),
-                  Expanded(
-                    child: GridView.count(
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      showModalBottomSheet(
+        context: context,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(
+            top: Radius.circular(16),
+          ),
+        ),
+        builder: (BuildContext context) {
+          return Container(
+            constraints: BoxConstraints(
+              maxHeight: MediaQuery.of(context).size.height * 0.5,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const SizedBox(height: 16),
+                Text(
+                  'Select Class',
+                  style: AppTextStyles.normal600(
+                      fontSize: 18, color: Colors.black),
+                ),
+                const SizedBox(height: 16),
+                Flexible(
+                  child: GridView.builder(
+                    gridDelegate:
+                        const SliverGridDelegateWithFixedCrossAxisCount(
                       crossAxisCount: 3,
                       childAspectRatio: 2.5,
                       mainAxisSpacing: 8,
                       crossAxisSpacing: 8,
-                      padding: const EdgeInsets.all(16),
-                      children: [
-                        for (var cls in classes)
-                          OutlinedButton(
-                            onPressed: () {
-                              // Handle class selection
-                              _toggleOverlay(_selectedLevel);
-                            },
-                            style: OutlinedButton.styleFrom(
-                              side: const BorderSide(
-                                  color: AppColors.resultColor1),
-                            ),
-                            child: Text(
-                              '$levelPrefix $cls',
-                              style: AppTextStyles.normal400(
-                                  fontSize: 14, color: AppColors.resultColor1),
-                            ),
-                          ),
-                      ],
                     ),
+                    padding: const EdgeInsets.all(16),
+                    itemCount: classes.length,
+                    itemBuilder: (context, index) {
+                      return InkWell(
+                        onTap: () {
+                          // print(
+                          //     "Button tapped: $levelPrefix ${classes[index]}");
+                          Navigator.of(context).pop(); // Close the dialog
+                          _navigateToClassDetail(
+                              '$levelPrefix ${classes[index]}');
+                        },
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            border: Border.all(color: Colors.blue),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          alignment: Alignment.center,
+                          child: Text(
+                            '$levelPrefix ${classes[index]}',
+                            style: AppTextStyles.normal400(
+                                fontSize: 14, color: AppColors.resultColor1),
+                          ),
+                        ),
+                      );
+                    },
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
-          ),
-        );
-      },
-    );
+          );
+        },
+      );
+    });
+  }
+
+  void _navigateToClassDetail(String className) {
+    // print(
+    //     "Attempting to navigate to ClassDetailScreen with className: $className");
+
+    // Attempt to navigate immediately
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      // print("Navigating to ClassDetailScreen");
+      Navigator.of(context)
+          .push(
+        MaterialPageRoute(
+          builder: (context) => ClassDetailScreen(className: className),
+        ),
+      )
+          .then((_) {
+        // print("Returned from ClassDetailScreen");
+      });
+    });
   }
 }

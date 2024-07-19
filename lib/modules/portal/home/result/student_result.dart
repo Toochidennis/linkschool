@@ -6,39 +6,83 @@ import '../../../common/text_styles.dart';
 import '../../../common/app_colors.dart';
 
 class StudentResultScreen extends StatelessWidget {
-  const StudentResultScreen({super.key});
+  final String studentName;
+  final String className; 
+  const StudentResultScreen({Key? key, required this.studentName, required this.className}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      // appBar: AppBar(
+      //   title: Text(
+      //     'Student result',
+      //     style: AppTextStyles.normal600(fontSize: 18.0, color: Colors.black),
+      //   ),
+      //   leading: IconButton(
+      //     icon: const Icon(Icons.arrow_back, color: Colors.black),
+      //     onPressed: () => Navigator.of(context).pop(),
+      //   ),
+      //   actions: [
+      //     Padding(
+      //       padding: const EdgeInsets.symmetric(horizontal: 13.0),
+      //       child: ElevatedButton(
+              
+      //         onPressed: () {
+      //           // Add your onPressed code here!
+      //         },
+      //         style: ElevatedButton.styleFrom(
+      //           backgroundColor: AppColors.secondaryLight,
+      //           shape: RoundedRectangleBorder(
+      //             borderRadius: BorderRadius.circular(4.0),
+      //           ),
+      //           padding: const EdgeInsets.symmetric(horizontal: 8.0)
+      //         ),
+      //         child: Text(
+      //           'See student list',
+      //           style: AppTextStyles.normal700(
+      //             fontSize: 14.0,
+      //             color: AppColors.backgroundLight,
+      //           ),
+      //         ),
+      //       ),
+      //     ),
+      //   ],
+      //   backgroundColor: AppColors.backgroundLight,
+      //   elevation: 0.0,
+      // ),
+
       appBar: AppBar(
         title: Text(
-          'Student result',
+          className,
           style: AppTextStyles.normal600(fontSize: 18.0, color: Colors.black),
         ),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
-          onPressed: () => Navigator.of(context).pop(),
+          onPressed: () {
+            Navigator.of(context).pop();
+          },
+          icon: Image.asset(
+            'assets/icons/arrow_back.png',
+            color: AppColors.primaryLight,
+            width: 34.0,
+            height: 34.0,
+          ),
         ),
         actions: [
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 13.0),
             child: ElevatedButton(
-              
-              onPressed: () {
-                // Add your onPressed code here!
-              },
+              onPressed: () {},
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.secondaryLight,
+                backgroundColor: AppColors.primaryLight,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(4.0),
                 ),
-                padding: const EdgeInsets.symmetric(horizontal: 8.0)
+                padding: const EdgeInsets.symmetric(horizontal: 8.0),
               ),
               child: Text(
                 'See student list',
                 style: AppTextStyles.normal700(
-                  fontSize: 14.0,
+                  fontSize: 14,
                   color: AppColors.backgroundLight,
                 ),
               ),
@@ -81,7 +125,7 @@ class StudentResultScreen extends StatelessWidget {
                         ),
                         const SizedBox(height: 10),
                         Text(
-                          'Tochukwu Dennis',
+                          studentName,
                           style: AppTextStyles.normal700(
                             fontSize: 20,
                             color: AppColors.primaryLight,
