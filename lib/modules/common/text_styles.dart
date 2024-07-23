@@ -8,13 +8,6 @@ class AppTextStyles {
     color: AppColors.textLight,
   );
 
-  static const TextStyle title2Light = TextStyle(
-    fontSize: 20,
-    fontWeight: FontWeight.bold,
-    fontStyle: FontStyle.italic,
-    color: AppColors.textLight,
-  );
-
   static const TextStyle title3Light = TextStyle(
       fontSize: 20,
       fontWeight: FontWeight.bold,

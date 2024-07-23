@@ -12,11 +12,11 @@ class AppThemes {
       titleMedium: AppTextStyles.normalLight,
       titleSmall: AppTextStyles.italicLight,
     ),
-    appBarTheme: const AppBarTheme(
+    appBarTheme: AppBarTheme(
       backgroundColor: AppColors.primaryLight,
-      titleTextStyle: AppTextStyles.title2Light,
+      titleTextStyle: AppTextStyles.normal600(
+          fontSize: 18.0, color: AppColors.primaryLight),
     ),
-
     useMaterial3: true,
   );
 
@@ -29,11 +29,13 @@ class AppThemes {
       bodyMedium: AppTextStyles.normalDark,
       bodySmall: AppTextStyles.italicDark,
     ),
-    appBarTheme: const AppBarTheme(
+    appBarTheme: AppBarTheme(
       backgroundColor: AppColors.primaryDark,
-      titleTextStyle: AppTextStyles.title2Light,
+      titleTextStyle: AppTextStyles.normal600(
+        fontSize: 18.0,
+        color: AppColors.secondaryLight,
+      ),
     ),
-
     useMaterial3: true,
   );
 }

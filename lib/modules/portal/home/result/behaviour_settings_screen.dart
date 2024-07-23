@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
-import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/common/constants.dart'; // Import the constants file
 
 class BehaviourSettingScreen extends StatefulWidget {
   const BehaviourSettingScreen({super.key});
+
   @override
   State<BehaviourSettingScreen> createState() => _BehaviourSettingScreenState();
 }
@@ -16,26 +16,7 @@ class _BehaviourSettingScreenState extends State<BehaviourSettingScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: Constants.customAppBar(context: context, title: 'Skills and Behaviour', centerTitle: false),
-      // appBar: AppBar(
-      //   leading: IconButton(
-      //     onPressed: () {
-      //       Navigator.of(context).pop();
-      //     },
-      //     icon: Image.asset(
-      //       'assets/icons/arrow_back.png',
-      //       color: AppColors.primaryLight,
-      //       width: 34.0,
-      //       height: 34.0,
-      //     ),
-      //   ),
-      //   title: Text(
-      //     'Skills and Behaviour',
-      //     style: AppTextStyles.normal600(
-      //         fontSize: 18.0, color: AppColors.primaryLight),
-      //   ),
-      //   backgroundColor: AppColors.backgroundLight,
-      // ), // Use the background color from constants
+      appBar: Constants.customAppBar(context: context, title: 'Skills and Behaviour',),
       body: Container(
         decoration: Constants.customBoxDecoration(context),
         child: Padding(

@@ -36,6 +36,13 @@ class Constants {
     return AppBar(
       backgroundColor: Colors.white,
       elevation: 0.0,
+      title: Text(
+        title ?? "",
+        style: AppTextStyles.normal600(
+          fontSize: 18.0,
+          color: AppColors.primaryLight,
+        ),
+      ),
       centerTitle: centerTitle,
       flexibleSpace: FlexibleSpaceBar(
         background: Stack(
@@ -73,13 +80,6 @@ class Constants {
               height: 24.0,
             ),
           ),
-        Text(
-          '$title',
-          style: AppTextStyles.normal600(
-            fontSize: 18.0,
-            color: AppColors.primaryLight,
-          ),
-        ),
       ],
     );
   }
