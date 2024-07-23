@@ -3,7 +3,6 @@ import 'package:linkschool/modules/common/text_styles.dart';
 import 'app_colors.dart';
 
 class Constants {
-  
   static const double padding = 16.0;
   static const double gap = 10.0;
   static const double borderRadius = 8.0;
@@ -29,6 +28,7 @@ class Constants {
     required BuildContext context,
     String? iconPath,
     bool? centerTitle,
+    String? title,
   }) {
     final Brightness brightness = Theme.of(context).brightness;
     var opacity = brightness == Brightness.light ? 0.1 : 0.15;
@@ -73,6 +73,13 @@ class Constants {
               height: 24.0,
             ),
           ),
+        Text(
+          '$title',
+          style: AppTextStyles.normal600(
+            fontSize: 18.0,
+            color: AppColors.primaryLight,
+          ),
+        ),
       ],
     );
   }

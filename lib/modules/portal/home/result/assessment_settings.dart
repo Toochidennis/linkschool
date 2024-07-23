@@ -40,8 +40,15 @@ class _AssessmentSettingScreenState extends State<AssessmentSettingScreen> {
         ),
         centerTitle: true,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
-          onPressed: () => Navigator.of(context).pop(),
+          onPressed: () {
+            Navigator.of(context).pop();
+          },
+          icon: Image.asset(
+            'assets/icons/arrow_back.png',
+            color: AppColors.primaryLight,
+            width: 34.0,
+            height: 34.0,
+          ),
         ),
         backgroundColor: AppColors.backgroundLight,
         elevation: 0.0,
