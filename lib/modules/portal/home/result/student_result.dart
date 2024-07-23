@@ -13,44 +13,6 @@ class StudentResultScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // appBar: AppBar(
-      //   title: Text(
-      //     'Student result',
-      //     style: AppTextStyles.normal600(fontSize: 18.0, color: Colors.black),
-      //   ),
-      //   leading: IconButton(
-      //     icon: const Icon(Icons.arrow_back, color: Colors.black),
-      //     onPressed: () => Navigator.of(context).pop(),
-      //   ),
-      //   actions: [
-      //     Padding(
-      //       padding: const EdgeInsets.symmetric(horizontal: 13.0),
-      //       child: ElevatedButton(
-              
-      //         onPressed: () {
-      //           // Add your onPressed code here!
-      //         },
-      //         style: ElevatedButton.styleFrom(
-      //           backgroundColor: AppColors.secondaryLight,
-      //           shape: RoundedRectangleBorder(
-      //             borderRadius: BorderRadius.circular(4.0),
-      //           ),
-      //           padding: const EdgeInsets.symmetric(horizontal: 8.0)
-      //         ),
-      //         child: Text(
-      //           'See student list',
-      //           style: AppTextStyles.normal700(
-      //             fontSize: 14.0,
-      //             color: AppColors.backgroundLight,
-      //           ),
-      //         ),
-      //       ),
-      //     ),
-      //   ],
-      //   backgroundColor: AppColors.backgroundLight,
-      //   elevation: 0.0,
-      // ),
-
       appBar: AppBar(
         title: Text(
           className,
@@ -68,22 +30,25 @@ class StudentResultScreen extends StatelessWidget {
           ),
         ),
         actions: [
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 13.0),
-            child: ElevatedButton(
-              onPressed: () {},
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primaryLight,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(4.0),
+          SizedBox(
+            height: 32,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 13.0),
+              child: ElevatedButton(
+                onPressed: () {},
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primaryLight,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(4.0),
+                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 8.0),
                 ),
-                padding: const EdgeInsets.symmetric(horizontal: 8.0),
-              ),
-              child: Text(
-                'See student list',
-                style: AppTextStyles.normal700(
-                  fontSize: 14,
-                  color: AppColors.backgroundLight,
+                child: Text(
+                  'See student list',
+                  style: AppTextStyles.normal700(
+                    fontSize: 14,
+                    color: AppColors.backgroundLight,
+                  ),
                 ),
               ),
             ),

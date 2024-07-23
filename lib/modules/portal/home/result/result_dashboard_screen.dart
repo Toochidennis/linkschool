@@ -5,6 +5,7 @@ import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 
 import 'package:linkschool/modules/portal/home/result/assessment_settings.dart';
+import 'package:linkschool/modules/portal/home/result/behaviour_settings_screen.dart';
 import 'package:linkschool/modules/portal/home/result/grading_settings.dart';
 import 'package:linkschool/modules/portal/home/result/class_detail_screen.dart';
 
@@ -163,40 +164,66 @@ class _ResultDashboardScreenState extends State<ResultDashboardScreen>
               ),
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16.0,
-                  ),
+                  padding: const EdgeInsets.all(8.0),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const SizedBox(height: 16.0),
                       Row(
-                        // mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Expanded(
                             child: _buildSettingsBox(
-                                'assets/icons/assessment.png',
-                                'Assessment',
-                                AppColors.boxColor1, () {
-                              Navigator.push(
+                              'assets/icons/assessment.png',
+                              'Assessment',
+                              AppColors.boxColor1,
+                              () {
+                                Navigator.push(
                                   context,
                                   MaterialPageRoute(
                                       builder: (context) =>
-                                          const AssessmentSettingScreen()));
-                            }),
+                                          const AssessmentSettingScreen()),
+                                );
+                              },
+                            ),
                           ),
-                          _buildSettingsBox('assets/icons/grading.png',
-                              'Grading', AppColors.boxColor2, () {
-                            Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                    builder: (context) =>
-                                        const GradingSettingsScreen()));
-                          }),
-                          _buildSettingsBox('assets/icons/behaviour.png',
-                              'Behaviour', AppColors.boxColor3, () {}),
-                          _buildSettingsBox('assets/icons/tools.png', 'Tools',
-                              AppColors.boxColor4, () {}),
+                          Expanded(
+                            child: _buildSettingsBox(
+                              'assets/icons/grading.png',
+                              'Grading',
+                              AppColors.boxColor2,
+                              () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                      builder: (context) =>
+                                          const GradingSettingsScreen()),
+                                );
+                              },
+                            ),
+                          ),
+                          Expanded(
+                            child: _buildSettingsBox(
+                              'assets/icons/behaviour.png',
+                              'Behaviour',
+                              AppColors.boxColor3,
+                              () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                      builder: (context) =>
+                                          const BehaviourSettingScreen()),
+                                );
+                              },
+                            ),
+                          ),
+                          Expanded(
+                            child: _buildSettingsBox(
+                              'assets/icons/tools.png',
+                              'Tools',
+                              AppColors.boxColor4,
+                              () {},
+                            ),
+                          ),
                         ],
                       ),
                     ],
@@ -367,38 +394,33 @@ class _ResultDashboardScreenState extends State<ResultDashboardScreen>
       String iconPath, String text, Color color, VoidCallback onTap) {
     return GestureDetector(
       onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 8.0),
-        child: Container(
-          margin: const EdgeInsets.symmetric(horizontal: 4.0),
-          width: 70,
-          height: 90,
-          decoration: BoxDecoration(
-            color: color,
-            borderRadius: BorderRadius.circular(8.0),
-          ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    border: Border.all(color: color, width: 2.0)),
-                child: CircleAvatar(
-                  radius: 20,
-                  backgroundColor: AppColors.avatarbgColor,
-                  child: Image.asset(iconPath, width: 24, height: 24),
-                ),
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 5.0),
+        height: 90,
+        decoration: BoxDecoration(
+          color: color,
+          borderRadius: BorderRadius.circular(8.0),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(color: color, width: 2.0)),
+              child: CircleAvatar(
+                radius: 20,
+                backgroundColor: AppColors.avatarbgColor,
+                child: Image.asset(iconPath, width: 24, height: 24),
               ),
-              const SizedBox(height: 8.0),
-              Text(
-                text,
-                style:
-                    AppTextStyles.normal600(fontSize: 12, color: Colors.black),
-                textAlign: TextAlign.center,
-              ),
-            ],
-          ),
+            ),
+            const SizedBox(height: 8.0),
+            Text(
+              text,
+              style: AppTextStyles.normal600(fontSize: 12, color: Colors.black),
+              textAlign: TextAlign.center,
+            ),
+          ],
         ),
       ),
     );
@@ -472,64 +494,97 @@ class _ResultDashboardScreenState extends State<ResultDashboardScreen>
     WidgetsBinding.instance.addPostFrameCallback((_) {
       showModalBottomSheet(
         context: context,
+        isScrollControlled:
+            true, // Allow the sheet to be smaller than half the screen
         shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(
             top: Radius.circular(16),
           ),
         ),
         builder: (BuildContext context) {
-          return Container(
-            constraints: BoxConstraints(
-              maxHeight: MediaQuery.of(context).size.height * 0.5,
+          return Padding(
+            padding: EdgeInsets.only(
+              bottom: MediaQuery.of(context).viewInsets.bottom,
             ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const SizedBox(height: 16),
-                Text(
-                  'Select Class',
-                  style: AppTextStyles.normal600(
-                      fontSize: 18, color: Colors.black),
-                ),
-                const SizedBox(height: 16),
-                Flexible(
-                  child: GridView.builder(
-                    gridDelegate:
-                        const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 3,
-                      childAspectRatio: 2.5,
-                      mainAxisSpacing: 8,
-                      crossAxisSpacing: 8,
-                    ),
-                    padding: const EdgeInsets.all(16),
-                    itemCount: classes.length,
-                    itemBuilder: (context, index) {
-                      return InkWell(
-                        onTap: () {
-                          // print(
-                          //     "Button tapped: $levelPrefix ${classes[index]}");
-                          Navigator.of(context).pop(); // Close the dialog
-                          _navigateToClassDetail(
-                              '$levelPrefix ${classes[index]}');
-                        },
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            border: Border.all(color: Colors.blue),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          alignment: Alignment.center,
-                          child: Text(
-                            '$levelPrefix ${classes[index]}',
-                            style: AppTextStyles.normal400(
-                                fontSize: 14, color: AppColors.resultColor1),
-                          ),
-                        ),
-                      );
-                    },
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                maxHeight: MediaQuery.of(context).size.height *
+                    0.8, // Set a maximum height
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min, // Use minimum space needed
+                children: [
+                  const SizedBox(height: 16),
+                  Text(
+                    'Select Class',
+                    style: AppTextStyles.normal600(
+                        fontSize: 18, color: Colors.black),
                   ),
-                ),
-              ],
+                  const SizedBox(height: 16),
+                  Flexible(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 24),
+                      child: LayoutBuilder(
+                        builder: (context, constraints) {
+                          double itemWidth = (constraints.maxWidth - 32) / 3;
+                          double itemHeight = itemWidth * 36 / 85;
+                          int rowCount = (classes.length / 3).ceil();
+
+                          return Container(
+                            height: (itemHeight * rowCount) +
+                                ((rowCount - 1) * 16), // Calculate total height
+                            child: GridView.builder(
+                              gridDelegate:
+                                  SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount: 3,
+                                childAspectRatio: itemWidth / itemHeight,
+                                mainAxisSpacing: 16,
+                                crossAxisSpacing: 16,
+                              ),
+                              physics:
+                                  NeverScrollableScrollPhysics(), // Disable scrolling
+                              itemCount: classes.length,
+                              itemBuilder: (context, index) {
+                                return InkWell(
+                                  onTap: () {
+                                    Navigator.of(context).pop();
+                                    _navigateToClassDetail(
+                                        '$levelPrefix ${classes[index]}');
+                                  },
+                                  child: Container(
+                                    decoration: BoxDecoration(
+                                      color: AppColors.backgroundLight,
+                                      border: Border.all(
+                                          color: AppColors.dialogBtnColor),
+                                      borderRadius: BorderRadius.circular(8),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.black.withOpacity(0.25),
+                                          offset: const Offset(1, 1),
+                                          blurRadius: 1,
+                                        ),
+                                      ],
+                                    ),
+                                    alignment: Alignment.center,
+                                    child: Text(
+                                      '$levelPrefix ${classes[index]}',
+                                      style: AppTextStyles.normal600(
+                                        fontSize: 14,
+                                        color: AppColors.dialogBtnColor,
+                                      ),
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                ],
+              ),
             ),
           );
         },

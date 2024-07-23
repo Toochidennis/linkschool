@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 
 class AppColors {
   // Light Theme
-  static const Color primaryLight = Color(0xFF12077B); //primary
-  static const Color secondaryLight = Color(0xFFFC9338); //buttonOrange
-  static const Color textLight = Color(0xFF1A1A1A);
+  static const Color primaryLight = Color.fromRGBO(18, 7, 123, 1); //primary
+  static const Color secondaryLight = Color.fromRGBO(252, 147, 56, 1); //buttonOrange
+  static const Color textLight = Color.fromRGBO(26, 26, 26, 1);
   static const Color text2Light = Color.fromRGBO(18, 7, 123, 1);
   static const Color text3Light = Color.fromRGBO(0, 0, 0, 1);
   static const Color text4Light = Color.fromRGBO(26, 26, 26, 1);
@@ -14,15 +14,15 @@ class AppColors {
   static const Color text8Light = Color.fromRGBO(202, 202, 202, 1);
   static const Color text9Light = Color.fromRGBO(127, 127, 127, 1);
   static const Color text10Light = Color.fromRGBO(139, 139, 139, 1);
-  static const Color backgroundLight = Color(0xFFFFFFFF); // white
+  static const Color backgroundLight = Color.fromRGBO(255, 255, 255, 1); // white
   static const Color textFieldBorderLight = Color.fromRGBO(208, 208, 208, 1);
   static const Color textFieldLight = Color.fromRGBO(255, 255, 255, 1);
 
   // Dark Theme
-  static const Color primaryDark = Color(0xFF040D15);
-  static const Color secondaryDark = Color(0xFF03DAC6);
-  static const Color textDark = Color(0xFFFC9338);
-  static const Color backgroundDark = Color(0xFF040D15);
+  static const Color primaryDark = Color.fromRGBO(4, 13, 21, 1);
+  static const Color secondaryDark = Color.fromRGBO(3, 218, 198, 1);
+  static const Color textDark = Color.fromARGB(255, 252, 147, 56);
+  static const Color backgroundDark = Color.fromRGBO(4, 13, 21, 1);
 
   // Button Colors
   static const Color exploreButton1Light = Color.fromRGBO(30, 136, 229, 1);
@@ -53,8 +53,8 @@ class AppColors {
   static const Color newsBorderColor = Color.fromRGBO(211, 211, 211, 1);
   static const Color newsProfilePic = Color.fromRGBO(217, 217, 217, 1);
 
-  static const Color gamesColor1 = Color(0xFF6F5EE2);
-  static const Color gamesColor2 = Color(0xFF6D5ED2);
+  static const Color gamesColor1 = Color.fromRGBO(111, 94, 226, 1);
+  static const Color gamesColor2 = Color.fromRGBO(109, 94, 210, 1);
   static const Color gamesColor3 = Color.fromRGBO(119, 193, 100, 1);
   static const Color gamesColor4 = Color.fromRGBO(124, 206, 103, 1);
   static const Color gamesColor5 = Color.fromRGBO(81, 140, 254, 1);
@@ -123,4 +123,16 @@ class AppColors {
   static const Color avatarbgColor = Color.fromRGBO(187, 222, 251, 1);
   static const Color bgWhite = Color.fromRGBO(255, 255, 255, 1);
   static const Color grayColor = Color.fromRGBO(238, 238, 238, 1);
+  static const Color dialogBtnColor = Color.fromRGBO(58, 49, 145, 1);
+
+  //class detail screen
+  static const Color bgColor1 = Color.fromRGBO(247, 247, 247, 1);
+  static const Color bgColor2 = Color.fromRGBO(241, 200, 240, 1);
+  static const Color bgColor3 = Color.fromRGBO(200, 198, 230, 1);
+  static const Color bgColor4 = Color.fromRGBO(247, 220, 222, 1);
+  static const Color bgColor5 = Color.fromRGBO(255, 228, 179, 1); 
+
+  //behaviour screen
+  static const Color bgGray = Color.fromRGBO(162, 162, 162, 1);
+  static const Color bgGrayLight = Color.fromRGBO(158, 158, 158, 1);
 }
