@@ -1,5 +1,6 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
@@ -173,7 +174,7 @@ class _ResultDashboardScreenState extends State<ResultDashboardScreen>
                         children: [
                           Expanded(
                             child: _buildSettingsBox(
-                              'assets/icons/assessment.png',
+                              'assets/icons/result/assessment.svg',
                               'Assessment',
                               AppColors.boxColor1,
                               () {
@@ -188,7 +189,7 @@ class _ResultDashboardScreenState extends State<ResultDashboardScreen>
                           ),
                           Expanded(
                             child: _buildSettingsBox(
-                              'assets/icons/grading.png',
+                              'assets/icons/result/grading.svg',
                               'Grading',
                               AppColors.boxColor2,
                               () {
@@ -203,7 +204,7 @@ class _ResultDashboardScreenState extends State<ResultDashboardScreen>
                           ),
                           Expanded(
                             child: _buildSettingsBox(
-                              'assets/icons/behaviour.png',
+                              'assets/icons/result/behaviour.svg',
                               'Behaviour',
                               AppColors.boxColor3,
                               () {
@@ -218,7 +219,7 @@ class _ResultDashboardScreenState extends State<ResultDashboardScreen>
                           ),
                           Expanded(
                             child: _buildSettingsBox(
-                              'assets/icons/tools.png',
+                              'assets/icons/result/tool.svg',
                               'Tools',
                               AppColors.boxColor4,
                               () {},
@@ -253,17 +254,17 @@ class _ResultDashboardScreenState extends State<ResultDashboardScreen>
                       Column(
                         children: [
                           _buildLevelBox(
-                              'BASIC ONE', 'assets/images/box_bg1.png'),
+                              'BASIC ONE', 'assets/images/result/box_bg1.svg'),
                           _buildLevelBox(
-                              'BASIC TWO', 'assets/images/box_bg2.png'),
+                              'BASIC TWO', 'assets/images/result/box_bg2.svg'),
                           _buildLevelBox(
-                              'JSS ONE', 'assets/images/box_bg3.png'),
+                              'JSS ONE', 'assets/images/result/box_bg3.svg'),
                           _buildLevelBox(
-                              'JSS TWO', 'assets/images/box_bg4.png'),
+                              'JSS TWO', 'assets/images/result/box_bg4.svg'),
                           Padding(
-                            padding: const EdgeInsets.only(bottom: 60.0),
+                            padding: const EdgeInsets.only(bottom: 20.0),
                             child: _buildLevelBox(
-                                'JSS THREE', 'assets/images/box_bg5.png'),
+                                'JSS THREE', 'assets/images/result/box_bg5.svg'),
                           ),
                         ],
                       ),
@@ -411,7 +412,7 @@ class _ResultDashboardScreenState extends State<ResultDashboardScreen>
               child: CircleAvatar(
                 radius: 20,
                 backgroundColor: AppColors.avatarbgColor,
-                child: Image.asset(iconPath, width: 24, height: 24),
+                child: SvgPicture.asset(iconPath, width: 24, height: 24),
               ),
             ),
             const SizedBox(height: 8.0),
@@ -426,171 +427,130 @@ class _ResultDashboardScreenState extends State<ResultDashboardScreen>
     );
   }
 
-  Widget _buildLevelBox(String levelText, String backgroundImagePath) {
-    return GestureDetector(
-      onTap: () => _toggleOverlay(levelText),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 8.0),
-        child: Container(
-          width: 430,
-          height: 140,
-          padding: const EdgeInsets.symmetric(horizontal: 12),
-          decoration: BoxDecoration(
-            borderRadius: const BorderRadius.all(Radius.circular(10)),
-            image: DecorationImage(
-              image: AssetImage(backgroundImagePath),
+Widget _buildLevelBox(String levelText, String backgroundImagePath) {
+  return GestureDetector(
+    onTap: () => _toggleOverlay(levelText),
+    child: Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 5.0),
+      child: Container(
+        height: 140,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(10),
+          color: Colors.transparent,
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: Stack(
+          children: [
+            SvgPicture.asset(
+              backgroundImagePath,
+              width: double.infinity,
+              height: double.infinity,
               fit: BoxFit.cover,
             ),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                levelText,
-                style: AppTextStyles.normal700P(
-                    fontSize: 20.0,
-                    color: AppColors.backgroundLight,
-                    height: 1.04),
-              ),
-              const SizedBox(height: 40),
-              Container(
-                width: 148,
-                height: 32,
-                decoration: BoxDecoration(
-                  border:
-                      Border.all(color: AppColors.backgroundLight, width: 1),
-                  borderRadius: BorderRadius.circular(4),
-                ),
-                child: TextButton(
-                  onPressed: () => _toggleOverlay(levelText),
-                  style: TextButton.styleFrom(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-                    minimumSize: Size.zero,
-                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  ),
-                  child: Text(
-                    'View level performance',
-                    style: AppTextStyles.normal700P(
-                        fontSize: 12,
-                        color: AppColors.backgroundLight,
-                        height: 1.2),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  void _showClassSelectionDialog() {
-    final classes = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I'];
-    final levelPrefix = _selectedLevel.split(' ')[0];
-
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      showModalBottomSheet(
-        context: context,
-        isScrollControlled:
-            true, // Allow the sheet to be smaller than half the screen
-        shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(
-            top: Radius.circular(16),
-          ),
-        ),
-        builder: (BuildContext context) {
-          return Padding(
-            padding: EdgeInsets.only(
-              bottom: MediaQuery.of(context).viewInsets.bottom,
-            ),
-            child: ConstrainedBox(
-              constraints: BoxConstraints(
-                maxHeight: MediaQuery.of(context).size.height *
-                    0.8, // Set a maximum height
-              ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12),
               child: Column(
-                mainAxisSize: MainAxisSize.min, // Use minimum space needed
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const SizedBox(height: 16),
                   Text(
-                    'Select Class',
-                    style: AppTextStyles.normal600(
-                        fontSize: 18, color: Colors.black),
+                    levelText,
+                    style: AppTextStyles.normal700P(
+                        fontSize: 20.0,
+                        color: AppColors.backgroundLight,
+                        height: 1.04),
                   ),
-                  const SizedBox(height: 16),
-                  Flexible(
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 24),
-                      child: LayoutBuilder(
-                        builder: (context, constraints) {
-                          double itemWidth = (constraints.maxWidth - 32) / 3;
-                          double itemHeight = itemWidth * 36 / 85;
-                          int rowCount = (classes.length / 3).ceil();
-
-                          return Container(
-                            height: (itemHeight * rowCount) +
-                                ((rowCount - 1) * 16), // Calculate total height
-                            child: GridView.builder(
-                              gridDelegate:
-                                  SliverGridDelegateWithFixedCrossAxisCount(
-                                crossAxisCount: 3,
-                                childAspectRatio: itemWidth / itemHeight,
-                                mainAxisSpacing: 16,
-                                crossAxisSpacing: 16,
-                              ),
-                              physics:
-                                  NeverScrollableScrollPhysics(), // Disable scrolling
-                              itemCount: classes.length,
-                              itemBuilder: (context, index) {
-                                return InkWell(
-                                  onTap: () {
-                                    Navigator.of(context).pop();
-                                    _navigateToClassDetail(
-                                        '$levelPrefix ${classes[index]}');
-                                  },
-                                  child: Container(
-                                    decoration: BoxDecoration(
-                                      color: AppColors.backgroundLight,
-                                      border: Border.all(
-                                          color: AppColors.dialogBtnColor),
-                                      borderRadius: BorderRadius.circular(8),
-                                      boxShadow: [
-                                        BoxShadow(
-                                          color: Colors.black.withOpacity(0.25),
-                                          offset: const Offset(1, 1),
-                                          blurRadius: 1,
-                                        ),
-                                      ],
-                                    ),
-                                    alignment: Alignment.center,
-                                    child: Text(
-                                      '$levelPrefix ${classes[index]}',
-                                      style: AppTextStyles.normal600(
-                                        fontSize: 14,
-                                        color: AppColors.dialogBtnColor,
-                                      ),
-                                    ),
-                                  ),
-                                );
-                              },
-                            ),
-                          );
-                        },
+                  const SizedBox(height: 40),
+                  Container(
+                    width: 148,
+                    height: 32,
+                    decoration: BoxDecoration(
+                      border: Border.all(color: AppColors.backgroundLight, width: 1),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: TextButton(
+                      onPressed: () => _toggleOverlay(levelText),
+                      style: TextButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                        minimumSize: Size.zero,
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      ),
+                      child: Text(
+                        'View level performance',
+                        style: AppTextStyles.normal700P(
+                            fontSize: 12,
+                            color: AppColors.backgroundLight,
+                            height: 1.2),
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
                   ),
-                  const SizedBox(height: 16),
                 ],
               ),
             ),
-          );
-        },
-      );
-    });
-  }
+          ],
+        ),
+      ),
+    ),
+  );
+}
+
+void _showClassSelectionDialog() {
+  final classes = ['A', 'B', 'C', 'D', 'E',];
+  final levelPrefix = _selectedLevel.split(' ')[0];
+
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (BuildContext context) {
+        return Padding(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(context).viewInsets.bottom,
+          ),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              maxHeight: MediaQuery.of(context).size.height * 0.8,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const SizedBox(height: 24),
+                Text(
+                  'Select Class',
+                  style: AppTextStyles.normal600(fontSize: 24, color: Colors.black),
+                ),
+                const SizedBox(height: 24),
+                Flexible(
+                  child: ListView.builder(
+                    itemCount: classes.length,
+                    itemBuilder: (context, index) {
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+                        child: SelectClassButton(
+                          text: '$levelPrefix ${classes[index]}',
+                          onTap: () {
+                            Navigator.of(context).pop();
+                            _navigateToClassDetail('$levelPrefix ${classes[index]}');
+                          },
+                        ),
+                      );
+                    },
+                  ),
+                ),
+                const SizedBox(height: 16),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  });
+}
+
 
   void _navigateToClassDetail(String className) {
     // print(
@@ -609,5 +569,47 @@ class _ResultDashboardScreenState extends State<ResultDashboardScreen>
         // print("Returned from ClassDetailScreen");
       });
     });
+  }
+}
+
+
+// hover effect for Select class overlay
+class SelectClassButton extends StatefulWidget {
+  final String text;
+  final VoidCallback onTap;
+
+  const SelectClassButton({Key? key, required this.text, required this.onTap}) : super(key: key);
+
+  @override
+  _ClassButtonState createState() => _ClassButtonState();
+}
+class _ClassButtonState extends State<SelectClassButton> {
+  bool _isHovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      onEnter: (_) => setState(() => _isHovered = true),
+      onExit: (_) => setState(() => _isHovered = false),
+      child: GestureDetector(
+        onTap: widget.onTap,
+        child: Container(
+          height: 50,
+          decoration: BoxDecoration(
+            color: _isHovered ? const Color(0xFF12077B) : Colors.grey[200],
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Center(
+            child: Text(
+              widget.text,
+              style: AppTextStyles.normal600(
+                fontSize: 16,
+                color: _isHovered ? Colors.white : Colors.black,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }

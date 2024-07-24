@@ -1,6 +1,8 @@
-import 'dart:developer';
+// ignore_for_file: deprecated_member_use
 
+import 'dart:developer';
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:linkschool/modules/common/constants.dart';
 import '../../../common/app_colors.dart';
 import '../../../common/text_styles.dart';
@@ -76,33 +78,51 @@ class _AssessmentSettingScreenState extends State<AssessmentSettingScreen> {
                   ),
                 ],
               ),
-              child: DropdownButtonFormField<String>(
-                value: _selectedLevel,
-                decoration: const InputDecoration(
-                  border: InputBorder.none,
-                  contentPadding:
-                      EdgeInsets.symmetric(horizontal: 10.0, vertical: 0.0),
+              child: DropdownButtonHideUnderline(
+                child: DropdownButton<String>(
+                  value: _selectedLevel,
+                  icon: const Icon(Icons.arrow_drop_down,
+                      color: AppColors.primaryLight),
+                  isExpanded: true,
+                  onChanged: (String? newValue) {
+                    setState(() {
+                      _selectedLevel = newValue;
+                    });
+                  },
+                  items: levels.map<DropdownMenuItem<String>>((String value) {
+                    return DropdownMenuItem<String>(
+                      value: value,
+                      child: Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(
+                            vertical: 10, horizontal: 16),
+                        margin: const EdgeInsets.symmetric(vertical: 4),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(4),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.grey.withOpacity(0.2),
+                              spreadRadius: 1,
+                              blurRadius: 2,
+                              offset: const Offset(0, 1),
+                            ),
+                          ],
+                        ),
+                        child: Center(child: Text(value)),
+                      ),
+                    );
+                  }).toList(),
                 ),
-                items: levels.map((String level) {
-                  return DropdownMenuItem<String>(
-                    value: level,
-                    child: Text(level),
-                  );
-                }).toList(),
-                onChanged: (String? newValue) {
-                  setState(() {
-                    _selectedLevel = newValue;
-                  });
-                },
               ),
             ),
-            const SizedBox(height: 16.0),
+            const SizedBox(height: 32.0),
             Expanded(
               child: ListView(
                 children: [
                   ..._assessments
                       .map((assessment) => buildAssessmentCard(assessment)),
-                  const SizedBox(height: 16.0),
+                  const SizedBox(height: 24.0), // Increased space between cards
                   buildInputCard(),
                 ],
               ),
@@ -112,7 +132,6 @@ class _AssessmentSettingScreenState extends State<AssessmentSettingScreen> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          // Save settings functionality
           log('Save settings button pressed');
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
@@ -123,14 +142,16 @@ class _AssessmentSettingScreenState extends State<AssessmentSettingScreen> {
         backgroundColor: AppColors.primaryLight,
         child: Container(
           decoration: BoxDecoration(
-              borderRadius: const BorderRadius.all(Radius.circular(100)),
-              boxShadow: [
-                BoxShadow(
-                    color: Colors.black.withOpacity(0.3),
-                    blurRadius: 7,
-                    spreadRadius: 7,
-                    offset: const Offset(3, 5))
-              ]),
+            borderRadius: const BorderRadius.all(Radius.circular(100)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.3),
+                blurRadius: 7,
+                spreadRadius: 7,
+                offset: const Offset(3, 5),
+              )
+            ],
+          ),
           child: const Icon(
             Icons.save,
             color: AppColors.backgroundLight,
@@ -141,184 +162,228 @@ class _AssessmentSettingScreenState extends State<AssessmentSettingScreen> {
   }
 
   Widget buildInputCard() {
-    return Container(
-      decoration: BoxDecoration(
-          color: AppColors.backgroundLight,
-          borderRadius: BorderRadius.circular(4.0),
-          boxShadow: const [
-            BoxShadow(
-                color: AppColors.shadowColor,
-                offset: Offset(1, 2),
-                blurRadius: 0.3)
-          ]),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Align(
-                  alignment: Alignment.bottomLeft,
-                  child: Text(
-                    'Assessment name:',
-                    style: AppTextStyles.normal600(
-                        fontSize: 12.0, color: AppColors.primaryLight),
-                  ),
-                ),
-                const SizedBox(width: 8.0),
-                Expanded(
-                  child: TextField(
-                    controller: _assessmentNameController,
-                    decoration: const InputDecoration(
-                      border: UnderlineInputBorder(
-                        borderSide:
-                            BorderSide(color: AppColors.assessmentColor1),
-                      ),
-                      contentPadding: EdgeInsets.symmetric(
-                          vertical: 10.0, horizontal: 10.0),
-                    ),
-                  ),
-                ),
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Expanded(
+          flex: 5,
+          child: Container(
+            decoration: BoxDecoration(
+              color: AppColors.backgroundLight,
+              borderRadius: BorderRadius.circular(4.0),
+              boxShadow: const [
+                BoxShadow(
+                  color: AppColors.shadowColor,
+                  offset: Offset(1, 2),
+                  blurRadius: 0.3,
+                )
               ],
             ),
-            const SizedBox(height: 16.0),
-            Row(
-              children: [
-                Text(
-                  'Assessment score:',
-                  style: AppTextStyles.normal600(
-                    fontSize: 12.0,
-                    color: AppColors.primaryLight,
-                  ),
-                ),
-                const SizedBox(width: 8.0),
-                Expanded(
-                  child: TextField(
-                    controller: _assessmentScoreController,
-                    decoration: const InputDecoration(
-                      border: UnderlineInputBorder(
-                        borderSide:
-                            BorderSide(color: AppColors.assessmentColor1),
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Align(
+                        alignment: Alignment.bottomLeft,
+                        child: Text(
+                          'Assessment name:',
+                          style: AppTextStyles.normal600(
+                            fontSize: 14.0,
+                            color: AppColors.primaryLight,
+                          ),
+                        ),
                       ),
-                      contentPadding: EdgeInsets.symmetric(
-                          vertical: 10.0, horizontal: 10.0),
-                    ),
+                      const SizedBox(width: 8.0),
+                      Expanded(
+                        child: TextField(
+                          controller: _assessmentNameController,
+                          decoration: const InputDecoration(
+                            border: UnderlineInputBorder(
+                              borderSide:
+                                  BorderSide(color: AppColors.assessmentColor1),
+                            ),
+                            contentPadding: EdgeInsets.symmetric(
+                                vertical: 10.0, horizontal: 10.0),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16.0),
-            Align(
-              alignment: Alignment.bottomRight,
-              child: ElevatedButton(
-                onPressed: () {
-                  setState(() {
-                    _assessments.add({
-                      'name': _assessmentNameController.text,
-                      'score': _assessmentScoreController.text,
-                    });
-                    _assessmentNameController.clear();
-                    _assessmentScoreController.clear();
-                  });
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.secondaryLight,
-                  fixedSize: const Size(100, 30),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(4.0),
+                  const SizedBox(height: 16.0),
+                  Row(
+                    children: [
+                      Text(
+                        'Assessment score:',
+                        style: AppTextStyles.normal600(
+                          fontSize: 14.0,
+                          color: AppColors.primaryLight,
+                        ),
+                      ),
+                      const SizedBox(width: 8.0),
+                      Expanded(
+                        child: TextField(
+                          controller: _assessmentScoreController,
+                          decoration: const InputDecoration(
+                            border: UnderlineInputBorder(
+                              borderSide:
+                                  BorderSide(color: AppColors.assessmentColor1),
+                            ),
+                            contentPadding: EdgeInsets.symmetric(
+                                vertical: 10.0, horizontal: 10.0),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                ),
-                child: Text(
-                  'Add +',
-                  style: AppTextStyles.normal700(
-                    fontSize: 12.0,
-                    color: Colors.white,
-                  ),
-                ),
+                ],
               ),
             ),
-          ],
+          ),
         ),
-      ),
+        const SizedBox(width: 16), // Space between input card and + button
+        Container(
+          width: 40,
+          height: 40,
+          decoration: BoxDecoration(
+            color: AppColors.secondaryLight,
+            shape: BoxShape.circle,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.2),
+                spreadRadius: 1,
+                blurRadius: 3,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: IconButton(
+            icon: const Icon(Icons.add, color: Colors.white),
+            onPressed: () {
+              setState(() {
+                _assessments.add({
+                  'name': _assessmentNameController.text,
+                  'score': _assessmentScoreController.text,
+                });
+                _assessmentNameController.clear();
+                _assessmentScoreController.clear();
+              });
+            },
+          ),
+        ),
+      ],
     );
   }
 
-  Widget buildAssessmentCard(Map<String, String> assessment) {
-    return Card(
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(4.0),
-      ),
-      elevation: 3,
-      child: Padding(
-        padding: const EdgeInsets.all(Constants.padding),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
+Widget buildAssessmentCard(Map<String, String> assessment) {
+  return Card(
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(4.0),
+    ),
+    elevation: 3,
+    color: Colors.white,
+    child: Container(
+      height: 150, // Reduced height since we're using less vertical space
+      padding: const EdgeInsets.all(16.0),
+      child: Stack(
+        children: [
+          Positioned(
+            top: -10,
+            right: -10,
+            child: Row(
               children: [
                 IconButton(
-                  icon: const Icon(Icons.edit, color: AppColors.primaryDark),
+                  icon: SvgPicture.asset(
+                    'assets/icons/result/edit.svg',
+                    color: AppColors.primaryDark,
+                    width: 16,
+                    height: 16,
+                  ),
                   onPressed: () {
                     editAssessment(assessment);
                   },
+                  padding: EdgeInsets.zero,
+                  constraints: BoxConstraints.tight(Size(24, 24)),
                 ),
                 IconButton(
-                  icon: const Icon(Icons.delete, color: AppColors.primaryDark),
+                  icon: SvgPicture.asset(
+                    'assets/icons/result/delete.svg',
+                    color: AppColors.primaryDark,
+                    width: 16,
+                    height: 16,
+                  ),
                   onPressed: () {
                     deleteAssessment(assessment);
                   },
+                  padding: EdgeInsets.zero,
+                  constraints: BoxConstraints.tight(Size(24, 24)),
                 ),
               ],
             ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.start,
-              children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+          ),
+          const SizedBox(height: 12,),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+                padding: const EdgeInsets.only(top: 35.0),
+                child: Row(
                   children: [
-                    RichText(
-                        text: TextSpan(
-                            text: 'Assessment name:  ',
-                            style: AppTextStyles.normal500(
-                                fontSize: 14.0,
-                                color: AppColors.assessmentColor2),
-                            children: <TextSpan>[
-                          TextSpan(
-                            text: '${assessment['name']}',
-                            style: AppTextStyles.normal600(
-                                fontSize: 16.0, color: Colors.black),
-                          )
-                        ])),
-                    // Text(
-                    //   'Assessment name: ${assessment['name']}',
-                    //   style: AppTextStyles.normalLight,
-                    // ),
-                    const SizedBox(height: 20.0),
-                    RichText(
-                        text: TextSpan(
-                            text: 'Assessment score:  ',
-                            style: AppTextStyles.normal500(
-                              fontSize: 14.0,
-                              color: AppColors.text4Light,
-                            ),
-                            children: <TextSpan>[
-                          TextSpan(
-                            text: '${assessment['score']}',
-                            style: AppTextStyles.normal600(
-                                fontSize: 16.0, color: Colors.black),
-                          )
-                        ])),
+                    Padding(
+                      padding: const EdgeInsets.only(right:8.0),
+                      child: Text(
+                        'Assessment name: ',
+                        style: AppTextStyles.normal600(
+                          fontSize: 12.0,
+                          color: AppColors.textGray,
+                        ),
+                      ),
+                    ),
+                    Expanded(
+                      child: Text(
+                        assessment['name']!,
+                        style: AppTextStyles.normal600(
+                          fontSize: 16.0,
+                          color: Colors.black,
+                        ),
+                      ),
+                    ),
                   ],
                 ),
-              ],
-            ),
-          ],
-        ),
+              ),
+              const SizedBox(height: 15.0),
+              Row(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.only(right:8.0),
+                    child: Text(
+                      'Assessment score: ',
+                      style: AppTextStyles.normal600(
+                        fontSize: 12.0,
+                        color: AppColors.textGray,
+                      ),
+                    ),
+                  ),
+                  Expanded(
+                    child: Text(
+                      assessment['score']!,
+                      style: AppTextStyles.normal600(
+                        fontSize: 16.0,
+                        color: Colors.black,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ],
       ),
-    );
-  }
+    ),
+  );
+}
 
   void editAssessment(Map<String, String> assessment) {
     setState(() {

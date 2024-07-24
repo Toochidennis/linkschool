@@ -148,66 +148,81 @@ class _SkillItemState extends State<SkillItem> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: 351, // Match the width of the input field
-      decoration: BoxDecoration(
-        border: Border(
-          bottom: BorderSide(
-            color: Colors.grey[300]!,
-            width: 1,
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: Container(
+        // width: 351,
+        padding: EdgeInsets.only(bottom: 10), // Match the width of the input field
+        decoration: BoxDecoration(
+          border: Border(
+            bottom: BorderSide(
+              color: Colors.grey[300]!,
+              width: 1,
+            ),
           ),
         ),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 32,
-            height: 32,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: Colors.white,
-              border: Border.all(color: AppColors.bgGray, width: 2),
-            ),
-            child: Center(
-              child: SvgPicture.asset(
-                'assets/icons/result/skill.svg',
-                // ignore: deprecated_member_use
-                color: AppColors.bgGray,
-                width: 20,
-                height: 20,
+        child: Row(
+          children: [
+            Container(
+              width: 32,
+              height: 32,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: AppColors.bgGrayLight2,
+                border: Border.all(color: AppColors.bgBorder, width: 1),
+              ),
+              child: Center(
+                child: SvgPicture.asset(
+                  'assets/icons/result/skill.svg',
+                  // ignore: deprecated_member_use
+                  color: AppColors.bgBorder,
+                  width: 20,
+                  height: 20,
+                ),
               ),
             ),
-          ),
-          const SizedBox(width: 18),
-          Expanded(
-            child: _isEditing
-                ? TextField(
-                    controller: _controller,
-                    onSubmitted: (value) {
-                      widget.onEdit(value);
-                      setState(() {
-                        _isEditing = false;
-                      });
-                    },
-                  )
-                : Text(widget.skill),
-          ),
-          IconButton(
-            icon: Icon(_isEditing ? Icons.check : Icons.edit),
-            onPressed: () {
-              if (_isEditing) {
-                widget.onEdit(_controller.text);
-              }
-              setState(() {
-                _isEditing = !_isEditing;
-              });
-            },
-          ),
-          IconButton(
-            icon: Icon(Icons.delete),
-            onPressed: widget.onDelete,
-          ),
-        ],
+            const SizedBox(width: 18),
+            Expanded(
+              child: _isEditing
+                  ? TextField(
+                      controller: _controller,
+                      onSubmitted: (value) {
+                        widget.onEdit(value);
+                        setState(() {
+                          _isEditing = false;
+                        });
+                      },
+                    )
+                  : Text(widget.skill),
+            ),
+            GestureDetector(
+              onTap: () {
+                if (_isEditing) {
+                  widget.onEdit(_controller.text);
+                }
+                setState(() {
+                  _isEditing = !_isEditing;
+                });
+              },
+              child: SvgPicture.asset(
+                _isEditing
+                    ? 'assets/icons/result/check.svg'
+                    : 'assets/icons/result/edit.svg',
+                width: 24,
+                height: 24,
+              ),
+            ),
+            const SizedBox(width: 8),
+            GestureDetector(
+              onTap: widget.onDelete,
+              child: SvgPicture.asset(
+                'assets/icons/result/delete.svg',
+                width: 24,
+                height: 24,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

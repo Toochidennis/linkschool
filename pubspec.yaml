@@ -127,6 +127,17 @@ flutter:
     - assets/icons/result/skill.svg
     - assets/icons/result/course.svg
     - assets/icons/result/composite_result.svg
+    - assets/icons/result/check.svg
+    - assets/icons/result/edit.svg
+    - assets/icons/result/delete.svg
+    - assets/icons/result/grading.svg
+    - assets/icons/result/assessment.svg
+    - assets/icons/result/behaviour.svg
+    - assets/icons/result/tool.svg
+    - assets/images/result/box_bg1.svg
+    - assets/images/result/box_bg2.svg
+    - assets/images/result/box_bg3.svg
+    - assets/images/result/box_bg4.svg
 #     - images/a_dot_burr.jpeg
 #     - images/a_dot_ham.jpeg
 

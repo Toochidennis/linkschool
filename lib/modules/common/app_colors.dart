@@ -121,9 +121,8 @@ class AppColors {
   static const Color boxColor3 = Color.fromRGBO(241, 240, 255, 1);
   static const Color boxColor4 = Color.fromRGBO(232, 255, 254, 1);
   static const Color avatarbgColor = Color.fromRGBO(187, 222, 251, 1);
-  static const Color bgWhite = Color.fromRGBO(255, 255, 255, 1);
   static const Color grayColor = Color.fromRGBO(238, 238, 238, 1);
-  static const Color dialogBtnColor = Color.fromRGBO(58, 49, 145, 1);
+  static const Color dialogBtnColor = Color.fromRGBO(248, 248, 248, 1);
 
   //class detail screen
   static const Color bgColor1 = Color.fromRGBO(247, 247, 247, 1);
@@ -135,4 +134,7 @@ class AppColors {
   //behaviour screen
   static const Color bgGray = Color.fromRGBO(162, 162, 162, 1);
   static const Color bgGrayLight = Color.fromRGBO(158, 158, 158, 1);
+  static const Color bgGrayLight2 = Color.fromRGBO(232, 230, 255, 1);
+  static const Color bgBorder = Color.fromRGBO(77, 59, 255, 1);
+  static const Color textGray = Color.fromRGBO(91, 91, 91, 1);
 }
