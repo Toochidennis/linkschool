@@ -1,7 +1,10 @@
+// ignore_for_file: deprecated_member_use
+
 import 'package:flutter/material.dart';
 import '../../../common/app_colors.dart';
 import '../../../common/constants.dart';
 import '../../../common/text_styles.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 class GradingSettingsScreen extends StatefulWidget {
   const GradingSettingsScreen({super.key});
@@ -14,14 +17,46 @@ class _GradingSettingsScreenState extends State<GradingSettingsScreen> {
   String? selectedGrade;
   String? selectedRange;
   String? selectedRemark;
+  String? focusedField;
 
   bool isHoveringEdit = false;
   bool isHoveringDelete = false;
   bool isHoveringAdd = false;
   bool isHoveringSave = false;
+  
+
+  Map<String, bool> editingStates = {};
+  Map<String, TextEditingController> editingControllers = {};
+
+  @override
+  void initState() {
+    super.initState();
+    initializeControllers();
+  }
+
+  void initializeControllers() {
+    for (var item in gradingList) {
+      String itemId = item['id'] ?? '';
+      if (itemId.isNotEmpty) {
+        editingControllers['$itemId-Grade'] =
+            TextEditingController(text: item['grade']);
+        editingControllers['$itemId-Range'] =
+            TextEditingController(text: item['range']);
+        editingControllers['$itemId-Remark'] =
+            TextEditingController(text: item['remark']);
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    // Dispose of controllers
+    editingControllers.values.forEach((controller) => controller.dispose());
+    super.dispose();
+  }
 
   List<Map<String, String>> gradingList = [
-    {'grade': 'A', 'range': '80 - 100', 'remark': 'Excellent'}
+    {'id': '1', 'grade': 'A', 'range': '80 - 100', 'remark': 'Excellent'}
   ];
 
   @override
@@ -41,7 +76,8 @@ class _GradingSettingsScreenState extends State<GradingSettingsScreen> {
         ),
         title: Text(
           'Grade Settings',
-          style: AppTextStyles.normal600(fontSize: 18.0, color: Colors.black),
+          style: AppTextStyles.normal600(
+              fontSize: 24.0, color: Colors.black), // Increased font size
         ),
         centerTitle: true,
         backgroundColor: AppColors.backgroundLight,
@@ -50,6 +86,12 @@ class _GradingSettingsScreenState extends State<GradingSettingsScreen> {
         padding: const EdgeInsets.all(Constants.padding),
         child: ListView(
           children: [
+            const Text(
+              'Add and update grade details',
+              style: TextStyle(fontSize: 18, color: Colors.grey),
+              textAlign: TextAlign.center,
+            ),
+            SizedBox(height: 20), // Added margin
             ...gradingList.map((item) => buildFirstCard(item)).toList(),
             const SizedBox(height: Constants.gap),
             buildSecondCard(),
@@ -90,6 +132,13 @@ class _GradingSettingsScreenState extends State<GradingSettingsScreen> {
   }
 
   Widget buildFirstCard(Map<String, String> item) {
+    String itemId = item['id']!;
+    bool isEditing = editingStates[itemId] ?? false;
+
+    if (itemId.isEmpty) {
+      return const SizedBox(); // Return an empty widget if id is missing
+    }
+
     return Card(
       color: Colors.white,
       shape: RoundedRectangleBorder(
@@ -108,9 +157,14 @@ class _GradingSettingsScreenState extends State<GradingSettingsScreen> {
                   onEnter: (_) => setState(() => isHoveringEdit = true),
                   onExit: (_) => setState(() => isHoveringEdit = false),
                   child: GestureDetector(
-                    onTap: () => editItem(item),
-                    child: Icon(Icons.edit,
-                        color: isHoveringEdit ? Colors.blueGrey : Colors.black),
+                    onTap: () =>
+                        isEditing ? saveItem(itemId) : editItem(itemId),
+                    child: SvgPicture.asset(
+                      isEditing
+                          ? 'assets/icons/result/check.svg'
+                          : 'assets/icons/result/edit.svg',
+                      color: isHoveringEdit ? Colors.blueGrey : Colors.black,
+                    ),
                   ),
                 ),
                 const SizedBox(width: Constants.gap),
@@ -119,37 +173,93 @@ class _GradingSettingsScreenState extends State<GradingSettingsScreen> {
                   onExit: (_) => setState(() => isHoveringDelete = false),
                   child: GestureDetector(
                     onTap: () => deleteItem(item),
-                    child: Icon(Icons.delete,
-                        color:
-                            isHoveringDelete ? Colors.blueGrey : Colors.black),
+                    child: SvgPicture.asset(
+                      'assets/icons/result/delete.svg',
+                      color: isHoveringDelete ? Colors.blueGrey : Colors.black,
+                    ),
                   ),
                 ),
               ],
             ),
             const SizedBox(height: Constants.gap),
-            buildCardTextRow(title: 'Grade:', score: '${item['grade']}'),
-            buildCardTextRow(title: 'Range:', score: '${item['range']} marks'),
-            buildCardTextRow(title: 'Remark:', score: '${item['remark']}'),
-            // buildCardTextRow('Range: ${item['range']} marks'),
-            // buildCardTextRow('Remark: ${item['remark']}'),
+            buildEditableRow('Grade:', itemId, isEditing),
+            buildEditableRow('Range:', itemId, isEditing),
+            buildEditableRow('Remark:', itemId, isEditing),
           ],
         ),
       ),
     );
   }
 
-  void editItem(Map<String, String> item) {
+  Widget buildEditableRow(String title, String itemId, bool isEditing) {
+    String key = '$itemId-${title.replaceAll(':', '')}';
+    TextEditingController? controller = editingControllers[key];
+
+    if (controller == null) {
+      return const SizedBox(); // Return an empty widget if controller is missing
+    }
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: Constants.gap),
+      child: Row(
+        children: [
+          Text(
+            title,
+            style: AppTextStyles.normal500(
+              fontSize: 12.0,
+              color: AppColors.assessmentColor2,
+            ),
+          ),
+          SizedBox(width: 8),
+          Expanded(
+            child: isEditing
+                ? TextField(
+                    controller: controller,
+                    style: AppTextStyles.normal500(
+                      fontSize: 16.0,
+                      color: AppColors.backgroundDark,
+                    ),
+                  )
+                : Text(
+                    controller.text,
+                    style: AppTextStyles.normal500(
+                      fontSize: 16.0,
+                      color: AppColors.backgroundDark,
+                    ),
+                  ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void editItem(String itemId) {
     setState(() {
-      selectedGrade = item['grade'];
-      selectedRange = item['range'];
-      selectedRemark = item['remark'];
-      gradingList.remove(item);
+      editingStates[itemId] = true;
     });
   }
 
   void deleteItem(Map<String, String> item) {
     setState(() {
       gradingList.remove(item);
+      String itemId = item['id']!;
+      editingControllers.remove('$itemId-Grade');
+      editingControllers.remove('$itemId-Range');
+      editingControllers.remove('$itemId-Remark');
+      editingStates.remove(itemId);
+    });
+  }
+
+  void saveItem(String itemId) {
+    setState(() {
+      editingStates[itemId] = false;
+      int index = gradingList.indexWhere((item) => item['id'] == itemId);
+      if (index != -1) {
+        gradingList[index]['grade'] = editingControllers['$itemId-Grade']!.text;
+        gradingList[index]['range'] = editingControllers['$itemId-Range']!.text;
+        gradingList[index]['remark'] =
+            editingControllers['$itemId-Remark']!.text;
+      }
     });
   }
 
@@ -190,23 +300,17 @@ class _GradingSettingsScreenState extends State<GradingSettingsScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            buildInputRow('Grade', ['A', 'B', 'C', 'D', 'F'], selectedGrade,
-                (value) {
+            buildInputField('Grade', selectedGrade, (value) {
               setState(() {
                 selectedGrade = value;
               });
             }),
-            buildInputRow(
-                'Range',
-                ['80 - 100', '60 - 79', '50 - 69', '40 - 49', '0 - 39'],
-                selectedRange, (value) {
+            buildInputField('Range', selectedRange, (value) {
               setState(() {
                 selectedRange = value;
               });
             }),
-            buildInputRow(
-                'Remark', ['Excellent', 'Good', 'Fair', 'Poor'], selectedRemark,
-                (value) {
+            buildInputField('Remark', selectedRemark, (value) {
               setState(() {
                 selectedRemark = value;
               });
@@ -223,11 +327,23 @@ class _GradingSettingsScreenState extends State<GradingSettingsScreen> {
                         selectedRange != null &&
                         selectedRemark != null) {
                       setState(() {
-                        gradingList.add({
+                        String newId = (gradingList.length + 1).toString();
+                        Map<String, String> newItem = {
+                          'id': newId,
                           'grade': selectedGrade!,
                           'range': selectedRange!,
                           'remark': selectedRemark!
-                        });
+                        };
+                        gradingList.add(newItem);
+
+                        // Initialize controllers for the new item
+                        editingControllers['$newId-Grade'] =
+                            TextEditingController(text: selectedGrade);
+                        editingControllers['$newId-Range'] =
+                            TextEditingController(text: selectedRange);
+                        editingControllers['$newId-Remark'] =
+                            TextEditingController(text: selectedRemark);
+
                         selectedGrade = null;
                         selectedRange = null;
                         selectedRemark = null;
@@ -257,44 +373,42 @@ class _GradingSettingsScreenState extends State<GradingSettingsScreen> {
     );
   }
 
-  Widget buildInputRow(String label, List<String> options,
-      String? selectedValue, ValueChanged<String?> onChanged) {
+  Widget buildInputField(
+      String label, String? value, ValueChanged<String> onChanged) {
+        final FocusNode focusNode = FocusNode();
+          focusNode.addListener(() {
+    setState(() {
+      focusedField = focusNode.hasFocus ? label : null;
+    });
+  });
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: Constants.gap),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(
-            label,
-            style: AppTextStyles.normal600(fontSize: 12, color: Colors.black),
-          ),
-          Container(
-            width: 208,
-            height: 34,
-            padding: const EdgeInsets.symmetric(horizontal: Constants.padding),
-            decoration: BoxDecoration(
-              border: Border.all(color: AppColors.assessmentColor1),
-              borderRadius: BorderRadius.circular(4),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
-                  blurRadius: 3,
-                  offset: const Offset(0, 2),
-                ),
-              ],
+          SizedBox(
+            width: 50, // Adjust this width as needed
+            child: Text(
+              label,
+              style: AppTextStyles.normal600(fontSize: 12, color: Colors.black),
             ),
-            child: DropdownButtonHideUnderline(
-              child: DropdownButton<String>(
-                value: selectedValue,
-                items: options
-                    .map((option) => DropdownMenuItem(
-                          value: option,
-                          child: Text(option),
-                        ))
-                    .toList(),
+          ),
+          const SizedBox(
+              width: 16), // Horizontal margin between label and input field
+          Expanded(
+            child: Container(
+              height: 34,
+              decoration: BoxDecoration(
+                border: Border.all(color: Colors.grey),
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: TextField(
+                focusNode: focusNode,
                 onChanged: onChanged,
-                isExpanded: true,
-                hint: const Text('Select'),
+                decoration: const InputDecoration(
+                  border: InputBorder.none,
+                  contentPadding: EdgeInsets.symmetric(horizontal: 8),
+                ),
+                controller: TextEditingController(text: value),
               ),
             ),
           ),
