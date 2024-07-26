@@ -1,5 +1,6 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
+import 'package:linkschool/modules/portal/home/result/registration.dart';
 import 'package:percent_indicator/percent_indicator.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
@@ -182,7 +183,9 @@ class ClassDetailScreen extends StatelessWidget {
                                   backgroundColor: AppColors.barColor1,
                                   label: 'Registration',
                                   iconPath: 'assets/icons/grading.png',
-                                  onTap: () {},
+                                  onTap: () {
+                                     Navigator.push(context, MaterialPageRoute(builder: (context) => RegistrationScreen()));
+                                  },
                                 ),
                               ),
                               Expanded(
@@ -191,7 +194,9 @@ class ClassDetailScreen extends StatelessWidget {
                                       AppColors.exploreButton1Light,
                                   label: 'Attendance',
                                   iconPath: 'assets/icons/behaviour.png',
-                                  onTap: () {},
+                                  onTap: () {
+                                   
+                                  },
                                 ),
                               ),
                             ],

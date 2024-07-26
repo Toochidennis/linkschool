@@ -138,6 +138,7 @@ flutter:
     - assets/images/result/box_bg2.svg
     - assets/images/result/box_bg3.svg
     - assets/images/result/box_bg4.svg
+    - assets/images/result/top_container.svg
 #     - images/a_dot_burr.jpeg
 #     - images/a_dot_ham.jpeg
 

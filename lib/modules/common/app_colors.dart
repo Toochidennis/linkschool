@@ -137,4 +137,11 @@ class AppColors {
   static const Color bgGrayLight2 = Color.fromRGBO(232, 230, 255, 1);
   static const Color bgBorder = Color.fromRGBO(77, 59, 255, 1);
   static const Color textGray = Color.fromRGBO(91, 91, 91, 1);
+
+  //Registration screen
+  static const Color regBtnColor1 = Color.fromRGBO(224, 221, 255, 1); 
+  static const Color regAvatarColor = Color.fromRGBO(232, 229, 255, 1);
+  static const Color regBtnColor2 = Color.fromRGBO(255, 242, 230, 1);
+  static const Color regBgColor1 = Color.fromRGBO(241, 241, 241, 1);
+  static const Color regTextGray = Color.fromRGBO(109, 109, 109, 1);
 }
