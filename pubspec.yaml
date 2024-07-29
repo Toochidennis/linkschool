@@ -139,6 +139,8 @@ flutter:
     - assets/images/result/box_bg3.svg
     - assets/images/result/box_bg4.svg
     - assets/images/result/top_container.svg
+    - assets/icons/result/book.svg
+    - assets/images/result/bg_course_reg.svg
 #     - images/a_dot_burr.jpeg
 #     - images/a_dot_ham.jpeg
 

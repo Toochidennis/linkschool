@@ -1,10 +1,10 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
-import 'package:linkschool/modules/portal/home/result/registration.dart';
+import 'package:linkschool/modules/portal/home/result/registration/registration.dart';
 import 'package:percent_indicator/percent_indicator.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
-import 'package:linkschool/modules/portal/home/result/student_result.dart';
+import 'package:linkschool/modules/portal/home/result/student_result/student_result.dart';
 import '../../../common/app_colors.dart';
 import '../../../common/text_styles.dart';
 // import 'package:linkschool/modules/common/constants.dart';

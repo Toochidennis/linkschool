@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:percent_indicator/percent_indicator.dart';
 import 'package:fl_chart/fl_chart.dart';
 
-import '../../../common/text_styles.dart';
-import '../../../common/app_colors.dart';
+import '../../../../common/text_styles.dart';
+import '../../../../common/app_colors.dart';
 
 class StudentResultScreen extends StatelessWidget {
   final String studentName;
