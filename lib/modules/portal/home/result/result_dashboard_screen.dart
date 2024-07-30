@@ -8,7 +8,7 @@ import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/portal/home/result/assessment_settings.dart';
 import 'package:linkschool/modules/portal/home/result/behaviour_settings_screen.dart';
 import 'package:linkschool/modules/portal/home/result/grading_settings.dart';
-import 'package:linkschool/modules/portal/home/result/class_detail_screen.dart';
+import 'package:linkschool/modules/portal/home/result/class_detail/class_detail_screen.dart';
 
 class ResultDashboardScreen extends StatefulWidget {
   const ResultDashboardScreen({super.key});

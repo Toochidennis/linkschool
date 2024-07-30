@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:linkschool/modules/portal/home/portal_news_item.dart';
-import 'package:linkschool/modules/portal/home/result/student_result/student_result.dart';
+import 'package:linkschool/modules/portal/home/result/class_detail/student_result/student_result.dart';
 // import 'package:linkschool/modules/portal/home/results/assessment_settings.dart';
 //import 'package:linkschool/modules/portal/home/result/grading_settings.dart';
 

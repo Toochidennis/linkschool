@@ -4,7 +4,7 @@ import 'dart:math';
 
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
-import 'package:linkschool/modules/portal/home/result/registration/bulk_registration.dart';
+import 'package:linkschool/modules/portal/home/result/class_detail/registration/bulk_registration.dart';
 
 class RegistrationScreen extends StatefulWidget {
   const RegistrationScreen({Key? key}) : super(key: key);

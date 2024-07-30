@@ -4,8 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
-import 'package:linkschool/modules/portal/home/result/registration/course_registration.dart';
-import 'package:linkschool/modules/portal/home/result/registration/registration.dart';
+import 'package:linkschool/modules/portal/home/result/class_detail/registration/course_registration.dart';
+import 'package:linkschool/modules/portal/home/result/class_detail/registration/registration.dart';
 
 class BulkRegistrationScreen extends StatefulWidget {
   @override
