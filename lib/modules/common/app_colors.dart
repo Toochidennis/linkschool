@@ -144,4 +144,10 @@ class AppColors {
   static const Color regBtnColor2 = Color.fromRGBO(255, 242, 230, 1);
   static const Color regBgColor1 = Color.fromRGBO(241, 241, 241, 1);
   static const Color regTextGray = Color.fromRGBO(109, 109, 109, 1);
+
+  //Attendance screen
+  static const Color attBgColor1 = Color.fromRGBO(239, 227, 255, 1);
+  static const Color attCheckColor1 = Color.fromRGBO(129, 129, 129, 1);
+  static const Color attBorderColor1 = Color.fromRGBO(187, 187, 187, 1);
+  static const Color attCheckColor2 = Color.fromRGBO(76, 175, 80, 1);
 }
