@@ -172,9 +172,9 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
               Expanded(
                 child: OutlinedButton(
                   child: Text(
-                    '+ Copy previous registration',
+                    '+ Copy registration',
                     style: AppTextStyles.normal600(
-                        fontSize: 10, color: AppColors.videoColor4),
+                        fontSize: 12, color: AppColors.videoColor4),
                   ),
                   style: OutlinedButton.styleFrom(
                     backgroundColor: AppColors.regBtnColor2,

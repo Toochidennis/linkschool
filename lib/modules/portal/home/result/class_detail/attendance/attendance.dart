@@ -192,7 +192,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                     ),
                     const SizedBox(height: 44),
                     Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 8.0),
+                      padding: const EdgeInsets.symmetric(horizontal: 8.0),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
@@ -214,7 +214,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                       height: 400, // Set a fixed height or adjust as needed
                       child: ListView.separated(
                         shrinkWrap: true,
-                        physics: AlwaysScrollableScrollPhysics(),
+                        physics: const AlwaysScrollableScrollPhysics(),
                         itemCount: 8,
                         separatorBuilder: (context, index) => Divider(
                             height: 1,
@@ -255,7 +255,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                             ),
                             title: Text(dates[index]),
                             subtitle: Text(subjects[index],
-                                style: TextStyle(color: Colors.grey)),
+                                style: const TextStyle(color: Colors.grey)),
                             onTap: () {
                               Navigator.push(context, MaterialPageRoute(builder: (context) => AttendanceHistoryScreen(date: dates[index])));
                             },
@@ -273,88 +273,104 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
     );
   }
 
-  void _showTakeAttendanceDialog(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      builder: (BuildContext context) {
-        return Container(
-          padding: EdgeInsets.all(16),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: <Widget>[
-              ElevatedButton(
-                onPressed: () {},
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.grey,
-                  minimumSize: Size(double.infinity, 50),
-                ),
-                child: Text('Take class attendance',
-                    style: TextStyle(color: Colors.white)),
-              ),
-              SizedBox(height: 16),
-              ElevatedButton(
-                onPressed: () {
-                  Navigator.pop(context);
-                  _showSelectCourseDialog(context);
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.grey,
-                  minimumSize: Size(double.infinity, 50),
-                ),
-                child: Text('Take course attendance',
-                    style: TextStyle(color: Colors.white)),
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
+void _showTakeAttendanceDialog(BuildContext context) {
+  showModalBottomSheet(
+    context: context,
+    builder: (BuildContext context) {
+      return Container(
+        padding: EdgeInsets.all(16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            _buildAttendanceButton('Take class attendance', () {}),
+            SizedBox(height: 16),
+            _buildAttendanceButton('Take course attendance', () {
+              Navigator.pop(context);
+              _showSelectCourseDialog(context);
+            }),
+          ],
+        ),
+      );
+    },
+  );
+}
 
-  void _showSelectCourseDialog(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      builder: (BuildContext context) {
-        return Container(
-          padding: EdgeInsets.all(16),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[
-              Text('Select course to take attendance',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-              SizedBox(height: 16),
-              Column(
-                children: [
-                  'Mathematics',
-                  'English',
-                  'Physics',
-                  'Chemistry',
-                  'Biology'
-                ].map((subject) {
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 8.0),
-                    child: ElevatedButton(
-                      onPressed: () {
-                        Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                                builder: (context) => TakeCourseAttendance()));
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.grey,
-                        minimumSize: Size(double.infinity, 50),
-                      ),
-                      child:
-                          Text(subject, style: TextStyle(color: Colors.white)),
-                    ),
-                  );
-                }).toList(),
-              ),
-            ],
+void _showSelectCourseDialog(BuildContext context) {
+  showModalBottomSheet(
+    context: context,
+    builder: (BuildContext context) {
+      return Container(
+        padding: EdgeInsets.all(16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Text('Select course to take attendance',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            SizedBox(height: 16),
+            Column(
+              children: [
+                'Mathematics',
+                'English',
+                'Physics',
+                'Chemistry',
+                'Biology'
+              ].map((subject) {
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 8.0),
+                  child: _buildAttendanceButton(subject, () {
+                    Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => TakeCourseAttendance()));
+                  }),
+                );
+              }).toList(),
+            ),
+          ],
+        ),
+      );
+    },
+  );
+}
+
+Widget _buildAttendanceButton(String text, VoidCallback onPressed) {
+  return Container(
+    decoration: BoxDecoration(
+      boxShadow: [
+        BoxShadow(
+          color: Colors.grey.withOpacity(0.3),
+          spreadRadius: 1,
+          blurRadius: 3,
+          offset: Offset(0, 2), // changes position of shadow
+        ),
+      ],
+    ),
+    child: Material(
+      // color: Colors.transparent,
+      color: AppColors.dialogBtnColor,
+      child: InkWell(
+        onTap: onPressed,
+        borderRadius: BorderRadius.circular(4),
+        child: Ink(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            // border: Border.all(color: Colors.grey),
+            borderRadius: BorderRadius.circular(4),
           ),
-        );
-      },
-    );
-  }
+          child: Container(
+            width: double.infinity,
+            height: 50,
+            alignment: Alignment.center,
+            child: Text(
+              text,
+              style: AppTextStyles.normal600(fontSize: 16, color: AppColors.backgroundDark),
+            ),
+          ),
+        ),
+      ),
+    ),
+  );
+}
+
 }
