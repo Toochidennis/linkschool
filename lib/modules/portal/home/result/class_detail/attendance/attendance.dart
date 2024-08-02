@@ -5,6 +5,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/common/widgets/dash_line.dart';
+import 'package:linkschool/modules/portal/home/result/class_detail/attendance/attendance_history.dart';
 import 'package:linkschool/modules/portal/home/result/class_detail/attendance/take_course_attendance.dart';
 
 class AttendanceScreen extends StatefulWidget {
@@ -255,6 +256,9 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                             title: Text(dates[index]),
                             subtitle: Text(subjects[index],
                                 style: TextStyle(color: Colors.grey)),
+                            onTap: () {
+                              Navigator.push(context, MaterialPageRoute(builder: (context) => AttendanceHistoryScreen(date: dates[index])));
+                            },
                           );
                         },
                       ),

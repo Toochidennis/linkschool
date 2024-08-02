@@ -129,7 +129,12 @@ class AppColors {
   static const Color bgColor2 = Color.fromRGBO(241, 200, 240, 1);
   static const Color bgColor3 = Color.fromRGBO(200, 198, 230, 1);
   static const Color bgColor4 = Color.fromRGBO(247, 220, 222, 1);
-  static const Color bgColor5 = Color.fromRGBO(255, 228, 179, 1); 
+  static const Color bgColor5 = Color.fromRGBO(255, 228, 179, 1);
+  static const Color iconColor1 = Color.fromRGBO(238, 86, 236, 1);
+  static const Color iconColor2 = Color.fromRGBO(141, 136, 207, 1); 
+  static const Color iconColor3 = Color.fromRGBO(219, 163, 167, 1);
+  static const Color iconColor4 = Color.fromRGBO(247, 178, 50, 1);
+                          
 
   //behaviour screen
   static const Color bgGray = Color.fromRGBO(162, 162, 162, 1);
@@ -150,4 +155,8 @@ class AppColors {
   static const Color attCheckColor1 = Color.fromRGBO(129, 129, 129, 1);
   static const Color attBorderColor1 = Color.fromRGBO(187, 187, 187, 1);
   static const Color attCheckColor2 = Color.fromRGBO(76, 175, 80, 1);
+  static const Color attHistColor1 = Color.fromRGBO(13, 148, 136, 1);
+
+  //Course Result screen
+  static const Color progressBarColor1 = Color.fromRGBO(29, 214, 110, 1);
 }

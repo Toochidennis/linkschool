@@ -2,13 +2,12 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:linkschool/modules/portal/home/result/class_detail/attendance/attendance.dart';
 import 'package:linkschool/modules/portal/home/result/class_detail/registration/registration.dart';
+import 'package:linkschool/modules/portal/home/result/class_detail/student_result/course_result_screen.dart';
 import 'package:percent_indicator/percent_indicator.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-
 import 'package:linkschool/modules/portal/home/result/class_detail/student_result/student_result.dart';
 import '../../../../common/app_colors.dart';
 import '../../../../common/text_styles.dart';
-// import 'package:linkschool/modules/common/constants.dart';
 
 class ClassDetailScreen extends StatelessWidget {
   final String className;
@@ -37,20 +36,19 @@ class ClassDetailScreen extends StatelessWidget {
         ),
         actions: [
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 13.0,),
+            padding: const EdgeInsets.symmetric(horizontal: 13.0),
             child: SizedBox(
               height: 32,
               child: ElevatedButton(
                 onPressed: () {},
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primaryLight,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(4.0),
-                  ),
-                  padding: const EdgeInsets.symmetric(horizontal: 8.0,),
-                  minimumSize: Size.zero,
-                  tapTargetSize: MaterialTapTargetSize.shrinkWrap
-                ),
+                    backgroundColor: AppColors.primaryLight,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(4.0),
+                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                    minimumSize: Size.zero,
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap),
                 child: Text(
                   'See class list',
                   style: AppTextStyles.normal700(
@@ -62,14 +60,14 @@ class ClassDetailScreen extends StatelessWidget {
             ),
           ),
         ],
-        backgroundColor: Color.fromRGBO(247, 247, 247, 1),
+        backgroundColor: AppColors.bgColor1,
         elevation: 0.0,
       ),
       body: Stack(
         children: [
           Container(
             decoration: const BoxDecoration(
-              color: Color.fromRGBO(247, 247, 247, 1),
+              color: AppColors.bgColor1,
             ),
             child: CustomScrollView(
               physics: const BouncingScrollPhysics(),
@@ -79,7 +77,7 @@ class ClassDetailScreen extends StatelessWidget {
                   child: Container(
                     height: 250,
                     width: 196,
-                    color: const Color.fromRGBO(247, 247, 247, 1),
+                    color: AppColors.bgColor1,
                     child: AspectRatio(
                       aspectRatio: 2.0,
                       child: Padding(
@@ -145,7 +143,6 @@ class ClassDetailScreen extends StatelessWidget {
                 SliverToBoxAdapter(
                   child: Container(
                     width: 360,
-                    // height: 650,
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(20),
@@ -185,7 +182,11 @@ class ClassDetailScreen extends StatelessWidget {
                                   label: 'Registration',
                                   iconPath: 'assets/icons/grading.png',
                                   onTap: () {
-                                     Navigator.push(context, MaterialPageRoute(builder: (context) => RegistrationScreen()));
+                                    Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                            builder: (context) =>
+                                                RegistrationScreen()));
                                   },
                                 ),
                               ),
@@ -196,7 +197,11 @@ class ClassDetailScreen extends StatelessWidget {
                                   label: 'Attendance',
                                   iconPath: 'assets/icons/behaviour.png',
                                   onTap: () {
-                                    Navigator.push(context, MaterialPageRoute(builder: (contex) => AttendanceScreen()));
+                                    Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                            builder: (contex) =>
+                                                AttendanceScreen()));
                                   },
                                 ),
                               ),
@@ -337,7 +342,6 @@ class ClassDetailScreen extends StatelessWidget {
 
   Widget exploreButtonItem({
     required Color backgroundColor,
-    // required Color borderColor,
     required String label,
     required String iconPath,
     required VoidCallback onTap,
@@ -346,11 +350,7 @@ class ClassDetailScreen extends StatelessWidget {
       onTap: onTap,
       child: Padding(
         padding: const EdgeInsets.only(
-          top: 30.0,
-          bottom: 15.0,
-          left: 6,
-          right: 8
-        ),
+            top: 30.0, bottom: 15.0, left: 6, right: 8),
         child: Container(
           width: 110,
           height: 80,
@@ -568,10 +568,10 @@ class ClassDetailScreen extends StatelessWidget {
                           AppColors.bgColor5,
                         ];
                         final iconColors = [
-                          const Color.fromARGB(255, 238, 86, 236),
-                          const Color.fromARGB(255, 141, 136, 207),
-                          Color.fromARGB(255, 219, 163, 167),
-                          Color.fromARGB(255, 247, 178, 50),
+                          AppColors.iconColor1,
+                          AppColors.iconColor2,
+                          AppColors.iconColor3,
+                          AppColors.iconColor4,
                         ];
                         return ListTile(
                           leading: Container(
@@ -584,7 +584,6 @@ class ClassDetailScreen extends StatelessWidget {
                             child: Center(
                               child: SvgPicture.asset(
                                 icons[index],
-                                // ignore: deprecated_member_use
                                 color: iconColors[index],
                                 width: 20,
                                 height: 20,
@@ -593,7 +592,15 @@ class ClassDetailScreen extends StatelessWidget {
                           ),
                           title: Text(labels[index]),
                           onTap: () {
-                            // Handle tap on each item
+                            if (labels[index] == 'Course result') {
+                              Navigator.pop(context);
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => CourseResultScreen(), // Replace with your CourseResultScreen
+                                ),
+                              );
+                            }
                           },
                         );
                       },
