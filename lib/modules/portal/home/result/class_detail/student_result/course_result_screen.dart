@@ -1,5 +1,8 @@
+// ignore_for_file: deprecated_member_use
+
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/svg.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 
@@ -213,8 +216,10 @@ class _CourseResultScreenState extends State<CourseResultScreen> {
     return subjects.map((subject) => _buildSubjectRow(subject)).toList();
   }
 
-  Widget _buildSubjectRow(String subject) {
-    return Container(
+Widget _buildSubjectRow(String subject) {
+  return GestureDetector(
+    onTap: () => _showOverlayDialog(subject),
+    child: Container(
       padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 16.0),
       decoration: BoxDecoration(
         border: Border(bottom: BorderSide(color: Colors.grey[300]!, width: 1)),
@@ -235,8 +240,55 @@ class _CourseResultScreenState extends State<CourseResultScreen> {
           _buildCircularProgressBar(),
         ],
       ),
-    );
-  }
+    ),
+  );
+}
+
+void _showOverlayDialog(String subject) {
+  showModalBottomSheet(
+    context: context,
+    builder: (BuildContext context) {
+      return Container(
+        color: Colors.white,
+        padding: EdgeInsets.symmetric(horizontal: 16, vertical: 18),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                _buildDialogButton('View result', 'assets/icons/result/eye.svg'),
+                _buildDialogButton('Edit result', 'assets/icons/result/edit.svg'),
+              ],
+            ),
+          ],
+        ),
+      );
+    },
+  );
+}
+
+Widget _buildDialogButton(String text, String iconPath) {
+  return Container(
+    decoration: BoxDecoration(
+      border: Border.all(color: Colors.grey),
+      borderRadius: BorderRadius.circular(8),
+    ),
+    child: TextButton.icon(
+      onPressed: () {
+        // Add functionality here
+      },
+      icon: SvgPicture.asset(
+        iconPath,
+        color: Colors.grey,
+      ),
+      label: Text(
+        text,
+        style: AppTextStyles.normal600(fontSize: 14, color: AppColors.backgroundDark),
+      ),
+    ),
+  );
+}
 
   Widget _buildCircularLetter(String letter) {
     return Container(
@@ -280,3 +332,4 @@ class _CourseResultScreenState extends State<CourseResultScreen> {
     );
   }
 }
+
