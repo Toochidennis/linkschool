@@ -134,6 +134,10 @@ class AppColors {
   static const Color iconColor2 = Color.fromRGBO(141, 136, 207, 1); 
   static const Color iconColor3 = Color.fromRGBO(219, 163, 167, 1);
   static const Color iconColor4 = Color.fromRGBO(247, 178, 50, 1);
+  static const Color bgXplore1 = Color.fromRGBO(255, 124, 10,1);
+  static const Color bgXplore2 = Color.fromRGBO(0, 190, 173, 1);
+  static const Color bgXplore3 = Color.fromRGBO(0, 125, 234, 1);
+  static const Color classProgressBar1 = Color.fromRGBO(255, 87, 87,1);
                           
 
   //behaviour screen

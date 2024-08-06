@@ -254,17 +254,17 @@ class _ResultDashboardScreenState extends State<ResultDashboardScreen>
                       Column(
                         children: [
                           _buildLevelBox(
-                              'BASIC ONE', 'assets/images/result/box_bg1.svg'),
+                              'BASIC ONE', 'assets/images/result/bg_box1.svg'),
                           _buildLevelBox(
-                              'BASIC TWO', 'assets/images/result/box_bg2.svg'),
+                              'BASIC TWO', 'assets/images/result/bg_box2.svg'),
                           _buildLevelBox(
-                              'JSS ONE', 'assets/images/result/box_bg3.svg'),
+                              'JSS ONE', 'assets/images/result/bg_box3.svg'),
                           _buildLevelBox(
-                              'JSS TWO', 'assets/images/result/box_bg4.svg'),
+                              'JSS TWO', 'assets/images/result/bg_box4.svg'),
                           Padding(
                             padding: const EdgeInsets.only(bottom: 20.0),
                             child: _buildLevelBox(
-                                'JSS THREE', 'assets/images/result/box_bg5.svg'),
+                                'JSS THREE', 'assets/images/result/bg_box5.svg'),
                           ),
                         ],
                       ),
@@ -508,12 +508,13 @@ void _showClassSelectionDialog() {
       ),
       builder: (BuildContext context) {
         return Padding(
+          // ignore: prefer_const_constructors
           padding: EdgeInsets.only(
             bottom: MediaQuery.of(context).viewInsets.bottom,
           ),
           child: ConstrainedBox(
             constraints: BoxConstraints(
-              maxHeight: MediaQuery.of(context).size.height * 0.8,
+              maxHeight: MediaQuery.of(context).size.height * 0.6,
             ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -541,7 +542,7 @@ void _showClassSelectionDialog() {
                     },
                   ),
                 ),
-                const SizedBox(height: 16),
+                // const SizedBox(height: 16),
               ],
             ),
           ),

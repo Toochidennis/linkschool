@@ -1,3 +1,5 @@
+// ignore_for_file: deprecated_member_use
+
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:linkschool/modules/portal/home/result/class_detail/attendance/attendance.dart';
@@ -169,18 +171,18 @@ class ClassDetailScreen extends StatelessWidget {
                             children: [
                               Expanded(
                                 child: exploreButtonItem(
-                                  backgroundColor: AppColors.videoColor4,
+                                  backgroundColor: AppColors.bgXplore1,
                                   label: 'Student Result',
-                                  iconPath: 'assets/icons/assessment.png',
+                                  iconPath: 'assets/icons/result/assessment_icon.svg',
                                   onTap: () =>
                                       _showStudentResultOverlay(context),
                                 ),
                               ),
                               Expanded(
                                 child: exploreButtonItem(
-                                  backgroundColor: AppColors.barColor1,
+                                  backgroundColor: AppColors.bgXplore2,
                                   label: 'Registration',
-                                  iconPath: 'assets/icons/grading.png',
+                                  iconPath: 'assets/icons/result/registration_icon.svg',
                                   onTap: () {
                                     Navigator.push(
                                         context,
@@ -193,9 +195,9 @@ class ClassDetailScreen extends StatelessWidget {
                               Expanded(
                                 child: exploreButtonItem(
                                   backgroundColor:
-                                      AppColors.exploreButton1Light,
+                                      AppColors.bgXplore3,
                                   label: 'Attendance',
-                                  iconPath: 'assets/icons/behaviour.png',
+                                  iconPath: 'assets/icons/result/attendance_icon.svg',
                                   onTap: () {
                                     Navigator.push(
                                         context,
@@ -225,14 +227,21 @@ class ClassDetailScreen extends StatelessWidget {
                             0.75,
                             AppColors.primaryLight,
                             onTap: () =>
-                                _showTermOverlay(context, 'First Term'),
+                                _showTermOverlay(context,),
                           ),
                           _buildTermRow(
                             'Second Term',
                             0.75,
                             AppColors.videoColor4,
                             onTap: () =>
-                                _showTermOverlay(context, 'Second Term'),
+                                _showTermOverlay(context,),
+                          ),
+                          _buildTermRow(
+                            'Third Term',
+                            0.75,
+                            AppColors.classProgressBar1,
+                            onTap: () =>
+                                _showTermOverlay(context,),
                           ),
                           const SizedBox(height: 30),
                           Row(
@@ -252,14 +261,21 @@ class ClassDetailScreen extends StatelessWidget {
                             0.75,
                             AppColors.primaryLight,
                             onTap: () =>
-                                _showTermOverlay(context, 'First Term'),
+                                _showTermOverlay(context,),
                           ),
                           _buildTermRow(
                             'Second Term',
                             0.75,
                             AppColors.videoColor4,
                             onTap: () =>
-                                _showTermOverlay(context, 'Second Term'),
+                                _showTermOverlay(context,),
+                          ),
+                          _buildTermRow(
+                            'Third Term',
+                            0.75,
+                            AppColors.classProgressBar1,
+                            onTap: () =>
+                                _showTermOverlay(context,),
                           ),
                         ],
                       ),
@@ -372,13 +388,13 @@ class ClassDetailScreen extends StatelessWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Image.asset(
+              SvgPicture.asset(
                 iconPath,
-                width: 40,
-                height: 40,
+                width: 25,
+                height: 25,
                 color: AppColors.backgroundLight,
               ),
-              const SizedBox(height: 4),
+              const SizedBox(height: 10),
               Text(
                 label,
                 style: const TextStyle(
@@ -522,96 +538,90 @@ class ClassDetailScreen extends StatelessWidget {
     );
   }
 
-  void _showTermOverlay(BuildContext context, String term) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (BuildContext context) {
-        return GestureDetector(
-          onTap: () => Navigator.of(context).pop(),
-          child: DraggableScrollableSheet(
-            initialChildSize: 0.4,
-            minChildSize: 0.2,
-            maxChildSize: 0.5,
-            builder: (_, controller) {
-              return GestureDetector(
-                onTap: () {},
-                child: Container(
-                  decoration: const BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: ListView.separated(
-                      controller: controller,
-                      itemCount: 4,
-                      separatorBuilder: (context, index) => const Divider(),
-                      itemBuilder: (context, index) {
-                        final icons = [
-                          'assets/icons/result/comment.svg',
-                          'assets/icons/result/skill.svg',
-                          'assets/icons/result/course.svg',
-                          'assets/icons/result/composite_result.svg',
-                        ];
-                        final labels = [
-                          'Comment on results',
-                          'Skills and Behaviour',
-                          'Course result',
-                          'Composite result',
-                        ];
-                        final colors = [
-                          AppColors.bgColor2,
-                          AppColors.bgColor3,
-                          AppColors.bgColor4,
-                          AppColors.bgColor5,
-                        ];
-                        final iconColors = [
-                          AppColors.iconColor1,
-                          AppColors.iconColor2,
-                          AppColors.iconColor3,
-                          AppColors.iconColor4,
-                        ];
-                        return ListTile(
-                          leading: Container(
-                            width: 40,
-                            height: 40,
-                            decoration: BoxDecoration(
-                              color: colors[index],
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                            child: Center(
-                              child: SvgPicture.asset(
-                                icons[index],
-                                color: iconColors[index],
-                                width: 20,
-                                height: 20,
-                              ),
-                            ),
+void _showTermOverlay(BuildContext context) {
+  showModalBottomSheet(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: Colors.transparent,
+    builder: (BuildContext context) {
+      return Container(
+        height: MediaQuery.of(context).size.height * 0.4, // Fixed height
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 16.0),
+          child: Column(
+            children: [
+              Expanded(
+                child: ListView.separated(
+                  physics: const NeverScrollableScrollPhysics(), // Disable scrolling
+                  itemCount: 4,
+                  separatorBuilder: (context, index) => const Divider(),
+                  itemBuilder: (context, index) {
+                    final icons = [
+                      'assets/icons/result/comment.svg',
+                      'assets/icons/result/skill.svg',
+                      'assets/icons/result/course.svg',
+                      'assets/icons/result/composite_result.svg',
+                    ];
+                    final labels = [
+                      'Comment on results',
+                      'Skills and Behaviour',
+                      'Course result',
+                      'Composite result',
+                    ];
+                    final colors = [
+                      AppColors.bgColor2,
+                      AppColors.bgColor3,
+                      AppColors.bgColor4,
+                      AppColors.bgColor5,
+                    ];
+                    final iconColors = [
+                      AppColors.iconColor1,
+                      AppColors.iconColor2,
+                      AppColors.iconColor3,
+                      AppColors.iconColor4,
+                    ];
+                    return ListTile(
+                      leading: Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: colors[index],
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Center(
+                          child: SvgPicture.asset(
+                            icons[index],
+                            color: iconColors[index],
+                            width: 20,
+                            height: 20,
                           ),
-                          title: Text(labels[index]),
-                          onTap: () {
-                            if (labels[index] == 'Course result') {
-                              Navigator.pop(context);
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => CourseResultScreen(), // Replace with your CourseResultScreen
-                                ),
-                              );
-                            }
-                          },
-                        );
+                        ),
+                      ),
+                      title: Text(labels[index]),
+                      onTap: () {
+                        if (labels[index] == 'Course result') {
+                          Navigator.pop(context);
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => CourseResultScreen(),
+                            ),
+                          );
+                        }
                       },
-                    ),
-                  ),
+                    );
+                  },
                 ),
-              );
-            },
+              ),
+            ],
           ),
-        );
-      },
-    );
-  }
+        ),
+      );
+    },
+  );
+}
 }

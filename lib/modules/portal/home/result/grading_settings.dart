@@ -5,6 +5,7 @@ import '../../../common/app_colors.dart';
 import '../../../common/constants.dart';
 import '../../../common/text_styles.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:flutter/services.dart';
 
 class GradingSettingsScreen extends StatefulWidget {
   const GradingSettingsScreen({super.key});
@@ -23,7 +24,10 @@ class _GradingSettingsScreenState extends State<GradingSettingsScreen> {
   bool isHoveringDelete = false;
   bool isHoveringAdd = false;
   bool isHoveringSave = false;
-  
+
+    TextEditingController gradeController = TextEditingController();
+  TextEditingController rangeController = TextEditingController();
+  TextEditingController remarkController = TextEditingController();
 
   Map<String, bool> editingStates = {};
   Map<String, TextEditingController> editingControllers = {};
@@ -91,7 +95,7 @@ class _GradingSettingsScreenState extends State<GradingSettingsScreen> {
               style: TextStyle(fontSize: 18, color: Colors.grey),
               textAlign: TextAlign.center,
             ),
-            SizedBox(height: 20), // Added margin
+            const SizedBox(height: 20), // Added margin
             ...gradingList.map((item) => buildFirstCard(item)).toList(),
             const SizedBox(height: Constants.gap),
             buildSecondCard(),
@@ -135,8 +139,9 @@ class _GradingSettingsScreenState extends State<GradingSettingsScreen> {
     String itemId = item['id']!;
     bool isEditing = editingStates[itemId] ?? false;
 
+    // Return an empty widget if id is missing
     if (itemId.isEmpty) {
-      return const SizedBox(); // Return an empty widget if id is missing
+      return const SizedBox(); 
     }
 
     return Card(
@@ -167,7 +172,7 @@ class _GradingSettingsScreenState extends State<GradingSettingsScreen> {
                     ),
                   ),
                 ),
-                const SizedBox(width: Constants.gap),
+                const SizedBox(width: 16),
                 MouseRegion(
                   onEnter: (_) => setState(() => isHoveringDelete = true),
                   onExit: (_) => setState(() => isHoveringDelete = false),
@@ -194,9 +199,17 @@ class _GradingSettingsScreenState extends State<GradingSettingsScreen> {
   Widget buildEditableRow(String title, String itemId, bool isEditing) {
     String key = '$itemId-${title.replaceAll(':', '')}';
     TextEditingController? controller = editingControllers[key];
+    final FocusNode focusNode = FocusNode();
 
+    focusNode.addListener(() {
+      setState(() {
+        focusedField = focusNode.hasFocus ? key : null;
+      });
+    });
+
+    // Return an empty widget if controller is missing
     if (controller == null) {
-      return const SizedBox(); // Return an empty widget if controller is missing
+      return const SizedBox(); 
     }
 
     return Padding(
@@ -210,14 +223,28 @@ class _GradingSettingsScreenState extends State<GradingSettingsScreen> {
               color: AppColors.assessmentColor2,
             ),
           ),
-          SizedBox(width: 8),
+          const SizedBox(width: 8),
           Expanded(
             child: isEditing
                 ? TextField(
+                    focusNode: focusNode,
                     controller: controller,
                     style: AppTextStyles.normal500(
                       fontSize: 16.0,
                       color: AppColors.backgroundDark,
+                    ),
+                    cursorColor: AppColors.primaryLight,
+                    decoration: InputDecoration(
+                      border: InputBorder.none,
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+                      focusedBorder: OutlineInputBorder(
+                        borderSide: const BorderSide(color: AppColors.primaryLight),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderSide: const BorderSide(color: Colors.grey),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
                     ),
                   )
                 : Text(
@@ -273,7 +300,7 @@ class _GradingSettingsScreenState extends State<GradingSettingsScreen> {
               text: title,
               style: AppTextStyles.normal500(
                 fontSize: 12.0,
-                color: AppColors.assessmentColor2,
+                 color: AppColors.assessmentColor2,
               ),
             ),
             TextSpan(
@@ -289,131 +316,137 @@ class _GradingSettingsScreenState extends State<GradingSettingsScreen> {
     );
   }
 
-  Widget buildSecondCard() {
-    return Card(
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(Constants.borderRadius),
-      ),
-      elevation: 3,
-      child: Padding(
-        padding: const EdgeInsets.all(Constants.padding),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            buildInputField('Grade', selectedGrade, (value) {
-              setState(() {
-                selectedGrade = value;
-              });
-            }),
-            buildInputField('Range', selectedRange, (value) {
-              setState(() {
-                selectedRange = value;
-              });
-            }),
-            buildInputField('Remark', selectedRemark, (value) {
-              setState(() {
-                selectedRemark = value;
-              });
-            }),
-            const SizedBox(height: Constants.gap),
-            Align(
-              alignment: Alignment.bottomRight,
-              child: MouseRegion(
-                onEnter: (_) => setState(() => isHoveringAdd = true),
-                onExit: (_) => setState(() => isHoveringAdd = false),
-                child: ElevatedButton(
-                  onPressed: () {
-                    if (selectedGrade != null &&
-                        selectedRange != null &&
-                        selectedRemark != null) {
-                      setState(() {
-                        String newId = (gradingList.length + 1).toString();
-                        Map<String, String> newItem = {
-                          'id': newId,
-                          'grade': selectedGrade!,
-                          'range': selectedRange!,
-                          'remark': selectedRemark!
-                        };
-                        gradingList.add(newItem);
-
-                        // Initialize controllers for the new item
-                        editingControllers['$newId-Grade'] =
-                            TextEditingController(text: selectedGrade);
-                        editingControllers['$newId-Range'] =
-                            TextEditingController(text: selectedRange);
-                        editingControllers['$newId-Remark'] =
-                            TextEditingController(text: selectedRemark);
-
-                        selectedGrade = null;
-                        selectedRange = null;
-                        selectedRemark = null;
-                      });
-                    }
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: isHoveringAdd
-                        ? Colors.blueGrey
-                        : AppColors.secondaryLight,
-                    fixedSize: const Size(100, 30),
-                    shape: RoundedRectangleBorder(
-                      borderRadius:
-                          BorderRadius.circular(Constants.borderRadius),
-                    ),
-                  ),
-                  child: const Text(
-                    'Add +',
-                    style: AppTextStyles.normal5Light,
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget buildInputField(
-      String label, String? value, ValueChanged<String> onChanged) {
-        final FocusNode focusNode = FocusNode();
-          focusNode.addListener(() {
-    setState(() {
-      focusedField = focusNode.hasFocus ? label : null;
-    });
-  });
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: Constants.gap),
-      child: Row(
+Widget buildSecondCard() {
+  return Card(
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(Constants.borderRadius),
+    ),
+    elevation: 3,
+    child: Padding(
+      padding: const EdgeInsets.all(Constants.padding),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          SizedBox(
-            width: 50, // Adjust this width as needed
-            child: Text(
-              label,
-              style: AppTextStyles.normal600(fontSize: 12, color: Colors.black),
-            ),
-          ),
-          const SizedBox(
-              width: 16), // Horizontal margin between label and input field
-          Expanded(
-            child: Container(
-              height: 34,
-              decoration: BoxDecoration(
-                border: Border.all(color: Colors.grey),
-                borderRadius: BorderRadius.circular(4),
-              ),
-              child: TextField(
-                focusNode: focusNode,
-                onChanged: onChanged,
-                decoration: const InputDecoration(
-                  border: InputBorder.none,
-                  contentPadding: EdgeInsets.symmetric(horizontal: 8),
+          buildInputField('Grade', gradeController, (value) {}),
+          buildInputField('Range', rangeController, (value) {}),
+          buildInputField('Remark', remarkController, (value) {}),
+          const SizedBox(height: Constants.gap),
+          Align(
+            alignment: Alignment.bottomRight,
+            child: MouseRegion(
+              onEnter: (_) => setState(() => isHoveringAdd = true),
+              onExit: (_) => setState(() => isHoveringAdd = false),
+              child: ElevatedButton(
+                onPressed: () {
+                  if (gradeController.text.isNotEmpty &&
+                      rangeController.text.isNotEmpty &&
+                      remarkController.text.isNotEmpty) {
+                    setState(() {
+                      String newId = (gradingList.length + 1).toString();
+                      Map<String, String> newItem = {
+                        'id': newId,
+                        'grade': gradeController.text,
+                        'range': rangeController.text,
+                        'remark': remarkController.text
+                      };
+                      gradingList.add(newItem);
+
+                      // Initialize controllers for the new item
+                      editingControllers['$newId-Grade'] =
+                          TextEditingController(text: gradeController.text);
+                      editingControllers['$newId-Range'] =
+                          TextEditingController(text: rangeController.text);
+                      editingControllers['$newId-Remark'] =
+                          TextEditingController(text: remarkController.text);
+
+                      // Clear the input fields
+                      gradeController.clear();
+                      rangeController.clear();
+                      remarkController.clear();
+                    });
+                  }
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: isHoveringAdd
+                      ? Colors.blueGrey
+                      : AppColors.secondaryLight,
+                  fixedSize: const Size(100, 30),
+                  shape: RoundedRectangleBorder(
+                    borderRadius:
+                        BorderRadius.circular(Constants.borderRadius),
+                  ),
                 ),
-                controller: TextEditingController(text: value),
+                child: const Text(
+                  'Add +',
+                  style: AppTextStyles.normal5Light,
+                ),
               ),
             ),
           ),
         ],
       ),
-    );
-  }
+    ),
+  );
 }
+
+Widget buildInputField(String label, TextEditingController controller, ValueChanged<String> onChanged) {
+  final FocusNode focusNode = FocusNode();
+  
+  focusNode.addListener(() {
+    setState(() {
+      focusedField = focusNode.hasFocus ? label : null;
+    });
+  });
+
+  // Determine if the field should only accept numbers
+  bool isNumericOnly = label == 'Grade' || label == 'Range';
+
+  return Padding(
+    padding: const EdgeInsets.symmetric(vertical: Constants.gap),
+    child: Row(
+      children: [
+        SizedBox(
+          width: 50,
+          child: Text(
+            label,
+            style: AppTextStyles.normal600(fontSize: 12, color: Colors.black),
+          ),
+        ),
+        const SizedBox(width: 16),
+        Expanded(
+          child: Container(
+            height: 34,
+            decoration: BoxDecoration(
+              border: Border.all(
+                color: focusedField == label ? AppColors.primaryLight : Colors.grey,
+              ),
+              borderRadius: BorderRadius.circular(4),
+            ),
+            child: TextField(
+              focusNode: focusNode,
+              controller: controller,
+              onChanged: onChanged,
+              textAlignVertical: TextAlignVertical.center,
+              keyboardType: isNumericOnly ? TextInputType.number : TextInputType.text,
+              inputFormatters: isNumericOnly
+                  ? [FilteringTextInputFormatter.digitsOnly]
+                  : null,
+              decoration: InputDecoration(
+                border: InputBorder.none,
+                contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 13),
+                focusedBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: AppColors.primaryLight),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+              ),
+              style: TextStyle(fontSize: 14),
+              cursorColor: AppColors.primaryLight,
+            ),
+          ),
+        ),
+      ],
+    ),
+  );
+}
+}
+
