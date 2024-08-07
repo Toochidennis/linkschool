@@ -1,3 +1,5 @@
+// ignore_for_file: prefer_const_constructors
+
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'dart:math';
@@ -5,6 +7,7 @@ import 'dart:math';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/portal/home/result/class_detail/registration/bulk_registration.dart';
+import 'package:linkschool/modules/portal/home/result/class_detail/registration/see_all_history.dart';
 
 class RegistrationScreen extends StatefulWidget {
   const RegistrationScreen({Key? key}) : super(key: key);
@@ -164,18 +167,13 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
               style: AppTextStyles.normal600(
                   fontSize: 16, color: AppColors.backgroundLight),
             ),
-            onPressed: () => _showRegistrationDialog(context),
+            onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => BulkRegistrationScreen() )),
           ),
           const SizedBox(height: 16),
           Row(
             children: [
               Expanded(
                 child: OutlinedButton(
-                  child: Text(
-                    '+ Copy registration',
-                    style: AppTextStyles.normal600(
-                        fontSize: 12, color: AppColors.videoColor4),
-                  ),
                   style: OutlinedButton.styleFrom(
                     backgroundColor: AppColors.regBtnColor2,
                     side: const BorderSide(color: AppColors.videoColor4),
@@ -184,6 +182,11 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                     ),
                   ),
                   onPressed: () {},
+                  child: Text(
+                    '+ Copy registration',
+                    style: AppTextStyles.normal600(
+                        fontSize: 12, color: AppColors.videoColor4),
+                  ),
                 ),
               ),
               const SizedBox(width: 16),
@@ -199,7 +202,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                   child: Text('+ Bulk registration',
                       style: AppTextStyles.normal600(
                           fontSize: 12, color: AppColors.videoColor4)),
-                  onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => BulkRegistrationScreen())),
+                  onPressed: () => _showRegistrationDialog(context),
                 ),
               ),
             ],
@@ -214,8 +217,11 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
       margin: const EdgeInsets.symmetric(
         horizontal: 16,
       ),
-      padding: const EdgeInsets.all(16),
-      color: AppColors.regBgColor1,
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.only(topLeft: Radius.circular(10), topRight: Radius.circular(10)),
+        color: AppColors.regBgColor1,
+      ),
       child: Column(
         children: [
           Row(
@@ -224,12 +230,15 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
               Text('History',
                   style: AppTextStyles.normal600(
                       fontSize: 16, color: AppColors.backgroundDark)),
-              Text(
-                'See all',
-                style: AppTextStyles.normal500(
-                        fontSize: 14, color: AppColors.barTextGray)
-                    .copyWith(
-                  decoration: TextDecoration.underline,
+              GestureDetector(
+                onTap: () { Navigator.push(context, MaterialPageRoute(builder: (Context) => SeeAllHistory())); },
+                child: Text(
+                  'See all',
+                  style: AppTextStyles.normal500(
+                          fontSize: 14, color: AppColors.barTextGray)
+                      .copyWith(
+                    decoration: TextDecoration.underline,
+                  ),
                 ),
               ),
             ],
@@ -306,17 +315,16 @@ class CustomDropdown extends StatelessWidget {
   final Function(String?) onChanged;
 
   const CustomDropdown({
-    Key? key,
+    super.key,
     required this.items,
     required this.value,
     required this.onChanged,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
     return Container(
       height: 30,
-      // width: 110,
       decoration: BoxDecoration(
         color: AppColors.videoColor4,
         borderRadius: BorderRadius.circular(20),
@@ -329,23 +337,31 @@ class CustomDropdown extends StatelessWidget {
             child: Padding(
               padding: const EdgeInsets.only(left: 8.0, right: 1),
               child: Container(
-                padding: EdgeInsets.only(left: 8),
+                padding: const EdgeInsets.only(left: 8),
                 child: Text(
                   item,
                   style: AppTextStyles.normal600(
-                      fontSize: 12, color: AppColors.backgroundDark),
+                    fontSize: 12,
+                    color: item == value
+                        ? AppColors.backgroundLight
+                        : AppColors.backgroundDark,
+                  ),
                 ),
               ),
             ),
           );
         }).toList(),
         onChanged: onChanged,
-        style: const TextStyle(color: Colors.white),
+        style: AppTextStyles.normal600(
+          fontSize: 12,
+          color: AppColors.backgroundLight,
+        ),
         icon: const Icon(Icons.arrow_drop_down, color: Colors.white),
         dropdownColor: Colors.white,
         menuMaxHeight: 200,
         itemHeight: 50,
         borderRadius: BorderRadius.circular(8),
+        underline: Container(), 
       ),
     );
   }
@@ -361,11 +377,11 @@ void _showRegistrationDialog(BuildContext context) {
         padding:
             EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
         child: Container(
-          decoration: BoxDecoration(
+          decoration: const BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
           ),
-          padding: EdgeInsets.fromLTRB(16, 16, 16, 32), // Added bottom padding
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -375,13 +391,13 @@ void _showRegistrationDialog(BuildContext context) {
                     fontSize: 18, color: AppColors.backgroundDark),
                 textAlign: TextAlign.center,
               ),
-              SizedBox(height: 20),
-              ..._buildSubjectRows(),
-              SizedBox(height: 16),
+              const SizedBox(height: 20),
+              _buildSubjectSelection(),
+              const SizedBox(height: 16),
               ElevatedButton(
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.videoColor4,
-                  minimumSize: Size(double.infinity, 50),
+                  minimumSize: const Size(double.infinity, 50),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8),
                   ),
@@ -403,7 +419,7 @@ void _showRegistrationDialog(BuildContext context) {
   );
 }
 
-List<Widget> _buildSubjectRows() {
+Widget _buildSubjectSelection() {
   List<String> allSubjects = [
     'Mathematics',
     'English',
@@ -423,36 +439,26 @@ List<Widget> _buildSubjectRows() {
   ];
   allSubjects.shuffle();
 
-  List<Widget> rows = [];
-  while (allSubjects.isNotEmpty) {
-    List<String> rowSubjects = allSubjects.take(3).toList();
-    allSubjects.removeRange(0, rowSubjects.length);
-
-    rows.add(Padding(
-      padding: EdgeInsets.only(bottom: 8),
-      child: Row(
-        children: rowSubjects.map((subject) {
-          return Expanded(
-            child: Padding(
-              padding: EdgeInsets.symmetric(horizontal: 4),
-              child: OutlinedButton(
-                style: OutlinedButton.styleFrom(
-                  side: BorderSide(color: AppColors.videoColor4),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                ),
-                child: Text(subject,
-                    style: TextStyle(color: AppColors.videoColor4),
-                    overflow: TextOverflow.ellipsis),
-                onPressed: () {},
-              ),
-            ),
-          );
-        }).toList(),
-      ),
-    ));
-  }
-
-  return rows;
+  return Wrap(
+    spacing: 8, // Horizontal space between chips
+    runSpacing: 8, // Vertical space between lines
+    children: allSubjects.map((subject) {
+      return ChoiceChip(
+        label: Text(
+          subject,
+          style: TextStyle(
+            color: AppColors.videoColor4,
+            fontSize: 14,
+          ),
+        ),
+        selected: false,
+        onSelected: (_) {}, // Add your selection logic here
+        backgroundColor: Colors.transparent,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+          side: BorderSide(color: AppColors.videoColor4),
+        ),
+      );
+    }).toList(),
+  );
 }
