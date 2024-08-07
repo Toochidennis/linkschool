@@ -20,7 +20,7 @@ class _CourseRegistrationScreenState extends State<CourseRegistrationScreen> {
     Colors.purple, Colors.teal, Colors.pink, Colors.indigo, 
     Colors.amber, Colors.cyan
   ];
-  bool isHoveringSave = false; // Added this line
+  bool isHoveringSave = false; 
 
   @override
   void initState() {
@@ -69,7 +69,7 @@ class _CourseRegistrationScreenState extends State<CourseRegistrationScreen> {
               // Top Section
               SizedBox(height: MediaQuery.of(context).padding.top + AppBar().preferredSize.height),
               Container(
-                height: MediaQuery.of(context).size.height * 0.25,
+                height: MediaQuery.of(context).size.height * 0.18,
                 padding: const EdgeInsets.all(16.0),
                 child: Stack(
                   children: [
@@ -92,8 +92,8 @@ class _CourseRegistrationScreenState extends State<CourseRegistrationScreen> {
                       ),
                     ),
                     Positioned(
-                      bottom: 16.0,
-                      right: 16.0,
+                      bottom: 2.0,
+                      right: 8.0,
                       child: FloatingActionButton(
                         onPressed: () {
                           ScaffoldMessenger.of(context).showSnackBar(
@@ -105,6 +105,8 @@ class _CourseRegistrationScreenState extends State<CourseRegistrationScreen> {
                             isHoveringSave ? Colors.blueGrey : AppColors.primaryLight,
                         shape: const CircleBorder(),
                         child: Container(
+                          width: 50,
+                          height: 50,
                           decoration: BoxDecoration(
                               borderRadius: const BorderRadius.all(Radius.circular(100)),
                               boxShadow: [
@@ -141,42 +143,57 @@ class _CourseRegistrationScreenState extends State<CourseRegistrationScreen> {
                       ),
                     ],
                   ),
-                  child: ListView.builder(
-                    itemCount: subjects.length,
-                    itemBuilder: (context, index) {
-                      return Container(
-                        color: index % 2 == 0 ? Colors.white : Colors.grey[200],
-                        child: ListTile(
-                          leading: CircleAvatar(
-                            backgroundColor: subjectColors[index],
-                            child: Text(
-                              subjects[index][0],
-                              style: const TextStyle(color: Colors.white),
-                            ),
-                          ),
-                          title: Text(subjects[index]),
-                          trailing: GestureDetector(
-                            onTap: () {
-                              setState(() {
-                                selectedSubjects[index] = !selectedSubjects[index];
-                              });
-                            },
-                            child: Container(
-                              width: 24,
-                              height: 24,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: selectedSubjects[index] ? Colors.green : Colors.white,
-                                border: Border.all(color: Colors.grey),
+                  child: ClipRRect(
+                    borderRadius: const BorderRadius.only(
+                      topLeft: Radius.circular(20.0),
+                      topRight: Radius.circular(20.0),
+                    ),
+                    child: ListView.builder(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16), 
+                      itemCount: subjects.length,
+                      itemBuilder: (context, index) {
+                        return Container(
+                          decoration: BoxDecoration(
+                            color: selectedSubjects[index] ? Colors.grey[200] : Colors.white,
+                            border: Border(
+                              bottom: BorderSide(
+                                color: Colors.grey[300]!,
+                                width: 1,
                               ),
-                              child: selectedSubjects[index]
-                                  ? const Icon(Icons.check, size: 16, color: Colors.white)
-                                  : null,
                             ),
                           ),
-                        ),
-                      );
-                    },
+                          child: ListTile(
+                            leading: CircleAvatar(
+                              backgroundColor: subjectColors[index],
+                              child: Text(
+                                subjects[index][0],
+                                style: const TextStyle(color: Colors.white),
+                              ),
+                            ),
+                            title: Text(subjects[index]),
+                            trailing: GestureDetector(
+                              onTap: () {
+                                setState(() {
+                                  selectedSubjects[index] = !selectedSubjects[index];
+                                });
+                              },
+                              child: Container(
+                                width: 24,
+                                height: 24,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: selectedSubjects[index] ? Colors.green : Colors.white,
+                                  border: Border.all(color: Colors.grey),
+                                ),
+                                child: selectedSubjects[index]
+                                    ? const Icon(Icons.check, size: 16, color: Colors.white)
+                                    : null,
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
                   ),
                 ),
               ),
