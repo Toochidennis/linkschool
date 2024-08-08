@@ -11,6 +11,7 @@ class TakeCourseAttendance extends StatefulWidget {
 class _TakeCourseAttendanceState extends State<TakeCourseAttendance> {
   List<bool> _selectedStudents = List.generate(12, (_) => false);
   bool _selectAll = false;
+  List<int> _selectedRowIndices = [];
 
   final List<String> _studentNames = [
     'Alice Johnson',
@@ -46,8 +47,26 @@ class _TakeCourseAttendanceState extends State<TakeCourseAttendance> {
     setState(() {
       _selectAll = !_selectAll;
       _selectedStudents = List.generate(12, (_) => _selectAll);
+      if (_selectAll) {
+        _selectedRowIndices = List.generate(12, (index) => index);
+      } else {
+        _selectedRowIndices.clear();
+      }
     });
   }
+
+  void _toggleRowSelection(int index) {
+    setState(() {
+      _selectedStudents[index] = !_selectedStudents[index];
+      _selectAll = _selectedStudents.every((element) => element);
+      if (_selectedStudents[index]) {
+        _selectedRowIndices.add(index);
+      } else {
+        _selectedRowIndices.remove(index);
+      }
+    });
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -78,7 +97,7 @@ class _TakeCourseAttendanceState extends State<TakeCourseAttendance> {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
               decoration: BoxDecoration(
-                  color: AppColors.attBgColor1,
+                  color: _selectedRowIndices.contains(0) ? const Color.fromRGBO(239, 227, 255, 1) : AppColors.attBgColor1,
                   border: Border.all(color: AppColors.attBorderColor1)),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -113,22 +132,20 @@ class _TakeCourseAttendanceState extends State<TakeCourseAttendance> {
               ),
               itemBuilder: (context, index) {
                 return ListTile(
+                  tileColor: _selectedRowIndices.contains(index) ? const Color.fromRGBO(239, 227, 255, 1) : Colors.transparent, // Update background color
                   leading: CircleAvatar(
                     backgroundColor: _circleColors[index],
                     child: Text(
                       _studentNames[index][0],
-                      style: TextStyle(color: Colors.white),
+                      style: const TextStyle(color: Colors.white),
                     ),
                   ),
                   title: Text(_studentNames[index]),
                   trailing: _selectedStudents[index]
-                      ? Icon(Icons.check_circle, color: AppColors.attCheckColor2)
+                      ? const Icon(Icons.check_circle, color: AppColors.attCheckColor2)
                       : null,
                   onTap: () {
-                    setState(() {
-                      _selectedStudents[index] = !_selectedStudents[index];
-                      _selectAll = _selectedStudents.every((element) => element);
-                    });
+                    _toggleRowSelection(index);
                   },
                 );
               },

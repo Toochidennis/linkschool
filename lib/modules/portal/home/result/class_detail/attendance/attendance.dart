@@ -198,11 +198,13 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                         children: [
                           Text(
                             'Attendance history',
-                            style: AppTextStyles.normal600(fontSize: 18, color: AppColors.primaryLight),
+                            style: AppTextStyles.normal600(
+                                fontSize: 18, color: AppColors.primaryLight),
                           ),
                           Text(
                             'See all',
-                            style: AppTextStyles.normal600(fontSize: 14, color: AppColors.primaryLight),
+                            style: AppTextStyles.normal600(
+                                fontSize: 14, color: AppColors.primaryLight),
                           ),
                         ],
                       ),
@@ -211,56 +213,67 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                     Container(
                       width: double.infinity,
                       color: AppColors.backgroundLight,
-                      height: 400, // Set a fixed height or adjust as needed
-                      child: ListView.separated(
-                        shrinkWrap: true,
-                        physics: const AlwaysScrollableScrollPhysics(),
-                        itemCount: 8,
-                        separatorBuilder: (context, index) => Divider(
-                            height: 1,
-                            color: Colors.grey[300],
-                            indent: 16,
-                            endIndent: 16),
-                        itemBuilder: (context, index) {
-                          final subjects = [
-                            'English Language',
-                            'Mathematics',
-                            'Physics',
-                            'Chemistry',
-                            'Biology',
-                            'History',
-                            'Geography',
-                            'Literature'
-                          ];
-                          final dates = [
-                            'Thursday, 20 July, 2026',
-                            'Friday, 21 July, 2026',
-                            'Monday, 24 July, 2026',
-                            'Tuesday, 25 July, 2026',
-                            'Wednesday, 26 July, 2026',
-                            'Thursday, 27 July, 2026',
-                            'Friday, 28 July, 2026',
-                            'Monday, 31 July, 2026'
-                          ];
-                          return ListTile(
-                            leading: Container(
-                              width: 30,
-                              height: 30,
-                              decoration: const BoxDecoration(
-                                color: Colors.green,
-                                shape: BoxShape.circle,
+                      constraints: BoxConstraints(
+                        maxHeight: MediaQuery.of(context).size.height *
+                            0.5, 
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(vertical:8.0),
+                        child: ListView.separated(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          itemCount: 8,
+                          separatorBuilder: (context, index) => Divider(
+                              height: 1,
+                              color: Colors.grey[300],
+                              indent: 16,
+                              endIndent: 16),
+                          itemBuilder: (context, index) {
+                            final subjects = [
+                              'English Language',
+                              'Mathematics',
+                              'Physics',
+                              'Chemistry',
+                              'Biology',
+                              'History',
+                              'Geography',
+                              'Literature'
+                            ];
+                            final dates = [
+                              'Thursday, 20 July, 2026',
+                              'Friday, 21 July, 2026',
+                              'Monday, 24 July, 2026',
+                              'Tuesday, 25 July, 2026',
+                              'Wednesday, 26 July, 2026',
+                              'Thursday, 27 July, 2026',
+                              'Friday, 28 July, 2026',
+                              'Monday, 31 July, 2026'
+                            ];
+                            return ListTile(
+                              leading: Container(
+                                width: 30,
+                                height: 30,
+                                decoration: const BoxDecoration(
+                                  color: Colors.green,
+                                  shape: BoxShape.circle,
+                                ),
+                                child: const Icon(Icons.check,
+                                    color: Colors.white, size: 20),
                               ),
-                              child: const Icon(Icons.check,
-                                  color: Colors.white, size: 20),
-                            ),
-                            title: Text(dates[index]),
-                            subtitle: Text(subjects[index],
-                                style: const TextStyle(color: Colors.grey)),
-                            onTap: () {
-                              Navigator.push(context, MaterialPageRoute(builder: (context) => AttendanceHistoryScreen(date: dates[index])));
-                            },
-                          );
-                        },
+                              title: Text(dates[index]),
+                              subtitle: Text(subjects[index],
+                                  style: const TextStyle(color: Colors.grey)),
+                              onTap: () {
+                                Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                        builder: (context) =>
+                                            AttendanceHistoryScreen(
+                                                date: dates[index])));
+                              },
+                            );
+                          },
+                        ),
                       ),
                     ),
                   ],
@@ -273,104 +286,104 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
     );
   }
 
-void _showTakeAttendanceDialog(BuildContext context) {
-  showModalBottomSheet(
-    context: context,
-    builder: (BuildContext context) {
-      return Container(
-        padding: EdgeInsets.all(16),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: <Widget>[
-            _buildAttendanceButton('Take class attendance', () {}),
-            SizedBox(height: 16),
-            _buildAttendanceButton('Take course attendance', () {
-              Navigator.pop(context);
-              _showSelectCourseDialog(context);
-            }),
-          ],
-        ),
-      );
-    },
-  );
-}
-
-void _showSelectCourseDialog(BuildContext context) {
-  showModalBottomSheet(
-    context: context,
-    builder: (BuildContext context) {
-      return Container(
-        padding: EdgeInsets.all(16),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            Text('Select course to take attendance',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-            SizedBox(height: 16),
-            Column(
-              children: [
-                'Mathematics',
-                'English',
-                'Physics',
-                'Chemistry',
-                'Biology'
-              ].map((subject) {
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 8.0),
-                  child: _buildAttendanceButton(subject, () {
-                    Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (context) => TakeCourseAttendance()));
-                  }),
-                );
-              }).toList(),
-            ),
-          ],
-        ),
-      );
-    },
-  );
-}
-
-Widget _buildAttendanceButton(String text, VoidCallback onPressed) {
-  return Container(
-    decoration: BoxDecoration(
-      boxShadow: [
-        BoxShadow(
-          color: Colors.grey.withOpacity(0.3),
-          spreadRadius: 1,
-          blurRadius: 3,
-          offset: Offset(0, 2), // changes position of shadow
-        ),
-      ],
-    ),
-    child: Material(
-      // color: Colors.transparent,
-      color: AppColors.dialogBtnColor,
-      child: InkWell(
-        onTap: onPressed,
-        borderRadius: BorderRadius.circular(4),
-        child: Ink(
-          decoration: BoxDecoration(
-            color: Colors.white,
-            // border: Border.all(color: Colors.grey),
-            borderRadius: BorderRadius.circular(4),
+  void _showTakeAttendanceDialog(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      builder: (BuildContext context) {
+        return Container(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              _buildAttendanceButton('Take class attendance', () {}),
+              const SizedBox(height: 16),
+              _buildAttendanceButton('Take course attendance', () {
+                Navigator.pop(context);
+                _showSelectCourseDialog(context);
+              }),
+            ],
           ),
-          child: Container(
-            width: double.infinity,
-            height: 50,
-            alignment: Alignment.center,
-            child: Text(
-              text,
-              style: AppTextStyles.normal600(fontSize: 16, color: AppColors.backgroundDark),
+        );
+      },
+    );
+  }
+
+  void _showSelectCourseDialog(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      builder: (BuildContext context) {
+        return Container(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              const Text('Select course to take attendance',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 16),
+              Column(
+                children: [
+                  'Mathematics',
+                  'English',
+                  'Physics',
+                  'Chemistry',
+                  'Biology'
+                ].map((subject) {
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 8.0),
+                    child: _buildAttendanceButton(subject, () {
+                      Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) => TakeCourseAttendance()));
+                    }),
+                  );
+                }).toList(),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildAttendanceButton(String text, VoidCallback onPressed) {
+    return Container(
+      decoration: BoxDecoration(
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.3),
+            spreadRadius: 1,
+            blurRadius: 3,
+            offset: const Offset(0, 2), // changes position of shadow
+          ),
+        ],
+      ),
+      child: Material(
+        // color: Colors.transparent,
+        color: AppColors.dialogBtnColor,
+        child: InkWell(
+          onTap: onPressed,
+          borderRadius: BorderRadius.circular(4),
+          child: Ink(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              // border: Border.all(color: Colors.grey),
+              borderRadius: BorderRadius.circular(4),
+            ),
+            child: Container(
+              width: double.infinity,
+              height: 50,
+              alignment: Alignment.center,
+              child: Text(
+                text,
+                style: AppTextStyles.normal600(
+                    fontSize: 16, color: AppColors.backgroundDark),
+              ),
             ),
           ),
         ),
       ),
-    ),
-  );
-}
-
+    );
+  }
 }
