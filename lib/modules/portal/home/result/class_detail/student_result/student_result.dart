@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:linkschool/modules/common/widgets/buttons/custom_long_elevated_button.dart';
+import 'package:linkschool/modules/common/widgets/buttons/custom_medium_elevated_button.dart';
+import 'package:linkschool/modules/portal/home/result/class_detail/student_result/student_list.dart';
 import 'package:percent_indicator/percent_indicator.dart';
 import 'package:fl_chart/fl_chart.dart';
 
@@ -7,8 +10,10 @@ import '../../../../../common/app_colors.dart';
 
 class StudentResultScreen extends StatelessWidget {
   final String studentName;
-  final String className; 
-  const StudentResultScreen({Key? key, required this.studentName, required this.className}) : super(key: key);
+  final String className;
+  const StudentResultScreen(
+      {Key? key, required this.studentName, required this.className})
+      : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -34,22 +39,15 @@ class StudentResultScreen extends StatelessWidget {
             height: 32,
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 13.0),
-              child: ElevatedButton(
-                onPressed: () {},
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primaryLight,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(4.0),
-                  ),
-                  padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                ),
-                child: Text(
-                  'See student list',
-                  style: AppTextStyles.normal700(
-                    fontSize: 14,
-                    color: AppColors.backgroundLight,
-                  ),
-                ),
+              child: CustomMediumElevatedButton(
+                text: 'See student list',
+                onPressed: () {
+                  Navigator.push(context,
+                      MaterialPageRoute(builder: (context) => StudentList()));
+                },
+                backgroundColor: AppColors.videoColor4,
+                textStyle: AppTextStyles.normal700(fontSize: 14, color: AppColors.backgroundLight),
+                padding: const EdgeInsets.symmetric(horizontal: 8.0),
               ),
             ),
           ),
@@ -113,7 +111,17 @@ class StudentResultScreen extends StatelessWidget {
                   const SizedBox(height: 10),
                   _buildTermRow('First Term', 0.75, AppColors.primaryLight),
                   _buildTermRow('Second Term', 0.75, AppColors.videoColor4),
+                  _buildTermRow(
+                      'Third Term', 0.75, AppColors.exploreButton3Light),
                   const SizedBox(height: 30),
+                  CustomLongElevatedButton(
+                    text: 'See annual result',
+                    onPressed: () {},
+                    backgroundColor: AppColors.videoColor4,
+                    textStyle: AppTextStyles.normal600(
+                        fontSize: 18, color: AppColors.backgroundLight),
+                  ),
+                  SizedBox(height: 60,),
                   Text(
                     'Session average chart',
                     style: AppTextStyles.normal700(
@@ -142,8 +150,11 @@ class StudentResultScreen extends StatelessWidget {
                             sideTitles: SideTitles(
                               showTitles: true,
                               reservedSize: 40,
-                              getTitlesWidget: (value, meta) =>
-                                  Text(value.toInt().toString(), style: AppTextStyles.normal400(color: Colors.black, fontSize: 12),),
+                              getTitlesWidget: (value, meta) => Text(
+                                value.toInt().toString(),
+                                style: AppTextStyles.normal400(
+                                    color: Colors.black, fontSize: 12),
+                              ),
                             ),
                           ),
                           topTitles: const AxisTitles(
@@ -233,7 +244,11 @@ class StudentResultScreen extends StatelessWidget {
               radius: 20.0,
               lineWidth: 4.92,
               percent: percent,
-              center: Text("${(percent * 100).toInt()}%", style: AppTextStyles.normal600(fontSize: 10, color: Colors.black),),
+              center: Text(
+                "${(percent * 100).toInt()}%",
+                style:
+                    AppTextStyles.normal600(fontSize: 10, color: Colors.black),
+              ),
               progressColor: indicatorColor,
               backgroundColor: Colors.transparent,
               circularStrokeCap: CircularStrokeCap.round,
@@ -280,7 +295,8 @@ class StudentResultScreen extends StatelessWidget {
     return SideTitleWidget(
       axisSide: meta.axisSide,
       space: 4.0,
-      child: Text(text, style: AppTextStyles.normal400(fontSize: 12, color: Colors.black)),
+      child: Text(text,
+          style: AppTextStyles.normal400(fontSize: 12, color: Colors.black)),
     );
   }
 }

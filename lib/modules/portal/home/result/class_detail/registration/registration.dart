@@ -6,6 +6,7 @@ import 'dart:math';
 
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
+import 'package:linkschool/modules/common/widgets/buttons/custom_long_elevated_button.dart';
 import 'package:linkschool/modules/portal/home/result/class_detail/registration/bulk_registration.dart';
 import 'package:linkschool/modules/portal/home/result/class_detail/registration/see_all_history.dart';
 
@@ -154,20 +155,13 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
       padding: const EdgeInsets.all(16),
       child: Column(
         children: [
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.videoColor4,
-              minimumSize: const Size(double.infinity, 50),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8), // Reduced border radius
-              ),
-            ),
-            child: Text(
-              'Register student',
-              style: AppTextStyles.normal600(
-                  fontSize: 16, color: AppColors.backgroundLight),
-            ),
+          CustomLongElevatedButton(
+            text: 'Register Student',
             onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => BulkRegistrationScreen() )),
+            backgroundColor: AppColors.videoColor4,
+            textStyle:  AppTextStyles.normal600(
+                  fontSize: 16, color: AppColors.backgroundLight),
+        
           ),
           const SizedBox(height: 16),
           Row(

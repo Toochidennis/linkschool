@@ -36,7 +36,7 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
           widget.date,
           style: AppTextStyles.normal600(
             fontSize: 18,
-            color: AppColors.backgroundDark,
+            color: AppColors.primaryLight,
           ),
         ),
         leading: IconButton(
