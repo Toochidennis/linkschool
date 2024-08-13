@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:linkschool/modules/portal/home/portal_news_item.dart';
 import 'package:linkschool/modules/portal/home/result/class_detail/student_result/student_result.dart';
+// import 'package:linkschool/modules/portal/result/class_detail/student_result/student_result.dart';
 // import 'package:linkschool/modules/portal/home/results/assessment_settings.dart';
 //import 'package:linkschool/modules/portal/home/result/grading_settings.dart';
 
@@ -9,7 +10,7 @@ import '../../common/constants.dart';
 import '../../common/text_styles.dart';
 import '../../explore/home/custom_button_item.dart';
 import 'history_item.dart';
-import 'result/assessment_settings.dart';
+// import '../result/assessment_settings.dart';
 
 class PortalHome extends StatefulWidget {
   const PortalHome({super.key});

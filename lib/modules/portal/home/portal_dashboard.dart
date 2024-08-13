@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:linkschool/modules/portal/home/result/result_dashboard_screen.dart';
+// import 'package:linkschool/modules/portal/result/result_dashboard_screen.dart';
 
 import '../../common/text_styles.dart';
 import '../../../modules/portal/home/portal_home.dart';

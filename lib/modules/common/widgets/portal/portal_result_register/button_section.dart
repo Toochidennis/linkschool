@@ -6,6 +6,7 @@ import 'package:linkschool/modules/common/utils/registration/registration_utils.
 import 'package:linkschool/modules/portal/home/result/class_detail/registration/bulk_registration.dart';
 
 
+
 class ButtonSection extends StatelessWidget {
   const ButtonSection({Key? key}) : super(key: key);
 

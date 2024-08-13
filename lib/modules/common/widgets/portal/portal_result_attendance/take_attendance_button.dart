@@ -5,7 +5,6 @@ import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/portal/home/result/class_detail/attendance/take_course_attendance.dart';
 
 
-
 class TakeAttendanceButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {

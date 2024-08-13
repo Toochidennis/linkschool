@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
-import 'package:linkschool/modules/common/widgets/portal_result_register/button_section.dart';
-import 'package:linkschool/modules/common/widgets/portal_result_register/history_section.dart';
-import 'package:linkschool/modules/common/widgets/portal_result_register/top_container.dart';
+import 'package:linkschool/modules/common/widgets/portal/result_register/button_section.dart';
+import 'package:linkschool/modules/common/widgets/portal/result_register/history_section.dart';
+import 'package:linkschool/modules/common/widgets/portal/result_register/top_container.dart';
 
 
 class RegistrationScreen extends StatefulWidget {

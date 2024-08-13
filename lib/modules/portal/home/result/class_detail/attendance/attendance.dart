@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:linkschool/modules/common/widgets/portal_result_attendance/attendance_app_bar.dart';
-import 'package:linkschool/modules/common/widgets/portal_result_attendance/attendance_history_header.dart';
-import 'package:linkschool/modules/common/widgets/portal_result_attendance/attendance_history_list.dart';
-import 'package:linkschool/modules/common/widgets/portal_result_attendance/header_container.dart';
-import 'package:linkschool/modules/common/widgets/portal_result_attendance/info_card.dart';
-import 'package:linkschool/modules/common/widgets/portal_result_attendance/take_attendance_button.dart';
+import 'package:linkschool/modules/common/widgets/portal/result_attendance/attendance_app_bar.dart';
+import 'package:linkschool/modules/common/widgets/portal/result_attendance/attendance_history_header.dart';
+import 'package:linkschool/modules/common/widgets/portal/result_attendance/attendance_history_list.dart';
+import 'package:linkschool/modules/common/widgets/portal/result_attendance/header_container.dart';
+import 'package:linkschool/modules/common/widgets/portal/result_attendance/info_card.dart';
+import 'package:linkschool/modules/common/widgets/portal/result_attendance/take_attendance_button.dart';
 
 
 class AttendanceScreen extends StatelessWidget {

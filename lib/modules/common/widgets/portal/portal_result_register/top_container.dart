@@ -3,8 +3,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/common/utils/custom_dropdown_utils.dart';
-import 'package:linkschool/modules/portal/home/result/class_detail/registration/registration.dart';
-// import 'custom_dropdown.dart';
+
 
 class TopContainer extends StatelessWidget {
   final String selectedTerm;

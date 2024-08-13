@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/portal/home/result/class_detail/attendance/attendance_history.dart';
-
+// import 'package:linkschool/modules/portal/result/class_detail/attendance/attendance_history.dart';
 
 class AttendanceHistoryList extends StatelessWidget {
   final List<String> subjects = ['English Language', 'Mathematics', 'Physics', 'Chemistry', 'Biology', 'History', 'Geography', 'Literature'];
