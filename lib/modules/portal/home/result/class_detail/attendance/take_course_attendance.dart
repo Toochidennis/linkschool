@@ -14,18 +14,18 @@ class _TakeCourseAttendanceState extends State<TakeCourseAttendance> {
   List<int> _selectedRowIndices = [];
 
   final List<String> _studentNames = [
-    'Alice Johnson',
-    'Bob Smith',
-    'Charlie Brown',
-    'David Lee',
-    'Emma Watson',
-    'Frank Miller',
-    'Grace Chen',
-    'Henry Ford',
-    'Ivy Zhang',
-    'Jack Wilson',
-    'Kate Taylor',
-    'Liam Harris',
+    'Toochi Dennis',
+    'Bob John',
+    'Charlie Ifeanyi',
+    'David Oyeleke',
+    'Emma Chinonso',
+    'Frank Oga',
+    'Grace Okoro',
+    'Henry Onwe',
+    'Ivy John',
+    'Jack Sunday',
+    'Kate Joseph',
+    'Liam Dennis',
   ];
 
   final List<Color> _circleColors = [

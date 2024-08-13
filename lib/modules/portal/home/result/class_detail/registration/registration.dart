@@ -6,7 +6,7 @@ import 'dart:math';
 
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
-import 'package:linkschool/modules/common/widgets/buttons/custom_long_elevated_button.dart';
+import 'package:linkschool/modules/common/buttons/custom_long_elevated_button.dart';
 import 'package:linkschool/modules/portal/home/result/class_detail/registration/bulk_registration.dart';
 import 'package:linkschool/modules/portal/home/result/class_detail/registration/see_all_history.dart';
 

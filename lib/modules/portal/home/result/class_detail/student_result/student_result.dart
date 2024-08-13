@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:linkschool/modules/common/widgets/buttons/custom_long_elevated_button.dart';
-import 'package:linkschool/modules/common/widgets/buttons/custom_medium_elevated_button.dart';
+import 'package:linkschool/modules/common/buttons/custom_long_elevated_button.dart';
+import 'package:linkschool/modules/common/buttons/custom_medium_elevated_button.dart';
 import 'package:linkschool/modules/portal/home/result/class_detail/student_result/student_list.dart';
 import 'package:percent_indicator/percent_indicator.dart';
 import 'package:fl_chart/fl_chart.dart';

@@ -207,8 +207,6 @@ ElevatedButton(
           builder: (context) => CourseRegistrationScreen(studentName: name, coursesRegistered: coursesRegistered),
         ),
       );
-    } else {
-      // Handle the "Register" case if needed
     }
   },
   child: Text(coursesRegistered > 0 ? 'Edit' : 'Register', style: AppTextStyles.normal700(fontSize: 12, color: AppColors.backgroundLight)),
