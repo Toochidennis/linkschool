@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
-import 'package:linkschool/modules/portal/home/result/class_detail/student_result/course_result_screen.dart';
-import 'package:linkschool/modules/portal/home/result/class_detail/student_result/student_result.dart';
+import 'package:linkschool/modules/portal/result/class_detail/student_result/course_result_screen.dart';
+import 'package:linkschool/modules/portal/result/class_detail/student_result/student_result.dart';
 
 void showStudentResultOverlay(BuildContext context) {
   showModalBottomSheet(

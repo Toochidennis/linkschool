@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
-import 'package:linkschool/modules/portal/home/result/result_dashboard_screen.dart';
+import 'package:linkschool/modules/portal/e-learning/e_learning_dashboard_screen.dart';
+import 'package:linkschool/modules/portal/result/result_dashboard_screen.dart';
 // import 'package:linkschool/modules/portal/result/result_dashboard_screen.dart';
 
 import '../../common/text_styles.dart';
@@ -65,7 +66,6 @@ class _PortalDashboardState extends State<PortalDashboard> {
             text: 'E-learning',
             width: 18.0,
             height: 18.0,
-            
           ),
           createBottomNavIcon(
             imagePath: 'assets/icons/profile.svg',
@@ -75,10 +75,11 @@ class _PortalDashboardState extends State<PortalDashboard> {
         bodyItems: [
           const PortalHome(),
           const ResultDashboardScreen(),
-          Container(
-            height: MediaQuery.of(context).size.height,
-            color: Colors.black,
-          ),
+          const ELearningScreen(),
+          // Container(
+          //   height: MediaQuery.of(context).size.height,
+          //   color: Colors.black,
+          // ),
           Container(
             height: MediaQuery.of(context).size.height,
             color: Colors.blue,

@@ -163,4 +163,7 @@ class AppColors {
 
   //Course Result screen
   static const Color progressBarColor1 = Color.fromRGBO(29, 214, 110, 1);
+
+  // e-learning screen
+  static const Color eLearningBtnColor1 = Color.fromRGBO(47, 85, 221, 1);
 }

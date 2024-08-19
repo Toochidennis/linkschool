@@ -1,9 +1,9 @@
 // ignore_for_file: deprecated_member_use
 
 import 'package:flutter/material.dart';
-import '../../../common/app_colors.dart';
-import '../../../common/constants.dart';
-import '../../../common/text_styles.dart';
+import '../../common/app_colors.dart';
+import '../../common/constants.dart';
+import '../../common/text_styles.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter/services.dart';
 

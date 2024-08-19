@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/buttons/custom_long_elevated_button.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
-import 'package:linkschool/modules/portal/home/result/class_detail/attendance/take_course_attendance.dart';
+import 'package:linkschool/modules/portal/result/class_detail/attendance/take_course_attendance.dart';
 
 
 class TakeAttendanceButton extends StatelessWidget {

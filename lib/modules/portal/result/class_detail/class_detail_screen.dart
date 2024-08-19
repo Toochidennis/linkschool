@@ -5,8 +5,8 @@ import 'package:linkschool/modules/common/utils/class_detail/explore_button_item
 import 'package:linkschool/modules/common/utils/class_detail/term_row_utils.dart';
 import 'package:linkschool/modules/common/widgets/portal/class_detail/class_detail_barchart.dart';
 import 'package:linkschool/modules/common/widgets/portal/class_detail/overlays.dart';
-import 'package:linkschool/modules/portal/home/result/class_detail/attendance/attendance.dart';
-import 'package:linkschool/modules/portal/home/result/class_detail/registration/registration.dart';
+import 'package:linkschool/modules/portal/result/class_detail/attendance/attendance.dart';
+import 'package:linkschool/modules/portal/result/class_detail/registration/registration.dart';
 
 
 class ClassDetailScreen extends StatelessWidget {

@@ -4,8 +4,8 @@ import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:linkschool/modules/common/constants.dart';
-import '../../../common/app_colors.dart';
-import '../../../common/text_styles.dart';
+import '../../common/app_colors.dart';
+import '../../common/text_styles.dart';
 
 class AssessmentSettingScreen extends StatefulWidget {
   const AssessmentSettingScreen({super.key});
