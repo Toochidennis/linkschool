@@ -4,7 +4,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/common/widgets/portal/result_dashboard/select_class_button.dart';
-import 'package:linkschool/modules/portal/e-learning/syllabus.dart';
+import 'package:linkschool/modules/portal/e-learning/Empty_syllabus_screen.dart';
 import 'package:linkschool/modules/portal/result/class_detail/class_detail_screen.dart';
 
 
@@ -235,7 +235,7 @@ class _LevelSelectionState extends State<LevelSelection> {
       onPressed: () {
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (context) => Syllabus(),
+        builder: (context) => EmptySyllabusScreen(),
       ),
     );
         

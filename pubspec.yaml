@@ -145,6 +145,7 @@ flutter:
     - assets/icons/result/search.svg
     - assets/icons/result/study_book.svg
     - assets/icons/result/eye.svg
+    - assets/icons/e_learning/
 
     - assets/icons/result/
 #     - images/a_dot_burr.jpeg

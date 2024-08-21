@@ -4,15 +4,16 @@ import 'package:linkschool/modules/common/buttons/custom_long_elevated_button.da
 import 'package:linkschool/modules/common/buttons/custom_medium_elevated_button.dart';
 import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
+import 'package:linkschool/modules/portal/e-learning/create_syllabus.dart';
 
-class Syllabus extends StatefulWidget {
-  const Syllabus({super.key});
+class EmptySyllabusScreen extends StatefulWidget {
+  const EmptySyllabusScreen({super.key});
 
   @override
-  State<Syllabus> createState() => _SyllabusState();
+  State<EmptySyllabusScreen> createState() => _EmptySyllabusScreenState();
 }
 
-class _SyllabusState extends State<Syllabus> {
+class _EmptySyllabusScreenState extends State<EmptySyllabusScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -30,7 +31,8 @@ class _SyllabusState extends State<Syllabus> {
         ),
         title: Text(
           'Syllabus',
-          style: AppTextStyles.normal600(fontSize: 24.0, color: AppColors.primaryLight),
+          style: AppTextStyles.normal600(
+              fontSize: 24.0, color: AppColors.primaryLight),
         ),
         // centerTitle: true,
         backgroundColor: AppColors.backgroundLight,
@@ -42,14 +44,22 @@ class _SyllabusState extends State<Syllabus> {
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             Text('No syllabus have been created'),
-            SizedBox(height: 15,),
+            SizedBox(
+              height: 15,
+            ),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 CustomMediumElevatedButton(
                   text: 'Create new syllabus',
-                  onPressed: () {},
+                  onPressed: () => Navigator.of(context).push(
+                    MaterialPageRoute(
+                      fullscreenDialog: true,
+                      builder: (BuildContext context) =>
+                          CreateSyllabusScreen(),
+                    ),
+                  ),
                   backgroundColor: AppColors.eLearningBtnColor1,
                   textStyle: AppTextStyles.normal600(
                     fontSize: 16,

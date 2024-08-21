@@ -235,7 +235,7 @@ class _ELearningScreenState extends State<ELearningScreen> {
               ),
               child: Center(
                 child: SvgPicture.asset(
-                  'assets/icons/subject_icon.svg', // Replace with actual icon
+                  'assets/icons/e_learning/subject.svg', // Replace with actual icon
                   width: 48,
                   height: 48,
                 ),
