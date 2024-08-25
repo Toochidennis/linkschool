@@ -121,7 +121,7 @@ class EmptySubjectScreen extends StatelessWidget {
         padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
         margin: const EdgeInsets.only(bottom: 8),
         decoration: BoxDecoration(
-          color: const Color(0xFFF8F8F8),
+          color:  AppColors.backgroundLight,
           borderRadius: BorderRadius.circular(8),
         ),
         child: Row(

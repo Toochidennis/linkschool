@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
+import 'package:linkschool/modules/common/buttons/custom_save_elevated_button.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/common/widgets/portal/e_learning/select_classes_dialog.dart';
 import 'package:linkschool/modules/common/widgets/portal/e_learning/select_teachers_dialog.dart';
@@ -33,23 +34,20 @@ class _CreateSyllabusScreenState extends State<CreateSyllabusScreen> {
         ),
         backgroundColor: AppColors.backgroundLight,
         actions: [
-          TextButton(
-            onPressed: () {
-              // Pass the data back to EmptySyllabusScreen
-              Navigator.of(context).pop({
-                'title': _titleController.text,
-                'backgroundImagePath': _backgroundImagePath,
-                'description': _descriptionController.text,
-                'selectedClass': _selectedClass,
-                'selectedTeacher': _selectedTeacher,
-              });
-            },
-            child: Text(
-              'Save',
-              style: AppTextStyles.normal600(
-                fontSize: 16.0,
-                color: AppColors.primaryLight,
-              ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8.0), // Adding some padding for better alignment
+            child: CustomSaveElevatedButton(
+              onPressed: () {
+                
+                Navigator.of(context).pop({
+                  'title': _titleController.text,
+                  'backgroundImagePath': _backgroundImagePath,
+                  'description': _descriptionController.text,
+                  'selectedClass': _selectedClass,
+                  'selectedTeacher': _selectedTeacher,
+                });
+              }, 
+              text: 'Save',
             ),
           ),
         ],
