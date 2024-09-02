@@ -7,12 +7,12 @@ import 'package:linkschool/modules/common/buttons/custom_save_outline_button..da
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/portal/e-learning/topic_selection_screen.dart';
 
-class AssignmentScreen extends StatefulWidget {
+class QuestionScreen extends StatefulWidget {
   @override
-  State<AssignmentScreen> createState() => _AssignmentScreenState();
+  State<QuestionScreen> createState() => _QuestionScreenState();
 }
 
-class _AssignmentScreenState extends State<AssignmentScreen> {
+class _QuestionScreenState extends State<QuestionScreen> {
     String _selectedClass = 'Select classes';
     final TextEditingController _titleController = TextEditingController();
     final TextEditingController _descriptionController = TextEditingController();
@@ -37,7 +37,7 @@ class _AssignmentScreenState extends State<AssignmentScreen> {
           ),
         ),
         title: Text(
-          'Assignment',
+          'Question',
           style: AppTextStyles.normal600(
             fontSize: 24.0,
             color: AppColors.primaryLight,
@@ -77,7 +77,7 @@ class _AssignmentScreenState extends State<AssignmentScreen> {
             TextField(
               controller: _titleController,
               decoration: InputDecoration(
-                hintText: 'e.g. Dying and bleaching',
+                hintText: 'Why is egg white?',
                 hintStyle: const TextStyle(color: Colors.grey),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8.0),
@@ -96,7 +96,7 @@ class _AssignmentScreenState extends State<AssignmentScreen> {
               controller: _descriptionController,
               maxLines: 5,
               decoration: InputDecoration(
-                hintText: 'Type here...',
+                hintText: 'List out the characteristics of an egg',
                 hintStyle: const TextStyle(color: Colors.grey),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8.0),
@@ -106,7 +106,7 @@ class _AssignmentScreenState extends State<AssignmentScreen> {
             ),
             const SizedBox(height: 32.0),
             Text(
-              'Select the learning group for this syllabus: *',
+              'Select the learners : *',
               style:
                   AppTextStyles.normal600(fontSize: 16.0, color: Colors.black),
             ),
@@ -117,13 +117,13 @@ class _AssignmentScreenState extends State<AssignmentScreen> {
               text: _selectedClass,
               onTap: () {}
             ),
-            _buildGroupRow(
-              context, 
-              iconPath: 'assets/icons/e_learning/link.svg', 
-              text: _attachmentText, 
-              isSelected: true,
-              onTap: _showAttachmentOptions
-            ),
+            // _buildGroupRow(
+            //   context, 
+            //   iconPath: 'assets/icons/e_learning/link.svg', 
+            //   text: _attachmentText, 
+            //   isSelected: true,
+            //   onTap: _showAttachmentOptions
+            // ),
             _buildGroupRow(
               context, 
               iconPath: 'assets/icons/e_learning/mark.svg', 
@@ -134,14 +134,22 @@ class _AssignmentScreenState extends State<AssignmentScreen> {
             _buildGroupRow(
               context, 
               iconPath: 'assets/icons/e_learning/calender.svg', 
-              text: '${_selectedDateTime.toString().split(' ')[0]} (${_selectedDateTime.hour.toString().padLeft(2, '0')}:${_selectedDateTime.minute.toString().padLeft(2, '0')})', 
+              text: 'Due : Thurs, 25 July', 
+              showEditButton: true,
+              isSelected: true,
+              onTap: _showDateTimePicker
+            ),
+            _buildGroupRow(
+              context, 
+              iconPath: 'assets/icons/e_learning/clock.svg', 
+              text: '60 minutes', 
               showEditButton: true,
               onTap: _showDateTimePicker
             ),
             _buildGroupRow(
               context, 
               iconPath: 'assets/icons/e_learning/clipboard.svg', 
-              text: 'Rule of BODMAS', 
+              text: 'No Topic', 
               showEditButton: true,
               isSelected: true,
               onTap: () => _showTopicSelectionScreen()
@@ -228,114 +236,7 @@ Widget _buildGroupRow(
 }
 
 
-  void _showAttachmentOptions() {
-    showModalBottomSheet(
-      context: context,
-      builder: (BuildContext context) {
-        return Container(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            // crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[
-              Text(
-                'Add attachment',
-                style: AppTextStyles.normal600(fontSize: 20, color: AppColors.backgroundDark),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 16),
-              _buildAttachmentOption('Insert link', 'assets/icons/e_learning/link3.svg', _showInsertLinkDialog),
-              _buildAttachmentOption('Upload file', 'assets/icons/e_learning/upload.svg', () {}),
-              _buildAttachmentOption('Take photo', 'assets/icons/e_learning/camera.svg', () {}),
-              _buildAttachmentOption('Record Video', 'assets/icons/e_learning/video.svg', () {}),
-            ],
-          ),
-        );
-      },
-    );
-  }
 
-  Widget _buildAttachmentOption(String text, String iconPath, VoidCallback onTap) {
-    return InkWell(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-        margin: const EdgeInsets.only(bottom: 8),
-        color: AppColors.backgroundLight,
-        child: Row(
-          children: [
-            SvgPicture.asset(iconPath, width: 24, height: 24),
-            const SizedBox(width: 16),
-            Text(text, style: AppTextStyles.normal400(fontSize: 16, color: AppColors.backgroundDark)),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _showInsertLinkDialog() {
-    TextEditingController linkController = TextEditingController();
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      builder: (BuildContext context) {
-        return Padding(
-          padding: EdgeInsets.only(
-            bottom: MediaQuery.of(context).viewInsets.bottom,
-          ),
-          child: Container(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              // crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Insert Link',
-                  style: AppTextStyles.normal600(fontSize: 20, color: AppColors.backgroundDark),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: linkController,
-                  decoration: InputDecoration(
-                    hintText: 'Enter link here',
-                    prefixIcon: SvgPicture.asset(
-                      'assets/icons/e_learning/link3.svg',
-                      width: 24,
-                      height: 24,
-                      fit: BoxFit.scaleDown,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    // TextButton(
-                    //   child: Text('Cancel'),
-                    //   onPressed: () => Navigator.of(context).pop(),
-                    // ),
-                    CustomOutlineButton(onPressed: () => Navigator.of(context).pop(), text: 'Cancel', borderColor: AppColors.eLearningBtnColor3, textColor: AppColors.eLearningBtnColor3),
-                    CustomSaveElevatedButton(
-                      onPressed: () {
-                        setState(() {
-                          _attachmentText = linkController.text.isNotEmpty 
-                            ? 'Link: ${linkController.text}' 
-                            : 'Add Attachment';
-                        });
-                        Navigator.of(context).pop();
-                      }, 
-                      text: 'Save',
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
 
 void _showDateTimePicker() {
   showDatePicker(

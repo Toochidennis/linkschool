@@ -4,6 +4,7 @@ import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/buttons/custom_medium_elevated_button.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/portal/e-learning/assignment_screen.dart';
+import 'package:linkschool/modules/portal/e-learning/question_screen.dart';
 import 'package:linkschool/modules/portal/e-learning/topic_screen.dart';
 
 class EmptySubjectScreen extends StatelessWidget {
@@ -103,11 +104,11 @@ class EmptySubjectScreen extends StatelessWidget {
           Navigator.push(context, MaterialPageRoute(builder: (context) => AssignmentScreen()));
           break;
         case 'Topic':
-          Navigator.push(context, MaterialPageRoute(builder: (context) => TopicScreen()));
+          Navigator.push(context, MaterialPageRoute(fullscreenDialog: true, builder: (BuildContext context) => TopicScreen()));
           break;
-        // case 'Question':
-        //   Navigator.push(context, MaterialPageRoute(builder: (context) => QuestionScreen()));
-        //   break;
+        case 'Question':
+          Navigator.push(context, MaterialPageRoute(builder: (context) => QuestionScreen()));
+          break;
         // case 'Material':
         //   Navigator.push(context, MaterialPageRoute(builder: (context) => MaterialScreen()));
         //   break;
@@ -134,4 +135,18 @@ class EmptySubjectScreen extends StatelessWidget {
       ),
     );
   }
+
+  // void _addNewSyllabus() async {
+  //   final result = await Navigator.of(context).push(
+  //     MaterialPageRoute(
+  //       fullscreenDialog: true,
+  //       builder: (BuildContext context) => TopicScreen(),
+  //     ),
+  //   );
+  //   if (result != null) {
+  //     setState(() {
+  //       _syllabusList.add(result);
+  //     });
+  //   }
+  // }
 }
