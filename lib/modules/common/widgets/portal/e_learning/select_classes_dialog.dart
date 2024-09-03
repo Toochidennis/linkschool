@@ -3,7 +3,6 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 
-
 class SelectClassesDialog extends StatefulWidget {
   final Function(String) onSave;
 
@@ -16,7 +15,6 @@ class SelectClassesDialog extends StatefulWidget {
 class _SelectClassesDialogState extends State<SelectClassesDialog> {
   final List<String> _classes = ['Basic 1A', 'Basic 1B', 'Basic 1C', 'Basic 1D'];
   final Set<String> _selectedClasses = {};
-
   bool _selectAll = false;
 
   void _toggleSelectAll() {
@@ -42,7 +40,10 @@ class _SelectClassesDialogState extends State<SelectClassesDialog> {
 
   void _handleSave() {
     if (_selectedClasses.isNotEmpty) {
-      widget.onSave(_selectedClasses.join(', '));
+      final selectedClassString = _selectedClasses.length > 1
+          ? '${_selectedClasses.length} classes selected'
+          : _selectedClasses.join(', ');
+      widget.onSave(selectedClassString);
     }
     Navigator.of(context).pop();
   }
@@ -51,7 +52,10 @@ class _SelectClassesDialogState extends State<SelectClassesDialog> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Select class', style: AppTextStyles.normal600(fontSize: 20.0, color: AppColors.backgroundDark)),
+        title: Text(
+          'Select class',
+          style: AppTextStyles.normal600(fontSize: 20.0, color: AppColors.backgroundDark),
+        ),
         backgroundColor: AppColors.backgroundLight,
         leading: IconButton(
           icon: Icon(Icons.arrow_back),
@@ -60,7 +64,10 @@ class _SelectClassesDialogState extends State<SelectClassesDialog> {
         actions: [
           TextButton(
             onPressed: _handleSave,
-            child: Text('Save', style: AppTextStyles.normal600(fontSize: 16.0, color: AppColors.backgroundDark)),
+            child: Text(
+              'Save',
+              style: AppTextStyles.normal600(fontSize: 16.0, color: AppColors.backgroundDark),
+            ),
           ),
         ],
       ),
@@ -83,7 +90,10 @@ class _SelectClassesDialogState extends State<SelectClassesDialog> {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text('Select all classes', style: AppTextStyles.normal600(fontSize: 16.0, color: AppColors.backgroundDark)),
+            Text(
+              'Select all classes',
+              style: AppTextStyles.normal600(fontSize: 16.0, color: AppColors.backgroundDark),
+            ),
             SvgPicture.asset(
               'assets/icons/e_learning/check_icon.svg',
               color: _selectAll ? Colors.green : Colors.grey,
@@ -109,7 +119,10 @@ class _SelectClassesDialogState extends State<SelectClassesDialog> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(className, style: AppTextStyles.normal600(fontSize: 16.0, color: AppColors.backgroundDark)),
+                Text(
+                  className,
+                  style: AppTextStyles.normal600(fontSize: 16.0, color: AppColors.backgroundDark),
+                ),
                 SvgPicture.asset(
                   'assets/icons/e_learning/check_icon.svg',
                   color: isSelected ? Colors.green : Colors.grey,

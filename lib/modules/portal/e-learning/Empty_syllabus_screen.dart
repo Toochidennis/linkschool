@@ -3,7 +3,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
-import 'package:linkschool/modules/common/buttons/custom_long_elevated_button.dart';
 import 'package:linkschool/modules/common/buttons/custom_medium_elevated_button.dart';
 import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
@@ -97,12 +96,7 @@ class _EmptySyllabusScreenState extends State<EmptySyllabusScreen> {
                   EmptySubjectScreen(title: _syllabusList[index]['title']),
             ),
           ),
-          child: _buildOutlineContainers(
-            _syllabusList[index]['title'],
-            _syllabusList[index]['backgroundImagePath'],
-            _syllabusList[index]['selectedClass'],
-            _syllabusList[index]['selectedTeacher'],
-          ),
+          child: _buildOutlineContainers(_syllabusList[index], index)
         );
       },
     );
@@ -122,53 +116,94 @@ class _EmptySyllabusScreenState extends State<EmptySyllabusScreen> {
     }
   }
 
-  Widget _buildOutlineContainers(String title, String backgroundImagePath,
-      String selectedClass, String selectedTeacher) {
+  void _editSyllabus(int index) async {
+    final result = await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (BuildContext context) => CreateSyllabusScreen(
+          syllabusData: _syllabusList[index],
+        ),
+      ),
+    );
+    if (result != null) {
+      setState(() {
+        _syllabusList[index] = result;
+      });
+    }
+  }
+
+  void _deleteSyllabus(int index) {
+    setState(() {
+      _syllabusList.removeAt(index);
+    });
+  }
+
+  Widget _buildOutlineContainers(Map<String, dynamic> syllabus, int index) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
       child: Container(
-        height: 140,
+        height: 150,
         decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(10), color: Colors.transparent),
+          borderRadius: BorderRadius.circular(10),
+          color: Colors.transparent,
+        ),
         clipBehavior: Clip.antiAlias,
         child: Stack(
           children: [
             SvgPicture.asset(
-              backgroundImagePath,
+              syllabus['backgroundImagePath'],
               width: double.infinity,
               height: double.infinity,
               fit: BoxFit.cover,
             ),
             Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 12.0,
-              ),
+              padding: const EdgeInsets.symmetric(horizontal: 12.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Text(
-                    title,
-                    style: AppTextStyles.normal700(
-                      fontSize: 18,
-                      color: AppColors.backgroundLight,
-                    ),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          syllabus['title'],
+                          style: AppTextStyles.normal700(
+                            fontSize: 18,
+                            color: AppColors.backgroundLight,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      IconButton(
+                        icon: SvgPicture.asset(
+                          'assets/icons/result/edit.svg',
+                          color: Colors.white,
+                          width: 20,
+                          height: 20,
+                        ),
+                        onPressed: () => _editSyllabus(index),
+                      ),
+                      IconButton(
+                        icon: SvgPicture.asset(
+                          'assets/icons/result/delete.svg',
+                          color: Colors.white,
+                          width: 20,
+                          height: 20,
+                        ),
+                        onPressed: () => _deleteSyllabus(index),
+                      ),
+                    ],
                   ),
-                  const SizedBox(
-                    height: 20,
-                  ),
+                  const SizedBox(height: 20),
                   Text(
-                    'BASIC ONE,: $selectedClass',
+                    syllabus['selectedClass'],
                     style: AppTextStyles.normal500(
                       fontSize: 18,
                       color: AppColors.backgroundLight,
                     ),
                   ),
-                  const SizedBox(
-                    height: 30,
-                  ),
+                  const SizedBox(height: 30),
                   Text(
-                    selectedTeacher,
+                    syllabus['selectedTeacher'],
                     style: AppTextStyles.normal600(
                       fontSize: 14,
                       color: AppColors.backgroundLight,
@@ -176,7 +211,7 @@ class _EmptySyllabusScreenState extends State<EmptySyllabusScreen> {
                   ),
                 ],
               ),
-            )
+            ),
           ],
         ),
       ),

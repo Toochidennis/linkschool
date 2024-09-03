@@ -16,7 +16,6 @@ class _QuestionScreenState extends State<QuestionScreen> {
     String _selectedClass = 'Select classes';
     final TextEditingController _titleController = TextEditingController();
     final TextEditingController _descriptionController = TextEditingController();
-    String _attachmentText = 'Add Attachment';
     DateTime _selectedDateTime = DateTime.now();
     String _selectedTopic = 'Rule of BODMAS';
 
@@ -65,96 +64,91 @@ class _QuestionScreenState extends State<QuestionScreen> {
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Title:',
-              style:
-                  AppTextStyles.normal600(fontSize: 16.0, color: Colors.black),
-            ),
-            const SizedBox(height: 8.0),
-            TextField(
-              controller: _titleController,
-              decoration: InputDecoration(
-                hintText: 'Why is egg white?',
-                hintStyle: const TextStyle(color: Colors.grey),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8.0),
-                ),
-                contentPadding: const EdgeInsets.all(12.0),
+        child: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Title:',
+                style:
+                    AppTextStyles.normal600(fontSize: 16.0, color: Colors.black),
               ),
-            ),
-            const SizedBox(height: 16.0),
-            Text(
-              'Description:',
-              style:
-                  AppTextStyles.normal600(fontSize: 16.0, color: Colors.black),
-            ),
-            const SizedBox(height: 8.0),
-            TextField(
-              controller: _descriptionController,
-              maxLines: 5,
-              decoration: InputDecoration(
-                hintText: 'List out the characteristics of an egg',
-                hintStyle: const TextStyle(color: Colors.grey),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8.0),
+              const SizedBox(height: 8.0),
+              TextField(
+                controller: _titleController,
+                decoration: InputDecoration(
+                  hintText: 'Why is egg white?',
+                  hintStyle: const TextStyle(color: Colors.grey),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8.0),
+                  ),
+                  contentPadding: const EdgeInsets.all(12.0),
                 ),
-                contentPadding: const EdgeInsets.all(12.0),
               ),
-            ),
-            const SizedBox(height: 32.0),
-            Text(
-              'Select the learners : *',
-              style:
-                  AppTextStyles.normal600(fontSize: 16.0, color: Colors.black),
-            ),
-            const SizedBox(height: 16.0),
-            _buildGroupRow(
-              context,
-              iconPath: 'assets/icons/e_learning/people.svg',
-              text: _selectedClass,
-              onTap: () {}
-            ),
-            // _buildGroupRow(
-            //   context, 
-            //   iconPath: 'assets/icons/e_learning/link.svg', 
-            //   text: _attachmentText, 
-            //   isSelected: true,
-            //   onTap: _showAttachmentOptions
-            // ),
-            _buildGroupRow(
-              context, 
-              iconPath: 'assets/icons/e_learning/mark.svg', 
-              text: '200 marks', 
-              showEditButton: true,
-              onTap: () {}
-            ),
-            _buildGroupRow(
-              context, 
-              iconPath: 'assets/icons/e_learning/calender.svg', 
-              text: 'Due : Thurs, 25 July', 
-              showEditButton: true,
-              isSelected: true,
-              onTap: _showDateTimePicker
-            ),
-            _buildGroupRow(
-              context, 
-              iconPath: 'assets/icons/e_learning/clock.svg', 
-              text: '60 minutes', 
-              showEditButton: true,
-              onTap: _showDateTimePicker
-            ),
-            _buildGroupRow(
-              context, 
-              iconPath: 'assets/icons/e_learning/clipboard.svg', 
-              text: 'No Topic', 
-              showEditButton: true,
-              isSelected: true,
-              onTap: () => _showTopicSelectionScreen()
-            ),
-          ],
+              const SizedBox(height: 16.0),
+              Text(
+                'Description:',
+                style:
+                    AppTextStyles.normal600(fontSize: 16.0, color: Colors.black),
+              ),
+              const SizedBox(height: 8.0),
+              TextField(
+                controller: _descriptionController,
+                maxLines: 5,
+                decoration: InputDecoration(
+                  hintText: 'List out the characteristics of an egg',
+                  hintStyle: const TextStyle(color: Colors.grey),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8.0),
+                  ),
+                  contentPadding: const EdgeInsets.all(12.0),
+                ),
+              ),
+              const SizedBox(height: 32.0),
+              Text(
+                'Select the learners : *',
+                style:
+                    AppTextStyles.normal600(fontSize: 16.0, color: Colors.black),
+              ),
+              const SizedBox(height: 16.0),
+              _buildGroupRow(
+                context,
+                iconPath: 'assets/icons/e_learning/people.svg',
+                text: _selectedClass,
+                onTap: () {}
+              ),
+              _buildGroupRow(
+                context, 
+                iconPath: 'assets/icons/e_learning/mark.svg', 
+                text: '200 marks', 
+                showEditButton: true,
+                onTap: () {}
+              ),
+              _buildGroupRow(
+                context, 
+                iconPath: 'assets/icons/e_learning/calender.svg', 
+                text: 'Due : Thurs, 25 July', 
+                showEditButton: true,
+                isSelected: true,
+                onTap: _showDateTimePicker
+              ),
+              _buildGroupRow(
+                context, 
+                iconPath: 'assets/icons/e_learning/clock.svg', 
+                text: '60 minutes', 
+                showEditButton: true,
+                onTap: _showDateTimePicker
+              ),
+              _buildGroupRow(
+                context, 
+                iconPath: 'assets/icons/e_learning/clipboard.svg', 
+                text: 'No Topic', 
+                showEditButton: true,
+                isSelected: true,
+                onTap: () => _showTopicSelectionScreen()
+              ),
+            ],
+          ),
         ),
       )
     );

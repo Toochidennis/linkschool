@@ -86,7 +86,7 @@ class EmptySubjectScreen extends StatelessWidget {
                   ],
                 ),
               ),
-              _buildOptionRow(context, 'Share again', 'assets/icons/e_learning/share.svg'),
+              _buildOptionRow(context, 'Reuse content', 'assets/icons/e_learning/share.svg'),
             ],
           ),
         );

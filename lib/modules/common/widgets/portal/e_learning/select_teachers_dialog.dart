@@ -1,9 +1,7 @@
-
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
-
 
 class SelectTeachersDialog extends StatefulWidget {
   final Function(String) onSave;
@@ -15,9 +13,8 @@ class SelectTeachersDialog extends StatefulWidget {
 }
 
 class _SelectTeachersDialogState extends State<SelectTeachersDialog> {
-  final List<String> _teachers = ['Rapheal Nnachi', 'Alice Smith', 'John Doe', 'Jane Roe'];
+  final List<String> _teachers = ['John Doe', 'Jane Smith', 'Michael Johnson', 'Emily Davis'];
   final Set<String> _selectedTeachers = {};
-
   bool _selectAll = false;
 
   void _toggleSelectAll() {
@@ -43,7 +40,10 @@ class _SelectTeachersDialogState extends State<SelectTeachersDialog> {
 
   void _handleSave() {
     if (_selectedTeachers.isNotEmpty) {
-      widget.onSave(_selectedTeachers.join(', '));
+      final selectedTeacherString = _selectedTeachers.length > 1
+          ? '${_selectedTeachers.length} teachers selected'
+          : _selectedTeachers.join(', ');
+      widget.onSave(selectedTeacherString);
     }
     Navigator.of(context).pop();
   }
@@ -52,7 +52,10 @@ class _SelectTeachersDialogState extends State<SelectTeachersDialog> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Select teachers', style: AppTextStyles.normal600(fontSize: 20.0, color: AppColors.backgroundDark)),
+        title: Text(
+          'Select teacher',
+          style: AppTextStyles.normal600(fontSize: 20.0, color: AppColors.backgroundDark),
+        ),
         backgroundColor: AppColors.backgroundLight,
         leading: IconButton(
           icon: Icon(Icons.arrow_back),
@@ -61,7 +64,10 @@ class _SelectTeachersDialogState extends State<SelectTeachersDialog> {
         actions: [
           TextButton(
             onPressed: _handleSave,
-            child: Text('Save', style: AppTextStyles.normal600(fontSize: 16.0, color: AppColors.backgroundDark)),
+            child: Text(
+              'Save',
+              style: AppTextStyles.normal600(fontSize: 16.0, color: AppColors.backgroundDark),
+            ),
           ),
         ],
       ),
@@ -84,7 +90,10 @@ class _SelectTeachersDialogState extends State<SelectTeachersDialog> {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text('Select all teachers', style: AppTextStyles.normal600(fontSize: 16.0, color: AppColors.backgroundDark)),
+            Text(
+              'Select all teachers',
+              style: AppTextStyles.normal600(fontSize: 16.0, color: AppColors.backgroundDark),
+            ),
             SvgPicture.asset(
               'assets/icons/e_learning/check_icon.svg',
               color: _selectAll ? Colors.green : Colors.grey,
@@ -102,8 +111,6 @@ class _SelectTeachersDialogState extends State<SelectTeachersDialog> {
       itemBuilder: (context, index) {
         final teacherName = _teachers[index];
         final isSelected = _selectedTeachers.contains(teacherName);
-        final color = Colors.primaries[index % Colors.primaries.length];
-
         return InkWell(
           onTap: () => _toggleSelectTeacher(teacherName),
           child: Container(
@@ -112,15 +119,9 @@ class _SelectTeachersDialogState extends State<SelectTeachersDialog> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Row(
-                  children: [
-                    CircleAvatar(
-                      backgroundColor: color,
-                      child: Text(teacherName[0], style: TextStyle(color: Colors.white)),
-                    ),
-                    const SizedBox(width: 16.0),
-                    Text(teacherName, style: AppTextStyles.normal600(fontSize: 16.0, color: AppColors.backgroundDark)),
-                  ],
+                Text(
+                  teacherName,
+                  style: AppTextStyles.normal600(fontSize: 16.0, color: AppColors.backgroundDark),
                 ),
                 SvgPicture.asset(
                   'assets/icons/e_learning/check_icon.svg',
