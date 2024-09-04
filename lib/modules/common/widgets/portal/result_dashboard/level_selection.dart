@@ -235,7 +235,7 @@ class _LevelSelectionState extends State<LevelSelection> {
       onPressed: () {
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (context) => EmptySyllabusScreen(),
+        builder: (context) => EmptySyllabusScreen(selectedSubject: subject),
       ),
     );
         

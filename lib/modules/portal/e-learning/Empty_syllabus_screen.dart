@@ -10,7 +10,9 @@ import 'package:linkschool/modules/portal/e-learning/create_syllabus_screen.dart
 import 'package:linkschool/modules/portal/e-learning/empty_subject_screen.dart';
 
 class EmptySyllabusScreen extends StatefulWidget {
-  const EmptySyllabusScreen({super.key});
+  final String selectedSubject;
+  
+  const EmptySyllabusScreen({Key? key, required this.selectedSubject}) : super(key: key);
 
   @override
   State<EmptySyllabusScreen> createState() => _EmptySyllabusScreenState();
@@ -93,10 +95,10 @@ class _EmptySyllabusScreenState extends State<EmptySyllabusScreen> {
             context,
             MaterialPageRoute(
               builder: (context) =>
-                  EmptySubjectScreen(title: _syllabusList[index]['title']),
+                  EmptySubjectScreen(title: _syllabusList[index]['title'], selectedSubject: widget.selectedSubject,),
             ),
           ),
-          child: _buildOutlineContainers(_syllabusList[index], index)
+          child: _buildOutlineContainers(_syllabusList[index], index),
         );
       },
     );
@@ -135,6 +137,55 @@ class _EmptySyllabusScreenState extends State<EmptySyllabusScreen> {
     setState(() {
       _syllabusList.removeAt(index);
     });
+  }
+
+  void _confirmDeleteSyllabus(int index) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text(
+            'Delete Syllabus',
+            style: AppTextStyles.normal600(
+              fontSize: 20,
+              color: AppColors.backgroundDark,
+            ),
+          ),
+          content: Text(
+            'Are you sure you want to delete this syllabus?',
+            style: AppTextStyles.normal500(
+              fontSize: 16,
+              color: AppColors.backgroundDark,
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text(
+                'No',
+                style: AppTextStyles.normal600(
+                  fontSize: 16,
+                  color: AppColors.primaryLight,
+                ),
+              ),
+            ),
+            TextButton(
+              onPressed: () {
+                _deleteSyllabus(index);
+                Navigator.of(context).pop();
+              },
+              child: Text(
+                'Yes',
+                style: AppTextStyles.normal600(
+                  fontSize: 16,
+                  color: Colors.red,
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   Widget _buildOutlineContainers(Map<String, dynamic> syllabus, int index) {
@@ -189,7 +240,7 @@ class _EmptySyllabusScreenState extends State<EmptySyllabusScreen> {
                           width: 20,
                           height: 20,
                         ),
-                        onPressed: () => _deleteSyllabus(index),
+                        onPressed: () => _confirmDeleteSyllabus(index),
                       ),
                     ],
                   ),

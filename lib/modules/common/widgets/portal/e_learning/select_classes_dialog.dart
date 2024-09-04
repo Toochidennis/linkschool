@@ -1,6 +1,9 @@
+// ignore_for_file: deprecated_member_use
+
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
+import 'package:linkschool/modules/common/buttons/custom_save_elevated_button.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 
 class SelectClassesDialog extends StatefulWidget {
@@ -52,21 +55,28 @@ class _SelectClassesDialogState extends State<SelectClassesDialog> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        leading: IconButton(
+          onPressed: () {
+            Navigator.of(context).pop();
+          },
+          icon: Image.asset(
+            'assets/icons/arrow_back.png',
+            color: AppColors.primaryLight,
+            width: 34.0,
+            height: 34.0,
+          ),
+        ),
         title: Text(
           'Select class',
           style: AppTextStyles.normal600(fontSize: 20.0, color: AppColors.backgroundDark),
         ),
         backgroundColor: AppColors.backgroundLight,
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
         actions: [
-          TextButton(
-            onPressed: _handleSave,
-            child: Text(
-              'Save',
-              style: AppTextStyles.normal600(fontSize: 16.0, color: AppColors.backgroundDark),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8.0),
+            child: CustomSaveElevatedButton(
+              onPressed: _handleSave,
+              text: 'Save',
             ),
           ),
         ],
@@ -85,7 +95,7 @@ class _SelectClassesDialogState extends State<SelectClassesDialog> {
     return InkWell(
       onTap: _toggleSelectAll,
       child: Container(
-        color: AppColors.eLearningBtnColor2,
+        color: AppColors.bgGray.withOpacity(0.5),
         padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,

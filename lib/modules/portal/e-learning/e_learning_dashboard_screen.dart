@@ -82,6 +82,7 @@ class _ELearningScreenState extends State<ELearningScreen> {
               child: const LevelSelection(
                   isSecondScreen: true,
                   subjects: ['Civic Education', 'Mathematics', 'English', 'Physics', 'Chemistry'],
+
               ),
             ),
           ],
@@ -227,7 +228,7 @@ class _ELearningScreenState extends State<ELearningScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Expanded(
-            flex: 1,
+            flex: 2,
             child: Container(
               decoration: const BoxDecoration(
                 color: Colors.orange,
@@ -243,7 +244,7 @@ class _ELearningScreenState extends State<ELearningScreen> {
             ),
           ),
           Expanded(
-            flex: 1,
+            flex: 3,
             child: Padding(
               padding: const EdgeInsets.all(8),
               child: Column(

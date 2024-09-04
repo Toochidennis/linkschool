@@ -1,12 +1,15 @@
+// ignore_for_file: deprecated_member_use
+
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:intl/intl.dart'; // Add this package for date formatting
+import 'package:intl/intl.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/buttons/custom_medium_elevated_button.dart';
 import 'package:linkschool/modules/common/buttons/custom_save_elevated_button.dart';
-// import 'package:linkschool/modules/common/buttons/custom_save_outline_button.dart';
+import 'package:linkschool/modules/common/buttons/custom_save_outline_button..dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/common/widgets/portal/e_learning/select_classes_dialog.dart';
+import 'package:linkschool/modules/portal/e-learning/topic_screen.dart';
 import 'package:linkschool/modules/portal/e-learning/topic_selection_screen.dart';
 
 class AssignmentScreen extends StatefulWidget {
@@ -18,9 +21,9 @@ class _AssignmentScreenState extends State<AssignmentScreen> {
   String _selectedClass = 'Select classes';
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _descriptionController = TextEditingController();
-  List<Map<String, dynamic>> _attachments = [];
+  List<AttachmentItem> _attachments = [];
   DateTime _selectedDateTime = DateTime.now();
-  String _selectedTopic = 'Rule of BODMAS';
+  String _selectedTopic = 'No Topic';
 
   @override
   Widget build(BuildContext context) {
@@ -50,7 +53,7 @@ class _AssignmentScreenState extends State<AssignmentScreen> {
             padding: const EdgeInsets.symmetric(horizontal: 8.0),
             child: CustomSaveElevatedButton(
               onPressed: () {
-                // Save functionality can be added here
+                // Save functionality
               },
               text: 'Save',
             ),
@@ -103,6 +106,7 @@ class _AssignmentScreenState extends State<AssignmentScreen> {
                 style: AppTextStyles.normal600(fontSize: 16.0, color: Colors.black),
               ),
               const SizedBox(height: 16.0),
+              
               _buildGroupRow(
                 context,
                 iconPath: 'assets/icons/e_learning/people.svg',
@@ -121,13 +125,7 @@ class _AssignmentScreenState extends State<AssignmentScreen> {
                   );
                 },
               ),
-              ..._buildAttachments(),
-              // CustomOutlineButton(
-              //   text: '+ Add',
-              //   textColor: Colors.orange,
-              //   borderColor: Colors.orange,
-              //   onPressed: _showAttachmentOptions,
-              // ),
+              _buildAttachmentsSection(),
               _buildGroupRow(
                 context,
                 iconPath: 'assets/icons/e_learning/mark.svg',
@@ -148,7 +146,7 @@ class _AssignmentScreenState extends State<AssignmentScreen> {
                 text: _selectedTopic,
                 showEditButton: true,
                 isSelected: true,
-                onTap: _showTopicSelectionScreen,
+                onTap: () =>  Navigator.push(context, MaterialPageRoute(fullscreenDialog: true, builder: (BuildContext context) => TopicScreen())),
               ),
             ],
           ),
@@ -184,6 +182,15 @@ class _AssignmentScreenState extends State<AssignmentScreen> {
                 ),
               ),
               const SizedBox(width: 8.0),
+              // Expanded(
+              //   child: Text(
+              //     text,
+              //     style: AppTextStyles.normal600(
+              //       fontSize: 16.0,
+              //       color: isSelected ? AppColors.eLearningBtnColor1 : AppColors.eLearningBtnColor1,
+              //     ),
+              //   ),
+              // ),
               IntrinsicWidth(
                 child: Container(
                   height: 32,
@@ -207,18 +214,15 @@ class _AssignmentScreenState extends State<AssignmentScreen> {
               ),
               const Spacer(),
               if (showEditButton)
-                Padding(
-                  padding: const EdgeInsets.only(left: 8.0),
-                  child: OutlinedButton(
-                    onPressed: onTap,
-                    child: const Text('Edit'),
-                    style: OutlinedButton.styleFrom(
-                      textStyle: AppTextStyles.normal600(fontSize: 14.0, color: AppColors.backgroundLight),
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                      side: const BorderSide(color: Colors.grey),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
+                OutlinedButton(
+                  onPressed: onTap,
+                  child: const Text('Edit'),
+                  style: OutlinedButton.styleFrom(
+                    textStyle: AppTextStyles.normal600(fontSize: 14.0, color: AppColors.backgroundLight),
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    side: const BorderSide(color: AppColors.eLearningBtnColor1),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
                     ),
                   ),
                 ),
@@ -232,57 +236,92 @@ class _AssignmentScreenState extends State<AssignmentScreen> {
     );
   }
 
-  List<Widget> _buildAttachments() {
-    return _attachments.map((attachment) {
-      return Padding(
-        padding: const EdgeInsets.symmetric(vertical: 8.0),
-        child: Row(
-          children: [
-            SvgPicture.asset(
-              attachment['iconPath'],
-              width: 24,
-              height: 24,
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Text(
-                attachment['name'],
-                style: AppTextStyles.normal400(fontSize: 16, color: AppColors.backgroundDark),
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-            IconButton(
-              icon: SvgPicture.asset(
-                'assets/icons/e_learning/cancel.svg',
-                color: Colors.red,
-                width: 20,
-                height: 20,
-              ),
-              onPressed: () => setState(() => _attachments.remove(attachment)),
-            ),
-          ],
+  Widget _buildAttachmentsSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildGroupRow(
+          context,
+          iconPath: 'assets/icons/e_learning/link.svg',
+          text: 'Add Attachment',
+          isSelected: true,
+          onTap: _showAttachmentOptions,
         ),
-      );
-    }).toList();
+        ..._attachments.map((attachment) => _buildAttachmentRow(attachment)),
+        if (_attachments.isNotEmpty)
+          OutlinedButton(
+            onPressed: _showAttachmentOptions,
+            style: OutlinedButton.styleFrom(
+              side: BorderSide(color: AppColors.eLearningBtnColor4),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8.0),
+              ),
+            ),
+            child: const Text('+ Add'),
+          ),
+      ],
+    );
   }
 
-  void _showAttachmentOptions() {
-    showDialog(
+ Widget _buildAttachmentRow(AttachmentItem attachment) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8.0),
+      padding: const EdgeInsets.all(4.0),
+      decoration: const BoxDecoration(
+        border: Border(bottom: BorderSide(color: Colors.grey)),
+      ),
+      child: Row(
+        children: [
+          SvgPicture.asset(
+            attachment.iconPath,
+            width: 24,
+            height: 24,
+          ),
+          const SizedBox(width: 8.0),
+          Expanded(
+            child: Text(
+              attachment.content,
+              style: AppTextStyles.normal400(fontSize: 14.0, color: AppColors.primaryLight),
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          IconButton(
+            icon: SvgPicture.asset(
+              'assets/icons/cancel_icon.svg',
+              width: 24,
+              height: 24,
+              color: Colors.red, // Add a color to make it visible
+            ),
+            onPressed: () {
+              setState(() {
+                _attachments.remove(attachment);
+              });
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+ void _showAttachmentOptions() {
+    showModalBottomSheet(
       context: context,
       builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text(
-            'Add attachment',
-            style: AppTextStyles.normal600(fontSize: 20, color: AppColors.backgroundDark),
-            textAlign: TextAlign.center,
-          ),
-          content: Column(
+        return Container(
+          padding: const EdgeInsets.all(16),
+          child: Column(
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
+              Text(
+                'Add attachment',
+                style: AppTextStyles.normal600(fontSize: 20, color: AppColors.backgroundDark),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 16),
               _buildAttachmentOption('Insert link', 'assets/icons/e_learning/link3.svg', _showInsertLinkDialog),
-              _buildAttachmentOption('Upload file', 'assets/icons/e_learning/upload.svg', _uploadFile),
-              _buildAttachmentOption('Take photo', 'assets/icons/e_learning/camera.svg', _takePhoto),
-              _buildAttachmentOption('Record Video', 'assets/icons/e_learning/video.svg', _recordVideo),
+              _buildAttachmentOption('Upload file', 'assets/icons/e_learning/upload.svg', () => _addAttachment('File', 'assets/icons/e_learning/upload.svg')),
+              _buildAttachmentOption('Take photo', 'assets/icons/e_learning/camera.svg', () => _addAttachment('Photo', 'assets/icons/e_learning/camera.svg')),
+              _buildAttachmentOption('Record Video', 'assets/icons/e_learning/video.svg', () => _addAttachment('Video', 'assets/icons/e_learning/video.svg')),
             ],
           ),
         );
@@ -290,7 +329,7 @@ class _AssignmentScreenState extends State<AssignmentScreen> {
     );
   }
 
-  Widget _buildAttachmentOption(String text, String iconPath, VoidCallback onTap) {
+ Widget _buildAttachmentOption(String text, String iconPath, VoidCallback onTap) {
     return InkWell(
       onTap: onTap,
       child: Container(
@@ -308,7 +347,7 @@ class _AssignmentScreenState extends State<AssignmentScreen> {
     );
   }
 
-  void _showInsertLinkDialog() {
+ void _showInsertLinkDialog() {
     TextEditingController linkController = TextEditingController();
     showDialog(
       context: context,
@@ -329,24 +368,23 @@ class _AssignmentScreenState extends State<AssignmentScreen> {
                 height: 24,
                 fit: BoxFit.scaleDown,
               ),
+              border: const UnderlineInputBorder(),
+              focusedBorder: const UnderlineInputBorder(
+                borderSide: BorderSide(color: AppColors.primaryLight),
+              ),
             ),
           ),
           actions: [
-            // CustomOutlineButton(
-            //   onPressed: () => Navigator.of(context).pop(),
-            //   text: 'Cancel',
-            //   borderColor: AppColors.eLearningBtnColor3,
-            //   textColor: AppColors.eLearningBtnColor3,
-            // ),
+            CustomOutlineButton(
+              onPressed: () => Navigator.of(context).pop(),
+              text: 'Cancel',
+              borderColor: AppColors.eLearningBtnColor3.withOpacity(0.4),
+              textColor: AppColors.eLearningBtnColor3,
+            ),
             CustomSaveElevatedButton(
               onPressed: () {
                 if (linkController.text.isNotEmpty) {
-                  setState(() {
-                    _attachments.add({
-                      'iconPath': 'assets/icons/e_learning/link3.svg',
-                      'name': linkController.text,
-                    });
-                  });
+                  _addAttachment(linkController.text, 'assets/icons/e_learning/link3.svg');
                 }
                 Navigator.of(context).pop();
               },
@@ -358,33 +396,9 @@ class _AssignmentScreenState extends State<AssignmentScreen> {
     );
   }
 
-  void _uploadFile() {
-    // Logic for file upload; placeholder for future implementation
+  void _addAttachment(String content, String iconPath) {
     setState(() {
-      _attachments.add({
-        'iconPath': 'assets/icons/e_learning/upload.svg',
-        'name': 'Uploaded File',
-      });
-    });
-  }
-
-  void _takePhoto() {
-    // Logic for taking photo; placeholder for future implementation
-    setState(() {
-      _attachments.add({
-        'iconPath': 'assets/icons/e_learning/camera.svg',
-        'name': 'Photo Taken',
-      });
-    });
-  }
-
-  void _recordVideo() {
-    // Logic for recording video; placeholder for future implementation
-    setState(() {
-      _attachments.add({
-        'iconPath': 'assets/icons/e_learning/video.svg',
-        'name': 'Recorded Video',
-      });
+      _attachments.add(AttachmentItem(content: content, iconPath: iconPath));
     });
   }
 
@@ -399,6 +413,12 @@ class _AssignmentScreenState extends State<AssignmentScreen> {
         showTimePicker(
           context: context,
           initialTime: TimeOfDay.fromDateTime(_selectedDateTime),
+          builder: (BuildContext context, Widget? child) {
+            return MediaQuery(
+              data: MediaQuery.of(context).copyWith(alwaysUse24HourFormat: false),
+              child: child!,
+            );
+          },
         ).then((time) {
           if (time != null) {
             setState(() {
@@ -430,4 +450,11 @@ class _AssignmentScreenState extends State<AssignmentScreen> {
       ),
     );
   }
+}
+
+class AttachmentItem {
+  final String content;
+  final String iconPath;
+
+  AttachmentItem({required this.content, required this.iconPath});
 }

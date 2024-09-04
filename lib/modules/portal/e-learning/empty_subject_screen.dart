@@ -9,8 +9,10 @@ import 'package:linkschool/modules/portal/e-learning/topic_screen.dart';
 
 class EmptySubjectScreen extends StatelessWidget {
   final String title;
+  final String selectedSubject;
+  
 
-  const EmptySubjectScreen({Key? key, required this.title}) : super(key: key);
+  const EmptySubjectScreen({super.key, required this.title, required this.selectedSubject,});
 
   @override
   Widget build(BuildContext context) {
@@ -28,7 +30,8 @@ class EmptySubjectScreen extends StatelessWidget {
           ),
         ),
         title: Text(
-          title,
+          selectedSubject,
+          // title,
           style: AppTextStyles.normal600(
               fontSize: 24.0, color: AppColors.primaryLight),
         ),
@@ -43,11 +46,7 @@ class EmptySubjectScreen extends StatelessWidget {
               style: AppTextStyles.normal500(fontSize: 16.0, color: AppColors.backgroundDark),
             ),
             const SizedBox(height: 20),
-            CustomMediumElevatedButton(text: 'Create', onPressed: () => _showCreateOptionsBottomSheet(context), backgroundColor: AppColors.eLearningBtnColor1, textStyle: AppTextStyles.normal600(fontSize: 16, color: AppColors.backgroundLight), padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 10.0))
-            // ElevatedButton(
-            //   child: Text('Create'),
-            //   onPressed: () => _showCreateOptionsBottomSheet(context),
-            // ),
+            CustomMediumElevatedButton(text: 'Create subject', onPressed: () => _showCreateOptionsBottomSheet(context), backgroundColor: AppColors.eLearningBtnColor1, textStyle: AppTextStyles.normal600(fontSize: 16, color: AppColors.backgroundLight), padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 10.0))
           ],
         ),
       ),
@@ -136,17 +135,4 @@ class EmptySubjectScreen extends StatelessWidget {
     );
   }
 
-  // void _addNewSyllabus() async {
-  //   final result = await Navigator.of(context).push(
-  //     MaterialPageRoute(
-  //       fullscreenDialog: true,
-  //       builder: (BuildContext context) => TopicScreen(),
-  //     ),
-  //   );
-  //   if (result != null) {
-  //     setState(() {
-  //       _syllabusList.add(result);
-  //     });
-  //   }
-  // }
 }
