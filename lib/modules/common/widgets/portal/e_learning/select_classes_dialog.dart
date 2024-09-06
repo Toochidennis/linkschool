@@ -1,7 +1,7 @@
 // ignore_for_file: deprecated_member_use
+// import 'package:flutter_svg/flutter_svg.dart';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/buttons/custom_save_elevated_button.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
@@ -16,27 +16,40 @@ class SelectClassesDialog extends StatefulWidget {
 }
 
 class _SelectClassesDialogState extends State<SelectClassesDialog> {
-  final List<String> _classes = ['Basic 1A', 'Basic 1B', 'Basic 1C', 'Basic 1D'];
-  final Set<String> _selectedClasses = {};
+  final List<String> _classes = [
+    'Basic 1A',
+    'Basic 1B',
+    'Basic 1C',
+    'Basic 1D'
+  ];
+  // final Set<String> _selectedClasses = {};
+  List<bool> _selectedClasses = List.generate(4, (_) => false);
   bool _selectAll = false;
+  List<int> _selectedRowIndices = [];
 
   void _toggleSelectAll() {
     setState(() {
       _selectAll = !_selectAll;
+      // Ensure _selectedClasses always matches the number of available classes
+      _selectedClasses = List.generate(_classes.length, (_) => _selectAll);
+
       if (_selectAll) {
-        _selectedClasses.addAll(_classes);
+        // Set indices to match the length of classes
+        _selectedRowIndices = List.generate(_classes.length, (index) => index);
       } else {
-        _selectedClasses.clear();
+        _selectedRowIndices.clear();
       }
     });
   }
 
-  void _toggleSelectClass(String className) {
+  void _toggleRowSelection(int index) {
     setState(() {
-      if (_selectedClasses.contains(className)) {
-        _selectedClasses.remove(className);
+      _selectedClasses[index] = !_selectedClasses[index];
+      _selectAll = _selectedClasses.every((element) => element);
+      if (_selectedClasses[index]) {
+        _selectedRowIndices.add(index);
       } else {
-        _selectedClasses.add(className);
+        _selectedRowIndices.remove(index);
       }
     });
   }
@@ -68,7 +81,8 @@ class _SelectClassesDialogState extends State<SelectClassesDialog> {
         ),
         title: Text(
           'Select class',
-          style: AppTextStyles.normal600(fontSize: 20.0, color: AppColors.backgroundDark),
+          style: AppTextStyles.normal600(
+              fontSize: 20.0, color: AppColors.primaryLight),
         ),
         backgroundColor: AppColors.backgroundLight,
         actions: [
@@ -84,7 +98,6 @@ class _SelectClassesDialogState extends State<SelectClassesDialog> {
       body: Column(
         children: [
           _buildSelectAllRow(),
-          Divider(color: Colors.grey.withOpacity(0.5)),
           Expanded(child: _buildClassList()),
         ],
       ),
@@ -95,19 +108,35 @@ class _SelectClassesDialogState extends State<SelectClassesDialog> {
     return InkWell(
       onTap: _toggleSelectAll,
       child: Container(
-        color: AppColors.bgGray.withOpacity(0.5),
+        // color: AppColors.bgGray.withOpacity(0.5),
         padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+        decoration: BoxDecoration(
+            color: _selectedRowIndices.contains(0)
+                ? const Color.fromRGBO(239, 227, 255, 1)
+                : AppColors.attBgColor1,
+            border: Border.all(color: AppColors.attBorderColor1)),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
               'Select all classes',
-              style: AppTextStyles.normal600(fontSize: 16.0, color: AppColors.backgroundDark),
+              style: AppTextStyles.normal700(
+                  fontSize: 16.0, color: AppColors.backgroundDark),
             ),
-            SvgPicture.asset(
-              'assets/icons/e_learning/check_icon.svg',
-              color: _selectAll ? Colors.green : Colors.grey,
-            ),
+            Container(
+              padding: const EdgeInsets.all(4.0),
+              decoration: BoxDecoration(
+                  color: _selectAll
+                      ? AppColors.attCheckColor1
+                      : AppColors.attBgColor1,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: AppColors.attCheckColor1)),
+              child: Icon(
+                Icons.check,
+                color: _selectAll ? Colors.white : AppColors.attCheckColor1,
+                size: 16,
+              ),
+            )
           ],
         ),
       ),
@@ -116,30 +145,22 @@ class _SelectClassesDialogState extends State<SelectClassesDialog> {
 
   Widget _buildClassList() {
     return ListView.separated(
-      itemCount: _classes.length,
-      separatorBuilder: (context, index) => Divider(color: Colors.grey.withOpacity(0.5)),
+      // itemCount: _classes.length,
+      itemCount: 4,
+      separatorBuilder: (context, index) => Divider(
+        color: Colors.grey[300],
+        height: 1,
+      ),
       itemBuilder: (context, index) {
-        final className = _classes[index];
-        final isSelected = _selectedClasses.contains(className);
-        return InkWell(
-          onTap: () => _toggleSelectClass(className),
-          child: Container(
-            color: isSelected ? AppColors.eLearningBtnColor2 : null,
-            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  className,
-                  style: AppTextStyles.normal600(fontSize: 16.0, color: AppColors.backgroundDark),
-                ),
-                SvgPicture.asset(
-                  'assets/icons/e_learning/check_icon.svg',
-                  color: isSelected ? Colors.green : Colors.grey,
-                ),
-              ],
-            ),
-          ),
+        return ListTile(
+          tileColor: _selectedRowIndices.contains(index)
+              ? const Color.fromRGBO(239, 227, 255, 1)
+              : Colors.transparent,
+          title: Text(_classes[index]),
+          trailing: _selectedClasses[index]
+              ? const Icon(Icons.check_circle, color: AppColors.attCheckColor2)
+              : null,
+          onTap: () => _toggleRowSelection(index),
         );
       },
     );

@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart'; // Correct import path for SvgPicture
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/buttons/custom_save_elevated_button.dart';
 import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
+import 'package:linkschool/modules/portal/e-learning/objetive_screen.dart';
+import 'package:linkschool/modules/portal/result/behaviour_settings_screen.dart';
+// import 'package:linkschool/modules/portal/e-learning/objective_screen.dart'; // New import
 
 class TopicScreen extends StatefulWidget {
   @override
@@ -12,13 +15,47 @@ class TopicScreen extends StatefulWidget {
 
 class _TopicScreenState extends State<TopicScreen> {
   List<String> topics = [];
+  String? selectedTopic;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      // appBar: AppBar(
+      //   title: Text(
+      //     'Select topic',
+      //     style: AppTextStyles.normal600(
+      //       fontSize: 24.0,
+      //       color: AppColors.primaryLight,
+      //     ),
+      //   ),
+      //   backgroundColor: AppColors.backgroundLight,
+      //   actions: [
+      //    Padding(
+      //       padding: const EdgeInsets.symmetric(horizontal: 8.0),
+      //       child: CustomSaveElevatedButton(
+      //         onPressed: () {
+      //           // Save the selected topic and return to AssignmentScreen
+      //           Navigator.pop(context, selectedTopic ?? 'No Topic');
+      //         },
+      //         text: 'Save',
+      //       ),
+      //     ),
+      //   ],
+      // ),
       appBar: AppBar(
+        leading: IconButton(
+          onPressed: () {
+            Navigator.of(context).pop();
+          },
+          icon: Image.asset(
+            'assets/icons/arrow_back.png',
+            color: AppColors.primaryLight,
+            width: 34.0,
+            height: 34.0,
+          ),
+        ),
         title: Text(
-          'Topic',
+          'Select topic',
           style: AppTextStyles.normal600(
             fontSize: 24.0,
             color: AppColors.primaryLight,
@@ -26,29 +63,37 @@ class _TopicScreenState extends State<TopicScreen> {
         ),
         backgroundColor: AppColors.backgroundLight,
         actions: [
-          Padding(
+         Padding(
             padding: const EdgeInsets.symmetric(horizontal: 8.0),
-            child: CustomSaveElevatedButton(onPressed: () {}, text: 'Save'),
+            child: CustomSaveElevatedButton(
+              onPressed: () {
+                // Save the selected topic and return to AssignmentScreen
+                Navigator.pop(context, selectedTopic ?? 'No Topic');
+              },
+              text: 'Save',
+            ),
           ),
         ],
       ),
       body: Container(
         decoration: Constants.customBoxDecoration(context),
-        child: Padding( // Removed `const` keyword here
+        child: Padding(
           padding: const EdgeInsets.all(16.0),
           child: Column(
             children: [
-              TopicsList(
-                topics: topics,
-                onEdit: _editTopic,
-                onDelete: _deleteTopic,
-              ),
-              const SizedBox(
-                height: 10,
-              ),
               CustomInputField(
                 hintText: 'Add new Topic',
                 onSubmitted: _addTopic,
+              ),
+              const SizedBox(height: 10),
+              Expanded(
+                child: TopicsList(
+                  topics: topics,
+                  selectedTopic: selectedTopic,
+                  onEdit: _editTopic,
+                  onDelete: _deleteTopic,
+                  onTap: _navigateToObjectiveScreen,
+                ),
               ),
             ],
           ),
@@ -57,69 +102,100 @@ class _TopicScreenState extends State<TopicScreen> {
     );
   }
 
-  void _addTopic(String skill) {
+  void _addTopic(String topic) {
     setState(() {
-      topics.add(skill);
+      topics.add(topic);
+      selectedTopic = topic;
     });
   }
 
-  void _editTopic(int index, String newSkill) {
+ void _editTopic(int index, String newTopic) {
     setState(() {
-      topics[index] = newSkill;
+      topics[index] = newTopic;
+      if (selectedTopic == topics[index]) {
+        selectedTopic = newTopic;
+      }
     });
   }
 
   void _deleteTopic(int index) {
     setState(() {
+      if (selectedTopic == topics[index]) {
+        selectedTopic = null;
+      }
       topics.removeAt(index);
     });
+  }
+
+  void _selectTopic(String topic) {
+    setState(() {
+      selectedTopic = topic;
+    });
+  }
+
+ void _navigateToObjectiveScreen(String topic) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ObjectiveScreen(topic: topic),
+      ),
+    );
   }
 }
 
 class TopicsList extends StatelessWidget {
   final List<String> topics;
+  final String? selectedTopic;
   final Function(int, String) onEdit;
   final Function(int) onDelete;
+  final Function(String) onTap;
 
   const TopicsList({
-    super.key,
+    Key? key,
     required this.topics,
+    required this.selectedTopic,
     required this.onEdit,
     required this.onDelete,
-  });
+    required this.onTap,
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return ListView.builder(
-      itemCount: topics.length, // Ensure itemCount is specified
-      shrinkWrap: true, // This is useful if inside a Column
+      itemCount: topics.length,
       itemBuilder: (context, index) {
         return TopicItem(
           topic: topics[index],
-          onEdit: (newSkill) => onEdit(index, newSkill),
+          isSelected: topics[index] == selectedTopic,
+          onEdit: (newTopic) => onEdit(index, newTopic),
           onDelete: () => onDelete(index),
+          onTap: () => onTap(topics[index]),
         );
       },
     );
   }
 }
 
-
 class TopicItem extends StatefulWidget {
   final String topic;
+  final bool isSelected;
   final Function(String) onEdit;
   final VoidCallback onDelete;
+  final VoidCallback onTap;
 
   const TopicItem({
     Key? key,
     required this.topic,
+    required this.isSelected,
     required this.onEdit,
     required this.onDelete,
+    required this.onTap,
   }) : super(key: key);
 
   @override
   _TopicItemState createState() => _TopicItemState();
 }
+
 
 class _TopicItemState extends State<TopicItem> {
   late TextEditingController _controller;
@@ -139,184 +215,82 @@ class _TopicItemState extends State<TopicItem> {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: Container(
-        // width: 351,
-        padding: const EdgeInsets.only(
-            bottom: 10), // Match the width of the input field
-        decoration: BoxDecoration(
-          border: Border(
-            bottom: BorderSide(
-              color: Colors.grey[300]!,
-              width: 1,
+    return GestureDetector(
+      onTap: widget.onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8.0),
+        child: Container(
+          padding: const EdgeInsets.only(bottom: 10),
+          decoration: BoxDecoration(
+            border: Border(
+              bottom: BorderSide(
+                color: Colors.grey[300]!,
+                width: 1,
+              ),
             ),
           ),
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 32,
-              height: 32,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: AppColors.bgGrayLight2,
-                border: Border.all(color: AppColors.bgBorder, width: 1),
+          child: Row(
+            children: [
+              Container(
+                width: 32,
+                height: 32,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: AppColors.bgGrayLight2,
+                  border: Border.all(color: AppColors.bgBorder, width: 1),
+                ),
+                child: Center(
+                  child: SvgPicture.asset(
+                    'assets/icons/result/skill.svg',
+                    color: AppColors.bgBorder,
+                    width: 20,
+                    height: 20,
+                  ),
+                ),
               ),
-              child: Center(
+              const SizedBox(width: 18),
+              Expanded(
+                child: _isEditing
+                    ? TextField(
+                        controller: _controller,
+                        onSubmitted: (value) {
+                          widget.onEdit(value);
+                          setState(() {
+                            _isEditing = false;
+                          });
+                        },
+                      )
+                    : Text(widget.topic),
+              ),
+              GestureDetector(
+                onTap: () {
+                  if (_isEditing) {
+                    widget.onEdit(_controller.text);
+                  }
+                  setState(() {
+                    _isEditing = !_isEditing;
+                  });
+                },
                 child: SvgPicture.asset(
-                  'assets/icons/result/skill.svg',
-                  // ignore: deprecated_member_use
-                  color: AppColors.bgBorder,
-                  width: 20,
-                  height: 20,
+                  _isEditing
+                      ? 'assets/icons/result/check.svg'
+                      : 'assets/icons/result/edit.svg',
+                  width: 24,
+                  height: 24,
                 ),
               ),
-            ),
-            const SizedBox(width: 18),
-            Expanded(
-              child: _isEditing
-                  ? TextField(
-                      controller: _controller,
-                      onSubmitted: (value) {
-                        widget.onEdit(value);
-                        setState(() {
-                          _isEditing = false;
-                        });
-                      },
-                    )
-                  : Text(widget.topic),
-            ),
-            GestureDetector(
-              onTap: () {
-                if (_isEditing) {
-                  widget.onEdit(_controller.text);
-                }
-                setState(() {
-                  _isEditing = !_isEditing;
-                });
-              },
-              child: SvgPicture.asset(
-                _isEditing
-                    ? 'assets/icons/result/check.svg'
-                    : 'assets/icons/result/edit.svg',
-                width: 24,
-                height: 24,
-              ),
-            ),
-            const SizedBox(width: 8),
-            GestureDetector(
-              onTap: widget.onDelete,
-              child: SvgPicture.asset(
-                'assets/icons/result/delete.svg',
-                width: 24,
-                height: 24,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-
-class CustomInputField extends StatefulWidget {
-  final String hintText;
-  final Function(String) onSubmitted;
-
-  const CustomInputField({
-    Key? key,
-    required this.hintText,
-    required this.onSubmitted,
-  }) : super(key: key);
-
-  @override
-  _CustomInputFieldState createState() => _CustomInputFieldState();
-}
-
-class _CustomInputFieldState extends State<CustomInputField> {
-  final FocusNode _focusNode = FocusNode();
-  final TextEditingController _controller = TextEditingController();
-  bool _isFocused = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _focusNode.addListener(() {
-      setState(() {
-        _isFocused = _focusNode.hasFocus;
-      });
-    });
-  }
-
-  @override
-  void dispose() {
-    _focusNode.dispose();
-    _controller.dispose();
-    super.dispose();
-  }
-
-  void _submitTopic() {
-    if (_controller.text.isNotEmpty) {
-      widget.onSubmitted(_controller.text);
-      _controller.clear();
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 351,
-      height: 48,
-      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
-      decoration: BoxDecoration(
-        border: Border(
-          bottom: BorderSide(
-            color:
-                _isFocused ? AppColors.primaryLight : const Color(0xFFB2B2B2),
-            width: _isFocused ? 2 : 1,
-          ),
-        ),
-      ),
-      child: Row(
-        children: [
-          GestureDetector(
-            onTap: _submitTopic,
-            child: Container(
-              width: 32,
-              height: 32,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: Colors.white,
-                border: Border.all(
-                  color: AppColors.bgGray,
-                  width: 2,
+              const SizedBox(width: 8),
+              GestureDetector(
+                onTap: widget.onDelete,
+                child: SvgPicture.asset(
+                  'assets/icons/result/delete.svg',
+                  width: 24,
+                  height: 24,
                 ),
               ),
-              child: const Icon(
-                Icons.add,
-                color: AppColors.bgGray,
-                size: 24,
-              ),
-            ),
+            ],
           ),
-          const SizedBox(width: 18),
-          Expanded(
-            child: TextField(
-              controller: _controller,
-              focusNode: _focusNode,
-              decoration: InputDecoration(
-                hintText: widget.hintText,
-                hintStyle: const TextStyle(color: AppColors.bgGrayLight),
-                border: InputBorder.none,
-              ),
-              onSubmitted: (value) {
-                _submitTopic();
-              },
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }

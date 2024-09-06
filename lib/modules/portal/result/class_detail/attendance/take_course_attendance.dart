@@ -105,7 +105,7 @@ class _TakeCourseAttendanceState extends State<TakeCourseAttendance> {
                   Text(
                     'Select all students',
                     style: AppTextStyles.normal500(
-                        fontSize: 16, color: AppColors.backgroundDark),
+                        fontSize: 16.0, color: AppColors.backgroundDark),
                   ),
                   Container(
                     padding: const EdgeInsets.all(4.0),
