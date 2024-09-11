@@ -8,6 +8,7 @@ import 'package:linkschool/modules/common/buttons/custom_outline_button..dart';
 import 'package:linkschool/modules/common/buttons/custom_save_elevated_button.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/common/widgets/portal/e_learning/select_classes_dialog.dart';
+
 import 'package:linkschool/modules/portal/e-learning/select_topic_screen.dart';
 // import 'package:linkschool/modules/common/buttons/custom_outline_button.dart';
 // import 'package:linkschool/modules/common/buttons/custom_medium_elevated_button.dart';
@@ -15,6 +16,9 @@ import 'package:linkschool/modules/portal/e-learning/select_topic_screen.dart';
 
 
 class AssignmentScreen extends StatefulWidget {
+   final Function(Assignment) onSave;
+
+  const AssignmentScreen({Key? key, required this.onSave}) : super(key: key);
   @override
   State<AssignmentScreen> createState() => _AssignmentScreenState();
 }
@@ -56,9 +60,7 @@ class _AssignmentScreenState extends State<AssignmentScreen> {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 8.0),
             child: CustomSaveElevatedButton(
-              onPressed: () {
-                // Save functionality
-              },
+              onPressed: _saveAssignment,
               text: 'Save',
             ),
           ),
@@ -607,6 +609,21 @@ class _AssignmentScreenState extends State<AssignmentScreen> {
       });
     }
   }
+
+void _saveAssignment() {
+  final assignment = Assignment(
+    title: _titleController.text,
+    description: _descriptionController.text,
+    selectedClass: _selectedClass,
+    attachments: _attachments,
+    dueDate: _selectedDateTime,
+    topic: _selectedTopic,
+    marks: _marks,
+  );
+  widget.onSave(assignment);
+  Navigator.of(context).pop();
+}
+
 }
 
 class AttachmentItem {
@@ -614,4 +631,27 @@ class AttachmentItem {
   final String iconPath;
 
   AttachmentItem({required this.content, required this.iconPath});
+}
+
+
+class Assignment {
+  final String title;
+  final String description;
+  final String selectedClass;
+  final List<AttachmentItem> attachments;
+  final DateTime dueDate;
+  final String topic;
+  final String marks;
+  final DateTime createdAt;
+
+  Assignment({
+    required this.title,
+    required this.description,
+    required this.selectedClass,
+    required this.attachments,
+    required this.dueDate,
+    required this.topic,
+    required this.marks,
+    DateTime? createdAt,
+  }) : this.createdAt = createdAt ?? DateTime.now();
 }

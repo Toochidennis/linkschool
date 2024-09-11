@@ -9,6 +9,9 @@ import 'package:linkschool/modules/common/widgets/portal/e_learning/select_class
 import 'package:linkschool/modules/portal/e-learning/select_topic_screen.dart';
 
 class QuestionScreen extends StatefulWidget {
+  final Function(Question) onSave;
+
+  const QuestionScreen({Key? key, required this.onSave}) : super(key: key);
   @override
   State<QuestionScreen> createState() => _QuestionScreenState();
 }
@@ -51,7 +54,7 @@ class _QuestionScreenState extends State<QuestionScreen> {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 8.0),
             child: CustomSaveElevatedButton(
-              onPressed: () {},
+              onPressed: _saveQuestion,
               text: 'Save',
             ),
           ),
@@ -436,6 +439,21 @@ class _QuestionScreenState extends State<QuestionScreen> {
       });
     }
   }
+
+  void _saveQuestion() {
+    final question = Question(
+      title: _titleController.text,
+      description: _descriptionController.text,
+      selectedClass: _selectedClass,
+      startDate: _startDate,
+      endDate: _endDate,
+      topic: _selectedTopic,
+      duration: _selectedDuration,
+      marks: _marks,
+    );
+    widget.onSave(question);
+    Navigator.of(context).pop();
+  }
 }
 
 class DurationPickerDialog extends StatefulWidget {
@@ -578,4 +596,30 @@ class _DurationPickerDialogState extends State<DurationPickerDialog> {
       ],
     );
   }
+}
+
+
+class Question {
+  final String title;
+  final String description;
+  final String selectedClass;
+  final DateTime startDate;
+  final DateTime endDate;
+  final String topic;
+  final Duration duration;
+  final String marks;
+  final DateTime createdAt;
+
+  Question({
+    required this.title,
+    required this.description,
+    required this.selectedClass,
+    required this.startDate,
+    required this.endDate,
+    required this.topic,
+    required this.duration,
+    required this.marks,
+
+    DateTime? createdAt,
+  }) : this.createdAt = createdAt ?? DateTime.now();
 }
