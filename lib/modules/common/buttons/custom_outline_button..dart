@@ -4,7 +4,8 @@ class CustomOutlineButton extends StatelessWidget {
   final VoidCallback onPressed;
   final String text;
   final Color borderColor; 
-  final Color textColor;   
+  final Color textColor;
+     
 
   const CustomOutlineButton({
     required this.onPressed,

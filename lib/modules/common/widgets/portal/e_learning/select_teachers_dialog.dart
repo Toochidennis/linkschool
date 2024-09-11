@@ -1,49 +1,64 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
+import 'package:linkschool/modules/common/buttons/custom_save_elevated_button.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 
 class SelectTeachersDialog extends StatefulWidget {
   final Function(String) onSave;
 
-  const SelectTeachersDialog({Key? key, required this.onSave}) : super(key: key);
+  const SelectTeachersDialog({Key? key, required this.onSave})
+      : super(key: key);
 
   @override
   _SelectTeachersDialogState createState() => _SelectTeachersDialogState();
 }
 
 class _SelectTeachersDialogState extends State<SelectTeachersDialog> {
-  final List<String> _teachers = ['John Doe', 'Jane Smith', 'Michael Johnson', 'Emily Davis'];
-  final Set<String> _selectedTeachers = {};
+  final List<String> _teachers = [
+    'John Doe',
+    'Jane Smith',
+    'Michael Johnson',
+    'Emily Davis'
+  ];
+  List<bool> _selectedTeachers = List.generate(4, (_) => false);
   bool _selectAll = false;
+  List<int> _selectedRowIndices = [];
 
   void _toggleSelectAll() {
     setState(() {
       _selectAll = !_selectAll;
+      _selectedTeachers = List.generate(_teachers.length, (_) => _selectAll);
       if (_selectAll) {
-        _selectedTeachers.addAll(_teachers);
+        _selectedRowIndices = List.generate(_teachers.length, (index) => index);
       } else {
-        _selectedTeachers.clear();
+        _selectedRowIndices.clear();
       }
     });
   }
 
-  void _toggleSelectTeacher(String teacherName) {
+  void _toggleRowSelection(int index) {
     setState(() {
-      if (_selectedTeachers.contains(teacherName)) {
-        _selectedTeachers.remove(teacherName);
+      _selectedTeachers[index] = !_selectedTeachers[index];
+      if (_selectedTeachers[index]) {
+        _selectedRowIndices.add(index);
       } else {
-        _selectedTeachers.add(teacherName);
+        _selectedRowIndices.remove(index);
       }
+      _selectAll = _selectedTeachers.every((element) => element);
     });
   }
 
   void _handleSave() {
-    if (_selectedTeachers.isNotEmpty) {
-      final selectedTeacherString = _selectedTeachers.length > 1
-          ? '${_selectedTeachers.length} teachers selected'
-          : _selectedTeachers.join(', ');
-      widget.onSave(selectedTeacherString);
+    if (_selectAll) {
+      widget.onSave('All classes selected');
+    } else if (_selectedRowIndices.isNotEmpty) {
+      final selectedTeachersString = _selectedRowIndices.length > 1
+          ? '${_selectedRowIndices.length} classes selected'
+          : _teachers[_selectedRowIndices[0]];
+      widget.onSave(selectedTeachersString);
+    } else {
+      widget.onSave('Select classes');
     }
     Navigator.of(context).pop();
   }
@@ -52,21 +67,29 @@ class _SelectTeachersDialogState extends State<SelectTeachersDialog> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        leading: IconButton(
+          onPressed: () {
+            Navigator.of(context).pop();
+          },
+          icon: Image.asset(
+            'assets/icons/arrow_back.png',
+            color: AppColors.primaryLight,
+            width: 34.0,
+            height: 34.0,
+          ),
+        ),
         title: Text(
-          'Select teacher',
-          style: AppTextStyles.normal600(fontSize: 20.0, color: AppColors.backgroundDark),
+          'Select Teacher',
+          style: AppTextStyles.normal600(
+              fontSize: 20.0, color: AppColors.primaryLight),
         ),
         backgroundColor: AppColors.backgroundLight,
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
         actions: [
-          TextButton(
-            onPressed: _handleSave,
-            child: Text(
-              'Save',
-              style: AppTextStyles.normal600(fontSize: 16.0, color: AppColors.backgroundDark),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8.0),
+            child: CustomSaveElevatedButton(
+              onPressed: _handleSave,
+              text: 'Save',
             ),
           ),
         ],
@@ -74,7 +97,7 @@ class _SelectTeachersDialogState extends State<SelectTeachersDialog> {
       body: Column(
         children: [
           _buildSelectAllRow(),
-          Divider(color: Colors.grey.withOpacity(0.5)),
+          // Divider(color: Colors.grey.withOpacity(0.5)),
           Expanded(child: _buildTeacherList()),
         ],
       ),
@@ -85,18 +108,33 @@ class _SelectTeachersDialogState extends State<SelectTeachersDialog> {
     return InkWell(
       onTap: _toggleSelectAll,
       child: Container(
-        color: AppColors.eLearningBtnColor2,
         padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+        decoration: BoxDecoration(
+            color: _selectAll
+                ? AppColors.eLearningBtnColor2
+                : AppColors.backgroundLight),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
               'Select all teachers',
-              style: AppTextStyles.normal600(fontSize: 16.0, color: AppColors.backgroundDark),
+              style: AppTextStyles.normal600(
+                  fontSize: 16.0, color: AppColors.backgroundDark),
             ),
-            SvgPicture.asset(
-              'assets/icons/e_learning/check_icon.svg',
-              color: _selectAll ? Colors.green : Colors.grey,
+            Container(
+              padding: const EdgeInsets.all(4.0),
+              decoration: BoxDecoration(
+                color: _selectAll
+                    ? AppColors.attCheckColor1
+                    : AppColors.attBgColor1,
+                shape: BoxShape.circle,
+                border: Border.all(color: AppColors.attCheckColor1),
+              ),
+              child: Icon(
+                Icons.check,
+                color: _selectAll ? Colors.white : AppColors.attCheckColor1,
+                size: 18,
+              ),
             ),
           ],
         ),
@@ -107,29 +145,38 @@ class _SelectTeachersDialogState extends State<SelectTeachersDialog> {
   Widget _buildTeacherList() {
     return ListView.separated(
       itemCount: _teachers.length,
-      separatorBuilder: (context, index) => Divider(color: Colors.grey.withOpacity(0.5)),
+      separatorBuilder: (context, index) => Divider(
+        color: Colors.grey[300],
+        height: 1,
+      ),
       itemBuilder: (context, index) {
-        final teacherName = _teachers[index];
-        final isSelected = _selectedTeachers.contains(teacherName);
-        return InkWell(
-          onTap: () => _toggleSelectTeacher(teacherName),
-          child: Container(
-            color: isSelected ? AppColors.eLearningBtnColor2 : null,
-            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  teacherName,
-                  style: AppTextStyles.normal600(fontSize: 16.0, color: AppColors.backgroundDark),
-                ),
-                SvgPicture.asset(
-                  'assets/icons/e_learning/check_icon.svg',
-                  color: isSelected ? Colors.green : Colors.grey,
-                ),
-              ],
-            ),
+        return ListTile(
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16.0),
+          tileColor: _selectedTeachers[index]
+                    ? AppColors.eLearningBtnColor2
+                    : Colors.transparent,
+          title: Text(
+            _teachers[index],
+            style: AppTextStyles.normal500(fontSize: 16.0, color: AppColors.textGray),
           ),
+          trailing:  _selectedTeachers[index]
+                    ? Container(
+                      padding: const EdgeInsets.all(4.0),
+                      decoration: BoxDecoration(
+                        color: Colors.green,
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.green),
+                      ),
+                  child: const Icon(
+                    Icons.check,
+                    color: Colors.white,
+                    size: 12, // Matching size with the Select All check icon
+                  ),
+                    )
+                    :   Container(
+                  width: 24.0, // Ensuring space for alignment even when no icon
+                ),
+          onTap: () => _toggleRowSelection(index),
         );
       },
     );

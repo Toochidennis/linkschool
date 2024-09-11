@@ -1,6 +1,3 @@
-// ignore_for_file: deprecated_member_use
-// import 'package:flutter_svg/flutter_svg.dart';
-
 import 'package:flutter/material.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/buttons/custom_save_elevated_button.dart';
@@ -22,7 +19,6 @@ class _SelectClassesDialogState extends State<SelectClassesDialog> {
     'Basic 1C',
     'Basic 1D'
   ];
-  // final Set<String> _selectedClasses = {};
   List<bool> _selectedClasses = List.generate(4, (_) => false);
   bool _selectAll = false;
   List<int> _selectedRowIndices = [];
@@ -30,11 +26,8 @@ class _SelectClassesDialogState extends State<SelectClassesDialog> {
   void _toggleSelectAll() {
     setState(() {
       _selectAll = !_selectAll;
-      // Ensure _selectedClasses always matches the number of available classes
       _selectedClasses = List.generate(_classes.length, (_) => _selectAll);
-
       if (_selectAll) {
-        // Set indices to match the length of classes
         _selectedRowIndices = List.generate(_classes.length, (index) => index);
       } else {
         _selectedRowIndices.clear();
@@ -45,21 +38,25 @@ class _SelectClassesDialogState extends State<SelectClassesDialog> {
   void _toggleRowSelection(int index) {
     setState(() {
       _selectedClasses[index] = !_selectedClasses[index];
-      _selectAll = _selectedClasses.every((element) => element);
       if (_selectedClasses[index]) {
         _selectedRowIndices.add(index);
       } else {
         _selectedRowIndices.remove(index);
       }
+      _selectAll = _selectedClasses.every((element) => element);
     });
   }
 
   void _handleSave() {
-    if (_selectedClasses.isNotEmpty) {
-      final selectedClassString = _selectedClasses.length > 1
-          ? '${_selectedClasses.length} classes selected'
-          : _selectedClasses.join(', ');
-      widget.onSave(selectedClassString);
+    if (_selectAll) {
+      widget.onSave('All classes selected');
+    } else if (_selectedRowIndices.isNotEmpty) {
+      final selectedClassesString = _selectedRowIndices.length > 1
+          ? '${_selectedRowIndices.length} classes selected'
+          : _classes[_selectedRowIndices[0]];
+      widget.onSave(selectedClassesString);
+    } else {
+      widget.onSave('Select classes');
     }
     Navigator.of(context).pop();
   }
@@ -108,35 +105,35 @@ class _SelectClassesDialogState extends State<SelectClassesDialog> {
     return InkWell(
       onTap: _toggleSelectAll,
       child: Container(
-        // color: AppColors.bgGray.withOpacity(0.5),
         padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
         decoration: BoxDecoration(
-            color: _selectedRowIndices.contains(0)
-                ? const Color.fromRGBO(239, 227, 255, 1)
-                : AppColors.attBgColor1,
+            color: _selectAll
+                ? AppColors.eLearningBtnColor2
+                : AppColors.backgroundLight,
             border: Border.all(color: AppColors.attBorderColor1)),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
               'Select all classes',
-              style: AppTextStyles.normal700(
+              style: AppTextStyles.normal600(
                   fontSize: 16.0, color: AppColors.backgroundDark),
             ),
             Container(
               padding: const EdgeInsets.all(4.0),
               decoration: BoxDecoration(
-                  color: _selectAll
-                      ? AppColors.attCheckColor1
-                      : AppColors.attBgColor1,
-                  shape: BoxShape.circle,
-                  border: Border.all(color: AppColors.attCheckColor1)),
+                color: _selectAll
+                    ? AppColors.attCheckColor1
+                    : AppColors.attBgColor1,
+                shape: BoxShape.circle,
+                border: Border.all(color: AppColors.attCheckColor1),
+              ),
               child: Icon(
                 Icons.check,
                 color: _selectAll ? Colors.white : AppColors.attCheckColor1,
-                size: 16,
+                size: 18, 
               ),
-            )
+            ),
           ],
         ),
       ),
@@ -145,21 +142,38 @@ class _SelectClassesDialogState extends State<SelectClassesDialog> {
 
   Widget _buildClassList() {
     return ListView.separated(
-      // itemCount: _classes.length,
-      itemCount: 4,
+      itemCount: _classes.length,
       separatorBuilder: (context, index) => Divider(
         color: Colors.grey[300],
         height: 1,
       ),
       itemBuilder: (context, index) {
         return ListTile(
-          tileColor: _selectedRowIndices.contains(index)
-              ? const Color.fromRGBO(239, 227, 255, 1)
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16.0), 
+          tileColor: _selectedClasses[index]
+              ? AppColors.eLearningBtnColor2
               : Colors.transparent,
-          title: Text(_classes[index]),
+          title: Text(
+            _classes[index],
+            style: AppTextStyles.normal500(fontSize: 16.0, color: AppColors.textGray), 
+          ),
           trailing: _selectedClasses[index]
-              ? const Icon(Icons.check_circle, color: AppColors.attCheckColor2)
-              : null,
+              ? Container(
+                  padding: const EdgeInsets.all(4.0),
+                  decoration: BoxDecoration(
+                    color: Colors.green,
+                    shape: BoxShape.circle,
+                    border: Border.all(color: Colors.green),
+                  ),
+                  child: const Icon(
+                    Icons.check,
+                    color: Colors.white,
+                    size: 12, // Matching size with the Select All check icon
+                  ),
+                )
+              : Container(
+                  width: 24.0, // Ensuring space for alignment even when no icon
+                ),
           onTap: () => _toggleRowSelection(index),
         );
       },

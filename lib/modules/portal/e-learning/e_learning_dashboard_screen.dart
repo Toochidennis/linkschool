@@ -192,7 +192,7 @@ class _ELearningScreenState extends State<ELearningScreen> {
             itemCount: 5,
             itemBuilder: (context, index) {
               return Padding(
-                padding: EdgeInsets.only(left: index == 0 ? 16 : 8, right: 8),
+                padding: EdgeInsets.only(left: index == 0 ? 16 : 8, right: 8, bottom: 8),
                 child: _buildActivityCard(index),
               );
             },
@@ -228,7 +228,7 @@ class _ELearningScreenState extends State<ELearningScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Expanded(
-            flex: 2,
+            flex: 1,
             child: Container(
               decoration: const BoxDecoration(
                 color: Colors.orange,
@@ -244,7 +244,7 @@ class _ELearningScreenState extends State<ELearningScreen> {
             ),
           ),
           Expanded(
-            flex: 3,
+            flex: 1,
             child: Padding(
               padding: const EdgeInsets.all(8),
               child: Column(

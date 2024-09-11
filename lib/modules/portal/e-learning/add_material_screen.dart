@@ -1,42 +1,34 @@
-import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
-import 'package:intl/intl.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_svg/svg.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/buttons/custom_outline_button..dart';
 import 'package:linkschool/modules/common/buttons/custom_save_elevated_button.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/common/widgets/portal/e_learning/select_classes_dialog.dart';
 import 'package:linkschool/modules/portal/e-learning/select_topic_screen.dart';
-// import 'package:linkschool/modules/common/buttons/custom_outline_button.dart';
-// import 'package:linkschool/modules/common/buttons/custom_medium_elevated_button.dart';
 
+class AddMaterialScreen extends StatefulWidget {
+  const AddMaterialScreen({super.key});
 
-
-class AssignmentScreen extends StatefulWidget {
   @override
-  State<AssignmentScreen> createState() => _AssignmentScreenState();
+  State<AddMaterialScreen> createState() => _AddMaterialScreenState();
 }
 
-class _AssignmentScreenState extends State<AssignmentScreen> {
-  String _selectedClass = 'Select classes';
+class _AddMaterialScreenState extends State<AddMaterialScreen> {
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _descriptionController = TextEditingController();
-  final TextEditingController _marksController = TextEditingController();
-  List<AttachmentItem> _attachments = [];
-  DateTime _selectedDateTime = DateTime.now();
+  String _selectedClass = 'Select classes';
   String _selectedTopic = 'No Topic';
-  String _marks = '200 marks';
+  List<AttachmentItem> _attachments = [];
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
-          onPressed: () {
-            Navigator.of(context).pop();
-          },
+          onPressed: () => Navigator.of(context).pop(),
           icon: Image.asset(
             'assets/icons/arrow_back.png',
             color: AppColors.primaryLight,
@@ -45,20 +37,16 @@ class _AssignmentScreenState extends State<AssignmentScreen> {
           ),
         ),
         title: Text(
-          'Assignment',
+          'Add Material',
           style: AppTextStyles.normal600(
-            fontSize: 24.0,
-            color: AppColors.primaryLight,
-          ),
+              fontSize: 24.0, color: AppColors.primaryLight),
         ),
         backgroundColor: AppColors.backgroundLight,
         actions: [
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8.0),
+            padding: EdgeInsets.symmetric(horizontal: 8.0),
             child: CustomSaveElevatedButton(
-              onPressed: () {
-                // Save functionality
-              },
+              onPressed: () {},
               text: 'Save',
             ),
           ),
@@ -79,7 +67,7 @@ class _AssignmentScreenState extends State<AssignmentScreen> {
               TextField(
                 controller: _titleController,
                 decoration: InputDecoration(
-                  hintText: 'e.g. Dying and bleaching',
+                  hintText: 'e.g Dying and Bleaching',
                   hintStyle: const TextStyle(color: Colors.grey),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8.0),
@@ -108,7 +96,7 @@ class _AssignmentScreenState extends State<AssignmentScreen> {
               ),
               const SizedBox(height: 32.0),
               Text(
-                'Select the learning group for this syllabus: *',
+                'Select the learners for this outline*:',
                 style: AppTextStyles.normal600(
                     fontSize: 16.0, color: Colors.black),
               ),
@@ -136,24 +124,6 @@ class _AssignmentScreenState extends State<AssignmentScreen> {
                 child: _buildAttachmentsSection(),
               ),
               Divider(color: Colors.grey.withOpacity(0.5)),
-              Padding(
-                padding: const EdgeInsets.only(top: 8.0),
-                child: _buildGroupRow(
-                  context,
-                  iconPath: 'assets/icons/e_learning/mark.svg',
-                  text: _marks,
-                  showEditButton: true,
-                  onTap: _showMarksDialog,
-                ),
-              ),
-              _buildGroupRow(
-                context,
-                iconPath: 'assets/icons/e_learning/calender.svg',
-                text: DateFormat('E, dd MMM (hh:mm a)')
-                    .format(_selectedDateTime),
-                showEditButton: true,
-                onTap: _showDateTimePicker,
-              ),
               _buildGroupRow(
                 context,
                 iconPath: 'assets/icons/e_learning/clipboard.svg',
@@ -245,79 +215,6 @@ class _AssignmentScreenState extends State<AssignmentScreen> {
     );
   }
 
-  void _showMarksDialog() {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12.0),
-          ),
-          content: SizedBox(
-            width: 300,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Set marks',
-                  style:
-                      AppTextStyles.normal600(fontSize: 18.0, color: Colors.black),
-                ),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: _marksController,
-                  keyboardType: TextInputType.number,
-                  decoration: InputDecoration(
-                    hintText: 'Enter',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8.0),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    CustomOutlineButton(
-                      onPressed: () => Navigator.of(context).pop(),
-                      text: 'Cancel',
-                      borderColor: AppColors.eLearningBtnColor3,
-                      textColor: AppColors.eLearningBtnColor3,
-                    ),
-                    const SizedBox(width: 8),
-                    ElevatedButton(
-                      onPressed: () {
-                        setState(() {
-                          _marks = '${_marksController.text} marks';
-                        });
-                        Navigator.of(context).pop();
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.eLearningBtnColor1,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(4.0),
-                        ),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16.0,
-                          vertical: 10.0,
-                        ),
-                      ),
-                      child: Text(
-                        'Save',
-                        style: AppTextStyles.normal600(
-                            fontSize: 16.0, color: Colors.white),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
 
   Widget _buildAttachmentsSection() {
     return GestureDetector(
@@ -392,31 +289,6 @@ class _AssignmentScreenState extends State<AssignmentScreen> {
                 _attachments.remove(attachment);
               });
             },
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildAddMoreButton() {
-    return GestureDetector(
-      onTap: _showAttachmentOptions,
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Spacer(),
-          OutlinedButton(
-            onPressed: _showAttachmentOptions,
-            child: const Text('+ Add'),
-            style: OutlinedButton.styleFrom(
-              textStyle: AppTextStyles.normal600(
-                  fontSize: 14.0, color: AppColors.backgroundLight),
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              side: const BorderSide(color: AppColors.eLearningBtnColor1),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
-              ),
-            ),
           ),
         ],
       ),
@@ -529,6 +401,52 @@ class _AssignmentScreenState extends State<AssignmentScreen> {
     );
   }
 
+  Widget _buildAddMoreButton() {
+    return GestureDetector(
+      onTap: _showAttachmentOptions,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Spacer(),
+          OutlinedButton(
+            onPressed: _showAttachmentOptions,
+            child: const Text('+ Add'),
+            style: OutlinedButton.styleFrom(
+              textStyle: AppTextStyles.normal600(
+                  fontSize: 14.0, color: AppColors.backgroundLight),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              side: const BorderSide(color: AppColors.eLearningBtnColor1),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _addAttachment(String content, String iconPath) {
+    setState(() {
+      _attachments.add(AttachmentItem(content: content, iconPath: iconPath));
+    });
+  }
+
+  void _selectTopic() async {
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+          builder: (context) => SelectTopicScreen(
+                callingScreen: '',
+              )),
+    );
+    if (result != null && result is String) {
+      setState(() {
+        _selectedTopic = result;
+      });
+    }
+  }
+
   Future<void> _uploadFile() async {
     FilePickerResult? result = await FilePicker.platform.pickFiles();
     if (result != null) {
@@ -552,62 +470,8 @@ class _AssignmentScreenState extends State<AssignmentScreen> {
       _addAttachment('Video: ${video.name}', 'assets/icons/e_learning/video.svg');
     }
   }
-
-  void _addAttachment(String content, String iconPath) {
-    setState(() {
-      _attachments.add(AttachmentItem(content: content, iconPath: iconPath));
-    });
-  }
-
-  void _showDateTimePicker() {
-    showDatePicker(
-      context: context,
-      initialDate: _selectedDateTime,
-      firstDate: DateTime.now(),
-      lastDate: DateTime.now().add(const Duration(days: 365)),
-    ).then((date) {
-      if (date != null) {
-        showTimePicker(
-          context: context,
-          initialTime: TimeOfDay.fromDateTime(_selectedDateTime),
-          builder: (BuildContext context, Widget? child) {
-            return MediaQuery(
-              data: MediaQuery.of(context).copyWith(alwaysUse24HourFormat: false),
-              child: child!,
-            );
-          },
-        ).then((time) {
-          if (time != null) {
-            setState(() {
-              _selectedDateTime = DateTime(
-                date.year,
-                date.month,
-                date.day,
-                time.hour,
-                time.minute,
-              );
-            });
-          }
-        });
-      }
-    });
-  }
-
-  void _selectTopic() async {
-    final result = await Navigator.push(
-      context,
-      MaterialPageRoute(
-          builder: (context) => SelectTopicScreen(
-                callingScreen: '',
-              )),
-    );
-    if (result != null && result is String) {
-      setState(() {
-        _selectedTopic = result;
-      });
-    }
-  }
 }
+
 
 class AttachmentItem {
   final String content;

@@ -75,7 +75,7 @@ class _LevelSelectionState extends State<LevelSelection> {
                     ),
                     const SizedBox(height: 40),
                     Container(
-                      width: 148,
+                      width: 170,
                       height: 32,
                       decoration: BoxDecoration(
                         border: Border.all(
@@ -96,7 +96,7 @@ class _LevelSelectionState extends State<LevelSelection> {
                               fontSize: 12,
                               color: AppColors.backgroundLight,
                               height: 1.2),
-                          overflow: TextOverflow.ellipsis,
+                          // overflow: TextOverflow.ellipsis,
                         ),
                       ),
                     ),

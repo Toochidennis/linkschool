@@ -32,17 +32,6 @@ class _ObjectiveScreenState extends State<ObjectiveScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // appBar: AppBar(
-      //   title: Text(
-      //     widget.topic,
-      //     style: AppTextStyles.normal600(
-      //       fontSize: 24.0,
-      //       color: AppColors.primaryLight,
-      //     ),
-      //   ),
-      //   backgroundColor: AppColors.backgroundLight,
-      // ),
-
       appBar: AppBar(
         leading: IconButton(
           onPressed: () {

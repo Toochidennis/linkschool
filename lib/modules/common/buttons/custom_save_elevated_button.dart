@@ -25,9 +25,9 @@ class CustomSaveElevatedButton extends StatelessWidget {
         child: Text(
           text,
           style: TextStyle(
-            color: AppColors.backgroundLight, // White text color
+            color: AppColors.backgroundLight,
             fontSize: 16.0,
-            fontWeight: FontWeight.w600, // Matching the AppTextStyles.normal600
+            fontWeight: FontWeight.w600, 
           ),
         ),
       ),

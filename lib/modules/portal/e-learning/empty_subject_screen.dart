@@ -3,9 +3,11 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/buttons/custom_medium_elevated_button.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
+import 'package:linkschool/modules/portal/e-learning/add_material_screen.dart';
 import 'package:linkschool/modules/portal/e-learning/assignment_screen.dart';
+import 'package:linkschool/modules/portal/e-learning/create_topic_screen.dart';
 import 'package:linkschool/modules/portal/e-learning/question_screen.dart';
-import 'package:linkschool/modules/portal/e-learning/topic_screen.dart';
+import 'package:linkschool/modules/portal/e-learning/select_topic_screen.dart';
 
 class EmptySubjectScreen extends StatelessWidget {
   final String title;
@@ -46,7 +48,7 @@ class EmptySubjectScreen extends StatelessWidget {
               style: AppTextStyles.normal500(fontSize: 16.0, color: AppColors.backgroundDark),
             ),
             const SizedBox(height: 20),
-            CustomMediumElevatedButton(text: 'Create subject', onPressed: () => _showCreateOptionsBottomSheet(context), backgroundColor: AppColors.eLearningBtnColor1, textStyle: AppTextStyles.normal600(fontSize: 16, color: AppColors.backgroundLight), padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 10.0))
+            CustomMediumElevatedButton(text: 'Create content', onPressed: () => _showCreateOptionsBottomSheet(context), backgroundColor: AppColors.eLearningBtnColor1, textStyle: AppTextStyles.normal600(fontSize: 16, color: AppColors.backgroundLight), padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 10.0))
           ],
         ),
       ),
@@ -69,7 +71,7 @@ class EmptySubjectScreen extends StatelessWidget {
               ),
               const SizedBox(height: 20),
               _buildOptionRow(context, 'Assignment', 'assets/icons/e_learning/assignment.svg'),
-              _buildOptionRow(context, 'Question', 'assets/icons/e_learning/question.svg'),
+              _buildOptionRow(context, 'Question', 'assets/icons/e_learning/question_icon.svg'),
               _buildOptionRow(context, 'Material', 'assets/icons/e_learning/material.svg'),
               _buildOptionRow(context, 'Topic', 'assets/icons/e_learning/topic.svg'),
               const Padding(
@@ -103,14 +105,14 @@ class EmptySubjectScreen extends StatelessWidget {
           Navigator.push(context, MaterialPageRoute(builder: (context) => AssignmentScreen()));
           break;
         case 'Topic':
-          Navigator.push(context, MaterialPageRoute(fullscreenDialog: true, builder: (BuildContext context) => TopicScreen()));
+          Navigator.push(context, MaterialPageRoute(fullscreenDialog: true, builder: (BuildContext context) => CreateTopicScreen(),),);
           break;
         case 'Question':
           Navigator.push(context, MaterialPageRoute(builder: (context) => QuestionScreen()));
           break;
-        // case 'Material':
-        //   Navigator.push(context, MaterialPageRoute(builder: (context) => MaterialScreen()));
-        //   break;
+        case 'Material':
+          Navigator.push(context, MaterialPageRoute(builder: (context) => AddMaterialScreen()));
+          break;
         // case 'Share again':
         //   Navigator.push(context, MaterialPageRoute(builder: (context) => ShareAgainScreen()));
         //   break;

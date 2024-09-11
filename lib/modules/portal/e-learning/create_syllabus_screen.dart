@@ -27,10 +27,14 @@ class _CreateSyllabusScreenState extends State<CreateSyllabusScreen> {
     super.initState();
     // Initialize fields with existing data if editing, or set defaults
     _selectedClass = widget.syllabusData?['selectedClass'] ?? 'Select classes';
-    _selectedTeacher = widget.syllabusData?['selectedTeacher'] ?? 'Select teachers';
-    _titleController = TextEditingController(text: widget.syllabusData?['title'] ?? '');
-    _descriptionController = TextEditingController(text: widget.syllabusData?['description'] ?? '');
-    _backgroundImagePath = widget.syllabusData?['backgroundImagePath'] ?? 'assets/images/result/bg_box3.svg';
+    _selectedTeacher =
+        widget.syllabusData?['selectedTeacher'] ?? 'Select teachers';
+    _titleController =
+        TextEditingController(text: widget.syllabusData?['title'] ?? '');
+    _descriptionController =
+        TextEditingController(text: widget.syllabusData?['description'] ?? '');
+    _backgroundImagePath = widget.syllabusData?['backgroundImagePath'] ??
+        'assets/images/result/bg_box3.svg';
   }
 
   @override
@@ -71,7 +75,8 @@ class _CreateSyllabusScreenState extends State<CreateSyllabusScreen> {
             children: [
               Text(
                 'Title:',
-                style: AppTextStyles.normal600(fontSize: 16.0, color: Colors.black),
+                style: AppTextStyles.normal600(
+                    fontSize: 16.0, color: Colors.black),
               ),
               const SizedBox(height: 8.0),
               TextField(
@@ -88,7 +93,8 @@ class _CreateSyllabusScreenState extends State<CreateSyllabusScreen> {
               const SizedBox(height: 16.0),
               Text(
                 'Description:',
-                style: AppTextStyles.normal600(fontSize: 16.0, color: Colors.black),
+                style: AppTextStyles.normal600(
+                    fontSize: 16.0, color: Colors.black),
               ),
               const SizedBox(height: 8.0),
               TextField(
@@ -106,7 +112,8 @@ class _CreateSyllabusScreenState extends State<CreateSyllabusScreen> {
               const SizedBox(height: 32.0),
               Text(
                 'Select the learning group for this syllabus: *',
-                style: AppTextStyles.normal600(fontSize: 16.0, color: Colors.black),
+                style: AppTextStyles.normal600(
+                    fontSize: 16.0, color: Colors.black),
               ),
               const SizedBox(height: 16.0),
               _buildGroupRow(
@@ -114,7 +121,7 @@ class _CreateSyllabusScreenState extends State<CreateSyllabusScreen> {
                 iconPath: 'assets/icons/e_learning/people.svg',
                 text: _selectedClass,
                 onTap: () async {
-                  await Navigator.of(context).push(
+                  final result = await Navigator.of(context).push(
                     MaterialPageRoute(
                       builder: (context) => SelectClassesDialog(
                         onSave: (selectedClass) {
@@ -125,6 +132,11 @@ class _CreateSyllabusScreenState extends State<CreateSyllabusScreen> {
                       ),
                     ),
                   );
+                  if (result != null) {
+                    setState(() {
+                      _selectedClass = result;
+                    });
+                  }
                 },
               ),
               _buildGroupRow(
@@ -153,7 +165,9 @@ class _CreateSyllabusScreenState extends State<CreateSyllabusScreen> {
   }
 
   Widget _buildGroupRow(BuildContext context,
-      {required String iconPath, required String text, required VoidCallback onTap}) {
+      {required String iconPath,
+      required String text,
+      required VoidCallback onTap}) {
     return Column(
       children: [
         GestureDetector(
@@ -186,7 +200,8 @@ class _CreateSyllabusScreenState extends State<CreateSyllabusScreen> {
                       child: Text(
                         text,
                         style: AppTextStyles.normal600(
-                            fontSize: 16.0, color: AppColors.eLearningBtnColor1),
+                            fontSize: 16.0,
+                            color: AppColors.eLearningBtnColor1),
                       ),
                     ),
                   ),
