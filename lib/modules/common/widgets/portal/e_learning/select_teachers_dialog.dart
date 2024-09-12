@@ -54,7 +54,7 @@ class _SelectTeachersDialogState extends State<SelectTeachersDialog> {
       widget.onSave('All classes selected');
     } else if (_selectedRowIndices.isNotEmpty) {
       final selectedTeachersString = _selectedRowIndices.length > 1
-          ? '${_selectedRowIndices.length} classes selected'
+          ? '${_selectedRowIndices.length} teachers selected'
           : _teachers[_selectedRowIndices[0]];
       widget.onSave(selectedTeachersString);
     } else {

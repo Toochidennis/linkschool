@@ -8,10 +8,8 @@ import 'package:linkschool/modules/common/buttons/custom_outline_button..dart';
 import 'package:linkschool/modules/common/buttons/custom_save_elevated_button.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/common/widgets/portal/e_learning/select_classes_dialog.dart';
-
 import 'package:linkschool/modules/portal/e-learning/select_topic_screen.dart';
-// import 'package:linkschool/modules/common/buttons/custom_outline_button.dart';
-// import 'package:linkschool/modules/common/buttons/custom_medium_elevated_button.dart';
+
 
 
 
@@ -406,7 +404,7 @@ class _AssignmentScreenState extends State<AssignmentScreen> {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Spacer(),
+          const Spacer(),
           OutlinedButton(
             onPressed: _showAttachmentOptions,
             child: const Text('+ Add'),
@@ -599,7 +597,7 @@ class _AssignmentScreenState extends State<AssignmentScreen> {
     final result = await Navigator.push(
       context,
       MaterialPageRoute(
-          builder: (context) => SelectTopicScreen(
+          builder: (context) => const SelectTopicScreen(
                 callingScreen: '',
               )),
     );
