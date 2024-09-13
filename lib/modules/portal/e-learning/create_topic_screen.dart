@@ -4,6 +4,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 // Assuming these are custom files in your project
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/buttons/custom_save_elevated_button.dart';
+import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/common/widgets/portal/e_learning/select_classes_dialog.dart';
 
@@ -22,6 +23,7 @@ class _CreateTopicScreenState extends State<CreateTopicScreen> {
   bool _showObjectives = false;
   List<ObjectiveItem> _objectives = [];
   final FocusNode _titleFocusNode = FocusNode();
+  late double opacity;
 
   @override
   void initState() {
@@ -48,6 +50,8 @@ void _onTitleFocusChange() {
 
   @override
   Widget build(BuildContext context) {
+    final Brightness brightness = Theme.of(context).brightness;
+    opacity = brightness == Brightness.light ? 0.1 : 0.15;
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
@@ -65,6 +69,21 @@ void _onTitleFocusChange() {
               fontSize: 24.0, color: AppColors.primaryLight),
         ),
         backgroundColor: AppColors.backgroundLight,
+        flexibleSpace: FlexibleSpaceBar(
+          background: Stack(
+            children: [
+              Positioned.fill(
+                child: Opacity(
+                  opacity: opacity,
+                  child: Image.asset(
+                    'assets/images/background.png',
+                    fit: BoxFit.cover,
+                  ),
+                ),
+              )
+            ],
+          ),
+        ),
         actions: [
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 8.0),
@@ -77,71 +96,74 @@ void _onTitleFocusChange() {
           ),
         ],
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Topic',
-                style: AppTextStyles.normal600(fontSize: 16.0, color: Colors.black),
-              ),
-              const SizedBox(height: 8.0),
-              TextField(
-                controller: _titleController,
-                focusNode: _titleFocusNode,
-                decoration: InputDecoration(
-                  hintText: 'e.g Dying and Bleaching',
-                  hintStyle: const TextStyle(color: Colors.grey),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8.0),
-                  ),
-                  contentPadding: const EdgeInsets.all(12.0),
+      body: Container(
+        decoration: Constants.customBoxDecoration(context),
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Topic',
+                  style: AppTextStyles.normal600(fontSize: 16.0, color: Colors.black),
                 ),
-              ),
-              const SizedBox(height: 32.0),
-              Text(
-                'Select the learners for this outline*:',
-                style: AppTextStyles.normal600(
-                    fontSize: 16.0, color: Colors.black),
-              ),
-              const SizedBox(height: 16.0),
-              _buildGroupRow(
-                context,
-                iconPath: 'assets/icons/e_learning/people.svg',
-                text: _selectedClass,
-                onTap: () async {
-                  await Navigator.of(context).push<String>(
-                    MaterialPageRoute(
-                      builder: (context) => SelectClassesDialog(
-                        onSave: (selectedClass) {
-                          setState(() {
-                            _selectedClass = selectedClass;
-                          });
-                        },
-                      ),
+                const SizedBox(height: 8.0),
+                TextField(
+                  controller: _titleController,
+                  focusNode: _titleFocusNode,
+                  decoration: InputDecoration(
+                    hintText: 'e.g Dying and Bleaching',
+                    hintStyle: const TextStyle(color: Colors.grey),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8.0),
                     ),
-                  );
-                  // if (result != null) {
-                  //   setState(() {
-                  //     _selectedClass = result;
-                  //   });
-                  // }
-                },
-              ),
-              if (_showObjectives) ...[
+                    contentPadding: const EdgeInsets.all(12.0),
+                  ),
+                ),
                 const SizedBox(height: 32.0),
                 Text(
-                  'Topic Objectives:',
+                  'Select the learners for this outline*:',
                   style: AppTextStyles.normal600(
                       fontSize: 16.0, color: Colors.black),
                 ),
                 const SizedBox(height: 16.0),
-                ..._objectives.map((objective) => _buildObjectiveListItem(objective)),
-                _buildObjectiveInput(),
+                _buildGroupRow(
+                  context,
+                  iconPath: 'assets/icons/e_learning/people.svg',
+                  text: _selectedClass,
+                  onTap: () async {
+                    await Navigator.of(context).push<String>(
+                      MaterialPageRoute(
+                        builder: (context) => SelectClassesDialog(
+                          onSave: (selectedClass) {
+                            setState(() {
+                              _selectedClass = selectedClass;
+                            });
+                          },
+                        ),
+                      ),
+                    );
+                    // if (result != null) {
+                    //   setState(() {
+                    //     _selectedClass = result;
+                    //   });
+                    // }
+                  },
+                ),
+                if (_showObjectives) ...[
+                  const SizedBox(height: 32.0),
+                  Text(
+                    'Topic Objectives:',
+                    style: AppTextStyles.normal600(
+                        fontSize: 16.0, color: Colors.black),
+                  ),
+                  const SizedBox(height: 16.0),
+                  ..._objectives.map((objective) => _buildObjectiveListItem(objective)),
+                  _buildObjectiveInput(),
+                ],
               ],
-            ],
+            ),
           ),
         ),
       ),
@@ -333,8 +355,6 @@ void _onTitleFocusChange() {
   }
 
   void _editObjective(ObjectiveItem objective) {
-    // Implement edit functionality
-    // For example, you could show a dialog with a text field to edit the objective
     showDialog(
       context: context,
       builder: (BuildContext context) {

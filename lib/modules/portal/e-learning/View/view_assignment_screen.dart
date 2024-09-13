@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:intl/intl.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
+import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
+import 'package:linkschool/modules/model/e-learning/comment_model.dart';
 import 'package:linkschool/modules/portal/e-learning/assignment_screen.dart';
 
 class ViewAssignmentScreen extends StatefulWidget {
@@ -14,11 +16,13 @@ class ViewAssignmentScreen extends StatefulWidget {
   _ViewAssignmentScreenState createState() => _ViewAssignmentScreenState();
 }
 
-class _ViewAssignmentScreenState extends State<ViewAssignmentScreen> with SingleTickerProviderStateMixin {
+class _ViewAssignmentScreenState extends State<ViewAssignmentScreen>
+    with SingleTickerProviderStateMixin {
   late TabController _tabController;
   TextEditingController _commentController = TextEditingController();
   List<Comment> comments = [];
   bool _isAddingComment = false;
+  late double opacity;
 
   @override
   void initState() {
@@ -35,6 +39,8 @@ class _ViewAssignmentScreenState extends State<ViewAssignmentScreen> with Single
 
   @override
   Widget build(BuildContext context) {
+    final Brightness brightness = Theme.of(context).brightness;
+    opacity = brightness == Brightness.light ? 0.1 : 0.15;
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
@@ -72,22 +78,50 @@ class _ViewAssignmentScreenState extends State<ViewAssignmentScreen> with Single
           ),
         ],
         backgroundColor: AppColors.backgroundLight,
+        flexibleSpace: FlexibleSpaceBar(
+          background: Stack(
+            children: [
+              Positioned.fill(
+                child: Opacity(
+                  opacity: opacity,
+                  child: Image.asset(
+                    'assets/images/background.png',
+                    fit: BoxFit.cover,
+                  ),
+                ),
+              )
+            ],
+          ),
+        ),
         bottom: TabBar(
           controller: _tabController,
           tabs: [
             Tab(
-              child: Text('Instructions', style: AppTextStyles.normal600(fontSize: 18, color: AppColors.primaryLight),),
+              child: Text(
+                'Instructions',
+                style: AppTextStyles.normal600(
+                    fontSize: 18, color: AppColors.primaryLight),
+              ),
             ),
-            Tab(child: Text('Student work', style: AppTextStyles.normal600(fontSize: 18, color: AppColors.primaryLight),),),
+            Tab(
+              child: Text(
+                'Student work',
+                style: AppTextStyles.normal600(
+                    fontSize: 18, color: AppColors.primaryLight),
+              ),
+            ),
           ],
         ),
       ),
-      body: TabBarView(
-        controller: _tabController,
-        children: [
-          _buildInstructionsTab(),
-          const Center(child: Text('Student work content')),
-        ],
+      body: Container(
+        decoration: Constants.customBoxDecoration(context),
+        child: TabBarView(
+          controller: _tabController,
+          children: [
+            _buildInstructionsTab(),
+            const Center(child: Text('Student work content')),
+          ],
+        ),
       ),
     );
   }
@@ -121,15 +155,18 @@ class _ViewAssignmentScreenState extends State<ViewAssignmentScreen> with Single
 
   Widget _buildDueDate() {
     return Padding(
-      padding: const EdgeInsets.only(top: 20.0, bottom: 16.0, right: 16.0, left: 16.0),
+      padding: const EdgeInsets.only(
+          top: 20.0, bottom: 16.0, right: 16.0, left: 16.0),
       child: Row(
         children: [
           Text(
             'Due: ',
-            style: AppTextStyles.normal600(fontSize: 16.0, color: AppColors.eLearningTxtColor1),
+            style: AppTextStyles.normal600(
+                fontSize: 16.0, color: AppColors.eLearningTxtColor1),
           ),
           Text(
-            DateFormat('E, dd MMM yyyy (hh:mm a)').format(widget.assignment.dueDate),
+            DateFormat('E, dd MMM yyyy (hh:mm a)')
+                .format(widget.assignment.dueDate),
             style: AppTextStyles.normal500(fontSize: 16.0, color: Colors.black),
           ),
         ],
@@ -165,7 +202,8 @@ class _ViewAssignmentScreenState extends State<ViewAssignmentScreen> with Single
         children: [
           Text(
             'Grade : ',
-            style: AppTextStyles.normal600(fontSize: 16.0, color: AppColors.eLearningTxtColor1),
+            style: AppTextStyles.normal600(
+                fontSize: 16.0, color: AppColors.eLearningTxtColor1),
           ),
           Text(
             widget.assignment.marks,
@@ -183,7 +221,8 @@ class _ViewAssignmentScreenState extends State<ViewAssignmentScreen> with Single
         children: [
           Text(
             'Description : ',
-            style: AppTextStyles.normal600(fontSize: 16.0, color: AppColors.eLearningTxtColor1),
+            style: AppTextStyles.normal600(
+                fontSize: 16.0, color: AppColors.eLearningTxtColor1),
           ),
           Text(
             widget.assignment.description,
@@ -195,7 +234,7 @@ class _ViewAssignmentScreenState extends State<ViewAssignmentScreen> with Single
   }
 
   Widget _buildAttachments() {
-    return Container(
+    return SizedBox(
       height: 100,
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
@@ -240,7 +279,8 @@ class _ViewAssignmentScreenState extends State<ViewAssignmentScreen> with Single
             padding: const EdgeInsets.all(16.0),
             child: Text(
               'Class comments',
-              style: AppTextStyles.normal600(fontSize: 18.0, color: Colors.black),
+              style:
+                  AppTextStyles.normal600(fontSize: 18.0, color: Colors.black),
             ),
           ),
           ...comments.map(_buildCommentItem).toList(),
@@ -258,7 +298,8 @@ class _ViewAssignmentScreenState extends State<ViewAssignmentScreen> with Single
                   },
                   child: Text(
                     'Add class comment',
-                    style: AppTextStyles.normal500(fontSize: 16.0, color: AppColors.primaryLight),
+                    style: AppTextStyles.normal500(
+                        fontSize: 16.0, color: AppColors.primaryLight),
                   ),
                 ),
         ),
@@ -269,12 +310,18 @@ class _ViewAssignmentScreenState extends State<ViewAssignmentScreen> with Single
   Widget _buildCommentItem(Comment comment) {
     return ListTile(
       leading: CircleAvatar(
-        child: Text(comment.author[0].toUpperCase(), style: AppTextStyles.normal500(fontSize: 18, color: AppColors.backgroundLight),),
         backgroundColor: AppColors.primaryLight,
+        child: Text(
+          comment.author[0].toUpperCase(),
+          style: AppTextStyles.normal500(
+              fontSize: 18, color: AppColors.backgroundLight),
+        ),
       ),
       title: Row(
         children: [
-          Text(comment.author, style: AppTextStyles.normal600(fontSize: 16.0, color: AppColors.backgroundDark)),
+          Text(comment.author,
+              style: AppTextStyles.normal600(
+                  fontSize: 16.0, color: AppColors.backgroundDark)),
           const SizedBox(width: 8),
           Text(
             DateFormat('d MMMM').format(comment.date),
@@ -282,7 +329,11 @@ class _ViewAssignmentScreenState extends State<ViewAssignmentScreen> with Single
           ),
         ],
       ),
-      subtitle: Text(comment.text, style: AppTextStyles.normal500(fontSize: 16, color: AppColors.text4Light),),
+      subtitle: Text(
+        comment.text,
+        style:
+            AppTextStyles.normal500(fontSize: 16, color: AppColors.text4Light),
+      ),
     );
   }
 
@@ -301,6 +352,7 @@ class _ViewAssignmentScreenState extends State<ViewAssignmentScreen> with Single
         IconButton(
           icon: const Icon(Icons.send),
           onPressed: _addComment,
+          color: AppColors.primaryLight,
         ),
       ],
     );
@@ -310,7 +362,7 @@ class _ViewAssignmentScreenState extends State<ViewAssignmentScreen> with Single
     if (_commentController.text.isNotEmpty) {
       setState(() {
         comments.add(Comment(
-          author: 'Joe Onwe', 
+          author: 'Joe Onwe',
           text: _commentController.text,
           date: DateTime.now(),
         ));
@@ -321,10 +373,4 @@ class _ViewAssignmentScreenState extends State<ViewAssignmentScreen> with Single
   }
 }
 
-class Comment {
-  final String author;
-  final String text;
-  final DateTime date;
 
-  Comment({required this.author, required this.text, required this.date});
-}

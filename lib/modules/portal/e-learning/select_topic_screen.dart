@@ -25,6 +25,7 @@ class _SelectTopicScreenState extends State<SelectTopicScreen> {
   late final VoidCallback? onTopicCreated;
   List<String> topics = ['Punctuality', 'Reproduction', 'Grammar'];
   String? selectedTopic;
+  late double opacity;
 
   @override
   void initState() {
@@ -35,6 +36,8 @@ class _SelectTopicScreenState extends State<SelectTopicScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final Brightness brightness = Theme.of(context).brightness;
+    opacity = brightness == Brightness.light ? 0.1 : 0.15;
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
@@ -56,6 +59,21 @@ class _SelectTopicScreenState extends State<SelectTopicScreen> {
           ),
         ),
         backgroundColor: AppColors.backgroundLight,
+        flexibleSpace: FlexibleSpaceBar(
+          background: Stack(
+            children: [
+              Positioned.fill(
+                child: Opacity(
+                  opacity: opacity,
+                  child: Image.asset(
+                    'assets/images/background.png',
+                    fit: BoxFit.cover,
+                  ),
+                ),
+              )
+            ],
+          ),
+        ),
         actions: [
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 8.0),

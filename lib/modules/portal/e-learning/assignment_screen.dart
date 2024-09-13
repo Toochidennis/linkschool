@@ -6,6 +6,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/buttons/custom_outline_button..dart';
 import 'package:linkschool/modules/common/buttons/custom_save_elevated_button.dart';
+import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/common/widgets/portal/e_learning/select_classes_dialog.dart';
 import 'package:linkschool/modules/portal/e-learning/select_topic_screen.dart';
@@ -30,9 +31,12 @@ class _AssignmentScreenState extends State<AssignmentScreen> {
   DateTime _selectedDateTime = DateTime.now();
   String _selectedTopic = 'No Topic';
   String _marks = '200 marks';
+  late double opacity;
 
   @override
   Widget build(BuildContext context) {
+    final Brightness brightness = Theme.of(context).brightness;
+    opacity = brightness == Brightness.light ? 0.1 : 0.15;
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
@@ -54,6 +58,21 @@ class _AssignmentScreenState extends State<AssignmentScreen> {
           ),
         ),
         backgroundColor: AppColors.backgroundLight,
+        flexibleSpace: FlexibleSpaceBar(
+          background: Stack(
+            children: [
+              Positioned.fill(
+                child: Opacity(
+                  opacity: opacity,
+                  child: Image.asset(
+                    'assets/images/background.png',
+                    fit: BoxFit.cover,
+                  ),
+                ),
+              )
+            ],
+          ),
+        ),
         actions: [
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 8.0),
@@ -64,105 +83,108 @@ class _AssignmentScreenState extends State<AssignmentScreen> {
           ),
         ],
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Title:',
-                style: AppTextStyles.normal600(
-                    fontSize: 16.0, color: Colors.black),
-              ),
-              const SizedBox(height: 8.0),
-              TextField(
-                controller: _titleController,
-                decoration: InputDecoration(
-                  hintText: 'e.g. Dying and bleaching',
-                  hintStyle: const TextStyle(color: Colors.grey),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8.0),
-                  ),
-                  contentPadding: const EdgeInsets.all(12.0),
+      body: Container(
+        decoration: Constants.customBoxDecoration(context),
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Title:',
+                  style: AppTextStyles.normal600(
+                      fontSize: 16.0, color: Colors.black),
                 ),
-              ),
-              const SizedBox(height: 16.0),
-              Text(
-                'Description:',
-                style: AppTextStyles.normal600(
-                    fontSize: 16.0, color: Colors.black),
-              ),
-              const SizedBox(height: 8.0),
-              TextField(
-                controller: _descriptionController,
-                maxLines: 5,
-                decoration: InputDecoration(
-                  hintText: 'Type here...',
-                  hintStyle: const TextStyle(color: Colors.grey),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8.0),
-                  ),
-                  contentPadding: const EdgeInsets.all(12.0),
-                ),
-              ),
-              const SizedBox(height: 32.0),
-              Text(
-                'Select the learning group for this syllabus: *',
-                style: AppTextStyles.normal600(
-                    fontSize: 16.0, color: Colors.black),
-              ),
-              const SizedBox(height: 16.0),
-              _buildGroupRow(
-                context,
-                iconPath: 'assets/icons/e_learning/people.svg',
-                text: _selectedClass,
-                onTap: () async {
-                  await Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (context) => SelectClassesDialog(
-                        onSave: (selectedClass) {
-                          setState(() {
-                            _selectedClass = selectedClass;
-                          });
-                        },
-                      ),
+                const SizedBox(height: 8.0),
+                TextField(
+                  controller: _titleController,
+                  decoration: InputDecoration(
+                    hintText: 'e.g. Dying and bleaching',
+                    hintStyle: const TextStyle(color: Colors.grey),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8.0),
                     ),
-                  );
-                },
-              ),
-              Padding(
-                padding: const EdgeInsets.only(bottom: 8.0),
-                child: _buildAttachmentsSection(),
-              ),
-              Divider(color: Colors.grey.withOpacity(0.5)),
-              Padding(
-                padding: const EdgeInsets.only(top: 8.0),
-                child: _buildGroupRow(
-                  context,
-                  iconPath: 'assets/icons/e_learning/mark.svg',
-                  text: _marks,
-                  showEditButton: true,
-                  onTap: _showMarksDialog,
+                    contentPadding: const EdgeInsets.all(12.0),
+                  ),
                 ),
-              ),
-              _buildGroupRow(
-                context,
-                iconPath: 'assets/icons/e_learning/calender.svg',
-                text: DateFormat('E, dd MMM (hh:mm a)')
-                    .format(_selectedDateTime),
-                showEditButton: true,
-                onTap: _showDateTimePicker,
-              ),
-              _buildGroupRow(
-                context,
-                iconPath: 'assets/icons/e_learning/clipboard.svg',
-                text: _selectedTopic,
-                showEditButton: true,
-                isSelected: true,
-                onTap: () => _selectTopic(),
-              ),
-            ],
+                const SizedBox(height: 16.0),
+                Text(
+                  'Description:',
+                  style: AppTextStyles.normal600(
+                      fontSize: 16.0, color: Colors.black),
+                ),
+                const SizedBox(height: 8.0),
+                TextField(
+                  controller: _descriptionController,
+                  maxLines: 5,
+                  decoration: InputDecoration(
+                    hintText: 'Type here...',
+                    hintStyle: const TextStyle(color: Colors.grey),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8.0),
+                    ),
+                    contentPadding: const EdgeInsets.all(12.0),
+                  ),
+                ),
+                const SizedBox(height: 32.0),
+                Text(
+                  'Select the learning group for this syllabus: *',
+                  style: AppTextStyles.normal600(
+                      fontSize: 16.0, color: Colors.black),
+                ),
+                const SizedBox(height: 16.0),
+                _buildGroupRow(
+                  context,
+                  iconPath: 'assets/icons/e_learning/people.svg',
+                  text: _selectedClass,
+                  onTap: () async {
+                    await Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (context) => SelectClassesDialog(
+                          onSave: (selectedClass) {
+                            setState(() {
+                              _selectedClass = selectedClass;
+                            });
+                          },
+                        ),
+                      ),
+                    );
+                  },
+                ),
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 8.0),
+                  child: _buildAttachmentsSection(),
+                ),
+                Divider(color: Colors.grey.withOpacity(0.5)),
+                Padding(
+                  padding: const EdgeInsets.only(top: 8.0),
+                  child: _buildGroupRow(
+                    context,
+                    iconPath: 'assets/icons/e_learning/mark.svg',
+                    text: _marks,
+                    showEditButton: true,
+                    onTap: _showMarksDialog,
+                  ),
+                ),
+                _buildGroupRow(
+                  context,
+                  iconPath: 'assets/icons/e_learning/calender.svg',
+                  text: DateFormat('E, dd MMM (hh:mm a)')
+                      .format(_selectedDateTime),
+                  showEditButton: true,
+                  onTap: _showDateTimePicker,
+                ),
+                _buildGroupRow(
+                  context,
+                  iconPath: 'assets/icons/e_learning/clipboard.svg',
+                  text: _selectedTopic,
+                  showEditButton: true,
+                  isSelected: true,
+                  onTap: () => _selectTopic(),
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -441,7 +463,7 @@ class _AssignmentScreenState extends State<AssignmentScreen> {
               const SizedBox(height: 16),
               _buildAttachmentOption(
                   'Insert link',
-                  'assets/icons/e_learning/insert_link.svg',
+                  'assets/icons/e_learning/link3.svg',
                   _showInsertLinkDialog),
               _buildAttachmentOption(
                   'Upload file', 'assets/icons/e_learning/upload_file.svg', _uploadFile),

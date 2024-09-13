@@ -20,9 +20,13 @@ class EmptySyllabusScreen extends StatefulWidget {
 
 class _EmptySyllabusScreenState extends State<EmptySyllabusScreen> {
   List<Map<String, dynamic>> _syllabusList = [];
+  late double opacity;
+
 
   @override
   Widget build(BuildContext context) {
+    final Brightness brightness = Theme.of(context).brightness;
+    opacity = brightness == Brightness.light ? 0.1 : 0.15;
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
@@ -42,7 +46,23 @@ class _EmptySyllabusScreenState extends State<EmptySyllabusScreen> {
               fontSize: 24.0, color: AppColors.primaryLight),
         ),
         backgroundColor: AppColors.backgroundLight,
+        flexibleSpace: FlexibleSpaceBar(
+          background: Stack(
+            children: [
+              Positioned.fill(
+                child: Opacity(
+                  opacity: opacity,
+                  child: Image.asset(
+                    'assets/images/background.png',
+                    fit: BoxFit.cover,
+                  ),
+                ),
+              )
+            ],
+          ),
+        ),
       ),
+
       body: Container(
         decoration: Constants.customBoxDecoration(context),
         child:

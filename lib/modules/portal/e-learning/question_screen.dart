@@ -3,6 +3,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/buttons/custom_outline_button..dart';
 import 'package:linkschool/modules/common/buttons/custom_save_elevated_button.dart';
+import 'package:linkschool/modules/common/constants.dart';
 // import 'package:linkschool/modules/common/buttons/custom_outline_button.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/common/widgets/portal/e_learning/select_classes_dialog.dart';
@@ -26,9 +27,12 @@ class _QuestionScreenState extends State<QuestionScreen> {
   String _selectedTopic = 'No Topic';
   Duration _selectedDuration = const Duration(hours: 1);
   String _marks = '200 marks';
+  late double opacity;
 
   @override
   Widget build(BuildContext context) {
+    final Brightness brightness = Theme.of(context).brightness;
+    opacity = brightness == Brightness.light ? 0.1 : 0.15;
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
@@ -50,6 +54,21 @@ class _QuestionScreenState extends State<QuestionScreen> {
           ),
         ),
         backgroundColor: AppColors.backgroundLight,
+        flexibleSpace: FlexibleSpaceBar(
+          background: Stack(
+            children: [
+              Positioned.fill(
+                child: Opacity(
+                  opacity: opacity,
+                  child: Image.asset(
+                    'assets/images/background.png',
+                    fit: BoxFit.cover,
+                  ),
+                ),
+              )
+            ],
+          ),
+        ),
         actions: [
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 8.0),
@@ -60,104 +79,107 @@ class _QuestionScreenState extends State<QuestionScreen> {
           ),
         ],
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Title:',
-                style: AppTextStyles.normal600(
-                    fontSize: 16.0, color: Colors.black),
-              ),
-              const SizedBox(height: 8.0),
-              TextField(
-                controller: _titleController,
-                decoration: InputDecoration(
-                  hintText: 'Why is egg white?',
-                  hintStyle: const TextStyle(color: Colors.grey),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8.0),
-                  ),
-                  contentPadding: const EdgeInsets.all(12.0),
+      body: Container(
+        decoration: Constants.customBoxDecoration(context),
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Title:',
+                  style: AppTextStyles.normal600(
+                      fontSize: 16.0, color: Colors.black),
                 ),
-              ),
-              const SizedBox(height: 16.0),
-              Text(
-                'Description:',
-                style: AppTextStyles.normal600(
-                    fontSize: 16.0, color: Colors.black),
-              ),
-              const SizedBox(height: 8.0),
-              TextField(
-                controller: _descriptionController,
-                maxLines: 5,
-                decoration: InputDecoration(
-                  hintText: 'List out the characteristics of an egg',
-                  hintStyle: const TextStyle(color: Colors.grey),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8.0),
-                  ),
-                  contentPadding: const EdgeInsets.all(12.0),
-                ),
-              ),
-              const SizedBox(height: 32.0),
-              Text(
-                'Select the learners : *',
-                style: AppTextStyles.normal600(
-                    fontSize: 16.0, color: Colors.black),
-              ),
-              const SizedBox(height: 16.0),
-              _buildGroupRow(
-                context,
-                iconPath: 'assets/icons/e_learning/people.svg',
-                text: _selectedClass,
-                onTap: () async {
-                  await Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (context) => SelectClassesDialog(
-                        onSave: (selectedClass) {
-                          setState(() {
-                            _selectedClass = selectedClass;
-                          });
-                        },
-                      ),
+                const SizedBox(height: 8.0),
+                TextField(
+                  controller: _titleController,
+                  decoration: InputDecoration(
+                    hintText: 'Why is egg white?',
+                    hintStyle: const TextStyle(color: Colors.grey),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8.0),
                     ),
-                  );
-                },
-              ),
-              _buildGroupRow(
-                context,
-                iconPath: 'assets/icons/e_learning/mark.svg',
-                text: _marks,
-                showEditButton: true,
-                onTap: _showMarksDialog,
-              ),
-              _buildGroupRow(
-                context,
-                iconPath: 'assets/icons/e_learning/calender.svg',
-                text: 'Start: ${_formatDate(_startDate)}\nDue: ${_formatDate(_endDate)}',
-                showEditButton: true,
-                isSelected: true,
-                onTap: _showDateRangePicker,
-              ),
-              _buildGroupRow(
-                context,
-                iconPath: 'assets/icons/e_learning/clock.svg',
-                text: _formatDuration(_selectedDuration),
-                showEditButton: true,
-                onTap: _showDurationPicker,
-              ),
-              _buildGroupRow(
-                context,
-                iconPath: 'assets/icons/e_learning/clipboard.svg',
-                text: _selectedTopic,
-                showEditButton: true,
-                isSelected: true,
-                onTap: () => _selectTopic(),
-              ),
-            ],
+                    contentPadding: const EdgeInsets.all(12.0),
+                  ),
+                ),
+                const SizedBox(height: 16.0),
+                Text(
+                  'Description:',
+                  style: AppTextStyles.normal600(
+                      fontSize: 16.0, color: Colors.black),
+                ),
+                const SizedBox(height: 8.0),
+                TextField(
+                  controller: _descriptionController,
+                  maxLines: 5,
+                  decoration: InputDecoration(
+                    hintText: 'List out the characteristics of an egg',
+                    hintStyle: const TextStyle(color: Colors.grey),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8.0),
+                    ),
+                    contentPadding: const EdgeInsets.all(12.0),
+                  ),
+                ),
+                const SizedBox(height: 32.0),
+                Text(
+                  'Select the learners : *',
+                  style: AppTextStyles.normal600(
+                      fontSize: 16.0, color: Colors.black),
+                ),
+                const SizedBox(height: 16.0),
+                _buildGroupRow(
+                  context,
+                  iconPath: 'assets/icons/e_learning/people.svg',
+                  text: _selectedClass,
+                  onTap: () async {
+                    await Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (context) => SelectClassesDialog(
+                          onSave: (selectedClass) {
+                            setState(() {
+                              _selectedClass = selectedClass;
+                            });
+                          },
+                        ),
+                      ),
+                    );
+                  },
+                ),
+                _buildGroupRow(
+                  context,
+                  iconPath: 'assets/icons/e_learning/mark.svg',
+                  text: _marks,
+                  showEditButton: true,
+                  onTap: _showMarksDialog,
+                ),
+                _buildGroupRow(
+                  context,
+                  iconPath: 'assets/icons/e_learning/calender.svg',
+                  text: 'Start: ${_formatDate(_startDate)}\nDue: ${_formatDate(_endDate)}',
+                  showEditButton: true,
+                  isSelected: true,
+                  onTap: _showDateRangePicker,
+                ),
+                _buildGroupRow(
+                  context,
+                  iconPath: 'assets/icons/e_learning/clock.svg',
+                  text: _formatDuration(_selectedDuration),
+                  showEditButton: true,
+                  onTap: _showDurationPicker,
+                ),
+                _buildGroupRow(
+                  context,
+                  iconPath: 'assets/icons/e_learning/clipboard.svg',
+                  text: _selectedTopic,
+                  showEditButton: true,
+                  isSelected: true,
+                  onTap: () => _selectTopic(),
+                ),
+              ],
+            ),
           ),
         ),
       ),
