@@ -10,7 +10,7 @@ import 'package:linkschool/modules/portal/e-learning/assignment_screen.dart';
 class ViewAssignmentScreen extends StatefulWidget {
   final Assignment assignment;
 
-  ViewAssignmentScreen({required this.assignment});
+  const ViewAssignmentScreen({super.key, required this.assignment});
 
   @override
   _ViewAssignmentScreenState createState() => _ViewAssignmentScreenState();

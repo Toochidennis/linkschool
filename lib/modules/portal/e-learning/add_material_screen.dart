@@ -72,88 +72,95 @@ class _AddMaterialScreenState extends State<AddMaterialScreen> {
         ],
       ),
       body: Container(
+        height: MediaQuery.of(context).size.height,
         decoration: Constants.customBoxDecoration(context),
         child: Padding(
           padding: const EdgeInsets.all(16.0),
           child: SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Title:',
-                  style: AppTextStyles.normal600(
-                      fontSize: 16.0, color: Colors.black),
-                ),
-                const SizedBox(height: 8.0),
-                TextField(
-                  controller: _titleController,
-                  decoration: InputDecoration(
-                    hintText: 'e.g Dying and Bleaching',
-                    hintStyle: const TextStyle(color: Colors.grey),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8.0),
-                    ),
-                    contentPadding: const EdgeInsets.all(12.0),
+            physics: const AlwaysScrollableScrollPhysics(),
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                minHeight: MediaQuery.of(context).size.height
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Title:',
+                    style: AppTextStyles.normal600(
+                        fontSize: 16.0, color: Colors.black),
                   ),
-                ),
-                const SizedBox(height: 16.0),
-                Text(
-                  'Description:',
-                  style: AppTextStyles.normal600(
-                      fontSize: 16.0, color: Colors.black),
-                ),
-                const SizedBox(height: 8.0),
-                TextField(
-                  controller: _descriptionController,
-                  maxLines: 5,
-                  decoration: InputDecoration(
-                    hintText: 'Type here...',
-                    hintStyle: const TextStyle(color: Colors.grey),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8.0),
-                    ),
-                    contentPadding: const EdgeInsets.all(12.0),
-                  ),
-                ),
-                const SizedBox(height: 32.0),
-                Text(
-                  'Select the learners for this outline*:',
-                  style: AppTextStyles.normal600(
-                      fontSize: 16.0, color: Colors.black),
-                ),
-                const SizedBox(height: 16.0),
-                _buildGroupRow(
-                  context,
-                  iconPath: 'assets/icons/e_learning/people.svg',
-                  text: _selectedClass,
-                  onTap: () async {
-                    await Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (context) => SelectClassesDialog(
-                          onSave: (selectedClass) {
-                            setState(() {
-                              _selectedClass = selectedClass;
-                            });
-                          },
-                        ),
+                  const SizedBox(height: 8.0),
+                  TextField(
+                    controller: _titleController,
+                    decoration: InputDecoration(
+                      hintText: 'e.g Dying and Bleaching',
+                      hintStyle: const TextStyle(color: Colors.grey),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8.0),
                       ),
-                    );
-                  },
-                ),
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 8.0),
-                  child: _buildAttachmentsSection(),
-                ),
-                Divider(color: Colors.grey.withOpacity(0.5)),
-                _buildGroupRow(
-                  context,
-                  iconPath: 'assets/icons/e_learning/clipboard.svg',
-                  text: _selectedTopic,
-                  showEditButton: true,
-                  isSelected: true,
-                  onTap: () => _selectTopic(),
-                ),
-              ],
+                      contentPadding: const EdgeInsets.all(12.0),
+                    ),
+                  ),
+                  const SizedBox(height: 16.0),
+                  Text(
+                    'Description:',
+                    style: AppTextStyles.normal600(
+                        fontSize: 16.0, color: Colors.black),
+                  ),
+                  const SizedBox(height: 8.0),
+                  TextField(
+                    controller: _descriptionController,
+                    maxLines: 5,
+                    decoration: InputDecoration(
+                      hintText: 'Type here...',
+                      hintStyle: const TextStyle(color: Colors.grey),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8.0),
+                      ),
+                      contentPadding: const EdgeInsets.all(12.0),
+                    ),
+                  ),
+                  const SizedBox(height: 32.0),
+                  Text(
+                    'Select the learners for this outline*:',
+                    style: AppTextStyles.normal600(
+                        fontSize: 16.0, color: Colors.black),
+                  ),
+                  const SizedBox(height: 16.0),
+                  _buildGroupRow(
+                    context,
+                    iconPath: 'assets/icons/e_learning/people.svg',
+                    text: _selectedClass,
+                    onTap: () async {
+                      await Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (context) => SelectClassesDialog(
+                            onSave: (selectedClass) {
+                              setState(() {
+                                _selectedClass = selectedClass;
+                              });
+                            },
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 8.0),
+                    child: _buildAttachmentsSection(),
+                  ),
+                  Divider(color: Colors.grey.withOpacity(0.5)),
+                  _buildGroupRow(
+                    context,
+                    iconPath: 'assets/icons/e_learning/clipboard.svg',
+                    text: _selectedTopic,
+                    showEditButton: true,
+                    isSelected: true,
+                    onTap: () => _selectTopic(),
+                  ),
+                ],
+              ),
             ),
           ),
         ),
