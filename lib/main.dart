@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
-
-import 'modules/common/app_themes.dart';
-import 'modules/common/dashboard_switcher.dart';
+import 'package:linkschool/modules/common/app_themes.dart';
+import 'package:linkschool/modules/common/dashboard_switcher.dart';
+import 'package:linkschool/routes/route_generator.dart';
+ // Import the RouteGenerator
 
 void main() {
   runApp(const MyApp());
@@ -10,7 +11,6 @@ void main() {
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -19,7 +19,9 @@ class MyApp extends StatelessWidget {
       theme: AppThemes.lightTheme,
       darkTheme: AppThemes.darkTheme,
       themeMode: ThemeMode.system,
-      home: const DashboardSwitcher(),
+      initialRoute: '/', // Set the initial route
+      onGenerateRoute: RouteGenerator.generateRoute, // Use the RouteGenerator
+      home: const DashboardSwitcher(), 
     );
   }
 }

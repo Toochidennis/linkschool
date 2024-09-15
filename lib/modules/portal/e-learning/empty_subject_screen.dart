@@ -7,7 +7,7 @@ import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/model/e-learning/topic_model.dart';
 import 'package:linkschool/modules/portal/e-learning/View/view_assignment_screen.dart';
-import 'package:linkschool/modules/portal/e-learning/View/view_question_screen.dart';
+import 'package:linkschool/modules/portal/e-learning/View/question/view_question_screen.dart';
 import 'package:linkschool/modules/portal/e-learning/add_material_screen.dart';
 import 'package:linkschool/modules/portal/e-learning/assignment_screen.dart';
 import 'package:linkschool/modules/portal/e-learning/create_topic_screen.dart';
