@@ -21,6 +21,7 @@ class _CreateSyllabusScreenState extends State<CreateSyllabusScreen> {
   late TextEditingController _titleController;
   late TextEditingController _descriptionController;
   late String _backgroundImagePath;
+    late double opacity;
 
   @override
   void initState() {
@@ -39,6 +40,8 @@ class _CreateSyllabusScreenState extends State<CreateSyllabusScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final Brightness brightness = Theme.of(context).brightness;
+    opacity = brightness == Brightness.light ? 0.1 : 0.15;
     return Scaffold(
       appBar: AppBar(
         title: Text(
@@ -49,6 +52,21 @@ class _CreateSyllabusScreenState extends State<CreateSyllabusScreen> {
           ),
         ),
         backgroundColor: AppColors.backgroundLight,
+        flexibleSpace: FlexibleSpaceBar(
+          background: Stack(
+            children: [
+              Positioned.fill(
+                child: Opacity(
+                  opacity: opacity,
+                  child: Image.asset(
+                    'assets/images/background.png',
+                    fit: BoxFit.cover,
+                  ),
+                ),
+              )
+            ],
+          ),
+        ),
         actions: [
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 8.0),
@@ -67,97 +85,109 @@ class _CreateSyllabusScreenState extends State<CreateSyllabusScreen> {
           ),
         ],
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Title:',
-                style: AppTextStyles.normal600(
-                    fontSize: 16.0, color: Colors.black),
-              ),
-              const SizedBox(height: 8.0),
-              TextField(
-                controller: _titleController,
-                decoration: InputDecoration(
-                  hintText: 'e.g. Dying and bleaching',
-                  hintStyle: TextStyle(color: Colors.grey),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8.0),
-                  ),
-                  contentPadding: const EdgeInsets.all(12.0),
+      body: Container(
+        height: MediaQuery.of(context)
+            .size
+            .height, // Ensures the container covers the full screen height
+        decoration: BoxDecoration(
+          image: DecorationImage(
+            image: AssetImage('assets/images/background.png'),
+            fit: BoxFit.cover,
+            opacity: opacity
+          ),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Title:',
+                  style: AppTextStyles.normal600(
+                      fontSize: 16.0, color: Colors.black),
                 ),
-              ),
-              const SizedBox(height: 16.0),
-              Text(
-                'Description:',
-                style: AppTextStyles.normal600(
-                    fontSize: 16.0, color: Colors.black),
-              ),
-              const SizedBox(height: 8.0),
-              TextField(
-                controller: _descriptionController,
-                maxLines: 5,
-                decoration: InputDecoration(
-                  hintText: 'Type here...',
-                  hintStyle: TextStyle(color: Colors.grey),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8.0),
+                const SizedBox(height: 8.0),
+                TextField(
+                  controller: _titleController,
+                  decoration: InputDecoration(
+                    hintText: 'e.g. Dying and bleaching',
+                    hintStyle: TextStyle(color: Colors.grey),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8.0),
+                    ),
+                    contentPadding: const EdgeInsets.all(12.0),
                   ),
-                  contentPadding: const EdgeInsets.all(12.0),
                 ),
-              ),
-              const SizedBox(height: 32.0),
-              Text(
-                'Select the learning group for this syllabus: *',
-                style: AppTextStyles.normal600(
-                    fontSize: 16.0, color: Colors.black),
-              ),
-              const SizedBox(height: 16.0),
-              _buildGroupRow(
-                context,
-                iconPath: 'assets/icons/e_learning/people.svg',
-                text: _selectedClass,
-                onTap: () async {
-                  final result = await Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (context) => SelectClassesDialog(
-                        onSave: (selectedClass) {
-                          setState(() {
-                            _selectedClass = selectedClass;
-                          });
-                        },
-                      ),
+                const SizedBox(height: 16.0),
+                Text(
+                  'Description:',
+                  style: AppTextStyles.normal600(
+                      fontSize: 16.0, color: Colors.black),
+                ),
+                const SizedBox(height: 8.0),
+                TextField(
+                  controller: _descriptionController,
+                  maxLines: 5,
+                  decoration: InputDecoration(
+                    hintText: 'Type here...',
+                    hintStyle: TextStyle(color: Colors.grey),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8.0),
                     ),
-                  );
-                  if (result != null) {
-                    setState(() {
-                      _selectedClass = result;
-                    });
-                  }
-                },
-              ),
-              _buildGroupRow(
-                context,
-                iconPath: 'assets/icons/e_learning/profile.svg',
-                text: _selectedTeacher,
-                onTap: () async {
-                  await Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (context) => SelectTeachersDialog(
-                        onSave: (selectedTeacher) {
-                          setState(() {
-                            _selectedTeacher = selectedTeacher;
-                          });
-                        },
+                    contentPadding: const EdgeInsets.all(12.0),
+                  ),
+                ),
+                const SizedBox(height: 32.0),
+                Text(
+                  'Select the learning group for this syllabus: *',
+                  style: AppTextStyles.normal600(
+                      fontSize: 16.0, color: Colors.black),
+                ),
+                const SizedBox(height: 16.0),
+                _buildGroupRow(
+                  context,
+                  iconPath: 'assets/icons/e_learning/people.svg',
+                  text: _selectedClass,
+                  onTap: () async {
+                    final result = await Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (context) => SelectClassesDialog(
+                          onSave: (selectedClass) {
+                            setState(() {
+                              _selectedClass = selectedClass;
+                            });
+                          },
+                        ),
                       ),
-                    ),
-                  );
-                },
-              ),
-            ],
+                    );
+                    if (result != null) {
+                      setState(() {
+                        _selectedClass = result;
+                      });
+                    }
+                  },
+                ),
+                _buildGroupRow(
+                  context,
+                  iconPath: 'assets/icons/e_learning/profile.svg',
+                  text: _selectedTeacher,
+                  onTap: () async {
+                    await Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (context) => SelectTeachersDialog(
+                          onSave: (selectedTeacher) {
+                            setState(() {
+                              _selectedTeacher = selectedTeacher;
+                            });
+                          },
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ],
+            ),
           ),
         ),
       ),

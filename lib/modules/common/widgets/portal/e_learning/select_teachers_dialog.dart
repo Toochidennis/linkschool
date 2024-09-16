@@ -24,6 +24,7 @@ class _SelectTeachersDialogState extends State<SelectTeachersDialog> {
   List<bool> _selectedTeachers = List.generate(4, (_) => false);
   bool _selectAll = false;
   List<int> _selectedRowIndices = [];
+  late double opacity;
 
   void _toggleSelectAll() {
     setState(() {
@@ -65,6 +66,8 @@ class _SelectTeachersDialogState extends State<SelectTeachersDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final Brightness brightness = Theme.of(context).brightness;
+    opacity = brightness == Brightness.light ? 0.1 : 0.15;
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
@@ -84,6 +87,21 @@ class _SelectTeachersDialogState extends State<SelectTeachersDialog> {
               fontSize: 20.0, color: AppColors.primaryLight),
         ),
         backgroundColor: AppColors.backgroundLight,
+        flexibleSpace: FlexibleSpaceBar(
+          background: Stack(
+            children: [
+              Positioned.fill(
+                child: Opacity(
+                  opacity: opacity,
+                  child: Image.asset(
+                    'assets/images/background.png',
+                    fit: BoxFit.cover,
+                  ),
+                ),
+              )
+            ],
+          ),
+        ),
         actions: [
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 8.0),
@@ -94,12 +112,27 @@ class _SelectTeachersDialogState extends State<SelectTeachersDialog> {
           ),
         ],
       ),
-      body: Column(
-        children: [
-          _buildSelectAllRow(),
-          // Divider(color: Colors.grey.withOpacity(0.5)),
-          Expanded(child: _buildTeacherList()),
-        ],
+      body: Container(
+        height: MediaQuery.of(context)
+            .size
+            .height, // Ensures the container covers the full screen height
+        decoration: BoxDecoration(
+          image: DecorationImage(
+            image: AssetImage('assets/images/background.png'),
+            fit: BoxFit.cover,
+            opacity: opacity
+          ),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            children: [
+              _buildSelectAllRow(),
+              // Divider(color: Colors.grey.withOpacity(0.5)),
+              Expanded(child: _buildTeacherList()),
+            ],
+          ),
+        ),
       ),
     );
   }

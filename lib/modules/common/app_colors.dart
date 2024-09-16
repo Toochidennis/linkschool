@@ -169,5 +169,12 @@ class AppColors {
   static const Color eLearningBtnColor2 = Color.fromRGBO(212, 222, 255, 1);
   static const Color eLearningBtnColor3 = Color.fromRGBO(214, 41, 41, 1);
   static const Color eLearningBtnColor4 = Color.fromRGBO(255, 183, 51, 1);
+  static const Color eLearningBtnColor5 = Color.fromRGBO(56, 169, 94, 1);
+  static const Color eLearningBtnColor6 = Color.fromRGBO(230, 255, 237, 1);
+  static const Color eLearningBtnColor7 = Color.fromRGBO(255, 208, 208, 1);
   static const Color eLearningTxtColor1 = Color.fromRGBO(105, 105, 105, 1);
+  static const Color eLearningContColor1 = Color.fromRGBO(130, 159, 255, 1);
+   static const Color eLearningContColor2 = Color.fromRGBO(66, 102, 231, 1);
+  static const Color eLearningContColor3 = Color.fromRGBO(0, 195, 59, 1);
+   
 }

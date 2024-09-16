@@ -5,13 +5,16 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
+import 'package:linkschool/modules/model/e-learning/question_model.dart';
+import 'package:linkschool/modules/portal/e-learning/View/question/assessment_screen.dart';
 import 'package:linkschool/modules/portal/e-learning/View/question/question_editor_screen.dart';
 import 'package:linkschool/modules/portal/e-learning/question_screen.dart';
 
 class ViewQuestionScreen extends StatefulWidget {
   final Question question;
 
-  const ViewQuestionScreen({Key? key, required this.question}) : super(key: key);
+  const ViewQuestionScreen({Key? key, required this.question})
+      : super(key: key);
 
   @override
   State<ViewQuestionScreen> createState() => _ViewQuestionScreenState();
@@ -19,7 +22,7 @@ class ViewQuestionScreen extends StatefulWidget {
 
 class _ViewQuestionScreenState extends State<ViewQuestionScreen> {
   List<Widget> createdQuestions = [];
-    late double opacity;
+  late double opacity;
 
   @override
   Widget build(BuildContext context) {
@@ -78,33 +81,46 @@ class _ViewQuestionScreenState extends State<ViewQuestionScreen> {
                           width: constraints.maxWidth,
                         ),
                         Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 16.0, vertical: 8.0),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               _buildInfoSection(
                                 value: widget.question.title,
-                                style: AppTextStyles.normal600(fontSize: 20, color: AppColors.backgroundLight),
+                                style: AppTextStyles.normal600(
+                                    fontSize: 20,
+                                    color: AppColors.backgroundLight),
                               ),
                               _buildInfoSection(
                                 label: 'Instruction : ',
                                 value: widget.question.description,
-                                style: AppTextStyles.normal400(fontSize: 16, color: AppColors.backgroundLight),
+                                style: AppTextStyles.normal400(
+                                    fontSize: 16,
+                                    color: AppColors.backgroundLight),
                               ),
                               _buildInfoSection(
-                                value: _formatDuration(widget.question.duration),
-                                style: AppTextStyles.normal600(fontSize: 16, color: AppColors.backgroundLight),
-                                icon: 'assets/icons/e_learning/stopwatch_icon.svg',
+                                value:
+                                    _formatDuration(widget.question.duration),
+                                style: AppTextStyles.normal600(
+                                    fontSize: 16,
+                                    color: AppColors.backgroundLight),
+                                icon:
+                                    'assets/icons/e_learning/stopwatch_icon.svg',
                               ),
                               _buildInfoSection(
                                 value: widget.question.selectedClass,
-                                style: AppTextStyles.normal600(fontSize: 16, color: AppColors.backgroundLight),
+                                style: AppTextStyles.normal600(
+                                    fontSize: 16,
+                                    color: AppColors.backgroundLight),
                                 icon: 'assets/icons/e_learning/class_icon.svg',
                               ),
                               _buildInfoSection(
                                 label: 'Due : ',
                                 value: _formatDate(widget.question.endDate),
-                                style: AppTextStyles.normal600(fontSize: 16, color: AppColors.backgroundLight),
+                                style: AppTextStyles.normal600(
+                                    fontSize: 16,
+                                    color: AppColors.backgroundLight),
                               ),
                             ],
                           ),
@@ -119,33 +135,60 @@ class _ViewQuestionScreenState extends State<ViewQuestionScreen> {
           ),
         ),
       ),
-      bottomNavigationBar: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Row(
-          children: [
-            Expanded(
-              child: OutlinedButton(
-                onPressed: () => _showQuestionTypeOverlay(context),
-                style: OutlinedButton.styleFrom(
-                  side: const BorderSide(color: AppColors.primaryLight),
-                ),
-                child: const Text('+ Question'),
-              ),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: OutlinedButton.icon(
-                onPressed: () {
-                  // Implement preview functionality
-                },
-                icon: const Icon(Icons.preview),
-                label: const Text('Preview'),
-                style: OutlinedButton.styleFrom(
-                  side: const BorderSide(color: AppColors.primaryLight),
+      bottomNavigationBar: Container(
+        decoration: Constants.customBoxDecoration(context),
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Row(
+            children: [
+              Expanded(
+                child: OutlinedButton(
+                  style: OutlinedButton.styleFrom(
+                    backgroundColor: AppColors.regBtnColor2,
+                    side: const BorderSide(color: AppColors.videoColor4),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                  ),
+                  onPressed: () => _showQuestionTypeOverlay(context),
+                  child: Text(
+                    '+ Question',
+                    style: AppTextStyles.normal600(
+                        fontSize: 12, color: AppColors.videoColor4),
+                  ),
                 ),
               ),
-            ),
-          ],
+              const SizedBox(width: 16),
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) =>
+                              const AssessmentScreen()),
+                    );
+                  },
+                  icon: Icon(
+                    Icons.preview,
+                    color: AppColors.videoColor4,
+                  ),
+                  label: Text(
+                    'Preview',
+                    style: AppTextStyles.normal600(
+                        fontSize: 12, color: AppColors.videoColor4),
+                  ),
+                  style: OutlinedButton.styleFrom(
+                    backgroundColor: AppColors.regBtnColor2,
+                    side: const BorderSide(color: AppColors.videoColor4),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -228,70 +271,73 @@ class _ViewQuestionScreenState extends State<ViewQuestionScreen> {
     );
     if (result != null) {
       setState(() {
-        createdQuestions.add(_buildCreatedQuestionWidget(result as Map<String, dynamic>));
+        createdQuestions
+            .add(_buildCreatedQuestionWidget(result as Map<String, dynamic>));
       });
     }
   }
 
-Widget _buildCreatedQuestionWidget(Map<String, dynamic> questionData) {
-  return Column(
-    children: [
-      ListTile(
-        leading: SvgPicture.asset(
-          questionData['type'] == 'short_answer'
-              ? 'assets/icons/e_learning/short_answer_icon.svg'
-              : 'assets/icons/e_learning/multiple_choice_icon.svg',
-          width: 24,
-          height: 24,
-        ),
-        title: Text(
-          questionData['type'] == 'short_answer' ? 'Show answer' : 'Multiple choice',
-          style: AppTextStyles.normal500(fontSize: 16, color: AppColors.textGray),
-        ),
-        trailing: PopupMenuButton(
-          icon: const Icon(Icons.more_vert),
-          itemBuilder: (context) => [
-            const PopupMenuItem(
-              value: 'edit',
-              child: Row(
-                children: [
-                  Icon(Icons.edit),
-                  SizedBox(width: 8),
-                  Text('Edit'),
-                ],
+  Widget _buildCreatedQuestionWidget(Map<String, dynamic> questionData) {
+    return Column(
+      children: [
+        ListTile(
+          leading: SvgPicture.asset(
+            questionData['type'] == 'short_answer'
+                ? 'assets/icons/e_learning/short_answer_icon.svg'
+                : 'assets/icons/e_learning/multiple_choice_icon.svg',
+            width: 24,
+            height: 24,
+          ),
+          title: Text(
+            questionData['type'] == 'short_answer'
+                ? 'Show answer'
+                : 'Multiple choice',
+            style: AppTextStyles.normal500(
+                fontSize: 16, color: AppColors.textGray),
+          ),
+          trailing: PopupMenuButton(
+            icon: const Icon(Icons.more_vert),
+            itemBuilder: (context) => [
+              const PopupMenuItem(
+                value: 'edit',
+                child: Row(
+                  children: [
+                    Icon(Icons.edit),
+                    SizedBox(width: 8),
+                    Text('Edit'),
+                  ],
+                ),
               ),
-            ),
-            const PopupMenuItem(
-              value: 'preview',
-              child: Row(
-                children: [
-                  Icon(Icons.preview),
-                  SizedBox(width: 8),
-                  Text('Preview'),
-                ],
+              const PopupMenuItem(
+                value: 'preview',
+                child: Row(
+                  children: [
+                    Icon(Icons.preview),
+                    SizedBox(width: 8),
+                    Text('Preview'),
+                  ],
+                ),
               ),
-            ),
-            const PopupMenuItem(
-              value: 'delete',
-              child: Row(
-                children: [
-                  Icon(Icons.delete),
-                  SizedBox(width: 8),
-                  Text('Delete'),
-                ],
+              const PopupMenuItem(
+                value: 'delete',
+                child: Row(
+                  children: [
+                    Icon(Icons.delete),
+                    SizedBox(width: 8),
+                    Text('Delete'),
+                  ],
+                ),
               ),
-            ),
-          ],
-          onSelected: (value) {
-            // Handle menu item selection
-          },
+            ],
+            onSelected: (value) {
+              // Handle menu item selection
+            },
+          ),
         ),
-      ),
-      const Divider(), 
-    ],
-  );
-}
-
+        const Divider(),
+      ],
+    );
+  }
 
   Widget _buildQuestionTypeOption({
     required IconData icon,
@@ -337,8 +383,18 @@ Widget _buildCreatedQuestionWidget(Map<String, dynamic> questionData) {
 
   String _getMonth(int month) {
     const months = [
-      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec'
     ];
     return months[month - 1];
   }

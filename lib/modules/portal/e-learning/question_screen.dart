@@ -7,6 +7,7 @@ import 'package:linkschool/modules/common/constants.dart';
 // import 'package:linkschool/modules/common/buttons/custom_outline_button.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/common/widgets/portal/e_learning/select_classes_dialog.dart';
+import 'package:linkschool/modules/model/e-learning/question_model.dart';
 import 'package:linkschool/modules/portal/e-learning/select_topic_screen.dart';
 
 class QuestionScreen extends StatefulWidget {
@@ -88,7 +89,7 @@ class _QuestionScreenState extends State<QuestionScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Title:',
+                  'Title :',
                   style: AppTextStyles.normal600(
                       fontSize: 16.0, color: Colors.black),
                 ),
@@ -106,7 +107,7 @@ class _QuestionScreenState extends State<QuestionScreen> {
                 ),
                 const SizedBox(height: 16.0),
                 Text(
-                  'Description:',
+                  'Instruction :',
                   style: AppTextStyles.normal600(
                       fontSize: 16.0, color: Colors.black),
                 ),
@@ -621,27 +622,3 @@ class _DurationPickerDialogState extends State<DurationPickerDialog> {
 }
 
 
-class Question {
-  final String title;
-  final String description;
-  final String selectedClass;
-  final DateTime startDate;
-  final DateTime endDate;
-  final String topic;
-  final Duration duration;
-  final String marks;
-  final DateTime createdAt;
-
-  Question({
-    required this.title,
-    required this.description,
-    required this.selectedClass,
-    required this.startDate,
-    required this.endDate,
-    required this.topic,
-    required this.duration,
-    required this.marks,
-
-    DateTime? createdAt,
-  }) : this.createdAt = createdAt ?? DateTime.now();
-}

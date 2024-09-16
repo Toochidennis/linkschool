@@ -7,6 +7,7 @@ import 'package:linkschool/modules/common/buttons/custom_save_elevated_button.da
 import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/common/widgets/portal/e_learning/select_classes_dialog.dart';
+import 'package:linkschool/modules/model/e-learning/objective_item.dart';
 
 class CreateTopicScreen extends StatefulWidget {
   const CreateTopicScreen({Key? key}) : super(key: key);
@@ -96,77 +97,82 @@ void _onTitleFocusChange() {
           ),
         ],
       ),
-      body: Container(
-        decoration: Constants.customBoxDecoration(context),
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Topic',
-                  style: AppTextStyles.normal600(fontSize: 16.0, color: Colors.black),
-                ),
-                const SizedBox(height: 8.0),
-                TextField(
-                  controller: _titleController,
-                  focusNode: _titleFocusNode,
-                  decoration: InputDecoration(
-                    hintText: 'e.g Dying and Bleaching',
-                    hintStyle: const TextStyle(color: Colors.grey),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8.0),
-                    ),
-                    contentPadding: const EdgeInsets.all(12.0),
-                  ),
-                ),
-                const SizedBox(height: 32.0),
-                Text(
-                  'Select the learners for this outline*:',
-                  style: AppTextStyles.normal600(
-                      fontSize: 16.0, color: Colors.black),
-                ),
-                const SizedBox(height: 16.0),
-                _buildGroupRow(
-                  context,
-                  iconPath: 'assets/icons/e_learning/people.svg',
-                  text: _selectedClass,
-                  onTap: () async {
-                    await Navigator.of(context).push<String>(
-                      MaterialPageRoute(
-                        builder: (context) => SelectClassesDialog(
-                          onSave: (selectedClass) {
-                            setState(() {
-                              _selectedClass = selectedClass;
-                            });
-                          },
-                        ),
-                      ),
-                    );
-                    // if (result != null) {
-                    //   setState(() {
-                    //     _selectedClass = result;
-                    //   });
-                    // }
-                  },
-                ),
-                if (_showObjectives) ...[
-                  const SizedBox(height: 32.0),
-                  Text(
-                    'Topic Objectives:',
-                    style: AppTextStyles.normal600(
-                        fontSize: 16.0, color: Colors.black),
-                  ),
-                  const SizedBox(height: 16.0),
-                  ..._objectives.map((objective) => _buildObjectiveListItem(objective)),
-                  _buildObjectiveInput(),
-                ],
-              ],
+body: Container(
+  height: MediaQuery.of(context).size.height, // Ensures the container covers the full screen height
+  decoration: Constants.customBoxDecoration(context),
+  child: Padding(
+    padding: const EdgeInsets.all(16.0),
+    child: SingleChildScrollView(
+      physics: const AlwaysScrollableScrollPhysics(), // Allows scroll even if the content doesn't fill the screen
+      child: ConstrainedBox(
+        constraints: BoxConstraints(
+          minHeight: MediaQuery.of(context).size.height - kToolbarHeight - 32, // Ensures content covers the remaining screen height
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Topic',
+              style: AppTextStyles.normal600(fontSize: 16.0, color: Colors.black),
             ),
-          ),
+            const SizedBox(height: 8.0),
+            TextField(
+              controller: _titleController,
+              focusNode: _titleFocusNode,
+              decoration: InputDecoration(
+                hintText: 'e.g Dying and Bleaching',
+                hintStyle: const TextStyle(color: Colors.grey),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8.0),
+                ),
+                contentPadding: const EdgeInsets.all(12.0),
+              ),
+            ),
+            const SizedBox(height: 32.0),
+            Text(
+              'Select the learners for this outline*:',
+              style: AppTextStyles.normal600(
+                  fontSize: 16.0, color: Colors.black),
+            ),
+            const SizedBox(height: 16.0),
+            _buildGroupRow(
+              context,
+              iconPath: 'assets/icons/e_learning/people.svg',
+              text: _selectedClass,
+              onTap: () async {
+                await Navigator.of(context).push<String>(
+                  MaterialPageRoute(
+                    builder: (context) => SelectClassesDialog(
+                      onSave: (selectedClass) {
+                        setState(() {
+                          _selectedClass = selectedClass;
+                        });
+                      },
+                    ),
+                  ),
+                );
+              },
+            ),
+            if (_showObjectives) ...[
+              const SizedBox(height: 32.0),
+              Text(
+                'Topic Objectives:',
+                style: AppTextStyles.normal600(
+                    fontSize: 16.0, color: Colors.black),
+              ),
+              const SizedBox(height: 16.0),
+              ..._objectives.map((objective) => _buildObjectiveListItem(objective)),
+              _buildObjectiveInput(),
+            ],
+            // Add a spacer to push content to the bottom
+            const SizedBox(height: 16.0),
+          ],
         ),
       ),
+    ),
+  ),
+),
+
     );
   }
 
@@ -388,9 +394,3 @@ void _onTitleFocusChange() {
   }
 }
 
-class ObjectiveItem {
-  String text;
-  bool isSelected;
-
-  ObjectiveItem(this.text, {this.isSelected = false});
-}

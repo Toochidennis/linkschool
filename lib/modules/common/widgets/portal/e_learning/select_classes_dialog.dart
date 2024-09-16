@@ -22,6 +22,7 @@ class _SelectClassesDialogState extends State<SelectClassesDialog> {
   List<bool> _selectedClasses = List.generate(4, (_) => false);
   bool _selectAll = false;
   List<int> _selectedRowIndices = [];
+  late double opacity;
 
   void _toggleSelectAll() {
     setState(() {
@@ -63,6 +64,8 @@ class _SelectClassesDialogState extends State<SelectClassesDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final Brightness brightness = Theme.of(context).brightness;
+    opacity = brightness == Brightness.light ? 0.1 : 0.15;
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
@@ -82,6 +85,21 @@ class _SelectClassesDialogState extends State<SelectClassesDialog> {
               fontSize: 20.0, color: AppColors.primaryLight),
         ),
         backgroundColor: AppColors.backgroundLight,
+        flexibleSpace: FlexibleSpaceBar(
+          background: Stack(
+            children: [
+              Positioned.fill(
+                child: Opacity(
+                  opacity: opacity,
+                  child: Image.asset(
+                    'assets/images/background.png',
+                    fit: BoxFit.cover,
+                  ),
+                ),
+              )
+            ],
+          ),
+        ),
         actions: [
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 8.0),
@@ -92,11 +110,29 @@ class _SelectClassesDialogState extends State<SelectClassesDialog> {
           ),
         ],
       ),
-      body: Column(
-        children: [
-          _buildSelectAllRow(),
-          Expanded(child: _buildClassList()),
-        ],
+      body: Container(
+        height: MediaQuery.of(context)
+            .size
+            .height, 
+        decoration: BoxDecoration(
+          image: DecorationImage(
+            image: const AssetImage('assets/images/background.png'),
+            fit: BoxFit.cover,
+            opacity: opacity
+          ),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            children: [
+              _buildSelectAllRow(),
+              const SizedBox(height: 16.0),
+              Expanded(
+                  child:
+                      _buildClassList()), // Ensure ListView takes up remaining space
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -131,7 +167,7 @@ class _SelectClassesDialogState extends State<SelectClassesDialog> {
               child: Icon(
                 Icons.check,
                 color: _selectAll ? Colors.white : AppColors.attCheckColor1,
-                size: 18, 
+                size: 18,
               ),
             ),
           ],
@@ -149,13 +185,14 @@ class _SelectClassesDialogState extends State<SelectClassesDialog> {
       ),
       itemBuilder: (context, index) {
         return ListTile(
-          contentPadding: const EdgeInsets.symmetric(horizontal: 16.0), 
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16.0),
           tileColor: _selectedClasses[index]
               ? AppColors.eLearningBtnColor2
               : Colors.transparent,
           title: Text(
             _classes[index],
-            style: AppTextStyles.normal500(fontSize: 16.0, color: AppColors.textGray), 
+            style: AppTextStyles.normal500(
+                fontSize: 16.0, color: AppColors.textGray),
           ),
           trailing: _selectedClasses[index]
               ? Container(
@@ -168,11 +205,11 @@ class _SelectClassesDialogState extends State<SelectClassesDialog> {
                   child: const Icon(
                     Icons.check,
                     color: Colors.white,
-                    size: 12, // Matching size with the Select All check icon
+                    size: 12, 
                   ),
                 )
               : Container(
-                  width: 24.0, // Ensuring space for alignment even when no icon
+                  width: 24.0, 
                 ),
           onTap: () => _toggleRowSelection(index),
         );
