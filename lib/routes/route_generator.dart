@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:linkschool/modules/common/dashboard_switcher.dart';
 import 'package:linkschool/modules/model/e-learning/question_model.dart';
+import 'package:linkschool/modules/portal/e-learning/View/question/question_editor_screen.dart';
 // import 'package:linkschool/modules/portal/e-learning/View/question/short_question.dart';
 import 'package:linkschool/modules/portal/e-learning/View/question/view_question_screen.dart';
-import 'package:linkschool/modules/portal/e-learning/question_screen.dart';
+// import 'package:linkschool/modules/portal/e-learning/question_screen.dart';
 
 
 class RouteGenerator {
@@ -23,12 +24,12 @@ class RouteGenerator {
         }
         // If args is not of the correct type, return an error page
         return _errorRoute();
-      // case '/short-answer-question':
-      //   return MaterialPageRoute(builder: (_) => ShortAnswerQuestionScreen());
-      // case '/multiple-choice-question':
-      //   return MaterialPageRoute(builder: (_) => const MultipleChoiceQuestionScreen());
-      // case '/section-question':
-      //   return MaterialPageRoute(builder: (_) => const SectionQuestionScreen());
+      case '/short-answer-question':
+        return MaterialPageRoute(builder: (_) => QuestionEditorScreen(questionType: 'short_answer'),);
+      case '/multiple-choice-question':
+        return MaterialPageRoute(builder: (_) => const QuestionEditorScreen(questionType: 'multiple_choice'));
+      case '/section-question':
+        return MaterialPageRoute(builder: (_) => const QuestionEditorScreen(questionType: 'section'),);
       default:
         // If there is no such named route in the switch statement, e.g. /third
         return _errorRoute();

@@ -96,7 +96,7 @@ class _QuestionEditorScreenState extends State<QuestionEditorScreen> {
                   onTap: _showAttachmentOptionsOverlay,
                   child: Row(
                     children: [
-                      SvgPicture.asset('assets/icons/attachment_icon.svg'),
+                      SvgPicture.asset('assets/icons/e_learning/attachment_icon.svg'),
                       const SizedBox(width: 8),
                       const Text('Add attachment'),
                     ],
@@ -114,6 +114,7 @@ class _QuestionEditorScreenState extends State<QuestionEditorScreen> {
                     Text('(optional)', style: TextStyle(fontSize: 14, color: Colors.grey[600])),
                   ],
                 ),
+                const Divider(),
               ],
             ),
           ),
@@ -135,6 +136,7 @@ class _QuestionEditorScreenState extends State<QuestionEditorScreen> {
             // Show options for short answer
           },
         ),
+        const Divider(),
       ],
     );
   }
@@ -162,6 +164,7 @@ class _QuestionEditorScreenState extends State<QuestionEditorScreen> {
                   _showOptionMenu(index);
                 },
               ),
+              const Divider(),
             ],
           );
         }),
@@ -281,10 +284,3 @@ class _QuestionEditorScreenState extends State<QuestionEditorScreen> {
     super.dispose();
   }
 }
-
-// Add this to your main.dart or routes file
-final routes = {
-  '/short-answer-question': (context) => const QuestionEditorScreen(questionType: 'short_answer'),
-  '/multiple-choice-question': (context) => const QuestionEditorScreen(questionType: 'multiple_choice'),
-  '/section-question': (context) => const QuestionEditorScreen(questionType: 'section'),
-};

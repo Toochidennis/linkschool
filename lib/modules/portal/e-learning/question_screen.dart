@@ -6,9 +6,12 @@ import 'package:linkschool/modules/common/buttons/custom_save_elevated_button.da
 import 'package:linkschool/modules/common/constants.dart';
 // import 'package:linkschool/modules/common/buttons/custom_outline_button.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
+import 'package:linkschool/modules/common/utils/duration_picker_dialog.dart';
 import 'package:linkschool/modules/common/widgets/portal/e_learning/select_classes_dialog.dart';
 import 'package:linkschool/modules/model/e-learning/question_model.dart';
+import 'package:linkschool/modules/portal/e-learning/View/question/view_question_screen.dart';
 import 'package:linkschool/modules/portal/e-learning/select_topic_screen.dart';
+
 
 class QuestionScreen extends StatefulWidget {
   final Function(Question) onSave;
@@ -74,8 +77,8 @@ class _QuestionScreenState extends State<QuestionScreen> {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 8.0),
             child: CustomSaveElevatedButton(
-              onPressed: _saveQuestion,
-              text: 'Save',
+              onPressed: _saveQuestionAndNavigate,
+              text: 'Next',
             ),
           ),
         ],
@@ -336,31 +339,51 @@ class _QuestionScreenState extends State<QuestionScreen> {
     );
   }
 
-  void _showDateRangePicker() async {
-    final DateTimeRange? picked = await showDateRangePicker(
+  // void _showDateRangePicker() async {
+  //   final DateTimeRange? picked = await showDateRangePicker(
+  //     context: context,
+  //     firstDate: DateTime.now(),
+  //     lastDate: DateTime.now().add(const Duration(days: 365)),
+  //     initialDateRange: DateTimeRange(start: _startDate, end: _endDate),
+  //     builder: (BuildContext context, Widget? child) {
+  //       return Theme(
+  //         data: ThemeData.light().copyWith(
+  //           primaryColor: AppColors.eLearningBtnColor1,
+  //           colorScheme: ColorScheme.light(primary: AppColors.eLearningBtnColor1),
+  //           buttonTheme: ButtonThemeData(textTheme: ButtonTextTheme.primary),
+  //         ),
+  //         child: child!,
+  //       );
+  //     },
+  //   );
+
+  //   if (picked != null) {
+  //     setState(() {
+  //       _startDate = picked.start;
+  //       _endDate = picked.end;
+  //     });
+  //   }
+  // }
+
+  void _showDateRangePicker() {
+    showDialog(
       context: context,
-      firstDate: DateTime.now(),
-      lastDate: DateTime.now().add(const Duration(days: 365)),
-      initialDateRange: DateTimeRange(start: _startDate, end: _endDate),
-      builder: (BuildContext context, Widget? child) {
-        return Theme(
-          data: ThemeData.light().copyWith(
-            primaryColor: AppColors.eLearningBtnColor1,
-            colorScheme: ColorScheme.light(primary: AppColors.eLearningBtnColor1),
-            buttonTheme: ButtonThemeData(textTheme: ButtonTextTheme.primary),
-          ),
-          child: child!,
+      builder: (BuildContext context) {
+        return DateRangePickerDialog(
+          initialStartDate: _startDate,
+          initialEndDate: _endDate,
+          onSave: (startDate, endDate) {
+            setState(() {
+              _startDate = startDate;
+              _endDate = endDate;
+            });
+          },
         );
       },
     );
-
-    if (picked != null) {
-      setState(() {
-        _startDate = picked.start;
-        _endDate = picked.end;
-      });
-    }
   }
+
+  
 
   String _formatDate(DateTime date) {
     return '${_getDayOfWeek(date.weekday)}, ${date.day} ${_getMonth(date.month)}';
@@ -463,7 +486,7 @@ class _QuestionScreenState extends State<QuestionScreen> {
     }
   }
 
-  void _saveQuestion() {
+  void _saveQuestionAndNavigate() {
     final question = Question(
       title: _titleController.text,
       description: _descriptionController.text,
@@ -475,109 +498,109 @@ class _QuestionScreenState extends State<QuestionScreen> {
       marks: _marks,
     );
     widget.onSave(question);
-    Navigator.of(context).pop();
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => ViewQuestionScreen(question: question),
+      ),
+    );
   }
 }
 
-class DurationPickerDialog extends StatefulWidget {
-  final Duration initialDuration;
-  final Function(Duration) onSave;
 
-  const DurationPickerDialog({
+class DateRangePickerDialog extends StatefulWidget {
+  final DateTime initialStartDate;
+  final DateTime initialEndDate;
+  final Function(DateTime, DateTime) onSave;
+
+  const DateRangePickerDialog({
     Key? key,
-    required this.initialDuration,
+    required this.initialStartDate,
+    required this.initialEndDate,
     required this.onSave,
   }) : super(key: key);
 
   @override
-  _DurationPickerDialogState createState() => _DurationPickerDialogState();
+  _DateRangePickerDialogState createState() => _DateRangePickerDialogState();
 }
 
-class _DurationPickerDialogState extends State<DurationPickerDialog> {
-  late int _hours;
-  late int _minutes;
+class _DateRangePickerDialogState extends State<DateRangePickerDialog> {
+  late DateTime _startDate;
+  late DateTime _endDate;
+  late TimeOfDay _startTime;
+  late TimeOfDay _endTime;
 
   @override
   void initState() {
     super.initState();
-    _hours = widget.initialDuration.inHours;
-    _minutes = widget.initialDuration.inMinutes % 60;
+    _startDate = widget.initialStartDate;
+    _endDate = widget.initialEndDate;
+    _startTime = TimeOfDay.fromDateTime(_startDate);
+    _endTime = TimeOfDay.fromDateTime(_endDate);
   }
 
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      contentPadding: EdgeInsets.zero,
+      backgroundColor: Colors.white,
       content: Container(
-        width: 328,
-        height: 256,
+        width: 300,
         child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            const Padding(
-              padding: EdgeInsets.all(16.0),
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  'ENTER TIME',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            _buildDateTimeRow('Start date', _startDate, _startTime, (date) {
+              setState(() => _startDate = date);
+            }, (time) {
+              setState(() => _startTime = time);
+            }),
+            SizedBox(height: 16),
+            _buildDateTimeRow('End date', _endDate, _endTime, (date) {
+              setState(() => _endDate = date);
+            }, (time) {
+              setState(() => _endTime = time);
+            }),
+            SizedBox(height: 16),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                CustomOutlineButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  text: 'Cancel',
+                  borderColor: AppColors.eLearningBtnColor3,
+                  textColor: AppColors.eLearningBtnColor3,
                 ),
-              ),
-            ),
-            Expanded(
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  _buildTimeInput(
-                      'Hour',
-                      _hours,
-                      (value) => setState(() =>
-                          _hours = value < 0 ? 0 : value)),
-                  _buildTimeInput(
-                      'Minute',
-                      _minutes,
-                      (value) => setState(() => _minutes =
-                          value >= 60 ? 59 : (value < 0 ? 0 : value))),
-                ],
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  CustomOutlineButton(
-                    onPressed: () => Navigator.of(context).pop(),
-                    text: 'Cancel',
-                    borderColor: AppColors.eLearningBtnColor3,
-                    textColor: AppColors.eLearningBtnColor3
-                  ),
-                  const SizedBox(width: 8),
-                  ElevatedButton(
-                    onPressed: () {
-                      final duration = Duration(
-                        hours: _hours,
-                        minutes: _minutes,
-                      );
-                      widget.onSave(duration);
-                      Navigator.of(context).pop();
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.eLearningBtnColor1,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(4.0),
-                      ),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16.0,
-                        vertical: 10.0
-                      )
+                SizedBox(width: 8),
+                ElevatedButton(
+                  onPressed: () {
+                    final startDateTime = DateTime(
+                      _startDate.year,
+                      _startDate.month,
+                      _startDate.day,
+                      _startTime.hour,
+                      _startTime.minute,
+                    );
+                    final endDateTime = DateTime(
+                      _endDate.year,
+                      _endDate.month,
+                      _endDate.day,
+                      _endTime.hour,
+                      _endTime.minute,
+                    );
+                    widget.onSave(startDateTime, endDateTime);
+                    Navigator.of(context).pop();
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.eLearningBtnColor1,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(4.0),
                     ),
-                    child: Text(
-                      'Save',
-                      style: AppTextStyles.normal600(fontSize: 16.0, color: AppColors.backgroundLight),
-                    ),
+                    padding: EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                   ),
-                ],
-              ),
+                  child: Text(
+                    'Save',
+                    style: AppTextStyles.normal600(fontSize: 16, color: Colors.white),
+                  ),
+                ),
+              ],
             ),
           ],
         ),
@@ -585,40 +608,75 @@ class _DurationPickerDialogState extends State<DurationPickerDialog> {
     );
   }
 
-  Widget _buildTimeInput(String label, int value, Function(int) onChanged) {
+  Widget _buildDateTimeRow(
+    String label,
+    DateTime date,
+    TimeOfDay time,
+    Function(DateTime) onDateChanged,
+    Function(TimeOfDay) onTimeChanged,
+  ) {
     return Column(
-      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Container(
-          width: 80,
-          height: 80,
-          decoration: BoxDecoration(
-            border: Border.all(color: Colors.grey),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Center(
-            child: TextFormField(
-              initialValue: value.toString().padLeft(2, '0'),
-              keyboardType: TextInputType.number,
-              textAlign: TextAlign.center,
-              style: const TextStyle(fontSize: 24),
-              decoration: const InputDecoration(
-                border: InputBorder.none,
+        Text(label, style: AppTextStyles.normal600(fontSize: 16, color: Colors.black)),
+        SizedBox(height: 8),
+        Row(
+          children: [
+            Expanded(
+              child: GestureDetector(
+                onTap: () async {
+                  final picked = await showDatePicker(
+                    context: context,
+                    initialDate: date,
+                    firstDate: DateTime.now(),
+                    lastDate: DateTime.now().add(Duration(days: 365)),
+                  );
+                  if (picked != null) onDateChanged(picked);
+                },
+                child: Container(
+                  padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: AppColors.backgroundLight.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Text(
+                    '${date.day} ${_getMonth(date.month)} ${date.year}',
+                    style: AppTextStyles.normal400(fontSize: 14, color: Colors.black),
+                  ),
+                ),
               ),
-              onChanged: (newValue) {
-                int? parsedValue = int.tryParse(newValue);
-                if (parsedValue != null) {
-                  onChanged(parsedValue);
-                }
-              },
             ),
-          ),
+            SizedBox(width: 8),
+            Expanded(
+              child: GestureDetector(
+                onTap: () async {
+                  final picked = await showTimePicker(
+                    context: context,
+                    initialTime: time,
+                  );
+                  if (picked != null) onTimeChanged(picked);
+                },
+                child: Container(
+                  padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: AppColors.backgroundLight.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Text(
+                    '${time.format(context)}',
+                    style: AppTextStyles.normal400(fontSize: 14, color: Colors.black),
+                  ),
+                ),
+              ),
+            ),
+          ],
         ),
-        const SizedBox(height: 8),
-        Text(label),
       ],
     );
   }
+
+  String _getMonth(int month) {
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    return months[month - 1];
+  }
 }
-
-
