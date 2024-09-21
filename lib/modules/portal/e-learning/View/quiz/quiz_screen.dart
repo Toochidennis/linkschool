@@ -1,8 +1,9 @@
-
 import 'package:flutter/material.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
-// import 'package:linkschool/modules/common/app_colors.dart';
+import 'package:linkschool/modules/common/buttons/custom_long_elevated_button.dart';
+import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
+import 'package:linkschool/modules/common/widgets/portal/quiz/answer_tab_widget.dart';
 import 'package:linkschool/modules/model/e-learning/question_model.dart';
 
 class QuizScreen extends StatefulWidget {
@@ -16,62 +17,97 @@ class QuizScreen extends StatefulWidget {
 
 class _QuizScreenState extends State<QuizScreen> {
   int _selectedIndex = 0;
+  late double opacity;
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
-        title: const Text('Quiz'),
-        centerTitle: true,
-        actions: [
-          PopupMenuButton<String>(
-            icon: const Icon(Icons.more_vert),
-            onSelected: (String result) {
-              // Handle menu item selection
-            },
-            itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
-              const PopupMenuItem<String>(
-                value: 'option1',
-                child: Text('Option 1'),
-              ),
-              const PopupMenuItem<String>(
-                value: 'option2',
-                child: Text('Option 2'),
-              ),
+    final Brightness brightness = Theme.of(context).brightness;
+    opacity = brightness == Brightness.light ? 0.1 : 0.15;
+    return DefaultTabController(
+      length: 2, // Number of tabs
+      child: Scaffold(
+        appBar: AppBar(
+          leading: IconButton(
+            onPressed: () => Navigator.of(context).pop(),
+            icon: Image.asset(
+              'assets/icons/arrow_back.png',
+              color: AppColors.primaryLight,
+              width: 34.0,
+              height: 34.0,
+            ),
+          ),
+          title: Text(
+            'Quiz',
+            style: AppTextStyles.normal600(
+              fontSize: 24.0,
+              color: AppColors.primaryLight,
+            ),
+          ),
+          actions: [
+            PopupMenuButton<String>(
+              icon: const Icon(Icons.more_vert, color: AppColors.primaryLight),
+              onSelected: (String result) {
+                // Handle menu item selection
+              },
+              itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
+                const PopupMenuItem<String>(
+                  value: 'edit',
+                  child: Text('Edit'),
+                ),
+                const PopupMenuItem<String>(
+                  value: 'delete',
+                  child: Text('Delete'),
+                ),
+              ],
+            ),
+          ],
+        backgroundColor: AppColors.backgroundLight,
+        flexibleSpace: FlexibleSpaceBar(
+          background: Stack(
+            children: [
+              Positioned.fill(
+                child: Opacity(
+                  opacity: opacity,
+                  child: Image.asset(
+                    'assets/images/background.png',
+                    fit: BoxFit.cover,
+                  ),
+                ),
+              )
             ],
           ),
-        ],
-      ),
-      body: Column(
-        children: [
-          Container(
-            color: Colors.grey[200],
-            child: TabBar(
-              tabs: const [
-                Tab(text: 'Question'),
-                Tab(text: 'Answers'),
-              ],
-              onTap: (index) {
-                setState(() {
-                  _selectedIndex = index;
-                });
-              },
+        ),
+          bottom: TabBar(
+            // Move TabBar to AppBar's bottom
+            // controller: _tabController,
+            tabs:  [
+            Tab(
+              child: Text(
+                'Questions',
+                style: AppTextStyles.normal600(
+                    fontSize: 18, color: AppColors.primaryLight),
+              ),
             ),
-          ),
-          Expanded(
-            child: IndexedStack(
-              index: _selectedIndex,
-              children: [
-                _buildQuestionTab(),
-                _buildAnswersTab(),
-              ],
+            Tab(
+              child: Text(
+                'Answers',
+                style: AppTextStyles.normal600(
+                    fontSize: 18, color: AppColors.primaryLight),
+              ),
             ),
+            ],
           ),
-        ],
+        ),
+        body: Container(
+          decoration: Constants.customBoxDecoration(context),
+          child: TabBarView(
+            // Corresponding TabBarView
+            children: [
+              _buildQuestionTab(),
+              _buildAnswersTab(),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -84,31 +120,31 @@ class _QuizScreenState extends State<QuizScreen> {
         const Divider(color: Colors.grey),
         Text(
           widget.question.title,
-          style: AppTextStyles.normal600(fontSize: 20, color: AppColors.primaryLight),
+          style: AppTextStyles.normal600(
+              fontSize: 20, color: AppColors.primaryLight),
         ),
-        const Divider(color: Colors.blue),
-        _buildInfoRow('Duration:', '${widget.question.duration.inMinutes} minutes'),
+        const Divider(color: AppColors.eLearningBtnColor1),
+        _buildInfoRow(
+            'Duration:', '${widget.question.duration.inMinutes} minutes'),
         const Divider(color: Colors.grey),
         _buildInfoRow('Description:', widget.question.description),
         const Divider(color: Colors.grey),
         const SizedBox(height: 20),
-        ElevatedButton(
+        CustomLongElevatedButton(
           onPressed: () {
             // Implement quiz taking functionality
           },
-          style: ElevatedButton.styleFrom(
-            minimumSize: const Size(double.infinity, 50),
-          ),
-          child: const Text('Take Quiz'),
+          backgroundColor: AppColors.eLearningBtnColor1,
+          text: 'Take Quiz',
+          textStyle: AppTextStyles.normal600(fontSize: 18, color: AppColors.backgroundLight),
         ),
       ],
     );
   }
 
-  Widget _buildAnswersTab() {
-    // Implement the Answers tab
-    return const Center(child: Text('Answers tab content'));
-  }
+Widget _buildAnswersTab() {
+  return const AnswersTabWidget();
+}
 
   Widget _buildInfoRow(String label, String value) {
     return Padding(
@@ -118,13 +154,15 @@ class _QuizScreenState extends State<QuizScreen> {
         children: [
           Text(
             label,
-            style: AppTextStyles.normal600(fontSize: 16, color: AppColors.textGray),
+            style: AppTextStyles.normal600(
+                fontSize: 16, color: AppColors.textGray),
           ),
           const SizedBox(width: 8),
           Expanded(
             child: Text(
               value,
-              style: AppTextStyles.normal400(fontSize: 16, color: AppColors.backgroundDark),
+              style: AppTextStyles.normal400(
+                  fontSize: 16, color: AppColors.backgroundDark),
             ),
           ),
         ],
@@ -138,8 +176,18 @@ class _QuizScreenState extends State<QuizScreen> {
 
   String _getMonth(int month) {
     const months = [
-      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec'
     ];
     return months[month - 1];
   }

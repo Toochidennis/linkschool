@@ -7,6 +7,7 @@ import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/model/e-learning/question_model.dart';
 import 'package:linkschool/modules/portal/e-learning/View/question/assessment_screen.dart';
+import 'package:linkschool/modules/portal/e-learning/View/quiz/quiz_screen.dart';
 import 'package:linkschool/modules/portal/e-learning/question_screen.dart';
 
 class ViewQuestionScreen extends StatefulWidget {
@@ -23,6 +24,7 @@ class _ViewQuestionScreenState extends State<ViewQuestionScreen> {
   List<Widget> createdQuestions = [];
   late double opacity;
   late Question currentQuestion;
+   bool showSaveButton = false;
 
   @override
   void initState() {
@@ -69,13 +71,14 @@ class _ViewQuestionScreenState extends State<ViewQuestionScreen> {
           ),
         ),
         actions: [
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8.0),
-            child: CustomSaveElevatedButton(
-              onPressed: (){},
-              text: 'Save',
+          if (showSaveButton)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8.0),
+              child: CustomSaveElevatedButton(
+                onPressed: _saveQuestions,
+                text: 'Save',
+              ),
             ),
-          ),
         ],
       ),
       body: Container(
@@ -93,6 +96,153 @@ class _ViewQuestionScreenState extends State<ViewQuestionScreen> {
       bottomNavigationBar: _buildBottomNavigation(),
     );
   }
+
+// Map<String, dynamic> _extractQuestionData(Card card) {
+//   final content = card.child as Column;
+//   final questionTypeContainer = (content.children[0] as Padding).child as Container;
+//   final questionTypeRow = questionTypeContainer.child as Row;
+//   final questionType = questionTypeRow.children[1] as Text;
+//   final questionTextField = ((content.children[1] as Padding).child as Column).children[0] as TextField;
+  
+//   return {
+//     'type': questionType.data,
+//     'question': questionTextField.controller!.text,
+//     'options': questionType.data == 'Multiple choice'
+//         ? _extractOptions(content)
+//         : null,
+//   };
+// }
+
+// List<String> _extractOptions(Column content) {
+//   final optionsColumn = ((content.children[1] as Padding).child as Column).children[1] as Column;
+//   return optionsColumn.children
+//       .whereType<Row>()
+//       .map((row) => (row.children[1] as Expanded).child as TextField)
+//       .map((textField) => textField.controller!.text)
+//       .toList();
+// }
+
+//   void _saveQuestions() {
+//     setState(() {
+//       createdQuestions = createdQuestions.map((question) {
+//         if (question is Card) {
+//           // Extract question data from the card
+//           final questionData = _extractQuestionData(question);
+//           return _buildSavedQuestionCard(questionData);
+//         }
+//         return question;
+//       }).toList();
+//     });
+//   }
+
+
+  // Widget _buildSavedQuestionCard(Map<String, dynamic> questionData) {
+  //   return Card(
+  //     margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+  //     child: InkWell(
+  //       onTap: () => Navigator.push(
+  //         context,
+  //         MaterialPageRoute(builder: (context) => const AssessmentScreen()),
+  //       ),
+  //       child: Column(
+  //         children: [
+  //           ListTile(
+  //             leading: SvgPicture.asset(
+  //               questionData['type'] == 'Short answer'
+  //                   ? 'assets/icons/e_learning/short_answer_icon.svg'
+  //                   : 'assets/icons/e_learning/multiple_choice_icon.svg',
+  //               width: 24,
+  //               height: 24,
+  //             ),
+  //             title: Text(
+  //               questionData['question'],
+  //               style: AppTextStyles.normal500(fontSize: 16, color: AppColors.textGray),
+  //             ),
+  //             trailing: PopupMenuButton(
+  //               icon: const Icon(Icons.more_vert),
+  //               itemBuilder: (context) => [
+  //                 PopupMenuItem(
+  //                   child: ListTile(
+  //                     leading: const Icon(Icons.preview),
+  //                     title: const Text('Preview'),
+  //                     onTap: () {
+  //                       Navigator.pop(context);
+  //                       // Implement preview functionality
+  //                     },
+  //                   ),
+  //                 ),
+  //                 PopupMenuItem(
+  //                   child: ListTile(
+  //                     leading: const Icon(Icons.delete),
+  //                     title: const Text('Delete'),
+  //                     onTap: () {
+  //                       Navigator.pop(context);
+  //                       setState(() {
+  //                         createdQuestions.removeWhere((q) => q == _buildSavedQuestionCard(questionData));
+  //                       });
+  //                     },
+  //                   ),
+  //                 ),
+  //               ],
+  //             ),
+  //           ),
+  //           const Divider(height: 1, thickness: 1),
+  //         ],
+  //       ),
+  //     ),
+  //   );
+  // }
+
+  void _saveQuestions() {
+    setState(() {
+      List<Widget> updatedCards = [];
+      for (var widget in createdQuestions) {
+        updatedCards.add(_buildSavedQuestionRow(widget));
+      }
+      createdQuestions = updatedCards;
+      showSaveButton = false; // Hide save button after saving
+    });
+  }
+
+
+  Widget _buildSavedQuestionRow(Widget questionCard) {
+    return Column(
+      children: [
+        GestureDetector(
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) =>  QuizScreen(question: currentQuestion,)),
+            );
+          },
+          child: ListTile(
+            leading: SvgPicture.asset(
+              'assets/icons/e_learning/question_icon.svg',
+              width: 24,
+              height: 24,
+            ),
+            title: Text(
+              'Question Text', // Update this to show actual question text
+              style: AppTextStyles.normal500(fontSize: 16, color: AppColors.textGray),
+            ),
+            trailing: IconButton(
+              icon: SvgPicture.asset(
+                'assets/icons/e_learning/kebab_icon.svg',
+                width: 24,
+                height: 24,
+              ),
+              onPressed: () {
+                _showKebabMenu(context);
+              },
+            ),
+          ),
+        ),
+        const Divider(color: Colors.grey),
+      ],
+    );
+  }
+
+
 
   Widget _buildQuestionBackground() {
     return LayoutBuilder(
@@ -123,7 +273,7 @@ class _ViewQuestionScreenState extends State<ViewQuestionScreen> {
                   top: 16,
                   right: 8,
                   child: GestureDetector(
-                    onTap: _showKebabMenu,
+                    onTap: ()  => _showKebabMenu,
                     child: SvgPicture.asset(
                       'assets/icons/e_learning/kebab_icon.svg',
                       width: 24,
@@ -169,28 +319,57 @@ class _ViewQuestionScreenState extends State<ViewQuestionScreen> {
 
 
 
-  void _showKebabMenu() {
+  // void _showKebabMenu() {
+  //   showMenu(
+  //     context: context,
+  //     position: RelativeRect.fromLTRB(100, 100, 0, 0),
+  //     items: [
+  //       PopupMenuItem(
+  //         child: ListTile(
+  //           leading: const Icon(Icons.edit),
+  //           title: const Text('Edit'),
+  //           onTap: () {
+  //             Navigator.pop(context);
+  //             _editQuestion();
+  //           },
+  //         ),
+  //       ),
+  //       PopupMenuItem(
+  //         child: ListTile(
+  //           leading: const Icon(Icons.delete),
+  //           title: const Text('Delete'),
+  //           onTap: () {
+  //             Navigator.pop(context);
+  //             _deleteQuestion();
+  //           },
+  //         ),
+  //       ),
+  //     ],
+  //   );
+  // }
+
+  void _showKebabMenu(BuildContext context) {
     showMenu(
       context: context,
       position: RelativeRect.fromLTRB(100, 100, 0, 0),
       items: [
         PopupMenuItem(
           child: ListTile(
-            leading: const Icon(Icons.edit),
-            title: const Text('Edit'),
+            leading: SvgPicture.asset('assets/icons/e_learning/preview_icon.svg'),
+            title: const Text('Preview'),
             onTap: () {
+              // Preview logic
               Navigator.pop(context);
-              _editQuestion();
             },
           ),
         ),
         PopupMenuItem(
           child: ListTile(
-            leading: const Icon(Icons.delete),
+            leading: SvgPicture.asset('assets/icons/e_learning/delete_icon.svg'),
             title: const Text('Delete'),
             onTap: () {
+              // Delete logic
               Navigator.pop(context);
-              _deleteQuestion();
             },
           ),
         ),
@@ -332,6 +511,7 @@ class _ViewQuestionScreenState extends State<ViewQuestionScreen> {
     Navigator.pop(context);
     setState(() {
       createdQuestions.add(_buildQuestionCard(questionType));
+      showSaveButton = true;
     });
   }
 
@@ -348,8 +528,7 @@ class _ViewQuestionScreenState extends State<ViewQuestionScreen> {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(8),
             side: BorderSide(
-              color:
-                  isEditing ? Colors.blue.withOpacity(0.5) : Colors.transparent,
+              color: isEditing ? AppColors.primaryLight.withOpacity(0.5) : Colors.transparent,
               width: 1,
             ),
           ),
@@ -371,11 +550,8 @@ class _ViewQuestionScreenState extends State<ViewQuestionScreen> {
                       ),
                       const SizedBox(width: 8),
                       Text(
-                        questionType == 'short_answer'
-                            ? 'Short answer'
-                            : 'Multiple choice',
-                        style: AppTextStyles.normal600(
-                            fontSize: 16, color: AppColors.textGray),
+                        questionType == 'short_answer' ? 'Short answer' : 'Multiple choice',
+                        style: AppTextStyles.normal600(fontSize: 16, color: AppColors.textGray),
                       ),
                     ],
                   ),
@@ -409,8 +585,7 @@ class _ViewQuestionScreenState extends State<ViewQuestionScreen> {
                     if (questionType == 'multiple_choice')
                       Column(
                         children: [
-                          ...options.map(
-                              (option) => _buildOptionRow(option, setState)),
+                          ...options.map((option) => _buildOptionRow(option, setState)),
                           Padding(
                             padding: const EdgeInsets.only(top: 16),
                             child: InkWell(
@@ -432,12 +607,8 @@ class _ViewQuestionScreenState extends State<ViewQuestionScreen> {
                               ),
                             ),
                           ),
-                         SizedBox(height: 8.0,),
-                          const Divider(
-                            color: Colors.grey,
-                            thickness: 0.6,
-                            height: 1,
-                          ),
+                          const SizedBox(height: 8.0),
+                          const Divider(color: Colors.grey, thickness: 0.6, height: 1),
                         ],
                       ),
                   ],
@@ -508,7 +679,7 @@ class _ViewQuestionScreenState extends State<ViewQuestionScreen> {
         ),
         Expanded(
           child: TextField(
-            controller: TextEditingController(text: option),
+            controller: TextEditingController(),
             decoration: const InputDecoration(
               hintText: 'Option',
               border: UnderlineInputBorder(),
@@ -646,3 +817,5 @@ class _ViewQuestionScreenState extends State<ViewQuestionScreen> {
     return '${duration.inHours}h ${duration.inMinutes.remainder(60)}m';
   }
 }
+
+
