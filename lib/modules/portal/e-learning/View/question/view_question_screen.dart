@@ -1,16 +1,19 @@
+// ignore_for_file: deprecated_member_use
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
+import 'package:linkschool/modules/common/buttons/custom_save_elevated_button.dart';
 import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/model/e-learning/question_model.dart';
 import 'package:linkschool/modules/portal/e-learning/View/question/assessment_screen.dart';
+import 'package:linkschool/modules/portal/e-learning/question_screen.dart';
 
 class ViewQuestionScreen extends StatefulWidget {
   final Question question;
 
-  const ViewQuestionScreen({Key? key, required this.question})
-      : super(key: key);
+  
+  const ViewQuestionScreen({super.key, required this.question});
 
   @override
   State<ViewQuestionScreen> createState() => _ViewQuestionScreenState();
@@ -19,6 +22,13 @@ class ViewQuestionScreen extends StatefulWidget {
 class _ViewQuestionScreenState extends State<ViewQuestionScreen> {
   List<Widget> createdQuestions = [];
   late double opacity;
+  late Question currentQuestion;
+
+  @override
+  void initState() {
+    super.initState();
+    currentQuestion = widget.question;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -58,6 +68,15 @@ class _ViewQuestionScreenState extends State<ViewQuestionScreen> {
             ],
           ),
         ),
+        actions: [
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8.0),
+            child: CustomSaveElevatedButton(
+              onPressed: (){},
+              text: 'Save',
+            ),
+          ),
+        ],
       ),
       body: Container(
         height: MediaQuery.of(context).size.height,
@@ -78,63 +97,151 @@ class _ViewQuestionScreenState extends State<ViewQuestionScreen> {
   Widget _buildQuestionBackground() {
     return LayoutBuilder(
       builder: (context, constraints) {
-        return Container(
-          width: constraints.maxWidth,
-          height: 135,
-          margin: const EdgeInsets.symmetric(horizontal: 16),
-          child: Stack(
-            children: [
-              Positioned.fill(
-                child: ClipRect(
-                  child: OverflowBox(
-                    maxWidth: double.infinity,
-                    child: SvgPicture.asset(
-                      'assets/images/e-learning/question_bg2.svg',
-                      fit: BoxFit.cover,
-                      width: constraints.maxWidth,
-                      height: 135,
+        return GestureDetector(
+          onTap: () => _editQuestion(),
+          child: Container(
+            width: constraints.maxWidth,
+            height: 164,
+            margin: const EdgeInsets.symmetric(horizontal: 16),
+            child: Stack(
+              children: [
+                Positioned.fill(
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    child: OverflowBox(
+                      maxWidth: double.infinity,
+                      child: SvgPicture.asset(
+                        'assets/images/e-learning/question_bg2.svg',
+                        fit: BoxFit.cover,
+                        width: constraints.maxWidth,
+                        height: 164,
+                      ),
                     ),
                   ),
                 ),
-              ),
-              Positioned(
-                top: 8,
-                right: 8,
-                child: SvgPicture.asset(
-                  'assets/icons/kebab_icon.svg',
-                  width: 24,
-                  height: 24,
-                  color: Colors.white,
+                Positioned(
+                  top: 16,
+                  right: 8,
+                  child: GestureDetector(
+                    onTap: _showKebabMenu,
+                    child: SvgPicture.asset(
+                      'assets/icons/e_learning/kebab_icon.svg',
+                      width: 24,
+                      height: 24,
+                      color: Colors.white,
+                    ),
+                  ),
                 ),
-              ),
-              Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _buildInfoSection(
-                      value: widget.question.title,
-                      style: AppTextStyles.normal600(
-                          fontSize: 20, color: AppColors.backgroundLight),
-                    ),
-                    const Divider(color: Colors.white, height: 1),
-                    _buildInfoSection(
-                      label: 'Instruction',
-                      value: widget.question.description,
-                      style: AppTextStyles.normal400(
-                          fontSize: 16, color: AppColors.backgroundLight),
-                    ),
-                    _buildInfoSection(
-                      value: _formatDuration(widget.question.duration),
-                      style: AppTextStyles.normal600(
-                          fontSize: 16, color: AppColors.backgroundLight),
-                      icon: 'assets/icons/e_learning/stopwatch_icon.svg',
-                    ),
-                  ],
+                Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildInfoSection(
+                        value: currentQuestion.title,
+                        style: AppTextStyles.normal600(
+                            fontSize: 20, color: AppColors.backgroundLight),
+                      ),
+                      const SizedBox(height: 16.0),
+                      _buildInfoSection(
+                        value: currentQuestion.description,
+                        style: AppTextStyles.normal400(
+                            fontSize: 16, color: AppColors.backgroundLight),
+                      ),
+                      const Divider(color: Colors.white, height: 1),
+                      const SizedBox(height: 16.0),
+                      _buildInfoSection(
+                        value: _formatDuration(currentQuestion.duration),
+                        style: AppTextStyles.normal600(
+                            fontSize: 16, color: AppColors.backgroundLight),
+                        icon: 'assets/icons/e_learning/stopwatch_icon.svg',
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
+        );
+      },
+    );
+  }
+
+
+
+  void _showKebabMenu() {
+    showMenu(
+      context: context,
+      position: RelativeRect.fromLTRB(100, 100, 0, 0),
+      items: [
+        PopupMenuItem(
+          child: ListTile(
+            leading: const Icon(Icons.edit),
+            title: const Text('Edit'),
+            onTap: () {
+              Navigator.pop(context);
+              _editQuestion();
+            },
+          ),
+        ),
+        PopupMenuItem(
+          child: ListTile(
+            leading: const Icon(Icons.delete),
+            title: const Text('Delete'),
+            onTap: () {
+              Navigator.pop(context);
+              _deleteQuestion();
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+
+  void _editQuestion() async {
+    final result = await Navigator.push<Question>(
+      context,
+      MaterialPageRoute(
+        builder: (context) => QuestionScreen(
+          question: currentQuestion,
+          isEditing: true,
+          onSave: (Question) {},
+        ),
+      ),
+    );
+
+    if (result != null) {
+      setState(() {
+        currentQuestion = result;
+      });
+    }
+  }
+
+ void _deleteQuestion() {
+    // Implement delete functionality
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Delete Question'),
+          content: const Text('Are you sure you want to delete this question?'),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('Cancel'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+            TextButton(
+              child: const Text('Delete'),
+              onPressed: () {
+                // Implement the actual deletion logic here
+                Navigator.of(context).pop();
+                Navigator.of(context).pop(); // Return to the previous screen
+              },
+            ),
+          ],
         );
       },
     );
@@ -152,25 +259,33 @@ class _ViewQuestionScreenState extends State<ViewQuestionScreen> {
             blurRadius: 5,
             offset: const Offset(0, -3),
           ),
+
         ],
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          IconButton(
-            icon: SvgPicture.asset('assets/icons/e_learning/preview_icon.svg'),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                    builder: (context) => const AssessmentScreen()),
-              );
-            },
+          Padding(
+            padding: const EdgeInsets.only(left: 16.0),
+            child: IconButton(
+              icon:
+                  SvgPicture.asset('assets/icons/e_learning/preview_icon.svg'),
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (context) => const AssessmentScreen()),
+                );
+              },
+            ),
           ),
-          IconButton(
-            icon: SvgPicture.asset(
-                'assets/icons/e_learning/circle_plus_icon.svg'),
-            onPressed: () => _showQuestionTypeOverlay(context),
+          Padding(
+            padding: const EdgeInsets.only(right: 16.0),
+            child: IconButton(
+              icon: SvgPicture.asset(
+                  'assets/icons/e_learning/circle_plus_icon.svg'),
+              onPressed: () => _showQuestionTypeOverlay(context),
+            ),
           ),
         ],
       ),
@@ -186,6 +301,16 @@ class _ViewQuestionScreenState extends State<ViewQuestionScreen> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
+              Center(
+                child: Text(
+                  'Select Question Type',
+                  style: AppTextStyles.normal600(
+                    fontSize: 18,
+                    color: AppColors.textGray,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16), // Add spacing below the title
               _buildQuestionTypeOption(
                 icon: Icons.short_text,
                 text: 'Short answer',
@@ -211,112 +336,195 @@ class _ViewQuestionScreenState extends State<ViewQuestionScreen> {
   }
 
   Widget _buildQuestionCard(String questionType) {
-    return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      elevation: 4,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(8),
-        side: BorderSide(color: Colors.blue.withOpacity(0.5), width: 1),
-      ),
-      child: Column(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            color: const Color(0xFFF6F6F6),
-            child: Row(
-              children: [
-                SvgPicture.asset(
-                  questionType == 'short_answer'
-                      ? 'assets/icons/short_answer_icon.svg'
-                      : 'assets/icons/multiple_choice_icon.svg',
-                  width: 24,
-                  height: 24,
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  questionType == 'short_answer'
-                      ? 'Short answer'
-                      : 'Multiple choice',
-                  style: AppTextStyles.normal600(
-                      fontSize: 16, color: AppColors.textGray),
-                ),
-              ],
+    bool isEditing = false;
+    List<String> options = [];
+    TextEditingController questionController = TextEditingController();
+
+    return StatefulBuilder(
+      builder: (BuildContext context, StateSetter setState) {
+        return Card(
+          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          elevation: 4,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8),
+            side: BorderSide(
+              color:
+                  isEditing ? Colors.blue.withOpacity(0.5) : Colors.transparent,
+              width: 1,
             ),
           ),
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              children: [
-                TextField(
-                  decoration: InputDecoration(
-                    hintText: 'Question',
-                    border: const UnderlineInputBorder(),
-                    suffixIcon: IconButton(
-                      icon: const Icon(Icons.more_vert),
-                      onPressed: () => _showAttachmentOptions(context),
-                    ),
+          child: Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Container(
+                  padding: const EdgeInsets.all(8),
+                  color: const Color.fromRGBO(235, 235, 235, 1),
+                  child: Row(
+                    children: [
+                      SvgPicture.asset(
+                        questionType == 'short_answer'
+                            ? 'assets/icons/e_learning/short_answer_icon.svg'
+                            : 'assets/icons/e_learning/multiple_choice_icon.svg',
+                        width: 24,
+                        height: 24,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        questionType == 'short_answer'
+                            ? 'Short answer'
+                            : 'Multiple choice',
+                        style: AppTextStyles.normal600(
+                            fontSize: 16, color: AppColors.textGray),
+                      ),
+                    ],
                   ),
                 ),
-                if (questionType == 'multiple_choice')
-                  Padding(
-                    padding: const EdgeInsets.only(top: 16),
-                    child: InkWell(
+              ),
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  children: [
+                    TextField(
+                      controller: questionController,
+                      decoration: InputDecoration(
+                        hintText: 'Question',
+                        border: const UnderlineInputBorder(),
+                        suffixIcon: IconButton(
+                          icon: const Icon(Icons.more_vert),
+                          onPressed: () => _showAttachmentOptions(context),
+                        ),
+                      ),
                       onTap: () {
-                        // Add option functionality
+                        setState(() {
+                          isEditing = true;
+                        });
                       },
-                      child: Row(
+                      onEditingComplete: () {
+                        setState(() {
+                          isEditing = false;
+                        });
+                      },
+                    ),
+                    if (questionType == 'multiple_choice')
+                      Column(
                         children: [
-                          const Icon(Icons.add, color: Colors.blue),
-                          const SizedBox(width: 8),
-                          Text(
-                            'Add option',
-                            style: AppTextStyles.normal600(
-                                fontSize: 14, color: Colors.blue),
+                          ...options.map(
+                              (option) => _buildOptionRow(option, setState)),
+                          Padding(
+                            padding: const EdgeInsets.only(top: 16),
+                            child: InkWell(
+                              onTap: () {
+                                setState(() {
+                                  options.add('');
+                                });
+                              },
+                              child: Row(
+                                children: [
+                                  Text(
+                                    'Add option',
+                                    style: AppTextStyles.normal600(
+                                      fontSize: 14,
+                                      color: AppColors.textGray.withOpacity(0.5),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                         SizedBox(height: 8.0,),
+                          const Divider(
+                            color: Colors.grey,
+                            thickness: 0.6,
+                            height: 1,
                           ),
                         ],
                       ),
+                  ],
+                ),
+              ),
+              Padding(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                child: Row(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 16.0),
+                      child: Container(
+                        width: 60,
+                        decoration: BoxDecoration(
+                          border: Border(
+                              bottom: BorderSide(color: Colors.grey[400]!)),
+                        ),
+                        child: const TextField(
+                          keyboardType: TextInputType.number,
+                          decoration: InputDecoration(
+                            border: InputBorder.none,
+                          ),
+                        ),
+                      ),
                     ),
-                  ),
-              ],
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              children: [
-                Container(
-                  width: 60,
-                  decoration: BoxDecoration(
-                    border:
-                        Border(bottom: BorderSide(color: Colors.grey[300]!)),
-                  ),
-                  child: const TextField(
-                    keyboardType: TextInputType.number,
-                    decoration: InputDecoration(
-                      border: InputBorder.none,
+                    const SizedBox(width: 8),
+                    const Padding(
+                      padding: EdgeInsets.only(top: 16.0),
+                      child: Text('marks'),
                     ),
-                  ),
+                    const Spacer(),
+                    IconButton(
+                      icon: const Icon(Icons.copy, color: Colors.grey),
+                      onPressed: () {
+                        // Copy question functionality
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Question copied')),
+                        );
+                      },
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.delete, color: Colors.grey),
+                      onPressed: () {
+                        setState(() {
+                          createdQuestions.removeWhere((element) =>
+                              element == _buildQuestionCard(questionType));
+                        });
+                      },
+                    ),
+                  ],
                 ),
-                const SizedBox(width: 8),
-                const Text('marks'),
-                const Spacer(),
-                IconButton(
-                  icon: const Icon(Icons.copy, color: Colors.grey),
-                  onPressed: () {
-                    // Copy question functionality
-                  },
-                ),
-                IconButton(
-                  icon: const Icon(Icons.delete, color: Colors.grey),
-                  onPressed: () {
-                    // Delete question functionality
-                  },
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
-        ],
-      ),
+        );
+      },
+    );
+  }
+
+  Widget _buildOptionRow(String option, Function setState) {
+    return Row(
+      children: [
+        Radio(
+          value: option,
+          groupValue: null,
+          onChanged: (value) {},
+        ),
+        Expanded(
+          child: TextField(
+            controller: TextEditingController(text: option),
+            decoration: const InputDecoration(
+              hintText: 'Option',
+              border: UnderlineInputBorder(),
+            ),
+            onChanged: (value) {
+              setState(() {
+                option = value;
+              });
+            },
+          ),
+        ),
+        IconButton(
+          icon: const Icon(Icons.more_vert),
+          onPressed: () => _showAttachmentOptions(context),
+        ),
+      ],
     );
   }
 
@@ -349,7 +557,7 @@ class _ViewQuestionScreenState extends State<ViewQuestionScreen> {
                 leading: const Icon(Icons.camera_alt),
                 title: const Text('Take photo'),
                 onTap: () {
-                  // Take photo functionality
+// Take photo functionality
                   Navigator.pop(context);
                 },
               ),

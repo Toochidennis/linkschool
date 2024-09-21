@@ -15,8 +15,10 @@ import 'package:linkschool/modules/portal/e-learning/select_topic_screen.dart';
 
 class QuestionScreen extends StatefulWidget {
   final Function(Question) onSave;
+  final bool isEditing;
+  final Question? question;
 
-  const QuestionScreen({Key? key, required this.onSave}) : super(key: key);
+  const QuestionScreen({Key? key, required this.onSave, this.question, this.isEditing = false}) : super(key: key);
   @override
   State<QuestionScreen> createState() => _QuestionScreenState();
 }
@@ -51,7 +53,7 @@ class _QuestionScreenState extends State<QuestionScreen> {
           ),
         ),
         title: Text(
-          'Question',
+          widget.isEditing ? 'Edit Question' : 'Question',
           style: AppTextStyles.normal600(
             fontSize: 24.0,
             color: AppColors.primaryLight,
@@ -78,7 +80,7 @@ class _QuestionScreenState extends State<QuestionScreen> {
             padding: const EdgeInsets.symmetric(horizontal: 8.0),
             child: CustomSaveElevatedButton(
               onPressed: _saveQuestionAndNavigate,
-              text: 'Next',
+              text: widget.isEditing ? 'Save' : 'Next',
             ),
           ),
         ],

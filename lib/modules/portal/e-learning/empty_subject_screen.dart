@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
@@ -7,6 +6,7 @@ import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/model/e-learning/question_model.dart';
 import 'package:linkschool/modules/model/e-learning/topic_model.dart';
+import 'package:linkschool/modules/portal/e-learning/View/quiz/quiz_screen.dart';
 import 'package:linkschool/modules/portal/e-learning/View/view_assignment_screen.dart';
 import 'package:linkschool/modules/portal/e-learning/View/question/view_question_screen.dart';
 import 'package:linkschool/modules/portal/e-learning/add_material_screen.dart';
@@ -87,7 +87,8 @@ class _EmptySubjectScreenState extends State<EmptySubjectScreen> {
             title: 'Question 3',
             createdAt: DateTime.now().subtract(const Duration(days: 1)),
             topic: 'Time Management',
-            description: 'What are the key principles of effective time management?',
+            description:
+                'What are the key principles of effective time management?',
             selectedClass: 'Class 11A',
             startDate: DateTime.now(),
             endDate: DateTime.now().add(const Duration(days: 1)),
@@ -178,7 +179,8 @@ class _EmptySubjectScreenState extends State<EmptySubjectScreen> {
                 fontSize: 16,
                 color: AppColors.backgroundLight,
               ),
-              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 10.0),
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 16.0, vertical: 10.0),
             )
           ],
         ),
@@ -186,7 +188,7 @@ class _EmptySubjectScreenState extends State<EmptySubjectScreen> {
     );
   }
 
-  Widget _buildTopicSection(Topic topic) {
+Widget _buildTopicSection(Topic topic) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -228,7 +230,7 @@ class _EmptySubjectScreenState extends State<EmptySubjectScreen> {
         ),
         ...topic.assignments.map((assignment) => _buildContentItem(
               'Assignment',
-              'Assignment',
+              assignment.title,
               assignment.createdAt,
               () {
                 Navigator.push(
@@ -241,9 +243,10 @@ class _EmptySubjectScreenState extends State<EmptySubjectScreen> {
             )),
         ...topic.questions.map((question) => _buildContentItem(
               'Question',
-              'Question',
+              question.title,
               question.createdAt,
               () {
+
                 Navigator.push(
                   context,
                   MaterialPageRoute(
@@ -256,53 +259,58 @@ class _EmptySubjectScreenState extends State<EmptySubjectScreen> {
     );
   }
 
-  Widget _buildContentItem(
-      String title, String type, DateTime createdAt, VoidCallback onTap) {
-    return ListTile(
-      leading: SvgPicture.asset(
-        type == 'Assignment'
-            ? 'assets/icons/e_learning/circle-assignment.svg'
-            : 'assets/icons/e_learning/circle-question.svg',
-        width: 36,
-        height: 36,
-      ),
-      title: Text(
-        title,
-        style: AppTextStyles.normal600(
-          fontSize: 18.0,
-          color: AppColors.backgroundDark,
-        ),
-      ),
-      subtitle: Text(
-        'Created on ${_formatDate(createdAt)}',
-        style: AppTextStyles.normal600(
-          fontSize: 14.0,
-          color: Colors.grey.shade600,
-        ),
-      ),
-      trailing: PopupMenuButton<String>(
-        icon: const Icon(Icons.more_vert, color: AppColors.primaryLight),
-        onSelected: (String result) {
-          if (result == 'edit') {
-            // Implement edit functionality
-          } else if (result == 'delete') {
-            // Implement delete functionality
-          }
-        },
-        itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
-          const PopupMenuItem<String>(
-            value: 'edit',
-            child: Text('Edit'),
+ Widget _buildContentItem(String type, String title, DateTime createdAt, VoidCallback onTap) {
+    return Column(
+      children: [
+        ListTile(
+          leading: SvgPicture.asset(
+            type == 'Assignment'
+                ? 'assets/icons/e_learning/circle-assignment.svg'
+                : 'assets/icons/e_learning/circle-question.svg',
+            width: 36,
+            height: 36,
           ),
-          const PopupMenuItem<String>(
-            value: 'delete',
-            child: Text('Delete'),
+          title: Text(
+            title,
+            style: AppTextStyles.normal600(
+              fontSize: 18.0,
+              color: AppColors.backgroundDark,
+            ),
           ),
-        ],
-      ),
-      onTap: onTap,
+          subtitle: Text(
+            'Created on ${_formatDate(createdAt)}',
+            style: AppTextStyles.normal600(
+              fontSize: 14.0,
+              color: Colors.grey.shade600,
+            ),
+          ),
+          trailing: PopupMenuButton<String>(
+            icon: const Icon(Icons.more_vert, color: AppColors.primaryLight),
+            onSelected: (String result) {
+              if (result == 'edit') {
+                onTap();
+              } else if (result == 'delete') {
+                // Implement delete functionality
+              }
+            },
+            itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
+              const PopupMenuItem<String>(
+                value: 'edit',
+                child: Text('Edit'),
+              ),
+              const PopupMenuItem<String>(
+                value: 'delete',
+                child: Text('Delete'),
+              ),
+            ],
+          ),
+          onTap: onTap,
+        ),
+        const Divider(height: 1, thickness: 1),
+      ],
     );
   }
+
 
   void _addAssignment(Assignment assignment) {
     setState(() {
@@ -312,7 +320,8 @@ class _EmptySubjectScreenState extends State<EmptySubjectScreen> {
 
       Topic? existingTopic = topics.firstWhere(
         (topic) => topic.name == assignment.topic,
-        orElse: () => Topic(name: assignment.topic, assignments: [], questions: []),
+        orElse: () =>
+            Topic(name: assignment.topic, assignments: [], questions: []),
       );
 
       if (!topics.contains(existingTopic)) {
@@ -331,7 +340,8 @@ class _EmptySubjectScreenState extends State<EmptySubjectScreen> {
 
       Topic? existingTopic = topics.firstWhere(
         (topic) => topic.name == question.topic,
-        orElse: () => Topic(name: question.topic, assignments: [], questions: []),
+        orElse: () =>
+            Topic(name: question.topic, assignments: [], questions: []),
       );
 
       if (!topics.contains(existingTopic)) {
@@ -342,16 +352,24 @@ class _EmptySubjectScreenState extends State<EmptySubjectScreen> {
     });
   }
 
-
-
   String _formatDate(DateTime date) {
     return '${date.day} ${_getMonth(date.month)}, ${date.year} ${_formatTime(date)}';
   }
 
   String _getMonth(int month) {
     const months = [
-      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec'
     ];
     return months[month - 1];
   }
@@ -360,7 +378,6 @@ class _EmptySubjectScreenState extends State<EmptySubjectScreen> {
     return '${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}${date.hour >= 12 ? 'pm' : 'am'}';
   }
 
-  
   void _showCreateOptionsBottomSheet(BuildContext context) {
     showModalBottomSheet(
       context: context,
@@ -398,8 +415,8 @@ class _EmptySubjectScreenState extends State<EmptySubjectScreen> {
                   ],
                 ),
               ),
-              _buildOptionRow(
-                  context, 'Reuse content', 'assets/icons/e_learning/share.svg'),
+              _buildOptionRow(context, 'Reuse content',
+                  'assets/icons/e_learning/share.svg'),
             ],
           ),
         );
@@ -437,12 +454,21 @@ class _EmptySubjectScreenState extends State<EmptySubjectScreen> {
               ),
             );
             break;
-        case 'Topic':
-          Navigator.push(context, MaterialPageRoute(fullscreenDialog: true, builder: (BuildContext context) => const CreateTopicScreen(),),);
-          break;
-        case 'Material':
-          Navigator.push(context, MaterialPageRoute(builder: (context) => const AddMaterialScreen()));
-          break;
+          case 'Topic':
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                fullscreenDialog: true,
+                builder: (BuildContext context) => const CreateTopicScreen(),
+              ),
+            );
+            break;
+          case 'Material':
+            Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (context) => const AddMaterialScreen()));
+            break;
         }
       },
       child: Container(
