@@ -46,33 +46,43 @@ class _AnswersTabWidgetState extends State<AnswersTabWidget> {
 
     return GestureDetector(
       onTap: () => setState(() => _selectedCategory = text),
-      child: Container(
-        width: 89,
-        height: 30,
-        decoration: BoxDecoration(
-          color: isSelected ? const Color.fromRGBO(171, 190, 255, 1) : const Color.fromRGBO(224, 224, 224, 1),
-          borderRadius: BorderRadius.circular(16),
-        ),
-        child: Stack(
-          children: [
-            Center(child: Text(text)),
-            if (!isSelected && itemCount > 0)
-              Positioned(
-                right: 0,
-                top: -4,
-                child: Container(
-                  padding: const EdgeInsets.all(4),
-                  decoration: const BoxDecoration(
-                    color: Color.fromRGBO(244, 67, 54, 1),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Text(
-                    '$itemCount',
-                    style: const TextStyle(color: Color.fromRGBO(255, 255, 255, 1), fontSize: 10),
+      child: Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: Container(
+          width: 89,
+          height: 30,
+          decoration: BoxDecoration(
+            color: isSelected ? const Color.fromRGBO(171, 190, 255, 1) : const Color.fromRGBO(224, 224, 224, 1),
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Stack(
+            children: [
+              Center(
+                child: Text(
+                  text,
+                  style: TextStyle(
+                    color: isSelected ? AppColors.primaryLight : Colors.black,
                   ),
                 ),
               ),
-          ],
+              if (!isSelected && itemCount > 0)
+                Positioned(
+                  right: 0,
+                  top: -4,
+                  child: Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: const BoxDecoration(
+                      color: Color.fromRGBO(244, 67, 54, 1),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Text(
+                      '$itemCount',
+                      style: const TextStyle(color: Color.fromRGBO(255, 255, 255, 1), fontSize: 10),
+                    ),
+                  ),
+                ),
+            ],
+          ),
         ),
       ),
     );
@@ -80,10 +90,17 @@ class _AnswersTabWidgetState extends State<AnswersTabWidget> {
 
   Widget _buildSubmittedContent() {
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Expanded(child: _buildListContent('SUBMITTED')),
-        const Divider(),
-        const Text('NOT SUBMITTED'),
+        // const Divider(),
+        Padding(
+          padding: const EdgeInsets.only(left: 16.0),
+          child: Text(
+            'NOT SUBMITTED',
+            style: AppTextStyles.normal600(fontSize: 16, color: AppColors.backgroundDark),
+          ),
+        ),
         Expanded(child: _buildListContent('NOT SUBMITTED')),
       ],
     );
@@ -93,7 +110,7 @@ class _AnswersTabWidgetState extends State<AnswersTabWidget> {
     // This is a mock list
     List<Map<String, String>> items = [
       {'name': 'Jane Doe', 'progress': '9 of 15 questions answered', 'time': 'Yesterday'},
-      {'name': 'John Smith', 'progress': '12 of 15 questions answered', 'time': 'Today'},
+      {'name': 'Sam Smith', 'progress': '12 of 15 questions answered', 'time': 'Today'},
     ];
 
     return ListView.separated(

@@ -4,7 +4,9 @@ import 'package:linkschool/modules/common/buttons/custom_long_elevated_button.da
 import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/common/widgets/portal/quiz/answer_tab_widget.dart';
-import 'package:linkschool/modules/model/e-learning/question_model.dart';
+import 'package:linkschool/modules/portal/e-learning/View/quiz/quiz_assessment_screen.dart';
+import '../../../../model/e-learning/question_model.dart';
+// import 'package:linkschool/modules/model/e-learning/question_model.dart';
 
 class QuizScreen extends StatefulWidget {
   final Question question;
@@ -16,7 +18,7 @@ class QuizScreen extends StatefulWidget {
 }
 
 class _QuizScreenState extends State<QuizScreen> {
-  int _selectedIndex = 0;
+  // int _selectedIndex = 0;
   late double opacity;
 
   @override
@@ -132,7 +134,15 @@ class _QuizScreenState extends State<QuizScreen> {
         const SizedBox(height: 20),
         CustomLongElevatedButton(
           onPressed: () {
-            // Implement quiz taking functionality
+            // Navigate to the assessment screen
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => QuizAssessmentScreen(
+                  question: widget.question,
+                ),
+              ),
+            );
           },
           backgroundColor: AppColors.eLearningBtnColor1,
           text: 'Take Quiz',
@@ -196,3 +206,4 @@ Widget _buildAnswersTab() {
     return '${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
   }
 }
+
