@@ -6,8 +6,10 @@ import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/buttons/custom_long_elevated_button.dart';
 import 'package:linkschool/modules/common/buttons/custom_medium_elevated_button.dart';
 import 'package:linkschool/modules/common/buttons/custom_outline_button..dart';
+import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/model/e-learning/question_model.dart';
+import 'package:linkschool/modules/portal/e_learning/View/quiz/preview_quiz_assessment_screen.dart';
 
 class QuizAssessmentScreen extends StatefulWidget {
   final Question question;
@@ -27,6 +29,7 @@ class _QuizAssessmentScreenState extends State<QuizAssessmentScreen> {
   String? _selectedOption;
   bool _isAnswered = false;
   bool _isCorrect = false;
+  late double opacity;
 
   List<QuizQuestion> questions = [
     TextQuestion(
@@ -54,6 +57,8 @@ class _QuizAssessmentScreenState extends State<QuizAssessmentScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final Brightness brightness = Theme.of(context).brightness;
+    opacity = brightness == Brightness.light ? 0.1 : 0.15;
     return Scaffold(
       backgroundColor: AppColors.eLearningBtnColor1,
       appBar: AppBar(
@@ -347,7 +352,13 @@ class _QuizAssessmentScreenState extends State<QuizAssessmentScreen> {
                 height: 34.0,
               ),
             ),
-            title: const Text('Quiz Completed'),
+            title: Text(
+              'Quiz Completed',
+              style: AppTextStyles.normal600(
+                fontSize: 24.0,
+                color: AppColors.primaryLight,
+              ),
+            ),
             actions: [
               IconButton(
                 icon: const Icon(Icons.more_vert),
@@ -357,9 +368,24 @@ class _QuizAssessmentScreenState extends State<QuizAssessmentScreen> {
               ),
             ],
             backgroundColor: AppColors.backgroundLight,
+            flexibleSpace: FlexibleSpaceBar(
+              background: Stack(
+                children: [
+                  Positioned.fill(
+                    child: Opacity(
+                      opacity: opacity,
+                      child: Image.asset(
+                        'assets/images/background.png',
+                        fit: BoxFit.cover,
+                      ),
+                    ),
+                  )
+                ],
+              ),
+            ),
           ),
           body: Container(
-            color: Color.fromRGBO(232, 237, 255, 1),
+            decoration: Constants.customBoxDecoration(context),
             child: Container(
               padding: EdgeInsets.symmetric(horizontal: 16.0),
               child: Column(
@@ -386,11 +412,20 @@ class _QuizAssessmentScreenState extends State<QuizAssessmentScreen> {
                     textStyle: AppTextStyles.normal600(
                         fontSize: 22, color: AppColors.backgroundLight),
                   ),
-                  const SizedBox(height: 16.0,),
+                  const SizedBox(
+                    height: 16.0,
+                  ),
                   CustomOutlineButton(
                       width: double.infinity,
                       height: 50,
-                      onPressed: () {},
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => PreviewQuizAssessmentScreen(),
+                          ),
+                        );
+                      },
                       text: 'Preview Result',
                       borderColor: AppColors.eLearningContColor2,
                       textColor: AppColors.eLearningContColor2)

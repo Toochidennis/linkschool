@@ -6,6 +6,7 @@ import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/common/widgets/portal/quiz/answer_tab_widget.dart';
 import 'package:linkschool/modules/portal/e_learning/View/quiz/quiz_assessment_screen.dart';
 import '../../../../model/e-learning/question_model.dart';
+
 // import 'package:linkschool/modules/model/e-learning/question_model.dart';
 
 class QuizScreen extends StatefulWidget {
@@ -26,7 +27,7 @@ class _QuizScreenState extends State<QuizScreen> {
     final Brightness brightness = Theme.of(context).brightness;
     opacity = brightness == Brightness.light ? 0.1 : 0.15;
     return DefaultTabController(
-      length: 2, // Number of tabs
+      length: 2, 
       child: Scaffold(
         appBar: AppBar(
           leading: IconButton(
