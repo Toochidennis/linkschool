@@ -8,7 +8,7 @@ import 'package:linkschool/modules/common/buttons/custom_save_elevated_button.da
 import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/common/widgets/portal/e_learning/select_classes_dialog.dart';
-import 'package:linkschool/modules/portal/e-learning/select_topic_screen.dart';
+import 'package:linkschool/modules/portal/e_learning/select_topic_screen.dart';
 
 class AddMaterialScreen extends StatefulWidget {
   const AddMaterialScreen({super.key});

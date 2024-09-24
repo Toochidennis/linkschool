@@ -32,18 +32,16 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
             style: TextStyle(color: Colors.white)),
         elevation: 0,
       ),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            children: [
-              _buildProgressSection(),
-              const SizedBox(height: 16),
-              _buildQuestionCard(),
-              const SizedBox(height: 16),
-              _buildNavigationButtons(),
-            ],
-          ),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          children: [
+            _buildProgressSection(),
+            const SizedBox(height: 16),
+            _buildQuestionCard(),
+            const SizedBox(height: 16),
+            _buildNavigationButtons(),
+          ],
         ),
       ),
     );

@@ -5,13 +5,16 @@ class CustomOutlineButton extends StatelessWidget {
   final String text;
   final Color borderColor; 
   final Color textColor;
-     
+  final double? height;
+  final double? width;
 
   const CustomOutlineButton({
     required this.onPressed,
     required this.text,
     required this.borderColor,
     required this.textColor,
+    this.height,
+    this.width,
     Key? key,
   }) : super(key: key);
 
@@ -22,7 +25,11 @@ class CustomOutlineButton extends StatelessWidget {
       child: OutlinedButton(
         onPressed: onPressed,
         style: OutlinedButton.styleFrom(
-          side: BorderSide(color: borderColor, width: 1.0), 
+          // Only set minimumSize if both width and height are non-null
+          minimumSize: (width != null || height != null)
+              ? Size(width ?? 0, height ?? 0)
+              : null,
+          side: BorderSide(color: borderColor, width: 1.0),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(4.0),
           ),
@@ -31,7 +38,7 @@ class CustomOutlineButton extends StatelessWidget {
         child: Text(
           text,
           style: TextStyle(
-            color: textColor, 
+            color: textColor,
             fontSize: 16.0,
             fontWeight: FontWeight.w600,
           ),

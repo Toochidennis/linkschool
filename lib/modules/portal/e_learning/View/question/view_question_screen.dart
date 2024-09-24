@@ -6,9 +6,9 @@ import 'package:linkschool/modules/common/buttons/custom_save_elevated_button.da
 import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/model/e-learning/question_model.dart';
-import 'package:linkschool/modules/portal/e-learning/View/question/assessment_screen.dart';
-import 'package:linkschool/modules/portal/e-learning/View/quiz/quiz_screen.dart';
-import 'package:linkschool/modules/portal/e-learning/question_screen.dart';
+import 'package:linkschool/modules/portal/e_learning/View/question/assessment_screen.dart';
+import 'package:linkschool/modules/portal/e_learning/View/quiz/quiz_screen.dart';
+import 'package:linkschool/modules/portal/e_learning/question_screen.dart';
 
 class ViewQuestionScreen extends StatefulWidget {
   final Question question;
@@ -96,102 +96,6 @@ class _ViewQuestionScreenState extends State<ViewQuestionScreen> {
       bottomNavigationBar: _buildBottomNavigation(),
     );
   }
-
-// Map<String, dynamic> _extractQuestionData(Card card) {
-//   final content = card.child as Column;
-//   final questionTypeContainer = (content.children[0] as Padding).child as Container;
-//   final questionTypeRow = questionTypeContainer.child as Row;
-//   final questionType = questionTypeRow.children[1] as Text;
-//   final questionTextField = ((content.children[1] as Padding).child as Column).children[0] as TextField;
-  
-//   return {
-//     'type': questionType.data,
-//     'question': questionTextField.controller!.text,
-//     'options': questionType.data == 'Multiple choice'
-//         ? _extractOptions(content)
-//         : null,
-//   };
-// }
-
-// List<String> _extractOptions(Column content) {
-//   final optionsColumn = ((content.children[1] as Padding).child as Column).children[1] as Column;
-//   return optionsColumn.children
-//       .whereType<Row>()
-//       .map((row) => (row.children[1] as Expanded).child as TextField)
-//       .map((textField) => textField.controller!.text)
-//       .toList();
-// }
-
-//   void _saveQuestions() {
-//     setState(() {
-//       createdQuestions = createdQuestions.map((question) {
-//         if (question is Card) {
-//           // Extract question data from the card
-//           final questionData = _extractQuestionData(question);
-//           return _buildSavedQuestionCard(questionData);
-//         }
-//         return question;
-//       }).toList();
-//     });
-//   }
-
-
-  // Widget _buildSavedQuestionCard(Map<String, dynamic> questionData) {
-  //   return Card(
-  //     margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-  //     child: InkWell(
-  //       onTap: () => Navigator.push(
-  //         context,
-  //         MaterialPageRoute(builder: (context) => const AssessmentScreen()),
-  //       ),
-  //       child: Column(
-  //         children: [
-  //           ListTile(
-  //             leading: SvgPicture.asset(
-  //               questionData['type'] == 'Short answer'
-  //                   ? 'assets/icons/e_learning/short_answer_icon.svg'
-  //                   : 'assets/icons/e_learning/multiple_choice_icon.svg',
-  //               width: 24,
-  //               height: 24,
-  //             ),
-  //             title: Text(
-  //               questionData['question'],
-  //               style: AppTextStyles.normal500(fontSize: 16, color: AppColors.textGray),
-  //             ),
-  //             trailing: PopupMenuButton(
-  //               icon: const Icon(Icons.more_vert),
-  //               itemBuilder: (context) => [
-  //                 PopupMenuItem(
-  //                   child: ListTile(
-  //                     leading: const Icon(Icons.preview),
-  //                     title: const Text('Preview'),
-  //                     onTap: () {
-  //                       Navigator.pop(context);
-  //                       // Implement preview functionality
-  //                     },
-  //                   ),
-  //                 ),
-  //                 PopupMenuItem(
-  //                   child: ListTile(
-  //                     leading: const Icon(Icons.delete),
-  //                     title: const Text('Delete'),
-  //                     onTap: () {
-  //                       Navigator.pop(context);
-  //                       setState(() {
-  //                         createdQuestions.removeWhere((q) => q == _buildSavedQuestionCard(questionData));
-  //                       });
-  //                     },
-  //                   ),
-  //                 ),
-  //               ],
-  //             ),
-  //           ),
-  //           const Divider(height: 1, thickness: 1),
-  //         ],
-  //       ),
-  //     ),
-  //   );
-  // }
 
   void _saveQuestions() {
     setState(() {

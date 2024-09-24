@@ -6,8 +6,8 @@ import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/buttons/custom_medium_elevated_button.dart';
 import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
-import 'package:linkschool/modules/portal/e-learning/create_syllabus_screen.dart';
-import 'package:linkschool/modules/portal/e-learning/empty_subject_screen.dart';
+import 'package:linkschool/modules/portal/e_learning/create_syllabus_screen.dart';
+import 'package:linkschool/modules/portal/e_learning/empty_subject_screen.dart';
 
 class EmptySyllabusScreen extends StatefulWidget {
   final String selectedSubject;

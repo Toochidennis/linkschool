@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
-import 'package:linkschool/modules/portal/e-learning/e_learning_dashboard_screen.dart';
+import 'package:linkschool/modules/portal/e_learning/e_learning_dashboard_screen.dart';
 import 'package:linkschool/modules/portal/result/result_dashboard_screen.dart';
 // import 'package:linkschool/modules/portal/result/result_dashboard_screen.dart';
 

@@ -9,8 +9,8 @@ import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/common/utils/duration_picker_dialog.dart';
 import 'package:linkschool/modules/common/widgets/portal/e_learning/select_classes_dialog.dart';
 import 'package:linkschool/modules/model/e-learning/question_model.dart';
-import 'package:linkschool/modules/portal/e-learning/View/question/view_question_screen.dart';
-import 'package:linkschool/modules/portal/e-learning/select_topic_screen.dart';
+import 'package:linkschool/modules/portal/e_learning/View/question/view_question_screen.dart';
+import 'package:linkschool/modules/portal/e_learning/select_topic_screen.dart';
 
 
 class QuestionScreen extends StatefulWidget {

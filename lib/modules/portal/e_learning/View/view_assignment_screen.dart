@@ -5,7 +5,7 @@ import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/model/e-learning/comment_model.dart';
-import 'package:linkschool/modules/portal/e-learning/assignment_screen.dart';
+import 'package:linkschool/modules/portal/e_learning/assignment_screen.dart';
 
 class ViewAssignmentScreen extends StatefulWidget {
   final Assignment assignment;

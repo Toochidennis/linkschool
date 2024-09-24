@@ -4,7 +4,7 @@ import 'package:linkschool/modules/common/buttons/custom_long_elevated_button.da
 import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/common/widgets/portal/quiz/answer_tab_widget.dart';
-import 'package:linkschool/modules/portal/e-learning/View/quiz/quiz_assessment_screen.dart';
+import 'package:linkschool/modules/portal/e_learning/View/quiz/quiz_assessment_screen.dart';
 import '../../../../model/e-learning/question_model.dart';
 // import 'package:linkschool/modules/model/e-learning/question_model.dart';
 

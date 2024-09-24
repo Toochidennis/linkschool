@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:linkschool/modules/common/dashboard_switcher.dart';
 import 'package:linkschool/modules/model/e-learning/question_model.dart';
-import 'package:linkschool/modules/portal/e-learning/View/question/view_question_screen.dart';
+import 'package:linkschool/modules/portal/e_learning/View/question/view_question_screen.dart';
 
 
 class RouteGenerator {
