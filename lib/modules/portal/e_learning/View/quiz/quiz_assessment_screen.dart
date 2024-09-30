@@ -114,26 +114,26 @@ class _QuizAssessmentScreenState extends State<QuizAssessmentScreen> {
             // const Spacer(),
           ],
         ),
-        TextButton(
-          onPressed: () {
-            // Show the stop timer confirmation dialog
-            _showStopTimerDialog();
-          },
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            decoration: BoxDecoration(
-              color: _isTimerStopped ? Colors.grey : Colors.red,
-              borderRadius: BorderRadius.circular(4),
-            ),
-            child: const Text(
-              'Stop Timer',
-              style: TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ),
-        ),
+        // TextButton(
+        //   onPressed: () {
+        //     // Show the stop timer confirmation dialog
+        //     _showStopTimerDialog();
+        //   },
+        //   child: Container(
+        //     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        //     decoration: BoxDecoration(
+        //       color: _isTimerStopped ? Colors.grey : Colors.red,
+        //       borderRadius: BorderRadius.circular(4),
+        //     ),
+        //     child: const Text(
+        //       'Stop Timer',
+        //       style: TextStyle(
+        //         color: Colors.white,
+        //         fontWeight: FontWeight.bold,
+        //       ),
+        //     ),
+        //   ),
+        // ),
       ],
     );
   }

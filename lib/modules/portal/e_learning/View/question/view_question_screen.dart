@@ -13,7 +13,6 @@ import 'package:linkschool/modules/portal/e_learning/question_screen.dart';
 class ViewQuestionScreen extends StatefulWidget {
   final Question question;
 
-  
   const ViewQuestionScreen({super.key, required this.question});
 
   @override
@@ -21,10 +20,10 @@ class ViewQuestionScreen extends StatefulWidget {
 }
 
 class _ViewQuestionScreenState extends State<ViewQuestionScreen> {
-  List<Widget> createdQuestions = [];
+  List<Map<String, dynamic>> createdQuestions = [];
   late double opacity;
   late Question currentQuestion;
-   bool showSaveButton = false;
+  bool showSaveButton = false;
 
   @override
   void initState() {
@@ -88,7 +87,7 @@ class _ViewQuestionScreenState extends State<ViewQuestionScreen> {
           child: Column(
             children: [
               _buildQuestionBackground(),
-              ...createdQuestions,
+              ...createdQuestions.map((question) => question['widget']),
             ],
           ),
         ),
@@ -97,37 +96,28 @@ class _ViewQuestionScreenState extends State<ViewQuestionScreen> {
     );
   }
 
-  void _saveQuestions() {
-    setState(() {
-      List<Widget> updatedCards = [];
-      for (var widget in createdQuestions) {
-        updatedCards.add(_buildSavedQuestionRow(widget));
-      }
-      createdQuestions = updatedCards;
-      showSaveButton = false; // Hide save button after saving
-    });
-  }
+  Widget _buildSavedQuestionRow(String questionType, Widget questionCard) {
+    IconData iconData =
+        questionType == 'short_answer' ? Icons.short_text : Icons.list;
 
-
-  Widget _buildSavedQuestionRow(Widget questionCard) {
     return Column(
       children: [
         GestureDetector(
           onTap: () {
             Navigator.push(
               context,
-              MaterialPageRoute(builder: (context) =>  QuizScreen(question: currentQuestion,)),
+              MaterialPageRoute(
+                  builder: (context) => QuizScreen(question: currentQuestion)),
             );
           },
           child: ListTile(
-            leading: SvgPicture.asset(
-              'assets/icons/e_learning/question_icon.svg',
-              width: 24,
-              height: 24,
-            ),
+            leading: Icon(iconData),
             title: Text(
-              'Question Text', // Update this to show actual question text
-              style: AppTextStyles.normal500(fontSize: 16, color: AppColors.textGray),
+              questionType == 'short_answer'
+                  ? 'Short answer'
+                  : 'Multiple choice',
+              style: AppTextStyles.normal500(
+                  fontSize: 16, color: AppColors.textGray),
             ),
             trailing: IconButton(
               icon: SvgPicture.asset(
@@ -141,12 +131,42 @@ class _ViewQuestionScreenState extends State<ViewQuestionScreen> {
             ),
           ),
         ),
-        const Divider(color: Colors.grey),
+        const Padding(
+          padding: EdgeInsets.symmetric(horizontal: 16.0),
+          child: Divider(color: Colors.grey),
+        ),
       ],
     );
   }
 
-
+  void _showKebabMenu(BuildContext context) {
+    showMenu(
+      context: context,
+      position: const RelativeRect.fromLTRB(100, 100, 0, 0),
+      items: [
+        PopupMenuItem(
+          child: ListTile(
+            leading: const Icon(Icons.edit),
+            title: const Text('Edit'),
+            onTap: () {
+              Navigator.pop(context);
+              _editQuestion();
+            },
+          ),
+        ),
+        PopupMenuItem(
+          child: ListTile(
+            leading: const Icon(Icons.delete),
+            title: const Text('Delete'),
+            onTap: () {
+              Navigator.pop(context);
+              _deleteQuestion();
+            },
+          ),
+        ),
+      ],
+    );
+  }
 
   Widget _buildQuestionBackground() {
     return LayoutBuilder(
@@ -177,7 +197,7 @@ class _ViewQuestionScreenState extends State<ViewQuestionScreen> {
                   top: 16,
                   right: 8,
                   child: GestureDetector(
-                    onTap: ()  => _showKebabMenu,
+                    onTap: () => _showKebabMenu,
                     child: SvgPicture.asset(
                       'assets/icons/e_learning/kebab_icon.svg',
                       width: 24,
@@ -221,67 +241,6 @@ class _ViewQuestionScreenState extends State<ViewQuestionScreen> {
     );
   }
 
-
-
-  // void _showKebabMenu() {
-  //   showMenu(
-  //     context: context,
-  //     position: RelativeRect.fromLTRB(100, 100, 0, 0),
-  //     items: [
-  //       PopupMenuItem(
-  //         child: ListTile(
-  //           leading: const Icon(Icons.edit),
-  //           title: const Text('Edit'),
-  //           onTap: () {
-  //             Navigator.pop(context);
-  //             _editQuestion();
-  //           },
-  //         ),
-  //       ),
-  //       PopupMenuItem(
-  //         child: ListTile(
-  //           leading: const Icon(Icons.delete),
-  //           title: const Text('Delete'),
-  //           onTap: () {
-  //             Navigator.pop(context);
-  //             _deleteQuestion();
-  //           },
-  //         ),
-  //       ),
-  //     ],
-  //   );
-  // }
-
-  void _showKebabMenu(BuildContext context) {
-    showMenu(
-      context: context,
-      position: RelativeRect.fromLTRB(100, 100, 0, 0),
-      items: [
-        PopupMenuItem(
-          child: ListTile(
-            leading: SvgPicture.asset('assets/icons/e_learning/preview_icon.svg'),
-            title: const Text('Preview'),
-            onTap: () {
-              // Preview logic
-              Navigator.pop(context);
-            },
-          ),
-        ),
-        PopupMenuItem(
-          child: ListTile(
-            leading: SvgPicture.asset('assets/icons/e_learning/delete_icon.svg'),
-            title: const Text('Delete'),
-            onTap: () {
-              // Delete logic
-              Navigator.pop(context);
-            },
-          ),
-        ),
-      ],
-    );
-  }
-
-
   void _editQuestion() async {
     final result = await Navigator.push<Question>(
       context,
@@ -301,7 +260,7 @@ class _ViewQuestionScreenState extends State<ViewQuestionScreen> {
     }
   }
 
- void _deleteQuestion() {
+  void _deleteQuestion() {
     // Implement delete functionality
     showDialog(
       context: context,
@@ -342,7 +301,6 @@ class _ViewQuestionScreenState extends State<ViewQuestionScreen> {
             blurRadius: 5,
             offset: const Offset(0, -3),
           ),
-
         ],
       ),
       child: Row(
@@ -414,15 +372,37 @@ class _ViewQuestionScreenState extends State<ViewQuestionScreen> {
   void _addQuestion(String questionType) {
     Navigator.pop(context);
     setState(() {
-      createdQuestions.add(_buildQuestionCard(questionType));
+      createdQuestions.add({
+        'type': questionType,
+        'widget': _buildQuestionCard(questionType),
+      });
       showSaveButton = true;
+    });
+  }
+
+  void _saveQuestions() {
+    setState(() {
+      List<Map<String, dynamic>> updatedQuestions = [];
+      for (var question in createdQuestions) {
+        updatedQuestions.add({
+          'type': question['type'],
+          'widget':
+              _buildSavedQuestionRow(question['type'], question['widget']),
+        });
+      }
+      createdQuestions = updatedQuestions;
+      showSaveButton = false;
     });
   }
 
   Widget _buildQuestionCard(String questionType) {
     bool isEditing = false;
-    List<String> options = [];
+    List<TextEditingController> optionControllers = [
+      TextEditingController(),
+      TextEditingController()
+    ];
     TextEditingController questionController = TextEditingController();
+    TextEditingController marksController = TextEditingController(text: '1');
 
     return StatefulBuilder(
       builder: (BuildContext context, StateSetter setState) {
@@ -432,7 +412,9 @@ class _ViewQuestionScreenState extends State<ViewQuestionScreen> {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(8),
             side: BorderSide(
-              color: isEditing ? AppColors.primaryLight.withOpacity(0.5) : Colors.transparent,
+              color: isEditing
+                  ? AppColors.primaryLight.withOpacity(0.5)
+                  : Colors.transparent,
               width: 1,
             ),
           ),
@@ -445,17 +427,19 @@ class _ViewQuestionScreenState extends State<ViewQuestionScreen> {
                   color: const Color.fromRGBO(235, 235, 235, 1),
                   child: Row(
                     children: [
-                      SvgPicture.asset(
+                      Icon(
                         questionType == 'short_answer'
-                            ? 'assets/icons/e_learning/short_answer_icon.svg'
-                            : 'assets/icons/e_learning/multiple_choice_icon.svg',
-                        width: 24,
-                        height: 24,
+                            ? Icons.short_text
+                            : Icons.list,
+                        color: AppColors.primaryLight,
                       ),
                       const SizedBox(width: 8),
                       Text(
-                        questionType == 'short_answer' ? 'Short answer' : 'Multiple choice',
-                        style: AppTextStyles.normal600(fontSize: 16, color: AppColors.textGray),
+                        questionType == 'short_answer'
+                            ? 'Short answer'
+                            : 'Multiple choice',
+                        style: AppTextStyles.normal600(
+                            fontSize: 16, color: AppColors.textGray),
                       ),
                     ],
                   ),
@@ -489,13 +473,16 @@ class _ViewQuestionScreenState extends State<ViewQuestionScreen> {
                     if (questionType == 'multiple_choice')
                       Column(
                         children: [
-                          ...options.map((option) => _buildOptionRow(option, setState)),
+                          ...optionControllers.asMap().entries.map((entry) =>
+                              _buildOptionRow(
+                                  entry.key, entry.value, setState)),
                           Padding(
                             padding: const EdgeInsets.only(top: 16),
                             child: InkWell(
                               onTap: () {
                                 setState(() {
-                                  options.add('');
+                                  optionControllers
+                                      .add(TextEditingController());
                                 });
                               },
                               child: Row(
@@ -504,7 +491,8 @@ class _ViewQuestionScreenState extends State<ViewQuestionScreen> {
                                     'Add option',
                                     style: AppTextStyles.normal600(
                                       fontSize: 14,
-                                      color: AppColors.textGray.withOpacity(0.5),
+                                      color:
+                                          AppColors.textGray.withOpacity(0.5),
                                     ),
                                   ),
                                 ],
@@ -512,7 +500,8 @@ class _ViewQuestionScreenState extends State<ViewQuestionScreen> {
                             ),
                           ),
                           const SizedBox(height: 8.0),
-                          const Divider(color: Colors.grey, thickness: 0.6, height: 1),
+                          const Divider(
+                              color: Colors.grey, thickness: 0.6, height: 1),
                         ],
                       ),
                   ],
@@ -531,9 +520,11 @@ class _ViewQuestionScreenState extends State<ViewQuestionScreen> {
                           border: Border(
                               bottom: BorderSide(color: Colors.grey[400]!)),
                         ),
-                        child: const TextField(
+                        child: TextField(
+                          controller: marksController,
                           keyboardType: TextInputType.number,
-                          decoration: InputDecoration(
+                          textAlign: TextAlign.center,
+                          decoration: const InputDecoration(
                             border: InputBorder.none,
                           ),
                         ),
@@ -548,7 +539,6 @@ class _ViewQuestionScreenState extends State<ViewQuestionScreen> {
                     IconButton(
                       icon: const Icon(Icons.copy, color: Colors.grey),
                       onPressed: () {
-                        // Copy question functionality
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(content: Text('Question copied')),
                         );
@@ -573,24 +563,25 @@ class _ViewQuestionScreenState extends State<ViewQuestionScreen> {
     );
   }
 
-  Widget _buildOptionRow(String option, Function setState) {
+  Widget _buildOptionRow(
+      int index, TextEditingController controller, Function setState) {
     return Row(
       children: [
         Radio(
-          value: option,
+          value: index,
           groupValue: null,
           onChanged: (value) {},
         ),
         Expanded(
           child: TextField(
-            controller: TextEditingController(),
+            controller: controller,
             decoration: const InputDecoration(
               hintText: 'Option',
               border: UnderlineInputBorder(),
             ),
             onChanged: (value) {
               setState(() {
-                option = value;
+                // The controller will automatically update the text
               });
             },
           ),
@@ -721,5 +712,3 @@ class _ViewQuestionScreenState extends State<ViewQuestionScreen> {
     return '${duration.inHours}h ${duration.inMinutes.remainder(60)}m';
   }
 }
-
-
