@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:linkschool/modules/portal/e_learning/e_learning_dashboard_screen.dart';
+import 'package:linkschool/modules/portal/profile/payment_dashboard_screen.dart';
 import 'package:linkschool/modules/portal/result/result_dashboard_screen.dart';
 // import 'package:linkschool/modules/portal/result/result_dashboard_screen.dart';
 
@@ -76,14 +77,16 @@ class _PortalDashboardState extends State<PortalDashboard> {
           const PortalHome(),
           const ResultDashboardScreen(),
           const ELearningScreen(),
+           PaymentDashboardScreen(),
+
           // Container(
           //   height: MediaQuery.of(context).size.height,
           //   color: Colors.black,
           // ),
-          Container(
-            height: MediaQuery.of(context).size.height,
-            color: Colors.blue,
-          )
+          // Container(
+          //   height: MediaQuery.of(context).size.height,
+          //   color: Colors.blue,
+          // )
         ],
         onSwitch: widget.onSwitch,
       ),
