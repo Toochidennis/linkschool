@@ -1,10 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:linkschool/modules/common/app_themes.dart';
 import 'package:linkschool/modules/common/dashboard_switcher.dart';
 import 'package:linkschool/routes/route_generator.dart';
  // Import the RouteGenerator
 
 void main() {
+  WidgetsFlutterBinding.ensureInitialized();
+  SystemChrome.setSystemUIOverlayStyle(
+    const SystemUiOverlayStyle(
+      statusBarColor: Colors.transparent,
+      statusBarIconBrightness: Brightness.light, // For Android (dark icons)
+      statusBarBrightness: Brightness.dark, // For iOS (dark icons)
+    ),
+  );
   runApp(const MyApp());
 }
 

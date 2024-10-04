@@ -9,7 +9,12 @@ import 'package:linkschool/modules/common/widgets/portal/result_dashboard/settin
 
 
 class ResultDashboardScreen extends StatefulWidget {
-  const ResultDashboardScreen({Key? key}) : super(key: key);
+  final PreferredSizeWidget appBar;
+
+  const ResultDashboardScreen({
+    super.key,
+    required this.appBar,
+  });
 
   @override
   State<ResultDashboardScreen> createState() => _ResultDashboardScreenState();
@@ -19,6 +24,7 @@ class _ResultDashboardScreenState extends State<ResultDashboardScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: widget.appBar,
       body: Container(
         decoration: Constants.customBoxDecoration(context),
         child: CustomScrollView(
@@ -54,7 +60,7 @@ class _ResultDashboardScreenState extends State<ResultDashboardScreen> {
             const SliverToBoxAdapter(child: LevelSelection()),
           ],
         ),
-      ),
+      )
     );
   }
 }

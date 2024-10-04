@@ -86,7 +86,7 @@ class _AssignmentScreenState extends State<AssignmentScreen> {
       body: Container(
         decoration: Constants.customBoxDecoration(context),
         child: Padding(
-          padding: const EdgeInsets.all(16.0),
+          padding: const EdgeInsets.all(8.0),
           child: SingleChildScrollView(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,

@@ -6,6 +6,8 @@ import 'package:linkschool/modules/common/constants.dart';
 import '../explore/home/explore_dashboard.dart';
 import '../portal/home/portal_dashboard.dart';
 
+
+
 class DashboardSwitcher extends StatefulWidget {
   const DashboardSwitcher({super.key});
 
@@ -15,6 +17,7 @@ class DashboardSwitcher extends StatefulWidget {
 
 class _DashboardSwitcherState extends State<DashboardSwitcher> {
   late FlipCardController _controller;
+  int _selectedIndex = 0;
 
   @override
   void initState() {
@@ -36,11 +39,21 @@ class _DashboardSwitcherState extends State<DashboardSwitcher> {
         controller: _controller,
         front: ExploreDashboard(
           onSwitch: _toggleDashboard,
+          selectedIndex: _selectedIndex,
+          onTabSelected: _updateSelectedIndex,
         ),
         back: PortalDashboard(
           onSwitch: _toggleDashboard,
+          selectedIndex: _selectedIndex,
+          onTabSelected: _updateSelectedIndex,
         ),
       ),
     );
+  }
+
+  void _updateSelectedIndex(int index) {
+    setState(() {
+      _selectedIndex = index;
+    });
   }
 }

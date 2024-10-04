@@ -7,7 +7,8 @@ import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/common/widgets/portal/result_dashboard/level_selection.dart';
 
 class ELearningScreen extends StatefulWidget {
-  const ELearningScreen({Key? key}) : super(key: key);
+  final PreferredSizeWidget appBar;
+  const ELearningScreen({super.key,  required this.appBar,});
 
   @override
   State<ELearningScreen> createState() => _ELearningScreenState();
@@ -56,6 +57,7 @@ class _ELearningScreenState extends State<ELearningScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: widget.appBar,
       body: Container(
         decoration: Constants.customBoxDecoration(context),
         child: CustomScrollView(
@@ -79,7 +81,7 @@ class _ELearningScreenState extends State<ELearningScreen> {
               ),
             ),
             const SliverToBoxAdapter(
-              child: const LevelSelection(
+              child: LevelSelection(
                   isSecondScreen: true,
                   subjects: ['Civic Education', 'Mathematics', 'English', 'Physics', 'Chemistry'],
 

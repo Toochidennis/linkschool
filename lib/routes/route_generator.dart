@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:linkschool/modules/common/dashboard_switcher.dart';
 import 'package:linkschool/modules/model/e-learning/question_model.dart';
 import 'package:linkschool/modules/portal/e_learning/View/question/view_question_screen.dart';
+import 'package:linkschool/modules/portal/profile/payment_setting_screen.dart';
 
 
 class RouteGenerator {
@@ -21,8 +22,8 @@ class RouteGenerator {
         }
         // If args is not of the correct type, return an error page
         return _errorRoute();
-      // case '/short-answer-question':
-      //   return MaterialPageRoute(builder: (_) => QuestionEditorScreen(questionType: 'short_answer'),);
+      case '/payment-settings':
+        return MaterialPageRoute(builder: (_) => PaymentSettingScreen(),);
       // case '/multiple-choice-question':
       //   return MaterialPageRoute(builder: (_) => const QuestionEditorScreen(questionType: 'multiple_choice'));
       // case '/section-question':
