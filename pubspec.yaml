@@ -72,84 +72,86 @@ flutter:
 
   # To add assets to your application, add an assets section, like this:
   assets:
-    - assets/icons/notifications.svg
-    - assets/icons/home.svg
-    - assets/icons/e-learning.svg
-    - assets/icons/admission.svg
-    - assets/icons/games.svg
-    - assets/icons/cbt.svg
-    - assets/icons/portal.svg
-    - assets/icons/video.svg
-    - assets/icons/e-books.svg
-    - assets/icons/linkskool-ai.svg
-    - assets/icons/linkskool-logo.svg
-    - assets/icons/settings.svg
-    - assets/icons/comment.svg
-    - assets/icons/share.svg
-    - assets/icons/result.svg
-    - assets/icons/payment.svg
-    - assets/icons/profile.svg
-    - assets/icons/explore.svg
-    - assets/icons/arrow_back.png
-    - assets/icons/test.png
-    - assets/icons/success.png
-    - assets/icons/average.png
-    - assets/icons/search.png
-    - assets/icons/maths.png
-    - assets/icons/chemistry.png
-    - assets/icons/physics.png
-    - assets/icons/further_maths.png
-    - assets/icons/english.png
-    - assets/icons/biology.png
-    - assets/icons/agric.png
-    - assets/icons/views.png
-    - assets/icons/geography.png
-    - assets/images/background.png
-    - assets/images/millionaire.png
-    - assets/images/ai.png
-    - assets/images/video_1.png
-    - assets/images/book_1.png
-    - assets/images/book_2.png
-    - assets/images/book_3.png
-    - assets/images/book_4.png
-    - assets/images/book_5.png
-    - assets/images/games_1.png
-    - assets/images/games_2.png
-    - assets/images/games_3.png
-    - assets/icons/grading.png
-    - assets/icons/behaviour.png
-    - assets/icons/tools.png
-    - assets/icons/assessment.png
-    - assets/images/box_bg1.png
-    - assets/images/box_bg2.png
-    - assets/images/box_bg3.png
-    - assets/images/box_bg4.png
-    - assets/images/box_bg5.png
-    - assets/icons/result/comment.svg
-    - assets/icons/result/skill.svg
-    - assets/icons/result/course.svg
-    - assets/icons/result/composite_result.svg
-    - assets/icons/result/check.svg
-    - assets/icons/result/edit.svg
-    - assets/icons/result/delete.svg
-    - assets/icons/result/grading.svg
-    - assets/icons/result/assessment.svg
-    - assets/icons/result/behaviour.svg
-    - assets/icons/result/tool.svg
-    - assets/images/result/bg_box1.svg
-    - assets/images/result/bg_box2.svg
-    - assets/images/result/bg_box3.svg
-    - assets/images/result/bg_box4.svg
-    - assets/images/result/bg_box5.svg
-    - assets/images/result/top_container.svg
-    - assets/icons/result/book.svg
-    - assets/images/result/bg_course_reg.svg
-    - assets/icons/result/search.svg
-    - assets/icons/result/study_book.svg
-    - assets/icons/result/eye.svg
+    - assets/icons/
+    - assets/images/
     - assets/icons/e_learning/
     - assets/icons/result/
     - assets/images/e-learning/
+    - assets/icons/
+    - assets/icons/profile/
+    # - assets/icons/home.svg
+    # - assets/icons/e-learning.svg
+    # - assets/icons/admission.svg
+    # - assets/icons/games.svg
+    # - assets/icons/cbt.svg
+    # - assets/icons/portal.svg
+    # - assets/icons/video.svg
+    # - assets/icons/e-books.svg
+    # - assets/icons/linkskool-ai.svg
+    # - assets/icons/linkskool-logo.svg
+    # - assets/icons/settings.svg
+    # - assets/icons/comment.svg
+    # - assets/icons/share.svg
+    # - assets/icons/result.svg
+    # - assets/icons/payment.svg
+    # - assets/icons/profile.svg
+    # - assets/icons/explore.svg
+    # - assets/icons/arrow_back.png
+    # - assets/icons/test.png
+    # - assets/icons/success.png
+    # - assets/icons/average.png
+    # - assets/icons/search.png
+    # - assets/icons/maths.png
+    # - assets/icons/chemistry.png
+    # - assets/icons/physics.png
+    # - assets/icons/further_maths.png
+    # - assets/icons/english.png
+    # - assets/icons/biology.png
+    # - assets/icons/agric.png
+    # - assets/icons/views.png
+    # - assets/icons/geography.png
+    # - assets/images/millionaire.png
+    # - assets/images/ai.png
+    # - assets/images/video_1.png
+    # - assets/images/book_1.png
+    # - assets/images/book_2.png
+    # - assets/images/book_3.png
+    # - assets/images/book_4.png
+    # - assets/images/book_5.png
+    # - assets/images/games_1.png
+    # - assets/images/games_2.png
+    # - assets/images/games_3.png
+    # - assets/icons/grading.png
+    # - assets/icons/behaviour.png
+    # - assets/icons/tools.png
+    # - assets/icons/assessment.png
+    # - assets/images/box_bg1.png
+    # - assets/images/box_bg2.png
+    # - assets/images/box_bg3.png
+    # - assets/images/box_bg4.png
+    # - assets/images/box_bg5.png
+    # - assets/icons/result/comment.svg
+    # - assets/icons/result/skill.svg
+    # - assets/icons/result/course.svg
+    # - assets/icons/result/composite_result.svg
+    # - assets/icons/result/check.svg
+    # - assets/icons/result/edit.svg
+    # - assets/icons/result/delete.svg
+    # - assets/icons/result/grading.svg
+    # - assets/icons/result/assessment.svg
+    # - assets/icons/result/behaviour.svg
+    # - assets/icons/result/tool.svg
+    # - assets/images/result/bg_box1.svg
+    # - assets/images/result/bg_box2.svg
+    # - assets/images/result/bg_box3.svg
+    # - assets/images/result/bg_box4.svg
+    # - assets/images/result/bg_box5.svg
+    # - assets/images/result/top_container.svg
+    # - assets/icons/result/book.svg
+    # - assets/images/result/bg_course_reg.svg
+    # - assets/icons/result/search.svg
+    # - assets/icons/result/study_book.svg
+    # - assets/icons/result/eye.svg
 #     - images/a_dot_burr.jpeg
 #     - images/a_dot_ham.jpeg
 
