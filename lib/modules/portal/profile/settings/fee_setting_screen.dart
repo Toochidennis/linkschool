@@ -123,7 +123,8 @@ class _FeeSettingScreenState extends State<FeeSettingScreen> {
             mainAxisSize: MainAxisSize.min,
             children: [
               Text('Add Fee',
-                  style: AppTextStyles.normal600(fontSize: 18, color: AppColors.primaryLight)),
+                  style: AppTextStyles.normal600(
+                      fontSize: 18, color: AppColors.primaryLight)),
               SizedBox(height: 16),
               TextField(
                 decoration: InputDecoration(
@@ -145,19 +146,56 @@ class _FeeSettingScreenState extends State<FeeSettingScreen> {
               SizedBox(height: 16),
               Row(
                 children: [
-                  CustomOutlineButton(
+                  // CustomOutlineButton(
+                  //     onPressed: () => Navigator.pop(context),
+                  //     text: "Cancel",
+                  //     borderColor: AppColors.eLearningRedBtnColor,
+                  //     textColor: AppColors.eLearningRedBtnColor),
+                  Expanded(
+                    child: OutlinedButton(
                       onPressed: () => Navigator.pop(context),
-                      text: "Cancel",
-                      borderColor: AppColors.eLearningRedBtnColor,
-                      textColor: AppColors.eLearningRedBtnColor),
+                      style: OutlinedButton.styleFrom(
+                        side: const BorderSide(
+                            color: AppColors.eLearningRedBtnColor),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      child: Padding(
+                        padding: EdgeInsets.symmetric(vertical: 12),
+                        child: Text('Cancel',
+                            style: AppTextStyles.normal500(
+                                fontSize: 18,
+                                color: AppColors.eLearningRedBtnColor)),
+                      ),
+                    ),
+                  ),
                   SizedBox(width: 16),
-                  CustomMediumElevatedButton(
-                      text: 'Confirm',
+                  Expanded(
+                    child: ElevatedButton(
                       onPressed: () => Navigator.pop(context),
-                      backgroundColor: AppColors.eLearningBtnColor5,
-                      textStyle: AppTextStyles.normal600(
-                          fontSize: 16, color: AppColors.backgroundLight),
-                      padding: EdgeInsets.all(8.0))
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.eLearningBtnColor5,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      child: Padding(
+                        padding: EdgeInsets.symmetric(vertical: 12),
+                        child: Text('Confirm',
+                            style: AppTextStyles.normal600(
+                                fontSize: 16.0,
+                                color: AppColors.backgroundLight)),
+                      ),
+                    ),
+                  ),
+                  // CustomMediumElevatedButton(
+                  //     text: 'Confirm',
+                  //     onPressed: () => Navigator.pop(context),
+                  //     backgroundColor: AppColors.eLearningBtnColor5,
+                  //     textStyle: AppTextStyles.normal600(
+                  //         fontSize: 16, color: AppColors.backgroundLight),
+                  //     padding: EdgeInsets.all(8.0))
                 ],
               ),
             ],

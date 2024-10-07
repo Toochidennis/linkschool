@@ -4,15 +4,16 @@ import 'package:flutter_svg/svg.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
+import 'package:linkschool/modules/portal/profile/receipt/reciept_payment_detail.dart';
 
-class ReceiptScreen extends StatefulWidget {
-  const ReceiptScreen({super.key});
+class ExpenditureScreen extends StatefulWidget {
+  const ExpenditureScreen({super.key});
 
   @override
-  State<ReceiptScreen> createState() => _ReceiptScreenState();
+  State<ExpenditureScreen> createState() => _ExpenditureScreenState();
 }
 
-class _ReceiptScreenState extends State<ReceiptScreen> {
+class _ExpenditureScreenState extends State<ExpenditureScreen> {
   late double opacity;
   @override
   Widget build(BuildContext context) {
@@ -32,7 +33,7 @@ class _ReceiptScreenState extends State<ReceiptScreen> {
           ),
         ),
         title: Text(
-          'Receipts',
+          'Expenditures',
           style: AppTextStyles.normal600(
             fontSize: 24.0,
             color: AppColors.primaryLight,
@@ -58,10 +59,10 @@ class _ReceiptScreenState extends State<ReceiptScreen> {
       body: Container(
          decoration: Constants.customBoxDecoration(context),
         child: Padding(
-          padding: const EdgeInsets.all(16.0),
+          padding: const EdgeInsets.all(8.0),
           child: SingleChildScrollView(
             child: Padding(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 16.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -100,13 +101,13 @@ class _ReceiptScreenState extends State<ReceiptScreen> {
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               const Text(
-                                'Total Amount Received',
+                                'Total Expenses',
                                 style: TextStyle(color: Colors.white),
                               ),
                               Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                 decoration: BoxDecoration(
-                                  color: Color.fromRGBO(198, 210, 255, 1),
+                                  color: const Color.fromRGBO(198, 210, 255, 1),
                                   borderRadius: BorderRadius.circular(10),
                                 ),
                                 child: const Text('7 payments'),
@@ -125,9 +126,9 @@ class _ReceiptScreenState extends State<ReceiptScreen> {
                       ),
                     ),
                   ),
-                  const SizedBox(height: 16),
+                  // const SizedBox(height: 16),
                   SizedBox(
-                    height: 300,
+                    height: 200,
                     child: LineChart(
                       LineChartData(
                         gridData: const FlGridData(show: false),
@@ -166,12 +167,12 @@ class _ReceiptScreenState extends State<ReceiptScreen> {
                               const FlSpot(2, 4),
                             ],
                             isCurved: true,
-                            color: const Color.fromRGBO(47, 85, 221, 1),
+                            color: AppColors.videoColor4,
                             barWidth: 3,
                             dotData: const FlDotData(show: false),
                             belowBarData: BarAreaData(
                               show: true,
-                              color: Color.fromRGBO(47, 85, 221, 0.102),
+                              color: const Color.fromRGBO(47, 85, 221, 0.102),
                             ),
                           ),
                         ],
@@ -179,25 +180,25 @@ class _ReceiptScreenState extends State<ReceiptScreen> {
                     ),
                   ),
                   const SizedBox(height: 16),
-                  const Row(
+                  Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        'Payment History',
-                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+                        'Expense History',
+                        style: AppTextStyles.normal600(fontSize: 18, color: AppColors.backgroundDark)
                       ),
-                      Text(
+                      const Text(
                         'See all',
-                        style: TextStyle(decoration: TextDecoration.underline),
+                        style: TextStyle(decoration: TextDecoration.underline, color: Color.fromRGBO(47, 85, 221, 1), fontSize: 16.0),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 8),
-                  _buildPaymentHistoryItem('Grade 1', '234,700.00'),
-                  _buildPaymentHistoryItem('Grade 2', '189,500.00'),
-                  _buildPaymentHistoryItem('Grade 3', '276,300.00'),
-                  _buildPaymentHistoryItem('Grade 4', '205,800.00'),
-                  _buildPaymentHistoryItem('Grade 5', '298,100.00'),
+                  const SizedBox(height: 16),
+                  _buildExpenseHistoryItem('JSS', '234,700.00', 'Joseph Raphael'),
+                  _buildExpenseHistoryItem('SS', '189,500.00', 'Maria Johnson'),
+                  _buildExpenseHistoryItem('JSS', '276,300.00', 'John Smith'),
+                  _buildExpenseHistoryItem('SS', '205,800.00', 'Emma Davis'),
+                  _buildExpenseHistoryItem('JSS', '298,100.00', 'Michael Brown'),
                 ],
               ),
             ),
@@ -205,35 +206,53 @@ class _ReceiptScreenState extends State<ReceiptScreen> {
         ),
       ),
       floatingActionButton: FloatingActionButton(
-        child: const Icon(Icons.add),
+        child: const Icon(Icons.add, color: AppColors.backgroundLight,),
+        backgroundColor: AppColors.videoColor4,
         onPressed: () {
-          // Navigator.push(
-          //   context,
-          //   MaterialPageRoute(builder: (context) => OutputScreen()),
-          // );
         },
       ),
     );
   }
 
-  Widget _buildPaymentHistoryItem(String grade, String amount) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Row(
+  Widget _buildExpenseHistoryItem(String grade, String amount, String name) {
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => PaymentReceiptDetailScreen(
+              grade: grade,
+              amount: amount,
+              name: name,
+            ),
+          ),
+        );
+      },
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 8.0),
+        decoration: BoxDecoration(
+          border: Border.all(color: Colors.grey.shade300),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 8.0),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              SvgPicture.asset('assets/icons/profile/payment_icon.svg'),
-              const SizedBox(width: 8),
-              Text(grade),
+              Row(
+                children: [
+                  SvgPicture.asset('assets/icons/profile/payment_icon.svg'),
+                  const SizedBox(width: 8),
+                  Text(name, style: AppTextStyles.normal600(fontSize: 18, color: AppColors.backgroundDark),),
+                ],
+              ),
+              Text(
+                amount,
+                style: AppTextStyles.normal700(fontSize: 18, color: const Color.fromRGBO(47, 85, 221, 1))
+              ),
             ],
           ),
-          Text(
-            amount,
-            style: const TextStyle(fontWeight: FontWeight.w600),
-          ),
-        ],
+        ),
       ),
     );
   }

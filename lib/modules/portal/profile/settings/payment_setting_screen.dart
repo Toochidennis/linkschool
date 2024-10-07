@@ -5,8 +5,8 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
-import 'package:linkschool/modules/portal/profile/account_setting_screen.dart';
-import 'package:linkschool/modules/portal/profile/fee_setting_screen.dart';
+import 'package:linkschool/modules/portal/profile/settings/account_setting_screen.dart';
+import 'package:linkschool/modules/portal/profile/settings/fee_setting_screen.dart';
 
 class PaymentSettingScreen extends StatefulWidget {
   const PaymentSettingScreen({super.key});

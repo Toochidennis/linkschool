@@ -6,7 +6,9 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
-import 'package:linkschool/modules/portal/profile/payment_setting_screen.dart';
+import 'package:linkschool/modules/portal/profile/expenditure/expenditure_screen.dart';
+import 'package:linkschool/modules/portal/profile/settings/payment_setting_screen.dart';
+import 'package:linkschool/modules/portal/profile/receipt/receipt_screen.dart';
 
 class PaymentDashboardScreen extends StatefulWidget {
   @override
@@ -165,13 +167,30 @@ class _PaymentDashboardScreenState extends State<PaymentDashboardScreen> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         _buildRecordContainer(
-                            'Generate Receipt',
-                            'assets/icons/e_learning/receipt_icon.svg',
-                            Color.fromRGBO(45, 99, 255, 1)),
+                          'Generate Receipt',
+                          'assets/icons/e_learning/receipt_icon.svg',
+                          Color.fromRGBO(45, 99, 255, 1),
+                          () {
+                            // Navigate to Generate Receipt Screen
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) => ReceiptScreen()),
+                            );
+                          },
+                        ),
                         _buildRecordContainer(
-                            'Expenditure',
-                            'assets/icons/e_learning/expenditure_icon.svg',
-                            Color.fromRGBO(30, 136, 229, 1)),
+                          'Expenditure',
+                          'assets/icons/e_learning/expenditure_icon.svg',
+                          Color.fromRGBO(30, 136, 229, 1),
+                          () {
+                            // Navigate to Expenditure Screen
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(builder: (context) => ExpenditureScreen()),
+                            );
+                          },
+                        )
                       ],
                     ),
                     const SizedBox(height: 24),
@@ -242,23 +261,26 @@ class _PaymentDashboardScreenState extends State<PaymentDashboardScreen> {
     );
   }
 
-  Widget _buildRecordContainer(
-      String title, String iconPath, Color backgroundColor) {
-    return Container(
-      width: 158,
-      height: 60,
-      decoration: BoxDecoration(
-        color: backgroundColor,
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          SvgPicture.asset(iconPath,
-              width: 24, height: 24, color: Colors.white),
-          const SizedBox(width: 8),
-          Text(title, style: const TextStyle(color: Colors.white)),
-        ],
+  Widget _buildRecordContainer(String title, String iconPath,
+      Color backgroundColor, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap, // Make the container clickable
+      child: Container(
+        width: 158,
+        height: 60,
+        decoration: BoxDecoration(
+          color: backgroundColor,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            SvgPicture.asset(iconPath,
+                width: 24, height: 24, color: Colors.white),
+            const SizedBox(width: 8),
+            Text(title, style: const TextStyle(color: Colors.white)),
+          ],
+        ),
       ),
     );
   }
