@@ -16,7 +16,7 @@ class ReceiptScreen extends StatefulWidget {
 }
 
 class _ReceiptScreenState extends State<ReceiptScreen>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   late double opacity;
   bool _isOverlayVisible = false;
   late TabController _tabController;
@@ -28,16 +28,40 @@ class _ReceiptScreenState extends State<ReceiptScreen>
   DateTime _fromDate = DateTime.now();
   DateTime _toDate = DateTime.now();
 
+  bool _isExpanded = false;
+  late AnimationController _animationController;
+  late Animation<double> _animation;
+
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
+    _animationController = AnimationController(
+      duration: const Duration(milliseconds: 300),
+      vsync: this,
+    );
+    _animation = CurvedAnimation(
+      parent: _animationController,
+      curve: Curves.easeInOut,
+    );
   }
 
   @override
   void dispose() {
     _tabController.dispose();
+    _animationController.dispose();
     super.dispose();
+  }
+
+  void _toggleExpanded() {
+    setState(() {
+      _isExpanded = !_isExpanded;
+      if (_isExpanded) {
+        _animationController.forward();
+      } else {
+        _animationController.reverse();
+      }
+    });
   }
 
   @override
@@ -94,23 +118,16 @@ class _ReceiptScreenState extends State<ReceiptScreen>
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Row(
+                      const Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          GestureDetector(
-                            onTap: () {
-                              setState(() {
-                                _isOverlayVisible = true;
-                              });
-                            },
-                            child: const Row(
-                              children: [
-                                Text('February 2023'),
-                                Icon(Icons.arrow_drop_down),
-                              ],
-                            ),
+                          Row(
+                            children: [
+                              Text('February 2023'),
+                              Icon(Icons.arrow_drop_down),
+                            ],
                           ),
-                          const Row(
+                          Row(
                             children: [
                               Text('2023/2024 3rd Term'),
                               Icon(Icons.arrow_drop_down),
@@ -255,80 +272,278 @@ class _ReceiptScreenState extends State<ReceiptScreen>
               ),
             ),
           ),
-          if (_isOverlayVisible) _buildCustomOverlay(),
+          if (_isExpanded) _buildSmallFloatingButtons(),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
-        child: const Icon(
-          Icons.add,
-          color: AppColors.backgroundLight,
+      floatingActionButton: _buildAnimatedFAB(),
+    );
+  }
+
+  void _showAddReceiptBottomSheet() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (BuildContext context) {
+        return Container(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(context).viewInsets.bottom,
+            left: 16,
+            right: 16,
+            top: 16,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Add Receipt',
+                    style: AppTextStyles.normal600(
+                        fontSize: 20, color: Color.fromRGBO(47, 85, 221, 1)),
+                  ),
+                  IconButton(
+                    icon: SvgPicture.asset(
+                        'assets/icons/profile/cancel_receipt.svg'),
+                    color: AppColors.bgGray,
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              _buildInputField('Student name', 'Student name'),
+              const SizedBox(height: 16),
+              _buildInputField('Amount', 'Amount'),
+              const SizedBox(height: 16),
+              _buildInputField('Reference', 'Reference'),
+              const SizedBox(height: 16),
+              _buildDateInputField('Date'),
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () {
+                    Navigator.pop(context);
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color.fromRGBO(47, 85, 221, 1),
+                    minimumSize: const Size(double.infinity, 50),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10.0)),
+                  ),
+                  child: Text(
+                    'Record payment',
+                    style: AppTextStyles.normal500(
+                        fontSize: 18, color: AppColors.backgroundLight),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildInputField(String label, String hint) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label,
+            style: AppTextStyles.normal500(
+                fontSize: 16.0, color: AppColors.backgroundDark)),
+        const SizedBox(height: 8),
+        TextField(
+          decoration: InputDecoration(
+            hintText: hint,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+          ),
         ),
-        backgroundColor: AppColors.videoColor4,
-        onPressed: () {},
+      ],
+    );
+  }
+
+  Widget _buildDateInputField(String label) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label,
+            style: AppTextStyles.normal500(
+                fontSize: 16, color: AppColors.backgroundDark)),
+        const SizedBox(height: 8),
+        GestureDetector(
+          onTap: () async {
+            final DateTime? picked = await showDatePicker(
+              context: context,
+              initialDate: DateTime.now(),
+              firstDate: DateTime(2000),
+              lastDate: DateTime(2025),
+            );
+            if (picked != null) {
+              // Handle date selection
+            }
+          },
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 15),
+            decoration: BoxDecoration(
+              border: Border.all(color: Colors.grey),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text('Select date'),
+                SvgPicture.asset('assets/icons/profile/calendar_icon.svg'),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildAnimatedFAB() {
+    return FloatingActionButton(
+      child: AnimatedCrossFade(
+        firstChild: SvgPicture.asset('assets/icons/profile/add_icon.svg'),
+        secondChild: SvgPicture.asset('assets/icons/profile/inverted_add_icon.svg'),
+        crossFadeState:
+            _isExpanded ? CrossFadeState.showSecond : CrossFadeState.showFirst,
+        duration: const Duration(milliseconds: 300),
       ),
+      backgroundColor: AppColors.videoColor4,
+      onPressed: _toggleExpanded,
+    );
+  }
+
+  Widget _buildSmallFloatingButtons() {
+    return Positioned(
+      bottom: 80,
+      right: 16,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Tooltip(
+            message: 'Setup report',
+            preferBelow: false,
+            verticalOffset: 20,
+            child: FloatingActionButton(
+              mini: true,
+              onPressed: () {
+                showModalBottomSheet(
+                  context: context,
+                  isScrollControlled: true,
+                  backgroundColor: Colors.transparent,
+                  builder: (BuildContext context) {
+                    return _buildCustomOverlay();
+                  },
+                );
+              },
+              child: SvgPicture.asset('assets/icons/profile/setup_report.svg'),
+              backgroundColor: Color.fromRGBO(47, 85, 221, 1),
+            ),
+          ),
+          const SizedBox(height: 16),
+          Tooltip(
+            message: 'Add receipt',
+            preferBelow: false,
+            verticalOffset: 20,
+            child: FloatingActionButton(
+              mini: true,
+              onPressed: _showAddReceiptBottomSheet,
+              child: SvgPicture.asset('assets/icons/profile/add_receipt.svg'),
+              backgroundColor: Color.fromRGBO(47, 85, 221, 1),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSmallFloatingButton({
+    required IconData icon,
+    required VoidCallback onPressed,
+  }) {
+    return FloatingActionButton(
+      mini: true,
+      child: Icon(icon, color: AppColors.backgroundLight),
+      backgroundColor: Color.fromRGBO(47, 85, 221, 1),
+      onPressed: onPressed,
     );
   }
 
   Widget _buildCustomOverlay() {
     return GestureDetector(
-      onTap: () {
-        setState(() {
-          _isOverlayVisible = false;
-        });
-      },
+      onTap: () => Navigator.pop(context),
       child: Container(
         color: Colors.black54,
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.end,
-          children: [
-            GestureDetector(
-              onTap: () {},
-              child: Container(
-                height: MediaQuery.of(context).size.height * 0.4,
-                decoration: const BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.only(
-                    topLeft: Radius.circular(20),
-                    topRight: Radius.circular(20),
+        child: GestureDetector(
+          onTap:
+              () {}, // Prevents taps from propagating to the outer GestureDetector
+          child: Container(
+            height: MediaQuery.of(context).size.height * 0.5,
+            margin: EdgeInsets.only(
+              top: MediaQuery.of(context).size.height * 0.5,
+            ),
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+            ),
+            child: DefaultTabController(
+              length: 3,
+              child: Column(
+                children: [
+                  Container(
+                    decoration: BoxDecoration(
+                      color: Colors.grey[200],
+                      borderRadius:
+                          const BorderRadius.vertical(top: Radius.circular(20)),
+                    ),
+                    child: TabBar(
+                      controller: _tabController,
+                      onTap: (index) {
+                        setState(() {
+                          _currentTabIndex = index;
+                        });
+                      },
+                      tabs: const [
+                        Tab(text: 'Date Range'),
+                        Tab(text: 'Grouping'),
+                        Tab(text: 'Filter'),
+                      ],
+                    ),
                   ),
-                ),
-                child: DefaultTabController(
-                  length: 3,
-                  child: Column(
-                    children: [
-                      _buildTabBar(),
-                      Expanded(
-                        child: TabBarView(
-                          controller: _tabController,
-                          children: [
-                            _buildDateRangeTab(),
-                            _buildGroupingTab(),
-                            _buildFilterTab(),
-                          ],
-                        ),
-                      ),
-                    ],
+                  Expanded(
+                    child: TabBarView(
+                      controller: _tabController,
+                      children: [
+                        _buildDateRangeTab(),
+                        _buildGroupingTab(),
+                        _buildFilterTab(),
+                      ],
+                    ),
                   ),
-                ),
+                ],
               ),
             ),
-          ],
+          ),
         ),
       ),
     );
   }
 
   Widget _buildTabBar() {
-    return Container(
-      color: Colors.grey[200],
-      child: TabBar(
-        controller: _tabController,
-        tabs: [
-          const Tab(text: 'Date Range'),
-          const Tab(text: 'Grouping'),
-          const Tab(text: 'Filter'),
-        ],
-      ),
+    return TabBar(
+      controller: _tabController,
+      tabs: const [
+        Tab(text: 'Date Range'),
+        Tab(text: 'Grouping'),
+        Tab(text: 'Filter'),
+      ],
     );
   }
 
@@ -426,7 +641,7 @@ class _ReceiptScreenState extends State<ReceiptScreen>
   }
 
   Widget _buildDateInput(
-      String label, DateTime initialDate, Function(DateTime) onDateSelected) {
+      String label, DateTime selectedDate, Function(DateTime) onDateSelected) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -436,12 +651,14 @@ class _ReceiptScreenState extends State<ReceiptScreen>
           onTap: () async {
             final DateTime? picked = await showDatePicker(
               context: context,
-              initialDate: initialDate,
+              initialDate: selectedDate,
               firstDate: DateTime(2000),
               lastDate: DateTime(2025),
             );
             if (picked != null) {
-              onDateSelected(picked);
+              setState(() {
+                onDateSelected(picked);
+              });
             }
           },
           child: Container(
@@ -454,10 +671,10 @@ class _ReceiptScreenState extends State<ReceiptScreen>
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  '${initialDate.day}-${initialDate.month}-${initialDate.year}',
+                  '${selectedDate.day}-${selectedDate.month}-${selectedDate.year}',
                   style: const TextStyle(fontSize: 16),
                 ),
-                SvgPicture.asset('assets/icons/profile/calender_icon.svg'),
+                SvgPicture.asset('assets/icons/profile/calendar_icon.svg'),
               ],
             ),
           ),
@@ -481,22 +698,22 @@ class _ReceiptScreenState extends State<ReceiptScreen>
           _buildGroupingOption('Vendor'),
           _buildGroupingOption('Account'),
           const SizedBox(height: 20),
-        ElevatedButton(
-          onPressed: () {
-            // Generate report logic
-          },
-          style: ElevatedButton.styleFrom(
-            backgroundColor: const Color.fromRGBO(47, 85, 221, 1),
-            minimumSize: const Size(double.infinity, 50),
+          ElevatedButton(
+            onPressed: () {
+              // Generate report logic
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color.fromRGBO(47, 85, 221, 1),
+              minimumSize: const Size(double.infinity, 50),
               shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(10.0)),
+            ),
+            child: Text(
+              'Generate Report',
+              style: AppTextStyles.normal500(
+                  fontSize: 18, color: AppColors.backgroundLight),
+            ),
           ),
-          child: Text(
-            'Generate Report',
-            style: AppTextStyles.normal500(
-                fontSize: 18, color: AppColors.backgroundLight),
-          ),
-        ),
         ],
       ),
     );
@@ -508,7 +725,7 @@ class _ReceiptScreenState extends State<ReceiptScreen>
       height: 42,
       margin: const EdgeInsets.only(bottom: 10),
       decoration: BoxDecoration(
-        color: Color.fromRGBO(229, 229, 229, 1),
+        color: const Color.fromRGBO(229, 229, 229, 1),
         borderRadius: BorderRadius.circular(6),
       ),
       child: Center(
