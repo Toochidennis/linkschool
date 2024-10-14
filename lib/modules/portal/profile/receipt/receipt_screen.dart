@@ -1,4 +1,4 @@
-// ignore_for_file: prefer_const_literals_to_create_immutables
+// ignore_for_file: prefer_const_literals_to_create_immutables, unused_element
 
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
@@ -301,7 +301,7 @@ class _ReceiptScreenState extends State<ReceiptScreen>
                   Text(
                     'Add Receipt',
                     style: AppTextStyles.normal600(
-                        fontSize: 20, color: Color.fromRGBO(47, 85, 221, 1)),
+                        fontSize: 20, color: const Color.fromRGBO(47, 85, 221, 1)),
                   ),
                   IconButton(
                     icon: SvgPicture.asset(
@@ -408,6 +408,8 @@ class _ReceiptScreenState extends State<ReceiptScreen>
 
   Widget _buildAnimatedFAB() {
     return FloatingActionButton(
+      backgroundColor: AppColors.videoColor4,
+      onPressed: _toggleExpanded,
       child: AnimatedCrossFade(
         firstChild: SvgPicture.asset('assets/icons/profile/add_icon.svg'),
         secondChild: SvgPicture.asset('assets/icons/profile/inverted_add_icon.svg'),
@@ -415,8 +417,6 @@ class _ReceiptScreenState extends State<ReceiptScreen>
             _isExpanded ? CrossFadeState.showSecond : CrossFadeState.showFirst,
         duration: const Duration(milliseconds: 300),
       ),
-      backgroundColor: AppColors.videoColor4,
-      onPressed: _toggleExpanded,
     );
   }
 
@@ -443,8 +443,8 @@ class _ReceiptScreenState extends State<ReceiptScreen>
                   },
                 );
               },
+              backgroundColor: const Color.fromRGBO(47, 85, 221, 1),
               child: SvgPicture.asset('assets/icons/profile/setup_report.svg'),
-              backgroundColor: Color.fromRGBO(47, 85, 221, 1),
             ),
           ),
           const SizedBox(height: 16),
@@ -455,8 +455,8 @@ class _ReceiptScreenState extends State<ReceiptScreen>
             child: FloatingActionButton(
               mini: true,
               onPressed: _showAddReceiptBottomSheet,
+              backgroundColor: const Color.fromRGBO(47, 85, 221, 1),
               child: SvgPicture.asset('assets/icons/profile/add_receipt.svg'),
-              backgroundColor: Color.fromRGBO(47, 85, 221, 1),
             ),
           ),
         ],
@@ -470,9 +470,9 @@ class _ReceiptScreenState extends State<ReceiptScreen>
   }) {
     return FloatingActionButton(
       mini: true,
-      child: Icon(icon, color: AppColors.backgroundLight),
-      backgroundColor: Color.fromRGBO(47, 85, 221, 1),
+      backgroundColor: const Color.fromRGBO(47, 85, 221, 1),
       onPressed: onPressed,
+      child: Icon(icon, color: AppColors.backgroundLight),
     );
   }
 

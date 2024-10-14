@@ -181,5 +181,6 @@ class AppColors {
 // payment screens color
   static const Color paymentCtnColor1 = Color.fromRGBO(110, 103, 174, 1);
   static const Color paymentBtnColor1 = Color.fromRGBO(45, 99, 255, 1);
+  static const Color paymentTxtColor1 = Color.fromRGBO(47, 85, 221, 1);
    
 }

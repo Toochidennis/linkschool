@@ -84,8 +84,8 @@ class _EmptySyllabusScreenState extends State<EmptySyllabusScreen> {
       mainAxisAlignment: MainAxisAlignment.center,
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        Text('No syllabus have been created'),
-        SizedBox(height: 15),
+        const Text('No syllabus have been created'),
+        const SizedBox(height: 15),
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           crossAxisAlignment: CrossAxisAlignment.center,
@@ -98,7 +98,7 @@ class _EmptySyllabusScreenState extends State<EmptySyllabusScreen> {
                 fontSize: 16,
                 color: AppColors.backgroundLight,
               ),
-              padding: EdgeInsets.all(12),
+              padding: const EdgeInsets.all(12),
             )
           ],
         )
@@ -128,7 +128,7 @@ class _EmptySyllabusScreenState extends State<EmptySyllabusScreen> {
     final result = await Navigator.of(context).push(
       MaterialPageRoute(
         fullscreenDialog: true,
-        builder: (BuildContext context) => CreateSyllabusScreen(),
+        builder: (BuildContext context) => const CreateSyllabusScreen(),
       ),
     );
     if (result != null) {
