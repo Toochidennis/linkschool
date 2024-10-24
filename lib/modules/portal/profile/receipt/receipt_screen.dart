@@ -6,7 +6,7 @@ import 'package:flutter_svg/svg.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
-import 'package:linkschool/modules/portal/profile/receipt/reciept_payment_detail.dart';
+import 'package:linkschool/modules/portal/profile/receipt/payment_received_screen.dart';
 
 class ReceiptScreen extends StatefulWidget {
   const ReceiptScreen({super.key});
@@ -817,18 +817,20 @@ class _ReceiptScreenState extends State<ReceiptScreen>
 
   Widget _buildPaymentHistoryItem(String grade, String amount, String name) {
     return GestureDetector(
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => PaymentReceiptDetailScreen(
-              grade: grade,
-              amount: amount,
-              name: name,
-            ),
-          ),
-        );
-      },
+      onTap: () {},
+      
+      // () {
+      //   Navigator.push(
+      //     context,
+      //     MaterialPageRoute(
+      //       builder: (context) => PaymentReceiptDetailScreen(
+      //         grade: grade,
+      //         amount: amount,
+      //         name: name,
+      //       ),
+      //     ),
+      //   );
+      // },
       child: Container(
         margin: const EdgeInsets.only(bottom: 8.0),
         decoration: BoxDecoration(

@@ -6,7 +6,7 @@ import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/portal/profile/expenditure/expense_history.dart';
 import 'package:linkschool/modules/portal/profile/expenditure/vendor/expense_select_vendor.dart';
-import 'package:linkschool/modules/portal/profile/receipt/reciept_payment_detail.dart';
+import 'package:linkschool/modules/portal/profile/receipt/payment_received_screen.dart';
 
 class ExpenditureScreen extends StatefulWidget {
   const ExpenditureScreen({super.key});

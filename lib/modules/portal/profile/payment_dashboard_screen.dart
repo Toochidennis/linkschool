@@ -1,5 +1,4 @@
 // ignore_for_file: deprecated_member_use
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -7,6 +6,8 @@ import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/portal/profile/expenditure/expenditure_screen.dart';
+import 'package:linkschool/modules/portal/profile/receipt/payment_outstanding_screen.dart';
+import 'package:linkschool/modules/portal/profile/receipt/payment_received_screen.dart';
 import 'package:linkschool/modules/portal/profile/settings/payment_setting_screen.dart';
 import 'package:linkschool/modules/portal/profile/receipt/receipt_screen.dart';
 
@@ -123,34 +124,49 @@ class _PaymentDashboardScreenState extends State<PaymentDashboardScreen> {
                               ),
                             ),
                             const Expanded(
-                              child: Center(
-                                child: Column(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Text('Expected Revenue',
-                                        style: TextStyle(color: Colors.white)),
-                                    Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.center,
-                                      children: [
-                                        NairaSvgIcon(),
-                                        Text('234,790.00',
-                                            style: TextStyle(
-                                                color: Colors.white,
-                                                fontSize: 24,
-                                                fontWeight: FontWeight.bold)),
-                                      ],
-                                    ),
-                                  ],
-                                ),
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                crossAxisAlignment: CrossAxisAlignment.start, // Align text to the left
+                                children: [
+                                  Text('Expected Revenue',
+                                      style: TextStyle(color: Colors.white)),
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.start, // Align to the left
+                                    children: [
+                                      NairaSvgIcon(),
+                                      Text('234,790.00',
+                                          style: TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 24,
+                                              fontWeight: FontWeight.bold)),
+                                    ],
+                                  ),
+                                ],
                               ),
                             ),
                             Row(
                               mainAxisAlignment: MainAxisAlignment
                                   .spaceBetween, // Changed to space between
                               children: [
-                                _buildInfoContainer('Paid', '234,790.00'),
-                                _buildInfoContainer('Pending', '4,000.00'),
+                                _buildInfoContainer('Received', '234,790.00',
+                                    () {
+                                  Navigator.pushReplacement(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) =>
+                                          PaymentReceivedScreen(),
+                                    ),
+                                  );
+                                }),
+                                _buildInfoContainer('Outstanding', '4,000.00', () {
+                                  Navigator.pushReplacement(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) =>
+                                          PaymentOutstandingScreen(),
+                                    ),
+                                  );  
+                                }),
                               ],
                             ),
                           ],
@@ -167,7 +183,7 @@ class _PaymentDashboardScreenState extends State<PaymentDashboardScreen> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         _buildRecordContainer(
-                          'Generate Receipt',
+                          'Receipt',
                           'assets/icons/e_learning/receipt_icon.svg',
                           Color.fromRGBO(45, 99, 255, 1),
                           () {
@@ -187,7 +203,8 @@ class _PaymentDashboardScreenState extends State<PaymentDashboardScreen> {
                             // Navigate to Expenditure Screen
                             Navigator.push(
                               context,
-                              MaterialPageRoute(builder: (context) => ExpenditureScreen()),
+                              MaterialPageRoute(
+                                  builder: (context) => ExpenditureScreen()),
                             );
                           },
                         )
@@ -230,41 +247,54 @@ class _PaymentDashboardScreenState extends State<PaymentDashboardScreen> {
     );
   }
 
-  Widget _buildInfoContainer(String title, String value) {
-    return Container(
-      width: 131,
-      height: 55,
-      decoration: BoxDecoration(
-        color: AppColors.paymentCtnColor1,
-        border: Border.all(color: Colors.white),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Column(
+  Widget _buildInfoContainer(String title, String value, VoidCallback onTap) {
+    bool isOutstanding = title == 'Outstanding';
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 131,
+        height: 55,
+        decoration: BoxDecoration(
+          color: AppColors.paymentCtnColor1,
+          border: Border.all(color: Colors.white),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Text(title,
-              style: AppTextStyles.normal600(
-                  fontSize: 12, color: AppColors.assessmentColor1)),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const NairaSvgIcon(),
-              Text(value,
-                  style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold)),
-            ],
-          ),
-        ],
+        crossAxisAlignment: isOutstanding ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8.0),
+              child: Text(title,
+                  style: AppTextStyles.normal600(
+                      fontSize: 12, color: AppColors.assessmentColor1)),
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8.0),
+              child: Row(
+                mainAxisAlignment: title == 'Received' 
+                    ? MainAxisAlignment.start  // Left align for 'Received'
+                    : MainAxisAlignment.end,   // Right align for 'Outstanding'
+                children: [
+                  const NairaSvgIcon(),
+                  Text(value,
+                      style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold)),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildRecordContainer(String title, String iconPath,
-      Color backgroundColor, VoidCallback onTap) {
+  Widget _buildRecordContainer(
+      String title, String iconPath, Color backgroundColor, VoidCallback onTap) {
     return GestureDetector(
-      onTap: onTap, // Make the container clickable
+      onTap: onTap,
       child: Container(
         width: 158,
         height: 60,
@@ -272,12 +302,12 @@ class _PaymentDashboardScreenState extends State<PaymentDashboardScreen> {
           color: backgroundColor,
           borderRadius: BorderRadius.circular(8),
         ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center, // Center content vertically
           children: [
             SvgPicture.asset(iconPath,
                 width: 24, height: 24, color: Colors.white),
-            const SizedBox(width: 8),
+                const SizedBox(height: 4),
             Text(title, style: const TextStyle(color: Colors.white)),
           ],
         ),
@@ -316,20 +346,24 @@ class _PaymentDashboardScreenState extends State<PaymentDashboardScreen> {
                     Text(name,
                         style: const TextStyle(fontWeight: FontWeight.bold)),
                     Text(time,
-                        style:
-                            const TextStyle(color: Colors.grey, fontSize: 12)),
+                        style: const TextStyle(color: Colors.grey, fontSize: 12)),
                   ],
                 ),
               ),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  Text(
-                    '${amount >= 0 ? '+' : '-'} ₦${amount.abs().toStringAsFixed(2)}',
-                    style: TextStyle(
-                      color: amount >= 0 ? Colors.green : Colors.red,
-                      fontWeight: FontWeight.bold,
-                    ),
+                  Row(
+                    children: [
+                      const NairaSvgIcon(), // Added Naira icon
+                      Text(
+                        '${amount >= 0 ? '+' : '-'} ${amount.abs().toStringAsFixed(2)}',
+                        style: TextStyle(
+                          color: amount >= 0 ? Colors.green : Colors.red,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
                   ),
                   Text(grade,
                       style: const TextStyle(color: Colors.blue, fontSize: 12)),
@@ -357,3 +391,143 @@ class NairaSvgIcon extends StatelessWidget {
     );
   }
 }
+
+
+
+                            // const Expanded(
+                            //   child: Column(
+                            //     mainAxisSize: MainAxisSize.min,
+                            //     crossAxisAlignment: CrossAxisAlignment.start,
+                            //     children: [
+                            //       Text('Expected Revenue',
+                            //           style: TextStyle(color: Colors.white)),
+                            //       Row(
+                            //         mainAxisAlignment: MainAxisAlignment.start,
+                            //         children: [
+                            //           NairaSvgIcon(),
+                            //           Text('234,790.00',
+                            //               style: TextStyle(
+                            //                   color: Colors.white,
+                            //                   fontSize: 24,
+                            //                   fontWeight: FontWeight.bold)),
+                            //         ],
+                            //       ),
+                            //     ],
+                            //   ),
+                            // ),
+
+
+            // Row(
+            //   mainAxisAlignment: MainAxisAlignment.center,
+            //   children: [
+            //     const NairaSvgIcon(),
+            //     Text(value,
+            //         style: const TextStyle(
+            //             color: Colors.white,
+            //             fontSize: 16,
+            //             fontWeight: FontWeight.bold)),
+            //   ],
+            // ),
+
+
+
+  // Widget _buildRecordContainer(String title, String iconPath,
+  //     Color backgroundColor, VoidCallback onTap) {
+  //   return GestureDetector(
+  //     onTap: onTap, // To Make the container clickable
+  //     child: Container(
+  //         width: 158,
+  //         height: 60,
+  //         decoration: BoxDecoration(
+  //           color: backgroundColor,
+  //           borderRadius: BorderRadius.circular(8),
+  //         ),
+  //         child: Column(
+  //           children: [
+  //             Row(
+  //               mainAxisAlignment: MainAxisAlignment.center,
+  //               children: [
+  //                 Text(title, style: const TextStyle(color: Colors.white)),
+  //               ],
+  //             ),
+  //             Row(
+  //               mainAxisAlignment: MainAxisAlignment.center,
+  //               children: [
+  //                 SvgPicture.asset(iconPath,
+  //                     width: 24, height: 24, color: Colors.white),
+  //                 const SizedBox(width: 8),
+  //               ],
+  //             ),
+  //           ],
+  //         )
+
+  //         // Row(
+  //         //   mainAxisAlignment: MainAxisAlignment.center,
+  //         //   children: [
+  //         //     SvgPicture.asset(iconPath,
+  //         //         width: 24, height: 24, color: Colors.white),
+  //         //     const SizedBox(width: 8),
+  //         //     Text(title, style: const TextStyle(color: Colors.white)),
+  //         //   ],
+  //         // ),
+  //         ),
+  //   );
+  // }
+
+  // Widget _buildTransactionItem(
+  //     String name, String time, double amount, String grade) {
+  //   return Column(
+  //     children: [
+  //       Padding(
+  //         padding: const EdgeInsets.symmetric(vertical: 8.0),
+  //         child: Row(
+  //           children: [
+  //             Container(
+  //               width: 40,
+  //               height: 40,
+  //               decoration: const BoxDecoration(
+  //                 color: AppColors.paymentBtnColor1,
+  //                 shape: BoxShape.circle,
+  //               ),
+  //               child: Center(
+  //                 child: SvgPicture.asset(
+  //                     'assets/icons/e_learning/receipt_list_icon.svg',
+  //                     width: 24,
+  //                     height: 24,
+  //                     color: Colors.white),
+  //               ),
+  //             ),
+  //             const SizedBox(width: 16),
+  //             Expanded(
+  //               child: Column(
+  //                 crossAxisAlignment: CrossAxisAlignment.start,
+  //                 children: [
+  //                   Text(name,
+  //                       style: const TextStyle(fontWeight: FontWeight.bold)),
+  //                   Text(time,
+  //                       style:
+  //                           const TextStyle(color: Colors.grey, fontSize: 12)),
+  //                 ],
+  //               ),
+  //             ),
+  //             Column(
+  //               crossAxisAlignment: CrossAxisAlignment.end,
+  //               children: [
+  //                 Text(
+  //                   '${amount >= 0 ? '+' : '-'} ₦${amount.abs().toStringAsFixed(2)}',
+  //                   style: TextStyle(
+  //                     color: amount >= 0 ? Colors.green : Colors.red,
+  //                     fontWeight: FontWeight.bold,
+  //                   ),
+  //                 ),
+  //                 Text(grade,
+  //                     style: const TextStyle(color: Colors.blue, fontSize: 12)),
+  //               ],
+  //             ),
+  //           ],
+  //         ),
+  //       ),
+  //       const Divider(),
+  //     ],
+  //   );
+  // }
