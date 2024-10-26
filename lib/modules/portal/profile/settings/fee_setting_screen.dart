@@ -31,7 +31,7 @@ class _FeeSettingScreenState extends State<FeeSettingScreen> {
           },
           icon: Image.asset(
             'assets/icons/arrow_back.png',
-            color: AppColors.primaryLight,
+            color: AppColors.eLearningBtnColor1,
             width: 34.0,
             height: 34.0,
           ),
@@ -40,7 +40,7 @@ class _FeeSettingScreenState extends State<FeeSettingScreen> {
           'Fee Settings',
           style: AppTextStyles.normal600(
             fontSize: 24.0,
-            color: AppColors.primaryLight,
+            color: AppColors.eLearningBtnColor1,
           ),
         ),
         backgroundColor: AppColors.backgroundLight,
@@ -85,7 +85,7 @@ class _FeeSettingScreenState extends State<FeeSettingScreen> {
           size: 24,
         ),
         onPressed: () => _showAddFeeOverlay(context),
-        backgroundColor: AppColors.primaryLight,
+        backgroundColor: AppColors.videoColor4,
       ),
     );
   }
@@ -99,7 +99,7 @@ class _FeeSettingScreenState extends State<FeeSettingScreen> {
       ),
       child: ListTile(
         leading: CircleAvatar(
-          backgroundColor: AppColors.primaryLight,
+          backgroundColor: AppColors.eLearningBtnColor1,
           child: SvgPicture.asset('assets/icons/profile/fee.svg',
               color: Colors.white),
         ),
@@ -124,7 +124,7 @@ class _FeeSettingScreenState extends State<FeeSettingScreen> {
             children: [
               Text('Add Fee',
                   style: AppTextStyles.normal600(
-                      fontSize: 18, color: AppColors.primaryLight)),
+                      fontSize: 18, color: AppColors.eLearningBtnColor1)),
               SizedBox(height: 16),
               TextField(
                 decoration: InputDecoration(

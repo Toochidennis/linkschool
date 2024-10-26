@@ -3,23 +3,22 @@ import 'package:flutter_svg/svg.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
+import 'package:linkschool/modules/common/widgets/portal/profile/naira_icon.dart';
 import 'package:linkschool/modules/model/profile/student_model.dart';
 import 'package:linkschool/modules/portal/profile/receipt/student_payment_detail_screen.dart';
 
-
 class PaymentOutstandingScreen extends StatefulWidget {
-
-
   const PaymentOutstandingScreen({
     super.key,
   });
 
   @override
-  State<PaymentOutstandingScreen> createState() => _PaymentOutstandingScreenState();
+  State<PaymentOutstandingScreen> createState() =>
+      _PaymentOutstandingScreenState();
 }
 
 class _PaymentOutstandingScreenState extends State<PaymentOutstandingScreen> {
-    late double opacity;
+  late double opacity;
   String? selectedClass;
   String searchQuery = '';
 
@@ -37,11 +36,13 @@ class _PaymentOutstandingScreenState extends State<PaymentOutstandingScreen> {
     StudentPayment(name: "Richard", grade: "Basic 1", amount: "₦48,750"),
   ];
 
- // Filtered list based on search and class filter
+  // Filtered list based on search and class filter
   List<StudentPayment> get filteredStudents {
     return dummyStudents.where((student) {
-      bool matchesSearch = student.name.toLowerCase().contains(searchQuery.toLowerCase());
-      bool matchesClass = selectedClass == null || student.grade.startsWith(selectedClass!);
+      bool matchesSearch =
+          student.name.toLowerCase().contains(searchQuery.toLowerCase());
+      bool matchesClass =
+          selectedClass == null || student.grade.startsWith(selectedClass!);
       return matchesSearch && matchesClass;
     }).toList();
   }
@@ -64,7 +65,7 @@ class _PaymentOutstandingScreenState extends State<PaymentOutstandingScreen> {
           ),
         ),
         title: Text(
-          'Receive',
+          'Outstanding',
           style: AppTextStyles.normal600(
             fontSize: 24.0,
             color: AppColors.primaryLight,
@@ -98,8 +99,7 @@ class _PaymentOutstandingScreenState extends State<PaymentOutstandingScreen> {
                 children: [
                   DropdownButton<String>(
                     hint: const Text('Class'),
-                    items: ['Basic', 'JSS', 'SSS']
-                        .map((String value) {
+                    items: ['Basic', 'JSS', 'SSS'].map((String value) {
                       return DropdownMenuItem<String>(
                         value: value,
                         child: Text(value),
@@ -130,7 +130,7 @@ class _PaymentOutstandingScreenState extends State<PaymentOutstandingScreen> {
                 },
               ),
               const SizedBox(height: 16),
-             Expanded(
+              Expanded(
                 child: ListView.builder(
                   itemCount: filteredStudents.length,
                   itemBuilder: (context, index) {
@@ -146,8 +146,10 @@ class _PaymentOutstandingScreenState extends State<PaymentOutstandingScreen> {
     );
   }
 
-
   Widget _buildStudentItem(BuildContext context, StudentPayment student) {
+    // Extract the numeric part of the amount string (remove the ₦ symbol)
+    String amountValue = student.amount.replaceAll('₦', '');
+
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       decoration: BoxDecoration(
@@ -170,130 +172,30 @@ class _PaymentOutstandingScreenState extends State<PaymentOutstandingScreen> {
             color: Colors.grey,
           ),
         ),
-        trailing: Text(
-          student.amount,
-          style: AppTextStyles.normal700(
-            fontSize: 18,
-            color: AppColors.paymentTxtColor3,
-          ),
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            NairaSvgIcon(color: AppColors.paymentTxtColor3),
+            const SizedBox(width: 4),
+            Text(
+              amountValue,
+              style: AppTextStyles.normal700(
+                fontSize: 18,
+                color: AppColors.paymentTxtColor3,
+              ),
+            ),
+          ],
         ),
         onTap: () {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => StudentPaymentDetailsScreen(student: student),
+              builder: (context) =>
+                  StudentPaymentDetailsScreen(student: student),
             ),
           );
         },
       ),
     );
   }
-
-//  void _showReceiptOverlay(BuildContext context, StudentPayment student) {
-//     showModalBottomSheet(
-//       context: context,
-//       isScrollControlled: true, // This allows the bottom sheet to be taller
-//       shape: const RoundedRectangleBorder(
-//         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-//       ),
-//       builder: (BuildContext context) {
-//         return DraggableScrollableSheet(
-//           initialChildSize: 0.85, // Start at 85% of screen height
-//           minChildSize: 0.5, // Minimum height (50% of screen)
-//           maxChildSize: 0.95, // Maximum height (95% of screen)
-//           expand: false,
-//           builder: (_, controller) {
-//             return SingleChildScrollView(
-//               controller: controller,
-//               child: Container(
-//                 padding: const EdgeInsets.all(24),
-//                 child: Column(
-//                   mainAxisSize: MainAxisSize.min,
-//                   children: [
-//                     Container(
-//                       width: 40,
-//                       height: 5,
-//                       decoration: BoxDecoration(
-//                         color: Colors.grey[300],
-//                         borderRadius: BorderRadius.circular(2.5),
-//                       ),
-//                     ),
-//                     const SizedBox(height: 24),
-//                     SvgPicture.asset('assets/icons/profile/success_receipt_icon.svg', height: 60),
-//                     const SizedBox(height: 24),
-//                     const Text('Second Term Fees Receipt', 
-//                       style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-//                     const SizedBox(height: 16),
-//                     Text(student.amount, 
-//                       style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: AppColors.primaryLight)),
-//                     const SizedBox(height: 24),
-//                     Divider(thickness: 1, color: Colors.grey.withOpacity(0.5)),
-//                     const SizedBox(height: 16),
-//                     _buildReceiptDetail('Date', '2023-10-23'),
-//                     _buildReceiptDetail('Name',  student.name),
-//                     _buildReceiptDetail('Level', student.grade),
-//                     _buildReceiptDetail('Class', '${student.grade} A'),
-//                     _buildReceiptDetail('Registration number', 'REG${DateTime.now().millisecondsSinceEpoch}'),
-//                     _buildReceiptDetail('Session', '2023/2024'),
-//                     _buildReceiptDetail('Term', '2nd Term Fees'),
-//                     _buildReceiptDetail('Reference number', 'REF${DateTime.now().millisecondsSinceEpoch}'),
-//                     const SizedBox(height: 32),
-//                     Row(
-//                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-//                       children: [
-//                         Expanded(
-//                           child: OutlinedButton(
-//                             onPressed: () {},
-//                             style: OutlinedButton.styleFrom(
-//                               side: const BorderSide(color: const Color.fromRGBO(47, 85, 221, 1),),
-//                               shape: RoundedRectangleBorder(
-//                                 borderRadius: BorderRadius.circular(8),
-//                               ),
-//                             ),
-//                             child: Padding(
-//                               padding: EdgeInsets.symmetric(vertical: 12),
-//                               child: Text('Share', style: AppTextStyles.normal500(fontSize: 18, color: const Color.fromRGBO(47, 85, 221, 1),)),
-//                             ),
-//                           ),
-//                         ),
-//                         const SizedBox(width: 16),
-//                         Expanded(
-//                           child: ElevatedButton(
-//                             onPressed: () {},
-//                             style: ElevatedButton.styleFrom(
-//                               backgroundColor: const Color.fromRGBO(47, 85, 221, 1),
-//                               shape: RoundedRectangleBorder(
-//                                 borderRadius: BorderRadius.circular(8),
-//                               ),
-//                             ),
-//                             child: Padding(
-//                               padding: EdgeInsets.symmetric(vertical: 12),
-//                               child: Text('Download', style: AppTextStyles.normal500(fontSize: 16.0, color: AppColors.backgroundLight)),
-//                             ),
-//                           ),
-//                         ),
-//                       ],
-//                     ),
-//                   ],
-//                 ),
-//               ),
-//             );
-//           },
-//         );
-//       },
-//     );
-//   }
-
-  // Widget _buildReceiptDetail(String label, String value) {
-  //   return Padding(
-  //     padding: const EdgeInsets.symmetric(vertical: 4),
-  //     child: Row(
-  //       mainAxisAlignment: MainAxisAlignment.spaceBetween,
-  //       children: [
-  //         Text(label, style: const TextStyle(color: Colors.grey)),
-  //         Text(value),
-  //       ],
-  //     ),
-  //   );
-  // }
 }

@@ -5,6 +5,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
+import 'package:linkschool/modules/common/widgets/portal/profile/naira_icon.dart';
 import 'package:linkschool/modules/portal/profile/expenditure/expenditure_screen.dart';
 import 'package:linkschool/modules/portal/profile/receipt/payment_outstanding_screen.dart';
 import 'package:linkschool/modules/portal/profile/receipt/payment_received_screen.dart';
@@ -18,6 +19,7 @@ class PaymentDashboardScreen extends StatefulWidget {
 
 class _PaymentDashboardScreenState extends State<PaymentDashboardScreen> {
   late double opacity;
+  bool _hideAmounts = false;
   @override
   Widget build(BuildContext context) {
     final Brightness brightness = Theme.of(context).brightness;
@@ -103,72 +105,92 @@ class _PaymentDashboardScreenState extends State<PaymentDashboardScreen> {
                     Container(
                       height: 200,
                       decoration: BoxDecoration(
-                        color: Color.fromRGBO(58, 49, 145, 1),
+                        color: const Color.fromRGBO(58, 49, 145, 1),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Padding(
                         padding: const EdgeInsets.all(16.0),
                         child: Column(
                           children: [
-                            const Align(
+                            Align(
                               alignment: Alignment.centerRight,
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(Icons.remove_red_eye,
-                                      color: Colors.white),
-                                  SizedBox(width: 8),
-                                  Text('Hide all',
-                                      style: TextStyle(color: Colors.white)),
-                                ],
+                              child: GestureDetector(
+                                onTap: () {
+                                  setState(() {
+                                    _hideAmounts = !_hideAmounts;  // Toggle amount visibility
+                                  });
+                                },
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      _hideAmounts
+                                          ? Icons.visibility_off
+                                          : Icons.remove_red_eye,
+                                      color: Colors.white,
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      _hideAmounts ? 'Show all' : 'Hide all',
+                                      style: const TextStyle(color: Colors.white),
+                                    ),
+                                  ],
+                                ),
                               ),
                             ),
-                            const Expanded(
+
+                            Expanded(
                               child: Column(
                                 mainAxisSize: MainAxisSize.min,
-                                crossAxisAlignment: CrossAxisAlignment.start, // Align text to the left
+                                crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text('Expected Revenue',
+                                  const Text('Expected Revenue',
                                       style: TextStyle(color: Colors.white)),
                                   Row(
-                                    mainAxisAlignment: MainAxisAlignment.start, // Align to the left
+                                    mainAxisAlignment: MainAxisAlignment.start,
                                     children: [
-                                      NairaSvgIcon(),
-                                      Text('234,790.00',
-                                          style: TextStyle(
-                                              color: Colors.white,
-                                              fontSize: 24,
-                                              fontWeight: FontWeight.bold)),
+                                      if (!_hideAmounts) ...[
+                                        const NairaSvgIcon(color: AppColors.backgroundLight,),
+                                        const SizedBox(width: 4),
+                                        const Text('234,790.00',
+                                            style: TextStyle(
+                                                color: Colors.white,
+                                                fontSize: 24,
+                                                fontWeight: FontWeight.bold)),
+                                      ] else ...[
+                                        const Text('****', // Show asterisks if hidden
+                                            style: TextStyle(
+                                                color: Colors.white,
+                                                fontSize: 24,
+                                                fontWeight: FontWeight.bold)),
+                                      ],
                                     ],
                                   ),
                                 ],
                               ),
                             ),
                             Row(
-                              mainAxisAlignment: MainAxisAlignment
-                                  .spaceBetween, // Changed to space between
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                _buildInfoContainer('Received', '234,790.00',
-                                    () {
-                                  Navigator.pushReplacement(
+                                _buildInfoContainer('Received', '234,790.00', () {
+                                  Navigator.push(
                                     context,
                                     MaterialPageRoute(
-                                      builder: (context) =>
-                                          PaymentReceivedScreen(),
+                                      builder: (context) => const PaymentReceivedScreen(),
                                     ),
                                   );
                                 }),
                                 _buildInfoContainer('Outstanding', '4,000.00', () {
-                                  Navigator.pushReplacement(
+                                  Navigator.push(
                                     context,
                                     MaterialPageRoute(
-                                      builder: (context) =>
-                                          PaymentOutstandingScreen(),
+                                      builder: (context) => const PaymentOutstandingScreen(),
                                     ),
-                                  );  
+                                  );
                                 }),
                               ],
                             ),
+
                           ],
                         ),
                       ),
@@ -185,26 +207,26 @@ class _PaymentDashboardScreenState extends State<PaymentDashboardScreen> {
                         _buildRecordContainer(
                           'Receipt',
                           'assets/icons/e_learning/receipt_icon.svg',
-                          Color.fromRGBO(45, 99, 255, 1),
+                          const Color.fromRGBO(45, 99, 255, 1),
                           () {
                             // Navigate to Generate Receipt Screen
                             Navigator.push(
                               context,
                               MaterialPageRoute(
-                                  builder: (context) => ReceiptScreen()),
+                                  builder: (context) => const ReceiptScreen()),
                             );
                           },
                         ),
                         _buildRecordContainer(
                           'Expenditure',
                           'assets/icons/e_learning/expenditure_icon.svg',
-                          Color.fromRGBO(30, 136, 229, 1),
+                          const Color.fromRGBO(30, 136, 229, 1),
                           () {
                             // Navigate to Expenditure Screen
                             Navigator.push(
                               context,
                               MaterialPageRoute(
-                                  builder: (context) => ExpenditureScreen()),
+                                  builder: (context) => const ExpenditureScreen()),
                             );
                           },
                         )
@@ -276,15 +298,40 @@ class _PaymentDashboardScreenState extends State<PaymentDashboardScreen> {
                     ? MainAxisAlignment.start  // Left align for 'Received'
                     : MainAxisAlignment.end,   // Right align for 'Outstanding'
                 children: [
-                  const NairaSvgIcon(),
-                  Text(value,
-                      style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold)),
+                  if (!_hideAmounts) ...[
+                    const NairaSvgIcon(color: AppColors.backgroundLight),
+                    const SizedBox(width: 4),
+                    Text(value,
+                        style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold)),
+                  ] else ...[
+                    const Text('****', // Show asterisks if hidden
+                        style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold)),
+                  ],
                 ],
               ),
             ),
+            // Padding(
+            //   padding: const EdgeInsets.symmetric(horizontal: 8.0),
+            //   child: Row(
+            //     mainAxisAlignment: title == 'Received' 
+            //         ? MainAxisAlignment.start  // Left align for 'Received'
+            //         : MainAxisAlignment.end,   // Right align for 'Outstanding'
+            //     children: [
+            //       const NairaSvgIcon(color: AppColors.backgroundLight),
+            //       Text(value,
+            //           style: const TextStyle(
+            //               color: Colors.white,
+            //               fontSize: 16,
+            //               fontWeight: FontWeight.bold)),
+            //     ],
+            //   ),
+            // ),
           ],
         ),
       ),
@@ -315,219 +362,76 @@ class _PaymentDashboardScreenState extends State<PaymentDashboardScreen> {
     );
   }
 
-  Widget _buildTransactionItem(
-      String name, String time, double amount, String grade) {
-    return Column(
-      children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(vertical: 8.0),
-          child: Row(
-            children: [
-              Container(
-                width: 40,
-                height: 40,
-                decoration: const BoxDecoration(
-                  color: AppColors.paymentBtnColor1,
-                  shape: BoxShape.circle,
-                ),
-                child: Center(
-                  child: SvgPicture.asset(
-                      'assets/icons/e_learning/receipt_list_icon.svg',
-                      width: 24,
-                      height: 24,
-                      color: Colors.white),
-                ),
+Widget _buildTransactionItem(String name, String time, double amount, String grade) {
+  return Column(
+    children: [
+      Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8.0),
+        child: Row(
+          children: [
+            Container(
+              width: 40,
+              height: 40,
+              decoration: const BoxDecoration(
+                color: AppColors.paymentBtnColor1,
+                shape: BoxShape.circle,
               ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(name,
-                        style: const TextStyle(fontWeight: FontWeight.bold)),
-                    Text(time,
-                        style: const TextStyle(color: Colors.grey, fontSize: 12)),
-                  ],
-                ),
+              child: Center(
+                child: SvgPicture.asset(
+                    'assets/icons/e_learning/receipt_list_icon.svg',
+                    width: 24,
+                    height: 24,
+                    color: Colors.white),
               ),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    children: [
-                      const NairaSvgIcon(), // Added Naira icon
-                      Text(
-                        '${amount >= 0 ? '+' : '-'} ${amount.abs().toStringAsFixed(2)}',
-                        style: TextStyle(
-                          color: amount >= 0 ? Colors.green : Colors.red,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
-                  Text(grade,
-                      style: const TextStyle(color: Colors.blue, fontSize: 12)),
+                  Text(name, style: const TextStyle(fontWeight: FontWeight.bold)),
+                  Text(time, style: const TextStyle(color: Colors.grey, fontSize: 12)),
                 ],
               ),
-            ],
-          ),
+            ),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Row(
+                  children: [
+                    // Display plus/minus sign first
+                    Text(
+                      amount >= 0 ? '+' : '-',
+                      style: TextStyle(
+                        color: amount >= 0 ? Colors.green : Colors.red,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16, // Ensure the sign size matches the icon and text
+                      ),
+                    ),
+                    const SizedBox(width: 4), // Add spacing between sign and Naira icon
+                    // Naira icon
+                    NairaSvgIcon(color: amount >= 0 ? Colors.green : Colors.red),
+                    const SizedBox(width: 4), // Add spacing between Naira icon and amount
+                    // Amount text
+                    Text(
+                      amount.abs().toStringAsFixed(2),
+                      style: TextStyle(
+                        color: amount >= 0 ? Colors.green : Colors.red,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
+                    ),
+                  ],
+                ),
+                Text(grade, style: const TextStyle(color: Colors.blue, fontSize: 12)),
+              ],
+            ),
+          ],
         ),
-        const Divider(),
-      ],
-    );
-  }
+      ),
+      const Divider(),
+    ],
+  );
 }
 
-class NairaSvgIcon extends StatelessWidget {
-  const NairaSvgIcon({Key? key}) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return SvgPicture.asset(
-      'assets/icons/e_learning/naira_icon.svg', // Make sure to add this SVG to your assets
-      width: 16,
-      height: 16,
-      color: Colors.white,
-    );
-  }
 }
-
-
-
-                            // const Expanded(
-                            //   child: Column(
-                            //     mainAxisSize: MainAxisSize.min,
-                            //     crossAxisAlignment: CrossAxisAlignment.start,
-                            //     children: [
-                            //       Text('Expected Revenue',
-                            //           style: TextStyle(color: Colors.white)),
-                            //       Row(
-                            //         mainAxisAlignment: MainAxisAlignment.start,
-                            //         children: [
-                            //           NairaSvgIcon(),
-                            //           Text('234,790.00',
-                            //               style: TextStyle(
-                            //                   color: Colors.white,
-                            //                   fontSize: 24,
-                            //                   fontWeight: FontWeight.bold)),
-                            //         ],
-                            //       ),
-                            //     ],
-                            //   ),
-                            // ),
-
-
-            // Row(
-            //   mainAxisAlignment: MainAxisAlignment.center,
-            //   children: [
-            //     const NairaSvgIcon(),
-            //     Text(value,
-            //         style: const TextStyle(
-            //             color: Colors.white,
-            //             fontSize: 16,
-            //             fontWeight: FontWeight.bold)),
-            //   ],
-            // ),
-
-
-
-  // Widget _buildRecordContainer(String title, String iconPath,
-  //     Color backgroundColor, VoidCallback onTap) {
-  //   return GestureDetector(
-  //     onTap: onTap, // To Make the container clickable
-  //     child: Container(
-  //         width: 158,
-  //         height: 60,
-  //         decoration: BoxDecoration(
-  //           color: backgroundColor,
-  //           borderRadius: BorderRadius.circular(8),
-  //         ),
-  //         child: Column(
-  //           children: [
-  //             Row(
-  //               mainAxisAlignment: MainAxisAlignment.center,
-  //               children: [
-  //                 Text(title, style: const TextStyle(color: Colors.white)),
-  //               ],
-  //             ),
-  //             Row(
-  //               mainAxisAlignment: MainAxisAlignment.center,
-  //               children: [
-  //                 SvgPicture.asset(iconPath,
-  //                     width: 24, height: 24, color: Colors.white),
-  //                 const SizedBox(width: 8),
-  //               ],
-  //             ),
-  //           ],
-  //         )
-
-  //         // Row(
-  //         //   mainAxisAlignment: MainAxisAlignment.center,
-  //         //   children: [
-  //         //     SvgPicture.asset(iconPath,
-  //         //         width: 24, height: 24, color: Colors.white),
-  //         //     const SizedBox(width: 8),
-  //         //     Text(title, style: const TextStyle(color: Colors.white)),
-  //         //   ],
-  //         // ),
-  //         ),
-  //   );
-  // }
-
-  // Widget _buildTransactionItem(
-  //     String name, String time, double amount, String grade) {
-  //   return Column(
-  //     children: [
-  //       Padding(
-  //         padding: const EdgeInsets.symmetric(vertical: 8.0),
-  //         child: Row(
-  //           children: [
-  //             Container(
-  //               width: 40,
-  //               height: 40,
-  //               decoration: const BoxDecoration(
-  //                 color: AppColors.paymentBtnColor1,
-  //                 shape: BoxShape.circle,
-  //               ),
-  //               child: Center(
-  //                 child: SvgPicture.asset(
-  //                     'assets/icons/e_learning/receipt_list_icon.svg',
-  //                     width: 24,
-  //                     height: 24,
-  //                     color: Colors.white),
-  //               ),
-  //             ),
-  //             const SizedBox(width: 16),
-  //             Expanded(
-  //               child: Column(
-  //                 crossAxisAlignment: CrossAxisAlignment.start,
-  //                 children: [
-  //                   Text(name,
-  //                       style: const TextStyle(fontWeight: FontWeight.bold)),
-  //                   Text(time,
-  //                       style:
-  //                           const TextStyle(color: Colors.grey, fontSize: 12)),
-  //                 ],
-  //               ),
-  //             ),
-  //             Column(
-  //               crossAxisAlignment: CrossAxisAlignment.end,
-  //               children: [
-  //                 Text(
-  //                   '${amount >= 0 ? '+' : '-'} ₦${amount.abs().toStringAsFixed(2)}',
-  //                   style: TextStyle(
-  //                     color: amount >= 0 ? Colors.green : Colors.red,
-  //                     fontWeight: FontWeight.bold,
-  //                   ),
-  //                 ),
-  //                 Text(grade,
-  //                     style: const TextStyle(color: Colors.blue, fontSize: 12)),
-  //               ],
-  //             ),
-  //           ],
-  //         ),
-  //       ),
-  //       const Divider(),
-  //     ],
-  //   );
-  // }

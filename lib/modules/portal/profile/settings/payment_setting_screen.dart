@@ -5,6 +5,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
+import 'package:linkschool/modules/portal/profile/receipt/vendor_setting_screen.dart';
 import 'package:linkschool/modules/portal/profile/settings/account_setting_screen.dart';
 import 'package:linkschool/modules/portal/profile/settings/fee_setting_screen.dart';
 
@@ -83,8 +84,12 @@ class _PaymentSettingScreenState extends State<PaymentSettingScreen> {
               ),
               _buildSettingsRow(
                 icon: 'assets/icons/profile/fee_amount.svg',
-                title: 'Fees Amount ',
-                onTap: () {},
+                title: 'Vendor',
+                // onTap: () {}
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => VendorSettingsScreen()),
+                ),
               ),
             ],
           ),
@@ -106,7 +111,7 @@ class _PaymentSettingScreenState extends State<PaymentSettingScreen> {
       ),
       child: ListTile(
         leading: CircleAvatar(
-          backgroundColor: AppColors.primaryLight,
+          backgroundColor: AppColors.eLearningBtnColor1,
           child: SvgPicture.asset(icon, color: Colors.white),
         ),
         title: Text(title),

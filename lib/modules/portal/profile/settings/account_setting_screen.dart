@@ -34,7 +34,7 @@ class _AccountSettingScreenState extends State<AccountSettingScreen> {
           },
           icon: Image.asset(
             'assets/icons/arrow_back.png',
-            color: AppColors.primaryLight,
+            color: AppColors.eLearningBtnColor1,
             width: 34.0,
             height: 34.0,
           ),
@@ -43,7 +43,7 @@ class _AccountSettingScreenState extends State<AccountSettingScreen> {
           'Account Settings',
           style: AppTextStyles.normal600(
             fontSize: 24.0,
-            color: AppColors.primaryLight,
+            color: AppColors.eLearningBtnColor1,
           ),
         ),
         backgroundColor: AppColors.backgroundLight,
@@ -119,7 +119,7 @@ class _AccountSettingScreenState extends State<AccountSettingScreen> {
       ),
       child: ListTile(
         leading: CircleAvatar(
-          backgroundColor: AppColors.primaryLight,
+          backgroundColor: AppColors.eLearningBtnColor1,
           child: SvgPicture.asset('assets/icons/profile/fee.svg',
               color: Colors.white),
         ),
@@ -169,7 +169,7 @@ class _AccountSettingScreenState extends State<AccountSettingScreen> {
                 Text(
                   'Add account',
                   style: AppTextStyles.normal600(
-                      fontSize: 24, color: AppColors.primaryLight),
+                      fontSize: 24, color: AppColors.backgroundDark),
                   textAlign: TextAlign.center,
                 ),
                 SizedBox(height: 16),
@@ -219,7 +219,7 @@ class _AccountSettingScreenState extends State<AccountSettingScreen> {
                     );
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primaryLight,
+                    backgroundColor: AppColors.eLearningBtnColor1,
                     padding: EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8),

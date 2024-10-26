@@ -3,12 +3,12 @@ import 'package:flutter_svg/svg.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
+import 'package:linkschool/modules/common/widgets/portal/profile/naira_icon.dart';
 import 'package:linkschool/modules/model/profile/student_model.dart';
 // import 'package:linkschool/modules/common/app_colors.dart';
 // import 'package:linkschool/modules/common/text_styles.dart';
 
 class PaymentReceivedScreen extends StatefulWidget {
-
   const PaymentReceivedScreen({
     super.key,
   });
@@ -36,11 +36,13 @@ class _PaymentReceivedScreenState extends State<PaymentReceivedScreen> {
     StudentPayment(name: "Richard", grade: "Basic 1", amount: "₦48,750"),
   ];
 
- // Filtered list based on search and class filter
+  // Filtered list based on search and class filter
   List<StudentPayment> get filteredStudents {
     return dummyStudents.where((student) {
-      bool matchesSearch = student.name.toLowerCase().contains(searchQuery.toLowerCase());
-      bool matchesClass = selectedClass == null || student.grade.startsWith(selectedClass!);
+      bool matchesSearch =
+          student.name.toLowerCase().contains(searchQuery.toLowerCase());
+      bool matchesClass =
+          selectedClass == null || student.grade.startsWith(selectedClass!);
       return matchesSearch && matchesClass;
     }).toList();
   }
@@ -97,8 +99,7 @@ class _PaymentReceivedScreenState extends State<PaymentReceivedScreen> {
                 children: [
                   DropdownButton<String>(
                     hint: const Text('Class'),
-                    items: ['Basic', 'JSS', 'SSS']
-                        .map((String value) {
+                    items: ['Basic', 'JSS', 'SSS'].map((String value) {
                       return DropdownMenuItem<String>(
                         value: value,
                         child: Text(value),
@@ -129,7 +130,7 @@ class _PaymentReceivedScreenState extends State<PaymentReceivedScreen> {
                 },
               ),
               const SizedBox(height: 16),
-             Expanded(
+              Expanded(
                 child: ListView.builder(
                   itemCount: filteredStudents.length,
                   itemBuilder: (context, index) {
@@ -138,14 +139,6 @@ class _PaymentReceivedScreenState extends State<PaymentReceivedScreen> {
                   },
                 ),
               ),
-              // Expanded(
-              //   child: ListView.builder(
-              //     itemCount: 5,
-              //     itemBuilder: (context, index) {
-              //       return _buildStudentItem(context);
-              //     },
-              //   ),
-              // ),
             ],
           ),
         ),
@@ -154,6 +147,9 @@ class _PaymentReceivedScreenState extends State<PaymentReceivedScreen> {
   }
 
   Widget _buildStudentItem(BuildContext context, StudentPayment student) {
+    // Extract the numeric part of the amount string (remove the ₦ symbol)
+    String amountValue = student.amount.replaceAll('₦', '');
+
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       decoration: BoxDecoration(
@@ -176,12 +172,19 @@ class _PaymentReceivedScreenState extends State<PaymentReceivedScreen> {
             color: Colors.grey,
           ),
         ),
-        trailing: Text(
-          student.amount,
-          style: AppTextStyles.normal700(
-            fontSize: 18,
-            color: AppColors.paymentTxtColor2,
-          ),
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const NairaSvgIcon(color: AppColors.paymentTxtColor2),
+            const SizedBox(width: 4),
+            Text(
+              amountValue,
+              style: AppTextStyles.normal700(
+                fontSize: 18,
+                color: AppColors.paymentTxtColor2,
+              ),
+            ),
+          ],
         ),
         onTap: () {
           _showReceiptOverlay(context, student);
@@ -190,7 +193,9 @@ class _PaymentReceivedScreenState extends State<PaymentReceivedScreen> {
     );
   }
 
- void _showReceiptOverlay(BuildContext context, StudentPayment student) {
+  void _showReceiptOverlay(BuildContext context, StudentPayment student) {
+    // Extract the numeric part of the amount string
+    String amountValue = student.amount.replaceAll('₦', '');
     showModalBottomSheet(
       context: context,
       isScrollControlled: true, // This allows the bottom sheet to be taller
@@ -220,24 +225,44 @@ class _PaymentReceivedScreenState extends State<PaymentReceivedScreen> {
                       ),
                     ),
                     const SizedBox(height: 24),
-                    SvgPicture.asset('assets/icons/profile/success_receipt_icon.svg', height: 60),
+                    SvgPicture.asset(
+                        'assets/icons/profile/success_receipt_icon.svg',
+                        height: 60),
                     const SizedBox(height: 24),
-                    const Text('Second Term Fees Receipt', 
-                      style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                    const Text('Second Term Fees Receipt',
+                        style: TextStyle(
+                            fontSize: 20, fontWeight: FontWeight.bold)),
                     const SizedBox(height: 16),
-                    Text(student.amount, 
-                      style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: AppColors.primaryLight)),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const NairaSvgIcon(color: AppColors.primaryLight),
+                        const SizedBox(width: 4),
+                        Text(
+                          amountValue,
+                          style: const TextStyle(
+                            fontSize: 28,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.primaryLight,
+                          ),
+                        ),
+                      ],
+                    ),
+                    // Text(student.amount,
+                    //   style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: AppColors.primaryLight)),
                     const SizedBox(height: 24),
                     Divider(thickness: 1, color: Colors.grey.withOpacity(0.5)),
                     const SizedBox(height: 16),
                     _buildReceiptDetail('Date', '2023-10-23'),
-                    _buildReceiptDetail('Name',  student.name),
+                    _buildReceiptDetail('Name', student.name),
                     _buildReceiptDetail('Level', student.grade),
                     _buildReceiptDetail('Class', '${student.grade} A'),
-                    _buildReceiptDetail('Registration number', 'REG${DateTime.now().millisecondsSinceEpoch}'),
+                    _buildReceiptDetail('Registration number',
+                        'REG${DateTime.now().millisecondsSinceEpoch}'),
                     _buildReceiptDetail('Session', '2023/2024'),
                     _buildReceiptDetail('Term', '2nd Term Fees'),
-                    _buildReceiptDetail('Reference number', 'REF${DateTime.now().millisecondsSinceEpoch}'),
+                    _buildReceiptDetail('Reference number',
+                        'REF${DateTime.now().millisecondsSinceEpoch}'),
                     const SizedBox(height: 32),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -246,14 +271,20 @@ class _PaymentReceivedScreenState extends State<PaymentReceivedScreen> {
                           child: OutlinedButton(
                             onPressed: () {},
                             style: OutlinedButton.styleFrom(
-                              side: const BorderSide(color: const Color.fromRGBO(47, 85, 221, 1),),
+                              side: const BorderSide(
+                                color: const Color.fromRGBO(47, 85, 221, 1),
+                              ),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(8),
                               ),
                             ),
                             child: Padding(
-                              padding: EdgeInsets.symmetric(vertical: 12),
-                              child: Text('Share', style: AppTextStyles.normal500(fontSize: 18, color: const Color.fromRGBO(47, 85, 221, 1),)),
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                              child: Text('Share',
+                                  style: AppTextStyles.normal500(
+                                    fontSize: 18,
+                                    color: const Color.fromRGBO(47, 85, 221, 1),
+                                  )),
                             ),
                           ),
                         ),
@@ -262,14 +293,18 @@ class _PaymentReceivedScreenState extends State<PaymentReceivedScreen> {
                           child: ElevatedButton(
                             onPressed: () {},
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color.fromRGBO(47, 85, 221, 1),
+                              backgroundColor:
+                                  const Color.fromRGBO(47, 85, 221, 1),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(8),
                               ),
                             ),
                             child: Padding(
-                              padding: EdgeInsets.symmetric(vertical: 12),
-                              child: Text('Download', style: AppTextStyles.normal500(fontSize: 16.0, color: AppColors.backgroundLight)),
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                              child: Text('Download',
+                                  style: AppTextStyles.normal500(
+                                      fontSize: 16.0,
+                                      color: AppColors.backgroundLight)),
                             ),
                           ),
                         ),
