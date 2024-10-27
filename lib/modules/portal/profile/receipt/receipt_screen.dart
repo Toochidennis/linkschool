@@ -1,4 +1,4 @@
-// ignore_for_file: prefer_const_literals_to_create_immutables, unused_element
+// ignore_for_file: prefer_const_literals_to_create_immutables, unused_element, deprecated_member_use
 
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
@@ -6,7 +6,9 @@ import 'package:flutter_svg/svg.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
-import 'package:linkschool/modules/portal/profile/receipt/payment_received_screen.dart';
+import 'package:linkschool/modules/portal/profile/receipt/student_list_screen.dart';
+import 'package:linkschool/modules/portal/profile/receipt/generate_report/report_payment.dart';
+// import 'package:linkschool/modules/portal/profile/receipt/payment_received_screen.dart';
 
 class ReceiptScreen extends StatefulWidget {
   const ReceiptScreen({super.key});
@@ -19,7 +21,6 @@ class _ReceiptScreenState extends State<ReceiptScreen>
     with TickerProviderStateMixin {
   late double opacity;
   bool _isOverlayVisible = false;
-  late TabController _tabController;
   int _currentTabIndex = 0;
   String _selectedDateRange = 'Custom';
   String _selectedGrouping = 'Month';
@@ -28,9 +29,41 @@ class _ReceiptScreenState extends State<ReceiptScreen>
   DateTime _fromDate = DateTime.now();
   DateTime _toDate = DateTime.now();
 
+  late TabController _tabController;
+final List<String> reportTypes = ['Termly report', 'Session report', 'Monthly report', 'Class report', 'Level report'];
+final List<String> dateRangeOptions = ['Custom', 'Today', 'Yesterday', 'This Week', 'Last 7 days', 'Last 30 days'];
+
   bool _isExpanded = false;
   late AnimationController _animationController;
+  late Animation<double> _buttonAnimation;
   late Animation<double> _animation;
+
+  // new state variables for level and class selection
+  String? selectedLevel;
+  String? selectedClass;
+  List<String> students = []; // Will hold students for selected class
+
+  int _selectedReportType = 0;
+
+  // Define level and class data
+  final Map<String, List<String>> levelClassMap = {
+    'JSS': ['JSS 1', 'JSS 2', 'JSS 3'],
+    'SS': ['SS 1', 'SS 2', 'SS 3'],
+    'BASIC': ['Basic 1', 'Basic 2', 'Basic 3', 'Basic 4', 'Basic 5'],
+  };
+
+  final List<Map<String, dynamic>> _fabButtons = [
+    {
+      'title': 'Setup report',
+      'icon': 'assets/icons/profile/setup_report.svg',
+      'onPressed': null,
+    },
+    {
+      'title': 'Add receipt',
+      'icon': 'assets/icons/profile/add_receipt.svg',
+      'onPressed': null,
+    },
+  ];
 
   @override
   void initState() {
@@ -44,24 +77,229 @@ class _ReceiptScreenState extends State<ReceiptScreen>
       parent: _animationController,
       curve: Curves.easeInOut,
     );
+    _buttonAnimation = Tween<double>(begin: 0, end: 1).animate(_animation);
+
+    // Initialize FAB button actions
+    _fabButtons[0]['onPressed'] = () {
+      showModalBottomSheet(
+        context: context,
+        isScrollControlled: true,
+        backgroundColor: Colors.transparent,
+        builder: (BuildContext context) {
+          return _buildCustomOverlay();
+        },
+      );
+    };
+
+    // _fabButtons[1]['onPressed'] = _showAddReceiptBottomSheet;
+
+    // Update the Add Receipt FAB action
+    _fabButtons[1]['onPressed'] = _showLevelSelectionOverlay;
   }
 
-  @override
-  void dispose() {
-    _tabController.dispose();
-    _animationController.dispose();
-    super.dispose();
-  }
-
-  void _toggleExpanded() {
+  void _onFromDateChanged(DateTime date) {
     setState(() {
-      _isExpanded = !_isExpanded;
-      if (_isExpanded) {
-        _animationController.forward();
-      } else {
-        _animationController.reverse();
-      }
+      _fromDate = date;
     });
+  }
+
+  void _onToDateChanged(DateTime date) {
+    setState(() {
+      _toDate = date;
+    });
+  }
+
+  void _showLevelSelectionOverlay() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: AppColors.backgroundLight,
+      builder: (BuildContext context) {
+        return Padding(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(context).viewInsets.bottom,
+          ),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              maxHeight: MediaQuery.of(context).size.height * 0.4,
+            ),
+            child: Padding(
+              padding: const EdgeInsets.only(top: 16.0),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'Select Level',
+                    style: AppTextStyles.normal600(
+                      fontSize: 20,
+                      color: const Color.fromRGBO(47, 85, 221, 1),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  Flexible(
+                    child: ListView.builder(
+                      itemCount: levelClassMap.keys.length,
+                      itemBuilder: (context, index) {
+                        String level = levelClassMap.keys.elementAt(index);
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 24, vertical: 8),
+                          child: _buildSubjectButton(level),
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  void _showClassSelectionOverlay(String level) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: AppColors.backgroundLight,
+      builder: (BuildContext context) {
+        return Padding(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(context).viewInsets.bottom,
+          ),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              maxHeight: MediaQuery.of(context).size.height * 0.4,
+            ),
+            child: Padding(
+              padding: const EdgeInsets.only(top: 16.0),
+              child: Column(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Text(
+                      'Select Class',
+                      style: AppTextStyles.normal600(
+                        fontSize: 20,
+                        color: const Color.fromRGBO(47, 85, 221, 1),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  Flexible(
+                    child: ListView.builder(
+                      itemCount: levelClassMap[level]?.length ?? 0,
+                      itemBuilder: (context, index) {
+                        String className = levelClassMap[level]![index];
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 24, vertical: 8),
+                          child: _buildSubjectButton(className, isClass: true),
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  void _showStudentList(String className) {
+    // Simulated student data - replace with actual data fetch
+    List<String> students = [
+      'John ifeanyi',
+      'Amaka Smith',
+      'Mike Okoro',
+      'Sarah Uche',
+      'David Ugonna',
+    ];
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => StudentListScreen(
+          className: className,
+          students: students,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAnimatedFAB() {
+    final bool showLabels = _buttonAnimation.value == 1;
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.end,
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: [
+        if (_isExpanded) ...[
+          ..._fabButtons.map((button) {
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 16.0),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (showLabels)
+                    Padding(
+                      padding: const EdgeInsets.only(right: 8.0),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12.0,
+                          vertical: 6.0,
+                        ),
+                        decoration: BoxDecoration(
+                          color: const Color.fromRGBO(47, 85, 221, 1),
+                          borderRadius: BorderRadius.circular(4.0),
+                        ),
+                        child: Text(
+                          button['title'],
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 14.0,
+                          ),
+                        ),
+                      ),
+                    ),
+                  FloatingActionButton(
+                    heroTag: button['title'],
+                    mini: true,
+                    onPressed: button['onPressed'],
+                    backgroundColor: const Color.fromRGBO(47, 85, 221, 1),
+                    child: SvgPicture.asset(button['icon']),
+                  ),
+                ],
+              ),
+            );
+          }).toList(),
+        ],
+        FloatingActionButton(
+          backgroundColor: AppColors.videoColor4,
+          onPressed: () {
+            setState(() {
+              _isExpanded = !_isExpanded;
+              if (_isExpanded) {
+                _animationController.forward();
+              } else {
+                _animationController.reverse();
+              }
+            });
+          },
+          child: AnimatedRotation(
+            duration: const Duration(milliseconds: 300),
+            turns: _isExpanded ? 0.125 : 0,
+            child: SvgPicture.asset(
+              _isExpanded
+                  ? 'assets/icons/profile/inverted_add_icon.svg'
+                  : 'assets/icons/profile/add_icon.svg',
+            ),
+          ),
+        ),
+      ],
+    );
   }
 
   @override
@@ -257,25 +495,34 @@ class _ReceiptScreenState extends State<ReceiptScreen>
                       ),
                       const SizedBox(height: 16.0),
                       _buildPaymentHistoryItem(
-                          'JSS', '234,700.00', 'Joseph Raphael'),
+                        'JSS 2',
+                        '234,700.00',
+                      ),
                       _buildPaymentHistoryItem(
-                          'SS', '189,500.00', 'Maria Johnson'),
+                        'SS 2',
+                        '189,500.00',
+                      ),
                       _buildPaymentHistoryItem(
-                          'JSS', '276,300.00', 'John Smith'),
+                        'JSS 3',
+                        '276,300.00',
+                      ),
                       _buildPaymentHistoryItem(
-                          'SS', '205,800.00', 'Emma Davis'),
-                      _buildPaymentHistoryItem(
-                          'JSS', '298,100.00', 'Michael Brown'),
+                        'SS 1',
+                        '205,800.00',
+                      ),
+                      _buildPaymentHistoryItem('JSS 1', '298,100.00'),
                     ],
                   ),
                 ),
               ),
             ),
           ),
-          if (_isExpanded) _buildSmallFloatingButtons(),
         ],
       ),
-      floatingActionButton: _buildAnimatedFAB(),
+      floatingActionButton: AnimatedBuilder(
+        animation: _buttonAnimation,
+        builder: (context, child) => _buildAnimatedFAB(),
+      ),
     );
   }
 
@@ -301,7 +548,8 @@ class _ReceiptScreenState extends State<ReceiptScreen>
                   Text(
                     'Add Receipt',
                     style: AppTextStyles.normal600(
-                        fontSize: 20, color: const Color.fromRGBO(47, 85, 221, 1)),
+                        fontSize: 20,
+                        color: const Color.fromRGBO(47, 85, 221, 1)),
                   ),
                   IconButton(
                     icon: SvgPicture.asset(
@@ -344,6 +592,34 @@ class _ReceiptScreenState extends State<ReceiptScreen>
           ),
         );
       },
+    );
+  }
+
+  Widget _buildSubjectButton(String text, {bool isClass = false}) {
+    return ElevatedButton(
+      onPressed: () {
+        Navigator.pop(context); // Close current overlay
+        if (isClass) {
+          _showStudentList(
+              text); // Navigate to StudentListScreen for class selection
+        } else {
+          _showClassSelectionOverlay(
+              text); // Show class selection for level selection
+        }
+      },
+      style: ElevatedButton.styleFrom(
+        backgroundColor: Colors.white,
+        elevation: 4,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8),
+        ),
+        padding: const EdgeInsets.symmetric(vertical: 16),
+      ),
+      child: Text(
+        text,
+        style: const TextStyle(fontSize: 16),
+        textAlign: TextAlign.center,
+      ),
     );
   }
 
@@ -406,132 +682,235 @@ class _ReceiptScreenState extends State<ReceiptScreen>
     );
   }
 
-  Widget _buildAnimatedFAB() {
-    return FloatingActionButton(
-      backgroundColor: AppColors.videoColor4,
-      onPressed: _toggleExpanded,
-      child: AnimatedCrossFade(
-        firstChild: SvgPicture.asset('assets/icons/profile/add_icon.svg'),
-        secondChild: SvgPicture.asset('assets/icons/profile/inverted_add_icon.svg'),
-        crossFadeState:
-            _isExpanded ? CrossFadeState.showSecond : CrossFadeState.showFirst,
-        duration: const Duration(milliseconds: 300),
-      ),
-    );
-  }
-
-  Widget _buildSmallFloatingButtons() {
-    return Positioned(
-      bottom: 80,
-      right: 16,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Tooltip(
-            message: 'Setup report',
-            preferBelow: false,
-            verticalOffset: 20,
-            child: FloatingActionButton(
-              mini: true,
-              onPressed: () {
-                showModalBottomSheet(
-                  context: context,
-                  isScrollControlled: true,
-                  backgroundColor: Colors.transparent,
-                  builder: (BuildContext context) {
-                    return _buildCustomOverlay();
-                  },
-                );
-              },
-              backgroundColor: const Color.fromRGBO(47, 85, 221, 1),
-              child: SvgPicture.asset('assets/icons/profile/setup_report.svg'),
-            ),
-          ),
-          const SizedBox(height: 16),
-          Tooltip(
-            message: 'Add receipt',
-            preferBelow: false,
-            verticalOffset: 20,
-            child: FloatingActionButton(
-              mini: true,
-              onPressed: _showAddReceiptBottomSheet,
-              backgroundColor: const Color.fromRGBO(47, 85, 221, 1),
-              child: SvgPicture.asset('assets/icons/profile/add_receipt.svg'),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSmallFloatingButton({
-    required IconData icon,
-    required VoidCallback onPressed,
-  }) {
-    return FloatingActionButton(
-      mini: true,
-      backgroundColor: const Color.fromRGBO(47, 85, 221, 1),
-      onPressed: onPressed,
-      child: Icon(icon, color: AppColors.backgroundLight),
-    );
-  }
-
   Widget _buildCustomOverlay() {
     return GestureDetector(
       onTap: () => Navigator.pop(context),
       child: Container(
         color: Colors.black54,
         child: GestureDetector(
-          onTap:
-              () {}, // Prevents taps from propagating to the outer GestureDetector
+          onTap: () {}, // Prevents taps from propagating
           child: Container(
-            height: MediaQuery.of(context).size.height * 0.5,
+            height: MediaQuery.of(context).size.height * 0.58,
             margin: EdgeInsets.only(
-              top: MediaQuery.of(context).size.height * 0.5,
+              top: MediaQuery.of(context).size.height * 0.2,
             ),
             decoration: const BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
             ),
-            child: DefaultTabController(
-              length: 3,
-              child: Column(
-                children: [
-                  Container(
-                    decoration: BoxDecoration(
-                      color: Colors.grey[200],
-                      borderRadius:
-                          const BorderRadius.vertical(top: Radius.circular(20)),
-                    ),
-                    child: TabBar(
-                      controller: _tabController,
-                      onTap: (index) {
-                        setState(() {
-                          _currentTabIndex = index;
-                        });
-                      },
-                      tabs: const [
-                        Tab(text: 'Date Range'),
-                        Tab(text: 'Grouping'),
-                        Tab(text: 'Filter'),
-                      ],
-                    ),
+            child: Column(
+              children: [
+                // Report Type TabBar
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    children: [
+                      _buildReportTypeTab('Termly report', 0),
+                      _buildReportTypeTab('Session report', 1),
+                      _buildReportTypeTab('Monthly report', 2),
+                    ],
                   ),
-                  Expanded(
-                    child: TabBarView(
-                      controller: _tabController,
+                ),
+                // Main TabBar and Content
+                Expanded(
+                  child: DefaultTabController(
+                    length: 3,
+                    child: Column(
                       children: [
-                        _buildDateRangeTab(),
-                        _buildGroupingTab(),
-                        _buildFilterTab(),
+                        Container(
+                          decoration: BoxDecoration(
+                            color: Colors.grey[200],
+                          ),
+                          child: TabBar(
+                            onTap: (index) {
+                              setState(() {
+                                _currentTabIndex = index;
+                              });
+                            },
+                            tabs: const [
+                              Tab(text: 'Date Range'),
+                              Tab(text: 'Grouping'),
+                              Tab(text: 'Filter by'),
+                            ],
+                          ),
+                        ),
+                        Expanded(
+                          child: TabBarView(
+                            children: [
+                              _buildDateRangeTab(),
+                              _buildGroupingTab(),
+                              _buildFilterByTab(),
+                            ],
+                          ),
+                        ),
+                        // Fixed Generate Report Button
+                        Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.grey.withOpacity(0.2),
+                                spreadRadius: 1,
+                                blurRadius: 4,
+                                offset: const Offset(0, -2),
+                              ),
+                            ],
+                          ),
+                          child: ElevatedButton(
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) =>
+                                      const ReportPaymentScreen(), // Create this screen
+                                ),
+                              );
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Color.fromRGBO(47, 85, 221, 1),
+                              minimumSize: const Size(double.infinity, 50),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10.0),
+                              ),
+                            ),
+                            child: const Text(
+                              'Generate Report',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 18,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                        ),
                       ],
                     ),
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
         ),
+      ),
+    );
+  }
+
+Widget _buildReportTypeTab(String text, int index) {
+  return Container(
+    height: 50,
+    child: SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      physics: const BouncingScrollPhysics(),
+      child: Row(
+        children: reportTypes.map((type) {
+          int typeIndex = reportTypes.indexOf(type);
+          bool isSelected = _selectedReportType == typeIndex;
+          return Padding(
+            padding: const EdgeInsets.only(right: 12.0),
+            child: GestureDetector(
+              onTap: () {
+                setState(() {
+                  _selectedReportType = typeIndex;
+                });
+              },
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                decoration: BoxDecoration(
+                  color: isSelected ? const Color(0xFFE4EAFF) : const Color(0xFFF7F7F7),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: Text(
+                  type,
+                  style: TextStyle(
+                    color: isSelected ? const Color.fromRGBO(47, 85, 221, 1) : const Color(0xFF414141),
+                    fontSize: 12,
+                  ),
+                ),
+              ),
+            ),
+          );
+        }).toList(),
+      ),
+    ),
+  );
+}
+
+// Widget _buildReportTypeTab(String text, int index) {
+//   return Container(
+//     height: 50, // Fixed height for the container
+//     child: SingleChildScrollView(
+//       scrollDirection: Axis.horizontal,
+//       physics: const BouncingScrollPhysics(),
+//       child: Container(
+//         width: MediaQuery.of(context).size.width, // Full width of screen
+//         padding: const EdgeInsets.symmetric(horizontal: 16),
+//         child: Row(
+//           children: reportTypes.map((type) {
+//             int typeIndex = reportTypes.indexOf(type);
+//             bool isSelected = _selectedReportType == typeIndex;
+//             return Padding(
+//               padding: const EdgeInsets.only(right: 12.0),
+//               child: GestureDetector(
+//                 onTap: () {
+//                   setState(() {
+//                     _selectedReportType = typeIndex;
+//                   });
+//                 },
+//                 child: Container(
+//                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+//                   decoration: BoxDecoration(
+//                     color: isSelected ? const Color(0xFFE4EAFF) : const Color(0xFFF7F7F7),
+//                     borderRadius: BorderRadius.circular(4),
+//                   ),
+//                   child: Text(
+//                     type,
+//                     style: TextStyle(
+//                       color: isSelected ? const Color.fromRGBO(47, 85, 221, 1) : const Color(0xFF414141),
+//                       fontSize: 12,
+//                     ),
+//                   ),
+//                 ),
+//               ),
+//             );
+//           }).toList(),
+//         ),
+//       ),
+//     ),
+//   );
+// }
+
+
+  Widget _buildFilterByTab() {
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildFilterButton('Session'),
+          const SizedBox(height: 12),
+          _buildFilterButton('Term'),
+          const SizedBox(height: 12),
+          _buildFilterButton('Class'),
+          const SizedBox(height: 12),
+          _buildFilterButton('Level'),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFilterButton(String text) {
+    return Container(
+      width: double.infinity,
+      height: 42,
+      decoration: BoxDecoration(
+        color: Color.fromRGBO(229, 229, 229, 1),
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: Center(
+        child: Text(text),
       ),
     );
   }
@@ -574,114 +953,98 @@ class _ReceiptScreenState extends State<ReceiptScreen>
     );
   }
 
-  Widget _buildDateRangeOptions() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-      children: ['Custom', 'Today', 'Yesterday', 'This Week'].map((option) {
-        return GestureDetector(
-          onTap: () {
-            setState(() {
-              _selectedDateRange = option;
-            });
-          },
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: BoxDecoration(
-              color: _selectedDateRange == option
-                  ? const Color.fromRGBO(47, 85, 221, 1)
-                  : const Color.fromRGBO(212, 222, 255, 1),
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Text(
-              option,
-              style: TextStyle(
-                color:
-                    _selectedDateRange == option ? Colors.white : Colors.black,
+Widget _buildDateRangeOptions() {
+  return SingleChildScrollView(
+    scrollDirection: Axis.horizontal,
+    child: Row(
+      children: dateRangeOptions.map((option) {
+        return Padding(
+          padding: const EdgeInsets.only(right: 8.0),
+          child: GestureDetector(
+            onTap: () {
+              setState(() {
+                _selectedDateRange = option;
+              });
+            },
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: _selectedDateRange == option
+                    ? const Color.fromRGBO(47, 85, 221, 1)
+                    : const Color.fromRGBO(212, 222, 255, 1),
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Text(
+                option,
+                style: TextStyle(
+                  color: _selectedDateRange == option ? Colors.white : AppColors.paymentTxtColor1,
+                ),
               ),
             ),
           ),
         );
       }).toList(),
-    );
-  }
+    ),
+  );
+}
 
   Widget _buildCustomDateRange() {
     return Column(
       children: [
-        _buildDateInput('From:', _fromDate, (date) {
-          setState(() {
-            _fromDate = date;
-          });
-        }),
+        _buildDateInput('From:', _fromDate, _onFromDateChanged),
         const SizedBox(height: 10),
-        _buildDateInput('To:', _toDate, (date) {
-          setState(() {
-            _toDate = date;
-          });
-        }),
+        _buildDateInput('To:', _toDate, _onToDateChanged),
         const SizedBox(height: 20),
-        ElevatedButton(
-          onPressed: () {
-            // Generate report logic
-          },
-          style: ElevatedButton.styleFrom(
-            backgroundColor: const Color.fromRGBO(47, 85, 221, 1),
-            minimumSize: const Size(double.infinity, 50),
-            shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10.0)),
-          ),
-          child: Text(
-            'Generate Report',
-            style: AppTextStyles.normal500(
-                fontSize: 18, color: AppColors.backgroundLight),
-          ),
-        ),
       ],
     );
   }
 
-  Widget _buildDateInput(
-      String label, DateTime selectedDate, Function(DateTime) onDateSelected) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(label),
-        const SizedBox(height: 5),
-        GestureDetector(
-          onTap: () async {
-            final DateTime? picked = await showDatePicker(
-              context: context,
-              initialDate: selectedDate,
-              firstDate: DateTime(2000),
-              lastDate: DateTime(2025),
-            );
-            if (picked != null) {
-              setState(() {
-                onDateSelected(picked);
-              });
+Widget _buildDateInput(String label, DateTime selectedDate, Function(DateTime) onDateSelected) {
+  return Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Text(label),
+      const SizedBox(height: 5),
+      GestureDetector(
+        onTap: () async {
+          final DateTime? picked = await showDatePicker(
+            context: context,
+            initialDate: selectedDate,
+            firstDate: DateTime(2000),
+            lastDate: DateTime(2025),
+          );
+          if (picked != null) {
+            onDateSelected(picked);
+            if (mounted) {
+              setState(() {});
             }
-          },
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            decoration: BoxDecoration(
-              border: Border.all(color: Colors.grey),
-              borderRadius: BorderRadius.circular(4),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  '${selectedDate.day}-${selectedDate.month}-${selectedDate.year}',
-                  style: const TextStyle(fontSize: 16),
-                ),
-                SvgPicture.asset('assets/icons/profile/calendar_icon.svg'),
-              ],
-            ),
+          }
+        },
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          decoration: BoxDecoration(
+            border: Border.all(color: Colors.grey),
+            borderRadius: BorderRadius.circular(4),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                '${selectedDate.day}-${selectedDate.month}-${selectedDate.year}',
+                style: const TextStyle(fontSize: 16),
+              ),
+              Icon(
+                Icons.calendar_today,
+                color: AppColors.paymentTxtColor1,
+                size: 24,
+              ),
+            ],
           ),
         ),
-      ],
-    );
-  }
+      ),
+    ],
+  );
+}
 
   Widget _buildGroupingTab() {
     return Padding(
@@ -694,26 +1057,10 @@ class _ReceiptScreenState extends State<ReceiptScreen>
             style: TextStyle(color: Colors.grey),
           ),
           const SizedBox(height: 10),
+          _buildGroupingOption('Level'),
+          _buildGroupingOption('Class'),
           _buildGroupingOption('Month'),
-          _buildGroupingOption('Vendor'),
-          _buildGroupingOption('Account'),
-          const SizedBox(height: 20),
-          ElevatedButton(
-            onPressed: () {
-              // Generate report logic
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color.fromRGBO(47, 85, 221, 1),
-              minimumSize: const Size(double.infinity, 50),
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10.0)),
-            ),
-            child: Text(
-              'Generate Report',
-              style: AppTextStyles.normal500(
-                  fontSize: 18, color: AppColors.backgroundLight),
-            ),
-          ),
+          // const SizedBox(height: 20),
         ],
       ),
     );
@@ -758,23 +1105,7 @@ class _ReceiptScreenState extends State<ReceiptScreen>
               _selectedClass = value;
             });
           }),
-          const SizedBox(height: 20),
-          ElevatedButton(
-            onPressed: () {
-              // Generate report logic
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color.fromRGBO(47, 85, 221, 1),
-              minimumSize: const Size(double.infinity, 50),
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10.0)),
-            ),
-            child: Text(
-              'Generate Report',
-              style: AppTextStyles.normal500(
-                  fontSize: 18, color: AppColors.backgroundLight),
-            ),
-          ),
+          // const SizedBox(height: 20),
         ],
       ),
     );
@@ -815,22 +1146,12 @@ class _ReceiptScreenState extends State<ReceiptScreen>
     );
   }
 
-  Widget _buildPaymentHistoryItem(String grade, String amount, String name) {
+  Widget _buildPaymentHistoryItem(
+    String grade,
+    String amount,
+  ) {
     return GestureDetector(
       onTap: () {},
-      
-      // () {
-      //   Navigator.push(
-      //     context,
-      //     MaterialPageRoute(
-      //       builder: (context) => PaymentReceiptDetailScreen(
-      //         grade: grade,
-      //         amount: amount,
-      //         name: name,
-      //       ),
-      //     ),
-      //   );
-      // },
       child: Container(
         margin: const EdgeInsets.only(bottom: 8.0),
         decoration: BoxDecoration(
@@ -847,7 +1168,7 @@ class _ReceiptScreenState extends State<ReceiptScreen>
                   SvgPicture.asset('assets/icons/profile/payment_icon.svg'),
                   const SizedBox(width: 8),
                   Text(
-                    name,
+                    grade,
                     style: AppTextStyles.normal600(
                         fontSize: 18, color: AppColors.backgroundDark),
                   ),
@@ -864,3 +1185,115 @@ class _ReceiptScreenState extends State<ReceiptScreen>
     );
   }
 }
+
+
+  // Widget _buildDateInput(
+  //     String label, DateTime selectedDate, Function(DateTime) onDateSelected) {
+  //   return Column(
+  //     crossAxisAlignment: CrossAxisAlignment.start,
+  //     children: [
+  //       Text(label),
+  //       const SizedBox(height: 5),
+  //       GestureDetector(
+  //         onTap: () async {
+  //           final DateTime? picked = await showDatePicker(
+  //             context: context,
+  //             initialDate: selectedDate,
+  //             firstDate: DateTime(2000),
+  //             lastDate: DateTime(2025),
+  //           );
+  //           if (picked != null) {
+  //             onDateSelected(picked);
+  //             // Force rebuild of overlay to show updated date
+  //             if (mounted) {
+  //               setState(() {});
+  //             }
+  //           }
+  //         },
+  //         child: Container(
+  //           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+  //           decoration: BoxDecoration(
+  //             border: Border.all(color: Colors.grey),
+  //             borderRadius: BorderRadius.circular(4),
+  //           ),
+  //           child: Row(
+  //             mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  //             children: [
+  //               Text(
+  //                 '${selectedDate.day}-${selectedDate.month}-${selectedDate.year}',
+  //                 style: const TextStyle(fontSize: 16),
+  //               ),
+  //               SvgPicture.asset(
+  //                 'assets/icons/profile/calendar_icon.svg',
+  //                 color: AppColors.paymentTxtColor1,
+  //                 height: 24,
+  //                 width: 24,
+  //               ),
+  //             ],
+  //           ),
+  //         ),
+  //       ),
+  //     ],
+  //   );
+  // }
+
+    // Widget _buildDateRangeOptions() {
+  //   return Row(
+  //     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+  //     children: ['Custom', 'Today', 'Yesterday', 'This Week'].map((option) {
+  //       return GestureDetector(
+  //         onTap: () {
+  //           setState(() {
+  //             _selectedDateRange = option;
+  //           });
+  //         },
+  //         child: Container(
+  //           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+  //           decoration: BoxDecoration(
+  //             color: _selectedDateRange == option
+  //                 ? const Color.fromRGBO(47, 85, 221, 1)
+  //                 : const Color.fromRGBO(212, 222, 255, 1),
+  //             borderRadius: BorderRadius.circular(16),
+  //           ),
+  //           child: Text(
+  //             option,
+  //             style: TextStyle(
+  //               color:
+  //                   _selectedDateRange == option ? Colors.white : AppColors.paymentTxtColor1,
+  //             ),
+  //           ),
+  //         ),
+  //       );
+  //     }).toList(),
+  //   );
+  // }
+
+  // Widget _buildReportTypeTab(String text, int index) {
+  //   bool isSelected = _selectedReportType == index;
+  //   return GestureDetector(
+  //     onTap: () {
+  //       setState(() {
+  //         _selectedReportType = index;
+  //       });
+  //     },
+  //     child: Container(
+  //       width: 93,
+  //       height: 34,
+  //       decoration: BoxDecoration(
+  //         color: isSelected ? const Color(0xFFE4EAFF) : const Color(0xFFF7F7F7),
+  //         borderRadius: BorderRadius.circular(4),
+  //       ),
+  //       child: Center(
+  //         child: Text(
+  //           text,
+  //           style: TextStyle(
+  //             color: isSelected
+  //                 ? Color.fromRGBO(47, 85, 221, 1)
+  //                 : const Color(0xFF414141),
+  //             fontSize: 12,
+  //           ),
+  //         ),
+  //       ),
+  //     ),
+  //   );
+  // }
