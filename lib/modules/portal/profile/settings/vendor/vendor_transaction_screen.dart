@@ -5,6 +5,7 @@ import 'package:flutter_svg/svg.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/model/profile/vendor_transaction_model.dart';
+import 'package:linkschool/modules/portal/profile/expenditure/add_expenditure_screen.dart';
 import 'package:linkschool/modules/portal/profile/settings/vendor/vendor_transaction_details_screen.dart';
 
 class VendorTransactionScreen extends StatelessWidget {
@@ -116,6 +117,7 @@ class VendorTransactionScreen extends StatelessWidget {
           ),
         ),
         backgroundColor: AppColors.backgroundLight,
+        centerTitle: true,
       ),
       body: SingleChildScrollView(
         child: Padding(
@@ -228,14 +230,21 @@ class VendorTransactionScreen extends StatelessWidget {
                   const SizedBox(width: 10),
                   Expanded(
                     child: OutlinedButton.icon(
-                      onPressed: () {},
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => AddExpenditureScreen(),
+                          ),
+                        );
+                      },
                       icon: SvgPicture.asset(
                         'assets/icons/profile/add_icon.svg',
                         color: AppColors.paymentTxtColor1,
                         width: 20,
                         height: 20,
                       ),
-                      label: Text('Expenditure', style: AppTextStyles.normal600(fontSize: 16, color: AppColors.paymentTxtColor1),),
+                      label: Text('Expenditure', style: AppTextStyles.normal600(fontSize: 14, color: AppColors.paymentTxtColor1),),
                       style: OutlinedButton.styleFrom(
                         side: const BorderSide(
                             color: AppColors.paymentTxtColor1),

@@ -184,4 +184,7 @@ class AppColors {
   static const Color paymentTxtColor1 = Color.fromRGBO(47, 85, 221, 1);
   static const Color paymentTxtColor2 = Color.fromRGBO(76, 175, 80, 1);
   static const Color paymentTxtColor3 = Color.fromRGBO(219, 75, 70, 1);
+  static const Color paymentTxtColor4 = Color.fromRGBO(116, 195, 142, 1);
+  static const Color paymentTxtColor5 = Color.fromRGBO(112, 112, 112, 1);
+
 }

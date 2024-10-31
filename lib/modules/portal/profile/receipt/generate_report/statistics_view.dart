@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:linkschool/modules/common/app_colors.dart';
+import 'package:linkschool/modules/common/text_styles.dart';
 // import 'package:linkschool/modules/common/app_colors.dart';
 // import 'package:linkschool/modules/common/text_styles.dart';
 
@@ -16,25 +18,44 @@ class StatisticsView extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Existing Termly Report Container
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Container(
-              width: 327,
-              height: 40,
-              decoration: BoxDecoration(
-                color: const Color.fromRGBO(209, 219, 255, 1),
-                borderRadius: BorderRadius.circular(4),
-              ),
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text('Termly report'),
-                  SvgPicture.asset('assets/icons/profile/filter_icon.svg'),
-                ],
-              ),
+        Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Container(
+            // width: 327,
+            height: 50,
+            decoration: BoxDecoration(
+              color:  const Color.fromRGBO(209, 219, 255, 1).withOpacity(0.35),
+              borderRadius: BorderRadius.circular(4),
+            ),
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text('Termly report', style: AppTextStyles.normal500(fontSize: 14, color: AppColors.backgroundDark),),
+                SvgPicture.asset('assets/icons/profile/filter_icon.svg', height: 24, width: 24,),
+              ],
             ),
           ),
+        ),
+          // Padding(
+          //   padding: const EdgeInsets.all(16.0),
+          //   child: Container(
+          //     width: 327,
+          //     height: 40,
+          //     decoration: BoxDecoration(
+          //       color: const Color.fromRGBO(209, 219, 255, 1),
+          //       borderRadius: BorderRadius.circular(4),
+          //     ),
+          //     padding: const EdgeInsets.symmetric(horizontal: 16),
+          //     child: Row(
+          //       mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          //       children: [
+          //         const Text('Termly report'),
+          //         SvgPicture.asset('assets/icons/profile/filter_icon.svg'),
+          //       ],
+          //     ),
+          //   ),
+          // ),
 
           // Existing Date and Session Picker Row
           Padding(

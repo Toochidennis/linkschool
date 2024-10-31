@@ -108,7 +108,7 @@ class _FeeSettingScreenState extends State<FeeSettingScreen> {
           isRequired ? 'Required' : 'Not Required',
           style: TextStyle(color: Colors.grey),
         ),
-        trailing: SvgPicture.asset('assets/icons/profile/edit_pen.svg'),
+        // trailing: SvgPicture.asset('assets/icons/profile/edit_pen.svg'),
       ),
     );
   }

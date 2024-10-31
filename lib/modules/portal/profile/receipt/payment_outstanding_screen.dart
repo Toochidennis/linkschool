@@ -5,6 +5,7 @@ import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/common/widgets/portal/profile/naira_icon.dart';
 import 'package:linkschool/modules/model/profile/student_model.dart';
+import 'package:linkschool/modules/model/profile/vendor_transaction_model.dart';
 import 'package:linkschool/modules/portal/profile/receipt/student_payment_detail_screen.dart';
 
 class PaymentOutstandingScreen extends StatefulWidget {
@@ -36,6 +37,15 @@ class _PaymentOutstandingScreenState extends State<PaymentOutstandingScreen> {
     StudentPayment(name: "Richard", grade: "Basic 1", amount: "₦48,750"),
   ];
 
+
+
+  // Define class data
+  final Map<String, List<String>> ClassMap = {
+    'JSS': ['JSS 1', 'JSS 2', 'JSS 3'],
+    'SS': ['SS 1', 'SS 2', 'SS 3'],
+    'BASIC': ['Basic 1', 'Basic 2', 'Basic 3', 'Basic 4', 'Basic 5'],
+  };
+
   // Filtered list based on search and class filter
   List<StudentPayment> get filteredStudents {
     return dummyStudents.where((student) {
@@ -45,6 +55,55 @@ class _PaymentOutstandingScreenState extends State<PaymentOutstandingScreen> {
           selectedClass == null || student.grade.startsWith(selectedClass!);
       return matchesSearch && matchesClass;
     }).toList();
+  }
+
+  void _showClassSelectionOverlay() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: AppColors.backgroundLight,
+      builder: (BuildContext context) {
+        return Padding(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(context).viewInsets.bottom,
+          ),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              maxHeight: MediaQuery.of(context).size.height * 0.4,
+            ),
+            child: Padding(
+              padding: const EdgeInsets.only(top: 16.0),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'Select Class',
+                    style: AppTextStyles.normal600(
+                      fontSize: 20,
+                      color: const Color.fromRGBO(47, 85, 221, 1),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  Flexible(
+                    child: ListView.builder(
+                      itemCount: ClassMap.keys.length,
+                      itemBuilder: (context, index) {
+                        String level = ClassMap.keys.elementAt(index);
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 24, vertical: 8),
+                          child: _buildSubjectButton(level),
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
   }
 
   @override
@@ -64,6 +123,7 @@ class _PaymentOutstandingScreenState extends State<PaymentOutstandingScreen> {
             height: 34.0,
           ),
         ),
+        centerTitle: true,
         title: Text(
           'Outstanding',
           style: AppTextStyles.normal600(
@@ -97,20 +157,39 @@ class _PaymentOutstandingScreenState extends State<PaymentOutstandingScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
-                  DropdownButton<String>(
-                    hint: const Text('Class'),
-                    items: ['Basic', 'JSS', 'SSS'].map((String value) {
-                      return DropdownMenuItem<String>(
-                        value: value,
-                        child: Text(value),
-                      );
-                    }).toList(),
-                    // onChanged: (_) {},
-                    onChanged: (String? value) {
-                      setState(() {
-                        selectedClass = value;
-                      });
-                    },
+                  InkWell(
+                    onTap: _showClassSelectionOverlay,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16.0,
+                        vertical: 8.0,
+                      ),
+                      decoration: BoxDecoration(
+                        border: Border.all(color: Colors.grey.shade300),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            selectedClass ?? 'Class',
+                            style: AppTextStyles.normal500(
+                              fontSize: 16.0,
+                              color: selectedClass != null
+                                  ? AppColors.primaryLight
+                                  : Colors.grey,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Icon(
+                            Icons.arrow_drop_down,
+                            color: selectedClass != null
+                                ? AppColors.primaryLight
+                                : Colors.grey,
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
                 ],
               ),
@@ -191,10 +270,34 @@ class _PaymentOutstandingScreenState extends State<PaymentOutstandingScreen> {
             context,
             MaterialPageRoute(
               builder: (context) =>
-                  StudentPaymentDetailsScreen(student: student),
+                  StudentPaymentDetailsScreen(student: student, ),
             ),
           );
         },
+      ),
+    );
+  }
+
+  Widget _buildSubjectButton(String text) {
+    return ElevatedButton(
+      onPressed: () {
+        setState(() {
+          selectedClass = text;
+        });
+        Navigator.pop(context);
+      },
+      style: ElevatedButton.styleFrom(
+        backgroundColor: Colors.white,
+        elevation: 4,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8),
+        ),
+        padding: const EdgeInsets.symmetric(vertical: 16),
+      ),
+      child: Text(
+        text,
+        style: const TextStyle(fontSize: 16),
+        textAlign: TextAlign.center,
       ),
     );
   }

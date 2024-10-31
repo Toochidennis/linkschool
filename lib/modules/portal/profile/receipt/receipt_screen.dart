@@ -6,9 +6,10 @@ import 'package:flutter_svg/svg.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
+import 'package:linkschool/modules/common/widgets/portal/profile/naira_icon.dart';
 import 'package:linkschool/modules/portal/profile/receipt/student_list_screen.dart';
 import 'package:linkschool/modules/portal/profile/receipt/generate_report/report_payment.dart';
-// import 'package:linkschool/modules/portal/profile/receipt/payment_received_screen.dart';
+
 
 class ReceiptScreen extends StatefulWidget {
   const ReceiptScreen({super.key});
@@ -28,10 +29,27 @@ class _ReceiptScreenState extends State<ReceiptScreen>
   String _selectedClass = 'JSS1A';
   DateTime _fromDate = DateTime.now();
   DateTime _toDate = DateTime.now();
+  bool _isAmountHidden = false;
 
   late TabController _tabController;
-final List<String> reportTypes = ['Termly report', 'Session report', 'Monthly report', 'Class report', 'Level report'];
-final List<String> dateRangeOptions = ['Custom', 'Today', 'Yesterday', 'This Week', 'Last 7 days', 'Last 30 days'];
+  final List<String> reportTypes = [
+    'Termly report',
+    'Session report',
+    'Monthly report',
+    'Class report',
+    'Level report',
+    'Monthly report',
+    'Class report',
+    'Level report'
+  ];
+  final List<String> dateRangeOptions = [
+    'Custom',
+    'Today',
+    'Yesterday',
+    'This Week',
+    'Last 7 days',
+    'Last 30 days'
+  ];
 
   bool _isExpanded = false;
   late AnimationController _animationController;
@@ -107,6 +125,96 @@ final List<String> dateRangeOptions = ['Custom', 'Today', 'Yesterday', 'This Wee
     setState(() {
       _toDate = date;
     });
+  }
+
+  void _showMonthYearFilterOverlay() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: AppColors.backgroundLight,
+      builder: (BuildContext context) {
+        return Padding(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(context).viewInsets.bottom,
+          ),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              maxHeight: MediaQuery.of(context).size.height * 0.4,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Text(
+                    'Select Month and Year',
+                    style: AppTextStyles.normal600(
+                      fontSize: 20,
+                      color: const Color.fromRGBO(47, 85, 221, 1),
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: ListView(
+                    children: [
+                      _buildMonthYearItem('January 2023'),
+                      _buildMonthYearItem('February 2023'),
+                      _buildMonthYearItem('March 2023'),
+                      // Add more months
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  void _showSessionTermFilterOverlay() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: AppColors.backgroundLight,
+      builder: (BuildContext context) {
+        return Padding(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(context).viewInsets.bottom,
+          ),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              maxHeight: MediaQuery.of(context).size.height * 0.4,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Text(
+                    'Select Session and Term',
+                    style: AppTextStyles.normal600(
+                      fontSize: 20,
+                      color: const Color.fromRGBO(47, 85, 221, 1),
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: ListView(
+                    children: [
+                      _buildSessionTermItem('2023/2024 1st Term'),
+                      _buildSessionTermItem('2023/2024 2nd Term'),
+                      _buildSessionTermItem('2023/2024 3rd Term'),
+                      _buildSessionTermItem('2022/2023 3rd Term'),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
   }
 
   void _showLevelSelectionOverlay() {
@@ -314,7 +422,7 @@ final List<String> dateRangeOptions = ['Custom', 'Today', 'Yesterday', 'This Wee
           },
           icon: Image.asset(
             'assets/icons/arrow_back.png',
-            color: AppColors.primaryLight,
+            color: AppColors.paymentTxtColor1,
             width: 34.0,
             height: 34.0,
           ),
@@ -323,10 +431,29 @@ final List<String> dateRangeOptions = ['Custom', 'Today', 'Yesterday', 'This Wee
           'Receipts',
           style: AppTextStyles.normal600(
             fontSize: 24.0,
-            color: AppColors.primaryLight,
+            color: AppColors.paymentTxtColor1,
           ),
         ),
         backgroundColor: AppColors.backgroundLight,
+        centerTitle: true,
+        actions: [
+          TextButton(
+            onPressed: () {
+              showModalBottomSheet(
+                context: context,
+                isScrollControlled: true,
+                backgroundColor: Colors.transparent,
+                builder: (BuildContext context) {
+                  return _buildCustomOverlay();
+                },
+              );
+            },
+            child: SvgPicture.asset(
+              'assets/icons/profile/filter_icon.svg',
+              color: Color.fromRGBO(47, 85, 221, 1),
+            ),
+          ),
+        ],
         flexibleSpace: FlexibleSpaceBar(
           background: Stack(
             children: [
@@ -356,64 +483,90 @@ final List<String> dateRangeOptions = ['Custom', 'Today', 'Yesterday', 'This Wee
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Row(
+                      Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Row(
-                            children: [
-                              Text('February 2023'),
-                              Icon(Icons.arrow_drop_down),
-                            ],
+                          GestureDetector(
+                            onTap: _showMonthYearFilterOverlay,
+                            child: Row(
+                              children: [
+                                Text('February 2023'),
+                                Icon(Icons.arrow_drop_down),
+                              ],
+                            ),
                           ),
-                          Row(
-                            children: [
-                              Text('2023/2024 3rd Term'),
-                              Icon(Icons.arrow_drop_down),
-                            ],
+                          GestureDetector(
+                            onTap: _showSessionTermFilterOverlay,
+                            child: Row(
+                              children: [
+                                Text('2023/2024 3rd Term'),
+                                Icon(Icons.arrow_drop_down),
+                              ],
+                            ),
                           ),
                         ],
                       ),
                       const SizedBox(height: 16),
                       Container(
                         width: double.infinity,
-                        height: 100,
+                        height: 115,
                         decoration: BoxDecoration(
                           color: const Color.fromRGBO(47, 85, 221, 1),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Padding(
-                          padding: const EdgeInsets.all(16),
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            // mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               Row(
                                 mainAxisAlignment:
                                     MainAxisAlignment.spaceBetween,
                                 children: [
-                                  const Text(
-                                    'Total Amount Received',
-                                    style: TextStyle(color: Colors.white),
+                                  Row(
+                                    children: [
+                                      Text(
+                                        'Total Amount Received',
+                                        style: AppTextStyles.normal600(fontSize: 14, color: AppColors.backgroundLight),
+                                      ),
+                                      IconButton(
+                                        icon: Icon(
+                                          _isAmountHidden
+                                              ? Icons.visibility
+                                              : Icons.visibility_off,
+                                          color: Colors.white,
+                                          size: 20,
+                                        ),
+                                        onPressed: () {
+                                          setState(() {
+                                            _isAmountHidden = !_isAmountHidden;
+                                          });
+                                        },
+                                      ),
+                                    ],
                                   ),
                                   Container(
-                                    padding: const EdgeInsets.symmetric(
+                                    padding:  const EdgeInsets.symmetric(
                                         horizontal: 8, vertical: 4),
                                     decoration: BoxDecoration(
                                       color: const Color.fromRGBO(
                                           198, 210, 255, 1),
                                       borderRadius: BorderRadius.circular(10),
                                     ),
-                                    child: const Text('7 payments'),
+                                    child:  Text('7 payments', style: AppTextStyles.normal500(fontSize: 12, color: AppColors.paymentTxtColor1),),
                                   ),
                                 ],
                               ),
-                              const Text(
-                                '234,790.00',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 24,
-                                ),
+                              Row(
+                                children: [
+                                  const NairaSvgIcon(color: AppColors.backgroundLight),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    _isAmountHidden ? '********' : '234,790.00',
+                                    style: AppTextStyles.normal700(fontSize: 24, color: AppColors.backgroundLight),
+                                  ),
+                                ],
                               ),
                             ],
                           ),
@@ -484,12 +637,23 @@ final List<String> dateRangeOptions = ['Custom', 'Today', 'Yesterday', 'This Wee
                               style: AppTextStyles.normal600(
                                   fontSize: 18,
                                   color: AppColors.backgroundDark)),
-                          const Text(
-                            'See all',
-                            style: TextStyle(
-                                decoration: TextDecoration.underline,
-                                color: Color.fromRGBO(47, 85, 221, 1),
-                                fontSize: 16.0),
+                          GestureDetector(
+                            onTap: () {
+                              // Navigate to the report_payment screen
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (context) =>
+                                        ReportPaymentScreen()),
+                              );
+                            },
+                            child: const Text(
+                              'See all',
+                              style: TextStyle(
+                                  decoration: TextDecoration.underline,
+                                  color: Color.fromRGBO(47, 85, 221, 1),
+                                  fontSize: 16.0),
+                            ),
                           ),
                         ],
                       ),
@@ -686,7 +850,7 @@ final List<String> dateRangeOptions = ['Custom', 'Today', 'Yesterday', 'This Wee
     return GestureDetector(
       onTap: () => Navigator.pop(context),
       child: Container(
-        color: Colors.black54,
+        // color: Colors.black54,
         child: GestureDetector(
           onTap: () {}, // Prevents taps from propagating
           child: Container(
@@ -700,17 +864,22 @@ final List<String> dateRangeOptions = ['Custom', 'Today', 'Yesterday', 'This Wee
             ),
             child: Column(
               children: [
+
                 // Report Type TabBar
                 Container(
+                  height: 120,
                   padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceAround,
-                    children: [
-                      _buildReportTypeTab('Termly report', 0),
-                      _buildReportTypeTab('Session report', 1),
-                      _buildReportTypeTab('Monthly report', 2),
-                    ],
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Column(
+                      // mainAxisAlignment: MainAxisAlignment.spaceAround,
+                      children: [
+                        _buildReportTypeTabRow(reportTypes.sublist(0, 5)),
+                        SizedBox(height: 8),
+                        _buildReportTypeTabRow(reportTypes.sublist(0, 5)),
+                      ],
+                    ),
                   ),
                 ),
                 // Main TabBar and Content
@@ -765,12 +934,13 @@ final List<String> dateRangeOptions = ['Custom', 'Today', 'Yesterday', 'This Wee
                                 context,
                                 MaterialPageRoute(
                                   builder: (context) =>
-                                      const ReportPaymentScreen(), // Create this screen
+                                      const ReportPaymentScreen(),
                                 ),
                               );
                             },
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: Color.fromRGBO(47, 85, 221, 1),
+                              backgroundColor:
+                                  const Color.fromRGBO(47, 85, 221, 1),
                               minimumSize: const Size(double.infinity, 50),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(10.0),
@@ -798,90 +968,50 @@ final List<String> dateRangeOptions = ['Custom', 'Today', 'Yesterday', 'This Wee
     );
   }
 
-Widget _buildReportTypeTab(String text, int index) {
-  return Container(
-    height: 50,
-    child: SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      physics: const BouncingScrollPhysics(),
-      child: Row(
-        children: reportTypes.map((type) {
-          int typeIndex = reportTypes.indexOf(type);
-          bool isSelected = _selectedReportType == typeIndex;
-          return Padding(
-            padding: const EdgeInsets.only(right: 12.0),
-            child: GestureDetector(
-              onTap: () {
-                setState(() {
-                  _selectedReportType = typeIndex;
-                });
-              },
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                decoration: BoxDecoration(
-                  color: isSelected ? const Color(0xFFE4EAFF) : const Color(0xFFF7F7F7),
-                  borderRadius: BorderRadius.circular(4),
-                ),
-                child: Text(
-                  type,
-                  style: TextStyle(
-                    color: isSelected ? const Color.fromRGBO(47, 85, 221, 1) : const Color(0xFF414141),
-                    fontSize: 12,
+  Widget _buildReportTypeTab(String text, int index) {
+    return Container(
+      height: 50,
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        physics: const BouncingScrollPhysics(),
+        child: Row(
+          children: reportTypes.map((type) {
+            int typeIndex = reportTypes.indexOf(type);
+            bool isSelected = _selectedReportType == typeIndex;
+            return Padding(
+              padding: const EdgeInsets.only(right: 12.0),
+              child: GestureDetector(
+                onTap: () {
+                  setState(() {
+                    _selectedReportType = typeIndex;
+                  });
+                },
+                child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: isSelected
+                        ? Color.fromRGBO(228, 234, 255, 1)
+                        : Color.fromRGBO(247, 247, 247, 1),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Text(
+                    type,
+                    style: TextStyle(
+                      color: isSelected
+                          ? Color.fromRGBO(47, 85, 221, 1)
+                          : Color.fromRGBO(65, 65, 65, 1),
+                      fontSize: 12,
+                    ),
                   ),
                 ),
               ),
-            ),
-          );
-        }).toList(),
+            );
+          }).toList(),
+        ),
       ),
-    ),
-  );
-}
-
-// Widget _buildReportTypeTab(String text, int index) {
-//   return Container(
-//     height: 50, // Fixed height for the container
-//     child: SingleChildScrollView(
-//       scrollDirection: Axis.horizontal,
-//       physics: const BouncingScrollPhysics(),
-//       child: Container(
-//         width: MediaQuery.of(context).size.width, // Full width of screen
-//         padding: const EdgeInsets.symmetric(horizontal: 16),
-//         child: Row(
-//           children: reportTypes.map((type) {
-//             int typeIndex = reportTypes.indexOf(type);
-//             bool isSelected = _selectedReportType == typeIndex;
-//             return Padding(
-//               padding: const EdgeInsets.only(right: 12.0),
-//               child: GestureDetector(
-//                 onTap: () {
-//                   setState(() {
-//                     _selectedReportType = typeIndex;
-//                   });
-//                 },
-//                 child: Container(
-//                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-//                   decoration: BoxDecoration(
-//                     color: isSelected ? const Color(0xFFE4EAFF) : const Color(0xFFF7F7F7),
-//                     borderRadius: BorderRadius.circular(4),
-//                   ),
-//                   child: Text(
-//                     type,
-//                     style: TextStyle(
-//                       color: isSelected ? const Color.fromRGBO(47, 85, 221, 1) : const Color(0xFF414141),
-//                       fontSize: 12,
-//                     ),
-//                   ),
-//                 ),
-//               ),
-//             );
-//           }).toList(),
-//         ),
-//       ),
-//     ),
-//   );
-// }
-
+    );
+  }
 
   Widget _buildFilterByTab() {
     return Padding(
@@ -906,7 +1036,7 @@ Widget _buildReportTypeTab(String text, int index) {
       width: double.infinity,
       height: 42,
       decoration: BoxDecoration(
-        color: Color.fromRGBO(229, 229, 229, 1),
+        color: const Color.fromRGBO(229, 229, 229, 1),
         borderRadius: BorderRadius.circular(6),
       ),
       child: Center(
@@ -953,40 +1083,43 @@ Widget _buildReportTypeTab(String text, int index) {
     );
   }
 
-Widget _buildDateRangeOptions() {
-  return SingleChildScrollView(
-    scrollDirection: Axis.horizontal,
-    child: Row(
-      children: dateRangeOptions.map((option) {
-        return Padding(
-          padding: const EdgeInsets.only(right: 8.0),
-          child: GestureDetector(
-            onTap: () {
-              setState(() {
-                _selectedDateRange = option;
-              });
-            },
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              decoration: BoxDecoration(
-                color: _selectedDateRange == option
-                    ? const Color.fromRGBO(47, 85, 221, 1)
-                    : const Color.fromRGBO(212, 222, 255, 1),
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Text(
-                option,
-                style: TextStyle(
-                  color: _selectedDateRange == option ? Colors.white : AppColors.paymentTxtColor1,
+  Widget _buildDateRangeOptions() {
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        children: dateRangeOptions.map((option) {
+          return Padding(
+            padding: const EdgeInsets.only(right: 8.0),
+            child: GestureDetector(
+              onTap: () {
+                setState(() {
+                  _selectedDateRange = option;
+                });
+              },
+              child: Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: _selectedDateRange == option
+                      ? const Color.fromRGBO(47, 85, 221, 1)
+                      : const Color.fromRGBO(212, 222, 255, 1),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Text(
+                  option,
+                  style: TextStyle(
+                    color: _selectedDateRange == option
+                        ? Colors.white
+                        : AppColors.paymentTxtColor1,
+                  ),
                 ),
               ),
             ),
-          ),
-        );
-      }).toList(),
-    ),
-  );
-}
+          );
+        }).toList(),
+      ),
+    );
+  }
 
   Widget _buildCustomDateRange() {
     return Column(
@@ -999,52 +1132,53 @@ Widget _buildDateRangeOptions() {
     );
   }
 
-Widget _buildDateInput(String label, DateTime selectedDate, Function(DateTime) onDateSelected) {
-  return Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      Text(label),
-      const SizedBox(height: 5),
-      GestureDetector(
-        onTap: () async {
-          final DateTime? picked = await showDatePicker(
-            context: context,
-            initialDate: selectedDate,
-            firstDate: DateTime(2000),
-            lastDate: DateTime(2025),
-          );
-          if (picked != null) {
-            onDateSelected(picked);
-            if (mounted) {
-              setState(() {});
+  Widget _buildDateInput(
+      String label, DateTime selectedDate, Function(DateTime) onDateSelected) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label),
+        const SizedBox(height: 5),
+        GestureDetector(
+          onTap: () async {
+            final DateTime? picked = await showDatePicker(
+              context: context,
+              initialDate: selectedDate,
+              firstDate: DateTime(2000),
+              lastDate: DateTime(2025),
+            );
+            if (picked != null) {
+              onDateSelected(picked);
+              if (mounted) {
+                setState(() {});
+              }
             }
-          }
-        },
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-          decoration: BoxDecoration(
-            border: Border.all(color: Colors.grey),
-            borderRadius: BorderRadius.circular(4),
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                '${selectedDate.day}-${selectedDate.month}-${selectedDate.year}',
-                style: const TextStyle(fontSize: 16),
-              ),
-              Icon(
-                Icons.calendar_today,
-                color: AppColors.paymentTxtColor1,
-                size: 24,
-              ),
-            ],
+          },
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              border: Border.all(color: Colors.grey),
+              borderRadius: BorderRadius.circular(4),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  '${selectedDate.day}-${selectedDate.month}-${selectedDate.year}',
+                  style: const TextStyle(fontSize: 16),
+                ),
+                const Icon(
+                  Icons.calendar_today,
+                  color: AppColors.paymentTxtColor1,
+                  size: 24,
+                ),
+              ],
+            ),
           ),
         ),
-      ),
-    ],
-  );
-}
+      ],
+    );
+  }
 
   Widget _buildGroupingTab() {
     return Padding(
@@ -1174,126 +1308,77 @@ Widget _buildDateInput(String label, DateTime selectedDate, Function(DateTime) o
                   ),
                 ],
               ),
-              Text(amount,
-                  style: AppTextStyles.normal700(
-                      fontSize: 18,
-                      color: const Color.fromRGBO(47, 85, 221, 1))),
+              Row(
+                children: [
+                  NairaSvgIcon(color: AppColors.paymentTxtColor1,),
+                  const SizedBox(width: 4),
+                  Text(amount,
+                      style: AppTextStyles.normal700(
+                          fontSize: 18,
+                          color: AppColors.paymentTxtColor1)),
+                ],
+              ),
             ],
           ),
         ),
       ),
     );
   }
+
+  Widget _buildReportTypeTabRow(List<String> types) {
+    return Row(
+      children: types.map((type) {
+        int typeIndex = reportTypes.indexOf(type);
+        bool isSelected = _selectedReportType == typeIndex;
+        return Padding(
+          padding: const EdgeInsets.only(right: 12.0),
+          child: GestureDetector(
+            onTap: () {
+              setState(() {
+                _selectedReportType = typeIndex;
+              });
+            },
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              decoration: BoxDecoration(
+                color: isSelected
+                    ? Color.fromRGBO(228, 234, 255, 1)
+                    : Color.fromRGBO(247, 247, 247, 1),
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: Text(
+                type,
+                style: TextStyle(
+                  color: isSelected
+                      ? const Color.fromRGBO(47, 85, 221, 1)
+                      : Color.fromRGBO(65, 65, 65, 1),
+                  fontSize: 12,
+                ),
+              ),
+            ),
+          ),
+        );
+      }).toList(),
+    );
+  }
+
+  Widget _buildMonthYearItem(String text) {
+    return ListTile(
+      title: Text(text),
+      onTap: () {
+        // Update selected month/year
+        Navigator.pop(context);
+      },
+    );
+  }
+
+  Widget _buildSessionTermItem(String text) {
+    return ListTile(
+      title: Text(text),
+      onTap: () {
+        // Update selected session/term
+        Navigator.pop(context);
+      },
+    );
+  }
 }
-
-
-  // Widget _buildDateInput(
-  //     String label, DateTime selectedDate, Function(DateTime) onDateSelected) {
-  //   return Column(
-  //     crossAxisAlignment: CrossAxisAlignment.start,
-  //     children: [
-  //       Text(label),
-  //       const SizedBox(height: 5),
-  //       GestureDetector(
-  //         onTap: () async {
-  //           final DateTime? picked = await showDatePicker(
-  //             context: context,
-  //             initialDate: selectedDate,
-  //             firstDate: DateTime(2000),
-  //             lastDate: DateTime(2025),
-  //           );
-  //           if (picked != null) {
-  //             onDateSelected(picked);
-  //             // Force rebuild of overlay to show updated date
-  //             if (mounted) {
-  //               setState(() {});
-  //             }
-  //           }
-  //         },
-  //         child: Container(
-  //           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-  //           decoration: BoxDecoration(
-  //             border: Border.all(color: Colors.grey),
-  //             borderRadius: BorderRadius.circular(4),
-  //           ),
-  //           child: Row(
-  //             mainAxisAlignment: MainAxisAlignment.spaceBetween,
-  //             children: [
-  //               Text(
-  //                 '${selectedDate.day}-${selectedDate.month}-${selectedDate.year}',
-  //                 style: const TextStyle(fontSize: 16),
-  //               ),
-  //               SvgPicture.asset(
-  //                 'assets/icons/profile/calendar_icon.svg',
-  //                 color: AppColors.paymentTxtColor1,
-  //                 height: 24,
-  //                 width: 24,
-  //               ),
-  //             ],
-  //           ),
-  //         ),
-  //       ),
-  //     ],
-  //   );
-  // }
-
-    // Widget _buildDateRangeOptions() {
-  //   return Row(
-  //     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-  //     children: ['Custom', 'Today', 'Yesterday', 'This Week'].map((option) {
-  //       return GestureDetector(
-  //         onTap: () {
-  //           setState(() {
-  //             _selectedDateRange = option;
-  //           });
-  //         },
-  //         child: Container(
-  //           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-  //           decoration: BoxDecoration(
-  //             color: _selectedDateRange == option
-  //                 ? const Color.fromRGBO(47, 85, 221, 1)
-  //                 : const Color.fromRGBO(212, 222, 255, 1),
-  //             borderRadius: BorderRadius.circular(16),
-  //           ),
-  //           child: Text(
-  //             option,
-  //             style: TextStyle(
-  //               color:
-  //                   _selectedDateRange == option ? Colors.white : AppColors.paymentTxtColor1,
-  //             ),
-  //           ),
-  //         ),
-  //       );
-  //     }).toList(),
-  //   );
-  // }
-
-  // Widget _buildReportTypeTab(String text, int index) {
-  //   bool isSelected = _selectedReportType == index;
-  //   return GestureDetector(
-  //     onTap: () {
-  //       setState(() {
-  //         _selectedReportType = index;
-  //       });
-  //     },
-  //     child: Container(
-  //       width: 93,
-  //       height: 34,
-  //       decoration: BoxDecoration(
-  //         color: isSelected ? const Color(0xFFE4EAFF) : const Color(0xFFF7F7F7),
-  //         borderRadius: BorderRadius.circular(4),
-  //       ),
-  //       child: Center(
-  //         child: Text(
-  //           text,
-  //           style: TextStyle(
-  //             color: isSelected
-  //                 ? Color.fromRGBO(47, 85, 221, 1)
-  //                 : const Color(0xFF414141),
-  //             fontSize: 12,
-  //           ),
-  //         ),
-  //       ),
-  //     ),
-  //   );
-  // }

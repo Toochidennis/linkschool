@@ -4,12 +4,32 @@ import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/common/widgets/portal/profile/naira_icon.dart';
 import 'package:linkschool/modules/model/profile/student_model.dart';
+import 'package:linkschool/modules/model/profile/vendor_transaction_model.dart';
+import 'package:linkschool/modules/portal/profile/settings/vendor/vendor_transaction_details_screen.dart';
 
 class StudentPaymentDetailsScreen extends StatelessWidget {
   final StudentPayment student;
 
   const StudentPaymentDetailsScreen({Key? key, required this.student})
       : super(key: key);
+
+  // Helper method to create VendorTransaction from StudentPayment
+  VendorTransaction _createVendorTransaction() {
+    // Convert the amount string to double, removing the ₦ symbol and any commas
+    String cleanAmount = student.amount.replaceAll('₦', '').replaceAll(',', '');
+    double amount = double.tryParse(cleanAmount) ?? 0.0;
+
+    return VendorTransaction(
+      amount: amount,
+      dateTime: DateTime.now().toString(), // Current date/time
+      name: student.name,
+      phoneNumber: student.phoneNumber ?? '', // Assuming this exists in StudentPayment
+      session: '2023/2024', // You might want to make this dynamic
+      reference: 'REF-${DateTime.now().millisecondsSinceEpoch}', // Generate unique reference
+      description: 'Second Term Fee Charges', 
+      period: '',
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -35,6 +55,7 @@ class StudentPaymentDetailsScreen extends StatelessWidget {
             color: AppColors.primaryLight,
           ),
         ),
+        centerTitle: true,
         backgroundColor: AppColors.backgroundLight,
       ),
       body: SingleChildScrollView(
@@ -59,10 +80,12 @@ class StudentPaymentDetailsScreen extends StatelessWidget {
                       const SizedBox(height: 16),
 
                       // Second section: Text description
-                      const Center(
+                      Center(
                         child: Text(
                           'Second Term Fee Charges for 2017/2018 Session',
                           textAlign: TextAlign.center,
+                          style: AppTextStyles.normal500(
+                              fontSize: 18, color: AppColors.backgroundDark),
                         ),
                       ),
 
@@ -81,19 +104,21 @@ class StudentPaymentDetailsScreen extends StatelessWidget {
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                const Text('Bus fee',
-                                    style: TextStyle(color: Colors.grey)),
+                                Text('Bus fee',
+                                    style: AppTextStyles.normal400(
+                                        fontSize: 14,
+                                        color: AppColors.paymentTxtColor5)),
                                 Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
                                     const NairaSvgIcon(
-                                        color: AppColors.paymentTxtColor3),
+                                        color: AppColors.paymentTxtColor5),
                                     const SizedBox(width: 4),
                                     Text(
                                       amountValue,
-                                      style: AppTextStyles.normal700(
-                                        fontSize: 18,
-                                        color: AppColors.paymentTxtColor3,
+                                      style: AppTextStyles.normal500(
+                                        fontSize: 14,
+                                        color: AppColors.paymentTxtColor5,
                                       ),
                                     ),
                                   ],
@@ -109,24 +134,23 @@ class StudentPaymentDetailsScreen extends StatelessWidget {
                       const Divider(),
 
                       // Fourth section: Total Amount
-                      const Row(
+                      Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Text('Total amount to pay',
-                              style: TextStyle(color: Colors.grey)),
+                              style: AppTextStyles.normal400(
+                                  fontSize: 14,
+                                  color: AppColors.paymentTxtColor5)),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              const NairaSvgIcon(
-                                  color: AppColors.backgroundDark),
-                              const SizedBox(width: 4),
+                              NairaSvgIcon(color: AppColors.backgroundDark),
+                              SizedBox(width: 4),
                               Text(
                                 '356,870.00',
-                                style: const TextStyle(
-                                  fontSize: 28,
-                                  fontWeight: FontWeight.bold,
-                                  color: AppColors.backgroundDark,
-                                ),
+                                style: AppTextStyles.normal500(
+                                    fontSize: 18,
+                                    color: AppColors.backgroundDark),
                               ),
                             ],
                           ),
@@ -149,11 +173,12 @@ class StudentPaymentDetailsScreen extends StatelessWidget {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
-            const Column(
+            Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Text('Total amount to pay',
-                    style: TextStyle(color: Colors.white)),
+                    style: AppTextStyles.normal500(
+                        fontSize: 16, color: AppColors.backgroundLight)),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -161,31 +186,39 @@ class StudentPaymentDetailsScreen extends StatelessWidget {
                     const SizedBox(width: 4),
                     Text(
                       '356,870.00',
-                      style: const TextStyle(
-                        fontSize: 28,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
+                      style: AppTextStyles.normal600(
+                          fontSize: 26, color: AppColors.backgroundLight),
                     ),
                   ],
                 ),
-                // Text('₦356,870.00',
-                //     style: TextStyle(
-                //         color: Colors.white, fontWeight: FontWeight.bold)),
               ],
             ),
             ElevatedButton(
-              onPressed: () {},
+              onPressed: () {
+                // Create VendorTransaction object and navigate
+                final vendorTransaction = _createVendorTransaction();
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => VendorTransactionDetailsScreen(
+                      transaction: vendorTransaction,
+                    ),
+                  ),
+                );
+              },
               style: ElevatedButton.styleFrom(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                 backgroundColor: Colors.white,
                 foregroundColor: const Color.fromRGBO(47, 85, 221, 1),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8),
                 ),
               ),
-              child: const Text('Proceed to pay'),
+              child: Text(
+                'Proceed to pay',
+                style: AppTextStyles.normal500(
+                    fontSize: 16, color: AppColors.paymentTxtColor1),
+              ),
             ),
           ],
         ),

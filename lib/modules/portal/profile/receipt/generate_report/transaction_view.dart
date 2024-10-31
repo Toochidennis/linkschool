@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
+import 'package:linkschool/modules/common/widgets/portal/profile/naira_icon.dart';
 
 class TransactionsView extends StatelessWidget {
   const TransactionsView({super.key});
@@ -13,18 +14,18 @@ class TransactionsView extends StatelessWidget {
         Padding(
           padding: const EdgeInsets.all(16.0),
           child: Container(
-            width: 327,
-            height: 40,
+            // width: 327,
+            height: 50,
             decoration: BoxDecoration(
-              color: const Color.fromRGBO(209, 219, 255, 1),
+              color:  const Color.fromRGBO(209, 219, 255, 1).withOpacity(0.35),
               borderRadius: BorderRadius.circular(4),
             ),
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text('Termly report'),
-                SvgPicture.asset('assets/icons/profile/filter_icon.svg'),
+                Text('Termly report', style: AppTextStyles.normal500(fontSize: 14, color: AppColors.backgroundDark),),
+                SvgPicture.asset('assets/icons/profile/filter_icon.svg', height: 24, width: 24,),
               ],
             ),
           ),
@@ -93,7 +94,7 @@ class TransactionsView extends StatelessWidget {
                           ),
                           Text(
                             '07-03-2018 17:13',
-                            style: AppTextStyles.normal400(
+                            style: AppTextStyles.normal500(
                               fontSize: 12,
                               color: Colors.grey,
                             ),
@@ -101,9 +102,15 @@ class TransactionsView extends StatelessWidget {
                         ],
                       ),
                     ),
-                    Text(
-                      '23,790.00',
-                      style: AppTextStyles.normal600(fontSize: 16, color: AppColors.backgroundDark),
+                    Row(
+                      children: [
+                              const NairaSvgIcon(color: AppColors.backgroundDark,),
+                              const SizedBox(width: 2,),
+                        Text(
+                          '23,790.00',
+                          style: AppTextStyles.normal600(fontSize: 16, color: AppColors.backgroundDark),
+                        ),
+                      ],
                     ),
                   ],
                 ),
