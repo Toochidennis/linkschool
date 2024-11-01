@@ -7,7 +7,7 @@ import 'package:linkschool/modules/portal/profile/expenditure/expense_history_de
 
 class ExpenseHistoryScreen extends StatefulWidget {
   final String grade;
-  final String amount;
+  final double amount;
   final String name;
 
   const ExpenseHistoryScreen({
@@ -122,7 +122,7 @@ class _ExpenseHistoryScreenState extends State<ExpenseHistoryScreen> {
           style: AppTextStyles.normal500(fontSize: 18, color: AppColors.backgroundDark),
         ),
         trailing: Text(
-          widget.amount,
+          '${widget.amount}',
           style: AppTextStyles.normal700(fontSize: 18, color: const Color.fromRGBO(47, 85, 221, 1)),
         ),
         onTap: () => Navigator.push(
@@ -130,7 +130,7 @@ class _ExpenseHistoryScreenState extends State<ExpenseHistoryScreen> {
           MaterialPageRoute(
             builder: (context) => ExpenseHistoryDetail(
               studentName: widget.name,
-              amount: widget.amount,
+              amount: '${widget.amount}',
             ),
           ),
         ),

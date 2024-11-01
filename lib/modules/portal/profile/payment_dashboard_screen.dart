@@ -40,7 +40,7 @@ class _PaymentDashboardScreenState extends State<PaymentDashboardScreen> {
             'Revenue',
             style: AppTextStyles.normal600(
               fontSize: 24.0,
-              color: AppColors.primaryLight,
+              color: AppColors.paymentTxtColor1,
             ),
           ),
         ),

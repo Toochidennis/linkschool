@@ -4,6 +4,7 @@ import 'package:flutter_svg/svg.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
+import 'package:linkschool/modules/common/widgets/portal/profile/naira_icon.dart';
 import 'package:linkschool/modules/portal/profile/expenditure/add_expenditure_screen.dart';
 import 'package:linkschool/modules/portal/profile/expenditure/expense_history.dart';
 import 'package:linkschool/modules/portal/profile/receipt/generate_report/report_payment.dart';
@@ -219,7 +220,7 @@ class _ExpenditureScreenState extends State<ExpenditureScreen>
           },
           icon: Image.asset(
             'assets/icons/arrow_back.png',
-            color: AppColors.primaryLight,
+            color: AppColors.paymentTxtColor1,
             width: 34.0,
             height: 34.0,
           ),
@@ -228,10 +229,11 @@ class _ExpenditureScreenState extends State<ExpenditureScreen>
           'Expenditures',
           style: AppTextStyles.normal600(
             fontSize: 24.0,
-            color: AppColors.primaryLight,
+            color: AppColors.paymentTxtColor1,
           ),
         ),
         backgroundColor: AppColors.backgroundLight,
+        centerTitle: true,
         actions: [
           IconButton(
             onPressed: () {
@@ -250,17 +252,6 @@ class _ExpenditureScreenState extends State<ExpenditureScreen>
             ),
           ),
         ],
-// actions: [
-//   TextButton(
-//     onPressed: () {
-//       // Handle download action
-//     },
-//     child: SvgPicture.asset(
-//       'assets/icons/profile/filter_icon.svg',
-//       color:  Color.fromRGBO(47, 85, 221, 1) , // Use the ternary operator properly
-//     ),
-//   ),
-// ],
 
         flexibleSpace: FlexibleSpaceBar(
           background: Stack(
@@ -335,9 +326,9 @@ class _ExpenditureScreenState extends State<ExpenditureScreen>
                                 children: [
                                   Row(
                                     children: [
-                                      const Text(
+                                      Text(
                                         'Total Expenses',
-                                        style: TextStyle(color: Colors.white),
+                                        style: AppTextStyles.normal600(fontSize: 14, color: AppColors.backgroundLight),
                                       ),
                                       IconButton(
                                         icon: Icon(
@@ -363,17 +354,13 @@ class _ExpenditureScreenState extends State<ExpenditureScreen>
                                           198, 210, 255, 1),
                                       borderRadius: BorderRadius.circular(10),
                                     ),
-                                    child: const Text('7 payments'),
+                                    child:  Text('7 payments', style: AppTextStyles.normal500(fontSize: 12, color: AppColors.paymentTxtColor1),),
                                   ),
                                 ],
                               ),
                               Text(
                                 _isAmountHidden ? '********' : '234,790.00',
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 24,
-                                ),
+                                    style: AppTextStyles.normal700(fontSize: 24, color: AppColors.backgroundLight),     
                               ),
                             ],
                           ),
@@ -467,15 +454,15 @@ class _ExpenditureScreenState extends State<ExpenditureScreen>
                       ),
                       const SizedBox(height: 16),
                       _buildExpenseHistoryItem(
-                          'JSS', '234,700.00', 'Joseph Raphael'),
+                          'JSS', 234700.00, 'Joseph Raphael'),
                       _buildExpenseHistoryItem(
-                          'SS', '189,500.00', 'Maria Johnson'),
+                          'SS', 189500.00, 'Maria Johnson'),
                       _buildExpenseHistoryItem(
-                          'JSS', '276,300.00', 'John Smith'),
+                          'JSS', 276300.00, 'John Smith'),
                       _buildExpenseHistoryItem(
-                          'SS', '205,800.00', 'Emma Davis'),
+                          'SS', 205800.00, 'Emma Davis'),
                       _buildExpenseHistoryItem(
-                          'JSS', '298,100.00', 'Michael Brown'),
+                          'JSS', 298100.00, 'Michael Brown'),
                     ],
                   ),
                 ),
@@ -563,7 +550,7 @@ class _ExpenditureScreenState extends State<ExpenditureScreen>
     );
   }
 
-  Widget _buildExpenseHistoryItem(String grade, String amount, String name) {
+  Widget _buildExpenseHistoryItem(String grade, double amount, String name) {
     return GestureDetector(
       onTap: () {
         Navigator.push(
@@ -594,7 +581,7 @@ class _ExpenditureScreenState extends State<ExpenditureScreen>
           ),
           subtitle: Text(
             '07-03-2018  17:23',
-            style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+            style: AppTextStyles.normal500(fontSize: 12, color: AppColors.text10Light),
           ),
           trailing: Column(
             crossAxisAlignment: CrossAxisAlignment.end,
@@ -604,10 +591,11 @@ class _ExpenditureScreenState extends State<ExpenditureScreen>
                 '-$amount',
                 style: AppTextStyles.normal700(fontSize: 18, color: Colors.red),
               ),
+
               const SizedBox(height: 4),
               Text(
                 'Clinic medication',
-                style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                style: AppTextStyles.normal500(fontSize: 12, color: AppColors.text10Light),
               ),
             ],
           ),
