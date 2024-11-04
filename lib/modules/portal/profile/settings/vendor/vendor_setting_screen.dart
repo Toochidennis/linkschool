@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
+import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/model/profile/vendor_transaction_model.dart';
 import 'package:linkschool/modules/portal/profile/settings/vendor/vendor_transaction_screen.dart';
@@ -14,6 +15,8 @@ class VendorSettingsScreen extends StatefulWidget {
 }
 
 class _VendorSettingsScreenState extends State<VendorSettingsScreen> {
+  late double opacity;
+
   final List<String> vendorNames = [
     'Okoro Ifeanyi',
     'Joe Nwachi',
@@ -147,6 +150,8 @@ class _VendorSettingsScreenState extends State<VendorSettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final Brightness brightness = Theme.of(context).brightness;
+    opacity = brightness == Brightness.light ? 0.1 : 0.15;
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
@@ -155,7 +160,7 @@ class _VendorSettingsScreenState extends State<VendorSettingsScreen> {
           },
           icon: Image.asset(
             'assets/icons/arrow_back.png',
-            color: AppColors.primaryLight,
+            color: AppColors.paymentTxtColor1,
             width: 34.0,
             height: 34.0,
           ),
@@ -164,62 +169,80 @@ class _VendorSettingsScreenState extends State<VendorSettingsScreen> {
           'Vendor Settings',
           style: AppTextStyles.normal600(
             fontSize: 24.0,
-            color: AppColors.primaryLight,
+            color: AppColors.paymentTxtColor1,
           ),
         ),
         backgroundColor: AppColors.backgroundLight,
+        flexibleSpace: FlexibleSpaceBar(
+          background: Stack(
+            children: [
+              Positioned.fill(
+                child: Opacity(
+                  opacity: opacity,
+                  child: Image.asset(
+                    'assets/images/background.png',
+                    fit: BoxFit.cover,
+                  ),
+                ),
+              )
+            ],
+          ),
+        ),
       ),
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: TextField(
-              decoration: InputDecoration(
-                hintText: 'Search Vendor...',
-                prefixIcon: const Icon(Icons.search),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(30),
+      body: Container(
+        decoration: Constants.customBoxDecoration(context),
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: TextField(
+                decoration: InputDecoration(
+                  hintText: 'Search Vendor...',
+                  prefixIcon: const Icon(Icons.search),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(30),
+                  ),
                 ),
               ),
             ),
-          ),
-          Expanded(
-            child: ListView.builder(
-              itemCount: vendorNames.length,
-              itemBuilder: (context, index) {
-                return Column(
-                  children: [
-                    ListTile(
-                      leading: CircleAvatar(
-                        backgroundColor: AppColors.paymentTxtColor1,
-                        child: Text(
-                          vendorNames[index][0],
-                          style: const TextStyle(color: Colors.white),
-                        ),
-                      ),
-                      title: Text(vendorNames[index]),
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => VendorTransactionScreen(
-                              vendorName: vendorNames[index],
-                            ),
+            Expanded(
+              child: ListView.builder(
+                itemCount: vendorNames.length,
+                itemBuilder: (context, index) {
+                  return Column(
+                    children: [
+                      ListTile(
+                        leading: CircleAvatar(
+                          backgroundColor: AppColors.paymentTxtColor1,
+                          child: Text(
+                            vendorNames[index][0],
+                            style: const TextStyle(color: Colors.white),
                           ),
-                        );
-                      },
-                    ),
-                    if (index != vendorNames.length - 1)
-                      const Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 16.0),
-                        child: Divider(),
-                      )
-                  ],
-                );
-              },
+                        ),
+                        title: Text(vendorNames[index]),
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => VendorTransactionScreen(
+                                vendorName: vendorNames[index],
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                      if (index != vendorNames.length - 1)
+                        const Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 16.0),
+                          child: Divider(),
+                        )
+                    ],
+                  );
+                },
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => _showAddVendorModal(context),

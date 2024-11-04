@@ -15,6 +15,7 @@ class ReportPaymentScreen extends StatefulWidget {
 
 class _ReportPaymentScreenState extends State<ReportPaymentScreen> {
   int _selectedIndex = 0;
+  late double opacity;
 
   // List of widgets to display for each navigation item
   final List<Widget> _screens = [
@@ -30,6 +31,8 @@ class _ReportPaymentScreenState extends State<ReportPaymentScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final Brightness brightness = Theme.of(context).brightness;
+    opacity = brightness == Brightness.light ? 0.1 : 0.15;
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
@@ -52,6 +55,21 @@ class _ReportPaymentScreenState extends State<ReportPaymentScreen> {
         ),
         backgroundColor: AppColors.backgroundLight,
         centerTitle: true,
+        flexibleSpace: FlexibleSpaceBar(
+          background: Stack(
+            children: [
+              Positioned.fill(
+                child: Opacity(
+                  opacity: opacity,
+                  child: Image.asset(
+                    'assets/images/background.png',
+                    fit: BoxFit.cover,
+                  ),
+                ),
+              )
+            ],
+          ),
+        ),
         actions: [
           TextButton(
             onPressed: () {

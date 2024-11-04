@@ -33,7 +33,7 @@ class _VendorTransactionDetailsScreenState extends State<VendorTransactionDetail
           onPressed: () => Navigator.of(context).pop(),
           icon: Image.asset(
             'assets/icons/arrow_back.png',
-            color: AppColors.primaryLight,
+            color: AppColors.paymentTxtColor1,
             width: 34.0,
             height: 34.0,
           ),
@@ -42,7 +42,7 @@ class _VendorTransactionDetailsScreenState extends State<VendorTransactionDetail
           'Transaction Details',
           style: AppTextStyles.normal600(
             fontSize: 24.0,
-            color: AppColors.primaryLight,
+            color: AppColors.paymentTxtColor1,
           ),
         ),
         centerTitle: true,

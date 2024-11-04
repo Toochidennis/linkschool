@@ -1,5 +1,4 @@
 // ignore_for_file: deprecated_member_use
-
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
@@ -7,7 +6,7 @@ import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/portal/profile/settings/vendor/vendor_setting_screen.dart';
 import 'package:linkschool/modules/portal/profile/settings/account_setting_screen.dart';
-import 'package:linkschool/modules/portal/profile/settings/fee_setting_screen.dart';
+import 'package:linkschool/modules/portal/profile/settings/fee_setting/fee_setting_screen.dart';
 
 class PaymentSettingScreen extends StatefulWidget {
   const PaymentSettingScreen({super.key});
@@ -31,7 +30,7 @@ class _PaymentSettingScreenState extends State<PaymentSettingScreen> {
           },
           icon: Image.asset(
             'assets/icons/arrow_back.png',
-            color: AppColors.primaryLight,
+            color: AppColors.paymentTxtColor1,
             width: 34.0,
             height: 34.0,
           ),
@@ -40,7 +39,7 @@ class _PaymentSettingScreenState extends State<PaymentSettingScreen> {
           'Settings',
           style: AppTextStyles.normal600(
             fontSize: 24.0,
-            color: AppColors.primaryLight,
+            color: AppColors.paymentTxtColor1,
           ),
         ),
         backgroundColor: AppColors.backgroundLight,

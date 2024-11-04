@@ -28,7 +28,7 @@ class _ExpenseShareRecieptScreenState extends State<ExpenseShareRecieptScreen> {
           'Receipt',
           style: AppTextStyles.normal600(
             fontSize: 24.0,
-            color: AppColors.primaryLight,
+            color: AppColors.paymentTxtColor1,
           ),
         ),
         backgroundColor: AppColors.backgroundLight,

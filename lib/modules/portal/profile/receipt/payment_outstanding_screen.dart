@@ -5,8 +5,8 @@ import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/common/widgets/portal/profile/naira_icon.dart';
 import 'package:linkschool/modules/model/profile/student_model.dart';
-import 'package:linkschool/modules/model/profile/vendor_transaction_model.dart';
 import 'package:linkschool/modules/portal/profile/receipt/student_payment_detail_screen.dart';
+
 
 class PaymentOutstandingScreen extends StatefulWidget {
   const PaymentOutstandingScreen({
@@ -118,7 +118,7 @@ class _PaymentOutstandingScreenState extends State<PaymentOutstandingScreen> {
           },
           icon: Image.asset(
             'assets/icons/arrow_back.png',
-            color: AppColors.primaryLight,
+            color: AppColors.paymentTxtColor1,
             width: 34.0,
             height: 34.0,
           ),
@@ -128,7 +128,7 @@ class _PaymentOutstandingScreenState extends State<PaymentOutstandingScreen> {
           'Outstanding',
           style: AppTextStyles.normal600(
             fontSize: 24.0,
-            color: AppColors.primaryLight,
+            color: AppColors.paymentTxtColor1,
           ),
         ),
         backgroundColor: AppColors.backgroundLight,
