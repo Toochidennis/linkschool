@@ -3,7 +3,7 @@ import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/buttons/custom_long_elevated_button.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/common/utils/registration/registration_utils.dart';
-import 'package:linkschool/modules/portal/result/class_detail/registration/bulk_registration.dart';
+import 'package:linkschool/modules/admin_portal/result/class_detail/registration/bulk_registration.dart';
 
 
 

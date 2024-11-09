@@ -1,155 +1,45 @@
-// import 'package:curved_nav_bar/curved_bar/curved_action_bar.dart';
-// import 'package:curved_nav_bar/fab_bar/fab_bottom_app_bar_item.dart';
-// import 'package:curved_nav_bar/flutter_curved_bottom_nav_bar.dart';
-// import 'package:flutter/material.dart';
-// import 'package:flutter_svg/svg.dart';
-
-// import 'app_colors.dart';
-
-// class CustomNavigationBar extends StatefulWidget {
-//   final Function(bool) onSwitch;
-//   final String actionButtonImagePath;
-//   final List<FABBottomAppBarItem> appBarItems;
-//   final List<Widget> bodyItems;
-
-//   const CustomNavigationBar({
-//     super.key,
-//     required this.actionButtonImagePath,
-//     required this.appBarItems,
-//     required this.bodyItems,
-//     required this.onSwitch,
-//   });
-
-//   @override
-//   State<CustomNavigationBar> createState() => _CustomNavigationBarState();
-// }
-
-// class _CustomNavigationBarState extends State<CustomNavigationBar>
-//     with WidgetsBindingObserver {
-//   Brightness? brightness;
-
-//   @override
-//   void initState() {
-//     super.initState();
-//     WidgetsBinding.instance.addObserver(this);
-//     _updateBrightness();
-//   }
-
-//   @override
-//   void didChangePlatformBrightness() {
-//     super.didChangePlatformBrightness();
-//     _updateBrightness();
-//   }
-
-//   void _updateBrightness() {
-//     setState(() {
-//       brightness = WidgetsBinding.instance.window.platformBrightness;
-//     });
-//   }
-
-//   @override
-//   void dispose() {
-//     WidgetsBinding.instance.removeObserver(this);
-//     super.dispose();
-//   }
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return SafeArea(
-//         child: Column(
-//       children: [
-//         Expanded(
-//           child: CurvedNavBar(
-//             actionButton: CurvedActionBar(
-//               onTab: widget.onSwitch,
-//               activeIcon: Container(
-//                 padding: const EdgeInsets.all(24.0),
-//                 decoration: BoxDecoration(
-//                   color: AppColors.primaryLight,
-//                   shape: BoxShape.circle,
-//                   border: Border.all(
-//                     color: AppColors.secondaryLight,
-//                     width: 1.0,
-//                   ),
-//                 ),
-//                 child: SvgPicture.asset(
-//                   widget.actionButtonImagePath,
-//                 ),
-//               ),
-//               inActiveIcon: Container(
-//                 padding: const EdgeInsets.all(24.0),
-//                 decoration: BoxDecoration(
-//                   color: AppColors.primaryLight,
-//                   shape: BoxShape.circle,
-//                   border: Border.all(
-//                     color: AppColors.secondaryLight,
-//                     width: 1.0,
-//                   ),
-//                 ),
-//                 child: SvgPicture.asset(
-//                   widget.actionButtonImagePath,
-//                 ),
-//               ),
-//             ),
-//             activeColor: AppColors.secondaryLight,
-//             inActiveColor: AppColors.primaryLight,
-//             navBarBackgroundColor: brightness == Brightness.light
-//                 ? AppColors.backgroundLight
-//                 : AppColors.backgroundDark,
-//             appBarItems: widget.appBarItems,
-//             bodyItems: widget.bodyItems,
-//           ),
-//         ),
-//       ],
-//     ));
-//   }
-// }
-
-
-// ignore_for_file: deprecated_member_use
-
 import 'package:curved_nav_bar/curved_bar/curved_action_bar.dart';
 import 'package:curved_nav_bar/fab_bar/fab_bottom_app_bar_item.dart';
 import 'package:curved_nav_bar/flutter_curved_bottom_nav_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
-
 import 'app_colors.dart';
 
 class CustomNavigationBar extends StatefulWidget {
-  final Function(bool) onSwitch;
   final String actionButtonImagePath;
   final List<FABBottomAppBarItem> appBarItems;
   final List<Widget> bodyItems;
-  final Function(int) onTabSelected; // Callback to handle tab selection
+  final Function(int) onTabSelected;
+  final Function(bool) onSwitch;
+  final int selectedIndex;
 
   const CustomNavigationBar({
-    super.key,
+    Key? key,
     required this.actionButtonImagePath,
     required this.appBarItems,
     required this.bodyItems,
+    required this.onTabSelected,
     required this.onSwitch,
-    required this.onTabSelected, // Required onTabSelected parameter
-  });
+    required this.selectedIndex,
+  }) : super(key: key);
 
   @override
   State<CustomNavigationBar> createState() => _CustomNavigationBarState();
 }
 
-class _CustomNavigationBarState extends State<CustomNavigationBar> with WidgetsBindingObserver {
+class _CustomNavigationBarState extends State<CustomNavigationBar>
+    with WidgetsBindingObserver {
   Brightness? brightness;
-  int _currentIndex = 0; // Track the current tab index
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addObserver(this); // No need to cast
+    WidgetsBinding.instance.addObserver(this);
     _updateBrightness();
   }
 
   @override
   void didChangePlatformBrightness() {
-    // Called when the platform brightness changes (light/dark mode)
     _updateBrightness();
   }
 
@@ -161,7 +51,7 @@ class _CustomNavigationBarState extends State<CustomNavigationBar> with WidgetsB
 
   @override
   void dispose() {
-    WidgetsBinding.instance.removeObserver(this); // No need to cast
+    WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
 
@@ -173,7 +63,9 @@ class _CustomNavigationBarState extends State<CustomNavigationBar> with WidgetsB
           Expanded(
             child: CurvedNavBar(
               actionButton: CurvedActionBar(
-                onTab: widget.onSwitch,
+                onTab: (value) {
+                  widget.onSwitch(value);
+                },
                 activeIcon: Container(
                   padding: const EdgeInsets.all(24.0),
                   decoration: BoxDecoration(
@@ -210,7 +102,7 @@ class _CustomNavigationBarState extends State<CustomNavigationBar> with WidgetsB
                   : AppColors.backgroundDark,
               appBarItems: widget.appBarItems,
               bodyItems: widget.bodyItems,
-              onTabSelected: widget.onTabSelected, // Pass the callback to CurvedNavBar
+              onTabSelected: widget.onTabSelected,
             ),
           ),
         ],

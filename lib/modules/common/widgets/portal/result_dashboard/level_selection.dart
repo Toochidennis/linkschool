@@ -4,8 +4,8 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/common/widgets/portal/result_dashboard/select_class_button.dart';
-import 'package:linkschool/modules/portal/e_learning/empty_syllabus_screen.dart';
-import 'package:linkschool/modules/portal/result/class_detail/class_detail_screen.dart';
+import 'package:linkschool/modules/admin_portal/e_learning/empty_syllabus_screen.dart';
+import 'package:linkschool/modules/admin_portal/result/class_detail/class_detail_screen.dart';
 
 
 class LevelSelection extends StatefulWidget {

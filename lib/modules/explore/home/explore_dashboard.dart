@@ -1,116 +1,21 @@
-// import 'package:flutter/material.dart';
-// import 'package:flutter_svg/flutter_svg.dart';
-// import '../../common/bottom_navigation_bar.dart';
-
-// import '../../common/bottom_nav_item.dart';
-// import 'explore_home.dart';
-
-// class ExploreDashboard extends StatefulWidget {
-//   final Function(bool) onSwitch;
-
-//   const ExploreDashboard({super.key, required this.onSwitch});
-
-//   @override
-//   State<ExploreDashboard> createState() => _ExploreDashboardState();
-// }
-
-// class _ExploreDashboardState extends State<ExploreDashboard> {
-//   bool _showSearchIcon = false;
-
-//   void _onSearchIconVisibilityChanged(bool isVisible) {
-//     setState(() {
-//       _showSearchIcon = isVisible;
-//     });
-//   }
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return Scaffold(
-//       key: const ValueKey(true),
-//       appBar: AppBar(
-//         title: SvgPicture.asset('assets/icons/linkskool-logo.svg'),
-//         actions: [
-//           if (!_showSearchIcon)
-//             IconButton(
-//               icon: const Icon(
-//                 Icons.search,
-//                 color: Colors.white,
-//               ),
-//               onPressed: () {
-//                 // Handle search action
-//               },
-//             ),
-//           IconButton(
-//             onPressed: () {},
-//             icon: SvgPicture.asset(
-//               'assets/icons/notifications.svg',
-//               colorFilter: const ColorFilter.mode(
-//                 Colors.white,
-//                 BlendMode.srcIn,
-//               ),
-//             ),
-//           )
-//         ],
-//         elevation: 0,
-//       ),
-//       body: CustomNavigationBar(
-//         actionButtonImagePath: 'assets/icons/portal.svg',
-//         appBarItems: [
-//           createBottomNavIcon(
-//             imagePath: 'assets/icons/home.svg',
-//             text: 'Home',
-//           ),
-//           createBottomNavIcon(
-//             imagePath: 'assets/icons/admission.svg',
-//             text: 'Admission',
-//           ),
-//           createBottomNavIcon(
-//             imagePath: 'assets/icons/e-books.svg',
-//             text: 'E-library',
-//             width: 24.0,
-//             height: 25.0,
-//           ),
-//           createBottomNavIcon(
-//             imagePath: 'assets/icons/settings.svg',
-//             text: 'Settings',
-//           ),
-//         ],
-//         bodyItems: [
-//           ExploreHome(
-//               onSearchIconVisibilityChanged: _onSearchIconVisibilityChanged),
-//           Container(
-//             height: MediaQuery.of(context).size.height,
-//             color: Colors.orange,
-//           ),
-//           Container(
-//             height: MediaQuery.of(context).size.height,
-//             color: Colors.black,
-//           ),
-//           Container(
-//             height: MediaQuery.of(context).size.height,
-//             color: Colors.blue,
-//           )
-//         ],
-//         onSwitch: widget.onSwitch,
-//       ),
-//     );
-//   }
-// }
-
-
-
-
+import 'package:curved_nav_bar/fab_bar/fab_bottom_app_bar_item.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import '../../common/bottom_navigation_bar.dart';
-
 import '../../common/bottom_nav_item.dart';
 import 'explore_home.dart';
 
 class ExploreDashboard extends StatefulWidget {
   final Function(bool) onSwitch;
+  final int selectedIndex;
+  final Function(int) onTabSelected;
 
-  const ExploreDashboard({super.key, required this.onSwitch, required int selectedIndex, required void Function(int index) onTabSelected});
+  const ExploreDashboard({
+    Key? key,
+    required this.onSwitch,
+    required this.selectedIndex,
+    required this.onTabSelected,
+  }) : super(key: key);
 
   @override
   State<ExploreDashboard> createState() => _ExploreDashboardState();
@@ -118,7 +23,7 @@ class ExploreDashboard extends StatefulWidget {
 
 class _ExploreDashboardState extends State<ExploreDashboard> {
   bool _showSearchIcon = false;
-  int _selectedIndex = 0; // Add state for the selected index
+  late List<Widget> _bodyItems;
 
   void _onSearchIconVisibilityChanged(bool isVisible) {
     setState(() {
@@ -127,18 +32,72 @@ class _ExploreDashboardState extends State<ExploreDashboard> {
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _initializeBodyItems();
+  }
+
+//  @override
+//   void initState() {
+//     super.initState();
+//     _initializeBodyItems();
+//   }
+
+
+  void _initializeBodyItems() {
+    _bodyItems = [
+      ExploreHome(
+        onSearchIconVisibilityChanged: _onSearchIconVisibilityChanged,
+      ),
+      Container(
+        height: MediaQuery.of(context).size.height,
+        color: Colors.orange,
+      ),
+      Container(
+        height: MediaQuery.of(context).size.height,
+        color: Colors.black,
+      ),
+      Container(
+        height: MediaQuery.of(context).size.height,
+        color: Colors.blue,
+      ),
+    ];
+  }
+
+  List<FABBottomAppBarItem> _buildAppBarItems() {
+    return [
+      createBottomNavIcon(
+        imagePath: 'assets/icons/home.svg',
+        text: 'Home',
+      ),
+      createBottomNavIcon(
+        imagePath: 'assets/icons/admission.svg',
+        text: 'Admission',
+      ),
+      createBottomNavIcon(
+        imagePath: 'assets/icons/e-books.svg',
+        text: 'E-library',
+        width: 24.0,
+        height: 25.0,
+      ),
+      createBottomNavIcon(
+        imagePath: 'assets/icons/settings.svg',
+        text: 'Settings',
+      ),
+    ];
+  }
+
+  @override
   Widget build(BuildContext context) {
+
     return Scaffold(
-      key: const ValueKey(true),
+      key: const ValueKey('explore_dashboard'),
       appBar: AppBar(
         title: SvgPicture.asset('assets/icons/linkskool-logo.svg'),
         actions: [
           if (!_showSearchIcon)
             IconButton(
-              icon: const Icon(
-                Icons.search,
-                color: Colors.white,
-              ),
+              icon: const Icon(Icons.search, color: Colors.white),
               onPressed: () {
                 // Handle search action
               },
@@ -147,10 +106,7 @@ class _ExploreDashboardState extends State<ExploreDashboard> {
             onPressed: () {},
             icon: SvgPicture.asset(
               'assets/icons/notifications.svg',
-              colorFilter: const ColorFilter.mode(
-                Colors.white,
-                BlendMode.srcIn,
-              ),
+              colorFilter: const ColorFilter.mode(Colors.white, BlendMode.srcIn),
             ),
           )
         ],
@@ -158,51 +114,13 @@ class _ExploreDashboardState extends State<ExploreDashboard> {
       ),
       body: CustomNavigationBar(
         actionButtonImagePath: 'assets/icons/portal.svg',
-        appBarItems: [
-          createBottomNavIcon(
-            imagePath: 'assets/icons/home.svg',
-            text: 'Home',
-          ),
-          createBottomNavIcon(
-            imagePath: 'assets/icons/admission.svg',
-            text: 'Admission',
-          ),
-          createBottomNavIcon(
-            imagePath: 'assets/icons/e-books.svg',
-            text: 'E-library',
-            width: 24.0,
-            height: 25.0,
-          ),
-          createBottomNavIcon(
-            imagePath: 'assets/icons/settings.svg',
-            text: 'Settings',
-          ),
-        ],
-        bodyItems: [
-          ExploreHome(
-              onSearchIconVisibilityChanged: _onSearchIconVisibilityChanged),
-          Container(
-            height: MediaQuery.of(context).size.height,
-            color: Colors.orange,
-          ),
-          Container(
-            height: MediaQuery.of(context).size.height,
-            color: Colors.black,
-          ),
-          Container(
-            height: MediaQuery.of(context).size.height,
-            color: Colors.blue,
-          )
-        ],
+        appBarItems: _buildAppBarItems(),
+        bodyItems: _bodyItems,
+        onTabSelected: widget.onTabSelected,
         onSwitch: widget.onSwitch,
-
-        // Add the missing onTabSelected callback
-        onTabSelected: (index) {
-          setState(() {
-            _selectedIndex = index; // Update the selected index
-          });
-        },
+        selectedIndex: widget.selectedIndex,
       ),
+  
     );
   }
 }
