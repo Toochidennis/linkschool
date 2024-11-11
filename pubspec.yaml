@@ -78,9 +78,10 @@ flutter:
     - assets/images/
     - assets/icons/e_learning/
     - assets/icons/result/
-    - assets/images/e-learning/
-    - assets/icons/
+    - assets/icons/student/
+    - assets/images/student/
     - assets/icons/profile/
+    - assets/images/e-learning/
     - assets/images/result/
     # - assets/icons/home.svg
     # - assets/icons/e-learning.svg

@@ -4,7 +4,7 @@ import 'package:flutter_svg/svg.dart';
 import '../../common/app_colors.dart';
 import '../../common/text_styles.dart';
 
-class PortalNewsItem extends StatelessWidget {
+class PortalNewsItem extends StatefulWidget {
   final String profileImageUrl;
   final String name;
   final String newsContent;
@@ -18,6 +18,11 @@ class PortalNewsItem extends StatelessWidget {
     required this.time,
   });
 
+  @override
+  State<PortalNewsItem> createState() => _PortalNewsItemState();
+}
+
+class _PortalNewsItemState extends State<PortalNewsItem> {
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -47,13 +52,13 @@ class PortalNewsItem extends StatelessWidget {
                   Row(
                     children: [
                       CircleAvatar(
-                        backgroundImage: NetworkImage(profileImageUrl),
+                        backgroundImage: NetworkImage(widget.profileImageUrl),
                         radius: 16.0,
                       ),
                       const SizedBox(width: 10.0),
                       Expanded(
                         child: Text(
-                          name,
+                          widget.name,
                           style: AppTextStyles.normal2Light,
                         ),
                       ),
@@ -61,12 +66,12 @@ class PortalNewsItem extends StatelessWidget {
                   ),
                   const SizedBox(height: 10.0),
                   Text(
-                    newsContent,
+                    widget.newsContent,
                     style: AppTextStyles.normal500(fontSize: 14.0, color: AppColors.text4Light),
                   ),
                   const SizedBox(height: 10.0),
                   Text(
-                    time,
+                    widget.time,
                     style: AppTextStyles.normal4Light,
                   ),
                   Row(

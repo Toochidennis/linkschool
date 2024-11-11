@@ -37,11 +37,7 @@ class _ExploreDashboardState extends State<ExploreDashboard> {
     _initializeBodyItems();
   }
 
-//  @override
-//   void initState() {
-//     super.initState();
-//     _initializeBodyItems();
-//   }
+
 
 
   void _initializeBodyItems() {
