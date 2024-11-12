@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:linkschool/modules/common/bottom_navigation_bar.dart';
 import 'package:linkschool/modules/common/bottom_nav_item.dart';
 import 'package:linkschool/modules/student_portal/home_screen/student_home_screen.dart';
+import 'package:linkschool/modules/student_portal/student_result/student_result_screen.dart';
 
 class StudentDashboard extends StatefulWidget {
   final Function(bool) onSwitch;
@@ -36,10 +37,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
       case 0:
         return const StudentHomeScreen();
       case 1:
-        return Container(
-          color: Colors.orange,
-          child: const Center(child: Text('Results')),
-        );
+        return StudentResultScreen(studentName: 'Tochukwu Dennis', className: 'JSS 1',);
       case 2:
         return Container(
           color: Colors.green,
