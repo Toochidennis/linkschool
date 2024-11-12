@@ -59,7 +59,8 @@ class _StudentDashboardState extends State<StudentDashboard> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text('Payment', style: TextStyle(fontSize: 24, color: Colors.white)),
+            Text('Payment',
+                style: TextStyle(fontSize: 24, color: Colors.white)),
             SizedBox(height: 20),
             ElevatedButton(
               onPressed: widget.onLogout,
@@ -113,7 +114,22 @@ class _StudentDashboardState extends State<StudentDashboard> {
 
     return Scaffold(
       key: const ValueKey('student_dashboard'),
-      body: _buildBodyItem(_selectedIndex),
+      body: Stack(
+        children: [
+          _buildBodyItem(_selectedIndex),
+          Positioned(
+            top: 16.0,
+            right: 16.0,  // Place the FAB in the upper right corner
+            child: FloatingActionButton(
+              onPressed: () {
+                print("FAB pressed");
+              },
+              backgroundColor: Colors.red,
+              child: const Icon(Icons.add, color: Colors.white),
+            ),
+          ),
+        ],
+      ),
       bottomNavigationBar: CustomNavigationBar(
         actionButtonImagePath: 'assets/icons/explore.svg',
         appBarItems: appBarItems,

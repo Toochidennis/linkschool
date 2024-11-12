@@ -102,7 +102,7 @@ class _FeedDetailsScreenState extends State<FeedDetailsScreen> {
               ),
               const SizedBox(height: 16),
               Text(widget.content),
-              const SizedBox(height: 20),
+              const SizedBox(height: 16),
               Row(
                 children: [
                   Expanded(
