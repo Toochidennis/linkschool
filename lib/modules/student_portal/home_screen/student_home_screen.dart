@@ -5,6 +5,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
+import 'package:linkschool/modules/common/widgets/portal/student/student_customized_appbar.dart';
 import 'package:linkschool/modules/explore/home/custom_button_item.dart';
 import 'package:linkschool/modules/student_portal/home_screen/feed_details_screen.dart';
 import 'package:linkschool/modules/student_portal/home_screen/new_post_dialog.dart';
@@ -90,78 +91,15 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
     final Brightness brightness = Theme.of(context).brightness;
     opacity = brightness == Brightness.light ? 0.1 : 0.15;
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: AppColors.primaryLight,
-        toolbarHeight: kToolbarHeight + 85,
-        flexibleSpace: SafeArea(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Title and notification row
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 32, 8, 8),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    RichText(
-                      text: TextSpan(
-                        text: 'Welcome, ',
-                        style: AppTextStyles.normal700(
-                            fontSize: 22, color: AppColors.backgroundLight),
-                        children: [
-                          TextSpan(
-                            text: 'Tochukwu',
-                            style: AppTextStyles.normal700(
-                                fontSize: 22, color: AppColors.secondaryLight),
-                          ),
-                        ],
-                      ),
-                    ),
-                    IconButton(
-                      onPressed: () {},
-                      icon: SvgPicture.asset(
-                        'assets/icons/notifications.svg',
-                        colorFilter: const ColorFilter.mode(
-                            Colors.white, BlendMode.srcIn),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              // Input field row with avatar
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                child: Row(
-                  children: [
-                    CircleAvatar(
-                      backgroundColor: Colors.grey[300],
-                      radius: 16,
-                      child: Icon(Icons.person, color: Colors.grey[600], size: 20),
-                    ),
-                    SizedBox(width: 12),
-                    Expanded(
-                      child: InkWell(
-                        onTap: _showNewPostDialog,
-                        child: Container(
-                          padding: EdgeInsets.symmetric(vertical: 12),
-                          child: Text(
-                            "What's on your mind ?",
-                            style: TextStyle(
-                              color: Colors.white.withOpacity(0.8),
-                              fontSize: 16,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
+          appBar: CustomStudentAppBar(
+            title: 'Welcome',
+            subtitle: 'Tochukwu',
+            showNotification: true,
+            showPostInput: true,
+            onNotificationTap: () {},
+            onPostTap: _showNewPostDialog,
           ),
-        ),
-        automaticallyImplyLeading: false,
-      ),
+ 
       body: Container(
         decoration: Constants.customBoxDecoration(context),
         child: Stack(

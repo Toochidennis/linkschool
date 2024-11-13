@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
-import 'package:linkschool/modules/common/buttons/custom_long_elevated_button.dart';
 import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
+import 'package:linkschool/modules/common/widgets/portal/student/student_customized_appbar.dart';
+import 'package:linkschool/modules/student_portal/home_screen/new_post_dialog.dart';
 import 'package:linkschool/modules/student_portal/student_result/student_annual_result_screen.dart';
 import 'package:percent_indicator/percent_indicator.dart';
 import 'package:fl_chart/fl_chart.dart';
@@ -22,44 +23,29 @@ class StudentResultScreen extends StatefulWidget {
 class _StudentResultScreenState extends State<StudentResultScreen> {
   late double opacity;
 
+
+  void _showNewPostDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return NewPostDialog();
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final Brightness brightness = Theme.of(context).brightness;
     opacity = brightness == Brightness.light ? 0.1 : 0.15;
     return Scaffold(
-      appBar: AppBar(
-        title:  Text(
-          'Annual result',
-          style: AppTextStyles.normal600(fontSize: 18.0, color: AppColors.eLearningBtnColor1,),
-        ),
-        leading: IconButton(
-          onPressed: () {
-            Navigator.of(context).pop();
-          },
-          icon: Image.asset(
-            'assets/icons/arrow_back.png',
-            color: AppColors.eLearningBtnColor1,
-            width: 34.0,
-            height: 34.0,
+          appBar: CustomStudentAppBar(
+            title: 'Welcome',
+            subtitle: 'Tochukwu',
+            showNotification: true,
+            showPostInput: true,
+            onNotificationTap: () {},
+            onPostTap: _showNewPostDialog,
           ),
-        ),
-        backgroundColor: AppColors.backgroundLight,
-        flexibleSpace: FlexibleSpaceBar(
-          background: Stack(
-            children: [
-              Positioned.fill(
-                child: Opacity(
-                  opacity: opacity,
-                  child: Image.asset(
-                    'assets/images/background.png',
-                    fit: BoxFit.cover,
-                  ),
-                ),
-              )
-            ],
-          ),
-        ),
-      ),
       body: Container(
         decoration: Constants.customBoxDecoration(context),
         child: Padding(

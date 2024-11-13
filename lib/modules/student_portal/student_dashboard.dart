@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:linkschool/modules/common/bottom_navigation_bar.dart';
 import 'package:linkschool/modules/common/bottom_nav_item.dart';
 import 'package:linkschool/modules/student_portal/home_screen/student_home_screen.dart';
+import 'package:linkschool/modules/student_portal/student_payment/student_payment_home_screen.dart';
 import 'package:linkschool/modules/student_portal/student_result/student_result_screen.dart';
 
 class StudentDashboard extends StatefulWidget {
@@ -37,38 +38,17 @@ class _StudentDashboardState extends State<StudentDashboard> {
       case 0:
         return const StudentHomeScreen();
       case 1:
-        return StudentResultScreen(studentName: 'Tochukwu Dennis', className: 'JSS 1',);
+        return const StudentResultScreen(studentName: 'Tochukwu Dennis', className: 'JSS 1',);
       case 2:
-        return Container(
+        return  Container(
           color: Colors.green,
           child: const Center(child: Text('E-Learning')),
         );
       case 3:
-        return _buildProfileScreen();
+        return StudentPaymentHomeScreen(logout: widget.onLogout);
       default:
         return Container();
     }
-  }
-
-  Widget _buildProfileScreen() {
-    return Container(
-      color: Colors.blue,
-      child: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text('Payment',
-                style: TextStyle(fontSize: 24, color: Colors.white)),
-            SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: widget.onLogout,
-              child: Text('Logout'),
-              style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-            ),
-          ],
-        ),
-      ),
-    );
   }
 
   @override
@@ -104,7 +84,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
       ),
       createBottomNavIcon(
         imagePath: 'assets/icons/profile.svg',
-        text: 'Profile',
+        text: 'Payment',
         width: 20.0,
         height: 20.0,
       ),
