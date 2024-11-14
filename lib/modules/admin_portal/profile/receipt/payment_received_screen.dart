@@ -100,7 +100,7 @@ class _PaymentReceivedScreenState extends State<PaymentReceivedScreen> {
       },
     );
   }
-  
+
   @override
   Widget build(BuildContext context) {
     final Brightness brightness = Theme.of(context).brightness;
@@ -303,9 +303,13 @@ class _PaymentReceivedScreenState extends State<PaymentReceivedScreen> {
                         'assets/icons/profile/success_receipt_icon.svg',
                         height: 60),
                     const SizedBox(height: 24),
-                    const Text('Second Term Fees Receipt',
-                        style: TextStyle(
-                            fontSize: 20, fontWeight: FontWeight.bold)),
+                    Text(
+                      'Second Term Fees Receipt',
+                      style: AppTextStyles.normal600(
+                        fontSize: 20.0,
+                        color: AppColors.primaryLight,
+                      ),
+                    ),
                     const SizedBox(height: 16),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,

@@ -36,7 +36,10 @@ class _StudentSettingDialogState extends State<StudentSettingDialog> {
           Padding(
             padding: const EdgeInsets.only(right: 16.0),
             child: ElevatedButton(
-              onPressed: widget.logout,
+              onPressed: () {
+                widget.logout();       // Perform logout action
+                Navigator.pop(context); // Close the dialog after logout
+              },
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.eLearningBtnColor1,
                 iconColor: Colors.white,

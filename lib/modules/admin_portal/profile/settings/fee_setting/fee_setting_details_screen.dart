@@ -153,63 +153,6 @@ void _showClassSelectionBottomSheet() {
     );
   }
 
-  // void _showClassSelectionBottomSheet() {
-  //   showModalBottomSheet(
-  //     context: context,
-  //     shape: const RoundedRectangleBorder(
-  //       borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-  //     ),
-  //     builder: (BuildContext context) {
-  //       return Container(
-  //         padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
-  //         child: Column(
-  //           mainAxisSize: MainAxisSize.min,
-  //           crossAxisAlignment: CrossAxisAlignment.start,
-  //           children: [
-  //             Padding(
-  //               padding: const EdgeInsets.only(bottom: 16.0),
-  //               child: Text(
-  //                 'Select Class',
-  //                 style: AppTextStyles.normal600(
-  //                   fontSize: 18,
-  //                   color: AppColors.eLearningBtnColor1,
-  //                 ),
-  //               ),
-  //             ),
-  //             ListView(
-  //               shrinkWrap: true,
-  //               children: [
-  //                 'Basic One A',
-  //                 'Basic One B',
-  //                 'Basic Two A',
-  //               ].map((String className) {
-  //                 return ListTile(
-  //                   title: Text(
-  //                     className,
-  //                     style: AppTextStyles.normal500(fontSize: 16, color: AppColors.backgroundDark),
-  //                   ),
-  //                   trailing: selectedClass == className
-  //                       ? const Icon(
-  //                           Icons.check_circle,
-  //                           color: AppColors.eLearningBtnColor1,
-  //                         )
-  //                       : null,
-  //                   onTap: () {
-  //                     setState(() {
-  //                       selectedClass = className;
-  //                     });
-  //                     Navigator.pop(context);
-  //                   },
-  //                 );
-  //               }).toList(),
-  //             ),
-  //           ],
-  //         ),
-  //       );
-  //     },
-  //   );
-  // }
-
   double get totalAmount {
     return feeItems.fold(0, (sum, item) => sum + (item['amount'] as int));
   }
