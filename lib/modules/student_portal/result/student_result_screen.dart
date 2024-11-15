@@ -4,8 +4,9 @@ import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/common/widgets/portal/student/student_customized_appbar.dart';
-import 'package:linkschool/modules/student_portal/home_screen/new_post_dialog.dart';
-import 'package:linkschool/modules/student_portal/student_result/student_annual_result_screen.dart';
+import 'package:linkschool/modules/student_portal/home/new_post_dialog.dart';
+import 'package:linkschool/modules/student_portal/result/student_annual_result_screen.dart';
+
 import 'package:percent_indicator/percent_indicator.dart';
 import 'package:fl_chart/fl_chart.dart';
 

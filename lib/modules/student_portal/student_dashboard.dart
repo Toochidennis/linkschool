@@ -2,9 +2,11 @@
 import 'package:flutter/material.dart';
 import 'package:linkschool/modules/common/bottom_navigation_bar.dart';
 import 'package:linkschool/modules/common/bottom_nav_item.dart';
-import 'package:linkschool/modules/student_portal/home_screen/student_home_screen.dart';
-import 'package:linkschool/modules/student_portal/student_payment/student_payment_home_screen.dart';
-import 'package:linkschool/modules/student_portal/student_result/student_result_screen.dart';
+import 'package:linkschool/modules/student_portal/elearning/student_elearning_home_screen.dart';
+import 'package:linkschool/modules/student_portal/home/student_home_screen.dart';
+import 'package:linkschool/modules/student_portal/payment/student_payment_home_screen.dart';
+import 'package:linkschool/modules/student_portal/result/student_result_screen.dart';
+
 
 class StudentDashboard extends StatefulWidget {
   final Function(bool) onSwitch;
@@ -40,10 +42,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
       case 1:
         return const StudentResultScreen(studentName: 'Tochukwu Dennis', className: 'JSS 1',);
       case 2:
-        return  Container(
-          color: Colors.green,
-          child: const Center(child: Text('E-Learning')),
-        );
+        return  StudentElearningScreen();
       case 3:
         return StudentPaymentHomeScreen(logout: widget.onLogout);
       default:
@@ -83,7 +82,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
         height: 20.0,
       ),
       createBottomNavIcon(
-        imagePath: 'assets/icons/profile.svg',
+        imagePath: 'assets/icons/payment.svg',
         text: 'Payment',
         width: 20.0,
         height: 20.0,
