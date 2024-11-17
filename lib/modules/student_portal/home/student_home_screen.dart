@@ -10,7 +10,6 @@ import 'package:linkschool/modules/explore/home/custom_button_item.dart';
 import 'package:linkschool/modules/student_portal/home/feed_details_screen.dart';
 import 'package:linkschool/modules/student_portal/home/new_post_dialog.dart';
 
-
 class StudentHomeScreen extends StatefulWidget {
   const StudentHomeScreen({super.key});
 
@@ -19,7 +18,9 @@ class StudentHomeScreen extends StatefulWidget {
 }
 
 class _StudentHomeScreenState extends State<StudentHomeScreen> {
-  final PageController _pageController = PageController();
+  final PageController _pageController = PageController(
+    viewportFraction: 0.85,
+  );
   Timer? _timer;
   int _currentPage = 0;
   late double opacity;
@@ -34,20 +35,20 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
       'avatar': 'assets/images/student/avatar1.svg',
     },
     {
-      'name': 'James Smith',
+      'name': 'Ifeanyi Joseph',
       'message': 'posted new course materials for SSS3',
       'time': 'Today at 8:30 AM',
       'avatar': 'assets/images/student/avatar2.svg',
     },
     {
-      'name': 'Sarah Johnson',
+      'name': 'Sarah Okoro',
       'message': 'scheduled a class meeting for Mathematics',
       'time': 'Just now',
       'avatar': 'assets/images/student/avatar3.svg',
     },
   ];
 
-  List<String> feedCardNames = ['John Doe', 'Jane Smith', 'Bob Johnson'];
+  List<String> feedCardNames = ['John Dennis', 'Jane Emaka', 'Bob John'];
 
   @override
   void initState() {
@@ -92,15 +93,14 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
     final Brightness brightness = Theme.of(context).brightness;
     opacity = brightness == Brightness.light ? 0.1 : 0.15;
     return Scaffold(
-          appBar: CustomStudentAppBar(
-            title: 'Welcome',
-            subtitle: 'Tochukwu',
-            showNotification: true,
-            showPostInput: true,
-            onNotificationTap: () {},
-            onPostTap: _showNewPostDialog,
-          ),
- 
+      appBar: CustomStudentAppBar(
+        title: 'Welcome',
+        subtitle: 'Tochukwu',
+        showNotification: true,
+        showPostInput: true,
+        onNotificationTap: () {},
+        onPostTap: _showNewPostDialog,
+      ),
       body: Container(
         decoration: Constants.customBoxDecoration(context),
         child: Stack(
@@ -111,7 +111,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
                 padding: const EdgeInsets.all(16.0),
                 children: [
                   SizedBox(
-                    height: 120,
+                    height: 120, // Adjust height to fit the design
                     child: PageView.builder(
                       controller: _pageController,
                       itemCount: notifications.length,
@@ -121,18 +121,35 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
                         });
                       },
                       itemBuilder: (context, index) {
-                        return Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                          child: _buildNotificationCard(
-                            notifications[index]['name']!,
-                            notifications[index]['message']!,
-                            notifications[index]['time']!,
-                            notifications[index]['avatar']!,
-                          ),
+                        return AnimatedBuilder(
+                          animation: _pageController,
+                          builder: (context, child) {
+                            double scale = 1.0;
+                            if (_pageController.position.haveDimensions) {
+                              num pageOffset =
+                                  _pageController.page ?? _currentPage;
+                              scale = (1 - ((pageOffset - index).abs() * 0.2))
+                                  .clamp(0.8, 1.0);
+                            }
+                            return Transform.scale(
+                              scale: scale,
+                              child: Padding(
+                                padding:
+                                    const EdgeInsets.symmetric(horizontal: 8.0),
+                                child: _buildNotificationCard(
+                                  notifications[index]['name']!,
+                                  notifications[index]['message']!,
+                                  notifications[index]['time']!,
+                                  notifications[index]['avatar']!,
+                                ),
+                              ),
+                            );
+                          },
                         );
                       },
                     ),
                   ),
+
                   const SizedBox(height: 8),
                   // Add dots indicator
                   Row(
@@ -236,17 +253,17 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
                 ],
               ),
             ),
-          Align(
-            alignment: Alignment.bottomRight,
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: FloatingActionButton(
-                onPressed: () {},
-                backgroundColor: Colors.red,
-                child: const Icon(Icons.add, color: Colors.white),
+            Align(
+              alignment: Alignment.bottomRight,
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: FloatingActionButton(
+                  onPressed: () {},
+                  backgroundColor: Colors.red,
+                  child: const Icon(Icons.add, color: Colors.white),
+                ),
               ),
             ),
-          ),
           ],
         ),
       ),
@@ -263,7 +280,6 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-
             CircleAvatar(
               backgroundImage: NetworkImage(profileImageUrl),
               radius: 16.0,
@@ -367,61 +383,58 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
             ),
           ),
         ),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        CircleAvatar(
-                          backgroundImage: NetworkImage(profileImageUrl),
-                          radius: 16.0,
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      CircleAvatar(
+                        backgroundImage: NetworkImage(profileImageUrl),
+                        radius: 16.0,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(feedCardNames[index],
+                          style: AppTextStyles.normal500(
+                              fontSize: 16, color: AppColors.primaryLight)),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Text(content),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.favorite_outline),
+                        onPressed: () {},
+                      ),
+                      Text(
+                        '$interactions',
+                      ),
+                      const SizedBox(width: 16),
+                      IconButton(
+                        icon: SvgPicture.asset(
+                          'assets/icons/comment.svg',
+                          height: 20.0,
+                          width: 20.0,
                         ),
-                        const SizedBox(width: 8),
-                        Text(feedCardNames[index],
-                            style: AppTextStyles.normal500(
-                                fontSize: 16, color: AppColors.primaryLight)),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    Text(content),
-                    const SizedBox(height: 8),
-                    Row(
-                      children: [
-                        IconButton(
-                          icon: const Icon(Icons.favorite_outline),
-                          onPressed: () {},
-                        ),
-                        Text(
-                          '$interactions',
-                        ),
-                        const SizedBox(width: 16),
-                        IconButton(
-                          icon: SvgPicture.asset(
-                            'assets/icons/comment.svg',
-                            height: 20.0,
-                            width: 20.0,
-                          ),
-                          onPressed: () {},
-                        ),
-                        Text(
-                          '$interactions',
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
+                        onPressed: () {},
+                      ),
+                      Text(
+                        '$interactions',
+                      ),
+                    ],
+                  ),
+                ],
               ),
-              Text(time,
-                  style: AppTextStyles.normal500(
-                      fontSize: 12, color: AppColors.primaryLight)),
-            ],
-          ),
+            ),
+            Text(time,
+                style: AppTextStyles.normal500(
+                    fontSize: 12, color: AppColors.primaryLight)),
+          ],
         ),
       ),
     );

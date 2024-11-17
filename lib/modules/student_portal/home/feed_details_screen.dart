@@ -3,6 +3,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
+import 'package:linkschool/modules/common/widgets/portal/student/custom_input_field.dart';
 
 class FeedDetailsScreen extends StatefulWidget {
   final String profileImageUrl;
@@ -26,6 +27,14 @@ class FeedDetailsScreen extends StatefulWidget {
 
 class _FeedDetailsScreenState extends State<FeedDetailsScreen> {
   late double opacity;
+
+  final TextEditingController _commentController = TextEditingController();
+
+  @override
+  void dispose() {
+    _commentController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -77,7 +86,6 @@ class _FeedDetailsScreenState extends State<FeedDetailsScreen> {
             children: [
               Row(
                 children: [
-
                   CircleAvatar(
                     backgroundImage: NetworkImage(widget.profileImageUrl),
                     radius: 16.0,
@@ -103,44 +111,62 @@ class _FeedDetailsScreenState extends State<FeedDetailsScreen> {
               const SizedBox(height: 16),
               Text(widget.content),
               const SizedBox(height: 16),
-              Row(
-                children: [
-                  Expanded(
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                      IconButton(
-                        icon: const Icon(Icons.favorite_outline),
-                        onPressed: () {},
+              const Divider(height: 1), // Reduced height of top divider
+              Container(
+                height: 40, // Fixed height for the interaction row
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          IconButton(
+                            padding: EdgeInsets.zero, // Remove padding
+                            constraints: const BoxConstraints(), // Remove constraints
+                            icon: const Icon(Icons.favorite_outline),
+                            onPressed: () {},
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            '${widget.interactions}',
+                          ),
+                        ],
                       ),
-                        Text(
-                          '${widget.interactions}',
-                        ),
-                      ],
                     ),
-                  ),
-                  Expanded(
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                      IconButton(
-                        icon: SvgPicture.asset(
-                          'assets/icons/comment.svg',
-                          height: 20.0,
-                          width: 20.0,
-                        ),
-                        onPressed: () {},
+                    Container(
+                      width: 4,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: Colors.grey[400],
+                        shape: BoxShape.circle,
                       ),
-                        Text(
-                          '${widget.interactions}',
-                          style: TextStyle(color: Colors.grey[600]),
-                        ),
-                      ],
                     ),
-                  ),
-                ],
+                    Expanded(
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          IconButton(
+                            padding: EdgeInsets.zero, // Remove padding
+                            constraints: const BoxConstraints(), // Remove constraints
+                            icon: SvgPicture.asset(
+                              'assets/icons/comment.svg',
+                              height: 20.0,
+                              width: 20.0,
+                            ),
+                            onPressed: () {},
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            '${widget.interactions}',
+                            style: TextStyle(color: Colors.grey[600]),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
               ),
-              const Divider(),
+              const Divider(height: 1), 
               const SizedBox(height: 24),
               Expanded(
                 child: ListView(
@@ -154,19 +180,26 @@ class _FeedDetailsScreenState extends State<FeedDetailsScreen> {
                 ),
               ),
               const SizedBox(height: 16),
-              TextField(
-                decoration: InputDecoration(
-                  hintText: 'Add a comment...',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  suffixIcon: IconButton(
-                    icon: const Icon(Icons.send),
-                    onPressed: () {
-                      // Add comment logic
-                    },
-                  ),
-                ),
+              CustomCommentInput(
+                controller: _commentController,
+                hintText: 'Add a comment...',
+                onSendPressed: () {
+                  // Handle send comment
+                  if (_commentController.text.isNotEmpty) {
+                    // Add your comment logic here
+                    _commentController.clear();
+                  }
+                },
+                onChanged: (value) {
+                  // Handle text changes if needed
+                },
+                // Optional: Customize the appearance
+                borderColor: Colors.grey[300],
+                focusedBorderColor: Colors.grey[400],
+                hintTextColor: Colors.grey[400],
+                sendIconColor: Colors.grey[400],
+                fontSize: 14,
+                iconSize: 20,
               ),
             ],
           ),
