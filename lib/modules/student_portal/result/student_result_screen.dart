@@ -6,6 +6,7 @@ import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/common/widgets/portal/student/student_customized_appbar.dart';
 import 'package:linkschool/modules/student_portal/home/new_post_dialog.dart';
 import 'package:linkschool/modules/student_portal/result/student_annual_result_screen.dart';
+import 'package:linkschool/modules/student_portal/result/student_term_result_screen.dart';
 
 import 'package:percent_indicator/percent_indicator.dart';
 import 'package:fl_chart/fl_chart.dart';
@@ -24,7 +25,6 @@ class StudentResultScreen extends StatefulWidget {
 class _StudentResultScreenState extends State<StudentResultScreen> {
   late double opacity;
 
-
   void _showNewPostDialog() {
     showDialog(
       context: context,
@@ -39,14 +39,14 @@ class _StudentResultScreenState extends State<StudentResultScreen> {
     final Brightness brightness = Theme.of(context).brightness;
     opacity = brightness == Brightness.light ? 0.1 : 0.15;
     return Scaffold(
-          appBar: CustomStudentAppBar(
-            title: 'Welcome',
-            subtitle: 'Tochukwu',
-            showNotification: true,
-            showPostInput: true,
-            onNotificationTap: () {},
-            onPostTap: _showNewPostDialog,
-          ),
+      appBar: CustomStudentAppBar(
+        title: 'Welcome',
+        subtitle: 'Tochukwu',
+        showNotification: true,
+        showPostInput: true,
+        onNotificationTap: () {},
+        onPostTap: _showNewPostDialog,
+      ),
       body: Container(
         decoration: Constants.customBoxDecoration(context),
         child: Padding(
@@ -110,7 +110,8 @@ class _StudentResultScreenState extends State<StudentResultScreen> {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => const StudentAnnualResultScreen(),
+                            builder: (context) =>
+                                const StudentAnnualResultScreen(),
                           ),
                         );
                       },
@@ -232,36 +233,47 @@ class _StudentResultScreenState extends State<StudentResultScreen> {
   }
 
   Widget _buildTermRow(String term, double percent, Color indicatorColor) {
-    return Container(
-      width: double.infinity,
-      height: 75,
-      decoration: const BoxDecoration(
-          border: Border(
-        bottom: BorderSide(color: AppColors.borderGray, width: 1),
-      )),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 16.0),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              term,
-              style: AppTextStyles.normal700(fontSize: 14, color: Colors.black),
-            ),
-            CircularPercentIndicator(
-              radius: 20.0,
-              lineWidth: 4.92,
-              percent: percent,
-              center: Text(
-                "${(percent * 100).toInt()}%",
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => TermResultScreen(termTitle: term),
+          ),
+        );
+      },
+      child: Container(
+        width: double.infinity,
+        height: 75,
+        decoration: const BoxDecoration(
+            border: Border(
+          bottom: BorderSide(color: AppColors.borderGray, width: 1),
+        )),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 16.0),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                term,
                 style:
-                    AppTextStyles.normal600(fontSize: 10, color: Colors.black),
+                    AppTextStyles.normal700(fontSize: 14, color: Colors.black),
               ),
-              progressColor: indicatorColor,
-              backgroundColor: Colors.transparent,
-              circularStrokeCap: CircularStrokeCap.round,
-            ),
-          ],
+              CircularPercentIndicator(
+                radius: 20.0,
+                lineWidth: 4.92,
+                percent: percent,
+                center: Text(
+                  "${(percent * 100).toInt()}%",
+                  style: AppTextStyles.normal600(
+                      fontSize: 10, color: Colors.black),
+                ),
+                progressColor: indicatorColor,
+                backgroundColor: Colors.transparent,
+                circularStrokeCap: CircularStrokeCap.round,
+              ),
+            ],
+          ),
         ),
       ),
     );
