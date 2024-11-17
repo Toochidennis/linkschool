@@ -191,4 +191,5 @@ class AppColors {
   static const Color studentTxtColor1 = Color.fromRGBO(37, 153, 255, 1);
   static const Color studentTxtColor2 = Color.fromRGBO(26, 31, 54, 1);
 
+
 }
