@@ -29,7 +29,7 @@ class _StudentResultScreenState extends State<StudentResultScreen> {
     showDialog(
       context: context,
       builder: (BuildContext context) {
-        return NewPostDialog();
+        return const NewPostDialog();
       },
     );
   }
@@ -39,13 +39,10 @@ class _StudentResultScreenState extends State<StudentResultScreen> {
     final Brightness brightness = Theme.of(context).brightness;
     opacity = brightness == Brightness.light ? 0.1 : 0.15;
     return Scaffold(
-      appBar: CustomStudentAppBar(
+      appBar: const CustomStudentAppBar(
         title: 'Welcome',
         subtitle: 'Tochukwu',
         showNotification: true,
-        showPostInput: true,
-        onNotificationTap: () {},
-        onPostTap: _showNewPostDialog,
       ),
       body: Container(
         decoration: Constants.customBoxDecoration(context),
@@ -127,7 +124,7 @@ class _StudentResultScreenState extends State<StudentResultScreen> {
                         ),
                       ),
                     ),
-                    SizedBox(
+                    const SizedBox(
                       height: 60,
                     ),
                     Text(

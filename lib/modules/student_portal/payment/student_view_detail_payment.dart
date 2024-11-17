@@ -9,10 +9,12 @@ class StudentViewDetailPaymentDialog extends StatefulWidget {
   const StudentViewDetailPaymentDialog({super.key});
 
   @override
-  State<StudentViewDetailPaymentDialog> createState() => _StudentViewDetailPaymentDialogState();
+  State<StudentViewDetailPaymentDialog> createState() =>
+      _StudentViewDetailPaymentDialogState();
 }
 
-class _StudentViewDetailPaymentDialogState extends State<StudentViewDetailPaymentDialog> {
+class _StudentViewDetailPaymentDialogState
+    extends State<StudentViewDetailPaymentDialog> {
   late double opacity;
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _confirmEmailController = TextEditingController();
@@ -76,36 +78,47 @@ class _StudentViewDetailPaymentDialogState extends State<StudentViewDetailPaymen
             const SizedBox(height: 24),
             Row(
               children: [
-                Expanded(
-                  child: OutlinedButton(
-                    onPressed: () => Navigator.pop(context),
-                    style: OutlinedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      side: BorderSide(color: AppColors.eLearningBtnColor1),
-                    ),
-                    child: Text(
-                      'Cancel',
-                      style: TextStyle(color: AppColors.eLearningBtnColor1),
-                    ),
-                  ),
-                ),
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: () {},
+                          style: OutlinedButton.styleFrom(
+                            side: const BorderSide(
+                              color: AppColors.eLearningRedBtnColor,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            child: Text('Cancel',
+                                style: AppTextStyles.normal500(
+                                  fontSize: 18,
+                                  color: AppColors.eLearningRedBtnColor,
+                                )),
+                          ),
+                        ),
+                      ),
                 const SizedBox(width: 16),
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: () {
-                      // Implement proceed logic
-                      Navigator.pop(context);
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.eLearningBtnColor1,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                    ),
-                    child: const Text(
-                      'Proceed',
-                      style: TextStyle(color: Colors.white),
-                    ),
-                  ),
-                ),
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: () {},
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor:
+                                const Color.fromRGBO(47, 85, 221, 1),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            child: Text('Proceed',
+                                style: AppTextStyles.normal500(
+                                    fontSize: 16.0,
+                                    color: AppColors.backgroundLight)),
+                          ),
+                        ),
+                      ),
               ],
             ),
           ],
@@ -155,50 +168,55 @@ class _StudentViewDetailPaymentDialogState extends State<StudentViewDetailPaymen
           ),
         ),
       ),
-      body: Stack(
-        children: [
-          Container(
-            decoration: Constants.customBoxDecoration(context),
-            child: SingleChildScrollView(
+      body: Container(
+        height: MediaQuery.of(context).size.height, // Ensures full screen height
+        decoration: Constants.customBoxDecoration(context),
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Card(
               child: Padding(
                 padding: const EdgeInsets.all(16.0),
-                child: Card(
-                  child: Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Column(
-                      children: [
-                        Center(
-                            child: SvgPicture.asset(
-                                'assets/icons/profile/success_receipt_icon.svg',
-                                height: 60)),
-                        const SizedBox(height: 16.0),
-                        Text(
-                          'Second Term Fee Charges for 2017/2018 Session',
-                          style: AppTextStyles.normal600(
-                            fontSize: 16.0,
-                            color: AppColors.eLearningBtnColor1,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                        const SizedBox(height: 24.0),
-                        ListView.builder(
-                          shrinkWrap: true,
-                          physics: const NeverScrollableScrollPhysics(),
-                          itemCount: 12,
-                          itemBuilder: (context, index) => Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 8.0),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                child: Column(
+                  children: [
+                    Center(
+                      child: SvgPicture.asset(
+                        'assets/icons/profile/success_receipt_icon.svg',
+                        height: 60,
+                      ),
+                    ),
+                    const SizedBox(height: 16.0),
+                    Text(
+                      'Second Term Fee Charges for 2017/2018 Session',
+                      style: AppTextStyles.normal600(
+                        fontSize: 16.0,
+                        color: AppColors.eLearningBtnColor1,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 24.0),
+                    ListView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemCount: 12,
+                      itemBuilder: (context, index) => Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 8.0),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              'Library fee', // Changed label from "Bus fee"
+                              style: AppTextStyles.normal400(
+                                fontSize: 12,
+                                color: AppColors.backgroundDark,
+                              ),
+                            ),
+                            Row(
                               children: [
+                                const NairaSvgIcon(color: AppColors.backgroundDark),
+                                const SizedBox(width: 4),
                                 Text(
-                                  'Bus fee',
-                                  style: AppTextStyles.normal400(
-                                    fontSize: 12,
-                                    color: AppColors.backgroundDark,
-                                  ),
-                                ),
-                                Text(
-                                  '₦3000',
+                                  '3000',
                                   style: AppTextStyles.normal400(
                                     fontSize: 12,
                                     color: AppColors.backgroundDark,
@@ -206,21 +224,27 @@ class _StudentViewDetailPaymentDialogState extends State<StudentViewDetailPaymen
                                 ),
                               ],
                             ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16.0),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'Total amount to pay',
+                          style: AppTextStyles.normal600(
+                            fontSize: 14,
+                            color: AppColors.backgroundDark,
                           ),
                         ),
-                        const SizedBox(height: 16.0),
                         Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
+                            const NairaSvgIcon(color: AppColors.backgroundDark),
+                            const SizedBox(width: 4),
                             Text(
-                              'Total amount to pay',
-                              style: AppTextStyles.normal600(
-                                fontSize: 14,
-                                color: AppColors.backgroundDark,
-                              ),
-                            ),
-                            Text(
-                              '₦356,870.00',
+                              '356,870.00',
                               style: AppTextStyles.normal600(
                                 fontSize: 18,
                                 color: AppColors.backgroundDark,
@@ -230,34 +254,31 @@ class _StudentViewDetailPaymentDialogState extends State<StudentViewDetailPaymen
                         ),
                       ],
                     ),
-                  ),
+                  ],
                 ),
               ),
             ),
           ),
-
-        ],
+        ),
       ),
       bottomNavigationBar: Padding(
         padding: const EdgeInsets.all(16.0),
-        child: Expanded(
-          child: ElevatedButton(
-              onPressed: _showIdentityConfirmation,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.eLearningBtnColor1,
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-              child: Text(
-                'Proceed to pay',
-                style: AppTextStyles.normal600(
-                  fontSize: 16,
-                  color: AppColors.backgroundLight,
-                ),
-              ),
+        child: ElevatedButton(
+          onPressed: _showIdentityConfirmation,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: AppColors.eLearningBtnColor1,
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
             ),
+          ),
+          child: Text(
+            'Proceed to pay',
+            style: AppTextStyles.normal600(
+              fontSize: 16,
+              color: AppColors.backgroundLight,
+            ),
+          ),
         ),
       ),
     );

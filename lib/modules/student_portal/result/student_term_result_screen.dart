@@ -1,14 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
+import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 
-class TermResultScreen extends StatelessWidget {
+class TermResultScreen extends StatefulWidget {
   final String termTitle;
 
   const TermResultScreen({Key? key, required this.termTitle}) : super(key: key);
 
   @override
+  State<TermResultScreen> createState() => _TermResultScreenState();
+}
+
+class _TermResultScreenState extends State<TermResultScreen> {
+  late double opacity;
+
+  @override
   Widget build(BuildContext context) {
+    final Brightness brightness = Theme.of(context).brightness;
+    opacity = brightness == Brightness.light ? 0.1 : 0.15;
     return Scaffold(
       appBar: AppBar(
         title: Text(
@@ -30,6 +40,21 @@ class TermResultScreen extends StatelessWidget {
           ),
         ),
         backgroundColor: AppColors.backgroundLight,
+        flexibleSpace: FlexibleSpaceBar(
+          background: Stack(
+            children: [
+              Positioned.fill(
+                child: Opacity(
+                  opacity: opacity,
+                  child: Image.asset(
+                    'assets/images/background.png',
+                    fit: BoxFit.cover,
+                  ),
+                ),
+              )
+            ],
+          ),
+        ),
         actions: [
           TextButton.icon(
             onPressed: () {
@@ -45,13 +70,15 @@ class TermResultScreen extends StatelessWidget {
         ],
       ),
       body: Container(
-        decoration: BoxDecoration(color: Colors.white), // Replace with your theme's background
+         decoration: Constants.customBoxDecoration(context),
         child: SingleChildScrollView(
           child: Column(
             children: [
-              _buildTermSection('$termTitle Result'),
+              _buildTermSection('${widget.termTitle} Result'),
               Padding(
-                padding: const EdgeInsets.only(bottom: 32.0,),
+                padding: const EdgeInsets.only(
+                  bottom: 32.0,
+                ),
                 child: const Divider(),
               ),
               _buildSubjectsTable(),
@@ -64,7 +91,7 @@ class TermResultScreen extends StatelessWidget {
 
   Widget _buildTermSection(String title) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 16.0),
+      padding: const EdgeInsets.all(16.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -81,10 +108,9 @@ class TermResultScreen extends StatelessWidget {
               child: Text(
                 title,
                 style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w500,
-                  color: Colors.orange
-                ),
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                    color: Colors.orange),
               ),
             ),
           ),
@@ -97,53 +123,30 @@ class TermResultScreen extends StatelessWidget {
       ),
     );
   }
-  // Widget _buildInfoRow(String label, String value) {
-  //   return Padding(
-  //     padding: const EdgeInsets.symmetric(horizontal: 8.0),
-  //     child: Row(
-  //       mainAxisAlignment: MainAxisAlignment.spaceBetween,
-  //       children: [
-  //         Text(
-  //           label,
-  //           style: const TextStyle(fontSize: 14),
-  //         ),
-  //         Text(
-  //           value,
-  //           style: const TextStyle(
-  //             fontSize: 14,
-  //             fontWeight: FontWeight.w600,
-  //             color: AppColors.paymentTxtColor1,
-  //           ),
-  //         ),
-  //       ],
-  //     ),
-  //   );
-  // }
 
-Widget _buildInfoRow(String label, String value) {
-  return Container(
-    padding: const EdgeInsets.only(left: 8.0, right: 8.0, top: 32),
-    child: Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      crossAxisAlignment: CrossAxisAlignment.center, // Add this
-      children: [
-        Text(
-          label,
-          style: const TextStyle(fontSize: 14),
-        ),
-        Text(
-          value,
-          style: const TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
-            color: AppColors.paymentTxtColor1,
+  Widget _buildInfoRow(String label, String value) {
+    return Container(
+      padding: const EdgeInsets.only(left: 8.0, right: 8.0, top: 32),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        crossAxisAlignment: CrossAxisAlignment.center, // Add this
+        children: [
+          Text(
+            label,
+            style: const TextStyle(fontSize: 14),
           ),
-        ),
-      ],
-    ),
-  );
-}
-
+          Text(
+            value,
+            style: const TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              color: AppColors.paymentTxtColor1,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
   Widget _buildSubjectsTable() {
     final List<String> subjects = [
@@ -158,30 +161,33 @@ Widget _buildInfoRow(String label, String value) {
       'History',
     ];
 
-    return Container(
-      decoration: BoxDecoration(
-        border: Border.all(color: Colors.grey[300]!),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Row(
-        children: [
-          _buildSubjectColumn(subjects),
-          Expanded(
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                children: [
-                  _buildScrollableColumn('Assessment 1', 80, subjects),
-                  _buildScrollableColumn('Assessment 2', 80, subjects),
-                  _buildScrollableColumn('Assessment 3', 80, subjects),
-                  _buildScrollableColumn('Examination', 100, subjects),
-                  _buildScrollableColumn('Total Score', 100, subjects),
-                  _buildScrollableColumn('Grade', 80, subjects),
-                ],
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: Container(
+        decoration: BoxDecoration(
+          border: Border.all(color: Colors.grey[300]!),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Row(
+          children: [
+            _buildSubjectColumn(subjects),
+            Expanded(
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: [
+                    _buildScrollableColumn('Assessment 1', 80, subjects),
+                    _buildScrollableColumn('Assessment 2', 80, subjects),
+                    _buildScrollableColumn('Assessment 3', 80, subjects),
+                    _buildScrollableColumn('Examination', 100, subjects),
+                    _buildScrollableColumn('Total Score', 100, subjects),
+                    _buildScrollableColumn('Grade', 80, subjects),
+                  ],
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

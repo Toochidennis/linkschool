@@ -19,7 +19,7 @@ class StudentHomeScreen extends StatefulWidget {
 
 class _StudentHomeScreenState extends State<StudentHomeScreen> {
   final PageController _pageController = PageController(
-    viewportFraction: 0.85,
+    viewportFraction: 0.90,
   );
   Timer? _timer;
   int _currentPage = 0;
@@ -111,7 +111,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
                 padding: const EdgeInsets.all(16.0),
                 children: [
                   SizedBox(
-                    height: 120, // Adjust height to fit the design
+                    height: 140, // Adjust height to fit the design
                     child: PageView.builder(
                       controller: _pageController,
                       itemCount: notifications.length,

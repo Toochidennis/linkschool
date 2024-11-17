@@ -28,7 +28,6 @@ class StudentPaymentHomeScreen extends StatefulWidget {
 
 class _StudentPaymentHomeScreenState extends State<StudentPaymentHomeScreen> {
   int _currentCardIndex = 0;
-  bool _isAmountHidden = false;
   late double opacity;
 
   final List<Map<String, dynamic>> _cards = [
@@ -182,7 +181,7 @@ class _StudentPaymentHomeScreenState extends State<StudentPaymentHomeScreen> {
                     builder: (BuildContext context) {
                       return Padding(
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 8.0, vertical: 8.0),
+                            horizontal: 8.0, vertical: 16.0),
                         child: Container(
                           width: double.infinity,
                           height: 130,
@@ -192,7 +191,7 @@ class _StudentPaymentHomeScreenState extends State<StudentPaymentHomeScreen> {
                           ),
                           child: Padding(
                             padding: const EdgeInsets.symmetric(
-                                vertical: 8.0, horizontal: 8.0),
+                                vertical: 16.0, horizontal: 8.0),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
@@ -208,20 +207,6 @@ class _StudentPaymentHomeScreenState extends State<StudentPaymentHomeScreen> {
                                             fontSize: 16,
                                           ),
                                         ),
-                                        IconButton(
-                                          icon: Icon(
-                                            _isAmountHidden
-                                                ? Icons.visibility
-                                                : Icons.visibility_off,
-                                            color: Colors.white,
-                                            size: 20,
-                                          ),
-                                          onPressed: () {
-                                            setState(() {
-                                              _isAmountHidden = !_isAmountHidden;
-                                            });
-                                          },
-                                        ),
                                       ],
                                     ),
                                     Container(
@@ -236,7 +221,7 @@ class _StudentPaymentHomeScreenState extends State<StudentPaymentHomeScreen> {
                                     ),
                                   ],
                                 ),
-                                const SizedBox(height: 10),
+                                const SizedBox(height: 14),
                                 Row(
                                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                   children: [
@@ -245,16 +230,19 @@ class _StudentPaymentHomeScreenState extends State<StudentPaymentHomeScreen> {
                                         const NairaSvgIcon(color: AppColors.backgroundLight),
                                         const SizedBox(width: 4),
                                         Text(
-                                          _isAmountHidden ? '********' : '${card['amount']}',
+                                          '${card['amount']}',
                                           style: AppTextStyles.normal700(fontSize: 24, color: AppColors.backgroundLight),
                                         ),
                                       ],
                                     ),
                                     GestureDetector(
                                       onTap: _navigateToViewDetailDialog,
-                                      child: const Text(
-                                        'View Details',
-                                        style: TextStyle(color: Colors.white),
+                                      child: Padding(
+                                        padding: const EdgeInsets.all(8.0),
+                                        child: const Text(
+                                          'View Details',
+                                          style: TextStyle(color: Colors.white),
+                                        ),
                                       ),
                                     )
                                   ],
@@ -361,12 +349,19 @@ class PaymentHistoryItem extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
-            Text(
-              '₦${payment['amount']}',
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w500,
-              ),
+            Row(
+              mainAxisSize: MainAxisSize.min, // To avoid taking up too much space
+              children: [
+                const NairaSvgIcon(color: AppColors.paymentTxtColor5), // Naira SVG icon
+                const SizedBox(width: 2), 
+                Text(
+                  payment['amount'],
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
             ),
             Text(
               payment['status'],

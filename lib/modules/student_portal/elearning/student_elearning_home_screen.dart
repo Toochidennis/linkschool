@@ -100,8 +100,8 @@ class _StudentElearningScreenState extends State<StudentElearningScreen> {
   @override
   void initState() {
     super.initState();
-    assessmentController = PageController(viewportFraction: 0.8);
-    activityController = PageController(viewportFraction: 0.8);
+    assessmentController = PageController(viewportFraction: 0.90);
+    activityController = PageController(viewportFraction: 0.90);
 
     // Start timers for auto-scrolling
     assessmentTimer = Timer.periodic(const Duration(seconds: 5), (_) {
@@ -174,7 +174,7 @@ class _StudentElearningScreenState extends State<StudentElearningScreen> {
       body: Container(
         decoration: Constants.customBoxDecoration(context),
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(16.0),
+          padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 8.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -186,49 +186,54 @@ class _StudentElearningScreenState extends State<StudentElearningScreen> {
                   itemCount: assessments.length,
                   itemBuilder: (context, index) {
                     final assessment = assessments[index];
-                    return ClipRRect(
-                      borderRadius: BorderRadius.circular(12.0),
-                      child: Stack(
-                        children: [
-                          SvgPicture.asset(
-                            'assets/icons/student/big-blue-bg-illustration.svg',
-                            width: MediaQuery.of(context).size.width * 0.9,
-                            fit: BoxFit.cover,
-                          ),
-                          Padding(
-                            padding: const EdgeInsets.all(16.0),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Text(
-                                  assessment['date']!,
-                                  style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.bold),
-                                ),
-                                const SizedBox(height: 8),
-                                Text(
-                                  assessment['title']!,
-                                  style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.bold),
-                                ),
-                                const SizedBox(height: 8),
-                                Text(
-                                  'Subject: ${assessment['subject']}',
-                                  style: const TextStyle(color: Colors.white),
-                                ),
-                                Text(
-                                  'For: ${assessment['classes']}',
-                                  style: const TextStyle(color: Colors.white),
-                                ),
-                              ],
+                    return Container(
+                      margin: const EdgeInsets.symmetric(horizontal: 8.0),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(12.0),
+                        child: Stack(
+                          children: [
+                            SvgPicture.asset(
+                              'assets/icons/student/big-blue-bg-illustration.svg',
+                              width: double.infinity,
+                              // width: MediaQuery.of(context).size.width * 0.9,
+                              fit: BoxFit.cover,
                             ),
-                          ),
-                        ],
+                            Padding(
+                              padding: const EdgeInsets.all(16.0),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Text(
+                                    assessment['date']!,
+                                    style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.bold),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    assessment['title']!,
+                                    style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.bold),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    'Subject: ${assessment['subject']}',
+                                    style: const TextStyle(color: Colors.white),
+                                  ),
+                                   const SizedBox(height: 4),
+                                  Text(
+                                    'For: ${assessment['classes']}',
+                                    style: const TextStyle(color: Colors.white),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     );
                   },
@@ -236,20 +241,23 @@ class _StudentElearningScreenState extends State<StudentElearningScreen> {
               ),
               const SizedBox(height: 24),
               // Recent Activity Carousel with Peek Effect
-              const Text(
-                'Recent activity',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              Padding(
+                padding: const EdgeInsets.only(left: 8.0),
+                child: const Text(
+                  'Recent activity',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
               ),
+              const SizedBox(height: 16),
               SizedBox(
                 height: 110,
-
                 child: PageView.builder(
                   controller: activityController,
                   itemCount: activities.length,
                   itemBuilder: (context, index) {
                     final activity = activities[index];
-                    return Padding(
-                      padding: const EdgeInsets.only(right: 16.0),
+                    return Container(
+                      margin: const EdgeInsets.symmetric(horizontal: 8.0),
                       child: Card(
                         elevation: 4,
                         margin: const EdgeInsets.symmetric(vertical: 8.0),
@@ -302,9 +310,12 @@ class _StudentElearningScreenState extends State<StudentElearningScreen> {
               ),
               const SizedBox(height: 24),
               // Courses Grid with Navigation
-              const Text(
-                'Courses',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              Padding(
+                padding: const EdgeInsets.only(left: 8.0),
+                child: const Text(
+                  'Courses',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
               ),
               const SizedBox(height: 16),
               GridView.builder(
@@ -312,8 +323,8 @@ class _StudentElearningScreenState extends State<StudentElearningScreen> {
                 physics: const NeverScrollableScrollPhysics(),
                 gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: 2,
-                  mainAxisSpacing: 8,
-                  crossAxisSpacing: 8,
+                  mainAxisSpacing: 14,
+                  crossAxisSpacing: 14,
                   childAspectRatio: 3,
                 ),
                 itemCount: courses.length,
