@@ -3,6 +3,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/student_portal/elearning/assignment_detail_screen.dart';
+import 'package:linkschool/modules/student_portal/elearning/material_screen.dart';
 
 class CourseContentScreen extends StatefulWidget {
   const CourseContentScreen({super.key});
@@ -61,10 +62,20 @@ class _CourseContentScreenState extends State<CourseContentScreen> {
                 ),
               ),
               Divider(color: Colors.grey.shade400),
-              const ContentRow(
-                iconPath: 'assets/icons/student/note_icon.svg',
-                title: 'What is Punctuality?',
-                subtitle: 'Created on 25 June, 2015 08:52am',
+              GestureDetector(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => MaterialScreen(),
+                    ),
+                  );
+                },
+                child: const ContentRow(
+                  iconPath: 'assets/icons/student/note_icon.svg',
+                  title: 'What is Punctuality?',
+                  subtitle: 'Created on 25 June, 2015 08:52am',
+                ),
               ),
               const ContentRow(
                 iconPath: 'assets/icons/student/quiz_icon.svg',

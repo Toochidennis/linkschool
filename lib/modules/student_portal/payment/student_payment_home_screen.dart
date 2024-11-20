@@ -12,7 +12,6 @@ import 'package:linkschool/modules/student_portal/payment/student_reciept_dialog
 import 'package:linkschool/modules/student_portal/payment/student_setting_dialog.dart';
 import 'package:linkschool/modules/student_portal/payment/student_view_detail_payment.dart';
 
-
 class StudentPaymentHomeScreen extends StatefulWidget {
   final VoidCallback logout;
 
@@ -40,7 +39,6 @@ class _StudentPaymentHomeScreenState extends State<StudentPaymentHomeScreen> {
       'amount': '534,790.00',
     },
   ];
-
 
   final List<Map<String, dynamic>> _paymentHistory = [
     {
@@ -71,21 +69,21 @@ class _StudentPaymentHomeScreenState extends State<StudentPaymentHomeScreen> {
       'status': 'Paid',
       'icon': 'assets/icons/e_learning/receipt_list_icon.svg',
     },
-      {
+    {
       'term': '2016/2017 Third Term Fees',
       'date': '2022-05-24',
       'amount': '23,790.00',
       'status': 'Paid',
       'icon': 'assets/icons/e_learning/receipt_list_icon.svg',
     },
-      {
+    {
       'term': '2016/2017 Third Term Fees',
       'date': '2022-05-24',
       'amount': '23,790.00',
       'status': 'Paid',
       'icon': 'assets/icons/e_learning/receipt_list_icon.svg',
     },
-      {
+    {
       'term': '2016/2017 Third Term Fees',
       'date': '2022-05-24',
       'amount': '23,790.00',
@@ -127,11 +125,10 @@ class _StudentPaymentHomeScreenState extends State<StudentPaymentHomeScreen> {
   void _navigateToViewDetailDialog() {
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (context) => StudentViewDetailPaymentDialog(),
+        builder: (context) => const StudentViewDetailPaymentDialog(),
       ),
     );
   }
-
 
   void _showReceiptDialog(Map<String, dynamic> payment) {
     showDialog(
@@ -153,14 +150,14 @@ class _StudentPaymentHomeScreenState extends State<StudentPaymentHomeScreen> {
         subtitle: 'Tochukwu',
         showNotification: true,
         showSettings: true,
-        showPostInput: true,
+        // showPostInput: true,
         onNotificationTap: () {},
         onSettingsTap: _showSettingsDialog,
-        onPostTap: _showNewPostDialog,
+        // onPostTap: _showNewPostDialog,
       ),
       body: Container(
         decoration: Constants.customBoxDecoration(context),
-        child: SingleChildScrollView( // Wrap the entire content in SingleChildScrollView
+        child: SingleChildScrollView(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -196,7 +193,8 @@ class _StudentPaymentHomeScreenState extends State<StudentPaymentHomeScreen> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
                                   children: [
                                     Row(
                                       children: [
@@ -217,29 +215,38 @@ class _StudentPaymentHomeScreenState extends State<StudentPaymentHomeScreen> {
                                             198, 210, 255, 1),
                                         borderRadius: BorderRadius.circular(10),
                                       ),
-                                      child: Text('Pay Now', style: AppTextStyles.normal500(fontSize: 12, color: AppColors.paymentTxtColor1),),
+                                      child: Text(
+                                        'Pay Now',
+                                        style: AppTextStyles.normal500(
+                                            fontSize: 12,
+                                            color: AppColors.paymentTxtColor1),
+                                      ),
                                     ),
                                   ],
                                 ),
                                 const SizedBox(height: 14),
                                 Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
                                   children: [
                                     Row(
                                       children: [
-                                        const NairaSvgIcon(color: AppColors.backgroundLight),
+                                        const NairaSvgIcon(
+                                            color: AppColors.backgroundLight),
                                         const SizedBox(width: 4),
                                         Text(
                                           '${card['amount']}',
-                                          style: AppTextStyles.normal700(fontSize: 24, color: AppColors.backgroundLight),
+                                          style: AppTextStyles.normal700(
+                                              fontSize: 24,
+                                              color: AppColors.backgroundLight),
                                         ),
                                       ],
                                     ),
                                     GestureDetector(
                                       onTap: _navigateToViewDetailDialog,
-                                      child: Padding(
-                                        padding: const EdgeInsets.all(8.0),
-                                        child: const Text(
+                                      child: const Padding(
+                                        padding: EdgeInsets.all(8.0),
+                                        child: Text(
                                           'View Details',
                                           style: TextStyle(color: Colors.white),
                                         ),
@@ -267,7 +274,7 @@ class _StudentPaymentHomeScreenState extends State<StudentPaymentHomeScreen> {
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       color: _currentCardIndex == entry.key
-                          ? Color.fromRGBO(33, 150, 243, 1)
+                          ? const Color.fromRGBO(33, 150, 243, 1)
                           : const Color.fromRGBO(224, 224, 224, 1),
                     ),
                   );
@@ -293,10 +300,25 @@ class _StudentPaymentHomeScreenState extends State<StudentPaymentHomeScreen> {
                 ),
               ),
               Column(
-                children: _paymentHistory.map((payment) {
-                  return PaymentHistoryItem(
-                    payment: payment,
-                    onTap: () => _showReceiptDialog(payment),
+                children: _paymentHistory.asMap().entries.map((entry) {
+                  final index = entry.key;
+                  final payment = entry.value;
+
+                  return Column(
+                    children: [
+                      PaymentHistoryItem(
+                        payment: payment,
+                        onTap: () => _showReceiptDialog(payment),
+                      ),
+                      if (index !=
+                          _paymentHistory.length -
+                              1) // Avoid adding a divider after the last item
+                        const Divider(
+                          color: Colors.grey, // Customize the color as needed
+                          thickness: 0.5, // Set the thickness of the line
+                          height: 1, // Control vertical spacing
+                        ),
+                    ],
                   );
                 }).toList(),
               ),
@@ -312,7 +334,9 @@ class PaymentHistoryItem extends StatelessWidget {
   final Map<String, dynamic> payment;
   final VoidCallback onTap;
 
-  const PaymentHistoryItem({Key? key, required this.payment, required this.onTap}) : super(key: key);
+  const PaymentHistoryItem(
+      {Key? key, required this.payment, required this.onTap})
+      : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -350,10 +374,12 @@ class PaymentHistoryItem extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
             Row(
-              mainAxisSize: MainAxisSize.min, // To avoid taking up too much space
+              mainAxisSize:
+                  MainAxisSize.min, // To avoid taking up too much space
               children: [
-                const NairaSvgIcon(color: AppColors.paymentTxtColor5), // Naira SVG icon
-                const SizedBox(width: 2), 
+                const NairaSvgIcon(
+                    color: AppColors.paymentTxtColor5), // Naira SVG icon
+                const SizedBox(width: 2),
                 Text(
                   payment['amount'],
                   style: const TextStyle(

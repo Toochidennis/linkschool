@@ -169,7 +169,7 @@ class _StudentViewDetailPaymentDialogState
         ),
       ),
       body: Container(
-        height: MediaQuery.of(context).size.height, // Ensures full screen height
+        height: MediaQuery.of(context).size.height, 
         decoration: Constants.customBoxDecoration(context),
         child: SingleChildScrollView(
           child: Padding(

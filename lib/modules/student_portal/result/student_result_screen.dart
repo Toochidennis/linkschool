@@ -43,9 +43,9 @@ class _StudentResultScreenState extends State<StudentResultScreen> {
         title: 'Welcome',
         subtitle: 'Tochukwu',
         showNotification: true,
-        showPostInput: true,
+        // showPostInput: true,
         onNotificationTap: () {},
-        onPostTap: _showNewPostDialog,
+        // onPostTap: _showNewPostDialog,
       ),
       body: Container(
         decoration: Constants.customBoxDecoration(context),

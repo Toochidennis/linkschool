@@ -48,7 +48,7 @@ class _StudentRecieptDialogState extends State<StudentRecieptDialog> {
         padding: const EdgeInsets.all(16.0),
         child: SizedBox(
           width: double.infinity,
-          height: 600,
+          // height: 600,
           child: Card(
             child: Padding(
               padding:

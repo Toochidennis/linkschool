@@ -30,7 +30,9 @@ class CustomStudentAppBar extends StatelessWidget implements PreferredSizeWidget
   }) : super(key: key);
 
   @override
-  Size get preferredSize => const Size.fromHeight(kToolbarHeight + 85);
+  Size get preferredSize => Size.fromHeight(showPostInput 
+    ? kToolbarHeight + 81  // Increased height to accommodate input field
+    : kToolbarHeight + 32); // Reduced height when input is hidden
 
   @override
   Widget build(BuildContext context) {
@@ -54,7 +56,7 @@ class CustomStudentAppBar extends StatelessWidget implements PreferredSizeWidget
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 32, 8, 8),
+              padding: EdgeInsets.fromLTRB(16, showPostInput ? 32 : 32, 8, 8),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -97,7 +99,7 @@ class CustomStudentAppBar extends StatelessWidget implements PreferredSizeWidget
                         IconButton(
                           onPressed: onSettingsTap,
                           icon: SvgPicture.asset(
-                            'assets/icons/settings.svg',  // Make sure this asset exists
+                            'assets/icons/settings.svg',
                             colorFilter: const ColorFilter.mode(
                                 Colors.white, BlendMode.srcIn),
                             width: 24,
@@ -110,8 +112,9 @@ class CustomStudentAppBar extends StatelessWidget implements PreferredSizeWidget
               ),
             ),
             if (showPostInput)
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16.0),
+              Container(
+                color: Colors.white,
+                padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 6.0),
                 child: Row(
                   children: [
                     CircleAvatar(
@@ -125,11 +128,21 @@ class CustomStudentAppBar extends StatelessWidget implements PreferredSizeWidget
                       child: InkWell(
                         onTap: onPostTap,
                         child: Container(
-                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          padding: const EdgeInsets.symmetric(
+                            vertical: 6.0,  // Reduced vertical padding
+                            horizontal: 12.0,
+                          ),
+                          decoration: BoxDecoration(
+                            border: Border.all(
+                              color: Colors.grey[400]!,
+                              width: 1.0,
+                            ),
+                            borderRadius: BorderRadius.circular(20.0),
+                          ),
                           child: Text(
-                            "What's on your mind ?",
+                            "What's on your mind?",
                             style: TextStyle(
-                              color: Colors.white.withOpacity(0.8),
+                              color: Colors.grey[600],
                               fontSize: 16,
                             ),
                           ),

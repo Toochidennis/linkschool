@@ -111,7 +111,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
                 padding: const EdgeInsets.all(16.0),
                 children: [
                   SizedBox(
-                    height: 140, // Adjust height to fit the design
+                    height: 140,
                     child: PageView.builder(
                       controller: _pageController,
                       itemCount: notifications.length,
@@ -133,15 +133,11 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
                             }
                             return Transform.scale(
                               scale: scale,
-                              child: Padding(
-                                padding:
-                                    const EdgeInsets.symmetric(horizontal: 8.0),
-                                child: _buildNotificationCard(
-                                  notifications[index]['name']!,
-                                  notifications[index]['message']!,
-                                  notifications[index]['time']!,
-                                  notifications[index]['avatar']!,
-                                ),
+                              child: _buildNotificationCard(
+                                notifications[index]['name']!,
+                                notifications[index]['message']!,
+                                notifications[index]['time']!,
+                                notifications[index]['avatar']!,
                               ),
                             );
                           },
@@ -218,7 +214,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
                           'See all',
                           style: TextStyle(
                             decoration:
-                                TextDecoration.underline, // Added underline
+                                TextDecoration.underline,
                           ),
                         ),
                       ),
@@ -275,7 +271,8 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
     return Card(
       elevation: 2,
       child: Container(
-        width: 300,
+        // width: 300,
+        width: double.infinity,
         padding: const EdgeInsets.all(12),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,

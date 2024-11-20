@@ -167,9 +167,9 @@ class _StudentElearningScreenState extends State<StudentElearningScreen> {
         title: 'Welcome',
         subtitle: 'Tochukwu',
         showNotification: true,
-        showPostInput: true,
+        // showPostInput: true,
         onNotificationTap: () {},
-        onPostTap: _showNewPostDialog,
+        // onPostTap: _showNewPostDialog,
       ),
       body: Container(
         decoration: Constants.customBoxDecoration(context),
@@ -187,7 +187,7 @@ class _StudentElearningScreenState extends State<StudentElearningScreen> {
                   itemBuilder: (context, index) {
                     final assessment = assessments[index];
                     return Container(
-                      margin: const EdgeInsets.symmetric(horizontal: 8.0),
+                      // margin: const EdgeInsets.symmetric(horizontal: 8.0),
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(12.0),
                         child: Stack(
