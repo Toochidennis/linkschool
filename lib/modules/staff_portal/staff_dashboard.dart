@@ -2,7 +2,7 @@ import 'package:curved_nav_bar/fab_bar/fab_bottom_app_bar_item.dart';
 import 'package:flutter/material.dart';
 import 'package:linkschool/modules/common/bottom_navigation_bar.dart';
 import 'package:linkschool/modules/common/bottom_nav_item.dart';
-import 'package:linkschool/modules/staff_portal/home_screen/staff_home_screen.dart';
+import 'package:linkschool/modules/staff_portal/home/staff_home_screen.dart';
 
 class StaffDashboard extends StatefulWidget {
   final Function(bool) onSwitch;
@@ -39,12 +39,12 @@ class _StaffDashboardState extends State<StaffDashboard> {
       case 1:
         return Container(
           color: Colors.orange,
-          child: const Center(child: Text('Classes')),
+          child: const Center(child: Text('Result')),
         );
       case 2:
         return Container(
           color: Colors.green,
-          child: const Center(child: Text('Assignments')),
+          child: const Center(child: Text('E-learning')),
         );
       case 3:
         return _buildProfileScreen();
@@ -94,14 +94,14 @@ class _StaffDashboardState extends State<StaffDashboard> {
         height: 20.0,
       ),
       createBottomNavIcon(
-        imagePath: 'assets/icons/class.svg',
-        text: 'Classes',
+        imagePath: 'assets/icons/result.svg',
+        text: 'Result',
         width: 20.0,
         height: 20.0,
       ),
       createBottomNavIcon(
-        imagePath: 'assets/icons/assignment.svg',
-        text: 'Assignments',
+        imagePath: 'assets/icons/e-learning.svg',
+        text: 'E-Learning',
         width: 20.0,
         height: 20.0,
       ),
