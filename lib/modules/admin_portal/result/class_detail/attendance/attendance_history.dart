@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
+import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'dart:math';
 
@@ -19,6 +20,7 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
   final random = Random();
   late List<bool> _isChecked;
   late List<bool> _isSelected;
+  late double opacity;
 
   @override
   void initState() {
@@ -29,9 +31,10 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
 
   @override
   Widget build(BuildContext context) {
+   final Brightness brightness = Theme.of(context).brightness;
+    opacity = brightness == Brightness.light ? 0.1 : 0.15;
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: AppColors.backgroundLight,
         title: Text(
           widget.date,
           style: AppTextStyles.normal600(
@@ -45,76 +48,95 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
           },
           icon: Image.asset(
             'assets/icons/arrow_back.png',
-            color: AppColors.backgroundDark,
+            color: AppColors.eLearningBtnColor1,
             width: 34.0,
             height: 34.0,
           ),
         ),
+        backgroundColor: AppColors.backgroundLight,
+        flexibleSpace: FlexibleSpaceBar(
+          background: Stack(
+            children: [
+              Positioned.fill(
+                child: Opacity(
+                  opacity: opacity,
+                  child: Image.asset(
+                    'assets/images/background.png',
+                    fit: BoxFit.cover,
+                  ),
+                ),
+              )
+            ],
+          ),
+        ),
       ),
-      body: ListView.builder(
-        itemCount: names.length,
-        itemBuilder: (context, index) {
-          final name = names[index];
-          final circleColor = colors[random.nextInt(colors.length)];
-          return GestureDetector(
-            onTap: () {
-              setState(() {
-                _isSelected[index] = !_isSelected[index];
-              });
-            },
-            child: Container(
-              color: _isSelected[index]
-                  ? const Color.fromRGBO(239, 227, 255, 1)
-                  : Colors.transparent,
-              child: Column(
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 5.0),
-                    child: Row(
-                      children: [
-                        Padding(
-                          padding: const EdgeInsets.all(8.0),
-                          child: CircleAvatar(
-                            radius: 20,
-                            backgroundColor: circleColor,
+      body: Container(
+        decoration: Constants.customBoxDecoration(context),
+        child: ListView.builder(
+          itemCount: names.length,
+          itemBuilder: (context, index) {
+            final name = names[index];
+            final circleColor = colors[random.nextInt(colors.length)];
+            return GestureDetector(
+              onTap: () {
+                setState(() {
+                  _isSelected[index] = !_isSelected[index];
+                });
+              },
+              child: Container(
+                color: _isSelected[index]
+                    ? const Color.fromRGBO(239, 227, 255, 1)
+                    : Colors.transparent,
+                child: Column(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 5.0),
+                      child: Row(
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child: CircleAvatar(
+                              radius: 20,
+                              backgroundColor: circleColor,
+                              child: Text(
+                                name[0],
+                                style: const TextStyle(color: Colors.white, fontSize: 20),
+                              ),
+                            ),
+                          ),
+                          Expanded(
                             child: Text(
-                              name[0],
-                              style: const TextStyle(color: Colors.white, fontSize: 20),
+                              name,
+                              style: AppTextStyles.normal600(
+                                fontSize: 18,
+                                color: Colors.black,
+                              ),
                             ),
                           ),
-                        ),
-                        Expanded(
-                          child: Text(
-                            name,
-                            style: AppTextStyles.normal600(
-                              fontSize: 18,
-                              color: Colors.black,
+                          IconButton(
+                            icon: Icon(
+                              _isChecked[index] ? Icons.check_circle : Icons.check_circle_outline,
+                              color: _isChecked[index] ? Colors.green : Colors.grey,
                             ),
+                            onPressed: () {
+                              setState(() {
+                                _isChecked[index] = !_isChecked[index];
+                              });
+                            },
                           ),
-                        ),
-                        IconButton(
-                          icon: Icon(
-                            _isChecked[index] ? Icons.check_circle : Icons.check_circle_outline,
-                            color: _isChecked[index] ? Colors.green : Colors.grey,
-                          ),
-                          onPressed: () {
-                            setState(() {
-                              _isChecked[index] = !_isChecked[index];
-                            });
-                          },
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
-                  Divider(
-                    height: 1,
-                    color: Colors.grey[300],
-                  ),
-                ],
+                    Divider(
+                      height: 1,
+                      color: Colors.grey[300],
+                    ),
+                  ],
+                ),
               ),
-            ),
-          );
-        },
+            );
+          },
+        ),
       ),
     );
   }

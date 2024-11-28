@@ -190,6 +190,7 @@ class AppColors {
   // student_dashboard colors
   static const Color studentTxtColor1 = Color.fromRGBO(37, 153, 255, 1);
   static const Color studentTxtColor2 = Color.fromRGBO(26, 31, 54, 1);
-
-
+  static const Color studentCtnColor3 = Color.fromRGBO(199, 229, 255, 1);
+  static const Color studentCtnColor4 = Color.fromRGBO(216, 255, 218, 1);
+  static const Color studentCtnColor5 = Color.fromRGBO(196, 209, 255, 1);
 }

@@ -58,49 +58,14 @@ class _StudentResultScreenState extends State<StudentResultScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const SizedBox(
-                      height: 30, // Reduced from 50 to 30
-                    ),
-                    Center(
-                      child: Column(
-                        children: [
-                          Container(
-                            width: 60,
-                            height: 60,
-                            decoration: const BoxDecoration(
-                              color: AppColors.primaryLight,
-                              shape: BoxShape.circle,
-                            ),
-                            child: const Icon(
-                              Icons.person,
-                              color: AppColors.backgroundLight,
-                              size: 40,
-                            ),
-                          ),
-                          const SizedBox(height: 10),
-                          Text(
-                            widget.studentName,
-                            style: AppTextStyles.normal700(
-                              fontSize: 20,
-                              color: AppColors.primaryLight,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-                    _buildInfoRow('Student ID:', '3ye7458918947y3'),
-                    _buildInfoRow('Class:', 'JSS2 A'),
-                    _buildInfoRow('Gender:', 'Female'),
-                    _buildInfoRow('Student Average:', '76.80%'),
-                    const SizedBox(height: 30),
                     Text(
                       '2015/2016 Session',
                       style: AppTextStyles.normal700(
-                          fontSize: 18, color: AppColors.primaryLight),
+                          fontSize: 18, color: AppColors.paymentTxtColor1),
                     ),
                     const SizedBox(height: 10),
-                    _buildTermRow('First Term', 0.75, AppColors.primaryLight),
+                    _buildTermRow(
+                        'First Term', 0.75, AppColors.paymentTxtColor1),
                     _buildTermRow('Second Term', 0.75, AppColors.videoColor4),
                     _buildTermRow(
                         'Third Term', 0.75, AppColors.exploreButton3Light),
@@ -116,14 +81,16 @@ class _StudentResultScreenState extends State<StudentResultScreen> {
                         );
                       },
                       style: OutlinedButton.styleFrom(
-                        side: const BorderSide(color: AppColors.videoColor4),
-                        minimumSize: const Size(double.infinity, 48),
+                        side:
+                            const BorderSide(color: AppColors.paymentTxtColor1),
+                        minimumSize: const Size(double.infinity, 48),      
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10.0))               
                       ),
                       child: Text(
                         'See annual result',
                         style: AppTextStyles.normal600(
                           fontSize: 18,
-                          color: AppColors.videoColor4,
+                          color: AppColors.paymentTxtColor1,
                         ),
                       ),
                     ),
@@ -134,7 +101,7 @@ class _StudentResultScreenState extends State<StudentResultScreen> {
                       'Session average chart',
                       style: AppTextStyles.normal700(
                         fontSize: 18,
-                        color: AppColors.primaryLight,
+                        color: AppColors.paymentTxtColor1,
                       ),
                     ),
                     const SizedBox(height: 40.0), // Increased from 15.0 to 30.0
@@ -184,9 +151,9 @@ class _StudentResultScreenState extends State<StudentResultScreen> {
                           ),
                           borderData: FlBorderData(show: false),
                           barGroups: [
-                            _buildBarGroup(0, 60, AppColors.primaryLight),
+                            _buildBarGroup(0, 60, AppColors.paymentTxtColor1),
                             _buildBarGroup(1, 25, AppColors.videoColor4),
-                            _buildBarGroup(2, 75, AppColors.primaryLight),
+                            _buildBarGroup(2, 75, AppColors.paymentTxtColor1),
                           ],
                           groupsSpace: 0, // Reduced space between bars
                         ),
@@ -224,7 +191,7 @@ class _StudentResultScreenState extends State<StudentResultScreen> {
             Text(
               value,
               style: AppTextStyles.normal700(
-                  fontSize: 14, color: AppColors.primaryLight),
+                  fontSize: 14, color: AppColors.paymentTxtColor1),
             ),
           ],
         ),

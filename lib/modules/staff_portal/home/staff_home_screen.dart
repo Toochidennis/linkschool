@@ -1,5 +1,4 @@
 import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
@@ -7,6 +6,8 @@ import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/common/widgets/portal/student/student_customized_appbar.dart';
 import 'package:linkschool/modules/explore/home/custom_button_item.dart';
+import 'package:linkschool/modules/staff_portal/home/form_classes_screen.dart';
+import 'package:linkschool/modules/staff_portal/home/staff_course_screen.dart';
 import 'package:linkschool/modules/student_portal/home/feed_details_screen.dart';
 import 'package:linkschool/modules/student_portal/home/new_post_dialog.dart';
 
@@ -83,7 +84,7 @@ class _StaffHomeScreenState extends State<StaffHomeScreen> {
     showDialog(
       context: context,
       builder: (BuildContext context) {
-        return NewPostDialog();
+        return const NewPostDialog();
       },
     );
   }
@@ -97,9 +98,9 @@ class _StaffHomeScreenState extends State<StaffHomeScreen> {
         title: 'Welcome',
         subtitle: 'Tochukwu',
         showNotification: true,
-        showPostInput: true,
+        // showPostInput: true,
         onNotificationTap: () {},
-        onPostTap: _showNewPostDialog,
+        // onPostTap: _showNewPostDialog,
       ),
       body: Container(
         decoration: Constants.customBoxDecoration(context),
@@ -171,30 +172,32 @@ class _StaffHomeScreenState extends State<StaffHomeScreen> {
                           fontSize: 20, color: AppColors.primaryLight)),
                   const SizedBox(height: 12),
 
-                  const Row(
+                  Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Expanded(
+                      Expanded(
                         child: CustomButtonItem(
                           backgroundColor: AppColors.portalButton1Light,
                           borderColor: AppColors.portalButton1BorderLight,
-                          label: 'Check\nResults',
-                          iconPath: 'assets/icons/result.svg',
+                          label: 'Form Classes',
+                          number: 5, 
+                          iconPath: 'assets/icons/student/knowledge_icon.svg',
                           iconHeight: 40.0,
                           iconWidth: 36.0,
-                          destination: null,
+                          destination:  FormClassesScreen(), 
                         ),
                       ),
-                      SizedBox(width: 14.0),
-                      Expanded(
+                      const SizedBox(width: 14.0),
+                      const Expanded(
                         child: CustomButtonItem(
                           backgroundColor: AppColors.portalButton2Light,
                           borderColor: AppColors.portalButton2BorderLight,
-                          label: 'Make\nPayment',
-                          iconPath: 'assets/icons/payment.svg',
+                          label: 'Courses',
+                          number: 3,
+                          iconPath: 'assets/icons/student/study_icon.svg',
                           iconHeight: 40.0,
                           iconWidth: 36.0,
-                          destination: null,
+                          destination: StaffCoursesScreen(), 
                         ),
                       ),
                     ],
@@ -437,22 +440,3 @@ class _StaffHomeScreenState extends State<StaffHomeScreen> {
     );
   }
 }
-
-
-// import 'package:flutter/material.dart';
-
-// class StaffHomeScreen extends StatelessWidget {
-//   const StaffHomeScreen({super.key});
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return Scaffold(
-//       appBar: AppBar(
-//         title: const Text('Staff Portal'),
-//       ),
-//       body: const Center(
-//         child: Text('This is the Staff Portal screen.'),
-//       ),
-//     );
-//   }
-// }

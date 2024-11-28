@@ -69,7 +69,7 @@ class _CustomNavigationBarState extends State<CustomNavigationBar>
                 activeIcon: Container(
                   padding: const EdgeInsets.all(24.0),
                   decoration: BoxDecoration(
-                    color: AppColors.primaryLight,
+                    color: AppColors.paymentTxtColor1,
                     shape: BoxShape.circle,
                     border: Border.all(
                       color: AppColors.secondaryLight,
@@ -83,7 +83,7 @@ class _CustomNavigationBarState extends State<CustomNavigationBar>
                 inActiveIcon: Container(
                   padding: const EdgeInsets.all(24.0),
                   decoration: BoxDecoration(
-                    color: AppColors.primaryLight,
+                    color: AppColors.paymentTxtColor1,
                     shape: BoxShape.circle,
                     border: Border.all(
                       color: AppColors.secondaryLight,
@@ -96,7 +96,7 @@ class _CustomNavigationBarState extends State<CustomNavigationBar>
                 ),
               ),
               activeColor: AppColors.secondaryLight,
-              inActiveColor: AppColors.primaryLight,
+              inActiveColor: AppColors.paymentTxtColor1,
               navBarBackgroundColor: brightness == Brightness.light
                   ? AppColors.backgroundLight
                   : AppColors.backgroundDark,

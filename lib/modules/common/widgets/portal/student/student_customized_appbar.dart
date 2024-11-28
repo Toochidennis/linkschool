@@ -31,13 +31,13 @@ class CustomStudentAppBar extends StatelessWidget implements PreferredSizeWidget
 
   @override
   Size get preferredSize => Size.fromHeight(showPostInput 
-    ? kToolbarHeight + 81  // Increased height to accommodate input field
+    ? kToolbarHeight + 83  // Increased height to accommodate input field
     : kToolbarHeight + 32); // Reduced height when input is hidden
 
   @override
   Widget build(BuildContext context) {
     return AppBar(
-      backgroundColor: AppColors.primaryLight,
+      backgroundColor: AppColors.paymentTxtColor1,
       toolbarHeight: preferredSize.height,
       automaticallyImplyLeading: false,
       leading: showBackButton

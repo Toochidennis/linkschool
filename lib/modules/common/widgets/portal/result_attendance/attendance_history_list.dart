@@ -3,9 +3,16 @@ import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/admin_portal/result/class_detail/attendance/attendance_history.dart';
 // import 'package:linkschool/modules/portal/result/class_detail/attendance/attendance_history.dart';
 
-class AttendanceHistoryList extends StatelessWidget {
+class AttendanceHistoryList extends StatefulWidget {
+  @override
+  State<AttendanceHistoryList> createState() => _AttendanceHistoryListState();
+}
+
+class _AttendanceHistoryListState extends State<AttendanceHistoryList> {
   final List<String> subjects = ['English Language', 'Mathematics', 'Physics', 'Chemistry', 'Biology', 'History', 'Geography', 'Literature'];
+
   final List<String> dates = ['Thursday, 20 July, 2026', 'Friday, 21 July, 2026', 'Monday, 24 July, 2026', 'Tuesday, 25 July, 2026', 'Wednesday, 26 July, 2026', 'Thursday, 27 July, 2026', 'Friday, 28 July, 2026', 'Monday, 31 July, 2026'];
+  
 
   @override
   Widget build(BuildContext context) {

@@ -174,10 +174,11 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
                   const Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Expanded(
+                      Expanded(
                         child: CustomButtonItem(
-                          backgroundColor: AppColors.portalButton1Light,
+                          backgroundColor: AppColors.studentCtnColor3,
                           borderColor: AppColors.portalButton1BorderLight,
+                          textColor: AppColors.paymentBtnColor1,
                           label: 'Check\nResults',
                           iconPath: 'assets/icons/result.svg',
                           iconHeight: 40.0,
@@ -188,8 +189,9 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
                       SizedBox(width: 14.0),
                       Expanded(
                         child: CustomButtonItem(
-                          backgroundColor: AppColors.portalButton2Light,
+                          backgroundColor: AppColors.studentCtnColor4,
                           borderColor: AppColors.portalButton2BorderLight,
+                          textColor: AppColors.paymentTxtColor2,
                           label: 'Make\nPayment',
                           iconPath: 'assets/icons/payment.svg',
                           iconHeight: 40.0,

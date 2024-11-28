@@ -2,6 +2,7 @@ import 'package:curved_nav_bar/fab_bar/fab_bottom_app_bar_item.dart';
 import 'package:flutter/material.dart';
 import 'package:linkschool/modules/common/bottom_navigation_bar.dart';
 import 'package:linkschool/modules/common/bottom_nav_item.dart';
+import 'package:linkschool/modules/staff_portal/e_learning/staff_elearning_home_screen.dart';
 import 'package:linkschool/modules/staff_portal/home/staff_home_screen.dart';
 
 class StaffDashboard extends StatefulWidget {
@@ -42,10 +43,7 @@ class _StaffDashboardState extends State<StaffDashboard> {
           child: const Center(child: Text('Result')),
         );
       case 2:
-        return Container(
-          color: Colors.green,
-          child: const Center(child: Text('E-learning')),
-        );
+        return const StaffElearningScreen();
       case 3:
         return _buildProfileScreen();
       default:
