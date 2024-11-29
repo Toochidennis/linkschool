@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
-import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
+
 
 class StudentRecieptDialog extends StatefulWidget {
   @override
@@ -20,13 +20,13 @@ class _StudentRecieptDialogState extends State<StudentRecieptDialog> {
           },
           icon: Image.asset(
             'assets/icons/arrow_back.png',
-            color: AppColors.paymentTxtColor1,
+            color: Colors.white, // Ensure icon stands out on blue background
             width: 34.0,
             height: 34.0,
           ),
         ),
         centerTitle: true,
-        backgroundColor: AppColors.backgroundLight,
+        backgroundColor: AppColors.paymentTxtColor1, // Set AppBar background to blue
         flexibleSpace: FlexibleSpaceBar(
           background: Stack(
             children: [
@@ -44,12 +44,15 @@ class _StudentRecieptDialogState extends State<StudentRecieptDialog> {
         ),
       ),
       body: Container(
-        decoration: Constants.customBoxDecoration(context),
+        color: AppColors.paymentTxtColor1,
         padding: const EdgeInsets.all(16.0),
         child: SizedBox(
           width: double.infinity,
-          // height: 600,
           child: Card(
+            color: Colors.white, // Ensure Card has a white background
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8.0),
+            ),
             child: Padding(
               padding:
                   const EdgeInsets.symmetric(horizontal: 16.0, vertical: 20.0),

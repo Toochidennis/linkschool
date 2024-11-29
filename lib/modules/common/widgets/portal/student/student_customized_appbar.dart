@@ -3,6 +3,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 
+
 class CustomStudentAppBar extends StatelessWidget implements PreferredSizeWidget {
   final String title;
   final String? subtitle;
@@ -16,7 +17,7 @@ class CustomStudentAppBar extends StatelessWidget implements PreferredSizeWidget
   final VoidCallback? onBackPressed;
 
   const CustomStudentAppBar({
-    Key? key,
+    super.key,
     required this.title,
     this.subtitle,
     this.showNotification = false,
@@ -27,7 +28,7 @@ class CustomStudentAppBar extends StatelessWidget implements PreferredSizeWidget
     this.onSettingsTap,
     this.onPostTap,
     this.onBackPressed,
-  }) : super(key: key);
+  });
 
   @override
   Size get preferredSize => Size.fromHeight(showPostInput 

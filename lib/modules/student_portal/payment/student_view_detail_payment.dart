@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
-import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/common/widgets/portal/profile/naira_icon.dart';
 
@@ -18,6 +17,7 @@ class _StudentViewDetailPaymentDialogState
   late double opacity;
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _confirmEmailController = TextEditingController();
+
 
   @override
   void dispose() {
@@ -138,7 +138,7 @@ class _StudentViewDetailPaymentDialogState
           onPressed: () => Navigator.of(context).pop(),
           icon: Image.asset(
             'assets/icons/arrow_back.png',
-            color: AppColors.paymentTxtColor1,
+            color: AppColors.backgroundLight,
             width: 34.0,
             height: 34.0,
           ),
@@ -151,13 +151,13 @@ class _StudentViewDetailPaymentDialogState
           ),
         ),
         centerTitle: true,
-        backgroundColor: AppColors.backgroundLight,
+        backgroundColor: AppColors.paymentTxtColor1, // Set AppBar background to blue
         flexibleSpace: FlexibleSpaceBar(
           background: Stack(
             children: [
               Positioned.fill(
                 child: Opacity(
-                  opacity: opacity,
+                  opacity: 0.1,
                   child: Image.asset(
                     'assets/images/background.png',
                     fit: BoxFit.cover,
@@ -170,7 +170,7 @@ class _StudentViewDetailPaymentDialogState
       ),
       body: Container(
         height: MediaQuery.of(context).size.height, 
-        decoration: Constants.customBoxDecoration(context),
+        color: AppColors.paymentTxtColor1,
         child: SingleChildScrollView(
           child: Padding(
             padding: const EdgeInsets.all(16.0),

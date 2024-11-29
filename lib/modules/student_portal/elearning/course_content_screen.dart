@@ -14,6 +14,9 @@ class CourseContentScreen extends StatefulWidget {
 
 class _CourseContentScreenState extends State<CourseContentScreen> {
   bool _isPunctualityExpanded = false;
+  bool _isProductionExpanded = false;
+  bool _isCapitalismExpanded = false;
+  bool _isSocialismExpanded = false;
 
   @override
   Widget build(BuildContext context) {
@@ -179,7 +182,7 @@ class _CourseContentScreenState extends State<CourseContentScreen> {
           GestureDetector(
             onTap: () {
               setState(() {
-                _isPunctualityExpanded = !_isPunctualityExpanded;
+                _isProductionExpanded = !_isProductionExpanded;
               });
             },
             child: Container(
@@ -198,7 +201,7 @@ class _CourseContentScreenState extends State<CourseContentScreen> {
                   const Spacer(),
                   // Expand/collapse arrow
                   RotatedBox(
-                    quarterTurns: _isPunctualityExpanded ? 2 : 0,
+                    quarterTurns: _isProductionExpanded ? 2 : 0,
                     child: SvgPicture.asset(
                       'assets/icons/student/dropdown_icon.svg',
                       height: 24,
@@ -215,7 +218,7 @@ class _CourseContentScreenState extends State<CourseContentScreen> {
           ),
           Divider(color: Colors.grey.shade400),
           // Dropdown Content
-          if (_isPunctualityExpanded)
+          if (_isProductionExpanded)
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 16.0),
               child: Column(
@@ -284,7 +287,7 @@ class _CourseContentScreenState extends State<CourseContentScreen> {
           GestureDetector(
             onTap: () {
               setState(() {
-                _isPunctualityExpanded = !_isPunctualityExpanded;
+                _isCapitalismExpanded = !_isCapitalismExpanded;
               });
             },
             child: Container(
@@ -303,7 +306,7 @@ class _CourseContentScreenState extends State<CourseContentScreen> {
                   const Spacer(),
                   // Expand/collapse arrow
                   RotatedBox(
-                    quarterTurns: _isPunctualityExpanded ? 2 : 0,
+                    quarterTurns: _isCapitalismExpanded ? 2 : 0,
                     child: SvgPicture.asset(
                       'assets/icons/student/dropdown_icon.svg',
                       height: 24,
@@ -320,7 +323,7 @@ class _CourseContentScreenState extends State<CourseContentScreen> {
           ),
           Divider(color: Colors.grey.shade400),
           // Dropdown Content
-          if (_isPunctualityExpanded)
+          if (_isCapitalismExpanded)
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 16.0),
               child: Column(
@@ -389,7 +392,7 @@ class _CourseContentScreenState extends State<CourseContentScreen> {
           GestureDetector(
             onTap: () {
               setState(() {
-                _isPunctualityExpanded = !_isPunctualityExpanded;
+                _isSocialismExpanded = !_isSocialismExpanded;
               });
             },
             child: Container(
@@ -408,7 +411,7 @@ class _CourseContentScreenState extends State<CourseContentScreen> {
                   const Spacer(),
                   // Expand/collapse arrow
                   RotatedBox(
-                    quarterTurns: _isPunctualityExpanded ? 2 : 0,
+                    quarterTurns: _isSocialismExpanded ? 2 : 0,
                     child: SvgPicture.asset(
                       'assets/icons/student/dropdown_icon.svg',
                       height: 24,
@@ -425,7 +428,7 @@ class _CourseContentScreenState extends State<CourseContentScreen> {
           ),
           Divider(color: Colors.grey.shade400),
           // Dropdown Content
-          if (_isPunctualityExpanded)
+          if (_isSocialismExpanded)
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 16.0),
               child: Column(

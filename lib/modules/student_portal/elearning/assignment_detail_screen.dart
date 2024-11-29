@@ -1,11 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
-import 'package:image_picker/image_picker.dart';
-import 'package:file_picker/file_picker.dart';
 import 'package:linkschool/modules/admin_portal/e_learning/assignment_screen.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
-import 'package:linkschool/modules/common/buttons/custom_outline_button..dart';
-import 'package:linkschool/modules/common/buttons/custom_save_elevated_button.dart';
+
 import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/student_portal/elearning/attachment_preview_screen.dart';
@@ -28,38 +25,7 @@ class _AssignmentDetailsScreenState extends State<AssignmentDetailsScreen> {
     super.dispose();
   }
 
-  void _showAttachmentOptions() {
-    showModalBottomSheet(
-      context: context,
-      builder: (BuildContext context) {
-        return Container(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: <Widget>[
-              Text(
-                'Add attachment',
-                style: AppTextStyles.normal600(
-                    fontSize: 20, color: AppColors.backgroundDark),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 16),
-              _buildAttachmentOption(
-                  'Insert link',
-                  'assets/icons/student/link1.svg',
-                  _showInsertLinkDialog),
-              _buildAttachmentOption(
-                  'Upload file', 'assets/icons/e_learning/upload_file.svg', _uploadFile),
-              _buildAttachmentOption(
-                  'Take photo', 'assets/icons/e_learning/take_photo.svg', _takePhoto),
-              _buildAttachmentOption(
-                  'Record Video', 'assets/icons/e_learning/record_video.svg', _recordVideo),
-            ],
-          ),
-        );
-      },
-    );
-  }
+
 
 void _navigateToAttachmentPreview() {
   Navigator.push(
@@ -187,7 +153,8 @@ void _navigateToAttachmentPreview() {
               ),
               const Spacer(),
               ElevatedButton(
-                onPressed: _showAttachmentOptions,
+                // onPressed: _showAttachmentOptions,
+                onPressed: _navigateToAttachmentPreview,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.eLearningBtnColor1,
                   shape: RoundedRectangleBorder(
@@ -222,91 +189,5 @@ void _navigateToAttachmentPreview() {
         ),
       ),
     );
-  }
-
-  void _showInsertLinkDialog() {
-    TextEditingController linkController = TextEditingController();
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text(
-            'Insert Link',
-            style: AppTextStyles.normal600(
-                fontSize: 20, color: AppColors.backgroundDark),
-            textAlign: TextAlign.center,
-          ),
-          content: TextField(
-            controller: linkController,
-            decoration: InputDecoration(
-              fillColor: Colors.grey[100],
-              filled: true,
-              hintText: 'Enter link here',
-              prefixIcon: SvgPicture.asset(
-                'assets/icons/e_learning/link3.svg',
-                width: 24,
-                height: 24,
-                fit: BoxFit.scaleDown,
-              ),
-              border: const UnderlineInputBorder(),
-              focusedBorder: const UnderlineInputBorder(
-                borderSide: BorderSide(color: AppColors.primaryLight),
-              ),
-            ),
-          ),
-          actions: [
-            CustomOutlineButton(
-              onPressed: () => Navigator.of(context).pop(),
-              text: 'Cancel',
-              borderColor: AppColors.eLearningBtnColor3.withOpacity(0.4),
-              textColor: AppColors.eLearningBtnColor3,
-            ),
-            CustomSaveElevatedButton(
-              onPressed: () {
-                if (linkController.text.isNotEmpty) {
-                  _addAttachment(
-                      linkController.text, 'assets/icons/e_learning/link3.svg');
-                }
-                Navigator.of(context).pop();
-              },
-              text: 'Save',
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-Future<void> _uploadFile() async {
-  FilePickerResult? result = await FilePicker.platform.pickFiles();
-  if (result != null) {
-    String fileName = result.files.single.name;
-    _addAttachment(fileName, 'assets/icons/e_learning/upload.svg');
-    _navigateToAttachmentPreview();
-  }
-}
-
-Future<void> _takePhoto() async {
-  final ImagePicker _picker = ImagePicker();
-  final XFile? photo = await _picker.pickImage(source: ImageSource.camera);
-  if (photo != null) {
-    _addAttachment('Photo: ${photo.name}', 'assets/icons/e_learning/camera.svg');
-    _navigateToAttachmentPreview();
-  }
-}
-
-
-  Future<void> _recordVideo() async {
-    final ImagePicker _picker = ImagePicker();
-    final XFile? video = await _picker.pickVideo(source: ImageSource.camera);
-    if (video != null) {
-      _addAttachment('Video: ${video.name}', 'assets/icons/e_learning/video.svg');
-    }
-  }
-
-  void _addAttachment(String content, String iconPath) {
-    setState(() {
-      _attachments.add(AttachmentItem(content: content, iconPath: iconPath));
-    });
   }
 }

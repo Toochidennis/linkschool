@@ -1,4 +1,9 @@
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:linkschool/modules/common/buttons/custom_outline_button..dart';
+import 'package:linkschool/modules/common/buttons/custom_save_elevated_button.dart';
 import 'package:linkschool/modules/admin_portal/e_learning/assignment_screen.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/constants.dart';
@@ -26,6 +31,7 @@ class _AttachmentPreviewScreenState extends State<AttachmentPreviewScreen> {
   late double opacity;
   final TextEditingController _commentController = TextEditingController();
   final List<Comment> _comments = [];
+   List<AttachmentItem> _attachments = [];
 
   final String networkImage = 'https://img.freepik.com/free-vector/gradient-human-rights-day-background_52683-149974.jpg?t=st=1717832829~exp=1717833429~hmac=3e938edcacd7fef2a791b36c7d3decbf64248d9760dd7da0a304acee382b8a86';
 
@@ -40,6 +46,39 @@ class _AttachmentPreviewScreenState extends State<AttachmentPreviewScreen> {
         _commentController.clear();
       });
     }
+  }
+
+  void _showAttachmentOptions() {
+    showModalBottomSheet(
+      context: context,
+      builder: (BuildContext context) {
+        return Container(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              Text(
+                'Add attachment',
+                style: AppTextStyles.normal600(
+                    fontSize: 20, color: AppColors.backgroundDark),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 16),
+              _buildAttachmentOption(
+                  'Insert link',
+                  'assets/icons/student/link1.svg',
+                  _showInsertLinkDialog),
+              _buildAttachmentOption(
+                  'Upload file', 'assets/icons/e_learning/upload_file.svg', _uploadFile),
+              _buildAttachmentOption(
+                  'Take photo', 'assets/icons/e_learning/take_photo.svg', _takePhoto),
+              _buildAttachmentOption(
+                  'Record Video', 'assets/icons/e_learning/record_video.svg', _recordVideo),
+            ],
+          ),
+        );
+      },
+    );
   }
 
   @override
@@ -101,42 +140,59 @@ class _AttachmentPreviewScreenState extends State<AttachmentPreviewScreen> {
               ),
               const SizedBox(height: 16),
               // Two-column attachment layout
-              Expanded(
-                flex: 1,
-                child: GridView.builder(
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 2,
-                    crossAxisSpacing: 10,
-                    mainAxisSpacing: 10,
-                    childAspectRatio: 1.5,
-                  ),
-                  itemCount: widget.attachments.length,
-                  itemBuilder: (context, index) {
-                    final item = widget.attachments[index];
-                    return Card(
-                      child: ListTile(
-                        leading: Image.asset(
-                          item.iconPath,
-                          width: 32,
-                          height: 32,
-                        ),
-                        title: Text(
-                          item.content,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        trailing: IconButton(
-                          icon: const Icon(Icons.close, color: Colors.red),
-                          onPressed: () {
-                            // Handle attachment removal
-                          },
-                        ),
+             const SizedBox(height: 24),
+              Row(
+                children: [
+                  Expanded(
+                    child: Container(
+                      height: 100, // Increased height to accommodate the layout
+                      color: Colors.blue.shade100,
+                      child: Column(
+                        children: [
+                          Expanded(
+                            flex: 2, // Takes up 75% of the container
+                            child: Image.network(
+                              networkImage,
+                              fit: BoxFit.cover,
+                              width: double.infinity,
+                            ),
+                          ),
+                          const Expanded(
+                            flex: 2, // Takes up 25% of the container
+                            child: Padding(
+                              padding: EdgeInsets.symmetric(horizontal: 8.0),
+                              child: Row(
+                                children: [
+                                  Icon(Icons.link, color: Colors.blue),
+                                  SizedBox(width: 8),
+                                  Expanded(
+                                    child: Text(
+                                      'https://jdidlf.com.ng...',
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
-                    );
-                  },
-                ),
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: Image.network(
+                        networkImage,
+                        fit: BoxFit.cover,
+                        height: 100,
+                      ),
+                    ),
+                  ),
+                ],
               ),
               const SizedBox(height: 16),
-              
               // Custom Comment Input Field
               CustomCommentInput(
                 controller: _commentController,
@@ -251,6 +307,112 @@ class _AttachmentPreviewScreenState extends State<AttachmentPreviewScreen> {
         ),
       ),
     );
+  }
+
+  void _showInsertLinkDialog() {
+    TextEditingController linkController = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text(
+            'Insert Link',
+            style: AppTextStyles.normal600(
+                fontSize: 20, color: AppColors.backgroundDark),
+            textAlign: TextAlign.center,
+          ),
+          content: TextField(
+            controller: linkController,
+            decoration: InputDecoration(
+              fillColor: Colors.grey[100],
+              filled: true,
+              hintText: 'Enter link here',
+              prefixIcon: SvgPicture.asset(
+                'assets/icons/e_learning/link3.svg',
+                width: 24,
+                height: 24,
+                fit: BoxFit.scaleDown,
+              ),
+              border: const UnderlineInputBorder(),
+              focusedBorder: const UnderlineInputBorder(
+                borderSide: BorderSide(color: AppColors.primaryLight),
+              ),
+            ),
+          ),
+          actions: [
+            CustomOutlineButton(
+              onPressed: () => Navigator.of(context).pop(),
+              text: 'Cancel',
+              borderColor: AppColors.eLearningBtnColor3.withOpacity(0.4),
+              textColor: AppColors.eLearningBtnColor3,
+            ),
+            CustomSaveElevatedButton(
+              onPressed: () {
+                if (linkController.text.isNotEmpty) {
+                  _addAttachment(
+                      linkController.text, 'assets/icons/e_learning/link3.svg');
+                }
+                Navigator.of(context).pop();
+              },
+              text: 'Save',
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildAttachmentOption(String text, String iconPath, VoidCallback onTap) {
+    return InkWell(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+        margin: const EdgeInsets.only(bottom: 8),
+        color: AppColors.backgroundLight,
+        child: Row(
+          children: [
+            SvgPicture.asset(iconPath, width: 24, height: 24),
+            const SizedBox(width: 16),
+            Text(text,
+                style: AppTextStyles.normal400(
+                    fontSize: 16, color: AppColors.backgroundDark)),
+          ],
+        ),
+      ),
+    );
+  }
+
+Future<void> _uploadFile() async {
+  FilePickerResult? result = await FilePicker.platform.pickFiles();
+  if (result != null) {
+    String fileName = result.files.single.name;
+    _addAttachment(fileName, 'assets/icons/e_learning/upload.svg');
+    // _navigateToAttachmentPreview();
+  }
+}
+
+Future<void> _takePhoto() async {
+  final ImagePicker _picker = ImagePicker();
+  final XFile? photo = await _picker.pickImage(source: ImageSource.camera);
+  if (photo != null) {
+    _addAttachment('Photo: ${photo.name}', 'assets/icons/e_learning/camera.svg');
+    // _navigateToAttachmentPreview();
+  }
+}
+
+
+  Future<void> _recordVideo() async {
+    final ImagePicker _picker = ImagePicker();
+    final XFile? video = await _picker.pickVideo(source: ImageSource.camera);
+    if (video != null) {
+      _addAttachment('Video: ${video.name}', 'assets/icons/e_learning/video.svg');
+    }
+  }
+
+  void _addAttachment(String content, String iconPath) {
+    setState(() {
+      _attachments.add(AttachmentItem(content: content, iconPath: iconPath));
+    });
   }
 }
 
