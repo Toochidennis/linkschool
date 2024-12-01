@@ -1,6 +1,7 @@
 import 'package:curved_nav_bar/fab_bar/fab_bottom_app_bar_item.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:linkschool/modules/common/app_colors.dart';
 import '../../common/bottom_navigation_bar.dart';
 import '../../common/bottom_nav_item.dart';
 import 'explore_home.dart';
@@ -89,6 +90,7 @@ class _ExploreDashboardState extends State<ExploreDashboard> {
     return Scaffold(
       key: const ValueKey('explore_dashboard'),
       appBar: AppBar(
+        backgroundColor: AppColors.paymentTxtColor1,
         title: SvgPicture.asset('assets/icons/linkskool-logo.svg'),
         actions: [
           if (!_showSearchIcon)

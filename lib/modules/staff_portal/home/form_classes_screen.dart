@@ -3,12 +3,9 @@ import 'package:flutter_svg/svg.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/buttons/custom_long_elevated_button.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
-import 'package:linkschool/modules/common/widgets/portal/result_attendance/attendance_app_bar.dart';
 import 'package:linkschool/modules/common/widgets/portal/result_attendance/attendance_history_header.dart';
 import 'package:linkschool/modules/common/widgets/portal/result_attendance/attendance_history_list.dart';
-import 'package:linkschool/modules/common/widgets/portal/result_attendance/header_container.dart';
 import 'package:linkschool/modules/common/widgets/portal/result_attendance/info_card.dart';
-import 'package:linkschool/modules/common/widgets/portal/result_attendance/take_attendance_button.dart';
 import 'package:linkschool/modules/staff_portal/home/staff_take_attandance_screen.dart';
 
 
@@ -18,7 +15,7 @@ class FormClassesScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: Colors.grey[200],
       appBar: AppBar(
-        backgroundColor: AppColors.primaryLight,
+        backgroundColor: AppColors.paymentTxtColor1,
         elevation: 0,
         title: Text('Attendance',
             style: AppTextStyles.normal600(
@@ -42,7 +39,7 @@ class FormClassesScreen extends StatelessWidget {
             Container(
               height: MediaQuery.of(context).size.height * 0.20,
               decoration: const BoxDecoration(
-                color: AppColors.primaryLight,
+                color: AppColors.paymentTxtColor1,
                 borderRadius: BorderRadius.only(
                     bottomLeft: Radius.circular(28),
                     bottomRight: Radius.circular(28)),

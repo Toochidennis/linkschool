@@ -140,7 +140,7 @@ class _CourseContentScreenState extends State<CourseContentScreen> {
                       title: 'Assignment',
                       description: 'Due date: 25 June, 2015 08:52am',
                       progressBarPercentage:
-                          75, // Adjust this value as required
+                          30, // Adjust this value as required
                       onTap: () {
                         // Navigate or handle tap for Assignment row
                       },

@@ -6,7 +6,8 @@ import 'package:linkschool/modules/student_portal/elearning/forum_screen.dart';
 
 class CourseDetailScreen extends StatefulWidget {
   final String courseTitle;
-  const CourseDetailScreen({Key? key, required this.courseTitle}) : super(key: key);
+  const CourseDetailScreen({Key? key, required this.courseTitle})
+      : super(key: key);
 
   @override
   _CourseDetailScreenState createState() => _CourseDetailScreenState();
@@ -16,7 +17,7 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
   int _selectedIndex = 0;
   late double opacity;
 
-  static  final List<Widget> _screens = [
+  static final List<Widget> _screens = [
     CourseContentScreen(),
     ForumScreen(),
   ];
@@ -58,6 +59,19 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
             ],
           ),
         ),
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 8.0),
+            child: IconButton(
+              onPressed: () {},
+              icon: SvgPicture.asset(
+                'assets/icons/notifications.svg',
+                colorFilter:
+                    const ColorFilter.mode(AppColors.paymentTxtColor1, BlendMode.srcIn),
+              ),
+            ),
+          ),
+        ],
       ),
       body: _screens[_selectedIndex],
       bottomNavigationBar: BottomNavigationBar(
@@ -65,11 +79,13 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
         onTap: _onItemTapped,
         items: [
           BottomNavigationBarItem(
-            icon: SvgPicture.asset('assets/icons/student/coursework_icon.svg', height: 20), // Replace with actual SVG path
+            icon: SvgPicture.asset('assets/icons/student/coursework_icon.svg',
+                height: 20), // Replace with actual SVG path
             label: 'Coursework',
           ),
           BottomNavigationBarItem(
-            icon: SvgPicture.asset('assets/icons/student/forum_icon.svg', height: 20), // Replace with actual SVG path
+            icon: SvgPicture.asset('assets/icons/student/forum_icon.svg',
+                height: 20), // Replace with actual SVG path
             label: 'Forum',
           ),
         ],
@@ -80,6 +96,3 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
     );
   }
 }
-
-
-

@@ -177,8 +177,9 @@ class _StaffHomeScreenState extends State<StaffHomeScreen> {
                     children: [
                       Expanded(
                         child: CustomButtonItem(
-                          backgroundColor: AppColors.portalButton1Light,
+                          backgroundColor: AppColors.studentCtnColor3,
                           borderColor: AppColors.portalButton1BorderLight,
+                          textColor: AppColors.staffTxtColor1,
                           label: 'Form Classes',
                           number: 5, 
                           iconPath: 'assets/icons/student/knowledge_icon.svg',
@@ -188,10 +189,11 @@ class _StaffHomeScreenState extends State<StaffHomeScreen> {
                         ),
                       ),
                       const SizedBox(width: 14.0),
-                      const Expanded(
+                      Expanded(
                         child: CustomButtonItem(
-                          backgroundColor: AppColors.portalButton2Light,
-                          borderColor: AppColors.portalButton2BorderLight,
+                          backgroundColor: AppColors.staffCtnColor1,
+                          borderColor: AppColors.secondaryLight,
+                          textColor: AppColors.staffTxtColor2,
                           label: 'Courses',
                           number: 3,
                           iconPath: 'assets/icons/student/study_icon.svg',
