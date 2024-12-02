@@ -9,14 +9,14 @@ import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/common/widgets/portal/e_learning/select_classes_dialog.dart';
 import 'package:linkschool/modules/model/e-learning/objective_item.dart';
 
-class CreateTopicScreen extends StatefulWidget {
-  const CreateTopicScreen({Key? key}) : super(key: key);
+class StaffCreateTopicScreen extends StatefulWidget {
+  const StaffCreateTopicScreen({Key? key}) : super(key: key);
 
   @override
-  State<CreateTopicScreen> createState() => _CreateTopicScreenState();
+  State<StaffCreateTopicScreen> createState() => _StaffCreateTopicScreenState();
 }
 
-class _CreateTopicScreenState extends State<CreateTopicScreen> {
+class _StaffCreateTopicScreenState extends State<StaffCreateTopicScreen> {
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _objectiveController = TextEditingController();
   String _selectedClass = 'Select classes';

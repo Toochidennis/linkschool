@@ -199,4 +199,5 @@ class AppColors {
   static const Color staffTxtColor2 = Color.fromRGBO(211, 95, 0, 1);
   static const Color staffCtnColor1 = Color.fromRGBO(255, 221, 193, 1); 
   static const Color staffCtnColor2 = Color.fromRGBO(232, 237, 255, 1);
+  static const Color staffBtnColor1 = Color.fromRGBO(255, 165, 0, 1);
 }
