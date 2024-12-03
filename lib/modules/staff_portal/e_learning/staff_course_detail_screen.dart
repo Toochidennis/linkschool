@@ -11,20 +11,17 @@ import 'package:linkschool/modules/model/e-learning/topic_model.dart';
 import 'package:linkschool/modules/staff_portal/e_learning/staff_create_syllabus_screen.dart';
 import 'package:linkschool/modules/staff_portal/e_learning/sub_screens/staff_add_material_screen.dart';
 import 'package:linkschool/modules/staff_portal/e_learning/sub_screens/staff_assignment_screen.dart';
-
 import 'package:linkschool/modules/staff_portal/e_learning/sub_screens/staff_question_screen.dart';
-// import 'package:linkschool/modules/admin_portal/e_learning/assignment_screen.dart';
+
 
 class StaffCourseDetailScreen extends StatefulWidget {
   final String courseTitle;
 
-  const StaffCourseDetailScreen({
-    super.key, 
-    required this.courseTitle
-  });
+  const StaffCourseDetailScreen({super.key, required this.courseTitle});
 
   @override
-  State<StaffCourseDetailScreen> createState() => _StaffCourseDetailScreenState();
+  State<StaffCourseDetailScreen> createState() =>
+      _StaffCourseDetailScreenState();
 }
 
 class _StaffCourseDetailScreenState extends State<StaffCourseDetailScreen> {
@@ -32,9 +29,10 @@ class _StaffCourseDetailScreenState extends State<StaffCourseDetailScreen> {
   late double opacity;
   int _currentIndex = 0; // For bottom navigation
   Map<String, dynamic>? _currentSyllabus; // To store the latest syllabus
-   List<Topic> topics = [];
+  List<Topic> topics = [];
 
-  static const String _courseworkIconPath = 'assets/icons/student/coursework_icon.svg';
+  static const String _courseworkIconPath =
+      'assets/icons/student/coursework_icon.svg';
   static const String _forumIconPath = 'assets/icons/student/forum_icon.svg';
 
   void _addDummyData() {
@@ -139,7 +137,6 @@ class _StaffCourseDetailScreenState extends State<StaffCourseDetailScreen> {
       }
     });
   }
-
 
   void _addAssignment(Assignment assignment) {
     setState(() {
@@ -311,7 +308,8 @@ class _StaffCourseDetailScreenState extends State<StaffCourseDetailScreen> {
               context,
               MaterialPageRoute(
                 fullscreenDialog: true,
-                builder: (BuildContext context) => const StaffCreateSyllabusScreen(),
+                builder: (BuildContext context) =>
+                    const StaffCreateSyllabusScreen(),
               ),
             );
             break;
@@ -347,7 +345,7 @@ class _StaffCourseDetailScreenState extends State<StaffCourseDetailScreen> {
   Widget build(BuildContext context) {
     final Brightness brightness = Theme.of(context).brightness;
     opacity = brightness == Brightness.light ? 0.1 : 0.15;
-    
+
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
@@ -364,7 +362,7 @@ class _StaffCourseDetailScreenState extends State<StaffCourseDetailScreen> {
         title: Text(
           widget.courseTitle,
           style: const TextStyle(
-            fontSize: 18,
+            fontSize: 22,
             fontWeight: FontWeight.bold,
             color: AppColors.paymentTxtColor1,
           ),
@@ -393,13 +391,13 @@ class _StaffCourseDetailScreenState extends State<StaffCourseDetailScreen> {
           _buildForumScreen(),
         ],
       ),
-      floatingActionButton: _currentIndex == 0 
-        ? FloatingActionButton(
-            onPressed: () => _showCreateOptionsBottomSheet(context),
-            backgroundColor: AppColors.staffBtnColor1,
-            child: const Icon(Icons.add, color: Colors.white),
-          )
-        : null,
+      floatingActionButton: _currentIndex == 0
+          ? FloatingActionButton(
+              onPressed: () => _showCreateOptionsBottomSheet(context),
+              backgroundColor: AppColors.staffBtnColor1,
+              child: const Icon(Icons.add, color: Colors.white),
+            )
+          : null,
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex,
         onTap: (index) {
@@ -415,9 +413,9 @@ class _StaffCourseDetailScreenState extends State<StaffCourseDetailScreen> {
               _courseworkIconPath,
               width: 24,
               height: 24,
-              color: _currentIndex == 0 
-                ? AppColors.eLearningBtnColor1 
-                : Colors.grey,
+              color: _currentIndex == 0
+                  ? AppColors.eLearningBtnColor1
+                  : Colors.grey,
             ),
             label: 'Coursework',
           ),
@@ -426,9 +424,9 @@ class _StaffCourseDetailScreenState extends State<StaffCourseDetailScreen> {
               _forumIconPath,
               width: 24,
               height: 24,
-              color: _currentIndex == 1 
-                ? AppColors.eLearningBtnColor1 
-                : Colors.grey,
+              color: _currentIndex == 1
+                  ? AppColors.eLearningBtnColor1
+                  : Colors.grey,
             ),
             label: 'Forum',
           ),
@@ -437,16 +435,16 @@ class _StaffCourseDetailScreenState extends State<StaffCourseDetailScreen> {
     );
   }
 
-Widget _buildCourseworkScreen() {
-  return Container(
-    width: double.infinity,
-    height: double.infinity,
-    decoration: Constants.customBoxDecoration(context),
-    child: _currentSyllabus == null 
-      ? _buildEmptyState() 
-      : _buildSyllabusDetails(),
-  );
-}
+  Widget _buildCourseworkScreen() {
+    return Container(
+      width: double.infinity,
+      height: double.infinity,
+      decoration: Constants.customBoxDecoration(context),
+      child: _currentSyllabus == null
+          ? _buildEmptyState()
+          : _buildSyllabusDetails(),
+    );
+  }
 
 Widget _buildForumScreen() {
   return Container(
@@ -455,7 +453,7 @@ Widget _buildForumScreen() {
     decoration: Constants.customBoxDecoration(context),
     child: _currentSyllabus == null 
       ? _buildEmptyState() 
-      : _buildSyllabusDetails(),
+      : _buildForumContent(), // Create a new method for Forum screen content
   );
 }
 
@@ -486,9 +484,202 @@ Widget _buildForumScreen() {
     );
   }
 
-Widget _buildSyllabusDetails() {
-  if (_currentSyllabus == null) return _buildEmptyState();
+  Widget _buildSyllabusDetails() {
+    if (_currentSyllabus == null) return _buildEmptyState();
 
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+      child: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Container(
+              height: 95,
+              width: MediaQuery.of(context).size.width,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(10),
+                color: Colors.transparent,
+              ),
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  SvgPicture.asset(
+                    _currentSyllabus!['backgroundImagePath'],
+                    width: MediaQuery.of(context).size.width,
+                    height: 95,
+                    fit: BoxFit.cover,
+                  ),
+                  Positioned.fill(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 12.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            _currentSyllabus!['title'],
+                            style: AppTextStyles.normal700(
+                              fontSize: 18,
+                              color: AppColors.backgroundLight,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: 5),
+                          Text(
+                            'Class: ${_currentSyllabus!['selectedClass']}',
+                            style: AppTextStyles.normal500(
+                              fontSize: 14,
+                              color: AppColors.backgroundLight,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          Text(
+                            'Teacher: ${_currentSyllabus!['selectedTeacher']}',
+                            style: AppTextStyles.normal600(
+                              fontSize: 12,
+                              color: AppColors.backgroundLight,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+            if (_currentSyllabus!['description'] != null &&
+                _currentSyllabus!['description'].isNotEmpty)
+              Card(
+                elevation: 2,
+                child: Padding(
+                  padding: const EdgeInsets.all(12.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Description:',
+                        style: AppTextStyles.normal600(
+                          fontSize: 16,
+                          color: AppColors.backgroundDark,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        _currentSyllabus!['description'],
+                        style: AppTextStyles.normal500(
+                          fontSize: 14,
+                          color: AppColors.backgroundDark,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+            // Assignment Row
+            if (topics.isNotEmpty && topics.first.assignments.isNotEmpty)
+              Card(
+                elevation: 2,
+                child: Padding(
+                  padding: const EdgeInsets.all(12.0),
+                  child: Row(
+                    children: [
+                      SvgPicture.asset(
+                        'assets/icons/e_learning/assignment.svg',
+                        width: 40,
+                        height: 40,
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Assignment',
+                              style: AppTextStyles.normal600(
+                                fontSize: 16,
+                                color: AppColors.backgroundDark,
+                              ),
+                            ),
+                            Text(
+                              topics.first.assignments.first.title,
+                              style: AppTextStyles.normal500(
+                                fontSize: 14,
+                                color: AppColors.backgroundDark,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'Created on ${DateFormat('dd MMMM, yyyy hh.mm a').format(topics.first.assignments.first.createdAt)}',
+                              style: AppTextStyles.normal400(
+                                fontSize: 12,
+                                color: Colors.grey,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+            // Question Row
+            if (topics.isNotEmpty && topics.first.questions.isNotEmpty)
+              Card(
+                elevation: 2,
+                child: Padding(
+                  padding: const EdgeInsets.all(12.0),
+                  child: Row(
+                    children: [
+                      SvgPicture.asset(
+                        'assets/icons/e_learning/question_icon.svg',
+                        width: 40,
+                        height: 40,
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Question',
+                              style: AppTextStyles.normal600(
+                                fontSize: 16,
+                                color: AppColors.backgroundDark,
+                              ),
+                            ),
+                            Text(
+                              topics.first.questions.first.title,
+                              style: AppTextStyles.normal500(
+                                fontSize: 14,
+                                color: AppColors.backgroundDark,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'Created on ${DateFormat('dd MMMM, yyyy hh.mm a').format(topics.first.questions.first.createdAt)}',
+                              style: AppTextStyles.normal400(
+                                fontSize: 12,
+                                color: Colors.grey,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+Widget _buildForumContent() {
   return Padding(
     padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
     child: SingleChildScrollView(
@@ -496,19 +687,19 @@ Widget _buildSyllabusDetails() {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Container(
-            height: 95, // Fixed height as requested
-            width: MediaQuery.of(context).size.width, // Use full screen width
+            height: 95, 
+            width: MediaQuery.of(context).size.width, 
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(10),
               color: Colors.transparent,
             ),
             child: Stack(
-              fit: StackFit.expand, // Ensure the stack fills the entire container
+              fit: StackFit.expand, 
               children: [
                 SvgPicture.asset(
                   _currentSyllabus!['backgroundImagePath'],
-                  width: MediaQuery.of(context).size.width, // Full screen width
-                  height: 95, // Match container height
+                  width: MediaQuery.of(context).size.width, 
+                  height: 95, 
                   fit: BoxFit.cover,
                 ),
                 Positioned.fill(
@@ -578,58 +769,12 @@ Widget _buildSyllabusDetails() {
                 ),
               ),
             ),
-
-          // New Assignment Row
-          if (topics.isNotEmpty)
-            Card(
-              elevation: 2,
-              child: Padding(
-                padding: const EdgeInsets.all(12.0),
-                child: Row(
-                  children: [
-                    SvgPicture.asset(
-                      'assets/icons/e_learning/assignment.svg', 
-                      width: 40, 
-                      height: 40,
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Assignment',
-                            style: AppTextStyles.normal600(
-                              fontSize: 16,
-                              color: AppColors.backgroundDark,
-                            ),
-                          ),
-                          Text(
-                            topics.first.assignments.first.title, // Take the first assignment
-                            style: AppTextStyles.normal500(
-                              fontSize: 14,
-                              color: AppColors.backgroundDark,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            'Created on ${DateFormat('dd MMMM, yyyy hh.mm a').format(topics.first.assignments.first.createdAt)}',
-                            style: AppTextStyles.normal400(
-                              fontSize: 12,
-                              color: Colors.grey,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
+          
+          // No Assignment or Question rows in Forum screen
+          // Add any Forum-specific content here if needed
         ],
       ),
     ),
   );
 }
-
 }

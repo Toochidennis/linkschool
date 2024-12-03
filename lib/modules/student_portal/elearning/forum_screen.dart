@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/constants.dart';
-// import 'package:linkschool/modules/common/app_colors.dart';
+
 
 class ForumScreen extends StatefulWidget {
   @override

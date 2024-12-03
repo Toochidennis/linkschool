@@ -175,7 +175,7 @@ class _StaffHomeScreenState extends State<StaffHomeScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Expanded(
+                      const Expanded(
                         child: CustomButtonItem(
                           backgroundColor: AppColors.studentCtnColor3,
                           borderColor: AppColors.portalButton1BorderLight,
@@ -199,7 +199,7 @@ class _StaffHomeScreenState extends State<StaffHomeScreen> {
                           iconPath: 'assets/icons/student/study_icon.svg',
                           iconHeight: 40.0,
                           iconWidth: 36.0,
-                          destination: StaffCoursesScreen(), 
+                          destination: null, 
                         ),
                       ),
                     ],

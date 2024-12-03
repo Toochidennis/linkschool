@@ -1,211 +1,215 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/svg.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
-import 'package:linkschool/modules/common/buttons/custom_long_elevated_button.dart';
+import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
-import 'package:linkschool/modules/common/widgets/portal/result_attendance/attendance_history_header.dart';
-import 'package:linkschool/modules/common/widgets/portal/result_attendance/attendance_history_list.dart';
-import 'package:linkschool/modules/common/widgets/portal/result_attendance/info_card.dart';
-import 'package:linkschool/modules/staff_portal/home/staff_take_attandance_screen.dart';
+import 'package:linkschool/modules/staff_portal/e_learning/form_classes/staff_coment_result_screen.dart';
+import 'package:linkschool/modules/staff_portal/e_learning/form_classes/staff_skill_behaviour_screen.dart';
+import 'package:linkschool/modules/staff_portal/e_learning/sub_screens/staff_attandance_screen.dart';
+import 'package:linkschool/modules/staff_portal/home/staff_course_screen.dart';
 
+class FormClassesScreen extends StatefulWidget {
+  const FormClassesScreen({super.key});
 
-class FormClassesScreen extends StatelessWidget {
+  @override
+  State<FormClassesScreen> createState() => _FormClassesScreenState();
+}
+
+class _FormClassesScreenState extends State<FormClassesScreen> {
+    late double opacity;
+
   @override
   Widget build(BuildContext context) {
+    final Brightness brightness = Theme.of(context).brightness;
+    opacity = brightness == Brightness.light ? 0.1 : 0.15;
+    
     return Scaffold(
-      backgroundColor: Colors.grey[200],
       appBar: AppBar(
-        backgroundColor: AppColors.paymentTxtColor1,
-        elevation: 0,
-        title: Text('Attendance',
-            style: AppTextStyles.normal600(
-                fontSize: 20, color: AppColors.backgroundLight)),
         leading: IconButton(
-          onPressed: () => Navigator.of(context).pop(),
-          icon: Image.asset('assets/icons/arrow_back.png',
-              color: AppColors.backgroundLight, width: 34.0, height: 34.0),
-        ),
-        actions: [
-          IconButton(
-            onPressed: () {},
-            icon: SvgPicture.asset('assets/icons/result/search.svg',
-                color: AppColors.backgroundLight),
+          onPressed: () {
+            Navigator.of(context).pop();
+          },
+          icon: Image.asset(
+            'assets/icons/arrow_back.png',
+            color: AppColors.paymentTxtColor1,
+            width: 34.0,
+            height: 34.0,
           ),
-        ],
-      ),
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            Container(
-              height: MediaQuery.of(context).size.height * 0.20,
-              decoration: const BoxDecoration(
-                color: AppColors.paymentTxtColor1,
-                borderRadius: BorderRadius.only(
-                    bottomLeft: Radius.circular(28),
-                    bottomRight: Radius.circular(28)),
-              ),
-            ),
-            Transform.translate(
-              offset: Offset(0, -MediaQuery.of(context).size.height * 0.15),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Column(
-                  children: [
-                    InfoCard(),
-                    const SizedBox(height: 20),
-                    CustomLongElevatedButton(
-                      text: 'Take attendance',
-                    onPressed: () {
-                      // Navigate to TakeAttendanceScreen when button is clicked
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (context) => StaffTakeAttendanceScreen(),
-                        ),
-                      );
-                    },
-                      backgroundColor: AppColors.videoColor4,
-                      textStyle: AppTextStyles.normal600(
-                          fontSize: 16, color: AppColors.backgroundLight),
-                    ),
-                    const SizedBox(height: 44),
-                    AttendanceHistoryHeader(),
-                    const SizedBox(height: 16),
-                    AttendanceHistoryList(),
-                  ],
+        ),
+        title: Text(
+          'Form Classes',
+          style: AppTextStyles.normal600(
+            fontSize: 24.0,
+            color: AppColors.paymentTxtColor1,
+          ),
+        ),
+        backgroundColor: Colors.white,
+        elevation: 0,
+        flexibleSpace: FlexibleSpaceBar(
+          background: Stack(
+            children: [
+              Positioned.fill(
+                child: Opacity(
+                  opacity: opacity,
+                  child: Image.asset(
+                    'assets/images/background.png',
+                    fit: BoxFit.cover,
+                  ),
                 ),
-              ),
-            ),
-          ],
+              )
+            ],
+          ),
+        ),
+      ),
+      body: Container(
+        decoration: Constants.customBoxDecoration(context),
+        child: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildClassSection(context, 'JSS 2', [
+                {'name': 'JSS2 Pink', 'students': '25 Students'},
+                {'name': 'JSS2 Red', 'students': '25 Students'},
+                {'name': 'JSS2 Red', 'students': '25 Students'},
+              ]),
+              _buildClassSection(context, 'SS 2', [
+                {'name': 'SS2 Pink', 'students': '25 Students'},
+                {'name': 'SS2 Red', 'students': '25 Students'},
+                {'name': 'SS2 Red', 'students': '25 Students'},
+              ]),
+            ],
+          ),
         ),
       ),
     );
   }
+
+  Widget _buildClassSection(
+      BuildContext context, String header, List<Map<String, String>> classes) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                header,
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.paymentTxtColor1,
+                ),
+              ),
+              const Divider(
+                color: AppColors.paymentTxtColor1,
+                thickness: 2,
+              ),
+            ],
+          ),
+          const SizedBox(height: 8.0),
+          // Cards
+          Column(
+            children: classes
+                .map(
+                  (classData) => GestureDetector(
+                    onTap: () => _showBottomSheet(context),
+                    child: Container(
+                      width: double.infinity, // Makes the card fill the width
+                      margin: const EdgeInsets.only(bottom: 8.0),
+                      child: Card(
+                        elevation: 4,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8.0),
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.all(16.0),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                classData['name']!,
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w500,
+                                  color: AppColors.paymentTxtColor1,
+                                ),
+                              ),
+                              const SizedBox(height: 4.0),
+                              Text(
+                                classData['students']!,
+                                style: const TextStyle(
+                                  fontSize: 14,
+                                  color: Colors.black54,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                )
+                .toList(),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showBottomSheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16.0)),
+      ),
+      builder: (context) {
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              title: const Text('Comment on result'),
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const StaffCommentResultScreen()),
+                );
+              },
+            ),
+            const Divider(),
+            ListTile(
+              title: const Text('Skills and Behaviour'),
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const StaffSkillsBehaviourScreen()),
+                );
+              },
+            ),
+            const Divider(),
+            ListTile(
+              title: const Text('Attendance'),
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => StaffAttandanceScreen()),
+                );
+              },
+            ),
+            const Divider(),
+            ListTile(
+              title: const Text('Students'),
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) =>StaffCoursesScreen()),
+                );
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
 }
-
-
-
-// import 'package:flutter/material.dart';
-// import 'package:flutter_svg/svg.dart';
-// import 'package:linkschool/modules/common/app_colors.dart';
-// import 'package:linkschool/modules/common/buttons/custom_long_elevated_button.dart';import 'package:linkschool/modules/common/constants.dart';
-// import 'package:linkschool/modules/common/text_styles.dart';
-// import 'package:linkschool/modules/common/widgets/portal/result_attendance/attendance_history_header.dart';
-// import 'package:linkschool/modules/common/widgets/portal/result_attendance/info_card.dart';
-// import 'package:linkschool/modules/staff_portal/home/staff_attendance_history.dart';
-// import 'package:linkschool/modules/staff_portal/home/staff_take_attandance_screen.dart';
-
-// class FormClassesScreen extends StatefulWidget {
-//   @override
-//   State<FormClassesScreen> createState() => _FormClassesScreenState();
-// }
-
-// class _FormClassesScreenState extends State<FormClassesScreen> {
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return Scaffold(
-//       backgroundColor: Colors.grey[200],
-//       appBar: AppBar(
-//         backgroundColor: AppColors.primaryLight,
-//         elevation: 0,
-//         title: Text('Attendance',
-//             style: AppTextStyles.normal600(
-//                 fontSize: 20, color: AppColors.backgroundLight)),
-//         leading: IconButton(
-//           onPressed: () => Navigator.of(context).pop(),
-//           icon: Image.asset('assets/icons/arrow_back.png',
-//               color: AppColors.backgroundLight, width: 34.0, height: 34.0),
-//         ),
-//         actions: [
-//           IconButton(
-//             onPressed: () {},
-//             icon: SvgPicture.asset('assets/icons/result/search.svg',
-//                 color: AppColors.backgroundLight),
-//           ),
-//         ],
-//       ),
-//       body: SingleChildScrollView(
-//         child: Column(
-//           children: [
-//             Container(
-//               height: MediaQuery.of(context).size.height * 0.20,
-//               decoration: const BoxDecoration(
-//                 color: AppColors.primaryLight,
-//                 borderRadius: BorderRadius.only(
-//                     bottomLeft: Radius.circular(28),
-//                     bottomRight: Radius.circular(28)),
-//               ),
-//             ),
-//             Transform.translate(
-//               offset: Offset(0, -MediaQuery.of(context).size.height * 0.15),
-//               child: Padding(
-//                 padding: const EdgeInsets.symmetric(horizontal: 20),
-//                 child: Column(
-//                   children: [
-//                     InfoCard(),
-//                     const SizedBox(height: 20),
-//                     CustomLongElevatedButton(
-//                       text: 'Take attendance',
-//                     onPressed: () {
-//                       // Navigate to TakeAttendanceScreen when button is clicked
-//                       Navigator.of(context).push(
-//                         MaterialPageRoute(
-//                           builder: (context) => StaffTakeAttendanceScreen(),
-//                         ),
-//                       );
-//                     },
-//                       backgroundColor: AppColors.videoColor4,
-//                       textStyle: AppTextStyles.normal600(
-//                           fontSize: 16, color: AppColors.backgroundLight),
-//                     ),
-//                     const SizedBox(height: 44),
-//                     AttendanceHistoryHeader(),
-//                     const SizedBox(height: 16),
-//                     StaffAttendanceHistoryList(date: 'June',),
-//                   ],
-//                 ),
-//               ),
-//             ),
-//           ],
-//         ),
-//       ),
-//     );
-//   }
-// }
-
-
-// import 'package:flutter/material.dart';
-// import 'package:linkschool/modules/common/app_colors.dart';
-// import 'package:linkschool/modules/common/text_styles.dart';
-
-// class FormClassesScreen extends StatelessWidget {
-//   const FormClassesScreen({super.key});
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return Scaffold(
-//       appBar: AppBar(
-//         title: Text(
-//           'Form Classes',
-//           style: AppTextStyles.normal600(
-//             fontSize: 20,
-//             color: AppColors.primaryLight,
-//           ),
-//         ),
-//       ),
-//       body: const Center(
-//         child: Text('Form Classes Management Screen'),
-//       ),
-//     );
-//   }
-// }
-
-
-                      // onPressed: () {
-                      //   // Navigate to TakeAttendanceScreen when button is clicked
-                      //   Navigator.of(context).push(
-                      //     MaterialPageRoute(
-                      //       builder: (context) => StaffTakeAttendanceScreen(),
-                      //     ),
-                      //   );
-                      // },
