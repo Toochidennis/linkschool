@@ -5,6 +5,7 @@ import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/staff_portal/e_learning/form_classes/staff_input_result_screen.dart';
 import 'package:linkschool/modules/staff_portal/e_learning/form_classes/staff_view_result_screen.dart';
 
+
 class StaffCommentResultScreen extends StatefulWidget {
   const StaffCommentResultScreen({super.key});
 
@@ -36,7 +37,7 @@ class _StaffCommentResultScreenState extends State<StaffCommentResultScreen> {
         title: Text(
           'Comment on result',
           style: AppTextStyles.normal600(
-            fontSize: 24.0,
+            fontSize: 18.0,
             color: AppColors.paymentTxtColor1,
           ),
         ),
@@ -150,7 +151,7 @@ class _StaffCommentResultScreenState extends State<StaffCommentResultScreen> {
 final List<String> courseList = [
   'Civic Education',
   'Mathematics',
-  'English Language',
+  'English',
   'Biology',
   'Physics',
   'Chemistry',

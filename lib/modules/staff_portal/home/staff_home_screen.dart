@@ -172,10 +172,10 @@ class _StaffHomeScreenState extends State<StaffHomeScreen> {
                           fontSize: 20, color: AppColors.primaryLight)),
                   const SizedBox(height: 12),
 
-                  Row(
+                  const Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Expanded(
+                      Expanded(
                         child: CustomButtonItem(
                           backgroundColor: AppColors.studentCtnColor3,
                           borderColor: AppColors.portalButton1BorderLight,
@@ -188,7 +188,7 @@ class _StaffHomeScreenState extends State<StaffHomeScreen> {
                           destination:  FormClassesScreen(), 
                         ),
                       ),
-                      const SizedBox(width: 14.0),
+                      SizedBox(width: 14.0),
                       Expanded(
                         child: CustomButtonItem(
                           backgroundColor: AppColors.staffCtnColor1,
