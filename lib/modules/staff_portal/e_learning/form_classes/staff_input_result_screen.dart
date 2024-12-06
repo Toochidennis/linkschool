@@ -1,298 +1,527 @@
 import 'package:flutter/material.dart';
+import 'package:linkschool/modules/common/app_colors.dart';
+import 'package:linkschool/modules/common/constants.dart';
+import 'package:linkschool/modules/common/text_styles.dart';
 
-class StaffInputResultScreen extends StatelessWidget {
-  const StaffInputResultScreen({super.key});
+class StaffInputResultScreen extends StatefulWidget {
+  const StaffInputResultScreen({Key? key}) : super(key: key);
+
+  @override
+  State<StaffInputResultScreen> createState() => _StaffInputResultScreenState();
+}
+
+class _StaffInputResultScreenState extends State<StaffInputResultScreen> {
+  late double opacity;
+
+  // Sample data for rows
+  final List<Map<String, dynamic>> studentData = [
+    {"name": "Toochi Dennis", "attendance": "90", "assessment": "85", "exam": "75", "total": "250", "grade": "A"},
+    {"name": "Toochi Joe", "attendance": "88", "assessment": "80", "exam": "78", "total": "246", "grade": "B"},
+    {"name": "Ifeanyi Dennis", "attendance": "92", "assessment": "83", "exam": "88", "total": "263", "grade": "A"},
+    {"name": "Johnson Kenny", "attendance": "80", "assessment": "75", "exam": "70", "total": "225", "grade": "C"},
+    // Add more students as needed
+  ];
 
   @override
   Widget build(BuildContext context) {
+    final Brightness brightness = Theme.of(context).brightness;
+    opacity = brightness == Brightness.light ? 0.1 : 0.15;
+
     return Scaffold(
       appBar: AppBar(
+        title: Text(
+          'Civic Education Result',
+          style: AppTextStyles.normal600(
+            fontSize: 18.0,
+            color: AppColors.eLearningBtnColor1,
+          ),
+        ),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.blue),
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: const Text(
-          'Civic Education Results',
-          style: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.w600,
-            color: Colors.blue,
+          onPressed: () {
+            Navigator.of(context).pop();
+          },
+          icon: Image.asset(
+            'assets/icons/arrow_back.png',
+            color: AppColors.eLearningBtnColor1,
+            width: 34.0,
+            height: 34.0,
           ),
         ),
-        backgroundColor: Colors.white,
-        elevation: 0,
-      ),
-      body: Column(
-        children: [
-          Expanded(
-            child: LayoutBuilder(
-              builder: (context, constraints) {
-                return SingleChildScrollView(
-                  scrollDirection: Axis.vertical,
-                  child: SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Fixed Student Name Column
-                        Container(
-                          width: 150, // Adjust width as needed
-                          decoration: BoxDecoration(
-                            border: Border(
-                              right: BorderSide(color: Colors.grey.shade300),
-                            ),
-                            color: Colors.blue[50],
-                          ),
-                          child: Column(
-                            children: [
-                              // Header for Student Name
-                              Container(
-                                height: 56, // Match DataTable header height
-                                alignment: Alignment.center,
-                                child: Text(
-                                  'Student Name',
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.blue,
-                                  ),
-                                ),
-                              ),
-                              // Student Names
-                              ...List.generate(10, (index) => 
-                                Container(
-                                  height: 52, // Match DataTable row height
-                                  alignment: Alignment.center,
-                                  child: Text(
-                                    [
-                                      'John Doe',
-                                      'Emma Smith',
-                                      'Michael Johnson',
-                                      'Sarah Williams',
-                                      'David Brown',
-                                      'Lisa Taylor',
-                                      'James Anderson',
-                                      'Maria Garcia',
-                                      'Robert Miller',
-                                      'Jennifer Wilson'
-                                    ][index],
-                                    style: TextStyle(color: Colors.black87),
-                                    textAlign: TextAlign.center,
-                                  ),
-                                )
-                              ),
-                            ],
-                          ),
-                        ),
-                        
-                        // Scrollable Columns
-                        DataTable(
-                          headingRowColor: MaterialStateColor.resolveWith((states) => Colors.blue[50]!),
-                          columnSpacing: 16.0,
-                          horizontalMargin: 0,
-                          border: TableBorder.symmetric(
-                            inside: BorderSide(color: Colors.grey.shade300),
-                          ),
-                          columns: const [
-                            DataColumn(
-                              label: SizedBox(
-                                width: 100,
-                                child: Text(
-                                  'Attendance',
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.blue,
-                                  ),
-                                  textAlign: TextAlign.center,
-                                ),
-                              ),
-                            ),
-                            DataColumn(
-                              label: SizedBox(
-                                width: 100,
-                                child: Text(
-                                  'Assessment',
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.blue,
-                                  ),
-                                  textAlign: TextAlign.center,
-                                ),
-                              ),
-                            ),
-                            DataColumn(
-                              label: SizedBox(
-                                width: 100,
-                                child: Text(
-                                  'Examination',
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.blue,
-                                  ),
-                                  textAlign: TextAlign.center,
-                                ),
-                              ),
-                            ),
-                            DataColumn(
-                              label: SizedBox(
-                                width: 100,
-                                child: Text(
-                                  'Total',
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.blue,
-                                  ),
-                                  textAlign: TextAlign.center,
-                                ),
-                              ),
-                            ),
-                            DataColumn(
-                              label: SizedBox(
-                                width: 100,
-                                child: Text(
-                                  'Grade',
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.blue,
-                                  ),
-                                  textAlign: TextAlign.center,
-                                ),
-                              ),
-                            ),
-                          ],
-                          rows: List<DataRow>.generate(
-                            10, // Number of rows
-                            (index) => DataRow(
-                              cells: [
-                                DataCell(
-                                  SizedBox(
-                                    width: 100,
-                                    child: _EditableCell(initialValue: '2'),
-                                  )
-                                ),
-                                DataCell(
-                                  SizedBox(
-                                    width: 100,
-                                    child: _EditableCell(initialValue: '2'),
-                                  )
-                                ),
-                                DataCell(
-                                  SizedBox(
-                                    width: 100,
-                                    child: _EditableCell(initialValue: '2'),
-                                  )
-                                ),
-                                DataCell(
-                                  SizedBox(
-                                    width: 100,
-                                    child: _EditableCell(initialValue: '6'),
-                                  )
-                                ),
-                                DataCell(
-                                  SizedBox(
-                                    width: 100,
-                                    child: _EditableCell(initialValue: 'A'),
-                                  )
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                );
-              },
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () {
-                  // Add save logic here
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.blue,
-                  padding: const EdgeInsets.symmetric(vertical: 16.0),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8.0),
+        backgroundColor: AppColors.backgroundLight,
+        flexibleSpace: FlexibleSpaceBar(
+          background: Stack(
+            children: [
+              Positioned.fill(
+                child: Opacity(
+                  opacity: opacity,
+                  child: Image.asset(
+                    'assets/images/background.png',
+                    fit: BoxFit.cover,
                   ),
                 ),
-                child: const Text(
-                  'Save',
-                  style: TextStyle(
-                    fontSize: 16.0,
-                    fontWeight: FontWeight.w600,
-                  ),
+              )
+            ],
+          ),
+        ),
+      ),
+      body: Container(
+        decoration: Constants.customBoxDecoration(context), // Full screen decoration
+        child: Column(
+          children: [
+            Expanded(
+              child: SingleChildScrollView(
+                child: _buildSubjectsTable(),
+              ),
+            ),
+            _buildSaveButton(),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSubjectsTable() {
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: Container(
+        decoration: BoxDecoration(
+          border: Border.all(color: Colors.grey[300]!),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Row(
+          children: [
+            _buildSubjectColumn(),
+            Expanded(
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: [
+                    _buildEditableColumn('Attendance', 'attendance'),
+                    _buildEditableColumn('Assessments', 'assessment'),
+                    _buildEditableColumn('Examination', 'exam'),
+                    _buildEditableColumn('Total', 'total'),
+                    _buildGradeColumn(),
+                  ],
                 ),
               ),
             ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSubjectColumn() {
+    return Container(
+      width: 120,
+      decoration: BoxDecoration(
+        color: Colors.blue[700],
+        borderRadius: const BorderRadius.only(topLeft: Radius.circular(8)),
+      ),
+      child: Column(
+        children: [
+          Container(
+            height: 48,
+            alignment: Alignment.center,
+            child: const Text(
+              'Student Name',
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
           ),
+          ...studentData.map((data) {
+            return Container(
+              height: 50,
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              decoration: BoxDecoration(
+                color: Colors.grey[100],
+                border: Border(
+                  top: BorderSide(color: Colors.grey[300]!),
+                  right: BorderSide(color: Colors.grey[300]!),
+                ),
+              ),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  data["name"],
+                  style: const TextStyle(fontSize: 14),
+                ),
+              ),
+            );
+          }).toList(),
         ],
       ),
     );
   }
-}
 
-class _EditableCell extends StatefulWidget {
-  final String initialValue;
-
-  const _EditableCell({required this.initialValue, Key? key}) : super(key: key);
-
-  @override
-  State<_EditableCell> createState() => _EditableCellState();
-}
-
-class _EditableCellState extends State<_EditableCell> {
-  late TextEditingController _controller;
-  bool _isEditing = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = TextEditingController(text: widget.initialValue);
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () {
-        setState(() {
-          _isEditing = true;
-        });
-      },
-      child: _isEditing
-          ? TextField(
-              controller: _controller,
-              keyboardType: TextInputType.text,
-              textAlign: TextAlign.center,
-              decoration: InputDecoration(
-                contentPadding: EdgeInsets.zero,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8.0),
-                ),
-              ),
-              onSubmitted: (_) {
-                setState(() {
-                  _isEditing = false;
-                });
-              },
-            )
-          : Container(
-              width: double.infinity,
-              alignment: Alignment.center,
-              child: Text(
-                _controller.text,
-                textAlign: TextAlign.center,
+  Widget _buildEditableColumn(String title, String key) {
+    return Container(
+      width: 100,
+      decoration: BoxDecoration(
+        border: Border(left: BorderSide(color: Colors.grey[300]!)),
+      ),
+      child: Column(
+        children: [
+          Container(
+            height: 48,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: AppColors.eLearningBtnColor1,
+              border: Border(
+                left: const BorderSide(color: Colors.white),
+                bottom: BorderSide(color: Colors.grey[300]!),
               ),
             ),
+            child: Text(
+              title,
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+          ...studentData.map((data) {
+            return Container(
+              height: 50,
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              child: TextField(
+                controller: TextEditingController(text: data[key].toString()),
+                onChanged: (value) {
+                  data[key] = value; // Update the value dynamically
+                },
+                textAlign: TextAlign.center,
+                decoration: const InputDecoration(border: InputBorder.none),
+              ),
+            );
+          }).toList(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildGradeColumn() {
+    return Container(
+      width: 80,
+      decoration: BoxDecoration(
+        border: Border(left: BorderSide(color: Colors.grey[300]!)),
+      ),
+      child: Column(
+        children: [
+          Container(
+            height: 48,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: AppColors.eLearningBtnColor1,
+              border: Border(
+                left: const BorderSide(color: Colors.white),
+                bottom: BorderSide(color: Colors.grey[300]!),
+              ),
+            ),
+            child: const Text(
+              'Grade',
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+          ...studentData.map((data) {
+            return Container(
+              height: 50,
+              alignment: Alignment.center,
+              child: DropdownButton<String>(
+                value: data["grade"],
+                onChanged: (value) {
+                  setState(() {
+                    data["grade"] = value!;
+                  });
+                },
+                items: const ['A', 'B', 'C', 'D', 'F']
+                    .map((grade) => DropdownMenuItem(
+                          value: grade,
+                          child: Text(grade),
+                        ))
+                    .toList(),
+              ),
+            );
+          }).toList(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSaveButton() {
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: SizedBox(
+        width: double.infinity,
+        child: ElevatedButton(
+          onPressed: () {
+            // Implement save logic here
+            print(studentData);
+          },
+          style: ElevatedButton.styleFrom(
+            backgroundColor: AppColors.eLearningBtnColor1,
+            padding: const EdgeInsets.symmetric(vertical: 16.0),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8.0),
+            ),
+          ),
+          child: const Text(
+            'Save',
+            style: TextStyle(
+              fontSize: 16.0,
+              fontWeight: FontWeight.w600,
+              color: AppColors.backgroundLight
+            ),
+          ),
+        ),
+      ),
     );
   }
 }
+
+
+
+
+// import 'package:flutter/material.dart';
+// import 'package:linkschool/modules/common/app_colors.dart';
+// import 'package:linkschool/modules/common/constants.dart';
+// import 'package:linkschool/modules/common/text_styles.dart';
+
+// class StaffInputResultScreen extends StatefulWidget {
+
+//   const StaffInputResultScreen({Key? key, }) : super(key: key);
+
+//   @override
+//   State<StaffInputResultScreen> createState() => _StaffInputResultScreenState();
+// }
+
+// class _StaffInputResultScreenState extends State<StaffInputResultScreen> {
+//   late double opacity;
+
+//   @override
+//   Widget build(BuildContext context) {
+//     final Brightness brightness = Theme.of(context).brightness;
+//     opacity = brightness == Brightness.light ? 0.1 : 0.15;
+//     return Scaffold(
+//       appBar: AppBar(
+//         title: Text(
+//           'Civic Education Result',
+//           style: AppTextStyles.normal600(
+//             fontSize: 24.0,
+//             color: AppColors.eLearningBtnColor1,
+//           ),
+//         ),
+//         leading: IconButton(
+//           onPressed: () {
+//             Navigator.of(context).pop();
+//           },
+//           icon: Image.asset(
+//             'assets/icons/arrow_back.png',
+//             color: AppColors.eLearningBtnColor1,
+//             width: 34.0,
+//             height: 34.0,
+//           ),
+//         ),
+//         backgroundColor: AppColors.backgroundLight,
+//         flexibleSpace: FlexibleSpaceBar(
+//           background: Stack(
+//             children: [
+//               Positioned.fill(
+//                 child: Opacity(
+//                   opacity: opacity,
+//                   child: Image.asset(
+//                     'assets/images/background.png',
+//                     fit: BoxFit.cover,
+//                   ),
+//                 ),
+//               )
+//             ],
+//           ),
+//         ),
+//       ),
+//       body: Container(
+//          decoration: Constants.customBoxDecoration(context),
+//         child: SingleChildScrollView(
+//           child: Column(
+//             children: [
+//               _buildSubjectsTable(),
+//             ],
+//           ),
+//         ),
+//       ),
+//     );
+//   }
+
+//   Widget _buildTermSection(String title) {
+//     return Padding(
+//       padding: const EdgeInsets.all(16.0),
+//       child: Column(
+//         crossAxisAlignment: CrossAxisAlignment.start,
+//         children: [
+//           Container(
+//             width: double.infinity,
+//             padding: const EdgeInsets.all(16.0),
+//             decoration: const BoxDecoration(
+//               border: Border(
+//                 top: BorderSide(color: Colors.orange, width: 2),
+//                 bottom: BorderSide(color: Colors.orange, width: 2),
+//               ),
+//             ),
+//             child: Center(
+//               child: Text(
+//                 title,
+//                 style: const TextStyle(
+//                     fontSize: 16,
+//                     fontWeight: FontWeight.w500,
+//                     color: Colors.orange),
+//               ),
+//             ),
+//           ),
+//         ],
+//       ),
+//     );
+//   }
+
+//   Widget _buildSubjectsTable() {
+//     final List<String> subjects = [
+//       'Toochi Dennis',
+//       'Toochi Joe',
+//       'Ifeanyi Dennis',
+//       'Johnson Kenny',
+//       'Toochi Dennis',
+//       'Toochi Dennis',
+//       'Toochi Dennis',
+//       'Toochi Dennis',
+//       'Toochi Dennis',
+//     ];
+
+//     return Padding(
+//       padding: const EdgeInsets.all(16.0),
+//       child: Container(
+//         decoration: BoxDecoration(
+//           border: Border.all(color: Colors.grey[300]!),
+//           borderRadius: BorderRadius.circular(8),
+//         ),
+//         child: Row(
+//           children: [
+//             _buildSubjectColumn(subjects),
+//             Expanded(
+//               child: SingleChildScrollView(
+//                 scrollDirection: Axis.horizontal,
+//                 child: Row(
+//                   children: [
+//                     _buildScrollableColumn('Attendance', 100, subjects),
+//                     _buildScrollableColumn('Assessments', 100, subjects),
+//                     _buildScrollableColumn('Examination', 100, subjects),
+//                     _buildScrollableColumn('Total', 100, subjects),
+//                     _buildScrollableColumn('Total', 100, subjects),
+//                     _buildScrollableColumn('Grade', 80, subjects),
+//                   ],
+//                 ),
+//               ),
+//             ),
+//           ],
+//         ),
+//       ),
+//     );
+//   }
+
+//   Widget _buildSubjectColumn(List<String> subjects) {
+//     return Container(
+//       width: 120,
+//       decoration: BoxDecoration(
+//         color: Colors.blue[700],
+//         borderRadius: const BorderRadius.only(topLeft: Radius.circular(8)),
+//       ),
+//       child: Column(
+//         children: [
+//           Container(
+//             height: 48,
+//             alignment: Alignment.center,
+//             child: const Text(
+//               'Student Name',
+//               style: TextStyle(
+//                 color: Colors.white,
+//                 fontWeight: FontWeight.w500,
+//               ),
+//             ),
+//           ),
+//           ...subjects.map((subject) {
+//             return Container(
+//               height: 50,
+//               padding: const EdgeInsets.symmetric(horizontal: 8),
+//               decoration: BoxDecoration(
+//                 color: Colors.grey[100],
+//                 border: Border(
+//                   top: BorderSide(color: Colors.grey[300]!),
+//                   right: BorderSide(color: Colors.grey[300]!),
+//                 ),
+//               ),
+//               child: Align(
+//                 alignment: Alignment.centerLeft,
+//                 child: Text(
+//                   subject,
+//                   style: const TextStyle(fontSize: 14),
+//                 ),
+//               ),
+//             );
+//           }).toList(),
+//         ],
+//       ),
+//     );
+//   }
+
+//   Widget _buildScrollableColumn(
+//       String title, double width, List<String> subjects) {
+//     return Container(
+//       width: width,
+//       decoration: BoxDecoration(
+//         border: Border(left: BorderSide(color: Colors.grey[300]!)),
+//       ),
+//       child: Column(
+//         children: [
+//           Container(
+//             height: 48,
+//             alignment: Alignment.center,
+//             decoration: BoxDecoration(
+//               color: AppColors.eLearningBtnColor1,
+//               border: Border(
+//                 left: const BorderSide(color: Colors.white),
+//                 bottom: BorderSide(color: Colors.grey[300]!),
+//               ),
+//             ),
+//             child: Text(
+//               title,
+//               style: const TextStyle(
+//                 color: Colors.white,
+//                 fontWeight: FontWeight.w500,
+//               ),
+//               textAlign: TextAlign.center,
+//             ),
+//           ),
+//           ...subjects.map((_) {
+//             return Container(
+//               height: 50,
+//               alignment: Alignment.center,
+//               decoration: BoxDecoration(
+//                 color: Colors.grey[100],
+//                 border: Border(
+//                   top: BorderSide(color: Colors.grey[300]!),
+//                   right: BorderSide(color: Colors.grey[300]!),
+//                 ),
+//               ),
+//               child: const Text(
+//                 '80', // Sample Data
+//                 style: TextStyle(fontSize: 14),
+//               ),
+//             );
+//           }).toList(),
+//         ],
+//       ),
+//     );
+//   }
+// }

@@ -123,7 +123,7 @@ class _StaffCommentResultScreenState extends State<StaffCommentResultScreen> {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => const StaffInputResultScreen(),
+                    builder: (context) => StaffInputResultScreen(),
                   ),
                 );
               },
@@ -135,7 +135,7 @@ class _StaffCommentResultScreenState extends State<StaffCommentResultScreen> {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => const StaffViewResultScreen(),
+                    builder: (context) => StaffViewResultScreen(),
                   ),
                 );
               },

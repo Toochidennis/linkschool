@@ -212,4 +212,92 @@ class _FormClassesScreenState extends State<FormClassesScreen> {
       },
     );
   }
+
+// void showTermOverlay(BuildContext context) {
+//   showModalBottomSheet(
+//     context: context,
+//     isScrollControlled: true,
+//     backgroundColor: Colors.transparent,
+//     builder: (BuildContext context) {
+//       return Container(
+//         height: MediaQuery.of(context).size.height * 0.4,
+//         decoration: const BoxDecoration(
+//           color: Colors.white,
+//           borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+//         ),
+//         child: Padding(
+//           padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 16.0),
+//           child: Column(
+//             children: [
+//               Expanded(
+//                 child: ListView.separated(
+//                   physics: const NeverScrollableScrollPhysics(),
+//                   itemCount: 4,
+//                   separatorBuilder: (context, index) => const Divider(),
+//                   itemBuilder: (context, index) {
+//                     final icons = [
+//                       'assets/icons/result/comment.svg',
+//                       'assets/icons/result/skill.svg',
+//                       'assets/icons/result/course.svg',
+//                       'assets/icons/result/composite_result.svg',
+//                     ];
+//                     final labels = [
+//                       'Comment on results',
+//                       'Skills and Behaviour',
+//                       'Course result',
+//                       'Composite result',
+//                     ];
+//                     final colors = [
+//                       AppColors.bgColor2,
+//                       AppColors.bgColor3,
+//                       AppColors.bgColor4,
+//                       AppColors.bgColor5,
+//                     ];
+//                     final iconColors = [
+//                       AppColors.iconColor1,
+//                       AppColors.iconColor2,
+//                       AppColors.iconColor3,
+//                       AppColors.iconColor4,
+//                     ];
+//                     return ListTile(
+//                       leading: Container(
+//                         width: 40,
+//                         height: 40,
+//                         decoration: BoxDecoration(
+//                           color: colors[index],
+//                           borderRadius: BorderRadius.circular(4),
+//                         ),
+//                         child: Center(
+//                           child: SvgPicture.asset(
+//                             icons[index],
+//                             color: iconColors[index],
+//                             width: 20,
+//                             height: 20,
+//                           ),
+//                         ),
+//                       ),
+//                       title: Text(labels[index]),
+//                       onTap: () {
+//                         if (labels[index] == 'Course result') {
+//                           Navigator.pop(context);
+//                           Navigator.push(
+//                             context,
+//                             MaterialPageRoute(
+//                               builder: (context) => CourseResultScreen(),
+//                             ),
+//                           );
+//                         }
+//                       },
+//                     );
+//                   },
+//                 ),
+//               ),
+//             ],
+//           ),
+//         ),
+//       );
+//     },
+//   );
+// }
+
 }
