@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/svg.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
@@ -114,7 +115,7 @@ class _FormClassesScreenState extends State<FormClassesScreen> {
             children: classes
                 .map(
                   (classData) => GestureDetector(
-                    onTap: () => _showBottomSheet(context),
+                    onTap: () => _showTermOverlay(context),
                     child: Container(
                       width: double.infinity, // Makes the card fill the width
                       margin: const EdgeInsets.only(bottom: 8.0),
@@ -158,146 +159,95 @@ class _FormClassesScreenState extends State<FormClassesScreen> {
     );
   }
 
-  void _showBottomSheet(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16.0)),
-      ),
-      builder: (context) {
-        return Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              title: const Text('Comment on result'),
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const StaffCommentResultScreen()),
-                );
-              },
-            ),
-            const Divider(),
-            ListTile(
-              title: const Text('Skills and Behaviour'),
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const StaffSkillsBehaviourScreen()),
-                );
-              },
-            ),
-            const Divider(),
-            ListTile(
-              title: const Text('Attendance'),
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => StaffAttandanceScreen()),
-                );
-              },
-            ),
-            const Divider(),
-            ListTile(
-              title: const Text('Students'),
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) =>StaffCoursesScreen()),
-                );
-              },
-            ),
-          ],
-        );
-      },
-    );
-  }
+void _showTermOverlay(BuildContext context) {
+  showModalBottomSheet(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: Colors.transparent,
+    builder: (BuildContext context) {
+      return Container(
+        height: MediaQuery.of(context).size.height * 0.4,
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 16.0),
+          child: Column(
+            children: [
+              Expanded(
+                child: ListView.separated(
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: 4,
+                  separatorBuilder: (context, index) => const Divider(),
+                  itemBuilder: (context, index) {
+                    final icons = [
+                      'assets/icons/result/comment.svg',
+                      'assets/icons/result/skill.svg',
+                      'assets/icons/result/course.svg',
+                      'assets/icons/result/composite_result.svg',
+                    ];
+                    final labels = [
+                      'Comment on results',
+                      'Skills and Behaviour',
+                      'Attendance',
+                      'Students',
+                    ];
+                    final colors = [
+                      AppColors.bgColor2,
+                      AppColors.bgColor3,
+                      AppColors.bgColor4,
+                      AppColors.bgColor5,
+                    ];
+                    final iconColors = [
+                      AppColors.iconColor1,
+                      AppColors.iconColor2,
+                      AppColors.iconColor3,
+                      AppColors.iconColor4,
+                    ];
 
-// void showTermOverlay(BuildContext context) {
-//   showModalBottomSheet(
-//     context: context,
-//     isScrollControlled: true,
-//     backgroundColor: Colors.transparent,
-//     builder: (BuildContext context) {
-//       return Container(
-//         height: MediaQuery.of(context).size.height * 0.4,
-//         decoration: const BoxDecoration(
-//           color: Colors.white,
-//           borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-//         ),
-//         child: Padding(
-//           padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 16.0),
-//           child: Column(
-//             children: [
-//               Expanded(
-//                 child: ListView.separated(
-//                   physics: const NeverScrollableScrollPhysics(),
-//                   itemCount: 4,
-//                   separatorBuilder: (context, index) => const Divider(),
-//                   itemBuilder: (context, index) {
-//                     final icons = [
-//                       'assets/icons/result/comment.svg',
-//                       'assets/icons/result/skill.svg',
-//                       'assets/icons/result/course.svg',
-//                       'assets/icons/result/composite_result.svg',
-//                     ];
-//                     final labels = [
-//                       'Comment on results',
-//                       'Skills and Behaviour',
-//                       'Course result',
-//                       'Composite result',
-//                     ];
-//                     final colors = [
-//                       AppColors.bgColor2,
-//                       AppColors.bgColor3,
-//                       AppColors.bgColor4,
-//                       AppColors.bgColor5,
-//                     ];
-//                     final iconColors = [
-//                       AppColors.iconColor1,
-//                       AppColors.iconColor2,
-//                       AppColors.iconColor3,
-//                       AppColors.iconColor4,
-//                     ];
-//                     return ListTile(
-//                       leading: Container(
-//                         width: 40,
-//                         height: 40,
-//                         decoration: BoxDecoration(
-//                           color: colors[index],
-//                           borderRadius: BorderRadius.circular(4),
-//                         ),
-//                         child: Center(
-//                           child: SvgPicture.asset(
-//                             icons[index],
-//                             color: iconColors[index],
-//                             width: 20,
-//                             height: 20,
-//                           ),
-//                         ),
-//                       ),
-//                       title: Text(labels[index]),
-//                       onTap: () {
-//                         if (labels[index] == 'Course result') {
-//                           Navigator.pop(context);
-//                           Navigator.push(
-//                             context,
-//                             MaterialPageRoute(
-//                               builder: (context) => CourseResultScreen(),
-//                             ),
-//                           );
-//                         }
-//                       },
-//                     );
-//                   },
-//                 ),
-//               ),
-//             ],
-//           ),
-//         ),
-//       );
-//     },
-//   );
-// }
+                    // Define navigation destinations for each index
+                    final screens = [
+                      const StaffCommentResultScreen(),
+                      const StaffSkillsBehaviourScreen(),
+                      StaffAttandanceScreen(),
+                      StaffCoursesScreen(),
+                    ];
+
+                    return ListTile(
+                      leading: Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: colors[index],
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Center(
+                          child: SvgPicture.asset(
+                            icons[index],
+                            color: iconColors[index],
+                            width: 20,
+                            height: 20,
+                          ),
+                        ),
+                      ),
+                      title: Text(labels[index]),
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => screens[index]),
+                        );
+                      },
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    },
+  );
+}
 
 }

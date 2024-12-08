@@ -1,21 +1,21 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/staff_portal/e_learning/form_classes/staff_input_result_screen.dart';
 import 'package:linkschool/modules/staff_portal/e_learning/form_classes/staff_view_result_screen.dart';
 
-
 class StaffCommentResultScreen extends StatefulWidget {
   const StaffCommentResultScreen({super.key});
 
   @override
-  State<StaffCommentResultScreen> createState() => _StaffCommentResultScreenState();
+  State<StaffCommentResultScreen> createState() =>
+      _StaffCommentResultScreenState();
 }
 
 class _StaffCommentResultScreenState extends State<StaffCommentResultScreen> {
   late double opacity;
-
 
   @override
   Widget build(BuildContext context) {
@@ -73,27 +73,42 @@ class _StaffCommentResultScreenState extends State<StaffCommentResultScreen> {
             itemCount: courseList.length,
             itemBuilder: (context, index) {
               return GestureDetector(
-                onTap: () => _showBottomSheet(context),
+                onTap: () => _showTermOverlay(context),
                 child: Container(
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(8.0),
-                    gradient: LinearGradient(
-                      colors: gradientColors[index % gradientColors.length],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
                   ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
+                  child: Stack(
                     children: [
-                      const Icon(Icons.book, color: Colors.white, size: 32.0),
-                      const SizedBox(width: 8.0),
-                      Text(
-                        courseList[index],
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w600,
-                          fontSize: 16.0,
+                      // SVG Background
+                      Positioned.fill(
+                        child: SvgPicture.asset(
+                          svgBackgrounds[index % svgBackgrounds.length],
+                          fit: BoxFit.cover,
+                        ),
+                      ),
+                      // Content Row
+                      Center(
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            // SVG Icon
+                            SvgPicture.asset(
+                              svgIcons[index % svgIcons.length],
+                              color: Colors.white,
+                              width: 32.0,
+                              height: 32.0,
+                            ),
+                            const SizedBox(width: 8.0),
+                            Text(
+                              courseList[index],
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w600,
+                                fontSize: 16.0,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ],
@@ -107,40 +122,84 @@ class _StaffCommentResultScreenState extends State<StaffCommentResultScreen> {
     );
   }
 
-  void _showBottomSheet(BuildContext context) {
+  void _showTermOverlay(BuildContext context) {
     showModalBottomSheet(
       context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16.0)),
-      ),
-      builder: (context) {
-        return Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              title: const Text('Input result'),
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => StaffInputResultScreen(),
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (BuildContext context) {
+        return Container(
+          height: MediaQuery.of(context).size.height * 0.4,
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+          ),
+          child: Padding(
+            padding:
+                const EdgeInsets.symmetric(horizontal: 10.0, vertical: 16.0),
+            child: Column(
+              children: [
+                Expanded(
+                  child: ListView.separated(
+                    physics: const NeverScrollableScrollPhysics(),
+                    itemCount: 2, // Change to match the number of items
+                    separatorBuilder: (context, index) => const Divider(),
+                    itemBuilder: (context, index) {
+                      final icons = [
+                        'assets/icons/staff/input_icon.svg',
+                        'assets/icons/staff/view_icon.svg',
+                      ];
+                      final labels = [
+                        'Input result',
+                        'View result',
+                      ];
+                      final colors = [
+                        AppColors.bgColor2,
+                        AppColors.bgColor3,
+                      ];
+                      final iconColors = [
+                        AppColors.iconColor1,
+                        AppColors.iconColor2,
+                      ];
+
+                      // Define navigation destinations for each index
+                      final screens = [
+                        const StaffInputResultScreen(),
+                        StaffViewResultScreen(),
+                      ];
+
+                      return ListTile(
+                        leading: Container(
+                          width: 40,
+                          height: 40,
+                          decoration: BoxDecoration(
+                            color: colors[index],
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Center(
+                            child: SvgPicture.asset(
+                              icons[index],
+                              color: iconColors[index],
+                              width: 20,
+                              height: 20,
+                            ),
+                          ),
+                        ),
+                        title: Text(labels[index]),
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) => screens[index]),
+                          );
+                        },
+                      );
+                    },
                   ),
-                );
-              },
+                ),
+              ],
             ),
-            const Divider(),
-            ListTile(
-              title: const Text('View result'),
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => StaffViewResultScreen(),
-                  ),
-                );
-              },
-            ),
-          ],
+          ),
         );
       },
     );
@@ -161,10 +220,66 @@ final List<String> courseList = [
   'Geography',
 ];
 
-// Gradient colors for the course cards
-final List<List<Color>> gradientColors = [
-  [Colors.blue, Colors.lightBlue],
-  [Colors.green, Colors.teal],
-  [Colors.indigo, Colors.blueAccent],
-  [Colors.purple, Colors.deepPurple],
+// SVG background images for course cards (replace with your actual asset paths)
+final List<String> svgBackgrounds = [
+  'assets/images/student/bg-light-blue.svg',
+  'assets/images/student/bg-green.svg',
+  'assets/images/student/bg-dark-blue.svg',
+  'assets/images/student/bg-purple.svg',
+  'assets/images/student/bg-light-blue.svg',
+  'assets/images/student/bg-green.svg',
+  'assets/images/student/bg-dark-blue.svg',
+  'assets/images/student/bg-purple.svg',
+  'assets/images/student/bg-light-blue.svg',
+  'assets/images/student/bg-green.svg',
 ];
+
+// SVG icons for course cards (replace with your actual asset paths)
+final List<String> svgIcons = [
+  'assets/icons/course-icon.svg',
+  'assets/icons/course-icon.svg',
+  'assets/icons/course-icon.svg',
+  'assets/icons/course-icon.svg',
+  'assets/icons/course-icon.svg',
+];
+
+
+
+  // void _showBottomSheet(BuildContext context) {
+  //   showModalBottomSheet(
+  //     context: context,
+  //     shape: const RoundedRectangleBorder(
+  //       borderRadius: BorderRadius.vertical(top: Radius.circular(16.0)),
+  //     ),
+  //     builder: (context) {
+  //       return Column(
+  //         mainAxisSize: MainAxisSize.min,
+  //         children: [
+  //           ListTile(
+  //             title: const Text('Input result'),
+  //             onTap: () {
+  //               Navigator.push(
+  //                 context,
+  //                 MaterialPageRoute(
+  //                   builder: (context) => StaffInputResultScreen(),
+  //                 ),
+  //               );
+  //             },
+  //           ),
+  //           const Divider(),
+  //           ListTile(
+  //             title: const Text('View result'),
+  //             onTap: () {
+  //               Navigator.push(
+  //                 context,
+  //                 MaterialPageRoute(
+  //                   builder: (context) => StaffViewResultScreen(),
+  //                 ),
+  //               );
+  //             },
+  //           ),
+  //         ],
+  //       );
+  //     },
+  //   );
+  // }
