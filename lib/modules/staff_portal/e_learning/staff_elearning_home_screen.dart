@@ -38,7 +38,7 @@ class _StaffElearningScreenState extends State<StaffElearningScreen> {
     {
       'date': '10TH JAN 2025',
       'title': 'Third C A',
-      'subject': 'Civic Education',
+      'subject': 'Social Study',
       'classes': 'JSS 1, JSS3, SS3',
     },
     {

@@ -11,7 +11,7 @@ import 'package:linkschool/modules/common/widgets/portal/e_learning/select_class
 import 'package:linkschool/modules/admin_portal/e_learning/select_topic_screen.dart';
 
 class StaffAddMaterialScreen extends StatefulWidget {
-  const StaffAddMaterialScreen({super.key});
+  const StaffAddMaterialScreen({super.key, required Null Function(dynamic material) onSave});
 
   @override
   State<StaffAddMaterialScreen> createState() => _StaffAddMaterialScreenState();

@@ -286,26 +286,3 @@ class _ForumScreenState extends State<ForumScreen> {
     );
   }
 }
-
-
-
-// import 'package:flutter/material.dart';
-// import 'package:linkschool/modules/common/constants.dart';
-
-// class ForumScreen extends StatefulWidget {
-//   @override
-//   State<ForumScreen> createState() => _ForumScreenState();
-// }
-
-// class _ForumScreenState extends State<ForumScreen> {
-//   late double opacity;
-//   @override
-//   Widget build(BuildContext context) {
-//     return Container(
-//       decoration: Constants.customBoxDecoration(context),
-//       child: const Center(
-//         child: Text('Forum Screen Placeholder'),
-//       ),
-//     );
-//   }
-// }

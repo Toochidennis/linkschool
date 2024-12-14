@@ -6,6 +6,7 @@ import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/model/e-learning/question_model.dart';
 import 'package:linkschool/modules/model/e-learning/topic_model.dart';
+import 'package:linkschool/modules/model/e-learning/material_model.dart' as custom;
 import 'package:linkschool/modules/admin_portal/e_learning/View/quiz/quiz_screen.dart';
 import 'package:linkschool/modules/admin_portal/e_learning/View/view_assignment_screen.dart';
 import 'package:linkschool/modules/admin_portal/e_learning/View/question/view_question_screen.dart';
@@ -67,6 +68,19 @@ class _EmptySubjectScreenState extends State<EmptySubjectScreen> {
             marks: '10',
           ),
         ],
+        materials: [
+          custom.Material(
+            title: 'Importance of Time Management',
+            createdAt: DateTime.now().subtract(const Duration(days: 3)),
+            topic: 'Punctuality',
+            description: 'A comprehensive guide on time management techniques',
+            selectedClass: 'Class 10A',
+            startDate: DateTime.now(),
+            endDate: DateTime.now().add(const Duration(days: 1)),
+            duration: const Duration(minutes: 30),
+            marks: '10',
+          ),
+        ],
       ),
       Topic(
         name: 'Time Management',
@@ -94,6 +108,19 @@ class _EmptySubjectScreenState extends State<EmptySubjectScreen> {
             endDate: DateTime.now().add(const Duration(days: 1)),
             duration: const Duration(minutes: 20),
             marks: '20',
+          ),
+        ],
+        materials: [
+          custom.Material(
+            title: 'Importance of Time Management',
+            createdAt: DateTime.now().subtract(const Duration(days: 3)),
+            topic: 'Punctuality',
+            description: 'A comprehensive guide on time management techniques',
+            selectedClass: 'Class 10A',
+            startDate: DateTime.now(),
+            endDate: DateTime.now().add(const Duration(days: 1)),
+            duration: const Duration(minutes: 30),
+            marks: '10',
           ),
         ],
       ),
@@ -321,7 +348,7 @@ Widget _buildTopicSection(Topic topic) {
       Topic? existingTopic = topics.firstWhere(
         (topic) => topic.name == assignment.topic,
         orElse: () =>
-            Topic(name: assignment.topic, assignments: [], questions: []),
+            Topic(name: assignment.topic, assignments: [], questions: [], materials: []),
       );
 
       if (!topics.contains(existingTopic)) {
@@ -341,7 +368,7 @@ Widget _buildTopicSection(Topic topic) {
       Topic? existingTopic = topics.firstWhere(
         (topic) => topic.name == question.topic,
         orElse: () =>
-            Topic(name: question.topic, assignments: [], questions: []),
+            Topic(name: question.topic, assignments: [], questions: [], materials: []),
       );
 
       if (!topics.contains(existingTopic)) {

@@ -36,7 +36,7 @@ class _StudentElearningScreenState extends State<StudentElearningScreen> {
     {
       'date': '10TH JAN 2025',
       'title': 'Third C A',
-      'subject': 'Civic Education',
+      'subject': 'Civic Edu..',
       'classes': 'JSS 1, JSS3, SS3',
     },
     {

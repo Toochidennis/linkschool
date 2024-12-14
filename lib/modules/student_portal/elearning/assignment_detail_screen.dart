@@ -100,6 +100,7 @@ void _navigateToAttachmentPreview() {
                 style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 24),
+              // Attachment section
               Row(
                 children: [
                   Expanded(
