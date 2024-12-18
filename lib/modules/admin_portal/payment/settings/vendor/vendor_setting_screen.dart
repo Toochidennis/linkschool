@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
-import 'package:linkschool/modules/model/profile/vendor_transaction_model.dart';
-import 'package:linkschool/modules/admin_portal/profile/settings/vendor/vendor_transaction_screen.dart';
+import 'package:linkschool/modules/admin_portal/payment/settings/vendor/vendor_transaction_screen.dart';
 
 class VendorSettingsScreen extends StatefulWidget {
 

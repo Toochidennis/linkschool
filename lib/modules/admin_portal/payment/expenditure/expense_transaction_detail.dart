@@ -3,8 +3,8 @@ import 'package:flutter_svg/svg.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
-import 'package:linkschool/modules/admin_portal/profile/expenditure/expense_download_receipt_screen.dart';
-import 'package:linkschool/modules/admin_portal/profile/expenditure/expense_share_reciept_screen.dart';
+import 'package:linkschool/modules/admin_portal/payment/expenditure/expense_download_receipt_screen.dart';
+import 'package:linkschool/modules/admin_portal/payment/expenditure/expense_share_reciept_screen.dart';
 
 class ExpenseTransactionDetail extends StatefulWidget {
   final String amount;

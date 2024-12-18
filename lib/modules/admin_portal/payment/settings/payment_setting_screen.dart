@@ -4,12 +4,13 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
-import 'package:linkschool/modules/admin_portal/profile/settings/vendor/vendor_setting_screen.dart';
-import 'package:linkschool/modules/admin_portal/profile/settings/account_setting_screen.dart';
-import 'package:linkschool/modules/admin_portal/profile/settings/fee_setting/fee_setting_screen.dart';
+import 'package:linkschool/modules/admin_portal/payment/settings/vendor/vendor_setting_screen.dart';
+import 'package:linkschool/modules/admin_portal/payment/settings/account_setting_screen.dart';
+import 'package:linkschool/modules/admin_portal/payment/settings/fee_setting/fee_setting_screen.dart';
 
 class PaymentSettingScreen extends StatefulWidget {
-  const PaymentSettingScreen({super.key});
+  final VoidCallback onLogout;
+  const PaymentSettingScreen({super.key, required this.onLogout});
 
   @override
   State<PaymentSettingScreen> createState() => _PaymentSettingScreenState();
@@ -89,6 +90,11 @@ class _PaymentSettingScreenState extends State<PaymentSettingScreen> {
                   context,
                   MaterialPageRoute(builder: (context) => VendorSettingsScreen()),
                 ),
+              ),
+              _buildSettingsRow(
+                icon: 'assets/icons/profile/logout.svg',
+                title: 'Logout',
+                onTap: widget.onLogout,
               ),
             ],
           ),

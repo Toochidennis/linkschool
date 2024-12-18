@@ -115,7 +115,7 @@ class _AppNavigationFlowState extends State<AppNavigationFlow> {
           onTabSelected: _updateSelectedIndex,
         ),
         back: AnimatedSwitcher(
-          duration: Duration(milliseconds: 300),
+          duration:  const Duration(milliseconds: 300),
           child: _getBackWidget(),
         ),
       ),

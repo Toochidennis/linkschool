@@ -11,6 +11,7 @@ class CustomStudentAppBar extends StatelessWidget implements PreferredSizeWidget
   final bool showSettings;
   final bool showBackButton;
   final bool showPostInput;
+  final bool centerTitle;
   final VoidCallback? onNotificationTap;
   final VoidCallback? onSettingsTap;
   final VoidCallback? onPostTap;
@@ -24,6 +25,7 @@ class CustomStudentAppBar extends StatelessWidget implements PreferredSizeWidget
     this.showSettings = false,
     this.showBackButton = false,
     this.showPostInput = false,
+    this.centerTitle = false,
     this.onNotificationTap,
     this.onSettingsTap,
     this.onPostTap,
@@ -37,10 +39,37 @@ class CustomStudentAppBar extends StatelessWidget implements PreferredSizeWidget
 
   @override
   Widget build(BuildContext context) {
+    // Create title widget based on whether subtitle exists
+    Widget titleWidget = subtitle != null
+      ? RichText(
+          textAlign: centerTitle ? TextAlign.center : TextAlign.start,
+          text: TextSpan(
+            text: '$title, ',
+            style: AppTextStyles.normal700(
+                fontSize: 22, color: AppColors.backgroundLight),
+            children: [
+              TextSpan(
+                text: subtitle,
+                style: AppTextStyles.normal700(
+                    fontSize: 22, color: AppColors.secondaryLight),
+              ),
+            ],
+          ),
+        )
+      : Text(
+          title,
+          textAlign: centerTitle ? TextAlign.center : TextAlign.start,
+          style: AppTextStyles.normal600(
+            fontSize: 18.0,
+            color: Colors.white,
+          ),
+        );
+
     return AppBar(
       backgroundColor: AppColors.paymentTxtColor1,
       toolbarHeight: preferredSize.height,
       automaticallyImplyLeading: false,
+      centerTitle: centerTitle,
       leading: showBackButton
           ? IconButton(
               onPressed: onBackPressed ?? () => Navigator.of(context).pop(),
@@ -59,56 +88,68 @@ class CustomStudentAppBar extends StatelessWidget implements PreferredSizeWidget
             Padding(
               padding: EdgeInsets.fromLTRB(16, showPostInput ? 32 : 32, 8, 8),
               child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                mainAxisAlignment: centerTitle 
+                  ? MainAxisAlignment.center 
+                  : MainAxisAlignment.spaceBetween,
                 children: [
-                  if (subtitle != null)
-                    RichText(
-                      text: TextSpan(
-                        text: '$title, ',
-                        style: AppTextStyles.normal700(
-                            fontSize: 22, color: AppColors.backgroundLight),
-                        children: [
-                          TextSpan(
-                            text: subtitle,
-                            style: AppTextStyles.normal700(
-                                fontSize: 22, color: AppColors.secondaryLight),
+                  if (!centerTitle) ...[
+                    titleWidget,
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (showNotification)
+                          IconButton(
+                            onPressed: onNotificationTap,
+                            icon: SvgPicture.asset(
+                              'assets/icons/notifications.svg',
+                              colorFilter: const ColorFilter.mode(
+                                  Colors.white, BlendMode.srcIn),
+                            ),
                           ),
-                        ],
-                      ),
-                    )
-                  else
-                    Text(
-                      title,
-                      style: AppTextStyles.normal600(
-                        fontSize: 18.0,
-                        color: Colors.white,
-                      ),
+                        if (showSettings)
+                          IconButton(
+                            onPressed: onSettingsTap,
+                            icon: SvgPicture.asset(
+                              'assets/icons/settings.svg',
+                              colorFilter: const ColorFilter.mode(
+                                  Colors.white, BlendMode.srcIn),
+                              width: 24,
+                              height: 24,
+                            ),
+                          ),
+                      ],
                     ),
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      if (showNotification)
-                        IconButton(
-                          onPressed: onNotificationTap,
-                          icon: SvgPicture.asset(
-                            'assets/icons/notifications.svg',
-                            colorFilter: const ColorFilter.mode(
-                                Colors.white, BlendMode.srcIn),
+                  ],
+                  if (centerTitle) ...[
+                    Expanded(
+                      child: Center(child: titleWidget),
+                    ),
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (showNotification)
+                          IconButton(
+                            onPressed: onNotificationTap,
+                            icon: SvgPicture.asset(
+                              'assets/icons/notifications.svg',
+                              colorFilter: const ColorFilter.mode(
+                                  Colors.white, BlendMode.srcIn),
+                            ),
                           ),
-                        ),
-                      if (showSettings)
-                        IconButton(
-                          onPressed: onSettingsTap,
-                          icon: SvgPicture.asset(
-                            'assets/icons/settings.svg',
-                            colorFilter: const ColorFilter.mode(
-                                Colors.white, BlendMode.srcIn),
-                            width: 24,
-                            height: 24,
+                        if (showSettings)
+                          IconButton(
+                            onPressed: onSettingsTap,
+                            icon: SvgPicture.asset(
+                              'assets/icons/settings.svg',
+                              colorFilter: const ColorFilter.mode(
+                                  Colors.white, BlendMode.srcIn),
+                              width: 24,
+                              height: 24,
+                            ),
                           ),
-                        ),
-                    ],
-                  ),
+                      ],
+                    ),
+                  ],
                 ],
               ),
             ),

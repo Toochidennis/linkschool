@@ -9,7 +9,7 @@ import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'dart:math';
 
-import 'package:linkschool/modules/admin_portal/profile/receipt/receipt_screen.dart';
+import 'package:linkschool/modules/admin_portal/payment/receipt/receipt_screen.dart';
 // import 'package:linkschool/modules/common/app_colors.dart';
 // import 'package:linkschool/modules/common/text_styles.dart';
 

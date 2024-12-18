@@ -160,18 +160,18 @@ class _ELearningScreenState extends State<ELearningScreen> {
       padding: const EdgeInsets.all(16),
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       decoration: const BoxDecoration(
-        color: AppColors.primaryLight,
+        color: AppColors.paymentTxtColor1,
         borderRadius: BorderRadius.all(Radius.circular(12)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(date, style: AppTextStyles.normal500(fontSize: 14, color: AppColors.backgroundLight)),
-          const SizedBox(height: 4),
+          const SizedBox(height: 8),
           Text(title, style: AppTextStyles.normal700(fontSize: 22, color: AppColors.backgroundLight)),
-          const SizedBox(height: 4),
+          const SizedBox(height: 8),
           Text('Subject: $subject', style: AppTextStyles.normal600(fontSize: 16, color: AppColors.backgroundLight)),
-          const SizedBox(height: 4),
+          const SizedBox(height: 8),
           Text('For: $classes', style: AppTextStyles.normal600(fontSize: 16, color: AppColors.backgroundLight)),
         ],
       ),

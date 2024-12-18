@@ -5,7 +5,7 @@ import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/common/widgets/portal/profile/naira_icon.dart';
 import 'package:linkschool/modules/model/profile/student_model.dart';
-import 'package:linkschool/modules/admin_portal/profile/receipt/student_payment_detail_screen.dart';
+import 'package:linkschool/modules/admin_portal/payment/receipt/student_payment_detail_screen.dart';
 
 
 class PaymentOutstandingScreen extends StatefulWidget {

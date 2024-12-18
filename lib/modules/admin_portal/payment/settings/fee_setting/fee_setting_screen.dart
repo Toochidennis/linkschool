@@ -4,7 +4,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
-import 'package:linkschool/modules/admin_portal/profile/settings/fee_setting/fee_setting_details_screen.dart';
+import 'package:linkschool/modules/admin_portal/payment/settings/fee_setting/fee_setting_details_screen.dart';
 
 
 class FeeSettingScreen extends StatefulWidget {
