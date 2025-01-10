@@ -94,7 +94,7 @@ class ClassDetailBarChart extends StatelessWidget {
     final index = value.toInt();
     if (index >= 0 && index < subjects.length) {
       return SideTitleWidget(
-        axisSide: meta.axisSide,
+        meta: meta,
         space: 4.0,
         child: Text(
           subjects[index],
@@ -132,7 +132,7 @@ class ClassDetailBarChart extends StatelessWidget {
     }
 
     return SideTitleWidget(
-      axisSide: meta.axisSide,
+      meta: meta,
       space: 8,
       child: Text(text, style: style, textAlign: TextAlign.right),
     );

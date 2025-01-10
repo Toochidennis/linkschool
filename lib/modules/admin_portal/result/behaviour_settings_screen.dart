@@ -19,6 +19,7 @@ class _BehaviourSettingScreenState extends State<BehaviourSettingScreen> {
       appBar: Constants.customAppBar(
         context: context,
         title: 'Skills and Behaviour',
+        centerTitle: true
       ),
       body: Container(
         decoration: Constants.customBoxDecoration(context),

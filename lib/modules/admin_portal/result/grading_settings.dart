@@ -78,11 +78,13 @@ class _GradingSettingsScreenState extends State<GradingSettingsScreen> {
             height: 34.0,
           ),
         ),
-        title: Text(
-          'Grade Settings',
-          style: AppTextStyles.normal600(
-              fontSize: 24.0, color: Colors.black), // Increased font size
+      title: Text(
+        'Grade Settings',
+        style: AppTextStyles.normal600(
+          fontSize: 18.0,
+          color: AppColors.primaryLight,
         ),
+      ),
         centerTitle: true,
         backgroundColor: AppColors.backgroundLight,
       ),
@@ -219,7 +221,7 @@ class _GradingSettingsScreenState extends State<GradingSettingsScreen> {
           Text(
             title,
             style: AppTextStyles.normal500(
-              fontSize: 12.0,
+              fontSize: 16.0,
               color: AppColors.assessmentColor2,
             ),
           ),
@@ -230,7 +232,7 @@ class _GradingSettingsScreenState extends State<GradingSettingsScreen> {
                     focusNode: focusNode,
                     controller: controller,
                     style: AppTextStyles.normal500(
-                      fontSize: 16.0,
+                      fontSize: 18.0,
                       color: AppColors.backgroundDark,
                     ),
                     cursorColor: AppColors.primaryLight,
@@ -250,7 +252,7 @@ class _GradingSettingsScreenState extends State<GradingSettingsScreen> {
                 : Text(
                     controller.text,
                     style: AppTextStyles.normal500(
-                      fontSize: 16.0,
+                      fontSize: 18.0,
                       color: AppColors.backgroundDark,
                     ),
                   ),
@@ -299,14 +301,14 @@ class _GradingSettingsScreenState extends State<GradingSettingsScreen> {
             TextSpan(
               text: title,
               style: AppTextStyles.normal500(
-                fontSize: 12.0,
+                fontSize: 16.0,
                  color: AppColors.assessmentColor2,
               ),
             ),
             TextSpan(
               text: '  $score',
               style: AppTextStyles.normal500(
-                fontSize: 16.0,
+                fontSize: 18.0,
                 color: AppColors.backgroundDark,
               ),
             ),

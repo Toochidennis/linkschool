@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
+import 'package:linkschool/modules/common/buttons/custom_outline_button_2.dart';
 import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/common/widgets/portal/student/student_customized_appbar.dart';
@@ -70,7 +71,7 @@ class _StudentResultScreenState extends State<StudentResultScreen> {
                     _buildTermRow(
                         'Third Term', 0.75, AppColors.exploreButton3Light),
                     const SizedBox(height: 30),
-                    OutlinedButton(
+                    CustomOutlineButton2(
                       onPressed: () {
                         Navigator.push(
                           context,
@@ -80,20 +81,38 @@ class _StudentResultScreenState extends State<StudentResultScreen> {
                           ),
                         );
                       },
-                      style: OutlinedButton.styleFrom(
-                        side:
-                            const BorderSide(color: AppColors.paymentTxtColor1),
-                        minimumSize: const Size(double.infinity, 48),      
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10.0))               
-                      ),
-                      child: Text(
-                        'See annual result',
-                        style: AppTextStyles.normal600(
-                          fontSize: 18,
-                          color: AppColors.paymentTxtColor1,
-                        ),
-                      ),
+                      text: 'See annual result',
+                      borderColor: AppColors.paymentTxtColor1,
+                      textColor: AppColors.paymentTxtColor1,
+                      fontSize: 18,
+                      borderRadius: 10.0,
+                      buttonHeight: 48,
                     ),
+
+                    // OutlinedButton(
+                    //   onPressed: () {
+                    //     Navigator.push(
+                    //       context,
+                    //       MaterialPageRoute(
+                    //         builder: (context) =>
+                    //             const StudentAnnualResultScreen(),
+                    //       ),
+                    //     );
+                    //   },
+                    //   style: OutlinedButton.styleFrom(
+                    //       side: const BorderSide(
+                    //           color: AppColors.paymentTxtColor1),
+                    //       minimumSize: const Size(double.infinity, 48),
+                    //       shape: RoundedRectangleBorder(
+                    //           borderRadius: BorderRadius.circular(10.0))),
+                    //   child: Text(
+                    //     'See annual result',
+                    //     style: AppTextStyles.normal600(
+                    //       fontSize: 18,
+                    //       color: AppColors.paymentTxtColor1,
+                    //     ),
+                    //   ),
+                    // ),
                     SizedBox(
                       height: 60,
                     ),
@@ -117,7 +136,9 @@ class _StudentResultScreenState extends State<StudentResultScreen> {
                             bottomTitles: AxisTitles(
                               sideTitles: SideTitles(
                                 showTitles: true,
-                                getTitlesWidget: getTitles,
+                                getTitlesWidget: (double value,
+                                        TitleMeta meta) =>
+                                    getTitles(value, meta), // Pass `meta` here
                                 reservedSize: 38,
                               ),
                             ),
@@ -125,7 +146,8 @@ class _StudentResultScreenState extends State<StudentResultScreen> {
                               sideTitles: SideTitles(
                                 showTitles: true,
                                 reservedSize: 40,
-                                getTitlesWidget: (value, meta) => Text(
+                                getTitlesWidget:
+                                    (double value, TitleMeta meta) => Text(
                                   value.toInt().toString(),
                                   style: AppTextStyles.normal400(
                                       color: Colors.black, fontSize: 12),
@@ -137,6 +159,31 @@ class _StudentResultScreenState extends State<StudentResultScreen> {
                             rightTitles: const AxisTitles(
                                 sideTitles: SideTitles(showTitles: false)),
                           ),
+                          // titlesData: FlTitlesData(
+                          //   show: true,
+                          //   bottomTitles: AxisTitles(
+                          //     sideTitles: SideTitles(
+                          //       showTitles: true,
+                          //       getTitlesWidget: getTitles,
+                          //       reservedSize: 38,
+                          //     ),
+                          //   ),
+                          //   leftTitles: AxisTitles(
+                          //     sideTitles: SideTitles(
+                          //       showTitles: true,
+                          //       reservedSize: 40,
+                          //       getTitlesWidget: (value, meta) => Text(
+                          //         value.toInt().toString(),
+                          //         style: AppTextStyles.normal400(
+                          //             color: Colors.black, fontSize: 12),
+                          //       ),
+                          //     ),
+                          //   ),
+                          //   topTitles: const AxisTitles(
+                          //       sideTitles: SideTitles(showTitles: false)),
+                          //   rightTitles: const AxisTitles(
+                          //       sideTitles: SideTitles(showTitles: false)),
+                          // ),
                           gridData: FlGridData(
                             show: true,
                             drawVerticalLine: false,
@@ -280,8 +327,8 @@ class _StudentResultScreenState extends State<StudentResultScreen> {
         break;
     }
     return SideTitleWidget(
-      axisSide: meta.axisSide,
       space: 4.0,
+      meta: meta,
       child: Text(text,
           style: AppTextStyles.normal400(fontSize: 12, color: Colors.black)),
     );

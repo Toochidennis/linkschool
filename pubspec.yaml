@@ -33,14 +33,16 @@ dependencies:
   flutter_svg: ^2.0.10+1
   curved_nav_bar: ^0.0.2
   flutter_rating_bar: ^4.0.1
-  carousel_slider: ^4.2.1
+  carousel_slider: ^5.0.0
   flip_card: ^0.7.0
   percent_indicator: ^4.0.1
-  fl_chart: ^0.68.0
-  intl: ^0.18.1
-  image_picker: ^0.8.4+4
-  file_picker: ^4.2.7
-  shared_preferences: ^2.3.2
+  fl_chart: ^0.70.1
+  intl: ^0.20.1
+  image_picker: ^1.1.2
+  file_picker: ^8.1.7
+  shared_preferences: ^2.3.5
+  flutter_plugin_android_lifecycle: ^2.0.24
+  # shared_preferences: ^2.3.2
   # flutter_charts: ^0.5.2
 
 
@@ -59,7 +61,7 @@ dev_dependencies:
   # activated in the `analysis_options.yaml` file located at the root of your
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
-  flutter_lints: ^4.0.0
+  flutter_lints: ^5.0.0
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec

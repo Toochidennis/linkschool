@@ -7,7 +7,6 @@ import 'package:linkschool/modules/common/widgets/portal/result_dashboard/select
 import 'package:linkschool/modules/admin_portal/e_learning/empty_syllabus_screen.dart';
 import 'package:linkschool/modules/admin_portal/result/class_detail/class_detail_screen.dart';
 
-
 class LevelSelection extends StatefulWidget {
   // const LevelSelection({Key? key}) : super(key: key);
   final bool isSecondScreen;
@@ -35,7 +34,9 @@ class _LevelSelectionState extends State<LevelSelection> {
         _buildLevelBox('JSS ONE', 'assets/images/result/bg_box3.svg'),
         _buildLevelBox('JSS TWO', 'assets/images/result/bg_box4.svg'),
         _buildLevelBox('JSS THREE', 'assets/images/result/bg_box5.svg'),
-        const SizedBox(height: 100,)
+        const SizedBox(
+          height: 100,
+        )
       ],
     );
   }
@@ -122,67 +123,92 @@ class _LevelSelectionState extends State<LevelSelection> {
     });
   }
 
-  void _showClassSelectionDialog() {
-    final classes = [
-      'A',
-      'B',
-      'C',
-      'D',
-      'E',
-    ];
-    final levelPrefix = _selectedLevel.split(' ')[0];
+void _showClassSelectionDialog() {
+  final classes = [
+    'A',
+    'B',
+    'C',
+    'D',
+    'E',
+  ];
+  final levelPrefix = _selectedLevel.split(' ')[0];
 
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+  showModalBottomSheet(
+    context: context,
+    isScrollControlled: true,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+    ),
+    builder: (BuildContext context) {
+      return Padding(
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(context).viewInsets.bottom,
+        ),
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.of(context).size.height * 0.6,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const SizedBox(height: 24),
+              Text(
+                'Select Class',
+                style: AppTextStyles.normal600(
+                    fontSize: 24, color: Colors.black),
+              ),
+              const SizedBox(height: 24),
+              Flexible(
+                child: ListView.builder(
+                  itemCount: classes.length,
+                  itemBuilder: (context, index) {
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 8),
+                      child: _buildClassButton(
+                        '$levelPrefix ${classes[index]}',
+                        () {
+                          Navigator.of(context).pop();
+                          _navigateToClassDetail(
+                              '$levelPrefix ${classes[index]}');
+                        },
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    },
+  );
+}
+
+Widget _buildClassButton(String text, VoidCallback onPressed) {
+  return Container(
+    decoration: BoxDecoration(
+      boxShadow: [BoxShadow(color: Colors.grey.withOpacity(0.3), spreadRadius: 1, blurRadius: 3, offset: const Offset(0, 2))],
+    ),
+    child: Material(
+      color: AppColors.dialogBtnColor,
+      child: InkWell(
+        onTap: onPressed,
+        borderRadius: BorderRadius.circular(4),
+        child: Ink(
+          decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(4)),
+          child: Container(
+            width: double.infinity,
+            height: 50,
+            alignment: Alignment.center,
+            child: Text(text, style: AppTextStyles.normal600(fontSize: 16, color: AppColors.backgroundDark)),
+          ),
+        ),
       ),
-      builder: (BuildContext context) {
-        return Padding(
-          padding: EdgeInsets.only(
-            bottom: MediaQuery.of(context).viewInsets.bottom,
-          ),
-          child: ConstrainedBox(
-            constraints: BoxConstraints(
-              maxHeight: MediaQuery.of(context).size.height * 0.6,
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const SizedBox(height: 24),
-                Text(
-                  'Select Class',
-                  style: AppTextStyles.normal600(
-                      fontSize: 24, color: Colors.black),
-                ),
-                const SizedBox(height: 24),
-                Flexible(
-                  child: ListView.builder(
-                    itemCount: classes.length,
-                    itemBuilder: (context, index) {
-                      return Padding(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 24, vertical: 8),
-                        child: SelectClassButton(
-                          text: '$levelPrefix ${classes[index]}',
-                          onTap: () {
-                            Navigator.of(context).pop();
-                            _navigateToClassDetail(
-                                '$levelPrefix ${classes[index]}');
-                          },
-                        ),
-                      );
-                    },
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
+    ),
+  );
+}
+
 
   void _showCourseSelectionDialog() {
     showModalBottomSheet(
@@ -233,12 +259,11 @@ class _LevelSelectionState extends State<LevelSelection> {
   Widget _buildSubjectButton(String subject) {
     return ElevatedButton(
       onPressed: () {
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (context) => EmptySyllabusScreen(selectedSubject: subject),
-      ),
-    );
-        
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (context) => EmptySyllabusScreen(selectedSubject: subject),
+          ),
+        );
       },
       style: ElevatedButton.styleFrom(
         backgroundColor: Colors.white,

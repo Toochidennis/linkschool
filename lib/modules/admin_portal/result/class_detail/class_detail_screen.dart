@@ -21,7 +21,7 @@ class ClassDetailScreen extends StatelessWidget {
       appBar: AppBar(
         title: Text(
           className,
-          style: AppTextStyles.normal600(fontSize: 18.0, color: Colors.black),
+          style: AppTextStyles.normal600(fontSize: 18.0, color: AppColors.primaryLight,),
         ),
         leading: IconButton(
           onPressed: () {

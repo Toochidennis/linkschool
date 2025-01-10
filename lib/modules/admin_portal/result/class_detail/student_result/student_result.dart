@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/buttons/custom_long_elevated_button.dart';
 import 'package:linkschool/modules/common/buttons/custom_medium_elevated_button.dart';
+import 'package:linkschool/modules/common/buttons/custom_outline_button_2.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/admin_portal/result/class_detail/student_result/student_list.dart';
+import 'package:linkschool/modules/student_portal/result/student_annual_result_screen.dart';
 import 'package:percent_indicator/percent_indicator.dart';
 import 'package:fl_chart/fl_chart.dart';
 
@@ -88,7 +90,7 @@ class StudentResultScreen extends StatelessWidget {
                         ),
                         const SizedBox(height: 10),
                         Text(
-                          studentName,
+                          'Toochukwu Dennis',
                           style: AppTextStyles.normal700(
                             fontSize: 20,
                             color: AppColors.primaryLight,
@@ -114,13 +116,30 @@ class StudentResultScreen extends StatelessWidget {
                   _buildTermRow(
                       'Third Term', 0.75, AppColors.exploreButton3Light),
                   const SizedBox(height: 30),
-                  CustomLongElevatedButton(
-                    text: 'See annual result',
-                    onPressed: () {},
-                    backgroundColor: AppColors.videoColor4,
-                    textStyle: AppTextStyles.normal600(
-                        fontSize: 18, color: AppColors.backgroundLight),
-                  ),
+                    CustomOutlineButton2(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) =>
+                                const StudentAnnualResultScreen(),
+                          ),
+                        );
+                      },
+                      text: 'See annual result',
+                      borderColor: AppColors.videoColor4,
+                      textColor: AppColors.videoColor4,
+                      fontSize: 18,
+                      borderRadius: 10.0,
+                      buttonHeight: 48,
+                    ),
+                  // CustomLongElevatedButton(
+                  //   text: 'See annual result',
+                  //   onPressed: () {},
+                  //   backgroundColor: AppColors.videoColor4,
+                  //   textStyle: AppTextStyles.normal600(
+                  //       fontSize: 18, color: AppColors.backgroundLight),
+                  // ),
                   SizedBox(height: 60,),
                   Text(
                     'Session average chart',
@@ -293,8 +312,9 @@ class StudentResultScreen extends StatelessWidget {
         break;
     }
     return SideTitleWidget(
-      axisSide: meta.axisSide,
       space: 4.0,
+      meta: meta,
+      // meta: TitleMeta(axisSide: meta.axisSide),
       child: Text(text,
           style: AppTextStyles.normal400(fontSize: 12, color: Colors.black)),
     );

@@ -39,10 +39,13 @@ class _AssessmentSettingScreenState extends State<AssessmentSettingScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-          'Assessment Settings',
-          style: AppTextStyles.normal600(fontSize: 18.0, color: Colors.black),
+      title: Text(
+        'Assessment Settings',
+        style: AppTextStyles.normal600(
+          fontSize: 18.0,
+          color: AppColors.primaryLight,
         ),
+      ),
         centerTitle: true,
         leading: IconButton(
           onPressed: () {

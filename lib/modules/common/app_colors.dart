@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 
 class AppColors {
   // Light Theme
-  static const Color primaryLight = Color.fromRGBO(18, 7, 123, 1); //primary
+  static const Color primaryLight = Color.fromRGBO(45, 99, 255, 1); //primary
   static const Color secondaryLight = Color.fromRGBO(252, 147, 56, 1); //buttonOrange
   static const Color textLight = Color.fromRGBO(26, 26, 26, 1);
-  static const Color text2Light = Color.fromRGBO(18, 7, 123, 1);
+  static const Color text2Light = Color.fromRGBO(45, 99, 255, 1);
   static const Color text3Light = Color.fromRGBO(0, 0, 0, 1);
   static const Color text4Light = Color.fromRGBO(26, 26, 26, 1);
   static const Color text5Light = Color.fromRGBO(140, 140, 140, 1);
