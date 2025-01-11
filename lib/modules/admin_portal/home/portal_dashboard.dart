@@ -104,7 +104,7 @@ class _PortalDashboardState extends State<PortalDashboard> {
           ),
         );
       case 2:
-        return ELearningScreen(
+        return ELearningDashboardScreen(
           appBar: CustomStudentAppBar(
             title: 'Welcome',
             subtitle: 'Tochukwu',

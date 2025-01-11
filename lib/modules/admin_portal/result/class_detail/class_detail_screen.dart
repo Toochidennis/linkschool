@@ -7,7 +7,7 @@ import 'package:linkschool/modules/common/widgets/portal/class_detail/class_deta
 import 'package:linkschool/modules/common/widgets/portal/class_detail/overlays.dart';
 import 'package:linkschool/modules/admin_portal/result/class_detail/attendance/attendance.dart';
 import 'package:linkschool/modules/admin_portal/result/class_detail/registration/registration.dart';
-
+import 'package:linkschool/modules/common/buttons/custom_elevated_appbar_button.dart';
 
 class ClassDetailScreen extends StatelessWidget {
   final String className;
@@ -35,30 +35,40 @@ class ClassDetailScreen extends StatelessWidget {
           ),
         ),
         actions: [
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 13.0),
-            child: SizedBox(
-              height: 32,
-              child: ElevatedButton(
-                onPressed: () {},
-                style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.videoColor4,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(4.0),
-                    ),
-                    padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                    minimumSize: Size.zero,
-                    tapTargetSize: MaterialTapTargetSize.shrinkWrap),
-                child: Text(
-                  'See class list',
-                  style: AppTextStyles.normal700(
-                    fontSize: 14,
-                    color: AppColors.backgroundLight,
-                  ),
-                ),
-              ),
-            ),
+          CustomElevatedAppbarButton(
+            text: 'See class list',
+            onPressed: () {
+              // Add your button action here
+            },
+            backgroundColor: AppColors.videoColor4,
+            textColor: Colors.white,
+            fontSize: 14,
+            borderRadius: 4.0,
           ),
+          // Padding(
+          //   padding: const EdgeInsets.symmetric(horizontal: 13.0),
+          //   child: SizedBox(
+          //     height: 32,
+          //     child: ElevatedButton(
+          //       onPressed: () {},
+          //       style: ElevatedButton.styleFrom(
+          //           backgroundColor: AppColors.videoColor4,
+          //           shape: RoundedRectangleBorder(
+          //             borderRadius: BorderRadius.circular(4.0),
+          //           ),
+          //           padding: const EdgeInsets.symmetric(horizontal: 8.0),
+          //           minimumSize: Size.zero,
+          //           tapTargetSize: MaterialTapTargetSize.shrinkWrap),
+          //       child: Text(
+          //         'See class list',
+          //         style: AppTextStyles.normal700(
+          //           fontSize: 14,
+          //           color: AppColors.backgroundLight,
+          //         ),
+          //       ),
+          //     ),
+          //   ),
+          // ),
         ],
         backgroundColor: AppColors.bgColor1,
         elevation: 0.0,

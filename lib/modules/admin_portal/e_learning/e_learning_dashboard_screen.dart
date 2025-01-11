@@ -5,52 +5,90 @@ import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/common/widgets/portal/result_dashboard/level_selection.dart';
+import 'package:carousel_slider/carousel_slider.dart';
 
-class ELearningScreen extends StatefulWidget {
+class ELearningDashboardScreen extends StatefulWidget {
   final PreferredSizeWidget appBar;
-  const ELearningScreen({super.key,  required this.appBar,});
+  const ELearningDashboardScreen({super.key, required this.appBar});
 
   @override
-  State<ELearningScreen> createState() => _ELearningScreenState();
+  State<ELearningDashboardScreen> createState() =>
+      _ELearningDashboardScreenState();
 }
 
-class _ELearningScreenState extends State<ELearningScreen> {
-  final PageController _pageController = PageController();
-  int _currentPage = 0;
-  Timer? _timer;
+class _ELearningDashboardScreenState extends State<ELearningDashboardScreen> {
+  int currentAssessmentIndex = 0;
+  int currentActivityIndex = 0;
+  late PageController activityController;
+  Timer? activityTimer;
+
+  final List<Map<String, String>> assessments = [
+    {
+      'date': '19TH FEBRUARY 2024',
+      'title': 'First C.A',
+      'subject': 'Mathematics',
+      'classes': 'JSS1, JSS2, JSS3',
+    },
+    {
+      'date': '22ND FEBRUARY 2024',
+      'title': 'Second C.A',
+      'subject': 'English Language',
+      'classes': 'JSS1, JSS2',
+    },
+    {
+      'date': '25TH FEBRUARY 2024',
+      'title': 'Third C A',
+      'subject': 'Basic Science',
+      'classes': 'JSS3',
+    },
+  ];
+
+  final List<Map<String, String>> activities = [
+    {
+      'name': 'Dennis Toochi',
+      'activity': 'posted an assignment on',
+      'subject': 'Homeostasis for JSS2',
+      'timestamp': 'Yesterday at 9:42 AM',
+      'avatar': 'assets/images/student/avatar3.svg',
+    },
+    {
+      'name': 'Ifeanyi Toochi',
+      'activity': 'posted an assignment on',
+      'subject': 'Hygiene for JSS2',
+      'timestamp': 'Yesterday at 9:42 AM',
+      'avatar': 'assets/images/student/avatar3.svg',
+    },
+    {
+      'name': 'Raphael Toochi',
+      'activity': 'posted an assignment on',
+      'subject': 'Exercises for JSS2',
+      'timestamp': 'Yesterday at 9:42 AM',
+      'avatar': 'assets/images/student/avatar3.svg',
+    },
+  ];
 
   @override
   void initState() {
     super.initState();
-    _startAutoScroll();
-  }
-
-  void _startAutoScroll() {
-    _timer = Timer.periodic(const Duration(seconds: 5), (Timer timer) {
-      if (_currentPage < 2) {
-        _currentPage++;
-        _pageController.animateToPage(
-          _currentPage,
-          duration: const Duration(milliseconds: 350),
-          curve: Curves.easeIn,
-        );
-      } else {
-        // Set to the first page with an instant jump and then smooth scroll to the first page
-        _pageController.jumpToPage(0);
-        _currentPage = 1; // Prepare for the next animation
-        _pageController.animateToPage(
-          _currentPage,
-          duration: const Duration(milliseconds: 350),
-          curve: Curves.easeIn,
-        );
+    activityController = PageController(viewportFraction: 0.90);
+    activityTimer = Timer.periodic(const Duration(seconds: 7), (_) {
+      if (activityController.hasClients) {
+        setState(() {
+          currentActivityIndex = (currentActivityIndex + 1) % activities.length;
+          activityController.animateToPage(
+            currentActivityIndex,
+            duration: const Duration(milliseconds: 900),
+            curve: Curves.easeIn,
+          );
+        });
       }
     });
   }
 
   @override
   void dispose() {
-    _timer?.cancel();
-    _pageController.dispose();
+    activityController.dispose();
+    activityTimer?.cancel();
     super.dispose();
   }
 
@@ -82,9 +120,14 @@ class _ELearningScreenState extends State<ELearningScreen> {
             ),
             const SliverToBoxAdapter(
               child: LevelSelection(
-                  isSecondScreen: true,
-                  subjects: ['Civic Education', 'Mathematics', 'English', 'Physics', 'Chemistry'],
-
+                isSecondScreen: true,
+                subjects: [
+                  'Civic Education',
+                  'Mathematics',
+                  'English',
+                  'Physics',
+                  'Chemistry'
+                ],
               ),
             ),
           ],
@@ -94,85 +137,210 @@ class _ELearningScreenState extends State<ELearningScreen> {
   }
 
   Widget _buildTopContainers() {
-    return Column(
-      children: [
-        SizedBox(
-          height: 200,
-          child: PageView(
-            controller: _pageController,
-            onPageChanged: (int page) {
-              setState(() {
-                _currentPage = page;
-              });
-            },
-            children: [
-              _buildTopContainer(
-                date: '19TH FEBRUARY 2024',
-                title: 'First Continuous Assessment',
-                subject: 'Mathematics',
-                classes: 'JSS1, JSS2, JSS3',
-              ),
-              _buildTopContainer(
-                date: '22ND FEBRUARY 2024',
-                title: 'Second Continuous Assessment',
-                subject: 'English Language',
-                classes: 'JSS1, JSS2',
-              ),
-              _buildTopContainer(
-                date: '25TH FEBRUARY 2024',
-                title: 'Final Examination',
-                subject: 'Basic Science',
-                classes: 'JSS3',
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 8),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: List.generate(3, (index) => _buildDot(index)),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildDot(int index) {
-    bool isActive = _currentPage == index;
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 300),
-      margin: const EdgeInsets.symmetric(horizontal: 4),
-      width: isActive ? 12 : 8,
-      height: isActive ? 12 : 8,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        color: isActive ? Colors.orange : Colors.grey.withOpacity(0.3),
-      ),
-    );
-  }
-
-  Widget _buildTopContainer({
-    required String date,
-    required String title,
-    required String subject,
-    required String classes,
-  }) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-      decoration: const BoxDecoration(
-        color: AppColors.paymentTxtColor1,
-        borderRadius: BorderRadius.all(Radius.circular(12)),
-      ),
+    return Padding(
+      padding: const EdgeInsets.only(top: 8.0),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(date, style: AppTextStyles.normal500(fontSize: 14, color: AppColors.backgroundLight)),
-          const SizedBox(height: 8),
-          Text(title, style: AppTextStyles.normal700(fontSize: 22, color: AppColors.backgroundLight)),
-          const SizedBox(height: 8),
-          Text('Subject: $subject', style: AppTextStyles.normal600(fontSize: 16, color: AppColors.backgroundLight)),
-          const SizedBox(height: 8),
-          Text('For: $classes', style: AppTextStyles.normal600(fontSize: 16, color: AppColors.backgroundLight)),
+          CarouselSlider(
+            items: assessments.map((assessment) {
+              return Container(
+                margin: const EdgeInsets.symmetric(horizontal: 8.0),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(12.0),
+                  color: AppColors.paymentTxtColor1,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.1),
+                      blurRadius: 8,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8.0),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(8.0),
+                          color: Colors.white,
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Expanded(
+                              child: Text(
+                                '${assessment['subject']} ${assessment['title']}',
+                                style: const TextStyle(
+                                  color: Colors.black,
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                                overflow: TextOverflow
+                                    .ellipsis, // Add ellipsis for long text
+                                maxLines: 1, // Limit to one line
+                              ),
+                            ),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 8.0, vertical: 4.0),
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(8.0),
+                                color: AppColors.paymentTxtColor1,
+                              ),
+                              child: Row(
+                                children: [
+                                  SvgPicture.asset(
+                                    'assets/icons/student/calender-icon.svg',
+                                    width: 16,
+                                    height: 16,
+                                    colorFilter: const ColorFilter.mode(
+                                      Colors.white,
+                                      BlendMode.srcIn,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    assessment['date']!,
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 12,
+                                    ),
+                                    overflow: TextOverflow
+                                        .ellipsis, // Add ellipsis for long text
+                                    maxLines: 1, // Limit to one line
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 48),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        children: [
+                          const Column(
+                            children: [
+                              Text(
+                                'Time',
+                                style: TextStyle(
+                                  color: AppColors.backgroundLight,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              SizedBox(height: 4),
+                              Text(
+                                '08:00 AM',
+                                style: TextStyle(
+                                  color: AppColors.backgroundLight,
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ],
+                          ),
+                          Container(
+                            height: 40,
+                            width: 1,
+                            color: Colors.white,
+                            margin: const EdgeInsets.symmetric(horizontal: 8.0),
+                          ),
+                          Column(
+                            children: [
+                              const Text(
+                                'Classes',
+                                style: TextStyle(
+                                  color: AppColors.backgroundLight,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              SizedBox(
+                                width:
+                                    80, // Set a fixed width for the classes text
+                                child: Text(
+                                  assessment['classes']!,
+                                  textAlign: TextAlign.center,
+                                  style: const TextStyle(
+                                    color: AppColors.backgroundLight,
+                                    fontSize: 14,
+                                  ),
+                                  overflow: TextOverflow
+                                      .ellipsis, // Add ellipsis for long text
+                                  maxLines: 1, // Limit to one line
+                                ),
+                              ),
+                            ],
+                          ),
+                          Container(
+                            height: 40,
+                            width: 1,
+                            color: Colors.white,
+                            margin: const EdgeInsets.symmetric(horizontal: 8.0),
+                          ),
+                          const Column(
+                            children: [
+                              Text(
+                                'Duration',
+                                style: TextStyle(
+                                  color: AppColors.backgroundLight,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              SizedBox(height: 4),
+                              Text(
+                                '2h 30m',
+                                style: TextStyle(
+                                  color: AppColors.backgroundLight,
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            }).toList(),
+            options: CarouselOptions(
+              height: 185,
+              viewportFraction: 0.90,
+              enableInfiniteScroll: true,
+              autoPlay: true,
+              autoPlayInterval: const Duration(seconds: 5),
+              autoPlayCurve: Curves.easeIn,
+              enlargeCenterPage: false,
+              onPageChanged: (index, reason) {
+                setState(() {
+                  currentAssessmentIndex = index;
+                });
+              },
+            ),
+          ),
+          const SizedBox(height: 16),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: List.generate(
+              assessments.length,
+              (index) => Container(
+                width: 8,
+                height: 8,
+                margin: const EdgeInsets.symmetric(horizontal: 4),
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color:
+                      currentAssessmentIndex == index ? Colors.blue : Colors.grey,
+                ),
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -184,96 +352,75 @@ class _ELearningScreenState extends State<ELearningScreen> {
       children: [
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Text('Recent activity', style: AppTextStyles.normal600(fontSize: 18, color: AppColors.backgroundDark)),
+          child: Text(
+            'Recent activity',
+            style: AppTextStyles.normal600(
+                fontSize: 18, color: AppColors.backgroundDark),
+          ),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 16),
         SizedBox(
-          height: 200,
-          child: ListView.builder(
-            scrollDirection: Axis.horizontal,
-            itemCount: 5,
+          height: 110,
+          child: PageView.builder(
+            controller: activityController,
+            itemCount: activities.length,
             itemBuilder: (context, index) {
-              return Padding(
-                padding: EdgeInsets.only(left: index == 0 ? 16 : 8, right: 8, bottom: 8),
-                child: _buildActivityCard(index),
+              final activity = activities[index];
+              return Container(
+                margin: const EdgeInsets.symmetric(horizontal: 8.0),
+                child: Card(
+                  elevation: 4,
+                  margin: const EdgeInsets.symmetric(vertical: 8.0),
+                  child: Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Row(
+                      children: [
+                        CircleAvatar(
+                          backgroundImage: AssetImage(activity['avatar']!),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              RichText(
+                                text: TextSpan(
+                                  style: const TextStyle(
+                                      color: Colors.black, fontSize: 14),
+                                  children: [
+                                    TextSpan(text: '${activity['name']} '),
+                                    TextSpan(
+                                      text: '${activity['activity']} ',
+                                      style: const TextStyle(
+                                          fontWeight: FontWeight.normal),
+                                    ),
+                                    TextSpan(
+                                      text: '${activity['subject']}',
+                                      style: const TextStyle(
+                                          fontWeight: FontWeight.bold),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                activity['timestamp']!,
+                                style: const TextStyle(
+                                    color: Colors.grey, fontSize: 12),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
               );
             },
           ),
         ),
       ],
-    );
-  }
-
-  Widget _buildActivityCard(int index) {
-    final List<Map<String, String>> cardData = [
-      {'day': 'Yesterday', 'topic': 'Homeostasis', 'teacher': 'Dennis Toochi', 'subject': 'Basic Science', 'class': 'JSS2'},
-      {'day': 'Today', 'topic': 'Photosynthesis', 'teacher': 'Joy Smith', 'subject': 'Biology', 'class': 'JSS3'},
-    ];
-
-    final data = cardData[index % cardData.length];
-
-    return Container(
-      width: 265,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(8),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.3),
-            spreadRadius: 1,
-            blurRadius: 3,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Expanded(
-            flex: 1,
-            child: Container(
-              decoration: const BoxDecoration(
-                color: Colors.orange,
-                borderRadius: BorderRadius.vertical(top: Radius.circular(8)),
-              ),
-              child: Center(
-                child: SvgPicture.asset(
-                  'assets/icons/e_learning/subject.svg', // Replace with actual icon
-                  width: 48,
-                  height: 48,
-                ),
-              ),
-            ),
-          ),
-          Expanded(
-            flex: 1,
-            child: Padding(
-              padding: const EdgeInsets.all(8),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(data['day']!, style: AppTextStyles.normal500(fontSize: 14, color: AppColors.backgroundDark)),
-                  Text(data['topic']!, style: AppTextStyles.normal600(fontSize: 18, color: AppColors.primaryLight)),
-                  Row(
-                    children: [
-                      const Icon(Icons.person, size: 12, color: Colors.grey),
-                      const SizedBox(width: 4),
-                      Expanded(
-                        child: Text(
-                          '${data['teacher']} • ${data['subject']} • ${data['class']}',
-                          style: AppTextStyles.normal500(fontSize: 14, color: AppColors.textGray),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
     );
   }
 }

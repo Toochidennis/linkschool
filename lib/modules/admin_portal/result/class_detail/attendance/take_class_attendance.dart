@@ -3,13 +3,12 @@ import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/buttons/custom_floating_save_button.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 
-
-class TakeCourseAttendance extends StatefulWidget {
+class TakeClassAttendance extends StatefulWidget {
   @override
-  State<TakeCourseAttendance> createState() => _TakeCourseAttendanceState();
+  State<TakeClassAttendance> createState() => _TakeClassAttendanceState();
 }
 
-class _TakeCourseAttendanceState extends State<TakeCourseAttendance> {
+class _TakeClassAttendanceState extends State<TakeClassAttendance> {
   List<bool> _selectedStudents = List.generate(12, (_) => false);
   bool _selectAll = false;
   List<int> _selectedRowIndices = [];
@@ -73,7 +72,7 @@ class _TakeCourseAttendanceState extends State<TakeCourseAttendance> {
     debugPrint('Save button pressed');
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
-        content: Text('Attendance saved successfully'),
+        content: Text('Class attendance saved successfully'),
       ),
     );
   }
@@ -84,9 +83,9 @@ class _TakeCourseAttendanceState extends State<TakeCourseAttendance> {
       appBar: AppBar(
         backgroundColor: AppColors.backgroundLight,
         title: Text(
-          'Wednesday 20 July, 2024',
+          'JSS 2',
           style: AppTextStyles.normal500(
-              fontSize: 18, color: AppColors.backgroundDark),
+              fontSize: 18, color: AppColors.primaryLight,),
         ),
         leading: IconButton(
           onPressed: () {

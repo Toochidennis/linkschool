@@ -4,6 +4,8 @@ import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:linkschool/modules/common/constants.dart';
+import 'package:linkschool/modules/common/buttons/custom_floating_save_button.dart';
+
 import '../../common/app_colors.dart';
 import '../../common/text_styles.dart';
 
@@ -157,33 +159,15 @@ class _AssessmentSettingScreenState extends State<AssessmentSettingScreen> {
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton(
+      floatingActionButton: CustomFloatingSaveButton(
         onPressed: () {
           log('Save settings button pressed');
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-                content: Text('Assessment settings saved successfully')),
+              content: Text('Assessment settings saved successfully'),
+            ),
           );
         },
-        shape: const CircleBorder(),
-        backgroundColor: AppColors.primaryLight,
-        child: Container(
-          decoration: BoxDecoration(
-            borderRadius: const BorderRadius.all(Radius.circular(100)),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.3),
-                blurRadius: 7,
-                spreadRadius: 7,
-                offset: const Offset(3, 5),
-              )
-            ],
-          ),
-          child: const Icon(
-            Icons.save,
-            color: AppColors.backgroundLight,
-          ),
-        ),
       ),
     );
   }
