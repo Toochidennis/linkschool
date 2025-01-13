@@ -86,7 +86,7 @@ class CustomCommentInput extends StatelessWidget {
   final double bottomPadding;
 
   const CustomCommentInput({
-    Key? key,
+    super.key,
     this.controller,
     this.hintText = 'Add a comment...',
     this.onSendPressed,
@@ -102,7 +102,7 @@ class CustomCommentInput extends StatelessWidget {
     this.fontSize = 14,
     this.topPadding = 22.0, // Default top padding
     this.bottomPadding = 8.0, // Default bottom padding
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

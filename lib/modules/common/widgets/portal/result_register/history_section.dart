@@ -5,7 +5,7 @@ import 'package:linkschool/modules/admin_portal/result/class_detail/registration
 
 
 class HistorySection extends StatelessWidget {
-  const HistorySection({Key? key}) : super(key: key);
+  const HistorySection({super.key});
 
   @override
   Widget build(BuildContext context) {

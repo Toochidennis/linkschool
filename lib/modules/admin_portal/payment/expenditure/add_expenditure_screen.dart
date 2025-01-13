@@ -4,7 +4,7 @@ import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/common/widgets/portal/profile/add_vendor_overlay.dart';
 
 class AddExpenditureScreen extends StatefulWidget {
-  const AddExpenditureScreen({Key? key}) : super(key: key);
+  const AddExpenditureScreen({super.key});
 
   @override
   State<AddExpenditureScreen> createState() => _AddExpenditureScreenState();

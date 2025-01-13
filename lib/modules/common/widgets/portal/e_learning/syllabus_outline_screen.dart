@@ -11,12 +11,12 @@ class SyllabusOutlineScreen extends StatelessWidget {
   final String selectedTeacher;
 
   const SyllabusOutlineScreen({
-    Key? key,
+    super.key,
     required this.title,
     required this.description,
     required this.selectedClass,
     required this.selectedTeacher,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

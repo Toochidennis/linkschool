@@ -4,6 +4,8 @@ import 'package:linkschool/modules/common/buttons/custom_floating_save_button.da
 import 'package:linkschool/modules/common/text_styles.dart';
 
 class TakeClassAttendance extends StatefulWidget {
+  const TakeClassAttendance({super.key});
+
   @override
   State<TakeClassAttendance> createState() => _TakeClassAttendanceState();
 }

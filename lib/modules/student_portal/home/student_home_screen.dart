@@ -222,7 +222,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
                       ),
                     ],
                   ),
-                  Container(
+                  SizedBox(
                     width: double.infinity,
                     child: _buildFeedCard(
                         'This is a mock data showing the info details of a recording.',
@@ -231,7 +231,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
                         0),
                   ),
                   const SizedBox(height: 8),
-                  Container(
+                  SizedBox(
                     width: double.infinity,
                     child: _buildFeedCard(
                         'This is a mock data showing the info details of a recording.',
@@ -240,7 +240,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
                         1),
                   ),
                   const SizedBox(height: 12),
-                  Container(
+                  SizedBox(
                     width: double.infinity,
                     child: _buildFeedCard(
                         'This is a mock data showing the info details of a recording.',

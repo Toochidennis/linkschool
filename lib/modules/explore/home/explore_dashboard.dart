@@ -12,11 +12,11 @@ class ExploreDashboard extends StatefulWidget {
   final Function(int) onTabSelected;
 
   const ExploreDashboard({
-    Key? key,
+    super.key,
     required this.onSwitch,
     required this.selectedIndex,
     required this.onTabSelected,
-  }) : super(key: key);
+  });
 
   @override
   State<ExploreDashboard> createState() => _ExploreDashboardState();

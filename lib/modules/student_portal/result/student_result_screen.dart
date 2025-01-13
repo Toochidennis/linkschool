@@ -16,8 +16,7 @@ class StudentResultScreen extends StatefulWidget {
   final String studentName;
   final String className;
   const StudentResultScreen(
-      {Key? key, required this.studentName, required this.className})
-      : super(key: key);
+      {super.key, required this.studentName, required this.className});
 
   @override
   State<StudentResultScreen> createState() => _StudentResultScreenState();

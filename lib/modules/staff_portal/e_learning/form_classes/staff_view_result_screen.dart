@@ -4,7 +4,7 @@ import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 
 class StaffViewResultScreen extends StatefulWidget {
-  const StaffViewResultScreen({Key? key}) : super(key: key);
+  const StaffViewResultScreen({super.key});
 
   @override
   State<StaffViewResultScreen> createState() => _StaffViewResultScreenState();
@@ -183,7 +183,7 @@ class _StaffViewResultScreenState extends State<StaffViewResultScreen> {
                 ),
               ),
             );
-          }).toList(),
+          }),
         ],
       ),
     );
@@ -233,7 +233,7 @@ class _StaffViewResultScreenState extends State<StaffViewResultScreen> {
                 style: TextStyle(fontSize: 14),
               ),
             );
-          }).toList(),
+          }),
         ],
       ),
     );

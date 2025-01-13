@@ -7,7 +7,7 @@ class SelectClassButton extends StatefulWidget {
   final String text;
   final VoidCallback onTap;
 
-  const SelectClassButton({Key? key, required this.text, required this.onTap}) : super(key: key);
+  const SelectClassButton({super.key, required this.text, required this.onTap});
 
   @override
   _SelectClassButtonState createState() => _SelectClassButtonState();

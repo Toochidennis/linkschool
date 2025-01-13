@@ -6,8 +6,7 @@ import 'package:linkschool/modules/student_portal/elearning/forum_screen.dart';
 
 class CourseDetailScreen extends StatefulWidget {
   final String courseTitle;
-  const CourseDetailScreen({Key? key, required this.courseTitle})
-      : super(key: key);
+  const CourseDetailScreen({super.key, required this.courseTitle});
 
   @override
   _CourseDetailScreenState createState() => _CourseDetailScreenState();

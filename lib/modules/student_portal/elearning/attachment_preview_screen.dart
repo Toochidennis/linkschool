@@ -21,7 +21,7 @@ class Comment {
 class AttachmentPreviewScreen extends StatefulWidget {
   final List<AttachmentItem> attachments;
 
-  const AttachmentPreviewScreen({Key? key, required this.attachments}) : super(key: key);
+  const AttachmentPreviewScreen({super.key, required this.attachments});
 
   @override
   State<AttachmentPreviewScreen> createState() => _AttachmentPreviewScreenState();
@@ -31,7 +31,7 @@ class _AttachmentPreviewScreenState extends State<AttachmentPreviewScreen> {
   late double opacity;
   final TextEditingController _commentController = TextEditingController();
   final List<Comment> _comments = [];
-   List<AttachmentItem> _attachments = [];
+   final List<AttachmentItem> _attachments = [];
 
   final String networkImage = 'https://img.freepik.com/free-vector/gradient-human-rights-day-background_52683-149974.jpg?t=st=1717832829~exp=1717833429~hmac=3e938edcacd7fef2a791b36c7d3decbf64248d9760dd7da0a304acee382b8a86';
 
@@ -392,8 +392,8 @@ Future<void> _uploadFile() async {
 }
 
 Future<void> _takePhoto() async {
-  final ImagePicker _picker = ImagePicker();
-  final XFile? photo = await _picker.pickImage(source: ImageSource.camera);
+  final ImagePicker picker = ImagePicker();
+  final XFile? photo = await picker.pickImage(source: ImageSource.camera);
   if (photo != null) {
     _addAttachment('Photo: ${photo.name}', 'assets/icons/e_learning/camera.svg');
     // _navigateToAttachmentPreview();
@@ -402,8 +402,8 @@ Future<void> _takePhoto() async {
 
 
   Future<void> _recordVideo() async {
-    final ImagePicker _picker = ImagePicker();
-    final XFile? video = await _picker.pickVideo(source: ImageSource.camera);
+    final ImagePicker picker = ImagePicker();
+    final XFile? video = await picker.pickVideo(source: ImageSource.camera);
     if (video != null) {
       _addAttachment('Video: ${video.name}', 'assets/icons/e_learning/video.svg');
     }

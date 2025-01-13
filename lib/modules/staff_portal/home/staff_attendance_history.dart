@@ -5,7 +5,7 @@ import 'dart:math';
 
 class StaffAttendanceHistoryList extends StatefulWidget {
   final String date;
-  const StaffAttendanceHistoryList({Key? key, required this.date}) : super(key: key);
+  const StaffAttendanceHistoryList({super.key, required this.date});
 
   @override
   _StaffAttendanceHistoryListState createState() => _StaffAttendanceHistoryListState();

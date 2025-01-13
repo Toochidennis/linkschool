@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 
 class SubjectSelection extends StatefulWidget {
-  const SubjectSelection({Key? key}) : super(key: key);
+  const SubjectSelection({super.key});
 
   @override
   _SubjectSelectionState createState() => _SubjectSelectionState();

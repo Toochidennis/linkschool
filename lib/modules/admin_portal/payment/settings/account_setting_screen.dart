@@ -98,13 +98,13 @@ class _AccountSettingScreenState extends State<AccountSettingScreen> {
         ),
       ),
       floatingActionButton: FloatingActionButton(
+        onPressed: () => _showAddFeeOverlay(context),
+        backgroundColor: AppColors.videoColor4,
         child: Icon(
           Icons.add,
           color: AppColors.backgroundLight,
           size: 24,
         ),
-        onPressed: () => _showAddFeeOverlay(context),
-        backgroundColor: AppColors.videoColor4,
       ),
     );
   }
@@ -206,11 +206,6 @@ class _AccountSettingScreenState extends State<AccountSettingScreen> {
                 ),
                 SizedBox(height: 16),
                 ElevatedButton(
-                  child: Text(
-                    'Add',
-                    style: AppTextStyles.normal600(
-                        fontSize: 16, color: AppColors.backgroundLight),
-                  ),
                   onPressed: () {
                     Navigator.pop(context);
                     Navigator.push(
@@ -224,6 +219,11 @@ class _AccountSettingScreenState extends State<AccountSettingScreen> {
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8),
                     ),
+                  ),
+                  child: Text(
+                    'Add',
+                    style: AppTextStyles.normal600(
+                        fontSize: 16, color: AppColors.backgroundLight),
                   ),
                 ),
               ],

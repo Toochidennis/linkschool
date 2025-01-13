@@ -5,6 +5,8 @@ import 'package:linkschool/modules/common/text_styles.dart';
 
 
 class TakeCourseAttendance extends StatefulWidget {
+  const TakeCourseAttendance({super.key});
+
   @override
   State<TakeCourseAttendance> createState() => _TakeCourseAttendanceState();
 }

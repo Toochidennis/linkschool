@@ -12,7 +12,7 @@ class CustomElevatedAppbarButton extends StatelessWidget {
   final double borderRadius;
 
   const CustomElevatedAppbarButton({
-    Key? key,
+    super.key,
     required this.text,
     required this.onPressed,
     this.backgroundColor = AppColors.videoColor4,
@@ -20,7 +20,7 @@ class CustomElevatedAppbarButton extends StatelessWidget {
     this.fontSize = 14,
     this.horizontalPadding = 8.0,
     this.borderRadius = 4.0,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

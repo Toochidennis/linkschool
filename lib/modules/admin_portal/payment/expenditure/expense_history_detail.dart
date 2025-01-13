@@ -9,7 +9,7 @@ class ExpenseHistoryDetail extends StatefulWidget {
   final String studentName;
   final String amount;
 
-  const ExpenseHistoryDetail({Key? key, required this.studentName, required this.amount}) : super(key: key);
+  const ExpenseHistoryDetail({super.key, required this.studentName, required this.amount});
 
   @override
   State<ExpenseHistoryDetail> createState() => _ExpenseHistoryDetailState();

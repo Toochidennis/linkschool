@@ -20,14 +20,14 @@ class _ExpenditureScreenState extends State<ExpenditureScreen>
     with TickerProviderStateMixin {
   late double opacity;
 
-  bool _isOverlayVisible = false;
+  final bool _isOverlayVisible = false;
   late TabController _tabController;
   int _currentTabIndex = 0;
   DateTime _fromDate = DateTime.now();
   DateTime _toDate = DateTime.now();
   int _selectedReportType = 0;
   String _selectedDateRange = 'Custom';
-  String _selectedGrouping = 'Month';
+  final String _selectedGrouping = 'Month';
   String _selectedLevel = 'JSS1';
   String _selectedClass = 'JSS1A';
     bool _isAmountHidden = false;
@@ -521,7 +521,7 @@ class _ExpenditureScreenState extends State<ExpenditureScreen>
                 ],
               ),
             );
-          }).toList(),
+          }),
         ],
         FloatingActionButton(
           backgroundColor: AppColors.videoColor4,
@@ -604,7 +604,7 @@ class _ExpenditureScreenState extends State<ExpenditureScreen>
   }
 
   Widget _buildReportTypeTab(String text, int index) {
-    return Container(
+    return SizedBox(
       height: 50,
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,

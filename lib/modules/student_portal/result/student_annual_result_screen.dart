@@ -4,7 +4,7 @@ import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 
 class StudentAnnualResultScreen extends StatefulWidget {
-  const StudentAnnualResultScreen({Key? key}) : super(key: key);
+  const StudentAnnualResultScreen({super.key});
 
   @override
   State<StudentAnnualResultScreen> createState() =>
@@ -249,7 +249,7 @@ class _StudentAnnualResultScreenState extends State<StudentAnnualResultScreen> {
                 ),
               ),
             );
-          }).toList(),
+          }),
         ],
       ),
     );
@@ -300,7 +300,7 @@ class _StudentAnnualResultScreenState extends State<StudentAnnualResultScreen> {
                 style: const TextStyle(fontSize: 14),
               ),
             );
-          }).toList(),
+          }),
         ],
       ),
     );

@@ -11,10 +11,10 @@ class TopContainer extends StatelessWidget {
   final Function(String?) onTermChanged;
 
   const TopContainer({
-    Key? key,
+    super.key,
     required this.selectedTerm,
     required this.onTermChanged,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

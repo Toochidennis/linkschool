@@ -81,7 +81,7 @@ class _AssessmentSettingScreenState extends State<AssessmentSettingScreen> {
                   builder: (BuildContext context) {
                     return AlertDialog(
                       title: const Text('Select Level'),
-                      content: Container(
+                      content: SizedBox(
                         width: double.maxFinite,
                         child: ListView(
                           shrinkWrap: true,

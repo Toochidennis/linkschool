@@ -16,7 +16,7 @@ class StaffAssignmentDetailsScreen extends StatefulWidget {
 class _StaffAssignmentDetailsScreenState extends State<StaffAssignmentDetailsScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
-  TextEditingController _commentController = TextEditingController();
+  final TextEditingController _commentController = TextEditingController();
   List<Comment> comments = [];
   bool _isAddingComment = false;
   late double opacity;
@@ -318,7 +318,7 @@ class _StaffAssignmentDetailsScreenState extends State<StaffAssignmentDetailsScr
                   AppTextStyles.normal600(fontSize: 18.0, color: Colors.black),
             ),
           ),
-          ...comments.map(_buildCommentItem).toList(),
+          ...comments.map(_buildCommentItem),
           _buildDivider(),
         ],
         Padding(

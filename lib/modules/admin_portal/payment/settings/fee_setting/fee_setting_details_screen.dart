@@ -8,8 +8,7 @@ import 'package:linkschool/modules/common/text_styles.dart';
 class FeeSettingDetailsScreen extends StatefulWidget {
   final String className;
 
-  const FeeSettingDetailsScreen({Key? key, required this.className})
-      : super(key: key);
+  const FeeSettingDetailsScreen({super.key, required this.className});
 
   @override
   State<FeeSettingDetailsScreen> createState() =>
@@ -63,7 +62,9 @@ class _FeeSettingDetailsScreenState extends State<FeeSettingDetailsScreen> {
   @override
   void dispose() {
     // Dispose of focus nodes
-    _focusNodes.values.forEach((node) => node.dispose());
+    for (var node in _focusNodes.values) {
+      node.dispose();
+    }
     super.dispose();
   }
 
@@ -272,7 +273,7 @@ void _showClassSelectionBottomSheet() {
                             ],
                           ),
                         );
-                      }).toList(),
+                      }),
                         const SizedBox(height: 16),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -284,7 +285,7 @@ void _showClassSelectionBottomSheet() {
                                   color: AppColors.paymentTxtColor5),
                             ),
                             Text(
-                              '${totalAmount.toStringAsFixed(2)}',
+                              totalAmount.toStringAsFixed(2),
                               style: AppTextStyles.normal600(
                                   fontSize: 18,
                                   color: AppColors.backgroundDark),

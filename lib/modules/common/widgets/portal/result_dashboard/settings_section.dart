@@ -10,7 +10,7 @@ import 'package:linkschool/modules/admin_portal/result/grading_settings.dart';
 
 
 class SettingsSection extends StatelessWidget {
-  const SettingsSection({Key? key}) : super(key: key);
+  const SettingsSection({super.key});
 
   @override
   Widget build(BuildContext context) {

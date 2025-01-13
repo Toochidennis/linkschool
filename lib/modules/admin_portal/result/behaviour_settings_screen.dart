@@ -93,11 +93,11 @@ class SkillsList extends StatelessWidget {
   final Function(int) onDelete;
 
   const SkillsList({
-    Key? key,
+    super.key,
     required this.skills,
     required this.onEdit,
     required this.onDelete,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -121,11 +121,11 @@ class SkillItem extends StatefulWidget {
   final VoidCallback onDelete;
 
   const SkillItem({
-    Key? key,
+    super.key,
     required this.skill,
     required this.onEdit,
     required this.onDelete,
-  }) : super(key: key);
+  });
 
   @override
   _SkillItemState createState() => _SkillItemState();
@@ -234,10 +234,10 @@ class CustomInputField extends StatefulWidget {
   final Function(String) onSubmitted;
 
   const CustomInputField({
-    Key? key,
+    super.key,
     required this.hintText,
     required this.onSubmitted,
-  }) : super(key: key);
+  });
 
   @override
   _CustomInputFieldState createState() => _CustomInputFieldState();

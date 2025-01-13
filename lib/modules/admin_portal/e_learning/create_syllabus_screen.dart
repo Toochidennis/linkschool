@@ -9,7 +9,7 @@ import 'package:linkschool/modules/common/widgets/portal/e_learning/select_teach
 class CreateSyllabusScreen extends StatefulWidget {
   final Map<String, dynamic>? syllabusData; // Optional parameter for editing
 
-  const CreateSyllabusScreen({Key? key, this.syllabusData}) : super(key: key);
+  const CreateSyllabusScreen({super.key, this.syllabusData});
 
   @override
   _CreateSyllabusScreenState createState() => _CreateSyllabusScreenState();

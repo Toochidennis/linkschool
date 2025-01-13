@@ -14,8 +14,7 @@ import 'package:linkschool/modules/admin_portal/e_learning/View/quiz/preview_qui
 class QuizAssessmentScreen extends StatefulWidget {
   final Question question;
 
-  const QuizAssessmentScreen({Key? key, required this.question})
-      : super(key: key);
+  const QuizAssessmentScreen({super.key, required this.question});
 
   @override
   _QuizAssessmentScreenState createState() => _QuizAssessmentScreenState();
@@ -24,7 +23,7 @@ class QuizAssessmentScreen extends StatefulWidget {
 class _QuizAssessmentScreenState extends State<QuizAssessmentScreen> {
   bool _isTimerStopped = false;
   int _currentQuestionIndex = 0;
-  int _totalQuestions = 3;
+  final int _totalQuestions = 3;
   bool isTimerStopped = false;
   String? _selectedOption;
   bool _isAnswered = false;
@@ -450,35 +449,31 @@ class OptionsQuestion extends QuizQuestion {
   final List<String> options;
 
   OptionsQuestion(
-      {required String topic,
-      required String questionText,
-      required this.options})
-      : super(topic: topic, questionText: questionText);
+      {required super.topic,
+      required super.questionText,
+      required this.options});
 }
 
 class TextQuestion extends OptionsQuestion {
   TextQuestion(
-      {required String topic,
-      required String questionText,
-      required List<String> options})
-      : super(topic: topic, questionText: questionText, options: options);
+      {required super.topic,
+      required super.questionText,
+      required super.options});
 }
 
 class ImageQuestion extends OptionsQuestion {
   final String imageUrl;
 
   ImageQuestion(
-      {required String topic,
-      required String questionText,
+      {required super.topic,
+      required super.questionText,
       required this.imageUrl,
-      required List<String> options})
-      : super(topic: topic, questionText: questionText, options: options);
+      required super.options});
 }
 
 class TypedAnswerQuestion extends QuizQuestion {
   final String? imageUrl;
 
   TypedAnswerQuestion(
-      {required String topic, required String questionText, this.imageUrl})
-      : super(topic: topic, questionText: questionText);
+      {required super.topic, required super.questionText, this.imageUrl});
 }

@@ -9,6 +9,8 @@ import 'package:linkschool/modules/staff_portal/staff_dashboard.dart';
 import 'package:linkschool/modules/admin_portal/home/portal_dashboard.dart';
 
 class AppNavigationFlow extends StatefulWidget {
+  const AppNavigationFlow({super.key});
+
   @override
   _AppNavigationFlowState createState() => _AppNavigationFlowState();
 }

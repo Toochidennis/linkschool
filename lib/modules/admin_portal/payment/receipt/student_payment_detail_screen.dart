@@ -11,8 +11,7 @@ import 'package:linkschool/modules/admin_portal/payment/settings/vendor/vendor_t
 class StudentPaymentDetailsScreen extends StatefulWidget {
   final StudentPayment student;
 
-  const StudentPaymentDetailsScreen({Key? key, required this.student})
-      : super(key: key);
+  const StudentPaymentDetailsScreen({super.key, required this.student});
 
   @override
   State<StudentPaymentDetailsScreen> createState() => _StudentPaymentDetailsScreenState();

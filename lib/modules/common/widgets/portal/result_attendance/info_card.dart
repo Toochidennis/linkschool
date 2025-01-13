@@ -5,6 +5,8 @@ import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/common/utils/dash_line_utils.dart';
 
 class InfoCard extends StatelessWidget {
+  const InfoCard({super.key});
+
   @override
   Widget build(BuildContext context) {
     return SizedBox(

@@ -7,7 +7,7 @@ class CourseRegistrationScreen extends StatefulWidget {
   final String studentName;
   final int coursesRegistered;
 
-  const CourseRegistrationScreen({Key? key, required this.studentName, required this.coursesRegistered}) : super(key: key);
+  const CourseRegistrationScreen({super.key, required this.studentName, required this.coursesRegistered});
   @override
   State createState() => _CourseRegistrationScreenState();
 }

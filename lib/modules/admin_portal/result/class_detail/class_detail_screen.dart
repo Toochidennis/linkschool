@@ -12,8 +12,7 @@ import 'package:linkschool/modules/common/buttons/custom_elevated_appbar_button.
 class ClassDetailScreen extends StatelessWidget {
   final String className;
 
-  const ClassDetailScreen({Key? key, required this.className})
-      : super(key: key);
+  const ClassDetailScreen({super.key, required this.className});
 
   @override
   Widget build(BuildContext context) {

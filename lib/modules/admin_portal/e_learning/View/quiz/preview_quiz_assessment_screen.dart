@@ -243,7 +243,7 @@ class PreviewQuizAssessmentScreen extends StatelessWidget {
               alignment: Alignment.centerRight,
               // Use the dynamic color for the marks
               child: Text(
-                '${marks} marks',
+                '$marks marks',
                 style: AppTextStyles.normal600(fontSize: 16, color: _getMarksColor(status)),
               ),
             ),

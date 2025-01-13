@@ -9,8 +9,7 @@ import 'package:linkschool/modules/admin_portal/payment/expenditure/expense_shar
 class ExpenseTransactionDetail extends StatefulWidget {
   final String amount;
 
-  const ExpenseTransactionDetail({Key? key, required this.amount})
-      : super(key: key);
+  const ExpenseTransactionDetail({super.key, required this.amount});
 
   @override
   State<ExpenseTransactionDetail> createState() =>
@@ -85,7 +84,7 @@ class _ExpenseTransactionDetailState extends State<ExpenseTransactionDetail> {
                   onPressed: () => _showShareReciept(),
                   style: OutlinedButton.styleFrom(
                     side: const BorderSide(
-                      color: const Color.fromRGBO(47, 85, 221, 1),
+                      color: Color.fromRGBO(47, 85, 221, 1),
                     ),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8),

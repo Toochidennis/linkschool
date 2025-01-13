@@ -350,7 +350,7 @@ class _PaymentReceivedScreenState extends State<PaymentReceivedScreen> {
                             onPressed: () {},
                             style: OutlinedButton.styleFrom(
                               side: const BorderSide(
-                                color: const Color.fromRGBO(47, 85, 221, 1),
+                                color: Color.fromRGBO(47, 85, 221, 1),
                               ),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(8),

@@ -3,7 +3,7 @@ import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 
 class AnswersTabWidget extends StatefulWidget {
-  const AnswersTabWidget({Key? key}) : super(key: key);
+  const AnswersTabWidget({super.key});
 
   @override
   _AnswersTabWidgetState createState() => _AnswersTabWidgetState();

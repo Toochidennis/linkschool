@@ -6,6 +6,8 @@ import 'package:linkschool/modules/admin_portal/result/class_detail/attendance/t
 import 'package:linkschool/modules/admin_portal/result/class_detail/attendance/take_class_attendance.dart'; // Import the new screen
 
 class TakeAttendanceButton extends StatelessWidget {
+  const TakeAttendanceButton({super.key});
+
   @override
   Widget build(BuildContext context) {
     return CustomLongElevatedButton(

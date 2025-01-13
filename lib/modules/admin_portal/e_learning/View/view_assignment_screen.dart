@@ -19,7 +19,7 @@ class ViewAssignmentScreen extends StatefulWidget {
 class _ViewAssignmentScreenState extends State<ViewAssignmentScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
-  TextEditingController _commentController = TextEditingController();
+  final TextEditingController _commentController = TextEditingController();
   List<Comment> comments = [];
   bool _isAddingComment = false;
   late double opacity;
@@ -283,7 +283,7 @@ class _ViewAssignmentScreenState extends State<ViewAssignmentScreen>
                   AppTextStyles.normal600(fontSize: 18.0, color: Colors.black),
             ),
           ),
-          ...comments.map(_buildCommentItem).toList(),
+          ...comments.map(_buildCommentItem),
           _buildDivider(),
         ],
         Padding(

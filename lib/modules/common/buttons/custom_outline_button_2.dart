@@ -10,7 +10,7 @@ class CustomOutlineButton2 extends StatelessWidget {
   final double buttonHeight;
 
   const CustomOutlineButton2({
-    Key? key,
+    super.key,
     required this.onPressed,
     required this.text,
     this.borderColor = Colors.blue, // Default border color
@@ -18,7 +18,7 @@ class CustomOutlineButton2 extends StatelessWidget {
     this.fontSize = 18, // Default font size
     this.borderRadius = 10.0, // Default border radius
     this.buttonHeight = 48, // Default button height
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

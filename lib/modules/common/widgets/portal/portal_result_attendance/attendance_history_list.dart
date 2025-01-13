@@ -7,6 +7,8 @@ class AttendanceHistoryList extends StatelessWidget {
   final List<String> subjects = ['English Language', 'Mathematics', 'Physics', 'Chemistry', 'Biology', 'History', 'Geography', 'Literature'];
   final List<String> dates = ['Thursday, 20 July, 2026', 'Friday, 21 July, 2026', 'Monday, 24 July, 2026', 'Tuesday, 25 July, 2026', 'Wednesday, 26 July, 2026', 'Thursday, 27 July, 2026', 'Friday, 28 July, 2026', 'Monday, 31 July, 2026'];
 
+  AttendanceHistoryList({super.key});
+
   @override
   Widget build(BuildContext context) {
     return Container(

@@ -6,6 +6,8 @@ import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/staff_portal/home/staff_profile_screen.dart';
 
 class StaffCoursesScreen extends StatefulWidget {
+  const StaffCoursesScreen({super.key});
+
   @override
   State<StaffCoursesScreen> createState() => _StaffCoursesScreenState();
 }

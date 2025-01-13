@@ -4,7 +4,7 @@ import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 
 class StaffSkillsBehaviourScreen extends StatefulWidget {
-  const StaffSkillsBehaviourScreen({Key? key}) : super(key: key);
+  const StaffSkillsBehaviourScreen({super.key});
 
   @override
   State<StaffSkillsBehaviourScreen> createState() => _StaffSkillsBehaviourScreenState();
@@ -196,7 +196,7 @@ class _StaffSkillsBehaviourScreenState extends State<StaffSkillsBehaviourScreen>
                 ),
               ),
             );
-          }).toList(),
+          }),
         ],
       ),
     );
@@ -246,7 +246,7 @@ class _StaffSkillsBehaviourScreenState extends State<StaffSkillsBehaviourScreen>
                 style: TextStyle(fontSize: 14),
               ),
             );
-          }).toList(),
+          }),
         ],
       ),
     );

@@ -20,10 +20,10 @@ class ReceiptScreen extends StatefulWidget {
 class _ReceiptScreenState extends State<ReceiptScreen>
     with TickerProviderStateMixin {
   late double opacity;
-  bool _isOverlayVisible = false;
+  final bool _isOverlayVisible = false;
   int _currentTabIndex = 0;
   String _selectedDateRange = 'Custom';
-  String _selectedGrouping = 'Month';
+  final String _selectedGrouping = 'Month';
   String _selectedLevel = 'JSS1';
   String _selectedClass = 'JSS1A';
   DateTime _fromDate = DateTime.now();
@@ -381,7 +381,7 @@ class _ReceiptScreenState extends State<ReceiptScreen>
                 ],
               ),
             );
-          }).toList(),
+          }),
         ],
         FloatingActionButton(
           backgroundColor: AppColors.videoColor4,
@@ -968,7 +968,7 @@ class _ReceiptScreenState extends State<ReceiptScreen>
   }
 
   Widget _buildReportTypeTab(String text, int index) {
-    return Container(
+    return SizedBox(
       height: 50,
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,

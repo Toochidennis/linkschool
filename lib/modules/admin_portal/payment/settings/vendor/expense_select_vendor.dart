@@ -170,7 +170,7 @@ class _ExpenseSelectVendorState extends State<ExpenseSelectVendor> {
                           child: OutlinedButton(
                             onPressed: () {},
                             style: OutlinedButton.styleFrom(
-                              side: const BorderSide(color: const Color.fromRGBO(47, 85, 221, 1),),
+                              side: const BorderSide(color: Color.fromRGBO(47, 85, 221, 1),),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(8),
                               ),

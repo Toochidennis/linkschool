@@ -15,12 +15,12 @@ class StudentDashboard extends StatefulWidget {
   final VoidCallback onLogout;
 
   const StudentDashboard({
-    Key? key,
+    super.key,
     required this.onSwitch,
     required this.selectedIndex,
     required this.onTabSelected,
     required this.onLogout,
-  }) : super(key: key);
+  });
 
   @override
   _StudentDashboardState createState() => _StudentDashboardState();

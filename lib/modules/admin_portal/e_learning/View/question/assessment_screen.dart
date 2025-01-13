@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 
 class AssessmentScreen extends StatefulWidget {
-  const AssessmentScreen({Key? key}) : super(key: key);
+  const AssessmentScreen({super.key});
 
   @override
   _AssessmentScreenState createState() => _AssessmentScreenState();

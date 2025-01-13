@@ -18,7 +18,7 @@ import 'package:linkschool/modules/common/widgets/portal/student/student_customi
 class PaymentDashboardScreen extends StatefulWidget {
   final VoidCallback onLogout;
 
-  const PaymentDashboardScreen({Key? key, required this.onLogout}) : super(key: key);
+  const PaymentDashboardScreen({super.key, required this.onLogout});
 
   @override
   State<PaymentDashboardScreen> createState() => _PaymentDashboardScreenState();
@@ -214,7 +214,7 @@ class _PaymentDashboardScreenState extends State<PaymentDashboardScreen> {
                         },
                         child: const Text(
                           'See all',
-                          style: const TextStyle(
+                          style: TextStyle(
                             color: AppColors.paymentTxtColor1,
                             fontSize: 16,
                             decoration: TextDecoration.underline,

@@ -6,7 +6,7 @@ import 'package:linkschool/modules/common/text_styles.dart';
 class TermResultScreen extends StatefulWidget {
   final String termTitle;
 
-  const TermResultScreen({Key? key, required this.termTitle}) : super(key: key);
+  const TermResultScreen({super.key, required this.termTitle});
 
   @override
   State<TermResultScreen> createState() => _TermResultScreenState();
@@ -231,7 +231,7 @@ class _TermResultScreenState extends State<TermResultScreen> {
                 ),
               ),
             );
-          }).toList(),
+          }),
         ],
       ),
     );
@@ -281,7 +281,7 @@ class _TermResultScreenState extends State<TermResultScreen> {
                 style: const TextStyle(fontSize: 14),
               ),
             );
-          }).toList(),
+          }),
         ],
       ),
     );

@@ -7,6 +7,8 @@ import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 
 class CourseResultScreen extends StatefulWidget {
+  const CourseResultScreen({super.key});
+
   @override
   State<CourseResultScreen> createState() => _CourseResultScreenState();
 }
@@ -308,7 +310,7 @@ class _CourseResultScreenState extends State<CourseResultScreen> {
   }
 
 Widget _buildCircularProgressBar() {
-  return Container(
+  return SizedBox(
     // Increased dimensions from 70x70 to 85x85
     width: 85,
     height: 85,

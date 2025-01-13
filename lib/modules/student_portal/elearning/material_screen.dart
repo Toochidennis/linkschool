@@ -6,6 +6,8 @@ import 'package:linkschool/modules/common/widgets/portal/student/custom_input_fi
 
 
 class MaterialScreen extends StatefulWidget {
+  const MaterialScreen({super.key});
+
   @override
   State<MaterialScreen> createState() => _MaterialScreenState();
 }

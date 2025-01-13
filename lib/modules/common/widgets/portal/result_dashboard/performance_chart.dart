@@ -7,7 +7,7 @@ import 'package:linkschool/modules/common/text_styles.dart';
 // import 'package:linkschool/utils/text_styles.dart';
 
 class PerformanceChart extends StatelessWidget {
-  const PerformanceChart({Key? key}) : super(key: key);
+  const PerformanceChart({super.key});
 
   @override
   Widget build(BuildContext context) {

@@ -11,6 +11,8 @@ import 'package:linkschool/modules/staff_portal/home/staff_take_attandance_scree
 
 
 class StaffAttandanceScreen extends StatelessWidget {
+  const StaffAttandanceScreen({super.key});
+
 
 
   @override

@@ -7,7 +7,7 @@ class LearningInfoCard extends StatelessWidget {
   final String title;
   final String subtitle;
 
-  const LearningInfoCard({Key? key, required this.title, required this.subtitle}) : super(key: key);
+  const LearningInfoCard({super.key, required this.title, required this.subtitle});
 
   @override
   Widget build(BuildContext context) {

@@ -11,9 +11,9 @@ class VendorTransactionDetailsScreen extends StatefulWidget {
   final VendorTransaction transaction;
 
   const VendorTransactionDetailsScreen({
-    Key? key,
+    super.key,
     required this.transaction,
-  }) : super(key: key);
+  });
 
   @override
   State<VendorTransactionDetailsScreen> createState() => _VendorTransactionDetailsScreenState();

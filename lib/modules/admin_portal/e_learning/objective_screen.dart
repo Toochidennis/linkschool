@@ -9,14 +9,14 @@ import 'package:intl/intl.dart';
 class ObjectiveScreen extends StatefulWidget {
   final String topic;
 
-  const ObjectiveScreen({Key? key, required this.topic}) : super(key: key);
+  const ObjectiveScreen({super.key, required this.topic});
 
   @override
   _ObjectiveScreenState createState() => _ObjectiveScreenState();
 }
 
 class _ObjectiveScreenState extends State<ObjectiveScreen> {
-  bool _isFocused = false;
+  final bool _isFocused = false;
   List<Objective> objectives = [
     Objective("Learn about the concept of punctuality", DateTime.now(), false),
     Objective("Understand the importance of time management", DateTime.now().subtract(Duration(days: 1)), true),
@@ -27,7 +27,7 @@ class _ObjectiveScreenState extends State<ObjectiveScreen> {
     Objective("Evaluate progress in punctuality improvement", DateTime.now().add(Duration(days: 5)), false),
   ];
 
-  TextEditingController _objectiveController = TextEditingController();
+  final TextEditingController _objectiveController = TextEditingController();
 
   @override
   Widget build(BuildContext context) {

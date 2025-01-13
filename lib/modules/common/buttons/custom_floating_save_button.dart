@@ -11,13 +11,13 @@ class CustomFloatingSaveButton extends StatelessWidget {
   final String tooltip;
 
   const CustomFloatingSaveButton({
-    Key? key,
+    super.key,
     required this.onPressed,
     this.icon = Icons.save,
     this.backgroundColor = AppColors.primaryLight,
     this.iconColor = AppColors.backgroundLight,
     this.tooltip = 'Save',
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

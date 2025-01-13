@@ -4,7 +4,7 @@ import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 
 class StaffInputResultScreen extends StatefulWidget {
-  const StaffInputResultScreen({Key? key}) : super(key: key);
+  const StaffInputResultScreen({super.key});
 
   @override
   State<StaffInputResultScreen> createState() => _StaffInputResultScreenState();
@@ -150,7 +150,7 @@ class _StaffInputResultScreenState extends State<StaffInputResultScreen> {
                 ),
               ),
             );
-          }).toList(),
+          }),
         ],
       ),
     );
@@ -195,7 +195,7 @@ class _StaffInputResultScreenState extends State<StaffInputResultScreen> {
                 decoration: const InputDecoration(border: InputBorder.none),
               ),
             );
-          }).toList(),
+          }),
         ],
       ),
     );
@@ -246,7 +246,7 @@ class _StaffInputResultScreenState extends State<StaffInputResultScreen> {
                     .toList(),
               ),
             );
-          }).toList(),
+          }),
         ],
       ),
     );

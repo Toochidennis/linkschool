@@ -16,9 +16,9 @@ class StudentPaymentHomeScreen extends StatefulWidget {
   final VoidCallback logout;
 
   const StudentPaymentHomeScreen({
-    Key? key,
+    super.key,
     required this.logout,
-  }) : super(key: key);
+  });
 
   @override
   _StudentPaymentHomeScreenState createState() =>
@@ -335,8 +335,7 @@ class PaymentHistoryItem extends StatelessWidget {
   final VoidCallback onTap;
 
   const PaymentHistoryItem(
-      {Key? key, required this.payment, required this.onTap})
-      : super(key: key);
+      {super.key, required this.payment, required this.onTap});
 
   @override
   Widget build(BuildContext context) {

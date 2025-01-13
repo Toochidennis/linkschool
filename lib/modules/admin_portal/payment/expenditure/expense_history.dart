@@ -11,11 +11,11 @@ class ExpenseHistoryScreen extends StatefulWidget {
   final String name;
 
   const ExpenseHistoryScreen({
-    Key? key,
+    super.key,
     required this.grade,
     required this.amount,
     required this.name,
-  }) : super(key: key);
+  });
 
   @override
   State<ExpenseHistoryScreen> createState() => _ExpenseHistoryScreenState();

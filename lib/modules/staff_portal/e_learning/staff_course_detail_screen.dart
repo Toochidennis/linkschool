@@ -23,14 +23,14 @@ import 'package:linkschool/modules/staff_portal/e_learning/view/staff_material_d
 class StaffCourseDetailScreen extends StatefulWidget {
   final String courseTitle;
 
-  const StaffCourseDetailScreen({Key? key, required this.courseTitle}) : super(key: key);
+  const StaffCourseDetailScreen({super.key, required this.courseTitle});
 
   @override
   State<StaffCourseDetailScreen> createState() => _StaffCourseDetailScreenState();
 }
 
 class _StaffCourseDetailScreenState extends State<StaffCourseDetailScreen> {
-  List<Map<String, dynamic>> _syllabusList = [];
+  final List<Map<String, dynamic>> _syllabusList = [];
   late double opacity = 0.1;
   int _currentIndex = 0;
   Map<String, dynamic>? _currentSyllabus;
@@ -86,7 +86,7 @@ class _StaffCourseDetailScreenState extends State<StaffCourseDetailScreen> {
             duration: const Duration(minutes: 30),
             marks: '10',
           ),
-        ],
+        ], description: '',
       ),
       Topic(
         name: 'Time Management',
@@ -127,7 +127,7 @@ class _StaffCourseDetailScreenState extends State<StaffCourseDetailScreen> {
             duration: const Duration(minutes: 30),
             marks: '10',
           ),
-        ],
+        ], description: '',
       ),
     ];
   }
@@ -181,7 +181,7 @@ class _StaffCourseDetailScreenState extends State<StaffCourseDetailScreen> {
 
       Topic? existingTopic = topics.firstWhere(
         (topic) => topic.name == assignment.topic,
-        orElse: () => Topic(name: assignment.topic, assignments: [], questions: [], materials: []),
+        orElse: () => Topic(name: assignment.topic, assignments: [], questions: [], materials: [], description: ''),
       );
 
       if (!topics.contains(existingTopic)) {
@@ -519,6 +519,8 @@ class _StaffCourseDetailScreenState extends State<StaffCourseDetailScreen> {
       ],
     );
   }
+
+  // ======= syllabus detail ======== //
 
   Widget _buildSyllabusDetails() {
     if (_currentSyllabus == null) return _buildEmptyState();

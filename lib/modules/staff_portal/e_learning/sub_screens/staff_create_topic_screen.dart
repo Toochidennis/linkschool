@@ -10,7 +10,7 @@ import 'package:linkschool/modules/common/widgets/portal/e_learning/select_class
 import 'package:linkschool/modules/model/e-learning/objective_item.dart';
 
 class StaffCreateTopicScreen extends StatefulWidget {
-  const StaffCreateTopicScreen({Key? key}) : super(key: key);
+  const StaffCreateTopicScreen({super.key});
 
   @override
   State<StaffCreateTopicScreen> createState() => _StaffCreateTopicScreenState();
@@ -20,9 +20,9 @@ class _StaffCreateTopicScreenState extends State<StaffCreateTopicScreen> {
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _objectiveController = TextEditingController();
   String _selectedClass = 'Select classes';
-  bool _isTitleFocused = false;
+  final bool _isTitleFocused = false;
   bool _showObjectives = false;
-  List<ObjectiveItem> _objectives = [];
+  final List<ObjectiveItem> _objectives = [];
   final FocusNode _titleFocusNode = FocusNode();
   late double opacity;
 
@@ -225,7 +225,6 @@ body: Container(
               if (showEditButton)
                 OutlinedButton(
                   onPressed: onTap,
-                  child: const Text('Edit'),
                   style: OutlinedButton.styleFrom(
                     textStyle: AppTextStyles.normal600(
                         fontSize: 14.0, color: AppColors.backgroundLight),
@@ -235,6 +234,7 @@ body: Container(
                       borderRadius: BorderRadius.circular(10),
                     ),
                   ),
+                  child: const Text('Edit'),
                 ),
             ],
           ),

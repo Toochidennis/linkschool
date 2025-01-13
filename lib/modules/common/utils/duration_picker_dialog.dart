@@ -9,10 +9,10 @@ class DurationPickerDialog extends StatefulWidget {
   final Function(Duration) onSave;
 
   const DurationPickerDialog({
-    Key? key,
+    super.key,
     required this.initialDuration,
     required this.onSave,
-  }) : super(key: key);
+  });
 
   @override
   _DurationPickerDialogState createState() => _DurationPickerDialogState();
@@ -33,7 +33,7 @@ class _DurationPickerDialogState extends State<DurationPickerDialog> {
   Widget build(BuildContext context) {
     return AlertDialog(
       backgroundColor: Colors.white,
-      content: Container(
+      content: SizedBox(
         width: 300,
         child: Column(
           mainAxisSize: MainAxisSize.min,

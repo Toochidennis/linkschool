@@ -7,7 +7,7 @@ class CustomSaveElevatedButton extends StatelessWidget {
   final VoidCallback onPressed;
   final String text;
 
-  const CustomSaveElevatedButton({required this.onPressed, Key? key, required this.text}) : super(key: key);
+  const CustomSaveElevatedButton({required this.onPressed, super.key, required this.text});
 
   @override
   Widget build(BuildContext context) {

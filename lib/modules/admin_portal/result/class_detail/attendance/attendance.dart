@@ -8,6 +8,8 @@ import 'package:linkschool/modules/common/widgets/portal/result_attendance/take_
 
 
 class AttendanceScreen extends StatelessWidget {
+  const AttendanceScreen({super.key});
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(

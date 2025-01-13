@@ -5,6 +5,8 @@ import 'package:linkschool/modules/common/text_styles.dart';
 
 
 class StudentRecieptDialog extends StatefulWidget {
+  const StudentRecieptDialog({super.key});
+
   @override
   State<StudentRecieptDialog> createState() => _StudentRecieptDialogState();
 }
@@ -100,7 +102,7 @@ class _StudentRecieptDialogState extends State<StudentRecieptDialog> {
                           onPressed: () {},
                           style: OutlinedButton.styleFrom(
                             side: const BorderSide(
-                              color: const Color.fromRGBO(47, 85, 221, 1),
+                              color: Color.fromRGBO(47, 85, 221, 1),
                             ),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(8),

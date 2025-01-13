@@ -55,7 +55,9 @@ class _GradingSettingsScreenState extends State<GradingSettingsScreen> {
   @override
   void dispose() {
     // Dispose of controllers
-    editingControllers.values.forEach((controller) => controller.dispose());
+    for (var controller in editingControllers.values) {
+      controller.dispose();
+    }
     super.dispose();
   }
 
@@ -98,7 +100,7 @@ class _GradingSettingsScreenState extends State<GradingSettingsScreen> {
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 20), // Added margin
-            ...gradingList.map((item) => buildFirstCard(item)).toList(),
+            ...gradingList.map((item) => buildFirstCard(item)),
             const SizedBox(height: Constants.gap),
             buildSecondCard(),
           ],

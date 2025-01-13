@@ -17,7 +17,7 @@ import 'package:linkschool/modules/admin_portal/e_learning/select_topic_screen.d
 class AssignmentScreen extends StatefulWidget {
    final Function(Assignment) onSave;
 
-  const AssignmentScreen({Key? key, required this.onSave}) : super(key: key);
+  const AssignmentScreen({super.key, required this.onSave});
   @override
   State<AssignmentScreen> createState() => _AssignmentScreenState();
 }
@@ -27,7 +27,7 @@ class _AssignmentScreenState extends State<AssignmentScreen> {
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _descriptionController = TextEditingController();
   final TextEditingController _marksController = TextEditingController();
-  List<AttachmentItem> _attachments = [];
+  final List<AttachmentItem> _attachments = [];
   DateTime _selectedDateTime = DateTime.now();
   String _selectedTopic = 'No Topic';
   String _marks = '200 marks';
@@ -245,7 +245,6 @@ class _AssignmentScreenState extends State<AssignmentScreen> {
               if (showEditButton)
                 OutlinedButton(
                   onPressed: onTap,
-                  child: const Text('Edit'),
                   style: OutlinedButton.styleFrom(
                     textStyle: AppTextStyles.normal600(
                         fontSize: 14.0, color: AppColors.backgroundLight),
@@ -256,6 +255,7 @@ class _AssignmentScreenState extends State<AssignmentScreen> {
                       borderRadius: BorderRadius.circular(10),
                     ),
                   ),
+                  child: const Text('Edit'),
                 ),
             ],
           ),
@@ -377,7 +377,7 @@ class _AssignmentScreenState extends State<AssignmentScreen> {
                     final attachment = entry.value;
                     return _buildAttachmentItem(attachment,
                         isFirst: index == 0);
-                  }).toList(),
+                  }),
                   const SizedBox(height: 8.0),
                   _buildAddMoreButton(),
                 ],
@@ -429,7 +429,6 @@ class _AssignmentScreenState extends State<AssignmentScreen> {
           const Spacer(),
           OutlinedButton(
             onPressed: _showAttachmentOptions,
-            child: const Text('+ Add'),
             style: OutlinedButton.styleFrom(
               textStyle: AppTextStyles.normal600(
                   fontSize: 14.0, color: AppColors.backgroundLight),
@@ -439,6 +438,7 @@ class _AssignmentScreenState extends State<AssignmentScreen> {
                 borderRadius: BorderRadius.circular(10),
               ),
             ),
+            child: const Text('+ Add'),
           ),
         ],
       ),
@@ -560,16 +560,16 @@ class _AssignmentScreenState extends State<AssignmentScreen> {
   }
 
   Future<void> _takePhoto() async {
-    final ImagePicker _picker = ImagePicker();
-    final XFile? photo = await _picker.pickImage(source: ImageSource.camera);
+    final ImagePicker picker = ImagePicker();
+    final XFile? photo = await picker.pickImage(source: ImageSource.camera);
     if (photo != null) {
       _addAttachment('Photo: ${photo.name}', 'assets/icons/e_learning/camera.svg');
     }
   }
 
   Future<void> _recordVideo() async {
-    final ImagePicker _picker = ImagePicker();
-    final XFile? video = await _picker.pickVideo(source: ImageSource.camera);
+    final ImagePicker picker = ImagePicker();
+    final XFile? video = await picker.pickVideo(source: ImageSource.camera);
     if (video != null) {
       _addAttachment('Video: ${video.name}', 'assets/icons/e_learning/video.svg');
     }
@@ -673,5 +673,5 @@ class Assignment {
     required this.topic,
     required this.marks,
     DateTime? createdAt,
-  }) : this.createdAt = createdAt ?? DateTime.now();
+  }) : createdAt = createdAt ?? DateTime.now();
 }

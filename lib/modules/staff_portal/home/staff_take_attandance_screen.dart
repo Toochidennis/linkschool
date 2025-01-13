@@ -4,6 +4,8 @@ import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 
 class StaffTakeAttendanceScreen extends StatefulWidget {
+  const StaffTakeAttendanceScreen({super.key});
+
   @override
   State<StaffTakeAttendanceScreen> createState() => _StaffTakeAttendanceScreenState();
 }

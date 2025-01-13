@@ -13,13 +13,13 @@ class FeedDetailsScreen extends StatefulWidget {
   final int interactions;
 
   const FeedDetailsScreen({
-    Key? key,
+    super.key,
         required this.profileImageUrl,
     required this.name,
     required this.content,
     required this.time,
     required this.interactions,
-  }) : super(key: key);
+  });
 
   @override
   State<FeedDetailsScreen> createState() => _FeedDetailsScreenState();
@@ -112,7 +112,7 @@ class _FeedDetailsScreenState extends State<FeedDetailsScreen> {
               Text(widget.content),
               const SizedBox(height: 16),
               const Divider(height: 1), // Reduced height of top divider
-              Container(
+              SizedBox(
                 height: 40, // Fixed height for the interaction row
                 child: Row(
                   children: [

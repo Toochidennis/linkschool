@@ -11,17 +11,16 @@ import 'package:linkschool/modules/admin_portal/e_learning/empty_subject_screen.
 
 class EmptySyllabusScreen extends StatefulWidget {
   final String selectedSubject;
-  
-  const EmptySyllabusScreen({Key? key, required this.selectedSubject}) : super(key: key);
+
+  const EmptySyllabusScreen({super.key, required this.selectedSubject});
 
   @override
   State<EmptySyllabusScreen> createState() => _EmptySyllabusScreenState();
 }
 
 class _EmptySyllabusScreenState extends State<EmptySyllabusScreen> {
-  List<Map<String, dynamic>> _syllabusList = [];
+  final List<Map<String, dynamic>> _syllabusList = [];
   late double opacity;
-
 
   @override
   Widget build(BuildContext context) {
@@ -62,7 +61,6 @@ class _EmptySyllabusScreenState extends State<EmptySyllabusScreen> {
           ),
         ),
       ),
-
       body: Container(
         decoration: Constants.customBoxDecoration(context),
         child:
@@ -114,8 +112,10 @@ class _EmptySyllabusScreenState extends State<EmptySyllabusScreen> {
           onTap: () => Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) =>
-                  EmptySubjectScreen(title: _syllabusList[index]['title'], selectedSubject: widget.selectedSubject,),
+              builder: (context) => EmptySubjectScreen(
+                title: _syllabusList[index]['title'],
+                selectedSubject: widget.selectedSubject,
+              ),
             ),
           ),
           child: _buildOutlineContainers(_syllabusList[index], index),

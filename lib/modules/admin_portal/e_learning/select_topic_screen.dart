@@ -11,10 +11,10 @@ class SelectTopicScreen extends StatefulWidget {
   final VoidCallback? onTopicCreated;
 
   const SelectTopicScreen({
-    Key? key,
+    super.key,
     required this.callingScreen,
     this.onTopicCreated,
-  }) : super(key: key);
+  });
 
   @override
   State<SelectTopicScreen> createState() => _SelectTopicScreenState();
@@ -134,11 +134,11 @@ class TopicsList extends StatelessWidget {
   final Function(String) onSelect;
 
   const TopicsList({
-    Key? key,
+    super.key,
     required this.topics,
     required this.selectedTopic,
     required this.onSelect,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -161,11 +161,11 @@ class TopicItem extends StatelessWidget {
   final Function(String) onSelect;
 
   const TopicItem({
-    Key? key,
+    super.key,
     required this.topic,
     required this.isSelected,
     required this.onSelect,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

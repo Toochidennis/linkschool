@@ -20,5 +20,5 @@ class Material {
     required this.marks,
 
     DateTime? createdAt,
-  }) : this.createdAt = createdAt ?? DateTime.now();
+  }) : createdAt = createdAt ?? DateTime.now();
 }

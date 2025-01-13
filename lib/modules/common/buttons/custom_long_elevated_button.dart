@@ -10,14 +10,14 @@ class CustomLongElevatedButton extends StatelessWidget {
   final double height;
 
   const CustomLongElevatedButton({
-    Key? key,
+    super.key,
     required this.text,
     required this.onPressed,
     required this.backgroundColor , 
     required this.textStyle,
     this.borderRadius = 8.0,
     this.height = 50.0,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

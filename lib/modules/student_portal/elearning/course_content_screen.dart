@@ -487,7 +487,7 @@ class _CourseContentScreenState extends State<CourseContentScreen> {
   }
 
   Widget buildHeader() {
-    return Container(
+    return SizedBox(
       width: MediaQuery.of(context).size.width,
       child: ClipRRect(
         borderRadius: BorderRadius.circular(16.0),
@@ -559,7 +559,7 @@ class _CourseContentScreenState extends State<CourseContentScreen> {
                     text: TextSpan(
                       children: [
                         TextSpan(
-                          text: title.split(':')[0] + ': ',
+                          text: '${title.split(':')[0]}: ',
                           style: const TextStyle(
                               color: AppColors.paymentTxtColor1,
                               fontWeight: FontWeight.bold),
@@ -737,14 +737,14 @@ class ExpandedContentRow extends StatelessWidget {
   final Color? badgeColor;
 
   const ExpandedContentRow({
-    Key? key,
+    super.key,
     required this.title,
     required this.subtitle,
     required this.description,
     required this.progressBarPercentage,
     this.badgeText,
     this.badgeColor,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -813,12 +813,12 @@ class ContentRow extends StatelessWidget {
   final Color titleColor;
 
   const ContentRow({
-    Key? key,
+    super.key,
     required this.iconPath,
     required this.title,
     required this.subtitle,
     this.titleColor = Colors.black,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -836,7 +836,7 @@ class ContentRow extends StatelessWidget {
                   text: TextSpan(
                     children: [
                       TextSpan(
-                        text: title.split(':')[0] + ': ',
+                        text: '${title.split(':')[0]}: ',
                         style: TextStyle(
                             color: titleColor, fontWeight: FontWeight.bold),
                       ),

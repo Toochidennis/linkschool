@@ -14,14 +14,14 @@ class CustomNavigationBar extends StatefulWidget {
   final int selectedIndex;
 
   const CustomNavigationBar({
-    Key? key,
+    super.key,
     required this.actionButtonImagePath,
     required this.appBarItems,
     required this.bodyItems,
     required this.onTabSelected,
     required this.onSwitch,
     required this.selectedIndex,
-  }) : super(key: key);
+  });
 
   @override
   State<CustomNavigationBar> createState() => _CustomNavigationBarState();

@@ -102,7 +102,7 @@ class AppColors {
   /// remove these guys
   static const Color shadowColor = Color(0x40000000);
   static const Color black40 = Color(0x66000000);
-  static const Color lightGray = Color(0X5B5B5B);
+  static const Color lightGray = Color(0X005b5b5b);
 
   static const Color resultColor1 = Color.fromRGBO(29, 33, 41, 1);
 

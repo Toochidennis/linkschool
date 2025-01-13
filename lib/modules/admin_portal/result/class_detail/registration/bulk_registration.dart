@@ -9,6 +9,8 @@ import 'package:linkschool/modules/admin_portal/result/class_detail/registration
 
 
 class BulkRegistrationScreen extends StatefulWidget {
+  const BulkRegistrationScreen({super.key});
+
   @override
   State<BulkRegistrationScreen> createState() => _BulkRegistrationScreenState();
 }
@@ -210,13 +212,13 @@ ElevatedButton(
       );
     }
   },
-  child: Text(coursesRegistered > 0 ? 'Edit' : 'Register', style: AppTextStyles.normal700(fontSize: 12, color: AppColors.backgroundLight)),
   style: ElevatedButton.styleFrom(
     backgroundColor: AppColors.videoColor4,
     shape: RoundedRectangleBorder(
       borderRadius: BorderRadius.circular(8),
     ),
   ),
+  child: Text(coursesRegistered > 0 ? 'Edit' : 'Register', style: AppTextStyles.normal700(fontSize: 12, color: AppColors.backgroundLight)),
 ),
           ],
         ),

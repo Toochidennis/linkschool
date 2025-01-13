@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 class AddVendorOverlay extends StatefulWidget {
+  const AddVendorOverlay({super.key});
+
   @override
   _AddVendorOverlayState createState() => _AddVendorOverlayState();
 }

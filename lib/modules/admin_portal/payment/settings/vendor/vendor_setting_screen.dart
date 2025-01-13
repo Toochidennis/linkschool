@@ -6,7 +6,7 @@ import 'package:linkschool/modules/admin_portal/payment/settings/vendor/vendor_t
 
 class VendorSettingsScreen extends StatefulWidget {
 
-  VendorSettingsScreen({Key? key}) : super(key: key);
+  const VendorSettingsScreen({super.key});
 
   @override
   State<VendorSettingsScreen> createState() => _VendorSettingsScreenState();

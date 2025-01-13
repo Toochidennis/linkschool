@@ -10,12 +10,12 @@ class TermRow extends StatelessWidget {
   final VoidCallback onTap;
 
   const TermRow({
-    Key? key,
+    super.key,
     required this.term,
     required this.percent,
     required this.indicatorColor,
     required this.onTap,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

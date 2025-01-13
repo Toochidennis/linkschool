@@ -16,9 +16,9 @@ class PortalHome extends StatefulWidget {
   final PreferredSizeWidget appBar;
 
   const PortalHome({
-    Key? key,
+    super.key,
     required this.appBar,
-  }) : super(key: key);
+  });
 
   @override
   State<PortalHome> createState() => _PortalHomeState();

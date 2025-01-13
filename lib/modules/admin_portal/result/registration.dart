@@ -6,7 +6,7 @@ import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 
 class RegistrationScreen extends StatefulWidget {
-  const RegistrationScreen({Key? key}) : super(key: key);
+  const RegistrationScreen({super.key});
 
   @override
   State<RegistrationScreen> createState() => _RegistrationScreenState();
@@ -158,7 +158,6 @@ Widget _buildButtonSection() {
           children: [
             Expanded(
               child: OutlinedButton(
-                child:  Text('+ Copy previous registration', style: AppTextStyles.normal600(fontSize: 10, color: AppColors.videoColor4),),
                 style: OutlinedButton.styleFrom(
                   backgroundColor: AppColors.regBtnColor2, 
                   side: const BorderSide(color: AppColors.videoColor4),
@@ -167,6 +166,7 @@ Widget _buildButtonSection() {
                   ),
                 ),
                 onPressed: () {},
+                child:  Text('+ Copy previous registration', style: AppTextStyles.normal600(fontSize: 10, color: AppColors.videoColor4),),
               ),
             ),
             const SizedBox(width: 16),
@@ -271,11 +271,11 @@ class CustomDropdown extends StatelessWidget {
   final Function(String?) onChanged;
 
   const CustomDropdown({
-    Key? key,
+    super.key,
     required this.items,
     required this.value,
     required this.onChanged,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

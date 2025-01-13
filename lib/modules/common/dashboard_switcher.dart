@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class DashboardSwitcher extends StatefulWidget {
+  const DashboardSwitcher({super.key});
+
   @override
   _DashboardSwitcherState createState() => _DashboardSwitcherState();
 }

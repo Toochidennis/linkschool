@@ -11,7 +11,7 @@ import 'package:linkschool/modules/common/widgets/portal/e_learning/select_class
 import 'package:linkschool/modules/admin_portal/e_learning/select_topic_screen.dart';
 
 class AddMaterialScreen extends StatefulWidget {
-  const AddMaterialScreen({super.key});
+  const AddMaterialScreen({super.key, required Null Function(dynamic material) onSave});
 
   @override
   State<AddMaterialScreen> createState() => _AddMaterialScreenState();
@@ -22,7 +22,7 @@ class _AddMaterialScreenState extends State<AddMaterialScreen> {
   final TextEditingController _descriptionController = TextEditingController();
   String _selectedClass = 'Select classes';
   String _selectedTopic = 'No Topic';
-  List<AttachmentItem> _attachments = [];
+  final List<AttachmentItem> _attachments = [];
   late double opacity;
 
   @override
@@ -222,7 +222,6 @@ class _AddMaterialScreenState extends State<AddMaterialScreen> {
               if (showEditButton)
                 OutlinedButton(
                   onPressed: onTap,
-                  child: const Text('Edit'),
                   style: OutlinedButton.styleFrom(
                     textStyle: AppTextStyles.normal600(
                         fontSize: 14.0, color: AppColors.backgroundLight),
@@ -233,6 +232,7 @@ class _AddMaterialScreenState extends State<AddMaterialScreen> {
                       borderRadius: BorderRadius.circular(10),
                     ),
                   ),
+                  child: const Text('Edit'),
                 ),
             ],
           ),
@@ -281,7 +281,7 @@ class _AddMaterialScreenState extends State<AddMaterialScreen> {
                     final attachment = entry.value;
                     return _buildAttachmentItem(attachment,
                         isFirst: index == 0);
-                  }).toList(),
+                  }),
                   const SizedBox(height: 8.0),
                   _buildAddMoreButton(),
                 ],
@@ -439,7 +439,6 @@ class _AddMaterialScreenState extends State<AddMaterialScreen> {
           Spacer(),
           OutlinedButton(
             onPressed: _showAttachmentOptions,
-            child: const Text('+ Add'),
             style: OutlinedButton.styleFrom(
               textStyle: AppTextStyles.normal600(
                   fontSize: 14.0, color: AppColors.backgroundLight),
@@ -449,6 +448,7 @@ class _AddMaterialScreenState extends State<AddMaterialScreen> {
                 borderRadius: BorderRadius.circular(10),
               ),
             ),
+            child: const Text('+ Add'),
           ),
         ],
       ),
@@ -485,16 +485,16 @@ class _AddMaterialScreenState extends State<AddMaterialScreen> {
   }
 
   Future<void> _takePhoto() async {
-    final ImagePicker _picker = ImagePicker();
-    final XFile? photo = await _picker.pickImage(source: ImageSource.camera);
+    final ImagePicker picker = ImagePicker();
+    final XFile? photo = await picker.pickImage(source: ImageSource.camera);
     if (photo != null) {
       _addAttachment('Photo: ${photo.name}', 'assets/icons/e_learning/camera.svg');
     }
   }
 
   Future<void> _recordVideo() async {
-    final ImagePicker _picker = ImagePicker();
-    final XFile? video = await _picker.pickVideo(source: ImageSource.camera);
+    final ImagePicker picker = ImagePicker();
+    final XFile? video = await picker.pickVideo(source: ImageSource.camera);
     if (video != null) {
       _addAttachment('Video: ${video.name}', 'assets/icons/e_learning/video.svg');
     }

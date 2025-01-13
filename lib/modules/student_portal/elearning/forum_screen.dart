@@ -5,6 +5,8 @@ import 'package:linkschool/modules/common/constants.dart';
 
 
 class ForumScreen extends StatefulWidget {
+  const ForumScreen({super.key});
+
   @override
   State<ForumScreen> createState() => _ForumScreenState();
 }
@@ -22,7 +24,7 @@ class _ForumScreenState extends State<ForumScreen> {
               // Section 1: Header with reduced height and left-aligned text
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                child: Container(
+                child: SizedBox(
                   width: MediaQuery.of(context).size.width, // Ensure full width
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(16.0),

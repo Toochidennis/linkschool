@@ -17,12 +17,12 @@ class PortalDashboard extends StatefulWidget {
   final VoidCallback onLogout;
 
   const PortalDashboard({
-    Key? key,
+    super.key,
     required this.onSwitch,
     required this.selectedIndex,
     required this.onTabSelected,
     required this.onLogout,
-  }) : super(key: key);
+  });
 
   @override
   State<PortalDashboard> createState() => _PortalDashboardState();

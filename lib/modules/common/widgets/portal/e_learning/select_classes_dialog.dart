@@ -6,7 +6,7 @@ import 'package:linkschool/modules/common/text_styles.dart';
 class SelectClassesDialog extends StatefulWidget {
   final Function(String) onSave;
 
-  const SelectClassesDialog({Key? key, required this.onSave}) : super(key: key);
+  const SelectClassesDialog({super.key, required this.onSave});
 
   @override
   _SelectClassesDialogState createState() => _SelectClassesDialogState();

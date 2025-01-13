@@ -8,7 +8,7 @@ import 'package:linkschool/modules/student_portal/elearning/course_detail_screen
 import 'package:linkschool/modules/student_portal/home/new_post_dialog.dart';
 
 class StudentElearningScreen extends StatefulWidget {
-  const StudentElearningScreen({Key? key}) : super(key: key);
+  const StudentElearningScreen({super.key});
 
   @override
   _StudentElearningScreenState createState() => _StudentElearningScreenState();

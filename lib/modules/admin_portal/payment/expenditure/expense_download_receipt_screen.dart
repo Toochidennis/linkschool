@@ -7,8 +7,7 @@ import 'package:linkschool/modules/common/text_styles.dart';
 class ExpenseDownloadReceiptScreen extends StatefulWidget {
   final String amount;
 
-  const ExpenseDownloadReceiptScreen({Key? key, required this.amount})
-      : super(key: key);
+  const ExpenseDownloadReceiptScreen({super.key, required this.amount});
 
   @override
   State<ExpenseDownloadReceiptScreen> createState() =>

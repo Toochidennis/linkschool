@@ -6,7 +6,7 @@ import 'package:linkschool/modules/common/text_styles.dart';
 class QuizAnswersScreen extends StatefulWidget {
   final String quizTitle;
 
-  const QuizAnswersScreen({Key? key, required this.quizTitle}) : super(key: key);
+  const QuizAnswersScreen({super.key, required this.quizTitle});
 
   @override
   _QuizAnswersScreenState createState() => _QuizAnswersScreenState();

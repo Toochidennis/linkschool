@@ -17,7 +17,7 @@ class StaffMaterialDetailsScreen extends StatefulWidget {
 class _StaffMaterialDetailsScreenState extends State<StaffMaterialDetailsScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
-  TextEditingController _commentController = TextEditingController();
+  final TextEditingController _commentController = TextEditingController();
   List<Comment> comments = [];
   bool _isAddingComment = false;
   late double opacity;
@@ -319,7 +319,7 @@ class _StaffMaterialDetailsScreenState extends State<StaffMaterialDetailsScreen>
                   AppTextStyles.normal600(fontSize: 18.0, color: Colors.black),
             ),
           ),
-          ...comments.map(_buildCommentItem).toList(),
+          ...comments.map(_buildCommentItem),
           _buildDivider(),
         ],
         Padding(

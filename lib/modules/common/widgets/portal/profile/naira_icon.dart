@@ -4,7 +4,7 @@ import 'package:flutter_svg/svg.dart';
 class NairaSvgIcon extends StatelessWidget {
   final Color? color;  // Accept color as a parameter
 
-  const NairaSvgIcon({Key? key, this.color}) : super(key: key);
+  const NairaSvgIcon({super.key, this.color});
 
   @override
   Widget build(BuildContext context) {

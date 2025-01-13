@@ -6,6 +6,8 @@ import 'package:linkschool/modules/admin_portal/result/class_detail/attendance/t
 
 
 class TakeAttendanceButton extends StatelessWidget {
+  const TakeAttendanceButton({super.key});
+
   @override
   Widget build(BuildContext context) {
     return CustomLongElevatedButton(

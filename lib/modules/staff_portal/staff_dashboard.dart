@@ -11,12 +11,12 @@ class StaffDashboard extends StatefulWidget {
   final VoidCallback onLogout;
 
   const StaffDashboard({
-    Key? key,
+    super.key,
     required this.onSwitch,
     required this.selectedIndex,
     required this.onTabSelected,
     required this.onLogout,
-  }) : super(key: key);
+  });
 
   @override
   _StaffDashboardState createState() => _StaffDashboardState();
@@ -62,8 +62,8 @@ class _StaffDashboardState extends State<StaffDashboard> {
             SizedBox(height: 20),
             ElevatedButton(
               onPressed: widget.onLogout,
-              child: Text('Logout'),
               style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+              child: Text('Logout'),
             ),
           ],
         ),

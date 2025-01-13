@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 
 class ClassDetailBarChart extends StatelessWidget {
-  const ClassDetailBarChart({Key? key}) : super(key: key);
+  const ClassDetailBarChart({super.key});
 
   @override
   Widget build(BuildContext context) {

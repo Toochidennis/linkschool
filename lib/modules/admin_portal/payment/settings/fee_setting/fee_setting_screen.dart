@@ -8,7 +8,7 @@ import 'package:linkschool/modules/admin_portal/payment/settings/fee_setting/fee
 
 
 class FeeSettingScreen extends StatefulWidget {
-  const FeeSettingScreen({Key? key}) : super(key: key);
+  const FeeSettingScreen({super.key});
 
   @override
   State<FeeSettingScreen> createState() => _FeeSettingScreenState();
@@ -73,13 +73,13 @@ class _FeeSettingScreenState extends State<FeeSettingScreen> {
         ),
       ),
       floatingActionButton: FloatingActionButton(
+        onPressed: () => _showAddFeeOverlay(context),
+        backgroundColor: AppColors.videoColor4,
         child: Icon(
           Icons.add,
           color: AppColors.backgroundLight,
           size: 24,
         ),
-        onPressed: () => _showAddFeeOverlay(context),
-        backgroundColor: AppColors.videoColor4,
       ),
     );
   }

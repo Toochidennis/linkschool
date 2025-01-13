@@ -1,10 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:linkschool/modules/common/app_themes.dart';
-import 'package:linkschool/modules/common/dashboard_switcher.dart';
 import 'package:linkschool/routes/app_navigation_flow.dart';
-import 'package:linkschool/routes/route_generator.dart';
 // import 'package:linkschool/app_navigation_flow.dart';
 
 void main() {

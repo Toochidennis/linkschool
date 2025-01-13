@@ -5,7 +5,7 @@ class DashedLine extends StatelessWidget {
   final double width;
   final Color color;
 
-  const DashedLine({
+  const DashedLine({super.key, 
     this.height = 1,
     this.width = 5,
     this.color = Colors.black,
@@ -18,6 +18,8 @@ class DashedLine extends StatelessWidget {
         final boxWidth = constraints.constrainWidth();
         final dashCount = (boxWidth / (2 * width)).floor();
         return Flex(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          direction: Axis.horizontal,
           children: List.generate(dashCount, (_) {
             return SizedBox(
               width: width,
@@ -27,8 +29,6 @@ class DashedLine extends StatelessWidget {
               ),
             );
           }),
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          direction: Axis.horizontal,
         );
       },
     );

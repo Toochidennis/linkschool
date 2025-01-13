@@ -8,7 +8,7 @@ import 'package:linkschool/modules/admin_portal/result/class_detail/registration
 
 
 class ButtonSection extends StatelessWidget {
-  const ButtonSection({Key? key}) : super(key: key);
+  const ButtonSection({super.key});
 
   @override
   Widget build(BuildContext context) {

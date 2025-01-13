@@ -12,7 +12,7 @@ import '../../../../model/e-learning/question_model.dart';
 class QuizScreen extends StatefulWidget {
   final Question question;
 
-  const QuizScreen({Key? key, required this.question}) : super(key: key);
+  const QuizScreen({super.key, required this.question});
 
   @override
   _QuizScreenState createState() => _QuizScreenState();

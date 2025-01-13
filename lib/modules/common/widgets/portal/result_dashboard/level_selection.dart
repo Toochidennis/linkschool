@@ -13,10 +13,10 @@ class LevelSelection extends StatefulWidget {
   final List<String> subjects;
 
   const LevelSelection({
-    Key? key,
+    super.key,
     this.isSecondScreen = false,
     this.subjects = const [],
-  }) : super(key: key);
+  });
 
   @override
   State<LevelSelection> createState() => _LevelSelectionState();

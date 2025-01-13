@@ -4,6 +4,8 @@ import 'package:linkschool/modules/admin_portal/result/class_detail/attendance/a
 // import 'package:linkschool/modules/portal/result/class_detail/attendance/attendance_history.dart';
 
 class AttendanceHistoryList extends StatefulWidget {
+  const AttendanceHistoryList({super.key});
+
   @override
   State<AttendanceHistoryList> createState() => _AttendanceHistoryListState();
 }

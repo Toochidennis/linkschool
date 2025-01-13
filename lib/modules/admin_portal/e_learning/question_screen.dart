@@ -18,7 +18,7 @@ class QuestionScreen extends StatefulWidget {
   final bool isEditing;
   final Question? question;
 
-  const QuestionScreen({Key? key, required this.onSave, this.question, this.isEditing = false}) : super(key: key);
+  const QuestionScreen({super.key, required this.onSave, this.question, this.isEditing = false});
   @override
   State<QuestionScreen> createState() => _QuestionScreenState();
 }
@@ -515,11 +515,11 @@ class DateRangePickerDialog extends StatefulWidget {
   final Function(DateTime, DateTime) onSave;
 
   const DateRangePickerDialog({
-    Key? key,
+    super.key,
     required this.initialStartDate,
     required this.initialEndDate,
     required this.onSave,
-  }) : super(key: key);
+  });
 
   @override
   _DateRangePickerDialogState createState() => _DateRangePickerDialogState();
@@ -544,7 +544,7 @@ class _DateRangePickerDialogState extends State<DateRangePickerDialog> {
   Widget build(BuildContext context) {
     return AlertDialog(
       backgroundColor: Colors.white,
-      content: Container(
+      content: SizedBox(
         width: 300,
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -665,7 +665,7 @@ class _DateRangePickerDialogState extends State<DateRangePickerDialog> {
                     borderRadius: BorderRadius.circular(4),
                   ),
                   child: Text(
-                    '${time.format(context)}',
+                    time.format(context),
                     style: AppTextStyles.normal400(fontSize: 14, color: Colors.black),
                   ),
                 ),

@@ -3,6 +3,8 @@ import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 
 class StudentList extends StatefulWidget {
+  const StudentList({super.key});
+
   @override
   State<StudentList> createState() => _StudentListState();
 }
