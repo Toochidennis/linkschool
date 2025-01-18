@@ -10,6 +10,7 @@ import 'package:linkschool/modules/admin_portal/e_learning/View/question/assessm
 import 'package:linkschool/modules/admin_portal/e_learning/View/quiz/quiz_screen.dart';
 import 'package:linkschool/modules/admin_portal/e_learning/question_screen.dart';
 
+
 class StaffQuestionPreviewScreen extends StatefulWidget {
   final Question question;
 
@@ -48,6 +49,7 @@ class _StaffQuestionPreviewScreenState extends State<StaffQuestionPreviewScreen>
         ),
         title: Text(
           'Question',
+
           style: AppTextStyles.normal600(
             fontSize: 24.0,
             color: AppColors.paymentTxtColor1,
