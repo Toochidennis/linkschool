@@ -20,10 +20,10 @@ class ReceiptScreen extends StatefulWidget {
 class _ReceiptScreenState extends State<ReceiptScreen>
     with TickerProviderStateMixin {
   late double opacity;
-  final bool _isOverlayVisible = false;
+  // final bool _isOverlayVisible = false;
   int _currentTabIndex = 0;
   String _selectedDateRange = 'Custom';
-  final String _selectedGrouping = 'Month';
+  // final String _selectedGrouping = 'Month';
   String _selectedLevel = 'JSS1';
   String _selectedClass = 'JSS1A';
   DateTime _fromDate = DateTime.now();
@@ -400,7 +400,7 @@ class _ReceiptScreenState extends State<ReceiptScreen>
             turns: _isExpanded ? 0.125 : 0,
             child: SvgPicture.asset(
               _isExpanded
-                  ? 'assets/icons/profile/inverted_add_icon.svg'
+                  ? 'assets/icons/profile/inverted_cross_icon.svg'
                   : 'assets/icons/profile/add_icon.svg',
             ),
           ),

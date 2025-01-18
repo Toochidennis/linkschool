@@ -10,7 +10,6 @@ import 'package:linkschool/modules/admin_portal/e_learning/View/question/assessm
 import 'package:linkschool/modules/admin_portal/e_learning/View/quiz/quiz_screen.dart';
 import 'package:linkschool/modules/admin_portal/e_learning/question_screen.dart';
 
-
 class StaffQuestionPreviewScreen extends StatefulWidget {
   final Question question;
 
@@ -25,6 +24,8 @@ class _StaffQuestionPreviewScreenState extends State<StaffQuestionPreviewScreen>
   late double opacity;
   late Question currentQuestion;
   bool showSaveButton = false;
+  bool isEditing = false;
+  int? editingIndex;
 
   @override
   void initState() {
@@ -49,7 +50,6 @@ class _StaffQuestionPreviewScreenState extends State<StaffQuestionPreviewScreen>
         ),
         title: Text(
           'Question',
-
           style: AppTextStyles.normal600(
             fontSize: 24.0,
             color: AppColors.paymentTxtColor1,
@@ -76,8 +76,8 @@ class _StaffQuestionPreviewScreenState extends State<StaffQuestionPreviewScreen>
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 8.0),
               child: CustomSaveElevatedButton(
-                onPressed: _saveQuestions,
-                text: 'Save',
+                onPressed: isEditing ? _saveEditedQuestion : _saveQuestions,
+                text: isEditing ? 'Save' : 'Save',
               ),
             ),
         ],
@@ -89,7 +89,13 @@ class _StaffQuestionPreviewScreenState extends State<StaffQuestionPreviewScreen>
           child: Column(
             children: [
               _buildQuestionBackground(),
-              ...createdQuestions.map((question) => question['widget']),
+              ...createdQuestions.asMap().entries.map((entry) {
+                final index = entry.key;
+                final question = entry.value;
+                return isEditing && editingIndex == index
+                    ? _buildQuestionCard(question['type'], index)
+                    : _buildSavedQuestionRow(question['type'], index);
+              }),
             ],
           ),
         ),
@@ -98,7 +104,7 @@ class _StaffQuestionPreviewScreenState extends State<StaffQuestionPreviewScreen>
     );
   }
 
-  Widget _buildSavedQuestionRow(String questionType, Widget questionCard) {
+  Widget _buildSavedQuestionRow(String questionType, int index) {
     IconData iconData =
         questionType == 'short_answer' ? Icons.short_text : Icons.list;
 
@@ -106,11 +112,11 @@ class _StaffQuestionPreviewScreenState extends State<StaffQuestionPreviewScreen>
       children: [
         GestureDetector(
           onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                  builder: (context) => QuizScreen(question: currentQuestion)),
-            );
+            setState(() {
+              isEditing = true; // Set editing mode
+              editingIndex = index; // Track which question is being edited
+              showSaveButton = true; // Show the button in the app bar
+            });
           },
           child: ListTile(
             leading: Icon(iconData),
@@ -128,7 +134,7 @@ class _StaffQuestionPreviewScreenState extends State<StaffQuestionPreviewScreen>
                 height: 24,
               ),
               onPressed: () {
-                _showKebabMenu(context);
+                _showKebabMenu(context, index);
               },
             ),
           ),
@@ -141,7 +147,7 @@ class _StaffQuestionPreviewScreenState extends State<StaffQuestionPreviewScreen>
     );
   }
 
-  void _showKebabMenu(BuildContext context) {
+  void _showKebabMenu(BuildContext context, int index) {
     showMenu(
       context: context,
       position: const RelativeRect.fromLTRB(100, 100, 0, 0),
@@ -152,7 +158,11 @@ class _StaffQuestionPreviewScreenState extends State<StaffQuestionPreviewScreen>
             title: const Text('Edit'),
             onTap: () {
               Navigator.pop(context);
-              _editQuestion();
+              setState(() {
+                isEditing = true; // Set editing mode
+                editingIndex = index; // Track which question is being edited
+                showSaveButton = true; // Show the button in the app bar
+              });
             },
           ),
         ),
@@ -162,7 +172,7 @@ class _StaffQuestionPreviewScreenState extends State<StaffQuestionPreviewScreen>
             title: const Text('Delete'),
             onTap: () {
               Navigator.pop(context);
-              _deleteQuestion();
+              _deleteQuestion(index);
             },
           ),
         ),
@@ -199,7 +209,7 @@ class _StaffQuestionPreviewScreenState extends State<StaffQuestionPreviewScreen>
                   top: 16,
                   right: 8,
                   child: GestureDetector(
-                    onTap: () => _showKebabMenu,
+                    onTap: () => _showKebabMenu(context, editingIndex ?? 0),
                     child: SvgPicture.asset(
                       'assets/icons/e_learning/kebab_icon.svg',
                       width: 24,
@@ -262,8 +272,7 @@ class _StaffQuestionPreviewScreenState extends State<StaffQuestionPreviewScreen>
     }
   }
 
-  void _deleteQuestion() {
-    // Implement delete functionality
+  void _deleteQuestion(int index) {
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -280,9 +289,10 @@ class _StaffQuestionPreviewScreenState extends State<StaffQuestionPreviewScreen>
             TextButton(
               child: const Text('Delete'),
               onPressed: () {
-                // Implement the actual deletion logic here
+                setState(() {
+                  createdQuestions.removeAt(index);
+                });
                 Navigator.of(context).pop();
-                Navigator.of(context).pop(); // Return to the previous screen
               },
             ),
           ],
@@ -353,7 +363,7 @@ class _StaffQuestionPreviewScreenState extends State<StaffQuestionPreviewScreen>
                   ),
                 ),
               ),
-              const SizedBox(height: 16), // Add spacing below the title
+              const SizedBox(height: 16),
               _buildQuestionTypeOption(
                 icon: Icons.short_text,
                 text: 'Short answer',
@@ -376,29 +386,31 @@ class _StaffQuestionPreviewScreenState extends State<StaffQuestionPreviewScreen>
     setState(() {
       createdQuestions.add({
         'type': questionType,
-        'widget': _buildQuestionCard(questionType),
+        'widget': _buildQuestionCard(questionType, createdQuestions.length),
       });
-      showSaveButton = true;
+      isEditing = true; // Set editing mode for the new question
+      editingIndex = createdQuestions.length - 1; // Track the new question
+      showSaveButton = true; // Show the "Save" button in the app bar
     });
   }
 
   void _saveQuestions() {
     setState(() {
-      List<Map<String, dynamic>> updatedQuestions = [];
-      for (var question in createdQuestions) {
-        updatedQuestions.add({
-          'type': question['type'],
-          'widget':
-              _buildSavedQuestionRow(question['type'], question['widget']),
-        });
-      }
-      createdQuestions = updatedQuestions;
-      showSaveButton = false;
+      isEditing = false; // Exit editing mode
+      editingIndex = null; // Reset the editing index
+      showSaveButton = false; // Hide the button in the app bar
     });
   }
 
-  Widget _buildQuestionCard(String questionType) {
-    bool isEditing = false;
+  void _saveEditedQuestion() {
+    setState(() {
+      isEditing = false; // Exit editing mode
+      editingIndex = null; // Reset the editing index
+      showSaveButton = false; // Hide the button in the app bar
+    });
+  }
+
+  Widget _buildQuestionCard(String questionType, int index) {
     List<TextEditingController> optionControllers = [
       TextEditingController(),
       TextEditingController()
@@ -550,8 +562,7 @@ class _StaffQuestionPreviewScreenState extends State<StaffQuestionPreviewScreen>
                       icon: const Icon(Icons.delete, color: Colors.grey),
                       onPressed: () {
                         setState(() {
-                          createdQuestions.removeWhere((element) =>
-                              element == _buildQuestionCard(questionType));
+                          createdQuestions.removeAt(index);
                         });
                       },
                     ),
@@ -625,7 +636,7 @@ class _StaffQuestionPreviewScreenState extends State<StaffQuestionPreviewScreen>
                 leading: const Icon(Icons.camera_alt),
                 title: const Text('Take photo'),
                 onTap: () {
-// Take photo functionality
+                  // Take photo functionality
                   Navigator.pop(context);
                 },
               ),
@@ -716,121 +727,720 @@ class _StaffQuestionPreviewScreenState extends State<StaffQuestionPreviewScreen>
 }
 
 
+
+// // ignore_for_file: deprecated_member_use
 // import 'package:flutter/material.dart';
+// import 'package:flutter_svg/flutter_svg.dart';
 // import 'package:linkschool/modules/common/app_colors.dart';
+// import 'package:linkschool/modules/common/buttons/custom_save_elevated_button.dart';
+// import 'package:linkschool/modules/common/constants.dart';
 // import 'package:linkschool/modules/common/text_styles.dart';
 // import 'package:linkschool/modules/model/e-learning/question_model.dart';
+// import 'package:linkschool/modules/admin_portal/e_learning/View/question/assessment_screen.dart';
+// import 'package:linkschool/modules/admin_portal/e_learning/View/quiz/quiz_screen.dart';
+// import 'package:linkschool/modules/admin_portal/e_learning/question_screen.dart';
 
-// class StaffQuestionPreviewScreen extends StatelessWidget {
+
+// class StaffQuestionPreviewScreen extends StatefulWidget {
 //   final Question question;
 
-//   const StaffQuestionPreviewScreen({
-//     Key? key,
-//     required this.question,
-//   }) : super(key: key);
+//   const StaffQuestionPreviewScreen({super.key, required this.question});
+
+//   @override
+//   State<StaffQuestionPreviewScreen> createState() => _StaffQuestionPreviewScreenState();
+// }
+
+// class _StaffQuestionPreviewScreenState extends State<StaffQuestionPreviewScreen> {
+//   List<Map<String, dynamic>> createdQuestions = [];
+//   late double opacity;
+//   late Question currentQuestion;
+//   bool showSaveButton = false;
+
+//   @override
+//   void initState() {
+//     super.initState();
+//     currentQuestion = widget.question;
+//   }
 
 //   @override
 //   Widget build(BuildContext context) {
+//     final Brightness brightness = Theme.of(context).brightness;
+//     opacity = brightness == Brightness.light ? 0.1 : 0.15;
 //     return Scaffold(
-//       backgroundColor: Colors.white,
 //       appBar: AppBar(
 //         leading: IconButton(
-//           icon: const Icon(Icons.arrow_back, color: Colors.indigo),
 //           onPressed: () => Navigator.of(context).pop(),
-//         ),
-//         title: const Text(
-//           'Create question',
-//           style: TextStyle(
-//             color: Colors.indigo,
-//             fontSize: 18,
-//             fontWeight: FontWeight.w500,
+//           icon: Image.asset(
+//             'assets/icons/arrow_back.png',
+//             color: AppColors.paymentTxtColor1,
+//             width: 34.0,
+//             height: 34.0,
 //           ),
 //         ),
-//         backgroundColor: Colors.white,
-//         elevation: 0,
+//         title: Text(
+//           'Question',
+
+//           style: AppTextStyles.normal600(
+//             fontSize: 24.0,
+//             color: AppColors.paymentTxtColor1,
+//           ),
+//         ),
+//         backgroundColor: AppColors.backgroundLight,
+//         flexibleSpace: FlexibleSpaceBar(
+//           background: Stack(
+//             children: [
+//               Positioned.fill(
+//                 child: Opacity(
+//                   opacity: opacity,
+//                   child: Image.asset(
+//                     'assets/images/background.png',
+//                     fit: BoxFit.cover,
+//                   ),
+//                 ),
+//               )
+//             ],
+//           ),
+//         ),
 //         actions: [
-//           IconButton(
-//             icon: const Icon(Icons.more_vert, color: Colors.indigo),
-//             onPressed: () {},
-//           ),
+//           if (showSaveButton)
+//             Padding(
+//               padding: const EdgeInsets.symmetric(horizontal: 8.0),
+//               child: CustomSaveElevatedButton(
+//                 onPressed: _saveQuestions,
+//                 text: 'Save',
+//               ),
+//             ),
 //         ],
 //       ),
-//       body: Column(
-//         children: [
-//           Container(
-//             margin: const EdgeInsets.all(16),
-//             decoration: BoxDecoration(
-//               color: const Color(0xFF4051B5), // Indigo/purple color from screenshot
-//               borderRadius: BorderRadius.circular(8),
+//       body: Container(
+//         height: MediaQuery.of(context).size.height,
+//         decoration: Constants.customBoxDecoration(context),
+//         child: SingleChildScrollView(
+//           child: Column(
+//             children: [
+//               _buildQuestionBackground(),
+//               ...createdQuestions.map((question) => question['widget']),
+//             ],
+//           ),
+//         ),
+//       ),
+//       bottomNavigationBar: _buildBottomNavigation(),
+//     );
+//   }
+
+//   Widget _buildSavedQuestionRow(String questionType, Widget questionCard) {
+//     IconData iconData =
+//         questionType == 'short_answer' ? Icons.short_text : Icons.list;
+
+//     return Column(
+//       children: [
+//         GestureDetector(
+//           onTap: () {
+//             Navigator.push(
+//               context,
+//               MaterialPageRoute(
+//                   builder: (context) => QuizScreen(question: currentQuestion)),
+//             );
+//           },
+//           child: ListTile(
+//             leading: Icon(iconData),
+//             title: Text(
+//               questionType == 'short_answer'
+//                   ? 'Short answer'
+//                   : 'Multiple choice',
+//               style: AppTextStyles.normal500(
+//                   fontSize: 16, color: AppColors.textGray),
 //             ),
-//             child: Padding(
-//               padding: const EdgeInsets.all(16),
-//               child: Column(
-//                 crossAxisAlignment: CrossAxisAlignment.start,
-//                 children: [
-//                   Text(
-//                     '2nd Continuous Assessment',
-//                     style: AppTextStyles.normal600(
-//                       fontSize: 20,
+//             trailing: IconButton(
+//               icon: SvgPicture.asset(
+//                 'assets/icons/e_learning/kebab_icon.svg',
+//                 width: 24,
+//                 height: 24,
+//               ),
+//               onPressed: () {
+//                 _showKebabMenu(context);
+//               },
+//             ),
+//           ),
+//         ),
+//         const Padding(
+//           padding: EdgeInsets.symmetric(horizontal: 16.0),
+//           child: Divider(color: Colors.grey),
+//         ),
+//       ],
+//     );
+//   }
+
+//   void _showKebabMenu(BuildContext context) {
+//     showMenu(
+//       context: context,
+//       position: const RelativeRect.fromLTRB(100, 100, 0, 0),
+//       items: [
+//         PopupMenuItem(
+//           child: ListTile(
+//             leading: const Icon(Icons.edit),
+//             title: const Text('Edit'),
+//             onTap: () {
+//               Navigator.pop(context);
+//               _editQuestion();
+//             },
+//           ),
+//         ),
+//         PopupMenuItem(
+//           child: ListTile(
+//             leading: const Icon(Icons.delete),
+//             title: const Text('Delete'),
+//             onTap: () {
+//               Navigator.pop(context);
+//               _deleteQuestion();
+//             },
+//           ),
+//         ),
+//       ],
+//     );
+//   }
+
+//   Widget _buildQuestionBackground() {
+//     return LayoutBuilder(
+//       builder: (context, constraints) {
+//         return GestureDetector(
+//           onTap: () => _editQuestion(),
+//           child: Container(
+//             width: constraints.maxWidth,
+//             height: 164,
+//             margin: const EdgeInsets.symmetric(horizontal: 16),
+//             child: Stack(
+//               children: [
+//                 Positioned.fill(
+//                   child: ClipRRect(
+//                     borderRadius: BorderRadius.circular(12),
+//                     child: OverflowBox(
+//                       maxWidth: double.infinity,
+//                       child: SvgPicture.asset(
+//                         'assets/images/e-learning/question_bg2.svg',
+//                         fit: BoxFit.cover,
+//                         width: constraints.maxWidth,
+//                         height: 164,
+//                       ),
+//                     ),
+//                   ),
+//                 ),
+//                 Positioned(
+//                   top: 16,
+//                   right: 8,
+//                   child: GestureDetector(
+//                     onTap: () => _showKebabMenu,
+//                     child: SvgPicture.asset(
+//                       'assets/icons/e_learning/kebab_icon.svg',
+//                       width: 24,
+//                       height: 24,
 //                       color: Colors.white,
 //                     ),
 //                   ),
-//                   const SizedBox(height: 8),
-//                   Text(
-//                     'Answer all questions',
-//                     style: AppTextStyles.normal400(
-//                       fontSize: 14,
-//                       color: Colors.white.withOpacity(0.8),
-//                     ),
-//                   ),
-//                   const SizedBox(height: 16),
-//                   Row(
+//                 ),
+//                 Padding(
+//                   padding: const EdgeInsets.all(16.0),
+//                   child: Column(
+//                     crossAxisAlignment: CrossAxisAlignment.start,
 //                     children: [
-//                       const Icon(
-//                         Icons.timer_outlined,
-//                         color: Colors.white,
-//                         size: 20,
+//                       _buildInfoSection(
+//                         value: currentQuestion.title,
+//                         style: AppTextStyles.normal600(
+//                             fontSize: 20, color: AppColors.backgroundLight),
 //                       ),
-//                       const SizedBox(width: 8),
-//                       Text(
-//                         '${question.duration.inMinutes} minutes',
+//                       const SizedBox(height: 16.0),
+//                       _buildInfoSection(
+//                         value: currentQuestion.description,
 //                         style: AppTextStyles.normal400(
-//                           fontSize: 14,
-//                           color: Colors.white,
-//                         ),
+//                             fontSize: 16, color: AppColors.backgroundLight),
+//                       ),
+//                       const Divider(color: Colors.white, height: 1),
+//                       const SizedBox(height: 16.0),
+//                       _buildInfoSection(
+//                         value: _formatDuration(currentQuestion.duration),
+//                         style: AppTextStyles.normal600(
+//                             fontSize: 16, color: AppColors.backgroundLight),
+//                         icon: 'assets/icons/e_learning/stopwatch_icon.svg',
 //                       ),
 //                     ],
 //                   ),
-//                 ],
-//               ),
-//             ),
-//           ),
-//           const Spacer(),
-//           Container(
-//             padding: const EdgeInsets.all(16),
-//             decoration: const BoxDecoration(
-//               border: Border(
-//                 top: BorderSide(color: Colors.grey, width: 0.5),
-//               ),
-//             ),
-//             child: Row(
-//               mainAxisAlignment: MainAxisAlignment.spaceBetween,
-//               children: [
-//                 IconButton(
-//                   icon: const Icon(Icons.photo_library_outlined),
-//                   onPressed: () {},
-//                   color: Colors.grey,
-//                 ),
-//                 FloatingActionButton(
-//                   onPressed: () {},
-//                   backgroundColor: const Color(0xFF4051B5),
-//                   child: const Icon(Icons.add),
 //                 ),
 //               ],
+//             ),
+//           ),
+//         );
+//       },
+//     );
+//   }
+
+//   void _editQuestion() async {
+//     final result = await Navigator.push<Question>(
+//       context,
+//       MaterialPageRoute(
+//         builder: (context) => QuestionScreen(
+//           question: currentQuestion,
+//           isEditing: true,
+//           onSave: (Question) {},
+//         ),
+//       ),
+//     );
+
+//     if (result != null) {
+//       setState(() {
+//         currentQuestion = result;
+//       });
+//     }
+//   }
+
+//   void _deleteQuestion() {
+//     // Implement delete functionality
+//     showDialog(
+//       context: context,
+//       builder: (BuildContext context) {
+//         return AlertDialog(
+//           title: const Text('Delete Question'),
+//           content: const Text('Are you sure you want to delete this question?'),
+//           actions: <Widget>[
+//             TextButton(
+//               child: const Text('Cancel'),
+//               onPressed: () {
+//                 Navigator.of(context).pop();
+//               },
+//             ),
+//             TextButton(
+//               child: const Text('Delete'),
+//               onPressed: () {
+//                 // Implement the actual deletion logic here
+//                 Navigator.of(context).pop();
+//                 Navigator.of(context).pop(); // Return to the previous screen
+//               },
+//             ),
+//           ],
+//         );
+//       },
+//     );
+//   }
+
+//   Widget _buildBottomNavigation() {
+//     return Container(
+//       height: 65,
+//       decoration: BoxDecoration(
+//         color: Colors.white,
+//         boxShadow: [
+//           BoxShadow(
+//             color: Colors.grey.withOpacity(0.5),
+//             spreadRadius: 1,
+//             blurRadius: 5,
+//             offset: const Offset(0, -3),
+//           ),
+//         ],
+//       ),
+//       child: Row(
+//         mainAxisAlignment: MainAxisAlignment.spaceBetween,
+//         children: [
+//           Padding(
+//             padding: const EdgeInsets.only(left: 16.0),
+//             child: IconButton(
+//               icon:
+//                   SvgPicture.asset('assets/icons/e_learning/preview_icon.svg'),
+//               onPressed: () {
+//                 Navigator.push(
+//                   context,
+//                   MaterialPageRoute(
+//                       builder: (context) => const AssessmentScreen()),
+//                 );
+//               },
+//             ),
+//           ),
+//           Padding(
+//             padding: const EdgeInsets.only(right: 16.0),
+//             child: IconButton(
+//               icon: SvgPicture.asset(
+//                   'assets/icons/e_learning/circle_plus_icon.svg'),
+//               onPressed: () => _showQuestionTypeOverlay(context),
 //             ),
 //           ),
 //         ],
 //       ),
 //     );
+//   }
+
+//   void _showQuestionTypeOverlay(BuildContext context) {
+//     showModalBottomSheet(
+//       context: context,
+//       builder: (BuildContext context) {
+//         return Container(
+//           padding: const EdgeInsets.all(16),
+//           child: Column(
+//             mainAxisSize: MainAxisSize.min,
+//             children: [
+//               Center(
+//                 child: Text(
+//                   'Select Question Type',
+//                   style: AppTextStyles.normal600(
+//                     fontSize: 18,
+//                     color: AppColors.textGray,
+//                   ),
+//                 ),
+//               ),
+//               const SizedBox(height: 16), // Add spacing below the title
+//               _buildQuestionTypeOption(
+//                 icon: Icons.short_text,
+//                 text: 'Short answer',
+//                 onTap: () => _addQuestion('short_answer'),
+//               ),
+//               _buildQuestionTypeOption(
+//                 icon: Icons.list,
+//                 text: 'Multiple choice',
+//                 onTap: () => _addQuestion('multiple_choice'),
+//               ),
+//             ],
+//           ),
+//         );
+//       },
+//     );
+//   }
+
+//   void _addQuestion(String questionType) {
+//     Navigator.pop(context);
+//     setState(() {
+//       createdQuestions.add({
+//         'type': questionType,
+//         'widget': _buildQuestionCard(questionType),
+//       });
+//       showSaveButton = true;
+//     });
+//   }
+
+//   void _saveQuestions() {
+//     setState(() {
+//       List<Map<String, dynamic>> updatedQuestions = [];
+//       for (var question in createdQuestions) {
+//         updatedQuestions.add({
+//           'type': question['type'],
+//           'widget':
+//               _buildSavedQuestionRow(question['type'], question['widget']),
+//         });
+//       }
+//       createdQuestions = updatedQuestions;
+//       showSaveButton = false;
+//     });
+//   }
+
+//   Widget _buildQuestionCard(String questionType) {
+//     bool isEditing = false;
+//     List<TextEditingController> optionControllers = [
+//       TextEditingController(),
+//       TextEditingController()
+//     ];
+//     TextEditingController questionController = TextEditingController();
+//     TextEditingController marksController = TextEditingController(text: '1');
+
+//     return StatefulBuilder(
+//       builder: (BuildContext context, StateSetter setState) {
+//         return Card(
+//           margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+//           elevation: 4,
+//           shape: RoundedRectangleBorder(
+//             borderRadius: BorderRadius.circular(8),
+//             side: BorderSide(
+//               color: isEditing
+//                   ? AppColors.paymentTxtColor1.withOpacity(0.5)
+//                   : Colors.transparent,
+//               width: 1,
+//             ),
+//           ),
+//           child: Column(
+//             children: [
+//               Padding(
+//                 padding: const EdgeInsets.all(8.0),
+//                 child: Container(
+//                   padding: const EdgeInsets.all(8),
+//                   color: const Color.fromRGBO(235, 235, 235, 1),
+//                   child: Row(
+//                     children: [
+//                       Icon(
+//                         questionType == 'short_answer'
+//                             ? Icons.short_text
+//                             : Icons.list,
+//                         color: AppColors.paymentTxtColor1,
+//                       ),
+//                       const SizedBox(width: 8),
+//                       Text(
+//                         questionType == 'short_answer'
+//                             ? 'Short answer'
+//                             : 'Multiple choice',
+//                         style: AppTextStyles.normal600(
+//                             fontSize: 16, color: AppColors.textGray),
+//                       ),
+//                     ],
+//                   ),
+//                 ),
+//               ),
+//               Padding(
+//                 padding: const EdgeInsets.all(16),
+//                 child: Column(
+//                   children: [
+//                     TextField(
+//                       controller: questionController,
+//                       decoration: InputDecoration(
+//                         hintText: 'Question',
+//                         border: const UnderlineInputBorder(),
+//                         suffixIcon: IconButton(
+//                           icon: const Icon(Icons.more_vert),
+//                           onPressed: () => _showAttachmentOptions(context),
+//                         ),
+//                       ),
+//                       onTap: () {
+//                         setState(() {
+//                           isEditing = true;
+//                         });
+//                       },
+//                       onEditingComplete: () {
+//                         setState(() {
+//                           isEditing = false;
+//                         });
+//                       },
+//                     ),
+//                     if (questionType == 'multiple_choice')
+//                       Column(
+//                         children: [
+//                           ...optionControllers.asMap().entries.map((entry) =>
+//                               _buildOptionRow(
+//                                   entry.key, entry.value, setState)),
+//                           Padding(
+//                             padding: const EdgeInsets.only(top: 16),
+//                             child: InkWell(
+//                               onTap: () {
+//                                 setState(() {
+//                                   optionControllers
+//                                       .add(TextEditingController());
+//                                 });
+//                               },
+//                               child: Row(
+//                                 children: [
+//                                   Text(
+//                                     'Add option',
+//                                     style: AppTextStyles.normal600(
+//                                       fontSize: 14,
+//                                       color:
+//                                           AppColors.textGray.withOpacity(0.5),
+//                                     ),
+//                                   ),
+//                                 ],
+//                               ),
+//                             ),
+//                           ),
+//                           const SizedBox(height: 8.0),
+//                           const Divider(
+//                               color: Colors.grey, thickness: 0.6, height: 1),
+//                         ],
+//                       ),
+//                   ],
+//                 ),
+//               ),
+//               Padding(
+//                 padding:
+//                     const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+//                 child: Row(
+//                   children: [
+//                     Padding(
+//                       padding: const EdgeInsets.only(bottom: 16.0),
+//                       child: Container(
+//                         width: 60,
+//                         decoration: BoxDecoration(
+//                           border: Border(
+//                               bottom: BorderSide(color: Colors.grey[400]!)),
+//                         ),
+//                         child: TextField(
+//                           controller: marksController,
+//                           keyboardType: TextInputType.number,
+//                           textAlign: TextAlign.center,
+//                           decoration: const InputDecoration(
+//                             border: InputBorder.none,
+//                           ),
+//                         ),
+//                       ),
+//                     ),
+//                     const SizedBox(width: 8),
+//                     const Padding(
+//                       padding: EdgeInsets.only(top: 16.0),
+//                       child: Text('marks'),
+//                     ),
+//                     const Spacer(),
+//                     IconButton(
+//                       icon: const Icon(Icons.copy, color: Colors.grey),
+//                       onPressed: () {
+//                         ScaffoldMessenger.of(context).showSnackBar(
+//                           const SnackBar(content: Text('Question copied')),
+//                         );
+//                       },
+//                     ),
+//                     IconButton(
+//                       icon: const Icon(Icons.delete, color: Colors.grey),
+//                       onPressed: () {
+//                         setState(() {
+//                           createdQuestions.removeWhere((element) =>
+//                               element == _buildQuestionCard(questionType));
+//                         });
+//                       },
+//                     ),
+//                   ],
+//                 ),
+//               ),
+//             ],
+//           ),
+//         );
+//       },
+//     );
+//   }
+
+//   Widget _buildOptionRow(
+//       int index, TextEditingController controller, Function setState) {
+//     return Row(
+//       children: [
+//         Radio(
+//           value: index,
+//           groupValue: null,
+//           onChanged: (value) {},
+//         ),
+//         Expanded(
+//           child: TextField(
+//             controller: controller,
+//             decoration: const InputDecoration(
+//               hintText: 'Option',
+//               border: UnderlineInputBorder(),
+//             ),
+//             onChanged: (value) {
+//               setState(() {
+//                 // The controller will automatically update the text
+//               });
+//             },
+//           ),
+//         ),
+//         IconButton(
+//           icon: const Icon(Icons.more_vert),
+//           onPressed: () => _showAttachmentOptions(context),
+//         ),
+//       ],
+//     );
+//   }
+
+//   void _showAttachmentOptions(BuildContext context) {
+//     showModalBottomSheet(
+//       context: context,
+//       builder: (BuildContext context) {
+//         return Container(
+//           padding: const EdgeInsets.all(16),
+//           child: Column(
+//             mainAxisSize: MainAxisSize.min,
+//             children: [
+//               ListTile(
+//                 leading: const Icon(Icons.link),
+//                 title: const Text('Insert link'),
+//                 onTap: () {
+//                   // Insert link functionality
+//                   Navigator.pop(context);
+//                 },
+//               ),
+//               ListTile(
+//                 leading: const Icon(Icons.upload_file),
+//                 title: const Text('Upload file'),
+//                 onTap: () {
+//                   // Upload file functionality
+//                   Navigator.pop(context);
+//                 },
+//               ),
+//               ListTile(
+//                 leading: const Icon(Icons.camera_alt),
+//                 title: const Text('Take photo'),
+//                 onTap: () {
+// // Take photo functionality
+//                   Navigator.pop(context);
+//                 },
+//               ),
+//             ],
+//           ),
+//         );
+//       },
+//     );
+//   }
+
+//   Widget _buildInfoSection({
+//     String? label,
+//     required String value,
+//     required TextStyle style,
+//     String? icon,
+//   }) {
+//     return Padding(
+//       padding: const EdgeInsets.only(bottom: 8.0),
+//       child: Row(
+//         children: [
+//           if (icon != null)
+//             Padding(
+//               padding: const EdgeInsets.only(right: 8.0),
+//               child: SvgPicture.asset(
+//                 icon,
+//                 width: 20,
+//                 height: 20,
+//                 color: style.color,
+//               ),
+//             ),
+//           if (label != null)
+//             Text(
+//               label,
+//               style: style,
+//             ),
+//           Expanded(
+//             child: Text(
+//               value,
+//               style: style,
+//             ),
+//           ),
+//         ],
+//       ),
+//     );
+//   }
+
+//   Widget _buildQuestionTypeOption({
+//     required IconData icon,
+//     required String text,
+//     required VoidCallback onTap,
+//   }) {
+//     return InkWell(
+//       onTap: onTap,
+//       child: Container(
+//         padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+//         margin: const EdgeInsets.only(bottom: 8),
+//         decoration: BoxDecoration(
+//           color: const Color.fromRGBO(248, 248, 248, 1),
+//           borderRadius: BorderRadius.circular(8),
+//           boxShadow: [
+//             BoxShadow(
+//               color: Colors.black.withOpacity(0.1),
+//               blurRadius: 4,
+//               offset: const Offset(0, 2),
+//             ),
+//           ],
+//         ),
+//         child: Row(
+//           children: [
+//             Icon(icon, color: AppColors.paymentTxtColor1),
+//             const SizedBox(width: 16),
+//             Text(
+//               text,
+//               style: AppTextStyles.normal500(
+//                 fontSize: 16,
+//                 color: AppColors.paymentTxtColor1,
+//               ),
+//             ),
+//           ],
+//         ),
+//       ),
+//     );
+//   }
+
+//   String _formatDuration(Duration duration) {
+//     return '${duration.inHours}h ${duration.inMinutes.remainder(60)}m';
 //   }
 // }

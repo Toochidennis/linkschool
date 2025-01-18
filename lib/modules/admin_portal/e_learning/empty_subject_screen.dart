@@ -11,7 +11,6 @@ import 'package:linkschool/modules/model/e-learning/material_model.dart' as cust
 import 'package:linkschool/modules/model/e-learning/topic_model.dart';
 import 'package:linkschool/modules/staff_portal/e_learning/staff_create_syllabus_screen.dart';
 import 'package:linkschool/modules/staff_portal/e_learning/sub_screens/staff_add_material_screen.dart';
-import 'package:linkschool/modules/staff_portal/e_learning/sub_screens/staff_assignment_screen.dart';
 import 'package:linkschool/modules/staff_portal/e_learning/sub_screens/staff_question_screen.dart';
 import 'package:linkschool/modules/staff_portal/e_learning/view/quiz_answer_screen.dart';
 import 'package:linkschool/modules/staff_portal/e_learning/view/staff_assignment_details_screen.dart';
@@ -27,9 +26,9 @@ class EmptySubjectScreen extends StatefulWidget {
 }
 
 class _EmptySubjectScreenState extends State<EmptySubjectScreen> {
-  final List<Map<String, dynamic>> _syllabusList = [];
+  // final List<Map<String, dynamic>> _syllabusList = [];
+  // Map<String, dynamic>? _currentSyllabus;
   late double opacity = 0.1;
-  Map<String, dynamic>? _currentSyllabus;
   List<Topic> topics = [];
   bool _showCourseworkScreen = false;
 
