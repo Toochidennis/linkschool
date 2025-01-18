@@ -15,7 +15,7 @@ class CustomOutlineButton extends StatelessWidget {
     required this.textColor,
     this.height,
     this.width,
-    super.key,
+    super.key, 
   });
 
   @override

@@ -1,98 +1,258 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
+import 'package:flutter_svg/svg.dart';
 import 'package:intl/intl.dart';
+import 'package:linkschool/modules/admin_portal/e_learning/admin_assignment_screen.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/buttons/custom_medium_elevated_button.dart';
 import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/model/e-learning/question_model.dart';
-import 'package:linkschool/modules/model/e-learning/topic_model.dart';
 import 'package:linkschool/modules/model/e-learning/material_model.dart' as custom;
-import 'package:linkschool/modules/admin_portal/e_learning/View/quiz/quiz_screen.dart';
-import 'package:linkschool/modules/admin_portal/e_learning/View/view_assignment_screen.dart';
-import 'package:linkschool/modules/admin_portal/e_learning/View/question/view_question_screen.dart';
-import 'package:linkschool/modules/admin_portal/e_learning/add_material_screen.dart';
-import 'package:linkschool/modules/admin_portal/e_learning/assignment_screen.dart';
-import 'package:linkschool/modules/admin_portal/e_learning/create_topic_screen.dart';
-import 'package:linkschool/modules/admin_portal/e_learning/question_screen.dart';
+import 'package:linkschool/modules/model/e-learning/topic_model.dart';
+import 'package:linkschool/modules/staff_portal/e_learning/staff_create_syllabus_screen.dart';
+import 'package:linkschool/modules/staff_portal/e_learning/sub_screens/staff_add_material_screen.dart';
+import 'package:linkschool/modules/staff_portal/e_learning/sub_screens/staff_assignment_screen.dart';
+import 'package:linkschool/modules/staff_portal/e_learning/sub_screens/staff_question_screen.dart';
+import 'package:linkschool/modules/staff_portal/e_learning/view/quiz_answer_screen.dart';
+import 'package:linkschool/modules/staff_portal/e_learning/view/staff_assignment_details_screen.dart';
 import 'package:linkschool/modules/staff_portal/e_learning/view/staff_material_details_screen.dart';
 
 class EmptySubjectScreen extends StatefulWidget {
-  final String title;
-  final String selectedSubject;
+  final String courseTitle;
 
-  const EmptySubjectScreen({
-    super.key,
-    required this.title,
-    required this.selectedSubject,
-  });
+  const EmptySubjectScreen({Key? key, required this.courseTitle}) : super(key: key);
 
   @override
-  _EmptySubjectScreenState createState() => _EmptySubjectScreenState();
+  State<EmptySubjectScreen> createState() => _EmptySubjectScreenState();
 }
 
 class _EmptySubjectScreenState extends State<EmptySubjectScreen> {
-  List<Topic> topics = []; // Initialize as empty
-  late double opacity;
+  final List<Map<String, dynamic>> _syllabusList = [];
+  late double opacity = 0.1;
+  Map<String, dynamic>? _currentSyllabus;
+  List<Topic> topics = [];
+  bool _showCourseworkScreen = false;
 
   @override
   void initState() {
     super.initState();
-    // Do not call _addDummyData here to ensure the empty state is shown first
+    _addDummyData();
   }
 
-  void _addAssignment(Assignment assignment) {
-    setState(() {
-      if (topics.isEmpty) {
-        // Add a default topic if the list is empty
-        topics.add(Topic(
-          name: 'Default Topic',
-          description: 'No description',
-          assignments: [],
-          questions: [],
-          materials: [],
-        ));
-      }
-
-      // Add the assignment to the first topic (or a specific topic)
-      topics.first.assignments.add(assignment);
-    });
+  void _addDummyData() {
+    topics = [
+      Topic(
+        name: 'Punctuality',
+        assignments: [
+          Assignment(
+            title: 'Assignment 1',
+            createdAt: DateTime.now().subtract(const Duration(days: 5)),
+            topic: 'Punctuality',
+            description: 'Write an essay about the importance of punctuality',
+            selectedClass: 'Class 10A',
+            attachments: [],
+            dueDate: DateTime.now().add(const Duration(days: 7)),
+            marks: '20',
+          ),
+        ],
+        questions: [
+          Question(
+            title: 'Question 1',
+            createdAt: DateTime.now().subtract(const Duration(days: 4)),
+            topic: 'Punctuality',
+            description: 'What are the benefits of being punctual?',
+            selectedClass: 'Class 10A',
+            startDate: DateTime.now(),
+            endDate: DateTime.now().add(const Duration(days: 1)),
+            duration: const Duration(minutes: 30),
+            marks: '10',
+          ),
+        ],
+        materials: [
+          custom.Material(
+            title: 'Importance of Time Management',
+            createdAt: DateTime.now().subtract(const Duration(days: 3)),
+            topic: 'Punctuality',
+            description: 'A comprehensive guide on time management techniques',
+            selectedClass: 'Class 10A',
+            startDate: DateTime.now(),
+            endDate: DateTime.now().add(const Duration(days: 1)),
+            duration: const Duration(minutes: 30),
+            marks: '10',
+          ),
+        ],
+        description: '',
+      ),
+      Topic(
+        name: 'Time Management',
+        assignments: [
+          Assignment(
+            title: 'Assignment 3',
+            createdAt: DateTime.now().subtract(const Duration(days: 6)),
+            topic: 'Time Management',
+            description: 'Create a weekly schedule to improve time management',
+            selectedClass: 'Class 11A',
+            attachments: [],
+            dueDate: DateTime.now().add(const Duration(days: 5)),
+            marks: '25',
+          ),
+        ],
+        questions: [
+          Question(
+            title: 'Question 3',
+            createdAt: DateTime.now().subtract(const Duration(days: 1)),
+            topic: 'Time Management',
+            description: 'What are the key principles of effective time management?',
+            selectedClass: 'Class 11A',
+            startDate: DateTime.now(),
+            endDate: DateTime.now().add(const Duration(days: 1)),
+            duration: const Duration(minutes: 20),
+            marks: '20',
+          ),
+        ],
+        materials: [
+          custom.Material(
+            title: 'Importance of Time Management',
+            createdAt: DateTime.now().subtract(const Duration(days: 3)),
+            topic: 'Punctuality',
+            description: 'A comprehensive guide on time management techniques',
+            selectedClass: 'Class 10A',
+            startDate: DateTime.now(),
+            endDate: DateTime.now().add(const Duration(days: 1)),
+            duration: const Duration(minutes: 30),
+            marks: '10',
+          ),
+        ],
+        description: '',
+      ),
+    ];
   }
 
-  void _addQuestion(Question question) {
-    setState(() {
-      if (topics.isEmpty) {
-        // Add a default topic if the list is empty
-        topics.add(Topic(
-          name: 'Default Topic',
-          description: 'No description',
-          assignments: [],
-          questions: [],
-          materials: [],
-        ));
-      }
-
-      // Add the question to the first topic (or a specific topic)
-      topics.first.questions.add(question);
-    });
+  void _showCreateOptionsBottomSheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      builder: (BuildContext context) {
+        return Container(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'What do you want to create?',
+                style: AppTextStyles.normal600(
+                    fontSize: 18.0, color: AppColors.backgroundDark),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 20),
+              _buildOptionRow(context, 'Assignment',
+                  'assets/icons/e_learning/assignment.svg'),
+              _buildOptionRow(context, 'Question',
+                  'assets/icons/e_learning/question_icon.svg'),
+              _buildOptionRow(
+                  context, 'Material', 'assets/icons/e_learning/material.svg'),
+              _buildOptionRow(
+                  context, 'Topic', 'assets/icons/e_learning/topic.svg'),
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 10),
+                child: Row(
+                  children: [
+                    Expanded(child: Divider()),
+                    Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 10),
+                      child: Text('or', style: TextStyle(color: Colors.grey)),
+                    ),
+                    Expanded(child: Divider()),
+                  ],
+                ),
+              ),
+              _buildOptionRow(context, 'Reuse content',
+                  'assets/icons/e_learning/share.svg'),
+            ],
+          ),
+        );
+      },
+    );
   }
 
-  void _addMaterial(custom.Material material) {
-    setState(() {
-      if (topics.isEmpty) {
-        // Add a default topic if the list is empty
-        topics.add(Topic(
-          name: 'Default Topic',
-          description: 'No description',
-          assignments: [],
-          questions: [],
-          materials: [],
-        ));
-      }
-
-      // Add the material to the first topic (or a specific topic)
-      topics.first.materials.add(material);
-    });
+  Widget _buildOptionRow(BuildContext context, String text, String iconPath) {
+    return InkWell(
+      onTap: () {
+        Navigator.pop(context);
+        switch (text) {
+          case 'Assignment':
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => AdminAssignmentScreen(
+                  onSave: (assignment) {
+                    setState(() {
+                      _showCourseworkScreen = true;
+                    });
+                  },
+                ),
+              ),
+            );
+            break;
+          case 'Question':
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => StaffQuestionScreen(
+                  onSave: (question) {
+                    setState(() {
+                      _showCourseworkScreen = true;
+                    });
+                  },
+                ),
+              ),
+            );
+            break;
+          case 'Topic':
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                fullscreenDialog: true,
+                builder: (BuildContext context) =>
+                    const StaffCreateSyllabusScreen(),
+              ),
+            );
+            break;
+          case 'Material':
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => StaffAddMaterialScreen(
+                  onSave: (material) {
+                    setState(() {
+                      _showCourseworkScreen = true;
+                    });
+                  },
+                ),
+              ),
+            );
+            break;
+        }
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+        margin: const EdgeInsets.only(bottom: 8),
+        decoration: BoxDecoration(
+          color: AppColors.backgroundLight,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Row(
+          children: [
+            SvgPicture.asset(iconPath, width: 24, height: 24),
+            const SizedBox(width: 16),
+            Text(
+              text,
+              style: AppTextStyles.normal500(
+                  fontSize: 16, color: AppColors.backgroundDark),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   @override
@@ -108,16 +268,17 @@ class _EmptySubjectScreenState extends State<EmptySubjectScreen> {
           },
           icon: Image.asset(
             'assets/icons/arrow_back.png',
-            color: AppColors.primaryLight,
+            color: AppColors.paymentTxtColor1,
             width: 34.0,
             height: 34.0,
           ),
         ),
         title: Text(
-          widget.selectedSubject,
-          style: AppTextStyles.normal600(
-            fontSize: 24.0,
-            color: AppColors.primaryLight,
+          widget.courseTitle,
+          style: const TextStyle(
+            fontSize: 22,
+            fontWeight: FontWeight.bold,
+            color: AppColors.paymentTxtColor1,
           ),
         ),
         backgroundColor: AppColors.backgroundLight,
@@ -137,34 +298,38 @@ class _EmptySubjectScreenState extends State<EmptySubjectScreen> {
           ),
         ),
       ),
-      body: Container(
-        decoration: Constants.customBoxDecoration(context),
-        child: topics.isEmpty
-            ? _buildEmptyState()
-            : _buildSyllabusDetails(),
+      body: _buildCourseworkScreen(),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => _showCreateOptionsBottomSheet(context),
+        backgroundColor: AppColors.staffBtnColor1,
+        child: const Icon(Icons.add, color: Colors.white),
       ),
     );
   }
 
-  Widget _buildEmptyState() {
+  Widget _buildCourseworkScreen() {
     return Container(
+      width: double.infinity,
+      height: double.infinity,
       decoration: Constants.customBoxDecoration(context),
-      child: Center(
-        child: Column(
+      child: _showCourseworkScreen ? _buildSyllabusDetails() : _buildEmptyState(),
+    );
+  }
+
+  Widget _buildEmptyState() {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        const Text('No syllabus have been created'),
+        const SizedBox(height: 15),
+        Row(
           mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            Text(
-              'Nothing has been created for this subject',
-              style: AppTextStyles.normal500(
-                fontSize: 16.0,
-                color: AppColors.backgroundDark,
-              ),
-            ),
-            const SizedBox(height: 20),
             CustomMediumElevatedButton(
               text: 'Create content',
               onPressed: () {
-                // Open the bottom sheet with options
                 _showCreateOptionsBottomSheet(context);
               },
               backgroundColor: AppColors.eLearningBtnColor1,
@@ -172,12 +337,11 @@ class _EmptySubjectScreenState extends State<EmptySubjectScreen> {
                 fontSize: 16,
                 color: AppColors.backgroundLight,
               ),
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 16.0, vertical: 10.0),
+              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 10.0),
             )
           ],
-        ),
-      ),
+        )
+      ],
     );
   }
 
@@ -188,7 +352,6 @@ class _EmptySubjectScreenState extends State<EmptySubjectScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Background Image Container
             Container(
               height: 95,
               width: MediaQuery.of(context).size.width,
@@ -200,7 +363,7 @@ class _EmptySubjectScreenState extends State<EmptySubjectScreen> {
                 fit: StackFit.expand,
                 children: [
                   SvgPicture.asset(
-                    'assets/images/syllabus_background.svg', // Update with correct path
+                    'assets/images/admission/background_img.svg',
                     width: MediaQuery.of(context).size.width,
                     height: 95,
                     fit: BoxFit.cover,
@@ -213,7 +376,7 @@ class _EmptySubjectScreenState extends State<EmptySubjectScreen> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Text(
-                            topics.isNotEmpty ? topics.first.name : 'Topic Name',
+                            widget.courseTitle,
                             style: AppTextStyles.normal700(
                               fontSize: 18,
                               color: AppColors.backgroundLight,
@@ -222,7 +385,7 @@ class _EmptySubjectScreenState extends State<EmptySubjectScreen> {
                           ),
                           const SizedBox(height: 5),
                           Text(
-                            'Class: Class 10A', // Update with dynamic data
+                            'Class: ${topics.isNotEmpty ? topics.first.assignments.first.selectedClass : "N/A"}',
                             style: AppTextStyles.normal500(
                               fontSize: 14,
                               color: AppColors.backgroundLight,
@@ -230,7 +393,7 @@ class _EmptySubjectScreenState extends State<EmptySubjectScreen> {
                             overflow: TextOverflow.ellipsis,
                           ),
                           Text(
-                            'Teacher: John Doe', // Update with dynamic data
+                            'Teacher: Current Teacher',
                             style: AppTextStyles.normal600(
                               fontSize: 12,
                               color: AppColors.backgroundLight,
@@ -245,44 +408,13 @@ class _EmptySubjectScreenState extends State<EmptySubjectScreen> {
               ),
             ),
             const SizedBox(height: 16),
-
-            // Description Card
-            if (topics.isNotEmpty && topics.first.description != null)
-              Card(
-                elevation: 2,
-                child: Padding(
-                  padding: const EdgeInsets.all(12.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Description:',
-                        style: AppTextStyles.normal600(
-                          fontSize: 16,
-                          color: AppColors.backgroundDark,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'topics.first.description',
-                        style: AppTextStyles.normal500(
-                          fontSize: 14,
-                          color: AppColors.backgroundDark,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-
-            // Assignments
             if (topics.isNotEmpty && topics.first.assignments.isNotEmpty)
               InkWell(
                 onTap: () {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => ViewAssignmentScreen(
+                      builder: (context) => StaffAssignmentDetailsScreen(
                         assignment: topics.first.assignments.first,
                       ),
                     ),
@@ -348,16 +480,14 @@ class _EmptySubjectScreenState extends State<EmptySubjectScreen> {
                   ),
                 ),
               ),
-
-            // Questions
             if (topics.isNotEmpty && topics.first.questions.isNotEmpty)
               InkWell(
                 onTap: () {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => ViewQuestionScreen(
-                        question: topics.first.questions.first,
+                      builder: (context) => QuizAnswersScreen(
+                        quizTitle: topics.first.questions.first.title,
                       ),
                     ),
                   );
@@ -422,8 +552,6 @@ class _EmptySubjectScreenState extends State<EmptySubjectScreen> {
                   ),
                 ),
               ),
-
-            // Materials
             if (topics.isNotEmpty && topics.first.materials.isNotEmpty)
               InkWell(
                 onTap: () {
@@ -496,471 +624,275 @@ class _EmptySubjectScreenState extends State<EmptySubjectScreen> {
                   ),
                 ),
               ),
+            if (topics.isNotEmpty)
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 16.0),
+                    child: Text(
+                      topics.first.name,
+                      style: AppTextStyles.normal600(
+                        fontSize: 18,
+                        color: AppColors.backgroundDark,
+                      ),
+                    ),
+                  ),
+                  _buildTopicItem(
+                    'What is Punctuality?',
+                    '25 June, 2015 · 08:52am',
+                    Icons.help_outline,
+                  ),
+                  _buildTopicItem(
+                    'First C.A',
+                    '25 June, 2015 · 08:52am',
+                    Icons.quiz_outlined,
+                  ),
+                  _buildTopicItem(
+                    'Assignment',
+                    '25 June, 2015 · 08:52am',
+                    Icons.assignment_outlined,
+                  ),
+                  _buildTopicItem(
+                    'Second C.A',
+                    '25 June, 2015 · 08:52am',
+                    Icons.quiz_outlined,
+                  ),
+                ],
+              ),
           ],
         ),
       ),
     );
   }
 
-  void _showCreateOptionsBottomSheet(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      builder: (BuildContext context) {
-        return Container(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                'What do you want to create?',
-                style: AppTextStyles.normal600(
-                    fontSize: 18.0, color: AppColors.backgroundDark),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 20),
-              _buildOptionRow(context, 'Assignment',
-                  'assets/icons/e_learning/assignment.svg'),
-              _buildOptionRow(context, 'Question',
-                  'assets/icons/e_learning/question_icon.svg'),
-              _buildOptionRow(
-                  context, 'Material', 'assets/icons/e_learning/material.svg'),
-              const Padding(
-                padding: EdgeInsets.symmetric(vertical: 10),
-                child: Row(
-                  children: [
-                    Expanded(child: Divider()),
-                    Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 10),
-                      child: Text('or', style: TextStyle(color: Colors.grey)),
-                    ),
-                    Expanded(child: Divider()),
-                  ],
-                ),
-              ),
-              _buildOptionRow(context, 'Reuse content',
-                  'assets/icons/e_learning/share.svg'),
-            ],
+  Widget _buildTopicItem(String title, String timestamp, IconData icon) {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 12.0),
+      child: Row(
+        children: [
+          Container(
+            width: 40,
+            height: 40,
+            decoration: const BoxDecoration(
+              color: AppColors.eLearningBtnColor1,
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              icon,
+              color: Colors.white,
+              size: 20,
+            ),
           ),
-        );
-      },
-    );
-  }
-
-  Widget _buildOptionRow(BuildContext context, String text, String iconPath) {
-    return InkWell(
-      onTap: () {
-        Navigator.pop(context); // Close the bottom sheet
-        // Navigate to the appropriate screen based on the selected text option
-        switch (text) {
-          case 'Assignment':
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => AssignmentScreen(
-                  onSave: (assignment) {
-                    _addAssignment(assignment);
-                  },
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: AppTextStyles.normal500(
+                    fontSize: 14,
+                    color: AppColors.backgroundDark,
+                  ),
                 ),
-              ),
-            );
-            break;
-          case 'Question':
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => QuestionScreen(
-                  onSave: (question) {
-                    _addQuestion(question);
-                  },
+                const SizedBox(height: 4),
+                Text(
+                  'Created on $timestamp',
+                  style: AppTextStyles.normal400(
+                    fontSize: 12,
+                    color: Colors.grey,
+                  ),
                 ),
-              ),
-            );
-            break;
-          case 'Material':
-            Navigator.push(
-                context,
-                MaterialPageRoute(
-                    builder: (context) => AddMaterialScreen(
-                          onSave: (material) {
-                            _addMaterial(material);
-                          },
-                        )));
-            break;
-        }
-      },
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-        margin: const EdgeInsets.only(bottom: 8),
-        decoration: BoxDecoration(
-          color: AppColors.backgroundLight,
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Row(
-          children: [
-            SvgPicture.asset(iconPath, width: 24, height: 24),
-            const SizedBox(width: 16),
-            Text(text,
-                style: AppTextStyles.normal500(
-                    fontSize: 16, color: AppColors.backgroundDark)),
-          ],
-        ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
 }
 
+// class Topic {
+//   final String name;
+//   final List<Assignment> assignments;
+//   final List<Question> questions;
+//   final List<custom.Material> materials;
+//   final String description;
+
+//   Topic({
+//     required this.name,
+//     required this.assignments,
+//     required this.questions,
+//     required this.materials,
+//     required this.description,
+//   });
+// }
+
+// class Assignment {
+//   final String title;
+//   final DateTime createdAt;
+//   final String topic;
+//   final String description;
+//   final String selectedClass;
+//   final List<dynamic> attachments;
+//   final DateTime dueDate;
+//   final String marks;
+
+//   Assignment({
+//     required this.title,
+//     required this.createdAt,
+//     required this.topic,
+//     required this.description,
+//     required this.selectedClass,
+//     required this.attachments,
+//     required this.dueDate,
+//     required this.marks,
+//   });
+// }
+
+// class Question {
+//   final String title;
+//   final DateTime createdAt;
+//   final String topic;
+//   final String description;
+//   final String selectedClass;
+//   final DateTime startDate;
+//   final DateTime endDate;
+//   final Duration duration;
+//   final String marks;
+
+//   Question({
+//     required this.title,
+//     required this.createdAt,
+//     required this.topic,
+//     required this.description,
+//     required this.selectedClass,
+//     required this.startDate,
+//     required this.endDate,
+//     required this.duration,
+//     required this.marks,
+//   });
+// }
+
+
+
 
 
 // import 'package:flutter/material.dart';
-// import 'package:flutter_svg/flutter_svg.dart';
+// import 'package:flutter_svg/svg.dart';
+// import 'package:intl/intl.dart';
+// import 'package:linkschool/modules/admin_portal/e_learning/admin_assignment_screen.dart';
 // import 'package:linkschool/modules/common/app_colors.dart';
 // import 'package:linkschool/modules/common/buttons/custom_medium_elevated_button.dart';
 // import 'package:linkschool/modules/common/constants.dart';
 // import 'package:linkschool/modules/common/text_styles.dart';
 // import 'package:linkschool/modules/model/e-learning/question_model.dart';
-// import 'package:linkschool/modules/model/e-learning/topic_model.dart';
 // import 'package:linkschool/modules/model/e-learning/material_model.dart' as custom;
-// import 'package:linkschool/modules/admin_portal/e_learning/View/view_assignment_screen.dart';
-// import 'package:linkschool/modules/admin_portal/e_learning/View/question/view_question_screen.dart';
-// import 'package:linkschool/modules/admin_portal/e_learning/add_material_screen.dart';
-// import 'package:linkschool/modules/admin_portal/e_learning/assignment_screen.dart';
-// import 'package:linkschool/modules/admin_portal/e_learning/create_topic_screen.dart';
-// import 'package:linkschool/modules/admin_portal/e_learning/question_screen.dart';
+// import 'package:linkschool/modules/model/e-learning/topic_model.dart';
+// import 'package:linkschool/modules/staff_portal/e_learning/staff_create_syllabus_screen.dart';
+// import 'package:linkschool/modules/staff_portal/e_learning/sub_screens/staff_add_material_screen.dart';
+// import 'package:linkschool/modules/staff_portal/e_learning/sub_screens/staff_assignment_screen.dart';
+// import 'package:linkschool/modules/staff_portal/e_learning/sub_screens/staff_question_screen.dart';
+// import 'package:linkschool/modules/staff_portal/e_learning/view/quiz_answer_screen.dart';
+// import 'package:linkschool/modules/staff_portal/e_learning/view/staff_assignment_details_screen.dart';
+// import 'package:linkschool/modules/staff_portal/e_learning/view/staff_material_details_screen.dart';
 
 // class EmptySubjectScreen extends StatefulWidget {
-//   final String title;
-//   final String selectedSubject;
+//   final String courseTitle;
 
-//   const EmptySubjectScreen({
-//     super.key,
-//     required this.title,
-//     required this.selectedSubject,
-//   });
+//   const EmptySubjectScreen({super.key, required this.courseTitle});
 
 //   @override
-//   _EmptySubjectScreenState createState() => _EmptySubjectScreenState();
+//   State<EmptySubjectScreen> createState() => _EmptySubjectScreenState();
 // }
 
 // class _EmptySubjectScreenState extends State<EmptySubjectScreen> {
+//   final List<Map<String, dynamic>> _syllabusList = [];
+//   late double opacity = 0.1;
+//   Map<String, dynamic>? _currentSyllabus;
 //   List<Topic> topics = [];
-//   late double opacity;
 
 //   @override
 //   void initState() {
 //     super.initState();
-//     // Removed _addDummyData() to ensure the screen starts empty.
+//     _addDummyData();
 //   }
 
 //   void _addDummyData() {
 //     topics = [
 //       Topic(
 //         name: 'Punctuality',
-//         assignments: [
-//           Assignment(
-//             title: 'Assignment 1',
-//             createdAt: DateTime.now().subtract(const Duration(days: 5)),
-//             topic: 'Punctuality',
-//             description: 'Write an essay about the importance of punctuality',
-//             selectedClass: 'Class 10A',
-//             attachments: [],
-//             dueDate: DateTime.now().add(const Duration(days: 7)),
-//             marks: '20',
-//           ),
-//         ],
-//         questions: [
-//           Question(
-//             title: 'Question 1',
-//             createdAt: DateTime.now().subtract(const Duration(days: 4)),
-//             topic: 'Punctuality',
-//             description: 'What are the benefits of being punctual?',
-//             selectedClass: 'Class 10A',
-//             startDate: DateTime.now(),
-//             endDate: DateTime.now().add(const Duration(days: 1)),
-//             duration: const Duration(minutes: 30),
-//             marks: '10',
-//           ),
-//         ],
-//         materials: [
-//           custom.Material(
-//             title: 'Importance of Time Management',
-//             createdAt: DateTime.now().subtract(const Duration(days: 3)),
-//             topic: 'Punctuality',
-//             description: 'A comprehensive guide on time management techniques',
-//             selectedClass: 'Class 10A',
-//             startDate: DateTime.now(),
-//             endDate: DateTime.now().add(const Duration(days: 1)),
-//             duration: const Duration(minutes: 30),
-//             marks: '10',
-//           ),
-//         ],
+//         assignments: [],
+//         questions: [],
+//         materials: [],
+//         description: '',
 //       ),
 //       Topic(
 //         name: 'Time Management',
-//         assignments: [
-//           Assignment(
-//             title: 'Assignment 3',
-//             createdAt: DateTime.now().subtract(const Duration(days: 6)),
-//             topic: 'Time Management',
-//             description: 'Create a weekly schedule to improve time management',
-//             selectedClass: 'Class 11A',
-//             attachments: [],
-//             dueDate: DateTime.now().add(const Duration(days: 5)),
-//             marks: '25',
-//           ),
-//         ],
-//         questions: [
-//           Question(
-//             title: 'Question 3',
-//             createdAt: DateTime.now().subtract(const Duration(days: 1)),
-//             topic: 'Time Management',
-//             description:
-//                 'What are the key principles of effective time management?',
-//             selectedClass: 'Class 11A',
-//             startDate: DateTime.now(),
-//             endDate: DateTime.now().add(const Duration(days: 1)),
-//             duration: const Duration(minutes: 20),
-//             marks: '20',
-//           ),
-//         ],
-//         materials: [
-//           custom.Material(
-//             title: 'Importance of Time Management',
-//             createdAt: DateTime.now().subtract(const Duration(days: 3)),
-//             topic: 'Punctuality',
-//             description: 'A comprehensive guide on time management techniques',
-//             selectedClass: 'Class 10A',
-//             startDate: DateTime.now(),
-//             endDate: DateTime.now().add(const Duration(days: 1)),
-//             duration: const Duration(minutes: 30),
-//             marks: '10',
-//           ),
-//         ],
+//         assignments: [],
+//         questions: [],
+//         materials: [],
+//         description: '',
 //       ),
 //     ];
 //   }
 
-//   @override
-//   Widget build(BuildContext context) {
-//     final Brightness brightness = Theme.of(context).brightness;
-//     opacity = brightness == Brightness.light ? 0.1 : 0.15;
-
-//     return Scaffold(
-//       appBar: AppBar(
-//         leading: IconButton(
-//           onPressed: () {
-//             Navigator.of(context).pop();
-//           },
-//           icon: Image.asset(
-//             'assets/icons/arrow_back.png',
-//             color: AppColors.primaryLight,
-//             width: 34.0,
-//             height: 34.0,
-//           ),
-//         ),
-//         title: Text(
-//           widget.selectedSubject,
-//           style: AppTextStyles.normal600(
-//             fontSize: 24.0,
-//             color: AppColors.primaryLight,
-//           ),
-//         ),
-//         backgroundColor: AppColors.backgroundLight,
-//         flexibleSpace: FlexibleSpaceBar(
-//           background: Stack(
-//             children: [
-//               Positioned.fill(
-//                 child: Opacity(
-//                   opacity: opacity,
-//                   child: Image.asset(
-//                     'assets/images/background.png',
-//                     fit: BoxFit.cover,
-//                   ),
-//                 ),
-//               )
-//             ],
-//           ),
-//         ),
-//       ),
-//       body: Container(
-//         decoration: Constants.customBoxDecoration(context),
-//         child: topics.isEmpty
-//             ? _buildEmptyState()
-//             : ListView.builder(
-//                 itemCount: topics.length,
-//                 itemBuilder: (context, index) {
-//                   return _buildTopicSection(topics[index]);
-//                 },
-//               ),
+//   void _addNewSyllabus() async {
+//     final result = await Navigator.of(context).push(
+//       MaterialPageRoute(
+//         fullscreenDialog: true,
+//         builder: (BuildContext context) => const StaffCreateSyllabusScreen(),
 //       ),
 //     );
+
+//     if (result != null) {
+//       setState(() {
+//         _syllabusList.add(result);
+//         _currentSyllabus = result;
+//       });
+//     }
 //   }
 
-//   Widget _buildEmptyState() {
-//     return Container(
-//       decoration: Constants.customBoxDecoration(context),
-//       child: Center(
-//         child: Column(
-//           mainAxisAlignment: MainAxisAlignment.center,
-//           children: [
-//             Text(
-//               'Nothing has been created for this subject',
-//               style: AppTextStyles.normal500(
-//                 fontSize: 16.0,
-//                 color: AppColors.backgroundDark,
-//               ),
-//             ),
-//             const SizedBox(height: 20),
-//             CustomMediumElevatedButton(
-//               text: 'Create content',
-//               onPressed: () => _showCreateOptionsBottomSheet(context),
-//               backgroundColor: AppColors.eLearningBtnColor1,
-//               textStyle: AppTextStyles.normal600(
-//                 fontSize: 16,
-//                 color: AppColors.backgroundLight,
-//               ),
-//               padding:
-//                   const EdgeInsets.symmetric(horizontal: 16.0, vertical: 10.0),
-//             )
-//           ],
+//   void _editSyllabus(int index) async {
+//     final result = await Navigator.of(context).push(
+//       MaterialPageRoute(
+//         builder: (BuildContext context) => StaffCreateSyllabusScreen(
+//           syllabusData: _syllabusList[index],
 //         ),
 //       ),
 //     );
+//     if (result != null) {
+//       setState(() {
+//         _syllabusList[index] = result;
+//         _currentSyllabus = result;
+//       });
+//     }
 //   }
 
-// Widget _buildTopicSection(Topic topic) {
-//     return Column(
-//       crossAxisAlignment: CrossAxisAlignment.start,
-//       children: [
-//         ListTile(
-//           title: Text(
-//             topic.name,
-//             style: AppTextStyles.normal600(
-//               fontSize: 20.0,
-//               color: AppColors.primaryLight,
-//             ),
-//           ),
-//           trailing: PopupMenuButton<String>(
-//             icon: const Icon(Icons.more_vert, color: AppColors.primaryLight),
-//             onSelected: (String result) {
-//               if (result == 'edit') {
-//                 // Implement edit functionality
-//               } else if (result == 'delete') {
-//                 // Implement delete functionality
-//               }
-//             },
-//             itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
-//               const PopupMenuItem<String>(
-//                 value: 'edit',
-//                 child: Text('Edit'),
-//               ),
-//               const PopupMenuItem<String>(
-//                 value: 'delete',
-//                 child: Text('Delete'),
-//               ),
-//             ],
-//           ),
-//         ),
-//         Padding(
-//           padding: const EdgeInsets.symmetric(horizontal: 16.0),
-//           child: Divider(
-//             color: AppColors.backgroundDark.withOpacity(0.2),
-//             thickness: 1,
-//           ),
-//         ),
-//         ...topic.assignments.map((assignment) => _buildContentItem(
-//               'Assignment',
-//               assignment.title,
-//               assignment.createdAt,
-//               () {
-//                 Navigator.push(
-//                   context,
-//                   MaterialPageRoute(
-//                     builder: (context) => ViewAssignmentScreen(assignment: assignment),
-//                   ),
-//                 );
-//               },
-//             )),
-//         ...topic.questions.map((question) => _buildContentItem(
-//               'Question',
-//               question.title,
-//               question.createdAt,
-//               () {
-
-//                 Navigator.push(
-//                   context,
-//                   MaterialPageRoute(
-//                     builder: (context) => ViewQuestionScreen(question: question),
-//                   ),
-//                 );
-//               },
-//             )),
-//       ],
-//     );
+//   void _deleteSyllabus(int index) {
+//     setState(() {
+//       _syllabusList.removeAt(index);
+//       if (_syllabusList.isEmpty) {
+//         _currentSyllabus = null;
+//       }
+//     });
 //   }
-
-//  Widget _buildContentItem(String type, String title, DateTime createdAt, VoidCallback onTap) {
-//     return Column(
-//       children: [
-//         ListTile(
-//           leading: SvgPicture.asset(
-//             type == 'Assignment'
-//                 ? 'assets/icons/e_learning/circle-assignment.svg'
-//                 : 'assets/icons/e_learning/circle-question.svg',
-//             width: 36,
-//             height: 36,
-//           ),
-//           title: Text(
-//             title,
-//             style: AppTextStyles.normal600(
-//               fontSize: 18.0,
-//               color: AppColors.backgroundDark,
-//             ),
-//           ),
-//           subtitle: Text(
-//             'Created on ${_formatDate(createdAt)}',
-//             style: AppTextStyles.normal600(
-//               fontSize: 14.0,
-//               color: Colors.grey.shade600,
-//             ),
-//           ),
-//           trailing: PopupMenuButton<String>(
-//             icon: const Icon(Icons.more_vert, color: AppColors.primaryLight),
-//             onSelected: (String result) {
-//               if (result == 'edit') {
-//                 onTap();
-//               } else if (result == 'delete') {
-//                 // Implement delete functionality
-//               }
-//             },
-//             itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
-//               const PopupMenuItem<String>(
-//                 value: 'edit',
-//                 child: Text('Edit'),
-//               ),
-//               const PopupMenuItem<String>(
-//                 value: 'delete',
-//                 child: Text('Delete'),
-//               ),
-//             ],
-//           ),
-//           onTap: onTap,
-//         ),
-//         const Divider(height: 1, thickness: 1),
-//       ],
-//     );
-//   }
-
 
 //   void _addAssignment(Assignment assignment) {
 //     setState(() {
 //       if (topics.isEmpty) {
-//         _addDummyData(); // Add dummy data if the list is empty when the first assignment is added.
+//         _addDummyData();
 //       }
 
 //       Topic? existingTopic = topics.firstWhere(
 //         (topic) => topic.name == assignment.topic,
-//         orElse: () =>
-//             Topic(name: assignment.topic, assignments: [], questions: [], materials: []),
+//         orElse: () => Topic(
+//             name: assignment.topic,
+//             assignments: [],
+//             questions: [],
+//             materials: [],
+//             description: ''),
 //       );
 
 //       if (!topics.contains(existingTopic)) {
@@ -974,13 +906,16 @@ class _EmptySubjectScreenState extends State<EmptySubjectScreen> {
 //   void _addQuestion(Question question) {
 //     setState(() {
 //       if (topics.isEmpty) {
-//         _addDummyData(); // Add dummy data if the list is empty when the first question is added.
+//         _addDummyData();
 //       }
 
 //       Topic? existingTopic = topics.firstWhere(
 //         (topic) => topic.name == question.topic,
-//         orElse: () =>
-//             Topic(name: question.topic, assignments: [], questions: [], materials: []),
+//         orElse: () => Topic(
+//             name: question.topic,
+//             assignments: [],
+//             questions: [],
+//             materials: []),
 //       );
 
 //       if (!topics.contains(existingTopic)) {
@@ -988,33 +923,60 @@ class _EmptySubjectScreenState extends State<EmptySubjectScreen> {
 //       }
 
 //       existingTopic.questions.add(question);
+
+//       if (_currentSyllabus != null) {
+//         _currentSyllabus!['questionTitle'] = question.title;
+//       }
 //     });
 //   }
 
-//   String _formatDate(DateTime date) {
-//     return '${date.day} ${_getMonth(date.month)}, ${date.year} ${_formatTime(date)}';
-//   }
-
-//   String _getMonth(int month) {
-//     const months = [
-//       'Jan',
-//       'Feb',
-//       'Mar',
-//       'Apr',
-//       'May',
-//       'Jun',
-//       'Jul',
-//       'Aug',
-//       'Sep',
-//       'Oct',
-//       'Nov',
-//       'Dec'
-//     ];
-//     return months[month - 1];
-//   }
-
-//   String _formatTime(DateTime date) {
-//     return '${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}${date.hour >= 12 ? 'pm' : 'am'}';
+//   void _confirmDeleteSyllabus(int index) {
+//     showDialog(
+//       context: context,
+//       builder: (BuildContext context) {
+//         return AlertDialog(
+//           title: Text(
+//             'Delete Syllabus',
+//             style: AppTextStyles.normal600(
+//               fontSize: 20,
+//               color: AppColors.backgroundDark,
+//             ),
+//           ),
+//           content: Text(
+//             'Are you sure you want to delete this syllabus?',
+//             style: AppTextStyles.normal500(
+//               fontSize: 16,
+//               color: AppColors.backgroundDark,
+//             ),
+//           ),
+//           actions: [
+//             TextButton(
+//               onPressed: () => Navigator.of(context).pop(),
+//               child: Text(
+//                 'No',
+//                 style: AppTextStyles.normal600(
+//                   fontSize: 16,
+//                   color: AppColors.primaryLight,
+//                 ),
+//               ),
+//             ),
+//             TextButton(
+//               onPressed: () {
+//                 _deleteSyllabus(index);
+//                 Navigator.of(context).pop();
+//               },
+//               child: Text(
+//                 'Yes',
+//                 style: AppTextStyles.normal600(
+//                   fontSize: 16,
+//                   color: Colors.red,
+//                 ),
+//               ),
+//             ),
+//           ],
+//         );
+//       },
+//     );
 //   }
 
 //   void _showCreateOptionsBottomSheet(BuildContext context) {
@@ -1066,14 +1028,13 @@ class _EmptySubjectScreenState extends State<EmptySubjectScreen> {
 //   Widget _buildOptionRow(BuildContext context, String text, String iconPath) {
 //     return InkWell(
 //       onTap: () {
-//         Navigator.pop(context); // Close the bottom sheet
-//         // Navigate to the appropriate screen based on the selected text option
+//         Navigator.pop(context);
 //         switch (text) {
 //           case 'Assignment':
 //             Navigator.push(
 //               context,
 //               MaterialPageRoute(
-//                 builder: (context) => AssignmentScreen(
+//                 builder: (context) => AdminAssignmentScreen(
 //                   onSave: (assignment) {
 //                     _addAssignment(assignment);
 //                   },
@@ -1085,7 +1046,7 @@ class _EmptySubjectScreenState extends State<EmptySubjectScreen> {
 //             Navigator.push(
 //               context,
 //               MaterialPageRoute(
-//                 builder: (context) => QuestionScreen(
+//                 builder: (context) => StaffQuestionScreen(
 //                   onSave: (question) {
 //                     _addQuestion(question);
 //                   },
@@ -1098,15 +1059,31 @@ class _EmptySubjectScreenState extends State<EmptySubjectScreen> {
 //               context,
 //               MaterialPageRoute(
 //                 fullscreenDialog: true,
-//                 builder: (BuildContext context) => const CreateTopicScreen(),
+//                 builder: (BuildContext context) =>
+//                     const StaffCreateSyllabusScreen(),
 //               ),
 //             );
 //             break;
 //           case 'Material':
 //             Navigator.push(
-//                 context,
-//                 MaterialPageRoute(
-//                     builder: (context) => const AddMaterialScreen()));
+//               context,
+//               MaterialPageRoute(
+//                 builder: (context) => StaffAddMaterialScreen(
+//                   onSave: (material) {
+//                     setState(() {
+//                       if (topics.isEmpty) {
+//                         topics.add(Topic(
+//                             name: "Default Topic",
+//                             assignments: [],
+//                             questions: [],
+//                             materials: []));
+//                       }
+//                       topics.first.materials.add(material);
+//                     });
+//                   },
+//                 ),
+//               ),
+//             );
 //             break;
 //         }
 //       },
@@ -1121,9 +1098,194 @@ class _EmptySubjectScreenState extends State<EmptySubjectScreen> {
 //           children: [
 //             SvgPicture.asset(iconPath, width: 24, height: 24),
 //             const SizedBox(width: 16),
-//             Text(text,
-//                 style: AppTextStyles.normal500(
-//                     fontSize: 16, color: AppColors.backgroundDark)),
+//             Text(
+//               text,
+//               style: AppTextStyles.normal500(
+//                   fontSize: 16, color: AppColors.backgroundDark),
+//             ),
+//           ],
+//         ),
+//       ),
+//     );
+//   }
+
+//   @override
+//   Widget build(BuildContext context) {
+//     final Brightness brightness = Theme.of(context).brightness;
+//     opacity = brightness == Brightness.light ? 0.1 : 0.15;
+
+//     return Scaffold(
+//       appBar: AppBar(
+//         leading: IconButton(
+//           onPressed: () {
+//             Navigator.of(context).pop();
+//           },
+//           icon: Image.asset(
+//             'assets/icons/arrow_back.png',
+//             color: AppColors.paymentTxtColor1,
+//             width: 34.0,
+//             height: 34.0,
+//           ),
+//         ),
+//         title: Text(
+//           widget.courseTitle,
+//           style: const TextStyle(
+//             fontSize: 22,
+//             fontWeight: FontWeight.bold,
+//             color: AppColors.paymentTxtColor1,
+//           ),
+//         ),
+//         backgroundColor: AppColors.backgroundLight,
+//         flexibleSpace: FlexibleSpaceBar(
+//           background: Stack(
+//             children: [
+//               Positioned.fill(
+//                 child: Opacity(
+//                   opacity: opacity,
+//                   child: Image.asset(
+//                     'assets/images/background.png',
+//                     fit: BoxFit.cover,
+//                   ),
+//                 ),
+//               )
+//             ],
+//           ),
+//         ),
+//       ),
+//       body: _buildCourseworkScreen(),
+//       floatingActionButton: FloatingActionButton(
+//         onPressed: () => _showCreateOptionsBottomSheet(context),
+//         backgroundColor: AppColors.staffBtnColor1,
+//         child: const Icon(Icons.add, color: Colors.white),
+//       ),
+//     );
+//   }
+
+//   Widget _buildCourseworkScreen() {
+//     return Container(
+//       width: double.infinity,
+//       height: double.infinity,
+//       decoration: Constants.customBoxDecoration(context),
+//       child: _currentSyllabus == null
+//           ? _buildEmptyState()
+//           : _buildSyllabusDetails(),
+//     );
+//   }
+
+//   Widget _buildEmptyState() {
+//     return Column(
+//       mainAxisAlignment: MainAxisAlignment.center,
+//       crossAxisAlignment: CrossAxisAlignment.center,
+//       children: [
+//         const Text('No syllabus have been created'),
+//         const SizedBox(height: 15),
+//         Row(
+//           mainAxisAlignment: MainAxisAlignment.center,
+//           crossAxisAlignment: CrossAxisAlignment.center,
+//           children: [
+//             CustomMediumElevatedButton(
+//               text: 'Create content',
+//               onPressed: () {
+//                 _showCreateOptionsBottomSheet(context);
+//               },
+//               backgroundColor: AppColors.eLearningBtnColor1,
+//               textStyle: AppTextStyles.normal600(
+//                 fontSize: 16,
+//                 color: AppColors.backgroundLight,
+//               ),
+//               padding:
+//                   const EdgeInsets.symmetric(horizontal: 16.0, vertical: 10.0),
+//             )
+//           ],
+//         )
+//       ],
+//     );
+//   }
+
+//   Widget _buildSyllabusDetails() {
+//     if (_currentSyllabus == null) return _buildEmptyState();
+
+//     return Padding(
+//       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+//       child: SingleChildScrollView(
+//         child: Column(
+//           crossAxisAlignment: CrossAxisAlignment.stretch,
+//           children: [
+//             if (topics.isNotEmpty && topics.first.assignments.isNotEmpty)
+//               ...topics.first.assignments.map((assignment) {
+//                 return InkWell(
+//                   onTap: () {
+//                     Navigator.push(
+//                       context,
+//                       MaterialPageRoute(
+//                         builder: (context) => StaffAssignmentDetailsScreen(
+//                           assignment: assignment,
+//                         ),
+//                       ),
+//                     );
+//                   },
+//                   child: Container(
+//                     padding: const EdgeInsets.symmetric(vertical: 12.0),
+//                     decoration: const BoxDecoration(
+//                       border: Border(
+//                         bottom: BorderSide(color: Colors.grey, width: 0.5),
+//                       ),
+//                     ),
+//                     child: Row(
+//                       children: [
+//                         Container(
+//                           width: 40,
+//                           height: 40,
+//                           padding: const EdgeInsets.all(8),
+//                           decoration: BoxDecoration(
+//                             color: AppColors.eLearningBtnColor1.withOpacity(0.1),
+//                             borderRadius: BorderRadius.circular(8),
+//                           ),
+//                           child: SvgPicture.asset(
+//                             'assets/icons/e_learning/assignment.svg',
+//                             color: AppColors.eLearningBtnColor1,
+//                           ),
+//                         ),
+//                         const SizedBox(width: 12),
+//                         Expanded(
+//                           child: Column(
+//                             crossAxisAlignment: CrossAxisAlignment.start,
+//                             children: [
+//                               Row(
+//                                 children: [
+//                                   Text(
+//                                     'Assignment: ',
+//                                     style: AppTextStyles.normal600(
+//                                       fontSize: 14,
+//                                       color: AppColors.backgroundDark,
+//                                     ),
+//                                   ),
+//                                   Text(
+//                                     assignment.title,
+//                                     style: AppTextStyles.normal400(
+//                                       fontSize: 14,
+//                                       color: AppColors.backgroundDark,
+//                                     ),
+//                                   ),
+//                                 ],
+//                               ),
+//                               const SizedBox(height: 4),
+//                               Text(
+//                                 'Created on ${DateFormat('dd MMMM, yyyy').format(assignment.createdAt)} · ${DateFormat('hh:mma').format(assignment.createdAt).toLowerCase()}',
+//                                 style: AppTextStyles.normal400(
+//                                   fontSize: 12,
+//                                   color: Colors.grey,
+//                                 ),
+//                               ),
+//                             ],
+//                           ),
+//                         ),
+//                       ],
+//                     ),
+//                   ),
+//                 );
+//               }).toList(),
+//             // Other UI elements...
 //           ],
 //         ),
 //       ),

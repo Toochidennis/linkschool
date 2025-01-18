@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
-import 'package:linkschool/modules/admin_portal/e_learning/assignment_screen.dart';
+import 'package:linkschool/modules/admin_portal/e_learning/admin_assignment_screen.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 
 import 'package:linkschool/modules/common/constants.dart';

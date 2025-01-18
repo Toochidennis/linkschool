@@ -4,7 +4,6 @@ import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/buttons/custom_outline_button..dart';
 import 'package:linkschool/modules/common/buttons/custom_save_elevated_button.dart';
 import 'package:linkschool/modules/common/constants.dart';
-// import 'package:linkschool/modules/common/buttons/custom_outline_button.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/common/utils/duration_picker_dialog.dart';
 import 'package:linkschool/modules/common/widgets/portal/e_learning/select_classes_dialog.dart';
@@ -13,12 +12,15 @@ import 'package:linkschool/modules/admin_portal/e_learning/View/question/view_qu
 import 'package:linkschool/modules/admin_portal/e_learning/select_topic_screen.dart';
 
 
+
 class QuestionScreen extends StatefulWidget {
   final Function(Question) onSave;
   final bool isEditing;
   final Question? question;
 
-  const QuestionScreen({super.key, required this.onSave, this.question, this.isEditing = false});
+
+
+  const QuestionScreen({super.key, required this.onSave, this.question, this.isEditing = false,});
   @override
   State<QuestionScreen> createState() => _QuestionScreenState();
 }
@@ -341,32 +343,6 @@ class _QuestionScreenState extends State<QuestionScreen> {
     );
   }
 
-  // void _showDateRangePicker() async {
-  //   final DateTimeRange? picked = await showDateRangePicker(
-  //     context: context,
-  //     firstDate: DateTime.now(),
-  //     lastDate: DateTime.now().add(const Duration(days: 365)),
-  //     initialDateRange: DateTimeRange(start: _startDate, end: _endDate),
-  //     builder: (BuildContext context, Widget? child) {
-  //       return Theme(
-  //         data: ThemeData.light().copyWith(
-  //           primaryColor: AppColors.eLearningBtnColor1,
-  //           colorScheme: ColorScheme.light(primary: AppColors.eLearningBtnColor1),
-  //           buttonTheme: ButtonThemeData(textTheme: ButtonTextTheme.primary),
-  //         ),
-  //         child: child!,
-  //       );
-  //     },
-  //   );
-
-  //   if (picked != null) {
-  //     setState(() {
-  //       _startDate = picked.start;
-  //       _endDate = picked.end;
-  //     });
-  //   }
-  // }
-
   void _showDateRangePicker() {
     showDialog(
       context: context,
@@ -385,7 +361,7 @@ class _QuestionScreenState extends State<QuestionScreen> {
     );
   }
 
-  
+
 
   String _formatDate(DateTime date) {
     return '${_getDayOfWeek(date.weekday)}, ${date.day} ${_getMonth(date.month)}';
@@ -411,6 +387,8 @@ class _QuestionScreenState extends State<QuestionScreen> {
         return '';
     }
   }
+
+
 
   String _getMonth(int month) {
     switch (month) {
@@ -682,3 +660,29 @@ class _DateRangePickerDialogState extends State<DateRangePickerDialog> {
     return months[month - 1];
   }
 }
+
+  // void _showDateRangePicker() async {
+  //   final DateTimeRange? picked = await showDateRangePicker(
+  //     context: context,
+  //     firstDate: DateTime.now(),
+  //     lastDate: DateTime.now().add(const Duration(days: 365)),
+  //     initialDateRange: DateTimeRange(start: _startDate, end: _endDate),
+  //     builder: (BuildContext context, Widget? child) {
+  //       return Theme(
+  //         data: ThemeData.light().copyWith(
+  //           primaryColor: AppColors.eLearningBtnColor1,
+  //           colorScheme: ColorScheme.light(primary: AppColors.eLearningBtnColor1),
+  //           buttonTheme: ButtonThemeData(textTheme: ButtonTextTheme.primary),
+  //         ),
+  //         child: child!,
+  //       );
+  //     },
+  //   );
+
+  //   if (picked != null) {
+  //     setState(() {
+  //       _startDate = picked.start;
+  //       _endDate = picked.end;
+  //     });
+  //   }
+  // }

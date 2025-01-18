@@ -1,6 +1,6 @@
 import 'package:linkschool/modules/model/e-learning/material_model.dart';
 import 'package:linkschool/modules/model/e-learning/question_model.dart';
-import 'package:linkschool/modules/admin_portal/e_learning/assignment_screen.dart';
+import 'package:linkschool/modules/admin_portal/e_learning/admin_assignment_screen.dart';
 
 class Topic {
   final String name;

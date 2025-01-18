@@ -113,8 +113,9 @@ class _EmptySyllabusScreenState extends State<EmptySyllabusScreen> {
             context,
             MaterialPageRoute(
               builder: (context) => EmptySubjectScreen(
-                title: _syllabusList[index]['title'],
-                selectedSubject: widget.selectedSubject,
+                // title: _syllabusList[index]['title'],
+                // selectedSubject: widget.selectedSubject, 
+                courseTitle: '',
               ),
             ),
           ),
