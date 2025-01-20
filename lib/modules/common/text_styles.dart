@@ -8,13 +8,6 @@ class AppTextStyles {
     color: AppColors.textLight,
   );
 
-  static const TextStyle title2Light = TextStyle(
-    fontSize: 20,
-    fontWeight: FontWeight.bold,
-    fontStyle: FontStyle.italic,
-    color: AppColors.textLight,
-  );
-
   static const TextStyle title3Light = TextStyle(
       fontSize: 20,
       fontWeight: FontWeight.bold,
@@ -32,12 +25,6 @@ class AppTextStyles {
       fontFamily: 'Urbanist',
       fontWeight: FontWeight.w500);
 
-  static const TextStyle normal3Light = TextStyle(
-    fontSize: 14,
-    color: AppColors.text4Light,
-    fontWeight: FontWeight.w500,
-    fontFamily: 'Urbanist',
-  );
 
   static const TextStyle normal4Light = TextStyle(
     fontSize: 10,
@@ -53,6 +40,18 @@ class AppTextStyles {
     fontFamily: 'Urbanist',
   );
 
+  static TextStyle italicTitle700({
+    required double fontSize,
+    required Color color,
+  }) {
+    return TextStyle(
+      color: color,
+      fontFamily: 'Urbanist',
+      fontSize: fontSize,
+      fontStyle: FontStyle.italic,
+      fontWeight: FontWeight.w700,
+    );
+  }
   static TextStyle normal500({
     required double fontSize,
     required Color color,
@@ -64,6 +63,7 @@ class AppTextStyles {
       fontFamily: 'Urbanist',
     );
   }
+
   static TextStyle normal600({
     required double fontSize,
     required Color color,
@@ -73,6 +73,37 @@ class AppTextStyles {
       color: color,
       fontWeight: FontWeight.w600,
       fontFamily: 'Urbanist',
+    );
+  }
+  static TextStyle normal700({
+    required double fontSize,
+    required Color color,
+  }) {
+    return TextStyle(
+      fontSize: fontSize,
+      color: color,
+      fontWeight: FontWeight.w700,
+      fontFamily: 'Urbanist',
+    );
+  }
+
+// newly added styles
+  static TextStyle normal400({required double fontSize, required Color color}){
+    return TextStyle(
+      fontSize: fontSize,
+      color: color,
+      fontWeight: FontWeight.w400,
+      fontFamily: 'Urbanist',
+    );
+  }
+
+  static TextStyle normal700P({required double fontSize, required Color color, required double height}) {
+    return TextStyle(
+      fontSize: fontSize,
+      color: color,
+      fontWeight: FontWeight.w700,
+      fontFamily: 'Urbanist',
+      height: height
     );
   }
 
@@ -97,7 +128,6 @@ class AppTextStyles {
       color: AppColors.secondaryLight,
       fontFamily: 'Urbanist');
 
-
   static const TextStyle titleDark = TextStyle(
     fontSize: 24,
     fontWeight: FontWeight.bold,
@@ -121,13 +151,4 @@ class AppTextStyles {
     color: AppColors.textDark,
   );
 
-  static TextStyle appBarTextStyle(Color color) {
-    return TextStyle(
-      color: color,
-      fontFamily: 'Urbanist',
-      fontSize: 24.0,
-      fontStyle: FontStyle.italic,
-      fontWeight: FontWeight.w700,
-    );
-  }
 }

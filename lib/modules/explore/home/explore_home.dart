@@ -88,6 +88,7 @@ class _ExploreHomeState extends State<ExploreHome> {
         backgroundColor: AppColors.exploreButton1Light,
         borderColor: AppColors.exploreButton1BorderLight,
         label: 'CBT',
+        textColor: AppColors.backgroundLight,
         iconPath: 'assets/icons/cbt.svg',
         destination: const CBTDashboard(),
       ),
@@ -286,21 +287,23 @@ class _ExploreHomeState extends State<ExploreHome> {
     );
   }
 
-  Widget exploreButtonItem({
-    required Color backgroundColor,
-    required Color borderColor,
-    required String label,
-    required String iconPath,
-    required Widget destination,
-  }) {
-    return CustomButtonItem(
-      backgroundColor: backgroundColor,
-      borderColor: borderColor,
-      label: label,
-      iconPath: iconPath,
-      destination: destination,
-    );
-  }
+Widget exploreButtonItem({
+  required Color backgroundColor,
+  required Color borderColor,
+  required String label,
+  required String iconPath,
+  required Widget destination,
+  Color? textColor, // Make textColor optional and nullable
+}) {
+  return CustomButtonItem(
+    backgroundColor: backgroundColor,
+    borderColor: borderColor,
+    label: label,
+    textColor: textColor ?? AppColors.backgroundLight, // Provide a default color if null
+    iconPath: iconPath,
+    destination: destination,
+  );
+}
 
   Widget _buildNewsItem({
     required String profileImageUrl,

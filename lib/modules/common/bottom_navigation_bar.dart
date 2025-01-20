@@ -3,21 +3,24 @@ import 'package:curved_nav_bar/fab_bar/fab_bottom_app_bar_item.dart';
 import 'package:curved_nav_bar/flutter_curved_bottom_nav_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
-
 import 'app_colors.dart';
 
 class CustomNavigationBar extends StatefulWidget {
-  final Function(bool) onSwitch;
   final String actionButtonImagePath;
   final List<FABBottomAppBarItem> appBarItems;
   final List<Widget> bodyItems;
+  final Function(int) onTabSelected;
+  final Function(bool) onSwitch;
+  final int selectedIndex;
 
   const CustomNavigationBar({
     super.key,
     required this.actionButtonImagePath,
     required this.appBarItems,
     required this.bodyItems,
+    required this.onTabSelected,
     required this.onSwitch,
+    required this.selectedIndex,
   });
 
   @override
@@ -37,7 +40,6 @@ class _CustomNavigationBarState extends State<CustomNavigationBar>
 
   @override
   void didChangePlatformBrightness() {
-    super.didChangePlatformBrightness();
     _updateBrightness();
   }
 
@@ -56,51 +58,55 @@ class _CustomNavigationBarState extends State<CustomNavigationBar>
   @override
   Widget build(BuildContext context) {
     return SafeArea(
-        child: Column(
-      children: [
-        Expanded(
-          child: CurvedNavBar(
-            actionButton: CurvedActionBar(
-              onTab: widget.onSwitch,
-              activeIcon: Container(
-                padding: const EdgeInsets.all(24.0),
-                decoration: BoxDecoration(
-                  color: AppColors.primaryLight,
-                  shape: BoxShape.circle,
-                  border: Border.all(
-                    color: AppColors.secondaryLight,
-                    width: 1.0,
+      child: Column(
+        children: [
+          Expanded(
+            child: CurvedNavBar(
+              actionButton: CurvedActionBar(
+                onTab: (value) {
+                  widget.onSwitch(value);
+                },
+                activeIcon: Container(
+                  padding: const EdgeInsets.all(24.0),
+                  decoration: BoxDecoration(
+                    color: AppColors.paymentTxtColor1,
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: AppColors.secondaryLight,
+                      width: 1.0,
+                    ),
+                  ),
+                  child: SvgPicture.asset(
+                    widget.actionButtonImagePath,
                   ),
                 ),
-                child: SvgPicture.asset(
-                  widget.actionButtonImagePath,
-                ),
-              ),
-              inActiveIcon: Container(
-                padding: const EdgeInsets.all(24.0),
-                decoration: BoxDecoration(
-                  color: AppColors.primaryLight,
-                  shape: BoxShape.circle,
-                  border: Border.all(
-                    color: AppColors.secondaryLight,
-                    width: 1.0,
+                inActiveIcon: Container(
+                  padding: const EdgeInsets.all(24.0),
+                  decoration: BoxDecoration(
+                    color: AppColors.paymentTxtColor1,
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: AppColors.secondaryLight,
+                      width: 1.0,
+                    ),
+                  ),
+                  child: SvgPicture.asset(
+                    widget.actionButtonImagePath,
                   ),
                 ),
-                child: SvgPicture.asset(
-                  widget.actionButtonImagePath,
-                ),
               ),
+              activeColor: AppColors.secondaryLight,
+              inActiveColor: AppColors.paymentTxtColor1,
+              navBarBackgroundColor: brightness == Brightness.light
+                  ? AppColors.backgroundLight
+                  : AppColors.backgroundDark,
+              appBarItems: widget.appBarItems,
+              bodyItems: widget.bodyItems,
+              onTabSelected: widget.onTabSelected,
             ),
-            activeColor: AppColors.secondaryLight,
-            inActiveColor: AppColors.primaryLight,
-            navBarBackgroundColor: brightness == Brightness.light
-                ? AppColors.backgroundLight
-                : AppColors.backgroundDark,
-            appBarItems: widget.appBarItems,
-            bodyItems: widget.bodyItems,
           ),
-        ),
-      ],
-    ));
+        ],
+      ),
+    );
   }
 }

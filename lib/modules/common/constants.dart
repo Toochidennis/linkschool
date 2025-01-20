@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
-
 import 'app_colors.dart';
 
 class Constants {
+  static const double padding = 16.0;
+  static const double gap = 10.0;
+  static const double borderRadius = 8.0;
+
   static BoxDecoration customBoxDecoration(BuildContext context) {
     final Brightness brightness = Theme.of(context).brightness;
     var opacity = brightness == Brightness.light ? 0.1 : 0.15;
@@ -24,6 +27,8 @@ class Constants {
   static AppBar customAppBar({
     required BuildContext context,
     String? iconPath,
+    bool? centerTitle,
+    String? title,
   }) {
     final Brightness brightness = Theme.of(context).brightness;
     var opacity = brightness == Brightness.light ? 0.1 : 0.15;
@@ -31,6 +36,14 @@ class Constants {
     return AppBar(
       backgroundColor: Colors.white,
       elevation: 0.0,
+      title: Text(
+        title ?? "",
+        style: AppTextStyles.normal600(
+          fontSize: 18.0,
+          color: AppColors.primaryLight,
+        ),
+      ),
+      centerTitle: centerTitle,
       flexibleSpace: FlexibleSpaceBar(
         background: Stack(
           children: [
