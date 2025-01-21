@@ -7,6 +7,7 @@ import 'package:linkschool/modules/explore/admission/admission_home_screen.dart'
 import '../../common/bottom_navigation_bar.dart';
 import '../../common/bottom_nav_item.dart';
 import 'explore_home.dart';
+import 'package:linkschool/modules/explore/admission/explore_admission.dart';
 
 class ExploreDashboard extends StatefulWidget {
   final Function(bool) onSwitch;
@@ -48,11 +49,11 @@ class _ExploreDashboardState extends State<ExploreDashboard> {
       ExploreHome(
         onSearchIconVisibilityChanged: _onSearchIconVisibilityChanged,
       ),
-      AdmissionHomeScreen(),
-      // Container(
-      //   height: MediaQuery.of(context).size.height,
-      //   color: Colors.orange,
-      // ),
+      ExploreAdmission(
+      
+      height: MediaQuery.of(context).size.height,
+     
+       ),
       Container(
         height: MediaQuery.of(context).size.height,
         color: Colors.black,

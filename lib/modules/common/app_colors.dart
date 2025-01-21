@@ -200,4 +200,10 @@ class AppColors {
   static const Color staffCtnColor1 = Color.fromRGBO(255, 221, 193, 1); 
   static const Color staffCtnColor2 = Color.fromRGBO(232, 237, 255, 1);
   static const Color staffBtnColor1 = Color.fromRGBO(255, 165, 0, 1);
+
+  static const Color admissionopen= Color.fromRGBO(0 ,187, 8 ,1);
+  static const Color admissionclosed= Color.fromRGBO(214, 41, 41, 1);
+  static const Color admissionTitle = Color.fromRGBO(105, 105, 105, 1);
+  static const Color schooltext = Color.fromRGBO(65, 65, 65, 1);
+  static const Color schoolform = Color.fromRGBO(47, 85, 221, 1);
 }
