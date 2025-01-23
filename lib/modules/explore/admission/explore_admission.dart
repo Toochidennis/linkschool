@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
-import 'package:linkschool/modules/explore/admission/school_description.dart';
+import 'package:linkschool/modules/explore/admission/admission_detail_screen.dart';
 import 'package:linkschool/modules/explore/home/explore_home.dart';
 
 class ExploreAdmission extends StatefulWidget {
@@ -61,8 +61,7 @@ class _ExploreAdmissionState extends State<ExploreAdmission> {
                   // TabBar
                   Container(
                     child: TabBar(
-                      labelStyle: AppTextStyles.normal2Light,
-                      indicatorColor: AppColors.text2Light,
+                      labelColor: Theme.of(context).primaryColor,
                       tabs: const [
                         Tab(text: 'Top'),
                         Tab(text: 'Near me'),
@@ -84,18 +83,20 @@ class _ExploreAdmissionState extends State<ExploreAdmission> {
                             CarouselSlider(
                               items: [
                                 _TopSchoolsCard(
+                                  context: context,
                                   schoolName: 'Daughters Of Divine Love',
                                   formPrice: '₦10,000.00',
                                   admissionStatus: 'Open',
                                 ),
                                 _TopSchoolsCard(
+                                  context: context,
                                   schoolName: 'Another School',
                                   formPrice: '₦10,000.00',
                                   admissionStatus: 'Closed',
                                 ),
                               ],
                               options: CarouselOptions(
-                                height: 250.0,
+                                height: 300.0,
                                 viewportFraction: 1.2,
                                 padEnds: true,
                                 autoPlay: true,
@@ -104,7 +105,7 @@ class _ExploreAdmissionState extends State<ExploreAdmission> {
                               ),
                             ),
                             SizedBox(
-                            height: 400,
+                              height: 400,
                               child: Column(
                                 children: [
                                   _TextIconRow(
@@ -114,8 +115,7 @@ class _ExploreAdmissionState extends State<ExploreAdmission> {
                                   CarouselSlider(
                                     items: [
                                       ListView.builder(
-                                        
-                                        shrinkWrap:true,
+                                        shrinkWrap: true,
                                         physics:
                                             const NeverScrollableScrollPhysics(),
                                         itemCount: _schoolItem.length,
@@ -127,7 +127,6 @@ class _ExploreAdmissionState extends State<ExploreAdmission> {
                                           );
                                         },
                                       ),
-                                      
                                       Expanded(
                                         child: ListView.builder(
                                           shrinkWrap: true,
@@ -137,11 +136,21 @@ class _ExploreAdmissionState extends State<ExploreAdmission> {
                                           itemBuilder: (context, index) {
                                             return GestureDetector(
                                               onTap: () {
-                                                Navigator.push(context, MaterialPageRoute(builder: (context) => ExploreHome(onSearchIconVisibilityChanged: (bool isVisible) {},),));
+                                                Navigator.push(
+                                                    context,
+                                                    MaterialPageRoute(
+                                                      builder: (context) =>
+                                                          ExploreHome(
+                                                        onSearchIconVisibilityChanged:
+                                                            (bool isVisible) {},
+                                                      ),
+                                                    ));
                                               },
                                               child: Padding(
-                                                padding: const EdgeInsets.symmetric(
-                                                    vertical: 4.0, horizontal: 8.0),
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                        vertical: 4.0,
+                                                        horizontal: 8.0),
                                                 child: _schoolItem[index],
                                               ),
                                             );
@@ -150,7 +159,7 @@ class _ExploreAdmissionState extends State<ExploreAdmission> {
                                       ),
                                     ],
                                     options: CarouselOptions(
-                                    height: 350,
+                                      height: 350,
                                       viewportFraction: 0.9,
                                       padEnds: true,
                                       autoPlay: false,
@@ -161,17 +170,17 @@ class _ExploreAdmissionState extends State<ExploreAdmission> {
                                 ],
                               ),
                             ),
-                            
                             Column(
                               children: [
                                 _TextIconRow(
                                   text: 'Based on your recent searches',
                                   icon: Icons.arrow_forward,
                                 ),
-                            
-                                 SizedBox(height: 20,),
-
+                                SizedBox(
+                                  height: 20,
+                                ),
                                 _BasedOnSearches(
+                                  context: context,
                                   schoolName: 'Daughters Of Divine Love',
                                   formPrice: '₦10,000.00',
                                   admissionStatus: 'Closed',
@@ -179,24 +188,28 @@ class _ExploreAdmissionState extends State<ExploreAdmission> {
                               ],
                             ),
                             _BasedOnSearches(
+                              context: context,
                               schoolName: 'Daughters Of Divine Love',
                               formPrice: '₦10,000.00',
-                              admissionStatus:  'Closed',
+                              admissionStatus: 'Closed',
                             ),
                             _BasedOnSearches(
+                              context: context,
                               schoolName: 'Daughters Of Divine Love',
                               formPrice: '₦10,000.00',
-                              admissionStatus:  'Closed',
+                              admissionStatus: 'Closed',
                             ),
                             _BasedOnSearches(
-                              schoolName: 'Daughters Of Divine Love',
-                              formPrice:'₦10,000.00',
-                              admissionStatus:  'Closed',
-                            ),
-                            _BasedOnSearches(
+                              context: context,
                               schoolName: 'Daughters Of Divine Love',
                               formPrice: '₦10,000.00',
-                              admissionStatus:  'Closed',
+                              admissionStatus: 'Closed',
+                            ),
+                            _BasedOnSearches(
+                              context: context,
+                              schoolName: 'Daughters Of Divine Love',
+                              formPrice: '₦10,000.00',
+                              admissionStatus: 'Closed',
                             ),
                             Column(
                               children: [
@@ -206,8 +219,7 @@ class _ExploreAdmissionState extends State<ExploreAdmission> {
                                 ),
                                 ListView.builder(
                                   shrinkWrap: true,
-                                  physics:
-                                      const NeverScrollableScrollPhysics(),
+                                  physics: const NeverScrollableScrollPhysics(),
                                   itemCount: _schoolItem.length,
                                   itemBuilder: (context, index) {
                                     return Padding(
@@ -224,9 +236,6 @@ class _ExploreAdmissionState extends State<ExploreAdmission> {
                         // Tab 2: Near me
                         ListView(
                           children: [
-
-
-                            
                             ListView.builder(
                               shrinkWrap: true,
                               physics: const NeverScrollableScrollPhysics(),
@@ -242,6 +251,21 @@ class _ExploreAdmissionState extends State<ExploreAdmission> {
                             SizedBox(
                               height: 50,
                             ),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                                  child: Text(
+                                    'Search using Google Map',
+                                    style: AppTextStyles.normal400(
+                                        fontSize: 16,
+                                        color: AppColors.admissionTitle),
+                                  ),
+                                ),
+                                MapSection(),
+                              ],
+                            ),
                             ListView.builder(
                               shrinkWrap: true,
                               physics: const NeverScrollableScrollPhysics(),
@@ -254,32 +278,33 @@ class _ExploreAdmissionState extends State<ExploreAdmission> {
                                 );
                               },
                             ),
-
-
-                              _TextIconRow(
-                                    text: 'Based on your recent searches',
-                                    icon: Icons.arrow_forward,
-                                  ),
-
-                             _BasedOnSearches(
-                              schoolName: 'Daughters Of Divine Love',
-                              formPrice: '₦10,000.00',
-                              admissionStatus:  'Closed',
+                            _TextIconRow(
+                              text: 'Based on your recent searches',
+                              icon: Icons.arrow_forward,
                             ),
                             _BasedOnSearches(
+                              context: context,
                               schoolName: 'Daughters Of Divine Love',
                               formPrice: '₦10,000.00',
-                              admissionStatus:  'Closed',
+                              admissionStatus: 'Closed',
                             ),
                             _BasedOnSearches(
-                              schoolName: 'Daughters Of Divine Love',
-                              formPrice:'₦10,000.00',
-                              admissionStatus:  'Closed',
-                            ),
-                            _BasedOnSearches(
+                              context: context,
                               schoolName: 'Daughters Of Divine Love',
                               formPrice: '₦10,000.00',
-                              admissionStatus:  'Closed',
+                              admissionStatus: 'Closed',
+                            ),
+                            _BasedOnSearches(
+                              context: context,
+                              schoolName: 'Daughters Of Divine Love',
+                              formPrice: '₦10,000.00',
+                              admissionStatus: 'Closed',
+                            ),
+                            _BasedOnSearches(
+                              context: context,
+                              schoolName: 'Daughters Of Divine Love',
+                              formPrice: '₦10,000.00',
+                              admissionStatus: 'Closed',
                             ),
                           ],
                         ),
@@ -302,8 +327,6 @@ class _ExploreAdmissionState extends State<ExploreAdmission> {
   }
 }
 
-
-
 // Reusable Widget: School Image
 Widget _SchoolImage() {
   return ClipRRect(
@@ -313,7 +336,6 @@ Widget _SchoolImage() {
       fit: BoxFit.cover,
       height: 150,
       width: 300,
-     
     ),
   );
 }
@@ -352,7 +374,8 @@ Widget _SchoolDescription({
             ),
             Text(
               'Form for sale at $formPrice',
-              style:AppTextStyles.normal400(fontSize: 14, color:AppColors.schoolform),
+              style: AppTextStyles.normal400(
+                  fontSize: 14, color: AppColors.schoolform),
             ),
             Row(
               children: [
@@ -377,50 +400,72 @@ Widget _SchoolDescription({
 
 // Reusable Widget: Top Schools Card
 Widget _TopSchoolsCard({
+  required BuildContext context,
   required String schoolName,
   required String formPrice,
   required String admissionStatus,
 }) {
-  return Padding(
-    padding: const EdgeInsets.symmetric(horizontal: 16),
-    child: Column(
-      children: [
-        _SchoolImage(),
-        const SizedBox(height: 5),
-        Padding(
-          padding: const EdgeInsets.only(left:20),
-          child: _SchoolDescription(
-            schoolName: schoolName,
-            formPrice: formPrice,
-            admissionStatus: admissionStatus,
-          ),
+  return GestureDetector(
+    onTap: () {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => const SchoolProfileScreen(),
         ),
-      ],
+      );
+    },
+    child: Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Column(
+        children: [
+          _SchoolImage(),
+          const SizedBox(height: 5),
+          Padding(
+            padding: const EdgeInsets.only(left: 20),
+            child: _SchoolDescription(
+              schoolName: schoolName,
+              formPrice: formPrice,
+              admissionStatus: admissionStatus,
+            ),
+          ),
+        ],
+      ),
     ),
   );
 }
 
 // Reusable Widget: Based on Searches
 Widget _BasedOnSearches({
+  required BuildContext context,
   required String schoolName,
   required String formPrice,
   required String admissionStatus,
 }) {
-  return Padding(
-    padding: const EdgeInsets.symmetric(horizontal:0),
-    child: Column(
-      children: [
-        _SchoolImage(),
-        const SizedBox(height: 5),
-        Padding(
-          padding: const EdgeInsets.only(left: 10),
-          child: _SchoolDescription(
-            schoolName: schoolName,
-            formPrice: formPrice,
-            admissionStatus: admissionStatus,
-          ),
+  return GestureDetector(
+    onTap: () {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => const SchoolProfileScreen(),
         ),
-      ],
+      );
+    },
+    child: Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 0),
+      child: Column(
+        children: [
+          _SchoolImage(),
+          const SizedBox(height: 5),
+          Padding(
+            padding: const EdgeInsets.only(left: 10),
+            child: _SchoolDescription(
+              schoolName: schoolName,
+              formPrice: formPrice,
+              admissionStatus: admissionStatus,
+            ),
+          ),
+        ],
+      ),
     ),
   );
 }
@@ -435,9 +480,10 @@ Widget _TextIconRow({
     child: Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(text, style: AppTextStyles.normal400(fontSize: 18, color: AppColors.admissionTitle)),
+        Text(text,
+            style: AppTextStyles.normal400(
+                fontSize: 18, color: AppColors.admissionTitle)),
         Icon(icon),
-       
       ],
     ),
   );
@@ -452,59 +498,57 @@ Widget _SearchItems({
   required String admissionStatus,
 }) {
   return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 8.0),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            width: 50,
+    padding: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 8.0),
+    child: Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SizedBox(
+          width: 50,
+          height: 50,
+          child: Image(
+            image: AssetImage(
+              image,
+            ),
+            fit: BoxFit.cover,
             height: 50,
-            child: Image(
-              image: AssetImage(image,),
-              fit: BoxFit.cover,
-              height: 50,
-              width: 50,
-              errorBuilder: (context, error, stackTrace) {
-                return const Icon(Icons.error);
-              },
-            ),
+            width: 50,
+            errorBuilder: (context, error, stackTrace) {
+              return const Icon(Icons.error);
+            },
           ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: AppTextStyles.normal700(fontSize: 16, color: AppColors.schooltext)
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  formSales,
-                 style: AppTextStyles.normal700(fontSize: 16, color: AppColors.schoolform)
-                ),
-                const SizedBox(height: 4),
-                Row(
-                  children: [
-                    Text(
-                      admissionDistance,
-                    style: AppTextStyles.normal700(fontSize: 16, color: AppColors.schooltext)
+        ),
+        const SizedBox(width: 16),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(title,
+                  style: AppTextStyles.normal700(
+                      fontSize: 16, color: AppColors.schooltext)),
+              const SizedBox(height: 4),
+              Text(formSales,
+                  style: AppTextStyles.normal700(
+                      fontSize: 16, color: AppColors.schoolform)),
+              const SizedBox(height: 4),
+              Row(
+                children: [
+                  Text(admissionDistance,
+                      style: AppTextStyles.normal700(
+                          fontSize: 16, color: AppColors.schooltext)),
+                  const SizedBox(width: 8),
+                  Text(
+                    admissionStatus,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      color: Colors.green,
                     ),
-                    const SizedBox(width: 8),
-                    Text(
-                      admissionStatus,
-                      style: const TextStyle(
-                        fontSize: 14,
-                        color: Colors.green,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
+                  ),
+                ],
+              ),
+            ],
           ),
-        ],
-      ),
-    );
-  
+        ),
+      ],
+    ),
+  );
 }

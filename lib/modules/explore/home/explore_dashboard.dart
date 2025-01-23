@@ -4,6 +4,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/explore/admission/admission_detail_screen.dart';
 import 'package:linkschool/modules/explore/admission/admission_home_screen.dart';
+import 'package:linkschool/modules/explore/explore-profile/explore_profileScreen.dart';
 import '../../common/bottom_navigation_bar.dart';
 import '../../common/bottom_nav_item.dart';
 import 'explore_home.dart';
@@ -56,9 +57,9 @@ class _ExploreDashboardState extends State<ExploreDashboard> {
        ),
       Container(
         height: MediaQuery.of(context).size.height,
-        color: Colors.black,
+        color: Colors.white,
       ),
-      Container(
+     ProfileScreen(
         height: MediaQuery.of(context).size.height,
         color: Colors.blue,
       ),
