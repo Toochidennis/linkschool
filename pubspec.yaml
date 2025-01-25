@@ -89,6 +89,7 @@ flutter:
     - assets/images/result/
     - assets/images/admission/
     - assets/images/explore-images/
+    - assets/images/profile/
     # - assets/icons/home.svg
     # - assets/icons/e-learning.svg
     # - assets/icons/admission.svg

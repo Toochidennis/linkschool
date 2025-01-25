@@ -1,135 +1,165 @@
 import 'package:flutter/material.dart';
+import 'package:linkschool/modules/common/app_colors.dart';
+import 'package:linkschool/modules/common/text_styles.dart';
 
 class ProfileScreen extends StatelessWidget {
-  const ProfileScreen({super.key, required double height, required Color color});
+  const ProfileScreen(
+      {super.key, required double height, required Color color});
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      child:Kamso() ,
+      child: ProfileHomeScreen(),
     );
   }
 }
 
+class ProfileHomeScreen extends StatefulWidget {
+  @override
+  _ProfileHomeScreenState createState() => _ProfileHomeScreenState();
+}
 
+class _ProfileHomeScreenState extends State<ProfileHomeScreen> {
+  bool _isAdRemoved = false;
 
-
-
-
-
-
-
-class Kamso extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return  Scaffold(
-        body: Center(
-          child: Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  Colors.blue.withOpacity(0.3), // Blurry blue at top-left
-                  Colors.white.withOpacity(0.0), // Fading to white
-                  Colors.blue.withOpacity(0.6), // Blurry blue at top-right
-                  Colors.white, // White background
+    return Scaffold(
+        body: Container(
+      width: double.infinity,
+      height: double.infinity,
+      decoration: profileDecoration(),
+      child: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            children: [
+              Text(
+                'Account',
+                style: AppTextStyles.normal600(
+                    fontSize: 22, color: AppColors.profileTitle),
+              ),
+              SizedBox(
+                height: 40,
+              ),
+              profilePicture(),
+              Column(
+                children: [
+                  Text(
+                    'Chiamaka Winifred',
+                    style: AppTextStyles.normal500(
+                        fontSize: 18, color: AppColors.profileTitle),
+                  ),
+                  Text(
+                    'azuhchiramaka2018@gmail.com',
+                    style: AppTextStyles.normal400(
+                        fontSize: 16, color: AppColors.profileSubTitle),
+                  )
                 ],
-                stops: [0.0, 0.3, 0.7, 1.0], 
               ),
-            ),
-            child: Center(
-              child: Text(
-                'Blurry Blue Gradient',
-                style: TextStyle(
-                  fontSize: 24,
-                  color: Colors.black,
-                ),
+              SizedBox(
+                height: 5,
               ),
+              Divider(),
+              Column(
+                children: [
+                  ListTile(
+                    leading: Icon(Icons.edit),
+                    title: Text('Edit profile information'),
+                    onTap: () {},
+                  ),
+                  ListTile(
+                    leading: Icon(Icons.color_lens),
+                    title: Text('Theme'),
+                    subtitle: Text('Light'),
+                    onTap: () {},
+                  ),
+                  ListTile(
+                    leading: Icon(Icons.remove_circle_outline),
+                    title: Text('Remove Ads'),
+                    trailing: Switch(
+                      value: _isAdRemoved,
+                      onChanged: (value) {
+                        setState(() {
+                          _isAdRemoved = value;
+                        });
+                        print('Ads removed: $value');
+                      },
+                    ),
+                  ),
+                  ListTile(
+                    leading: Icon(Icons.description_rounded),
+                    title: Text(
+                      'Terms & Conditions',
+                      style: AppTextStyles.normal400(
+                          fontSize: 16, color: AppColors.profiletext),
+                    ),
+                    onTap: () {},
+                  ),
+                  Divider(),
+                  ListTile(
+                    leading: Icon(Icons.logout_outlined,
+                        color: AppColors.profileLogout),
+                    title: Text('Logout',
+                        style: AppTextStyles.normal400(
+                            fontSize: 16, color: AppColors.profileLogout)),
+                  )
+                ],
+              )
+            ],
+          ),
+        ),
+      ),
+    ));
+  }
+
+
+
+
+  BoxDecoration profileDecoration() {
+    return BoxDecoration(
+      gradient: LinearGradient(
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+        colors: [
+          AppColors.profilebg1,
+          AppColors.profilebg2,
+        ],
+        stops: [0.1, 0.5],
+      ),
+    );
+  }
+
+
+
+
+  Stack profilePicture() {
+    return Stack(
+      children: [
+        SizedBox(
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(100),
+            child: Image(
+              image: AssetImage('assets/images/profile/profile-picture.jpg'),
+              height: 100,
+              width: 100,
+              fit: BoxFit.cover,
             ),
           ),
         ),
-      );
-    
+        Positioned(
+          bottom: 0,
+          right: 5,
+          child: Container(
+            height: 20,
+            width: 20,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(100),
+              color: Colors.green,
+            ),
+          ),
+        ),
+      ],
+    );
   }
 }
-
-
-
-
-
-
-
-// class ProfileSettingsPage extends StatelessWidget {
-//   @override
-//   Widget build(BuildContext context) {
-//     return Scaffold(
-//       appBar: AppBar(
-//         title: Text('Account'),
-//       ),
-//       body: ListView(
-//         children: <Widget>[
-//           Center(
-//             child: UserAccountsDrawerHeader(
-//               accountName: Text('Chiramaka Winifred'),
-//               accountEmail: Text('azuhchiramaka2018@gmail.com'),
-//               currentAccountPicture: CircleAvatar(
-//                 backgroundColor: Colors.white,
-//                 child: Icon(
-//                   Icons.person,
-//                   size: 40,
-//                 ),
-//               ),
-//             ),
-//           ),
-//           ListTile(
-//             leading: Icon(Icons.edit),
-//             title: Text('Edit profile information'),
-//             onTap: () {
-//               // Navigate to edit profile page
-//             },
-//           ),
-//           Divider(),
-//           ListTile(
-//             leading: Icon(Icons.color_lens),
-//             title: Text('Theme'),
-//             subtitle: Text('Light'),
-//             onTap: () {
-//               // Change theme
-//             },
-//           ),
-//           ListTile(
-//             leading: Icon(Icons.remove_circle_outline),
-//             title: Text('Remove Ads'),
-//             onTap: () {
-//               // Remove ads
-//             },
-//           ),
-//           Divider(),
-//           ListTile(
-//             leading: Icon(Icons.description),
-//             title: Text('Terms & Conditions'),
-//             onTap: () {
-//               // Navigate to terms & conditions
-//             },
-//           ),
-//           ListTile(
-//             leading: Icon(Icons.help),
-//             title: Text('Help and support'),
-//             onTap: () {
-//               // Navigate to help and support
-//             },
-//           ),
-//           Divider(),
-//           ListTile(
-//             leading: Icon(Icons.exit_to_app),
-//             title: Text('Logout'),
-//             onTap: () {
-//               // Perform logout
-//             },
-//           ),
-//         ],
-//       ),
-//     );
-//   }
-// }
