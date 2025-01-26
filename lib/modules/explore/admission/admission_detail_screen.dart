@@ -56,7 +56,7 @@ class SchoolProfileScreen extends StatelessWidget {
             ),
             // Rest of the content
             Padding(
-              padding: const EdgeInsets.only(top: 300),
+              padding: const EdgeInsets.only(top: 310),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: const [
@@ -101,26 +101,20 @@ class SchoolHeader extends StatelessWidget {
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
-            children: const [
+            children: [
               Text(
                 'Daughters Of Divine Love Juniorate',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
+                style:AppTextStyles.normal500(fontSize: 18, color:AppColors.aboutTitle),
               ),
-              SizedBox(height: 4),
+              const SizedBox(height: 4),
               Text(
                 '10 Ugwunwani St, Abakpa, Abakpa Nike 400103, Enugu',
-                style: TextStyle(fontSize: 14),
+               style: AppTextStyles.normal400(fontSize: 16, color: AppColors.detailsText),
               ),
-              SizedBox(height: 4),
-              Text(
+              const SizedBox(height: 4),
+              const Text(
                 'Motto: Peace and Love and Integrity',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontStyle: FontStyle.italic,
-                ),
+               style:AppTextStyles.normal2Light,
               ),
             ],
           ),
@@ -136,7 +130,7 @@ class MapSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 200,
+      height: 150,
       margin: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         border: Border.all(color: Colors.grey),
@@ -182,13 +176,10 @@ class GallerySection extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: const EdgeInsets.all(16),
+          padding:  EdgeInsets.all(16),
           child: Text(
             title,
-            style: const TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-            ),
+            style: AppTextStyles.normal600(fontSize: 16, color: AppColors.detailsText),
           ),
         ),
         SizedBox(
@@ -239,7 +230,8 @@ class GallerySection extends StatelessWidget {
               Tab(text: 'Testimonials'),
               Tab(text: 'Other Info'),
             ],
-            labelColor: Theme.of(context).primaryColor,
+            indicatorColor: AppColors.text2Light,
+         labelColor:AppColors.text2Light, 
           ),
           SizedBox(
             height: 500,
@@ -267,6 +259,9 @@ class GallerySection extends StatelessWidget {
                     ],
                   ),
                 ),
+
+
+
                 // Content for the "Testimonials" tab
                 SingleChildScrollView(
                   child: Padding(
@@ -365,13 +360,16 @@ class ActionButtons extends StatelessWidget {
           children: [
             TextButton.icon(
               onPressed: () {},
-              icon: const Icon(Icons.phone),
-              label: const Text('Get contact info'),
+              style: ButtonStyle(
+                overlayColor: MaterialStateProperty.all(AppColors.detailsbuttonbg),
+              ),
+              icon: const Icon(Icons.call_sharp,size: 18,color: AppColors.detailsbutton),
+              label:  Text('Get contact info', style: AppTextStyles.normal400(fontSize: 16, color: AppColors.detailsbutton)),
             ),
             TextButton.icon(
               onPressed: () {},
-              icon: const Icon(Icons.message),
-              label: const Text('Send a message'),
+              icon: const Icon(Icons.message,size: 18,color: AppColors.detailsbutton),
+              label:  Text('Send a message',style: AppTextStyles.normal400(fontSize: 16, color: AppColors.detailsbutton)),
             ),
           ],
         ),
@@ -390,16 +388,13 @@ class SchoolTypeSection extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        children: const [
+        children: [
           Text(
             'School type',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-            ),
+            style: AppTextStyles.normal600(fontSize: 16, color: AppColors.aboutTitle),
           ),
           SizedBox(height: 8),
-          Text('Boarding Only (All girls)'),
+          Text('Boarding Only (All girls)',style: AppTextStyles.normal400(fontSize: 16, color: AppColors.detailsText),),
         ],
       ),
     );
@@ -428,7 +423,7 @@ class AboutSection extends StatelessWidget {
           SizedBox(height: 8),
           Text(
             'The father founder was rector of a junior seminary, a male juniorate before he was made a bishop. It was a concept he was converted to with and he knows the value of the saying, \'catch them young\'. He was aware of what could be got from the juniorate and believed that after the training, if one did not succeed in the being a religious/clergy, the person would at least be a good citizen.',
-            style: TextStyle(height: 1.5),
+            style: AppTextStyles.normal400(fontSize: 16, color:AppColors.text4Light),
           ),
         ],
       ),
@@ -479,7 +474,8 @@ class _TestimonyCard extends StatelessWidget {
                     Text(name,
                         style: AppTextStyles.normal600(
                             fontSize: 16, color: AppColors.tesimonyName)),
-                    Text((role))
+                    Text((role),style: AppTextStyles.normal400(
+                            fontSize: 16, color: AppColors.tesimonyName))
                   ],
                 ),
                 SizedBox(
@@ -487,6 +483,8 @@ class _TestimonyCard extends StatelessWidget {
                 ),
                 Text(
                   testimoney,
+                  style:AppTextStyles.normal400(
+                            fontSize: 16, color: AppColors.tesimonyName) ,
                   overflow: TextOverflow.ellipsis,
                   maxLines: 3,
                 ),
@@ -532,7 +530,7 @@ Widget _schoolMotto (){
   return Row(
     children:[
       Text('School motto:',style:AppTextStyles.normal400(fontSize: 16, color: AppColors.aboutTitle),),
-      Text('Faith and Love'),
+      Text('Faith and Love',style:AppTextStyles.normal400(fontSize: 16, color: AppColors.detailsText)),
     ]
   );
 }

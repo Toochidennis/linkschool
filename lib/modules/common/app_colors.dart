@@ -211,6 +211,10 @@ class AppColors {
   static const Color  tesimonyName = Color.fromRGBO(26, 26, 26, 1);
   static const Color information = Color.fromRGBO(0, 123, 255, 1);
   static const Color inforText = Color.fromRGBO(105, 105, 105, 1);
+   static const Color detailsText = Color.fromRGBO(26, 31, 54, 1);
+  static const Color detailsbuttonbg = Color.fromRGBO(228, 234, 255, 1);
+  static const Color detailsbutton = Color.fromRGBO(47, 85, 221, 1);
+ 
 
   // profile colors
   static const Color profilebg1 =Color.fromRGBO(113, 77, 255, 1);

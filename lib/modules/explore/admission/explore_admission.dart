@@ -55,13 +55,16 @@ class _ExploreAdmissionState extends State<ExploreAdmission> {
         children: [
           Expanded(
             child: DefaultTabController(
+              
               length: 3,
               child: Column(
                 children: [
                   // TabBar
                   Container(
                     child: TabBar(
-                      labelColor: Theme.of(context).primaryColor,
+                
+                        indicatorColor: AppColors.text2Light,
+                            labelColor:AppColors.text2Light, 
                       tabs: const [
                         Tab(text: 'Top'),
                         Tab(text: 'Near me'),

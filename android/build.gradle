@@ -46,6 +46,6 @@ tasks.register("clean", Delete) {
 //     project.evaluationDependsOn(':app')
 // }
 
-// tasks.register("clean", Delete) {
+// tasks.register("clean", Delete) {    
 //     delete rootProject.buildDir
 // }
