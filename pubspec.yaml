@@ -41,6 +41,7 @@ dependencies:
   image_picker: ^1.1.2
   file_picker: ^8.1.7
   shared_preferences: ^2.3.5
+  introduction_screen: ^3.1.14
   flutter_plugin_android_lifecycle: ^2.0.24
   # shared_preferences: ^2.3.2
   # flutter_charts: ^0.5.2
@@ -90,6 +91,7 @@ flutter:
     - assets/images/admission/
     - assets/images/explore-images/
     - assets/images/profile/
+    - assets/images/onboardng-image/
     # - assets/icons/home.svg
     # - assets/icons/e-learning.svg
     # - assets/icons/admission.svg

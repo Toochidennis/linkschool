@@ -116,6 +116,23 @@ class Constants {
     );
   }
 
+
+  
+   static BoxDecoration customScreenDec0ration() {
+    return BoxDecoration(
+      gradient: LinearGradient(
+        begin: Alignment.topRight,
+        end: Alignment.bottomCenter,
+        colors: [
+         Color.fromRGBO(0, 114, 255, 1).withOpacity(0.3), 
+                AppColors.attBgColor1,
+        ],
+        stops: [0.1, 0.3],
+      ),
+    );
+  }
+
+
   static Padding heading600({
     required String title,
     double? titleSize,

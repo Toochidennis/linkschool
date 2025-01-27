@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:linkschool/modules/common/app_themes.dart';
 import 'package:linkschool/routes/app_navigation_flow.dart';
+import 'package:linkschool/routes/onboardingScreen.dart';
 // import 'package:linkschool/app_navigation_flow.dart';
 
 void main() {
@@ -27,7 +28,9 @@ class MyApp extends StatelessWidget {
       theme: AppThemes.lightTheme,
       darkTheme: AppThemes.darkTheme,
       themeMode: ThemeMode.system,
-      home: AppNavigationFlow(),
+      home: Onboardingscreen(),
     );
   }
 }
+
+// AppNavigationFlow()

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
+import 'package:linkschool/modules/common/constants.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen(
@@ -26,9 +27,10 @@ class _ProfileHomeScreenState extends State<ProfileHomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
         body: Container(
+          decoration:Constants.customScreenDec0ration(),
       width: double.infinity,
       height: double.infinity,
-      decoration: profileDecoration(),
+     
       child: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.all(16.0),
@@ -78,6 +80,8 @@ class _ProfileHomeScreenState extends State<ProfileHomeScreen> {
                     leading: Icon(Icons.remove_circle_outline),
                     title: Text('Remove Ads'),
                     trailing: Switch(
+                      activeColor: AppColors.barColor2,
+                      inactiveThumbColor: Colors.white10,
                       value: _isAdRemoved,
                       onChanged: (value) {
                         setState(() {
@@ -94,7 +98,10 @@ class _ProfileHomeScreenState extends State<ProfileHomeScreen> {
                       style: AppTextStyles.normal400(
                           fontSize: 16, color: AppColors.profiletext),
                     ),
-                    onTap: () {},
+                 selectedColor: Colors.amber.shade100,
+                    onTap: () {
+                       print(' Terms & Conditions');
+                    },
                   ),
                   Divider(),
                   ListTile(
@@ -103,6 +110,7 @@ class _ProfileHomeScreenState extends State<ProfileHomeScreen> {
                     title: Text('Logout',
                         style: AppTextStyles.normal400(
                             fontSize: 16, color: AppColors.profileLogout)),
+                            onTap: (){},
                   )
                 ],
               )
@@ -115,20 +123,6 @@ class _ProfileHomeScreenState extends State<ProfileHomeScreen> {
 
 
 
-
-  BoxDecoration profileDecoration() {
-    return BoxDecoration(
-      gradient: LinearGradient(
-        begin: Alignment.topCenter,
-        end: Alignment.bottomCenter,
-        colors: [
-          AppColors.profilebg1,
-          AppColors.profilebg2,
-        ],
-        stops: [0.1, 0.5],
-      ),
-    );
-  }
 
 
 

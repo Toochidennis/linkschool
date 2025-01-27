@@ -218,12 +218,14 @@ class AppColors {
 
   // profile colors
   static const Color profilebg1 =Color.fromRGBO(113, 77, 255, 1);
+  static const Color profile3 = Color.fromRGBO(187, 187, 187, 1);
   static const Color profilebg2=Color.fromRGBO(147, 128, 255, 0);
   static const Color profilebg3 =Color.fromRGBO(26, 26, 26, 1);
   static const Color profileTitle =Color.fromRGBO(26, 26, 26, 1);
   static const Color profileSubTitle =Color.fromRGBO(168, 168, 168, 1);
   static const Color profiletext=Color.fromRGBO(26, 26, 26, 1);
   static const Color profileLogout =Color.fromRGBO(255, 78, 78, 1);
+ 
 
 
 
