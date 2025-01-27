@@ -14,13 +14,16 @@ class Onboardingscreen extends StatelessWidget {
     return Container(
         decoration:Constants.customScreenDec0ration(),
         child:PageView(
+          pageSnapping: true,
           children: [
             Container(
-              color: Colors.amber,
+              color: Colors.white,
               height: 400,
+              child:SvgPicture.asset('assets/images/onboardng-image/amico.svg',height: 400,),
             ),
             Container(
-              color: Colors.orange,
+              color: Colors.white,
+               child:SvgPicture.asset('assets/images/onboardng-image/amico.svg',height: 400,),
               height: 400,
             ),
             Container(
