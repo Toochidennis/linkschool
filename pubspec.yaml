@@ -43,6 +43,7 @@ dependencies:
   shared_preferences: ^2.3.5
   introduction_screen: ^3.1.14
   flutter_plugin_android_lifecycle: ^2.0.24
+  smooth_page_indicator: ^1.2.0+3
   # shared_preferences: ^2.3.2
   # flutter_charts: ^0.5.2
 

@@ -1,9 +1,9 @@
 import 'package:curved_nav_bar/fab_bar/fab_bottom_app_bar_item.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:linkschool/modules/E_library/E_library_dashbord.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
-import 'package:linkschool/modules/explore/admission/admission_detail_screen.dart';
-import 'package:linkschool/modules/explore/admission/admission_home_screen.dart';
+import 'package:linkschool/modules/E_library/E_library_dashbord.dart';
 import 'package:linkschool/modules/explore/explore-profile/explore_profileScreen.dart';
 import '../../common/bottom_navigation_bar.dart';
 import '../../common/bottom_nav_item.dart';
@@ -46,24 +46,20 @@ class _ExploreDashboardState extends State<ExploreDashboard> {
 
 
   void _initializeBodyItems() {
-    _bodyItems = [
+      _bodyItems = [
       ExploreHome(
         onSearchIconVisibilityChanged: _onSearchIconVisibilityChanged,
       ),
       ExploreAdmission(
-      
       height: MediaQuery.of(context).size.height,
-     
        ),
-      Container(
-        height: MediaQuery.of(context).size.height,
-        color: Colors.white,
-      ),
+      ElibraryDashboard( height: MediaQuery.of(context).size.height,),
      ProfileScreen(
         height: MediaQuery.of(context).size.height,
         color: Colors.blue,
       ),
     ];
+    
   }
 
   List<FABBottomAppBarItem> _buildAppBarItems() {

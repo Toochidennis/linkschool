@@ -3,7 +3,8 @@ import 'package:flutter/material.dart';
 class AppColors {
   // Light Theme
   static const Color primaryLight = Color.fromRGBO(45, 99, 255, 1); //primary
-  static const Color secondaryLight = Color.fromRGBO(252, 147, 56, 1); //buttonOrange
+  static const Color secondaryLight =
+      Color.fromRGBO(252, 147, 56, 1); //buttonOrange
   static const Color textLight = Color.fromRGBO(26, 26, 26, 1);
   static const Color text2Light = Color.fromRGBO(45, 99, 255, 1);
   static const Color text3Light = Color.fromRGBO(0, 0, 0, 1);
@@ -14,7 +15,8 @@ class AppColors {
   static const Color text8Light = Color.fromRGBO(202, 202, 202, 1);
   static const Color text9Light = Color.fromRGBO(127, 127, 127, 1);
   static const Color text10Light = Color.fromRGBO(139, 139, 139, 1);
-  static const Color backgroundLight = Color.fromRGBO(255, 255, 255, 1); // white
+  static const Color backgroundLight =
+      Color.fromRGBO(255, 255, 255, 1); // white
   static const Color textFieldBorderLight = Color.fromRGBO(208, 208, 208, 1);
   static const Color textFieldLight = Color.fromRGBO(255, 255, 255, 1);
 
@@ -106,7 +108,7 @@ class AppColors {
 
   static const Color resultColor1 = Color.fromRGBO(29, 33, 41, 1);
 
-    //student result
+  //student result
   static const Color borderLight = Color.fromRGBO(255, 218, 218, 1);
   static const Color borderGray = Color.fromRGBO(218, 218, 218, 1);
   static const Color barTextGray = Color.fromRGBO(65, 65, 65, 1);
@@ -131,14 +133,13 @@ class AppColors {
   static const Color bgColor4 = Color.fromRGBO(247, 220, 222, 1);
   static const Color bgColor5 = Color.fromRGBO(255, 228, 179, 1);
   static const Color iconColor1 = Color.fromRGBO(238, 86, 236, 1);
-  static const Color iconColor2 = Color.fromRGBO(141, 136, 207, 1); 
+  static const Color iconColor2 = Color.fromRGBO(141, 136, 207, 1);
   static const Color iconColor3 = Color.fromRGBO(219, 163, 167, 1);
   static const Color iconColor4 = Color.fromRGBO(247, 178, 50, 1);
-  static const Color bgXplore1 = Color.fromRGBO(255, 124, 10,1);
+  static const Color bgXplore1 = Color.fromRGBO(255, 124, 10, 1);
   static const Color bgXplore2 = Color.fromRGBO(0, 190, 173, 1);
   static const Color bgXplore3 = Color.fromRGBO(0, 125, 234, 1);
-  static const Color classProgressBar1 = Color.fromRGBO(255, 87, 87,1);
-                          
+  static const Color classProgressBar1 = Color.fromRGBO(255, 87, 87, 1);
 
   //behaviour screen
   static const Color bgGray = Color.fromRGBO(162, 162, 162, 1);
@@ -148,7 +149,7 @@ class AppColors {
   static const Color textGray = Color.fromRGBO(91, 91, 91, 1);
 
   //Registration screen
-  static const Color regBtnColor1 = Color.fromRGBO(224, 221, 255, 1); 
+  static const Color regBtnColor1 = Color.fromRGBO(224, 221, 255, 1);
   static const Color regAvatarColor = Color.fromRGBO(232, 229, 255, 1);
   static const Color regBtnColor2 = Color.fromRGBO(255, 242, 230, 1);
   static const Color regBgColor1 = Color.fromRGBO(241, 241, 241, 1);
@@ -174,7 +175,7 @@ class AppColors {
   static const Color eLearningBtnColor7 = Color.fromRGBO(255, 208, 208, 1);
   static const Color eLearningTxtColor1 = Color.fromRGBO(105, 105, 105, 1);
   static const Color eLearningContColor1 = Color.fromRGBO(130, 159, 255, 1);
-   static const Color eLearningContColor2 = Color.fromRGBO(66, 102, 231, 1);
+  static const Color eLearningContColor2 = Color.fromRGBO(66, 102, 231, 1);
   static const Color eLearningContColor3 = Color.fromRGBO(0, 195, 59, 1);
   static const Color eLearningRedBtnColor = Color.fromRGBO(219, 75, 70, 1);
 
@@ -197,36 +198,37 @@ class AppColors {
   // staff colors
   static const Color staffTxtColor1 = Color.fromRGBO(1, 108, 238, 1);
   static const Color staffTxtColor2 = Color.fromRGBO(211, 95, 0, 1);
-  static const Color staffCtnColor1 = Color.fromRGBO(255, 221, 193, 1); 
+  static const Color staffCtnColor1 = Color.fromRGBO(255, 221, 193, 1);
   static const Color staffCtnColor2 = Color.fromRGBO(232, 237, 255, 1);
   static const Color staffBtnColor1 = Color.fromRGBO(255, 165, 0, 1);
   //  admission colors
-  static const Color admissionopen= Color.fromRGBO(0 ,187, 8 ,1);
-  static const Color admissionclosed= Color.fromRGBO(214, 41, 41, 1);
+  static const Color admissionopen = Color.fromRGBO(0, 187, 8, 1);
+  static const Color admissionclosed = Color.fromRGBO(214, 41, 41, 1);
   static const Color admissionTitle = Color.fromRGBO(105, 105, 105, 1);
   static const Color schooltext = Color.fromRGBO(65, 65, 65, 1);
   static const Color schoolform = Color.fromRGBO(47, 85, 221, 1);
-  static const Color schoolName= Color.fromRGBO(255, 87, 34, 1);
+  static const Color schoolName = Color.fromRGBO(255, 87, 34, 1);
   static const Color aboutTitle = Color.fromRGBO(47, 85, 221, 1);
-  static const Color  tesimonyName = Color.fromRGBO(26, 26, 26, 1);
+  static const Color tesimonyName = Color.fromRGBO(26, 26, 26, 1);
   static const Color information = Color.fromRGBO(0, 123, 255, 1);
   static const Color inforText = Color.fromRGBO(105, 105, 105, 1);
-   static const Color detailsText = Color.fromRGBO(26, 31, 54, 1);
+  static const Color detailsText = Color.fromRGBO(26, 31, 54, 1);
   static const Color detailsbuttonbg = Color.fromRGBO(228, 234, 255, 1);
   static const Color detailsbutton = Color.fromRGBO(47, 85, 221, 1);
- 
 
   // profile colors
-  static const Color profilebg1 =Color.fromRGBO(113, 77, 255, 1);
+  static const Color profilebg1 = Color.fromRGBO(113, 77, 255, 1);
   static const Color profile3 = Color.fromRGBO(187, 187, 187, 1);
-  static const Color profilebg2=Color.fromRGBO(147, 128, 255, 0);
-  static const Color profilebg3 =Color.fromRGBO(26, 26, 26, 1);
-  static const Color profileTitle =Color.fromRGBO(26, 26, 26, 1);
-  static const Color profileSubTitle =Color.fromRGBO(168, 168, 168, 1);
-  static const Color profiletext=Color.fromRGBO(26, 26, 26, 1);
-  static const Color profileLogout =Color.fromRGBO(255, 78, 78, 1);
- 
+  static const Color profilebg2 = Color.fromRGBO(147, 128, 255, 0);
+  static const Color profilebg3 = Color.fromRGBO(26, 26, 26, 1);
+  static const Color profileTitle = Color.fromRGBO(26, 26, 26, 1);
+  static const Color profileSubTitle = Color.fromRGBO(168, 168, 168, 1);
+  static const Color profiletext = Color.fromRGBO(26, 26, 26, 1);
+  static const Color profileLogout = Color.fromRGBO(255, 78, 78, 1);
 
-
-
+//  screen onboarding
+  static const Color titleColor = Color.fromRGBO(47, 85, 221, 1);
+  static const Color onboardingtext = Color.fromRGBO(127, 127, 127, 1);
+  static const Color linkSchool = Color.fromRGBO(255, 165, 0, 1);
+  static const Color buttonColor = Color.fromRGBO(255, 165, 0, 1);
 }
