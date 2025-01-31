@@ -1,5 +1,6 @@
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter/material.dart';
+import 'package:linkschool/modules/auth/login_screen.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
@@ -7,10 +8,16 @@ import 'app_navigation_flow.dart';
 import 'package:introduction_screen/introduction_screen.dart';
 import 'package:smooth_page_indicator/smooth_page_indicator.dart';
 
-class Onboardingscreen extends StatelessWidget {
+class Onboardingscreen extends StatefulWidget {
   Onboardingscreen({super.key});
-  final PageController _pageController = PageController();
 
+  @override
+  _OnboardingscreenState createState() => _OnboardingscreenState();
+}
+
+class _OnboardingscreenState extends State<Onboardingscreen> {
+  final PageController _pageController = PageController();
+  bool onLastPage = false;
   final List<Widget> _pages = [
     OnbordingItems(
         image: 'assets/images/onboardng-image/amico.svg',
@@ -38,8 +45,17 @@ class Onboardingscreen extends StatelessWidget {
               child: SvgPicture.asset('assets/images/onboardng-image/Blur.svg',
                   fit: BoxFit.cover)),
           PageView.builder(
+            onPageChanged: (index) {
+              setState((){  
+               if(onLastPage =(index ==2)){
+                print('the user is on the last page');
+               }
+
+              });
+            },
             itemCount: _pages.length,
             controller: _pageController,
+            
             itemBuilder: (context, index) {
               return _pages[index];
             },
@@ -60,20 +76,49 @@ class Onboardingscreen extends StatelessWidget {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  TextButton(onPressed: () {
-                    Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => AppNavigationFlow()));
-                  }, child: Text('Skip',style: TextStyle( fontSize: 20),)),
-                  ElevatedButton(
+                  TextButton(
                       onPressed: () {
+                        Navigator.pushReplacement(
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) => AppNavigationFlow()));
+                      },
+                      child: Text(
+                        'Skip',
+                        style: TextStyle(fontSize: 20),
+                      )),
 
-                      }, 
-                      child: Icon(Icons.arrow_forward,color: Colors.white,size: 25,),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.buttonColor,
-                        fixedSize: Size(50, 50),
-                        shape: CircleBorder(),
-                      ),)
-                ],
+
+                      if (onLastPage) ElevatedButton(
+                    onPressed: () {
+                      _pageController.nextPage(duration:Duration(milliseconds: 500), curve: Curves.easeIn);
+                      Navigator.push(context, MaterialPageRoute(builder: (context) =>  LoginScreen(onLoginSuccess: () {  },)));
+                    },
+                    child: Icon(
+                      Icons.arrow_forward,
+                     color: Colors.white,
+                      size: 34,
+                                        ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.buttonColor,
+                      shape: CircleBorder(),
+                    ),
+                  ) else ElevatedButton(
+                    onPressed: () {
+                      _pageController.nextPage(duration:Duration(milliseconds: 500), curve: Curves.easeIn);
+
+
+                    },
+                    child: Icon(
+                      Icons.arrow_forward,
+                     color: Colors.white,
+                      size: 34,
+                                        ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.buttonColor,
+                      shape: CircleBorder(),
+                    ),
+                  ) ],
               ))
         ],
       ),

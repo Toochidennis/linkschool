@@ -231,4 +231,10 @@ class AppColors {
   static const Color onboardingtext = Color.fromRGBO(127, 127, 127, 1);
   static const Color linkSchool = Color.fromRGBO(255, 165, 0, 1);
   static const Color buttonColor = Color.fromRGBO(255, 165, 0, 1);
+
+  // E_library Colors
+  static const Color  libtitle =  Color.fromRGBO(105, 105, 105, 1);
+  static const Color libText =  Color.fromRGBO(48, 45, 45, 1);
+  static const Color libitem1 =  Color.fromRGBO(203, 230, 227, 1);
+
 }
