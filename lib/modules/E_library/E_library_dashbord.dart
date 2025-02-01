@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
-import 'package:linkschool/modules/E_library/cbt.dart';
 import 'package:linkschool/modules/E_library/gameCard.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/constants.dart';
-import 'package:linkschool/modules/common/search_bar.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
+import 'package:linkschool/modules/explore/cbt/cbt_dashboard.dart';
+import 'package:linkschool/modules/explore/games/games_home.dart';
 
 class ElibraryDashboard extends StatefulWidget {
   const ElibraryDashboard({super.key, required this.height});
@@ -76,7 +76,7 @@ class _ElibraryDashboardState extends State<ElibraryDashboard> {
                       indicatorColor: AppColors.text2Light,
                       labelColor: AppColors.text2Light,
                       tabs: [
-                        Tab(text: 'for you'),
+                        Tab(text: 'For you'),
                         Tab(text: 'CBT'),
                         Tab(text: 'E-books'),
                         Tab(text: 'Games'),
@@ -88,7 +88,7 @@ class _ElibraryDashboardState extends State<ElibraryDashboard> {
                       padding: const EdgeInsets.all(8.0),
                       child: SingleChildScrollView(
                         child: Column(children: [
-                          CustomSearchBar(),
+                         
                           headingWithAdvert(
                             tag: 'Video',
                             title: 'Continue watching',
@@ -112,7 +112,7 @@ class _ElibraryDashboardState extends State<ElibraryDashboard> {
                             height: 5,
                           ),
                           headingWithAdvert(
-                              tag: "game", title: 'game Everyone is playing'),
+                              tag: "Game", title: 'Game Everyone is playing'),
                           SizedBox(
                             height: 10,
                           ),
@@ -213,15 +213,15 @@ class _ElibraryDashboardState extends State<ElibraryDashboard> {
                         ]),
                       ),
                     ),
-                    Expanded(child: CBT_Dashboard()),
-                    Center(
-                      child: Text('Page for Cbt'),
+                    Expanded(child: CBTDashboard()),
+                    Expanded(
+                      child: GamesDashboard(),
                     ),
                     Center(
                       child: Text('page for E_book'),
                     ),
                     Center(
-                      child: Text('page for game Games'),
+                      child: Text('page for Games'),
                     ),
                   ]))
                 ],

@@ -24,65 +24,70 @@ class Constants {
     );
   }
 
-  static AppBar customAppBar({
-    required BuildContext context,
-    String? iconPath,
-    bool? centerTitle,
-    String? title,
-  }) {
-    final Brightness brightness = Theme.of(context).brightness;
-    var opacity = brightness == Brightness.light ? 0.1 : 0.15;
+static AppBar customAppBar({
+  required BuildContext context,
+  String? iconPath,
+  bool? centerTitle,
+  String? title,
+  bool showBackButton = true, 
+}) {
+  final Brightness brightness = Theme.of(context).brightness;
+  var opacity = brightness == Brightness.light ? 0.1 : 0.15;
 
-    return AppBar(
-      backgroundColor: Colors.white,
-      elevation: 0.0,
-      title: Text(
-        title ?? "",
-        style: AppTextStyles.normal600(
-          fontSize: 18.0,
-          color: AppColors.primaryLight,
-        ),
+  return AppBar(
+    backgroundColor: Colors.white,
+    automaticallyImplyLeading: false,
+    elevation: 0.0,
+    title: Text(
+      title ?? "",
+      style: AppTextStyles.normal600(
+        fontSize: 18.0,
+        color: AppColors.primaryLight,
       ),
-      centerTitle: centerTitle,
-      flexibleSpace: FlexibleSpaceBar(
-        background: Stack(
-          children: [
-            Positioned.fill(
-              child: Opacity(
-                opacity: opacity,
-                child: Image.asset(
-                  'assets/images/background.png',
-                  fit: BoxFit.cover,
-                ),
+    ),
+    centerTitle: centerTitle,
+    flexibleSpace: FlexibleSpaceBar(
+      background: Stack(
+        children: [
+          Positioned.fill(
+            child: Opacity(
+              opacity: opacity,
+              child: Image.asset(
+                'assets/images/background.png',
+                fit: BoxFit.cover,
               ),
             ),
-          ],
-        ),
-      ),
-      leading: IconButton(
-        onPressed: () {
-          Navigator.of(context).pop();
-        },
-        icon: Image.asset(
-          'assets/icons/arrow_back.png',
-          color: AppColors.primaryLight,
-          width: 34.0,
-          height: 34.0,
-        ),
-      ),
-      actions: [
-        if (iconPath != null)
-          IconButton(
-            onPressed: () {},
-            icon: Image.asset(
-              iconPath,
-              width: 24.0,
-              height: 24.0,
-            ),
           ),
-      ],
-    );
-  }
+        ],
+      ),
+    ),
+    leading: showBackButton 
+        ? IconButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+            },
+            icon: Image.asset(
+              'assets/icons/arrow_back.png',
+              color: AppColors.primaryLight,
+              width: 34.0,
+              height: 34.0,
+            ),
+          )
+        : null, 
+    actions: [
+      if (iconPath != null)
+        IconButton(
+          onPressed: () {},
+          icon: Image.asset(
+            iconPath,
+            width: 24.0,
+            height: 24.0,
+          ),
+        ),
+    ],
+  );
+}
+
 
   static Padding headingWithSeeAll600({
     required String title,

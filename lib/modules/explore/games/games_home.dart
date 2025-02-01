@@ -85,6 +85,7 @@ class _GamesDashboardState extends State<GamesDashboard> {
       appBar: Constants.customAppBar(
         context: context,
         iconPath: 'assets/icons/search.png',
+        showBackButton: false,
       ),
       body: Container(
         decoration: Constants.customBoxDecoration(context),
