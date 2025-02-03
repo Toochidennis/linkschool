@@ -112,15 +112,13 @@ class _CBTDashboardState extends State<CBTDashboard> {
 
     return Scaffold(
       
-      appBar: Constants.customAppBar(
-          context: context, iconPath: 'assets/icons/search.png',
-          showBackButton: false,
-          ),
       body: Container(
         decoration: Constants.customBoxDecoration(context),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+
+            SizedBox(height: 30,),
             _cbtCategories(
                 buttonLabels: categoryShortNames,
                 selectedCBTCategoriesIndex: selectedCategoryIndex,

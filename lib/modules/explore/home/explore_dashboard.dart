@@ -91,6 +91,7 @@ class _ExploreDashboardState extends State<ExploreDashboard> {
     return Scaffold(
       key: const ValueKey('explore_dashboard'),
       appBar: AppBar(
+        automaticallyImplyLeading: false,
         backgroundColor: AppColors.paymentTxtColor1,
         title: SvgPicture.asset('assets/icons/linkskool-logo.svg'),
         actions: [

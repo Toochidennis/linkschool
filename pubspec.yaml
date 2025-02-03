@@ -93,6 +93,8 @@ flutter:
     - assets/images/explore-images/
     - assets/images/profile/
     - assets/images/onboardng-image/
+    - assets/images/gameDes/
+    - assets/icons/GamesIcon/
     # - assets/icons/home.svg
     # - assets/icons/e-learning.svg
     # - assets/icons/admission.svg

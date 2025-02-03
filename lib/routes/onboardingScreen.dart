@@ -61,7 +61,7 @@ class _OnboardingscreenState extends State<Onboardingscreen> {
             },
           ),
           Positioned(
-              bottom: 120,
+              bottom: 110,
               left: 0,
               right: 0,
               child: Center(
@@ -70,7 +70,7 @@ class _OnboardingscreenState extends State<Onboardingscreen> {
                       controller: _pageController,
                       count: _pages.length))),
           Positioned(
-              bottom: 40,
+              bottom: 50,
               right: 16,
               left: 16,
               child: Row(
@@ -136,7 +136,7 @@ Widget OnbordingItems({
     child: Column(
       children: [
         Container(
-            margin: EdgeInsets.only(top: 200), child: SvgPicture.asset(image)),
+            margin: EdgeInsets.only(top: 180), child: SvgPicture.asset(image)),
         SizedBox(
           height: 10,
         ),
