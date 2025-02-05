@@ -56,7 +56,7 @@ class _GameDetailsState extends State<GameDetails> {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.transparent,
-        title: const Text('Hakuna Matata'),
+        title:  Text('Hakuna Matata',style: AppTextStyles.normal600(fontSize: 20, color: AppColors.detailsbutton),),
         centerTitle: true, // Centering title properly
       ),
       body: SingleChildScrollView(
@@ -79,35 +79,32 @@ class _GameDetailsState extends State<GameDetails> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
+                  Text(
                     'Hakuna Matata King Saga',
-                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                    style: AppTextStyles.normal600(fontSize: 20, color: AppColors.gametitle),
                   ),
                   const Text(
                     'May contain ads and In-app purchases',
                     style: TextStyle(fontSize: 14, color: Colors.grey),
                   ),
                   const SizedBox(height: 20),
-                  SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        reviewText(
-                          image: 'assets/icons/gamesIcon/stars.png',
-                          reviews: '4.5',
-                          reviewDes: '1k reviews',
-                        ),
-                        reviewText(
-                          image: 'assets/icons/gamesIcon/downloading.png',
-                          reviewDes: '156 MB',
-                        ),
-                        reviewText(
-                          image: 'assets/icons/gamesIcon/+12.png',
-                          reviewDes: 'Rated for 12+',
-                        ),
-                      ],
-                    ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      reviewText(
+                        image: 'assets/icons/gamesIcon/stars.png',
+                        reviews: '4.5',
+                        reviewDes: '1k reviews',
+                      ),
+                      reviewText(
+                        image: 'assets/icons/gamesIcon/downloading.png',
+                        reviewDes: '156 MB',
+                      ),
+                      reviewText(
+                        image: 'assets/icons/gamesIcon/+12.png',
+                        reviewDes: 'Rated for 12+',
+                      ),
+                    ],
                   ),
                   SizedBox(
                     height: 20,
@@ -115,7 +112,7 @@ class _GameDetailsState extends State<GameDetails> {
                   CustomLongElevatedButton(
                     text: 'Play now',
                     onPressed: () {},
-                    backgroundColor: AppColors.bgBorder,
+                    backgroundColor: AppColors.bgXplore3,
                     textStyle: AppTextStyles.normal500(
                         fontSize: 16, color: AppColors.assessmentColor1),
                   ),
@@ -171,7 +168,7 @@ class _GameDetailsState extends State<GameDetails> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           
-                           Text('Recommended',
+                           Text('Games you may like',
                           style: AppTextStyles.normal700(
                             fontSize: 16,
                             color: AppColors.gametitle,
@@ -229,16 +226,17 @@ Widget reviewText({
   required String image,
 }) {
   return Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
+    crossAxisAlignment: CrossAxisAlignment.center,
     children: [
       Row(
+        
         mainAxisSize: MainAxisSize.min,
         children: [
           if (reviews != null)
             Text(reviews,
                 style:
                     const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-          if (icons != null) Icon(icons, size: 20),
+        
           Image.asset(image, width: 24, height: 24),
         ],
       ),

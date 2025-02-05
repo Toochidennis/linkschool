@@ -111,7 +111,7 @@ class _CBTDashboardState extends State<CBTDashboard> {
     ];
 
     return Scaffold(
-      
+      appBar: Constants.customAppBar(context: context,showBackButton: true,),
       body: Container(
         decoration: Constants.customBoxDecoration(context),
         child: Column(

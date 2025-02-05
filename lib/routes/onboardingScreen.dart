@@ -42,8 +42,9 @@ class _OnboardingscreenState extends State<Onboardingscreen> {
       body: Stack(
         children: [
           Positioned(
+            
               child: SvgPicture.asset('assets/images/onboardng-image/Blur.svg',
-                  fit: BoxFit.cover)),
+                  fit: BoxFit.contain)),
           PageView.builder(
             onPageChanged: (index) {
               setState((){  

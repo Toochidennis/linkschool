@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
+import 'package:linkschool/modules/E_library/cbt.dart';
+import 'package:linkschool/modules/E_library/elibrary-ebooks/library_ebook.dart';
 import 'package:linkschool/modules/E_library/gameCard.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/explore/cbt/cbt_dashboard.dart';
+import 'package:linkschool/modules/explore/ebooks/ebooks_dashboard.dart';
 import 'package:linkschool/modules/explore/games/games_home.dart';
 
 class ElibraryDashboard extends StatefulWidget {
@@ -12,6 +15,7 @@ class ElibraryDashboard extends StatefulWidget {
   final double height;
 
   @override
+  // ignore: library_private_types_in_public_api
   _ElibraryDashboardState createState() => _ElibraryDashboardState();
 }
 
@@ -59,8 +63,6 @@ class _ElibraryDashboardState extends State<ElibraryDashboard> {
     )
   ];
 
-
-  
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -76,7 +78,15 @@ class _ElibraryDashboardState extends State<ElibraryDashboard> {
                       indicatorColor: AppColors.text2Light,
                       labelColor: AppColors.text2Light,
                       tabs: [
-                        Tab(text: 'For you'),
+                        // Tab(
+                        //     text: 'For you',
+                        //     child: Text(
+                        //       'For you',
+                        //       style: AppTextStyles.normal600(
+                        //           fontSize: 18,
+                        //           color: AppColors.eLearningBtnColor1),
+                        //     )),
+                        Tab(text: 'For You'),
                         Tab(text: 'CBT'),
                         Tab(text: 'E-books'),
                         Tab(text: 'Games'),
@@ -84,19 +94,21 @@ class _ElibraryDashboardState extends State<ElibraryDashboard> {
                       ]),
                   Expanded(
                       child: TabBarView(children: [
-                    Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: SingleChildScrollView(
-                        child: Column(children: [
-                         
-                          headingWithAdvert(
+                    SingleChildScrollView(
+                      child: Column(children: [
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          child: headingWithAdvert(
                             tag: 'Video',
                             title: 'Continue watching',
                           ),
-                          SizedBox(
-                            height: 20,
-                          ),
-                          Container(
+                        ),
+                        // SizedBox(
+                        //   height: 8,
+                        // ),
+                        Padding(
+                          padding: const EdgeInsets.only(top:8.0),
+                          child: SizedBox(
                             height: 180,
                             child: ListView(
                               scrollDirection: Axis.horizontal,
@@ -108,31 +120,34 @@ class _ElibraryDashboardState extends State<ElibraryDashboard> {
                               ],
                             ),
                           ),
-                          SizedBox(
-                            height: 5,
+                        ),
+                         SizedBox(
+                          height: 25,
+                        ),
+                        headingWithAdvert(
+                            tag: "Game", title: 'Game Everyone is playing'),
+                        SizedBox(
+                          height: 8,
+                        ),
+                        Container(
+                          height: 200,
+                          child: ListView.builder(
+                            padding: const EdgeInsets.only(right: 16.0),
+                            itemCount: gameItems.length,
+                            scrollDirection: Axis.horizontal,
+                            itemBuilder: (context, index) {
+                              return gameItems[index];
+                            },
                           ),
-                          headingWithAdvert(
-                              tag: "Game", title: 'Game Everyone is playing'),
-                          SizedBox(
-                            height: 10,
-                          ),
-                          Container(
-                            height: 200,
-                            child: ListView.builder(
-                              padding: const EdgeInsets.only(right: 16.0),
-                              itemCount: gameItems.length,
-                              scrollDirection: Axis.horizontal,
-                              itemBuilder: (context, index) {
-                                return gameItems[index];
-                              },
-                            ),
-                          ),
-                          SizedBox(
-                            height: 10,
-                          ),
-                          blueHeading(
-                              tag: 'E-book', title: 'Suggested for you'),
-                          Container(
+                        ),
+                        SizedBox(
+                          height: 5,
+                        ),
+                        blueHeading(
+                            tag: 'E-book', title: 'Suggested for you'),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          child: Container(
                             height: 250,
                             child: ListView(
                               scrollDirection: Axis.horizontal,
@@ -160,60 +175,61 @@ class _ElibraryDashboardState extends State<ElibraryDashboard> {
                               ],
                             ),
                           ),
-                          blueHeading(
-                            tag: 'CBT',
-                            title: 'Continue taking tests',
-                          ),
-                          Divider(
-                            height: 20,
-                          ),
+                        ),
+                        blueHeading(
+                          tag: 'CBT',
+                          title: 'Continue taking tests',
+                        ),
+                        Divider(
+                          height: 20,
+                        ),
                         Column(
                           children: [
-                           subjectCard(
-      subjectIcon: 'maths',
-      subjectName: 'Mathematics',
-      subjectyear: '2001-2014',
-      cardColor: AppColors.cbtCardColor1,
-    ),
-    Divider(),
-    subjectCard(
-      subjectIcon: 'english',
-      subjectName: 'English Language',
-      subjectyear: '2001-2014',
-      cardColor: AppColors.cbtCardColor2,
-    ),
-     Divider(),
-   subjectCard(
-      subjectIcon: 'chemistry',
-      subjectName: 'Chemistry',
-      subjectyear: '2001-2014',
-      cardColor: AppColors.cbtCardColor3,
-    ),
-     Divider(),
-    subjectCard(
-      subjectIcon: 'physics',
-      subjectName: 'Physics',
-      subjectyear: '2001-2014',
-     cardColor: AppColors.cbtCardColor4,
-    ),
-     Divider(),
-    subjectCard(
-      cardColor: AppColors.cbtCardColor5,
-      subjectIcon:'further_maths',
-      subjectName: 'Further Mathematics',
-      subjectyear: '2001-2023',
-
-    )
+                            subjectCard(
+                              subjectIcon: 'maths',
+                              subjectName: 'Mathematics',
+                              subjectyear: '2001-2014',
+                              cardColor: AppColors.cbtCardColor1,
+                            ),
+                            Divider(),
+                            subjectCard(
+                              subjectIcon: 'english',
+                              subjectName: 'English Language',
+                              subjectyear: '2001-2014',
+                              cardColor: AppColors.cbtCardColor2,
+                            ),
+                            Divider(),
+                            subjectCard(
+                              subjectIcon: 'chemistry',
+                              subjectName: 'Chemistry',
+                              subjectyear: '2001-2014',
+                              cardColor: AppColors.cbtCardColor3,
+                            ),
+                            Divider(),
+                            subjectCard(
+                              subjectIcon: 'physics',
+                              subjectName: 'Physics',
+                              subjectyear: '2001-2014',
+                              cardColor: AppColors.cbtCardColor4,
+                            ),
+                            Divider(),
+                            subjectCard(
+                              cardColor: AppColors.cbtCardColor5,
+                              subjectIcon: 'further_maths',
+                              subjectName: 'Further Mathematics',
+                              subjectyear: '2001-2023',
+                            )
                           ],
                         ),
-                         
-                          SizedBox(
-                            height: 150,
-                          )
-                        ]),
-                      ),
+                        SizedBox(
+                          height: 150,
+                        )
+                      ]),
                     ),
-                    Expanded(child: CBTDashboard()),
+                    Expanded(child: E_CBTDashboard()),
+                    Expanded(
+                      child: LibraryEbook(),
+                    ),
                     Expanded(
                       child: GamesDashboard(),
                     ),
@@ -234,17 +250,16 @@ class _ElibraryDashboardState extends State<ElibraryDashboard> {
   }
 }
 
-
-
-
-  Widget subjectCard({
-    required String subjectIcon,
-    required String subjectName,
-    required Color cardColor,
-    final String? subjectyear,
-    bool showProgressIndicator = false,
-  }) {
-    return Container(
+Widget subjectCard({
+  required String subjectIcon,
+  required String subjectName,
+  required Color cardColor,
+  final String? subjectyear,
+  bool showProgressIndicator = false,
+}) {
+  return Padding(
+    padding: const EdgeInsets.symmetric(horizontal: .0),
+    child: Container(
       height: 70,
       width: double.infinity,
       decoration: BoxDecoration(
@@ -257,7 +272,7 @@ class _ElibraryDashboardState extends State<ElibraryDashboard> {
             width: 50,
             height: 50,
             decoration: BoxDecoration(
-              color:cardColor,
+              color: cardColor,
               borderRadius: BorderRadius.circular(4.0),
             ),
             child: Center(
@@ -273,28 +288,25 @@ class _ElibraryDashboardState extends State<ElibraryDashboard> {
           Expanded(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment:
-                  CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   subjectName,
-                  style:AppTextStyles.normal600(fontSize: 18, color: AppColors.backgroundDark),
+                  style: AppTextStyles.normal600(
+                      fontSize: 18, color: AppColors.backgroundDark),
                 ),
                 Text(
                   subjectyear!,
-                  style: TextStyle(
-                      fontSize: 16, color: Colors.grey),
+                  style: TextStyle(fontSize: 16, color: Colors.grey),
                 ),
-
-        
               ],
             ),
           ),
         ],
       ),
-    );
-  }
-
+    ),
+  );
+}
 
 class _books extends StatelessWidget {
   final String image;
@@ -311,13 +323,13 @@ class _books extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: EdgeInsets.fromLTRB(10, 10, 0, 0),
+      margin: EdgeInsets.fromLTRB(0, 10, 0, 0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
-            height: 150,
-            width: 120,
+            height: 173,
+            width: 114,
             decoration: BoxDecoration(
                 image: DecorationImage(
               image: AssetImage(image),
@@ -328,10 +340,10 @@ class _books extends StatelessWidget {
             height: 5,
           ),
           Container(
-            width: 120,
+            width: 114,
             child: new LinearProgressIndicator(
               minHeight: 5,
-              value: 40,
+              value: 0.5,
               color: AppColors.text2Light,
             ),
           ),
@@ -366,25 +378,28 @@ class headingWithAdvert extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Text(tag,
-            style: AppTextStyles.normal400(
-                fontSize: 14, color: AppColors.libtitle)),
-        Icon(
-          Icons.circle,
-          size: 8,
-          color: AppColors.libtitle,
-        ),
-        SizedBox(
-          width: 10,
-        ),
-        Text(
-          title,
-          style:
-              AppTextStyles.normal700(fontSize: 18, color: AppColors.libText),
-        )
-      ],
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+      child: Row(
+        children: [
+          Text(tag,
+              style: AppTextStyles.normal400(
+                  fontSize: 12, color: AppColors.libtitle)),
+          Icon(
+            Icons.circle,
+            size: 4,
+            color: AppColors.libtitle,
+          ),
+          SizedBox(
+            width: 10,
+          ),
+          Text(
+            title,
+            style:
+                AppTextStyles.normal500(fontSize: 16, color: AppColors.libText),
+          )
+        ],
+      ),
     );
   }
 }
@@ -401,41 +416,44 @@ class blueHeading extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Text(tag,
-            style: AppTextStyles.normal400(
-                fontSize: 14, color: AppColors.libtitle)),
-        Icon(
-          Icons.circle,
-          size: 8,
-          color: AppColors.libtitle,
-        ),
-        SizedBox(
-          width: 10,
-        ),
-        Text(
-          title,
-          style: AppTextStyles.normal700(
-              fontSize: 18, color: AppColors.titleColor),
-        )
-      ],
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+      child: Row(
+        children: [
+          Text(tag,
+              style: AppTextStyles.normal400(
+                  fontSize: 14, color: AppColors.libtitle)),
+          Icon(
+            Icons.circle,
+            size: 8,
+            color: AppColors.libtitle,
+          ),
+          SizedBox(
+            width: 10,
+          ),
+          Text(
+            title,
+            style: AppTextStyles.normal700(
+                fontSize: 18, color: AppColors.titleColor),
+          )
+        ],
+      ),
     );
   }
 }
 
 Widget _ContinueWatching() {
   return Container(
-    height: 180,
-    width: 180,
+    height: 147,
+    width: 150,
     margin: const EdgeInsets.only(left: 16.0),
     child: Column(
       children: [
         Image.asset(
           'assets/images/video_1.png',
           fit: BoxFit.cover,
-          height: 100, // Adjust the height of the image as needed
-          width: double.infinity,
+          height: 90, // Adjust the height of the image as needed
+          width: 150,
         ),
         const SizedBox(height: 4.0),
         Padding(
@@ -444,7 +462,7 @@ Widget _ContinueWatching() {
             'Mastering the Act of Video editing',
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
-            style: AppTextStyles.normal500(
+            style: AppTextStyles.normal600(
               fontSize: 14.0,
               color: AppColors.backgroundDark,
             ),
@@ -456,8 +474,9 @@ Widget _ContinueWatching() {
           child: Row(
             children: [
               const CircleAvatar(
-                backgroundImage: NetworkImage('profileImageUrl'),
+                backgroundImage: NetworkImage('profileImageUrl', ),
                 radius: 10.0,
+                
               ),
               const SizedBox(width: 4.0),
               Text(

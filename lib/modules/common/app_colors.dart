@@ -243,6 +243,15 @@ class AppColors {
   static const Color gameText=  Color.fromRGBO(65, 65, 65, 1);
   static const Color gameCard=  Color.fromRGBO(255, 105, 203, 1);
 
+// book colors
+  static const Color bookCard1 = Color.fromRGBO(247, 247, 247, 1);
+  static const Color bookCard2= Color.fromRGBO(152, 90, 165, 0.1);
+  static const Color bookText = Color.fromRGBO(0, 0, 0, 1);
+  static const Color bookButton = Color.fromRGBO(30, 136, 229, 1);
+  static const Color bookText1 = Color.fromRGBO(47, 85, 221, 1);
+  static const Color bookText2 = Color.fromRGBO(255, 255, 255, 1);
+  static const Color bookbutton = Color.fromRGBO(218, 218, 218, 1);
+  static const Color buttontext1 = Color.fromRGBO(105, 105, 105, 1);
 
 
 }

@@ -66,7 +66,7 @@ class _VideosDashboardState extends State<VideosDashboard> {
     ];
 
     return Scaffold(
-      appBar: Constants.customAppBar(context: context),
+      appBar: Constants.customAppBar(context: context,showBackButton: true),
       body: Container(
         decoration: Constants.customBoxDecoration(context),
         child: Column(

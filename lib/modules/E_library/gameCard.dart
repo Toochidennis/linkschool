@@ -25,8 +25,8 @@ class GameCard extends StatelessWidget {
     return Column(
       children: [
         Container(
-          height: 120,
-          width: 120,
+          height: 102,
+          width: 100,
            margin: const EdgeInsets.only(left: 16.0),
            padding: EdgeInsets.fromLTRB(16, 16, 16, 0),
           decoration: BoxDecoration(
@@ -44,7 +44,7 @@ class GameCard extends StatelessWidget {
           ),
         ),
         SizedBox(
-          height: 10,
+          height: 8,
         ),
         Text(gameTitle,style: AppTextStyles.normal500(fontSize: 13, color: AppColors.libText),),
         Text(platform,style: AppTextStyles.normal500(fontSize: 13, color: AppColors.text5Light),),

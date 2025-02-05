@@ -31,8 +31,9 @@ class _EbooksDashboardState extends State<EbooksDashboard> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: Constants.customAppBar(context: context),
+     
       body: Container(
+        padding: EdgeInsets.only(top: 30),
         decoration: Constants.customBoxDecoration(context),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -48,7 +49,7 @@ class _EbooksDashboardState extends State<EbooksDashboard> {
                 ),
               ),
             ),
-            const CustomSearchBar(),
+           
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16.0),
               child: Wrap(

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:linkschool/modules/common/constants.dart';
+import 'package:linkschool/modules/explore/ebooks/bookDetails/book_page.dart';
 
 import '../../common/app_colors.dart';
 import '../../common/text_styles.dart';
@@ -91,7 +92,9 @@ class AllTab extends StatelessWidget {
                 itemCount: suggestedItems.length,
                 scrollDirection: Axis.horizontal,
                 itemBuilder: (context, index) {
-                  return suggestedItems[index];
+                  return GestureDetector(
+                    onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => MybookPage(),)),
+                    child: suggestedItems[index]);
                 }),
           ),
         ),
