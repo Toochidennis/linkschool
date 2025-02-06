@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
+import 'package:linkschool/modules/E_library/E_lib_detail.dart';
 import 'package:linkschool/modules/E_library/cbt.dart';
 import 'package:linkschool/modules/E_library/elibrary-ebooks/library_ebook.dart';
 import 'package:linkschool/modules/E_library/gameCard.dart';
@@ -80,11 +81,11 @@ class _ElibraryDashboardState extends State<ElibraryDashboard> {
                       tabs: [
                         Tab(
                             child: Text(
-                              'For you',
-                              style: AppTextStyles.normal500(
-                                  fontSize: 16,
-                                  color: AppColors.eLearningBtnColor1),
-                            )),
+                          'For you',
+                          style: AppTextStyles.normal500(
+                              fontSize: 16,
+                              color: AppColors.eLearningBtnColor1),
+                        )),
                         Tab(text: 'CBT'),
                         Tab(text: 'E-books'),
                         Tab(text: 'Games'),
@@ -105,7 +106,7 @@ class _ElibraryDashboardState extends State<ElibraryDashboard> {
                         //   height: 8,
                         // ),
                         Padding(
-                          padding: const EdgeInsets.only(top:8.0),
+                          padding: const EdgeInsets.only(top: 8.0),
                           child: SizedBox(
                             height: 180,
                             child: ListView(
@@ -119,7 +120,7 @@ class _ElibraryDashboardState extends State<ElibraryDashboard> {
                             ),
                           ),
                         ),
-                         SizedBox(
+                        SizedBox(
                           height: 25,
                         ),
                         headingWithAdvert(
@@ -141,8 +142,7 @@ class _ElibraryDashboardState extends State<ElibraryDashboard> {
                         SizedBox(
                           height: 5,
                         ),
-                        blueHeading(
-                            tag: 'E-book', title: 'Suggested for you'),
+                        blueHeading(tag: 'E-book', title: 'Suggested for you'),
                         Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 16),
                           child: Container(
@@ -231,11 +231,11 @@ class _ElibraryDashboardState extends State<ElibraryDashboard> {
                     Expanded(
                       child: GamesDashboard(),
                     ),
-                    Center(
-                      child: Text('page for E_book'),
+                    Expanded(
+                      child: VideoDisplay(),
                     ),
                     Center(
-                      child: Text('page for Games'),
+                      child: Text('page for E_book'),
                     ),
                   ]))
                 ],
@@ -312,6 +312,7 @@ class _books extends StatelessWidget {
   final String editor;
 
   const _books({
+    // ignore: unused_element
     super.key,
     required this.image,
     required this.bookName,
@@ -472,9 +473,10 @@ Widget _ContinueWatching() {
           child: Row(
             children: [
               const CircleAvatar(
-                backgroundImage: NetworkImage('profileImageUrl', ),
+                backgroundImage: NetworkImage(
+                  'profileImageUrl',
+                ),
                 radius: 10.0,
-                
               ),
               const SizedBox(width: 4.0),
               Text(

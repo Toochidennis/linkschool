@@ -1,19 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:linkschool/modules/E_library/E_lib_vids.dart';
 
-import '../../common/app_colors.dart';
-import '../../common/constants.dart';
-import '../../common/search_bar.dart';
-import '../../common/text_styles.dart';
+import '../common/app_colors.dart';
+import '../common/constants.dart';
+import '../common/search_bar.dart';
+import '../common/text_styles.dart';
 
-class VideosDashboard extends StatefulWidget {
-  const VideosDashboard({super.key});
+class VideoDisplay extends StatefulWidget {
+  const VideoDisplay({super.key});
 
   @override
-  State<VideosDashboard> createState() => _VideosDashboardState();
+  State<VideoDisplay> createState() => _VideoDisplayState();
 }
 
-class _VideosDashboardState extends State<VideosDashboard> {
+class _VideoDisplayState extends State<VideoDisplay> {
   @override
   Widget build(BuildContext context) {
     final categories = [
@@ -67,7 +67,7 @@ class _VideosDashboardState extends State<VideosDashboard> {
     ];
 
     return Scaffold(
-      appBar: Constants.customAppBar(context: context),
+      // appBar: Constants.customAppBar(context: context),
       body: Container(
         decoration: Constants.customBoxDecoration(context),
         child: Column(
@@ -102,29 +102,30 @@ class _VideosDashboardState extends State<VideosDashboard> {
                                 ),
                               );
                             },
-                            child: _buildWatchHistoryCard(),
+                            child: Padding(
+                              padding: const EdgeInsets.all(8.0),
+                              child: _buildWatchHistoryVideo(),
+                            ),
                           ),
                           GestureDetector(
                             onTap: () {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (context) => E_lib_vids(),
-                                ),
+                                    builder: (context) => E_lib_vids()),
                               );
                             },
-                            child: _buildWatchHistoryCard(),
+                            child: _buildWatchHistoryVideo(),
                           ),
                           GestureDetector(
                             onTap: () {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (context) => E_lib_vids(),
-                                ),
+                                    builder: (context) => E_lib_vids()),
                               );
                             },
-                            child: _buildWatchHistoryCard(),
+                            child: _buildWatchHistoryVideo(),
                           ),
                         ],
                       ),
@@ -205,7 +206,7 @@ class _VideosDashboardState extends State<VideosDashboard> {
     );
   }
 
-  Widget _buildWatchHistoryCard() {
+  Widget _buildWatchHistoryVideo() {
     return Container(
       height: 150,
       width: 180,
@@ -263,12 +264,12 @@ class _VideosDashboardState extends State<VideosDashboard> {
   }) {
     return Column(
       mainAxisAlignment: MainAxisAlignment.start,
-      mainAxisSize: MainAxisSize.min,
+      // mainAxisSize: MainAxisSize.min,
       children: [
         Container(
           height: 60,
-          width: 60,
-          padding: const EdgeInsets.all(24.0),
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(horizontal: 24.0),
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             color: backgroundColor,
@@ -283,7 +284,10 @@ class _VideosDashboardState extends State<VideosDashboard> {
         const SizedBox(height: 8.0),
         Text(
           subjectName,
-          style: AppTextStyles.normal500(fontSize: 11.0, color: Colors.black),
+          style: AppTextStyles.normal500(
+            fontSize: 11.0,
+            color: Colors.black,
+          ),
         )
       ],
     );
@@ -332,20 +336,18 @@ class _VideosDashboardState extends State<VideosDashboard> {
           ),
           SizedBox(width: 10.0),
           Expanded(
-            
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisAlignment: MainAxisAlignment.start,
               children: [
                 Text(
                   'This is a mock data showing the info details of a recording.',
-                  style: AppTextStyles.normal500(
+                 style: AppTextStyles.normal500(
                     fontSize: 14.0,
                     color: AppColors.videoColor9,
-                  ),
-                ),
+                  )),
                 SizedBox(height: 8.0),
-                Text('1hr 34mins', style: AppTextStyles.normal500(
+                Text('1hr 34mins',  style: AppTextStyles.normal500(
                     fontSize: 10.0,
                     color: AppColors.videoColor9,
                   )),
@@ -370,7 +372,7 @@ class _VideosDashboardState extends State<VideosDashboard> {
                     Text(
                       '${'12'}k',
                       style: AppTextStyles.normal500(
-                        fontSize: 10,
+                        fontSize: 10.0,
                         color: Colors.black,
                       ),
                     ),
