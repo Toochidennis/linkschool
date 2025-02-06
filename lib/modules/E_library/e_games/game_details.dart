@@ -88,19 +88,21 @@ class _GameDetailsState extends State<GameDetails> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
+                      
                       reviewText(
-                        image: 'assets/icons/gamesIcon/stars.png',
+                        image: 'assets/icons/gamesicon/stars.png',
                         reviews: '4.5',
                         reviewDes: '1k reviews',
                       ),
                       reviewText(
-                        image: 'assets/icons/gamesIcon/downloading.png',
+                        image: 'assets/icons/gamesicon/stars.png',
                         reviewDes: '156 MB',
                       ),
                       reviewText(
-                        image: 'assets/icons/gamesIcon/+12.png',
+                        image:'assets/icons/gamesicon/+12.png',
                         reviewDes: 'Rated for 12+',
                       ),
+
                     ],
                   ),
                   SizedBox(

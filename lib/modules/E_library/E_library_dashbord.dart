@@ -1,14 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 import 'package:linkschool/modules/E_library/cbt.dart';
+import 'package:linkschool/modules/E_library/e_games/gamesTab.dart';
 import 'package:linkschool/modules/E_library/elibrary-ebooks/library_ebook.dart';
-import 'package:linkschool/modules/E_library/gameCard.dart';
+import 'package:linkschool/modules/E_library/e_games/gameCard.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
-import 'package:linkschool/modules/explore/cbt/cbt_dashboard.dart';
-import 'package:linkschool/modules/explore/ebooks/ebooks_dashboard.dart';
-import 'package:linkschool/modules/explore/games/games_home.dart';
 
 class ElibraryDashboard extends StatefulWidget {
   const ElibraryDashboard({super.key, required this.height});
@@ -79,16 +77,55 @@ class _ElibraryDashboardState extends State<ElibraryDashboard> {
                       labelColor: AppColors.text2Light,
                       tabs: [
                         Tab(
-                            child: Text(
-                              'For you',
-                              style: AppTextStyles.normal500(
-                                  fontSize: 16,
-                                  color: AppColors.eLearningBtnColor1),
-                            )),
-                        Tab(text: 'CBT'),
-                        Tab(text: 'E-books'),
-                        Tab(text: 'Games'),
-                        Tab(text: 'Videos'),
+                            child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Text(
+                            'For you',
+                            style: AppTextStyles.normal600(
+                              fontSize: 16,
+                            ),
+                          ),
+                        )),
+                        Tab(
+                            child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Text(
+                            'CBT',
+                            style: AppTextStyles.normal600(
+                              fontSize: 16,
+                            ),
+                          ),
+                        )),
+                        Tab(
+                            child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Text(
+                            'E-books',
+                            style: AppTextStyles.normal600(
+                              fontSize: 16,
+                            ),
+                          ),
+                        )),
+                        Tab(
+                            child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Text(
+                            'Games',
+                            style: AppTextStyles.normal600(
+                              fontSize: 16,
+                            ),
+                          ),
+                        )),
+                        Tab(
+                            child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Text(
+                            'Videos',
+                            style: AppTextStyles.normal600(
+                              fontSize: 16,
+                            ),
+                          ),
+                        )),
                       ]),
                   Expanded(
                       child: TabBarView(children: [
@@ -105,7 +142,7 @@ class _ElibraryDashboardState extends State<ElibraryDashboard> {
                         //   height: 8,
                         // ),
                         Padding(
-                          padding: const EdgeInsets.only(top:8.0),
+                          padding: const EdgeInsets.only(top: 8.0),
                           child: SizedBox(
                             height: 180,
                             child: ListView(
@@ -119,7 +156,7 @@ class _ElibraryDashboardState extends State<ElibraryDashboard> {
                             ),
                           ),
                         ),
-                         SizedBox(
+                        SizedBox(
                           height: 25,
                         ),
                         headingWithAdvert(
@@ -141,8 +178,7 @@ class _ElibraryDashboardState extends State<ElibraryDashboard> {
                         SizedBox(
                           height: 5,
                         ),
-                        blueHeading(
-                            tag: 'E-book', title: 'Suggested for you'),
+                        blueHeading(tag: 'E-book', title: 'Suggested for you'),
                         Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 16),
                           child: Container(
@@ -229,13 +265,10 @@ class _ElibraryDashboardState extends State<ElibraryDashboard> {
                       child: LibraryEbook(),
                     ),
                     Expanded(
-                      child: GamesDashboard(),
+                      child: GamesTab(),
                     ),
                     Center(
                       child: Text('page for E_book'),
-                    ),
-                    Center(
-                      child: Text('page for Games'),
                     ),
                   ]))
                 ],
@@ -472,9 +505,10 @@ Widget _ContinueWatching() {
           child: Row(
             children: [
               const CircleAvatar(
-                backgroundImage: NetworkImage('profileImageUrl', ),
+                backgroundImage: NetworkImage(
+                  'profileImageUrl',
+                ),
                 radius: 10.0,
-                
               ),
               const SizedBox(width: 4.0),
               Text(

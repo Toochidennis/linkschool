@@ -7,17 +7,19 @@ import '../../common/constants.dart';
 import '../../common/text_styles.dart';
 import '../../common/app_colors.dart';
 
-class GamesDashboard extends StatefulWidget {
-  const GamesDashboard({super.key});
+class GamesTab extends StatefulWidget {
+  const GamesTab({super.key});
+
 
   @override
-  State<GamesDashboard> createState() => _GamesDashboardState();
+  State<GamesTab> createState() => _GamesTabState();
 }
 
-class _GamesDashboardState extends State<GamesDashboard> {
+class _GamesTabState extends State<GamesTab> {
   @override
   Widget build(BuildContext context) {
     final trendingItems = [
+
       _buildTrendingCard(
         startColor: AppColors.gamesColor1,
         endColor: AppColors.gamesColor2,
@@ -30,6 +32,14 @@ class _GamesDashboardState extends State<GamesDashboard> {
         startColor: AppColors.gamesColor3,
         endColor: AppColors.gamesColor4,
         imagePath: 'assets/images/games_2.png',
+        gameName: 'Borderlands 2',
+        platform: 'Cross-platform',
+        rating: 3.5,
+      ),
+      _buildTrendingCard(
+        startColor: AppColors.gamesColor5,
+        endColor: AppColors.gamesColor6,
+        imagePath: 'assets/images/games_3.png',
         gameName: 'Borderlands 2',
         platform: 'Cross-platform',
         rating: 3.5,
@@ -83,9 +93,9 @@ class _GamesDashboardState extends State<GamesDashboard> {
     ];
 
     return Scaffold(
-    appBar: Constants.customAppBar(context: context,showBackButton: true),
+     
       body: Container(
-        padding: EdgeInsets.only(top: 35),
+        padding: EdgeInsets.only(top: 25),
         decoration: Constants.customBoxDecoration(context),
         child: CustomScrollView(
           physics: const BouncingScrollPhysics(),
@@ -93,14 +103,14 @@ class _GamesDashboardState extends State<GamesDashboard> {
             SliverToBoxAdapter(
               child: Constants.heading600(
                 title: 'Trending now',
-                titleSize: 20.0,
+                titleSize: 16.0,
                 titleColor: Colors.black,
               ),
             ),
-            const SliverToBoxAdapter(child: SizedBox(height: 10.0)),
+            const SliverToBoxAdapter(child: SizedBox(height: 12.0)),
             SliverToBoxAdapter(
               child: SizedBox(
-                height: 220,
+                height: 180,
                 child: ListView.builder(
                   padding: const EdgeInsets.only(right: 16.0),
                   scrollDirection: Axis.horizontal,
@@ -116,9 +126,9 @@ class _GamesDashboardState extends State<GamesDashboard> {
             ),
             const SliverToBoxAdapter(child: SizedBox(height: 16.0)),
             SliverToBoxAdapter(
-              child: Constants.heading600(
+              child: Constants.heading500(
                 title: 'Suggested for you',
-                titleSize: 20.0,
+                titleSize: 18.0,
                 titleColor: Colors.black,
               ),
             ),
@@ -180,8 +190,8 @@ class _GamesDashboardState extends State<GamesDashboard> {
         Container(
           margin: const EdgeInsets.only(left: 16.0),
           padding: const EdgeInsets.only(left: 16.0, right: 16.0, top: 16.0),
-          width: 125.0,
-          height: 125.0,
+          width: 89.0,
+          height: 88.0,
           decoration: BoxDecoration(
               gradient: LinearGradient(
                 begin: Alignment.topLeft,
@@ -247,7 +257,8 @@ class _GamesDashboardState extends State<GamesDashboard> {
             child: Image.asset(
               'assets/images/millionaire.png',
               fit: BoxFit.cover,
-              height: 200,
+              height: 158,
+              width: 328,
             ),
           ),
           const SizedBox(height: 12.0),
@@ -324,8 +335,8 @@ class _GamesDashboardState extends State<GamesDashboard> {
         children: [
           Container(
             padding: const EdgeInsets.only(left: 16.0, right: 16.0, top: 16.0),
-            width: 90.0,
-            height: 95.0,
+            width: 75.0,
+            height: 80.0,
             decoration: BoxDecoration(
                 gradient: LinearGradient(
                   begin: Alignment.topLeft,
@@ -401,7 +412,7 @@ class _GamesDashboardState extends State<GamesDashboard> {
                     ],
                   ),
                   Container(
-                    height: 45.0,
+                    height: 35.0,
                     decoration: BoxDecoration(
                       gradient: const LinearGradient(
                         begin: Alignment.topCenter,
@@ -428,7 +439,7 @@ class _GamesDashboardState extends State<GamesDashboard> {
                           child: Text(
                             'Play',
                             style: AppTextStyles.normal600(
-                                fontSize: 14.0, color: AppColors.buttonColor1),
+                                fontSize: 15.0, color: AppColors.buttonColor1),
                           ),
                         ),
                       ),

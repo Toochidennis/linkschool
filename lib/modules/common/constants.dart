@@ -160,4 +160,21 @@ static AppBar customAppBar({
       ),
     );
   }
+
+  static Padding heading500({
+    required String title,
+    double? titleSize,
+    Color? titleColor,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+      child: Text(
+        title,
+        style: AppTextStyles.normal600(
+          fontSize: titleSize ?? 16.0,
+          color: titleColor ?? AppColors.backgroundDark,
+        ),
+      ),
+    );
+  }
 }

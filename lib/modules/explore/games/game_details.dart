@@ -57,13 +57,13 @@ class _GameDetailsState extends State<GameDetails> {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         title:  Text('Hakuna Matata',style: AppTextStyles.normal600(fontSize: 20, color: AppColors.detailsbutton),),
-        centerTitle: true, // Centering title properly
+        centerTitle: true,
       ),
       body: SingleChildScrollView(
         child: Column(
           children: [
             Container(
-              height: 330,
+              height: 326,
               width: double.infinity,
               decoration: const BoxDecoration(
                 image: DecorationImage(
@@ -73,7 +73,7 @@ class _GameDetailsState extends State<GameDetails> {
                 ),
               ),
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 24),
             Padding(
               padding: const EdgeInsets.all(16),
               child: Column(
@@ -81,31 +81,38 @@ class _GameDetailsState extends State<GameDetails> {
                 children: [
                   Text(
                     'Hakuna Matata King Saga',
-                    style: AppTextStyles.normal600(fontSize: 20, color: AppColors.gametitle),
+                    style: AppTextStyles.normal600(fontSize: 22, color: AppColors.gametitle),
                   ),
-                  const Text(
+                  Text(
                     'May contain ads and In-app purchases',
-                    style: TextStyle(fontSize: 14, color: Colors.grey),
+                    style: AppTextStyles.normal500(fontSize: 14, color: AppColors.gameText),
                   ),
                   const SizedBox(height: 20),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      reviewText(
-                        image: 'assets/icons/gamesIcon/stars.png',
-                        reviews: '4.5',
-                        reviewDes: '1k reviews',
-                      ),
-                      reviewText(
-                        image: 'assets/icons/gamesIcon/downloading.png',
-                        reviewDes: '156 MB',
-                      ),
-                      reviewText(
-                        image: 'assets/icons/gamesIcon/+12.png',
-                        reviewDes: 'Rated for 12+',
-                      ),
-                    ],
-                  ),
+                 Row(
+  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  children: [
+    Expanded(
+      child: reviewText(
+        image: 'assets/icons/gamesicon/stars.png',
+        reviews: '4.5',
+        reviewDes: '1k reviews',
+      ),
+    ),
+    Expanded(
+      child: reviewText(
+        image: 'assets/icons/gamesicon/downloading.png',
+        reviewDes: '156 MB',
+      ),
+    ),
+    Expanded(
+      child: reviewText(
+        image: 'assets/icons/gamesicon/+12.png',
+        reviewDes: 'Rated for 12+',
+      ),
+    ),
+  ],
+),
+
                   SizedBox(
                     height: 20,
                   ),
@@ -229,21 +236,33 @@ Widget reviewText({
     crossAxisAlignment: CrossAxisAlignment.center,
     children: [
       Row(
-        
         mainAxisSize: MainAxisSize.min,
         children: [
+          // Display review text if available
           if (reviews != null)
-            Text(reviews,
-                style:
-                    const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-        
-          Image.asset(image, width: 24, height: 24),
+            Text(
+              reviews,
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            ),
+          // Display an image
+          Image.asset(
+            image,
+            width: 24,
+            height: 24,
+          ),
+          // Display an icon if provided
+          if (icons != null) Icon(icons),
         ],
       ),
-      Text(reviewDes, style: const TextStyle(fontSize: 12, color: Colors.grey)),
+      // Display the description text
+      Text(
+        reviewDes,
+        style: const TextStyle(fontSize: 12, color: Colors.grey),
+      ),
     ],
   );
 }
+
 
 Widget _buildYouMightLikeCard({
   required Color startColor,

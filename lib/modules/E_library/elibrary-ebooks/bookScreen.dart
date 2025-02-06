@@ -103,14 +103,11 @@ class BookProfileCard extends StatelessWidget {
         children: [
           Column(
             children: [
-              ClipRRect(
-                borderRadius: BorderRadius.circular(8),
-                child: Image.asset(
-                  'assets/images/book_1.png',
-                  height: 173,
-                  width: 114,
-                  fit: BoxFit.cover,
-                ),
+              Image.asset(
+                'assets/images/book_1.png',
+                height: 173,
+                width: 114,
+                fit: BoxFit.cover,
               ),
               SizedBox(height: 8),
               LinearPercentIndicator(
@@ -132,7 +129,7 @@ class BookProfileCard extends StatelessWidget {
                   text: TextSpan(
                     text: 'Purple Hibiscus',
                     style: AppTextStyles.normal600(
-                        fontSize: 26, color: AppColors.bookText),
+                        fontSize: 24, color: AppColors.bookText),
                   ),
                 ),
                 SizedBox(height: 4),
@@ -140,7 +137,7 @@ class BookProfileCard extends StatelessWidget {
                   text: TextSpan(
                     text: 'by Chimamanda Adichie',
                     style: AppTextStyles.normal500(
-                      fontSize: 16,
+                      fontSize: 14,
                       color: AppColors.booksButtonTextColor,
                     ),
                   ),
@@ -181,18 +178,19 @@ class BookButtons extends StatelessWidget {
           onPressed: () {},
           style: ElevatedButton.styleFrom(
               shape: CircleBorder(),
-              fixedSize: Size(34, 34),
+             fixedSize: Size(50, 50),
               backgroundColor: AppColors.bookButton,
               padding: EdgeInsets.all(16)),
-          child: Image(image: AssetImage('assets/icons/download-icon.png'),height: 24,width: 24,),
+          child: Image(image: AssetImage('assets/icons/download-icon.png'),height: 26,width: 26,),
         ),
         SizedBox(width: 10),
         ElevatedButton(
           onPressed: () {},
           style: ElevatedButton.styleFrom(
+          
               shape: CircleBorder(),
               backgroundColor: AppColors.bookButton,
-              fixedSize: Size(34, 34),
+              fixedSize: Size(50, 50),
               padding: EdgeInsets.all(16)),
           child: Image(image: AssetImage('assets/icons/shareicon.png'),height: 24,width: 24,),
         ),
