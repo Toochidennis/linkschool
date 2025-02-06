@@ -89,6 +89,12 @@ static AppBar customAppBar({
 }
 
 
+
+
+
+
+
+
   static Padding headingWithSeeAll600({
     required String title,
     double? titleSize,

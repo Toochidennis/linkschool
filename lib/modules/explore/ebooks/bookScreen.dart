@@ -14,7 +14,6 @@ class _BookScreenState extends State<BookScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: AppColors.backgroundLight,
                 leading: IconButton(
           onPressed: () {
             Navigator.of(context).pop();
@@ -29,7 +28,7 @@ class _BookScreenState extends State<BookScreen> {
       ),
       body:  Container(
         decoration: Constants.customBoxDecoration(context),
-        
+        padding: const EdgeInsets.only(top: 50),
         child: SingleChildScrollView(
           child: Stack(
             children: [
@@ -57,7 +56,10 @@ class _BookScreenState extends State<BookScreen> {
                           children: [
                             RichText(
                               text: TextSpan(
-                                style: AppTextStyles.normal400L(fontSize: 16, color:AppColors.bookText,height:30/16 ),
+                                style: TextStyle(
+                                    fontSize: 16,
+                                    color: AppColors.bookText,
+                                    height: 2.5),
                                 children: [
                                   TextSpan(
                                     text:
@@ -96,76 +98,73 @@ class BookProfileCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(left: 16,top: 8,right: 16,bottom: 16),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Column(
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Column(
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: Image.asset(
+                'assets/images/book_1.png',
+                height: 180,
+                width: 116,
+                fit: BoxFit.cover,
+              ),
+            ),
+            SizedBox(height: 8),
+            LinearPercentIndicator(
+              width: 116.0,
+              lineHeight: 5.0,
+              percent: 0.5,
+              barRadius: Radius.circular(16),
+              backgroundColor: Colors.grey.shade300,
+              progressColor: Colors.blue,
+            ),
+          ],
+        ),
+        SizedBox(width: 16),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              ClipRRect(
-                borderRadius: BorderRadius.circular(8),
-                child: Image.asset(
-                  'assets/images/book_1.png',
-                  height: 173,
-                  width: 114,
-                  fit: BoxFit.cover,
+              RichText(
+                text: TextSpan(
+                  text: 'Purple Hibiscus',
+                  style: AppTextStyles.normal600(
+                      fontSize: 26, color: AppColors.bookText),
                 ),
               ),
-              SizedBox(height: 8),
-              LinearPercentIndicator(
-                width: 114,
-                lineHeight: 5.0,
-                percent: 0.5,
-                barRadius: Radius.circular(16),
-                backgroundColor: Colors.grey.shade300,
-                progressColor: Colors.blue,
+              SizedBox(height: 4),
+              RichText(
+                text: TextSpan(
+                  text: 'by Chimamanda Adichie',
+                  style: AppTextStyles.normal400(
+                    fontSize: 16,
+                    color: AppColors.booksButtonTextColor,
+                  ),
+                ),
               ),
+              SizedBox(height: 10),
+              BookButtons(),
+              SizedBox(height: 10),
+              ElevatedButton(
+                onPressed: () {},
+                style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.bookbutton,
+                    fixedSize: Size(150, 40),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(20))),
+                child: Text(
+                  'Go to first page',
+                  style: AppTextStyles.normal500(
+                      fontSize: 16, color: AppColors.buttontext1),
+                ),
+              )
             ],
           ),
-          SizedBox(width: 19),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                RichText(
-                  text: TextSpan(
-                    text: 'Purple Hibiscus',
-                    style: AppTextStyles.normal600(
-                        fontSize: 26, color: AppColors.bookText),
-                  ),
-                ),
-                SizedBox(height: 4),
-                RichText(
-                  text: TextSpan(
-                    text: 'by Chimamanda Adichie',
-                    style: AppTextStyles.normal500(
-                      fontSize: 16,
-                      color: AppColors.booksButtonTextColor,
-                    ),
-                  ),
-                ),
-                SizedBox(height: 10),
-                BookButtons(),
-                SizedBox(height: 10),
-                ElevatedButton(
-                  onPressed: () {},
-                  style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.bookbutton,
-                      fixedSize: Size(150, 40),
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(20))),
-                  child: Text(
-                    'Go to first page',
-                    style: AppTextStyles.normal500(
-                        fontSize: 16, color: AppColors.buttontext1),
-                  ),
-                )
-              ],
-            ),
-          ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }
@@ -181,10 +180,10 @@ class BookButtons extends StatelessWidget {
           onPressed: () {},
           style: ElevatedButton.styleFrom(
               shape: CircleBorder(),
-              fixedSize: Size(34, 34),
+              fixedSize: Size(60, 60),
               backgroundColor: AppColors.bookButton,
               padding: EdgeInsets.all(16)),
-          child: Image(image: AssetImage('assets/icons/download-icon.png'),height: 24,width: 24,),
+          child: Image(image: AssetImage('assets/icons/download-icon.png')),
         ),
         SizedBox(width: 10),
         ElevatedButton(
@@ -192,9 +191,9 @@ class BookButtons extends StatelessWidget {
           style: ElevatedButton.styleFrom(
               shape: CircleBorder(),
               backgroundColor: AppColors.bookButton,
-              fixedSize: Size(34, 34),
+              fixedSize: Size(50, 60),
               padding: EdgeInsets.all(16)),
-          child: Image(image: AssetImage('assets/icons/shareicon.png'),height: 24,width: 24,),
+          child: Image(image: AssetImage('assets/icons/shareicon.png')),
         ),
       ],
     );

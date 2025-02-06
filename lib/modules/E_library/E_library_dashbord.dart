@@ -78,15 +78,13 @@ class _ElibraryDashboardState extends State<ElibraryDashboard> {
                       indicatorColor: AppColors.text2Light,
                       labelColor: AppColors.text2Light,
                       tabs: [
-                        // Tab(
-                        //     text: 'For you',
-                        //     child: Text(
-                        //       'For you',
-                        //       style: AppTextStyles.normal600(
-                        //           fontSize: 18,
-                        //           color: AppColors.eLearningBtnColor1),
-                        //     )),
-                        Tab(text: 'For You'),
+                        Tab(
+                            child: Text(
+                              'For you',
+                              style: AppTextStyles.normal500(
+                                  fontSize: 16,
+                                  color: AppColors.eLearningBtnColor1),
+                            )),
                         Tab(text: 'CBT'),
                         Tab(text: 'E-books'),
                         Tab(text: 'Games'),

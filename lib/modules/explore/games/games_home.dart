@@ -1,7 +1,7 @@
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
-import 'package:linkschool/modules/explore/games/game_details.dart';
+import 'package:linkschool/modules/E_library/game_details.dart';
 
 import '../../common/constants.dart';
 import '../../common/text_styles.dart';
