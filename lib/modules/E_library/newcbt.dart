@@ -2,20 +2,19 @@ import 'package:flutter/material.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
-import 'package:linkschool/modules/e_library/newcbt.dart';
 
 import 'package:linkschool/modules/explore/ebooks/subject_item.dart';
 
-class E_CBTDashboard extends StatefulWidget {
-  const E_CBTDashboard({super.key});
+class newCbtScreen extends StatefulWidget {
+  const newCbtScreen({super.key});
 
 
   @override
-  State<E_CBTDashboard> createState() => _E_CBTDashboardState();
+  State<newCbtScreen> createState() => _newCbtScreenState();
 
 }
 
-class _E_CBTDashboardState extends State<E_CBTDashboard> {
+class _newCbtScreenState extends State<newCbtScreen> {
   int selectedCategoryIndex = 0;
 
 
@@ -118,7 +117,7 @@ class _E_CBTDashboardState extends State<E_CBTDashboard> {
 
               TextButton(
                 onPressed: () {
-                  Navigator.push(context, MaterialPageRoute(builder: (context) => const newCbtScreen()));
+                  Navigator.push(context, MaterialPageRoute(builder: (context) => const SizedBox()));
                 },
                 style: TextButton.styleFrom(
                   padding: const EdgeInsets.symmetric(horizontal: 8),
