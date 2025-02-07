@@ -66,8 +66,22 @@ class AppTextStyles {
 
   static TextStyle normal600({
     required double fontSize,
-    required Color color,
+    Color? color,
   }) {
+    return TextStyle(
+      fontSize: fontSize,
+      color: color ,
+      fontWeight: FontWeight.w600,
+      fontFamily: 'Urbanist',
+
+    );
+  }
+  static TextStyle normal600L({
+    required double fontSize,
+    required Color color,
+    double? height,
+  }) {
+
     return TextStyle(
       fontSize: fontSize,
       color: color,
@@ -94,6 +108,16 @@ class AppTextStyles {
       color: color,
       fontWeight: FontWeight.w400,
       fontFamily: 'Urbanist',
+    );
+  }
+
+  static TextStyle normal400L({required double fontSize, required Color color, double? height}){
+    return TextStyle(
+      fontSize: fontSize,
+      color: color,
+      fontWeight: FontWeight.w400,
+      fontFamily: 'Urbanist',
+      height: height
     );
   }
 

@@ -1,11 +1,14 @@
 import 'package:curved_nav_bar/fab_bar/fab_bottom_app_bar_item.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:linkschool/modules/E_library/e_library_dashbord.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
+import 'package:linkschool/modules/explore/admission/admission_detail_screen.dart';
 import 'package:linkschool/modules/explore/admission/admission_home_screen.dart';
 import '../../common/bottom_navigation_bar.dart';
 import '../../common/bottom_nav_item.dart';
 import 'explore_home.dart';
+import 'package:linkschool/modules/explore/admission/explore_admission.dart';
 
 class ExploreDashboard extends StatefulWidget {
   final Function(bool) onSwitch;
@@ -43,24 +46,20 @@ class _ExploreDashboardState extends State<ExploreDashboard> {
 
 
   void _initializeBodyItems() {
-    _bodyItems = [
+      _bodyItems = [
       ExploreHome(
         onSearchIconVisibilityChanged: _onSearchIconVisibilityChanged,
       ),
-      AdmissionHomeScreen(),
-      // Container(
-      //   height: MediaQuery.of(context).size.height,
-      //   color: Colors.orange,
-      // ),
-      Container(
-        height: MediaQuery.of(context).size.height,
-        color: Colors.black,
-      ),
-      Container(
-        height: MediaQuery.of(context).size.height,
-        color: Colors.blue,
-      ),
+      ExploreAdmission(
+      height: MediaQuery.of(context).size.height,
+       ),
+      ElibraryDashboard( height: MediaQuery.of(context).size.height,),
+    //  ProfileScreen(
+    //     height: MediaQuery.of(context).size.height,
+    //     color: Colors.blue,
+    //   ),
     ];
+    
   }
 
   List<FABBottomAppBarItem> _buildAppBarItems() {
@@ -92,6 +91,7 @@ class _ExploreDashboardState extends State<ExploreDashboard> {
     return Scaffold(
       key: const ValueKey('explore_dashboard'),
       appBar: AppBar(
+        automaticallyImplyLeading: false,
         backgroundColor: AppColors.paymentTxtColor1,
         title: SvgPicture.asset('assets/icons/linkskool-logo.svg'),
         actions: [

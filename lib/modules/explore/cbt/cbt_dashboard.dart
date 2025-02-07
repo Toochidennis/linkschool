@@ -15,7 +15,7 @@ class CBTDashboard extends StatefulWidget {
 
 class _CBTDashboardState extends State<CBTDashboard> {
   int selectedCategoryIndex = 0;
-
+  
   final categoryShortNames = [
     'JAMB',
     'SSC',
@@ -111,13 +111,14 @@ class _CBTDashboardState extends State<CBTDashboard> {
     ];
 
     return Scaffold(
-      appBar: Constants.customAppBar(
-          context: context, iconPath: 'assets/icons/search.png'),
+      appBar: Constants.customAppBar(context: context,showBackButton: true,),
       body: Container(
         decoration: Constants.customBoxDecoration(context),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+
+            SizedBox(height: 30,),
             _cbtCategories(
                 buttonLabels: categoryShortNames,
                 selectedCBTCategoriesIndex: selectedCategoryIndex,

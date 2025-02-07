@@ -117,14 +117,12 @@ class _ExploreHomeState extends State<ExploreHome> {
 
     return Container(
       decoration: Constants.customBoxDecoration(context),
-      padding: const EdgeInsets.only(bottom: 90.0),
+      padding: const EdgeInsets.only(bottom: 90.0,top:20),
       child: CustomScrollView(
         physics: const BouncingScrollPhysics(),
         controller: _controller,
         slivers: [
-          const SliverToBoxAdapter(
-            child: CustomSearchBar(),
-          ),
+         
           SliverToBoxAdapter(
             child: CarouselSlider(
               items: [
