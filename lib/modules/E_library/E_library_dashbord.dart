@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
-import 'package:linkschool/modules/E_library/E_lib_detail.dart';
-import 'package:linkschool/modules/E_library/cbt.dart';
-import 'package:linkschool/modules/E_library/elibrary-ebooks/library_ebook.dart';
-import 'package:linkschool/modules/E_library/e_games/gameCard.dart';
+import 'package:linkschool/modules/e_library/E_lib_detail.dart';
+import 'package:linkschool/modules/e_library/e_cbt/cbt.dart';
+import 'package:linkschool/modules/e_library/elibrary-ebooks/library_ebook.dart';
+import 'package:linkschool/modules/e_library/e_games/gameCard.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
+import 'package:linkschool/modules/explore/games/games_home.dart';
 
 class ElibraryDashboard extends StatefulWidget {
   const ElibraryDashboard({super.key, required this.height});
@@ -80,7 +81,7 @@ class _ElibraryDashboardState extends State<ElibraryDashboard> {
                             child: Text(
                           'For you',
                           style: AppTextStyles.normal500(
-                              fontSize: 16,
+                              fontSize: 14,
                               color: AppColors.eLearningBtnColor1),
                         )),
                         Tab(text: 'CBT'),
@@ -491,14 +492,18 @@ Widget _ContinueWatching() {
           child: Row(
             children: [
               const CircleAvatar(
-                backgroundImage: NetworkImage(
-                  'profileImageUrl',
-                ),
-                radius: 10.0,
+                // backgroundImage: NetworkImage(
+                //   'profileImageUrl',
+                // ),
+                backgroundColor: AppColors.videoColor9,
+                child: const Icon(Icons.person_2_rounded, size: 13.0, 
+                color: Colors.white,),
+                radius: 8.0,
               ),
               const SizedBox(width: 4.0),
+
               Text(
-                'Toochi Dennis',
+                'Dennis Toochi ',
                 style: AppTextStyles.normal500(
                   fontSize: 12.0,
                   color: AppColors.videoColor9,

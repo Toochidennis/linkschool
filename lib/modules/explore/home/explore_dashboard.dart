@@ -3,12 +3,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:linkschool/modules/E_library/e_library_dashbord.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
-import 'package:linkschool/modules/E_library/e_library_dashbord.dart';
-<<<<<<< HEAD
+
 import 'package:linkschool/modules/explore/explore_profile/explore_profileScreen.dart';
-=======
-import 'package:linkschool/modules/explore/explore-profile/explore_profileScreen.dart';
->>>>>>> 186503ada8182e2b381b3aa8ba0b973cb2ee137a
+
+// import 'package:linkschool/modules/explore/explore-profile/explore_profileScreen.dart';
+
 import '../../common/bottom_navigation_bar.dart';
 import '../../common/bottom_nav_item.dart';
 import 'explore_home.dart';

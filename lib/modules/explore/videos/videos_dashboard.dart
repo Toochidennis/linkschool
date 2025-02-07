@@ -67,14 +67,14 @@ class _VideosDashboardState extends State<VideosDashboard> {
     ];
 
     return Scaffold(
-      appBar: Constants.customAppBar(context: context),
+      appBar: Constants.customAppBar(context:context, iconPath: 'assets/icons/search.png', iconSize: 20.0),
       body: Container(
         decoration: Constants.customBoxDecoration(context),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisAlignment: MainAxisAlignment.start,
           children: [
-            const CustomSearchBar(),
+            // const CustomSearchBar(),
             Expanded(
               child: CustomScrollView(
                 physics: const BouncingScrollPhysics(),
@@ -131,11 +131,13 @@ class _VideosDashboardState extends State<VideosDashboard> {
                     ),
                   ),
                   SliverToBoxAdapter(
+                    child: Padding(padding: const EdgeInsets.only(left: 16.0, top: 8),
                     child: Constants.heading600(
                       title: 'Categories',
                       titleSize: 16.0,
                       titleColor: AppColors.primaryLight,
                     ),
+                    )
                   ),
                   const SliverToBoxAdapter(child: SizedBox(height: 10.0)),
                   SliverToBoxAdapter(
@@ -216,7 +218,7 @@ class _VideosDashboardState extends State<VideosDashboard> {
             'assets/images/video_1.png',
             fit: BoxFit.cover,
             height: 92, // Adjust the height of the image as needed
-            width:150,
+            width: 150,
           ),
           const SizedBox(height: 4.0),
           Padding(
@@ -239,13 +241,16 @@ class _VideosDashboardState extends State<VideosDashboard> {
                 const CircleAvatar(
                   // backgroundImage: NetworkImage('profileImageUrl'),
                   backgroundColor: AppColors.videoColor9,
-                  child: const Icon(Icons.person_2_rounded, size: 14.0, 
-                  color: Colors.white,),
-                  radius: 10.0,
+                  child: const Icon(
+                    Icons.person_2_rounded,
+                    size: 13.0,
+                    color: Colors.white,
                   ),
+                  radius: 8.0,
+                ),
                 const SizedBox(width: 4.0),
                 Text(
-                  'Toochi Dennis',
+                  'Dennis Toochi',
                   style: AppTextStyles.normal400(
                     fontSize: 12.0,
                     color: AppColors.videoColor9,
@@ -284,9 +289,13 @@ class _VideosDashboardState extends State<VideosDashboard> {
           ),
         ),
         const SizedBox(height: 8.0),
-        Text(
-          subjectName,
-          style: AppTextStyles.normal500(fontSize: 12.0, color: Colors.black),
+        Padding(
+          padding: const EdgeInsets.only(left: 4.0),
+          child: Text(
+            subjectName,
+            style: AppTextStyles.normal500(fontSize: 12.0, color: Colors.black),
+            
+          ),
         )
       ],
     );
@@ -295,8 +304,8 @@ class _VideosDashboardState extends State<VideosDashboard> {
   Widget _recommendedForYouCard() {
     return Container(
       height: 121,
-      
-      padding: const EdgeInsets.only(left: 16.0, top: 16.0, right: 8.0, bottom: 8.0),
+      padding:
+          const EdgeInsets.only(left: 16.0, top: 16.0, right: 8.0, bottom:18),
       decoration: const BoxDecoration(
         color: AppColors.videoCardColor,
         border: Border(
@@ -335,7 +344,6 @@ class _VideosDashboardState extends State<VideosDashboard> {
           ),
           SizedBox(width: 8.0),
           Expanded(
-            
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisAlignment: MainAxisAlignment.start,
@@ -348,10 +356,11 @@ class _VideosDashboardState extends State<VideosDashboard> {
                   ),
                 ),
                 SizedBox(height: 4.0),
-                Text('1hr 34mins', style: AppTextStyles.normal500(
-                    fontSize: 10.0,
-                    color: AppColors.videoColor9,
-                  )),
+                Text('1hr 34mins',
+                    style: AppTextStyles.normal500(
+                      fontSize: 10.0,
+                      color: AppColors.videoColor9,
+                    )),
                 SizedBox(height: 4.0),
                 Row(
                   mainAxisSize: MainAxisSize.min,
