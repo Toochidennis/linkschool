@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:linkschool/modules/E_library/E_lib_vids.dart';
+import 'package:linkschool/modules/E_library/e_lib_vids.dart';
 
 import '../common/app_colors.dart';
 import '../common/constants.dart';
@@ -292,9 +292,9 @@ class _VideoDisplayState extends State<VideoDisplay> {
 
   Widget _recommendedForYouCard() {
     return Container(
-      height: 150,
+      height: 121,
       width: double.infinity,
-      padding: const EdgeInsets.all(16.0),
+      padding: const EdgeInsets.only(left: 16.0, top: 16.0, right: 8.0, bottom: 8.0),
       decoration: const BoxDecoration(
         color: AppColors.videoCardColor,
         border: Border(
@@ -312,8 +312,8 @@ class _VideoDisplayState extends State<VideoDisplay> {
                 child: Image.asset(
                   'assets/images/video_1.png',
                   fit: BoxFit.cover,
-                  height: 110.0,
-                  width: 140.0,
+                  height: 80,
+                  width: 108,
                 ),
               ),
               Positioned(
@@ -331,7 +331,7 @@ class _VideoDisplayState extends State<VideoDisplay> {
               )
             ],
           ),
-          SizedBox(width: 10.0),
+          SizedBox(width: 8),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -343,12 +343,12 @@ class _VideoDisplayState extends State<VideoDisplay> {
                     fontSize: 14.0,
                     color: AppColors.videoColor9,
                   )),
-                SizedBox(height: 8.0),
+                SizedBox(height: 4.0),
                 Text('1hr 34mins',  style: AppTextStyles.normal500(
                     fontSize: 10.0,
                     color: AppColors.videoColor9,
                   )),
-                SizedBox(height: 8.0),
+                SizedBox(height: 4.0),
                 Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
