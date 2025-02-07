@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
-import 'package:linkschool/modules/E_library/e_cbt/cbt.dart';
-import 'package:linkschool/modules/E_library/e_games/gamesTab.dart';
+import 'package:linkschool/modules/E_library/E_lib_detail.dart';
+import 'package:linkschool/modules/E_library/cbt.dart';
 import 'package:linkschool/modules/E_library/elibrary-ebooks/library_ebook.dart';
 import 'package:linkschool/modules/E_library/e_games/gameCard.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
@@ -77,55 +77,16 @@ class _ElibraryDashboardState extends State<ElibraryDashboard> {
                       labelColor: AppColors.text2Light,
                       tabs: [
                         Tab(
-                            child: FittedBox(
-                          fit: BoxFit.scaleDown,
-                          child: Text(
-                            'For you',
-                            style: AppTextStyles.normal600(
+                            child: Text(
+                          'For you',
+                          style: AppTextStyles.normal500(
                               fontSize: 16,
-                            ),
-                          ),
+                              color: AppColors.eLearningBtnColor1),
                         )),
-                        Tab(
-                            child: FittedBox(
-                          fit: BoxFit.scaleDown,
-                          child: Text(
-                            'CBT',
-                            style: AppTextStyles.normal600(
-                              fontSize: 16,
-                            ),
-                          ),
-                        )),
-                        Tab(
-                            child: FittedBox(
-                          fit: BoxFit.scaleDown,
-                          child: Text(
-                            'E-books',
-                            style: AppTextStyles.normal600(
-                              fontSize: 16,
-                            ),
-                          ),
-                        )),
-                        Tab(
-                            child: FittedBox(
-                          fit: BoxFit.scaleDown,
-                          child: Text(
-                            'Games',
-                            style: AppTextStyles.normal600(
-                              fontSize: 16,
-                            ),
-                          ),
-                        )),
-                        Tab(
-                            child: FittedBox(
-                          fit: BoxFit.scaleDown,
-                          child: Text(
-                            'Videos',
-                            style: AppTextStyles.normal600(
-                              fontSize: 16,
-                            ),
-                          ),
-                        )),
+                        Tab(text: 'CBT'),
+                        Tab(text: 'E-books'),
+                        Tab(text: 'Games'),
+                        Tab(text: 'Videos'),
                       ]),
                   Expanded(
                       child: TabBarView(children: [
@@ -268,7 +229,10 @@ class _ElibraryDashboardState extends State<ElibraryDashboard> {
                       child: LibraryEbook(),
                     ),
                     Expanded(
-                      child: GamesTab(),
+                      child: GamesDashboard(),
+                    ),
+                    Expanded(
+                      child: VideoDisplay(),
                     ),
                     Center(
                       child: Text('page for E_book'),
@@ -363,6 +327,7 @@ class _books extends StatelessWidget {
   final String editor;
 
   const _books({
+    // ignore: unused_element
     super.key,
     required this.image,
     required this.bookName,
