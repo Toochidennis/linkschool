@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
-import 'package:linkschool/modules/E_library/E-cbt/cbt.dart';
+import 'package:linkschool/modules/E_library/e_cbt/cbt.dart';
 import 'package:linkschool/modules/E_library/e_games/gamesTab.dart';
 import 'package:linkschool/modules/E_library/elibrary-ebooks/library_ebook.dart';
 import 'package:linkschool/modules/E_library/e_games/gameCard.dart';
