@@ -126,8 +126,7 @@ static AppBar customAppBar({
       ),
     );
   }
-
-
+  
   
    static BoxDecoration customScreenDec0ration() {
     return BoxDecoration(

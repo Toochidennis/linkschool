@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
-import 'package:linkschool/modules/E_library/cbt.dart';
+import 'package:linkschool/modules/E_library/E-cbt/cbt.dart';
 import 'package:linkschool/modules/E_library/e_games/gamesTab.dart';
 import 'package:linkschool/modules/E_library/elibrary-ebooks/library_ebook.dart';
 import 'package:linkschool/modules/E_library/e_games/gameCard.dart';
@@ -183,6 +183,7 @@ class _ElibraryDashboardState extends State<ElibraryDashboard> {
                           padding: const EdgeInsets.symmetric(horizontal: 16),
                           child: Container(
                             height: 250,
+                            width: double.infinity,
                             child: ListView(
                               scrollDirection: Axis.horizontal,
                               children: [
@@ -222,22 +223,24 @@ class _ElibraryDashboardState extends State<ElibraryDashboard> {
                             subjectCard(
                               subjectIcon: 'maths',
                               subjectName: 'Mathematics',
-                              subjectyear: '2001-2014',
                               cardColor: AppColors.cbtCardColor1,
+                              showProgressIndicator: true
                             ),
                             Divider(),
                             subjectCard(
                               subjectIcon: 'english',
                               subjectName: 'English Language',
-                              subjectyear: '2001-2014',
+                              
                               cardColor: AppColors.cbtCardColor2,
+                              showProgressIndicator: true
                             ),
                             Divider(),
                             subjectCard(
                               subjectIcon: 'chemistry',
                               subjectName: 'Chemistry',
-                              subjectyear: '2001-2014',
+                            
                               cardColor: AppColors.cbtCardColor3,
+                              showProgressIndicator: true
                             ),
                             Divider(),
                             subjectCard(
@@ -289,7 +292,7 @@ Widget subjectCard({
   bool showProgressIndicator = false,
 }) {
   return Padding(
-    padding: const EdgeInsets.symmetric(horizontal: .0),
+    padding: const EdgeInsets.symmetric(horizontal: 16.0),
     child: Container(
       height: 70,
       width: double.infinity,
@@ -326,14 +329,29 @@ Widget subjectCard({
                   style: AppTextStyles.normal600(
                       fontSize: 18, color: AppColors.backgroundDark),
                 ),
+                if (subjectyear != null)
                 Text(
-                  subjectyear!,
+                  subjectyear,
                   style: TextStyle(fontSize: 16, color: Colors.grey),
                 ),
+                if (showProgressIndicator)
+               
+                  Container(
+                    width: double.infinity,
+                    height: 4,
+                    color: Colors.grey,
+                    child: LinearProgressIndicator(
+
+                      value: 0.5,
+                      color:AppColors.progressBarLight,
+                    ),
+                  )
               ],
             ),
+
           ),
         ],
+
       ),
     ),
   );
@@ -353,45 +371,48 @@ class _books extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: EdgeInsets.fromLTRB(0, 10, 0, 0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            height: 173,
-            width: 114,
-            decoration: BoxDecoration(
-                image: DecorationImage(
-              image: AssetImage(image),
-              fit: BoxFit.cover,
-            )),
-          ),
-          SizedBox(
-            height: 5,
-          ),
-          Container(
-            width: 114,
-            child: new LinearProgressIndicator(
-              minHeight: 5,
-              value: 0.5,
-              color: AppColors.text2Light,
+    return Padding(
+      padding: const EdgeInsets.only(right: 8.0),
+      child: Container(
+        margin: EdgeInsets.fromLTRB(0, 10, 0, 0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              height: 173,
+              width: 114,
+              decoration: BoxDecoration(
+                  image: DecorationImage(
+                image: AssetImage(image),
+                fit: BoxFit.cover,
+              )),
             ),
-          ),
-          Text(
-            bookName,
-            style:
-                AppTextStyles.normal600(fontSize: 16, color: AppColors.libText),
-          ),
-          Text(
-            editor,
-            style: AppTextStyles.normal400(
-                fontSize: 14, color: AppColors.libtitle),
-          ),
-          SizedBox(
-            height: 20,
-          ),
-        ],
+            SizedBox(
+              height: 5,
+            ),
+            Container(
+              width: 114,
+              child: new LinearProgressIndicator(
+                minHeight: 5,
+                value: 0.5,
+                color: AppColors.text2Light,
+              ),
+            ),
+            Text(
+              bookName,
+              style:
+                  AppTextStyles.normal600(fontSize: 16, color: AppColors.libText),
+            ),
+            Text(
+              editor,
+              style: AppTextStyles.normal400(
+                  fontSize: 14, color: AppColors.libtitle),
+            ),
+            SizedBox(
+              height: 20,
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -452,7 +473,7 @@ class blueHeading extends StatelessWidget {
       child: Row(
         children: [
           Text(tag,
-              style: AppTextStyles.normal400(
+              style: AppTextStyles.normal500(
                   fontSize: 14, color: AppColors.libtitle)),
           Icon(
             Icons.circle,

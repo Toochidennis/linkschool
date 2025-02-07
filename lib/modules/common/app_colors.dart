@@ -15,9 +15,11 @@ class AppColors {
   static const Color text8Light = Color.fromRGBO(202, 202, 202, 1);
   static const Color text9Light = Color.fromRGBO(127, 127, 127, 1);
   static const Color text10Light = Color.fromRGBO(139, 139, 139, 1);
-  static const Color backgroundLight =Color.fromRGBO(255, 255, 255, 1); // white
+  static const Color backgroundLight =
+      Color.fromRGBO(255, 255, 255, 1); // white
   static const Color textFieldBorderLight = Color.fromRGBO(208, 208, 208, 1);
   static const Color textFieldLight = Color.fromRGBO(255, 255, 255, 1);
+  static const Color progressBarLight = Color.fromRGBO(119, 149, 255, 1);
   // Dark Theme
   static const Color primaryDark = Color.fromRGBO(4, 13, 21, 1);
   static const Color secondaryDark = Color.fromRGBO(3, 218, 198, 1);
@@ -231,27 +233,23 @@ class AppColors {
   static const Color buttonColor = Color.fromRGBO(255, 165, 0, 1);
 
   // E_library Colors
-  static const Color  libtitle =  Color.fromRGBO(105, 105, 105, 1);
-  static const Color libText =  Color.fromRGBO(48, 45, 45, 1);
-  static const Color libitem1 =  Color.fromRGBO(203, 230, 227, 1);
-  
+  static const Color libtitle = Color.fromRGBO(105, 105, 105, 1);
+  static const Color libText = Color.fromRGBO(48, 45, 45, 1);
+  static const Color libitem1 = Color.fromRGBO(203, 230, 227, 1);
 
-
-  static const Color gameDetails1=  Color.fromRGBO(246, 245, 255, 1);
-  static const Color gameDetails2=  Color.fromRGBO(80, 160, 254, 1);
-  static const Color gametitle=  Color.fromRGBO(0, 0, 0, 1);
-  static const Color gameText=  Color.fromRGBO(65, 65, 65, 1);
-  static const Color gameCard=  Color.fromRGBO(255, 105, 203, 1);
+  static const Color gameDetails1 = Color.fromRGBO(246, 245, 255, 1);
+  static const Color gameDetails2 = Color.fromRGBO(80, 160, 254, 1);
+  static const Color gametitle = Color.fromRGBO(0, 0, 0, 1);
+  static const Color gameText = Color.fromRGBO(65, 65, 65, 1);
+  static const Color gameCard = Color.fromRGBO(255, 105, 203, 1);
 
 // book colors
   static const Color bookCard1 = Color.fromRGBO(247, 247, 247, 1);
-  static const Color bookCard2= Color.fromRGBO(152, 90, 165, 0.1);
+  static const Color bookCard2 = Color.fromRGBO(152, 90, 165, 0.1);
   static const Color bookText = Color.fromRGBO(0, 0, 0, 1);
   static const Color bookButton = Color.fromRGBO(30, 136, 229, 1);
   static const Color bookText1 = Color.fromRGBO(47, 85, 221, 1);
   static const Color bookText2 = Color.fromRGBO(255, 255, 255, 1);
   static const Color bookbutton = Color.fromRGBO(218, 218, 218, 1);
   static const Color buttontext1 = Color.fromRGBO(105, 105, 105, 1);
-
-
 }

@@ -98,18 +98,39 @@ class _E_CBTDashboardState extends State<E_CBTDashboard> {
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 30.0),
             child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: metrics,
             ),
           ),
         ),
-        const SliverToBoxAdapter(child: SizedBox(height: 16.0)),
+        const SliverToBoxAdapter(child: SizedBox(height: 11.0)),
         SliverToBoxAdapter(
-          child: Constants.headingWithSeeAll600(
-            title: 'Choose subject',
-            titleSize: 18.0,
-            titleColor: AppColors.text4Light,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Constants.headingWithSeeAll600(
+                title: 'Choose subject',
+                titleSize: 18.0,
+                titleColor: AppColors.text4Light,
+
+              ),
+
+              TextButton(
+            onPressed: () {
+              Navigator.push(context, MaterialPageRoute(builder: (context) =>()));
+            },
+
+            style: TextButton.styleFrom(),
+            child: const Text(
+              'new user',
+              style: TextStyle(
+                decoration: TextDecoration.underline,
+              ),
+            ),
           ),
+            ],
+          ),
+
         ),
         SliverList(
           delegate: SliverChildBuilderDelegate(
