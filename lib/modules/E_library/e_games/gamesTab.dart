@@ -95,7 +95,7 @@ class _GamesTabState extends State<GamesTab> {
     return Scaffold(
      
       body: Container(
-        padding: EdgeInsets.only(top: 25),
+        padding: EdgeInsets.only(top: 25,bottom: 100),
         decoration: Constants.customBoxDecoration(context),
         child: CustomScrollView(
           physics: const BouncingScrollPhysics(),
@@ -141,7 +141,7 @@ class _GamesTabState extends State<GamesTab> {
                   _buildSuggestedCard(right: 16.0),
                 ],
                 options: CarouselOptions(
-                  height: 280.0,
+                  height: 250.0,
                   padEnds: false,
                   viewportFraction: 0.95,
                   autoPlay: true,

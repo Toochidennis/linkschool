@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 import 'package:linkschool/modules/E_library/E_lib_detail.dart';
 import 'package:linkschool/modules/E_library/cbt.dart';
 import 'package:linkschool/modules/E_library/elibrary-ebooks/library_ebook.dart';
@@ -7,6 +6,8 @@ import 'package:linkschool/modules/E_library/e_games/gameCard.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
+import 'package:linkschool/modules/e_library/e_games/gamesTab.dart';
+import 'package:linkschool/modules/explore/games/games_home.dart';
 
 class ElibraryDashboard extends StatefulWidget {
   const ElibraryDashboard({super.key, required this.height});
@@ -77,17 +78,41 @@ class _ElibraryDashboardState extends State<ElibraryDashboard> {
                       labelColor: AppColors.text2Light,
                       tabs: [
                         Tab(
-                            child: Text(
-                          'For you',
-                          style: AppTextStyles.normal500(
-                              fontSize: 16,
-                              color: AppColors.eLearningBtnColor1),
-                        )),
-                        Tab(text: 'CBT'),
-                        Tab(text: 'E-books'),
-                        Tab(text: 'Games'),
-                        Tab(text: 'Videos'),
+                          child: FittedBox(
+                              child: Text('For you',
+                                  style:
+                                      AppTextStyles.normal600(fontSize: 14))),
+                        ),
+
+                        Tab(
+                          child: FittedBox(
+                              child: Text('CBT',
+                                  style:
+                                      AppTextStyles.normal600(fontSize: 14))),
+                        ),
+
+                        Tab(
+                          child: FittedBox(
+                              child: Text('E-books',
+                                  style:
+                                      AppTextStyles.normal600(fontSize: 14))),
+
+                        ),
+                        Tab(
+                          child: FittedBox(
+                              child: Text('Games',
+                                  style:
+                                      AppTextStyles.normal600(fontSize: 14))),
+
+                        ),
+                        Tab(
+                          child: Flexible(
+                              child: Text('Videos',
+                                  style:
+                                      AppTextStyles.normal600(fontSize: 14))),
+                        ),
                       ]),
+
                   Expanded(
                       child: TabBarView(children: [
                     SingleChildScrollView(
@@ -182,27 +207,22 @@ class _ElibraryDashboardState extends State<ElibraryDashboard> {
                         Column(
                           children: [
                             subjectCard(
-                              subjectIcon: 'maths',
-                              subjectName: 'Mathematics',
-                              cardColor: AppColors.cbtCardColor1,
-                              showProgressIndicator: true
-                            ),
+                                subjectIcon: 'maths',
+                                subjectName: 'Mathematics',
+                                cardColor: AppColors.cbtCardColor1,
+                                showProgressIndicator: true),
                             Divider(),
                             subjectCard(
-                              subjectIcon: 'english',
-                              subjectName: 'English Language',
-                              
-                              cardColor: AppColors.cbtCardColor2,
-                              showProgressIndicator: true
-                            ),
+                                subjectIcon: 'english',
+                                subjectName: 'English Language',
+                                cardColor: AppColors.cbtCardColor2,
+                                showProgressIndicator: true),
                             Divider(),
                             subjectCard(
-                              subjectIcon: 'chemistry',
-                              subjectName: 'Chemistry',
-                            
-                              cardColor: AppColors.cbtCardColor3,
-                              showProgressIndicator: true
-                            ),
+                                subjectIcon: 'chemistry',
+                                subjectName: 'Chemistry',
+                                cardColor: AppColors.cbtCardColor3,
+                                showProgressIndicator: true),
                             Divider(),
                             subjectCard(
                               subjectIcon: 'physics',
@@ -229,7 +249,7 @@ class _ElibraryDashboardState extends State<ElibraryDashboard> {
                       child: LibraryEbook(),
                     ),
                     Expanded(
-                      child: GamesDashboard(),
+                      child: GamesTab(),
                     ),
                     Expanded(
                       child: VideoDisplay(),
@@ -294,28 +314,24 @@ Widget subjectCard({
                       fontSize: 18, color: AppColors.backgroundDark),
                 ),
                 if (subjectyear != null)
-                Text(
-                  subjectyear,
-                  style: TextStyle(fontSize: 16, color: Colors.grey),
-                ),
+                  Text(
+                    subjectyear,
+                    style: TextStyle(fontSize: 16, color: Colors.grey),
+                  ),
                 if (showProgressIndicator)
-               
                   Container(
                     width: double.infinity,
                     height: 4,
                     color: Colors.grey,
                     child: LinearProgressIndicator(
-
                       value: 0.5,
-                      color:AppColors.progressBarLight,
+                      color: AppColors.progressBarLight,
                     ),
                   )
               ],
             ),
-
           ),
         ],
-
       ),
     ),
   );
@@ -365,8 +381,8 @@ class _books extends StatelessWidget {
             ),
             Text(
               bookName,
-              style:
-                  AppTextStyles.normal600(fontSize: 16, color: AppColors.libText),
+              style: AppTextStyles.normal600(
+                  fontSize: 16, color: AppColors.libText),
             ),
             Text(
               editor,
@@ -469,7 +485,7 @@ Widget _ContinueWatching() {
         Image.asset(
           'assets/images/video_1.png',
           fit: BoxFit.cover,
-          height: 90, // Adjust the height of the image as needed
+          height: 90, 
           width: 150,
         ),
         const SizedBox(height: 4.0),

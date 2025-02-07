@@ -3,7 +3,6 @@ import 'package:linkschool/modules/E_library/e_lib_vids.dart';
 
 import '../common/app_colors.dart';
 import '../common/constants.dart';
-import '../common/search_bar.dart';
 import '../common/text_styles.dart';
 
 class VideoDisplay extends StatefulWidget {
