@@ -4,6 +4,7 @@ import 'package:linkschool/modules/auth/login_screen.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
+import 'package:smooth_page_indicator/smooth_page_indicator.dart';
 import 'app_navigation_flow.dart';
 // import 'package:introduction_screen/introduction_screen.dart';
 // import 'package:smooth_page_indicator/smooth_page_indicator.dart';
@@ -58,17 +59,17 @@ class _OnboardingscreenState extends State<Onboardingscreen> {
               return _pages[index];
             },
           ),
-          // Positioned(
-          //   bottom: 110,
-          //   left: 0,
-          //   right: 0,
-          //   child: Center(
-          //     child: SmoothPageIndicator(
-          //         effect: WormEffect(dotHeight: 10, dotWidth: 10),
-          //         controller: _pageController,
-          //         count: _pages.length),
-          //   ),
-          // ),
+          Positioned(
+            bottom: 110,
+            left: 0,
+            right: 0,
+            child: Center(
+              child: SmoothPageIndicator(
+                  effect: WormEffect(dotHeight: 10, dotWidth: 10),
+                  controller: _pageController,
+                  count: _pages.length),
+            ),
+          ),
           Positioned(
               bottom: 50,
               right: 16,

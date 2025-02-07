@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:linkschool/modules/common/buttons/custom_outline_button..dart';
-import 'package:linkschool/modules/common/buttons/custom_outline_button_2.dart';
+// import 'package:linkschool/modules/common/buttons/custom_outline_button_2.dart';
 import "package:linkschool/modules/common/text_styles.dart";
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';

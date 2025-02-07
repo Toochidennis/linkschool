@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:linkschool/modules/common/constants.dart';
-import 'package:linkschool/modules/E_library/elibrary-ebooks/book_page.dart';
+import 'package:linkschool/modules/E_library/elibrary_ebooks/book_page.dart';
 import '../../common/app_colors.dart';
 import '../../common/text_styles.dart';
 
