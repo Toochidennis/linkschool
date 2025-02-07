@@ -70,7 +70,7 @@ class _newCbtScreenState extends State<newCbtScreen> {
         child: _buildPerformanceCard(
           imagePath: 'assets/icons/success.png',
           title: 'Success',
-          completionRate: '0%',
+          completionRate: '123%',
           backgroundColor: AppColors.cbtColor2,
           borderColor: AppColors.cbtBorderColor2,
         ),
@@ -80,7 +80,7 @@ class _newCbtScreenState extends State<newCbtScreen> {
         child: _buildPerformanceCard(
           imagePath: 'assets/icons/average.png',
           title: 'Average',
-          completionRate: '0%',
+          completionRate: '123%',
           backgroundColor: AppColors.cbtColor3,
           borderColor: AppColors.cbtBorderColor3,
           marginEnd: 16.0,
@@ -104,6 +104,36 @@ class _newCbtScreenState extends State<newCbtScreen> {
           ),
         ),
         const SliverToBoxAdapter(child: SizedBox(height: 11.0)),
+
+        SliverToBoxAdapter(child:Constants.headingWithSeeAll600(
+                      title: 'Test history',
+                      titleSize: 18.0,
+                      titleColor: AppColors.text4Light,
+                    ),),
+
+                     SliverToBoxAdapter(
+                    child: SizedBox(
+                      height: 100,
+                      child: ListView(
+                        scrollDirection: Axis.horizontal,
+                        padding: const EdgeInsets.only(right: 16.0),
+                        children: [
+                          _buildHistoryCard(
+                            courseName: 'Biology',
+                            year: '2015',
+                            progressValue: 0.5,
+                            borderColor: AppColors.cbtColor3,
+                          ),
+                          _buildHistoryCard(
+                            courseName: 'Biology',
+                            year: '2015',
+                            progressValue: 0.25,
+                            borderColor: AppColors.cbtColor4,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
         SliverToBoxAdapter(
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -115,9 +145,10 @@ class _newCbtScreenState extends State<newCbtScreen> {
 
               ),
 
+
               TextButton(
                 onPressed: () {
-                  Navigator.push(context, MaterialPageRoute(builder: (context) => const SizedBox()));
+                  Navigator.pop(context);
                 },
                 style: TextButton.styleFrom(
                   padding: const EdgeInsets.symmetric(horizontal: 8),
@@ -128,6 +159,7 @@ class _newCbtScreenState extends State<newCbtScreen> {
                 decoration: TextDecoration.underline,
               ),
             ),
+
           ),
             ],
           ),
@@ -271,3 +303,82 @@ class _newCbtScreenState extends State<newCbtScreen> {
     );
   }
 }
+
+
+Widget _buildHistoryCard({
+    required String courseName,
+    required String year,
+    required double progressValue,
+    required borderColor,
+  }) {
+    return Container(
+      width: 169,
+      margin: const EdgeInsets.only(left: 16.0),
+      padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+      decoration: BoxDecoration(
+        color: AppColors.backgroundLight,
+        borderRadius: BorderRadius.circular(4.0),
+        border: Border.all(color: borderColor),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Stack(
+            alignment: Alignment.center,
+            children: [
+              SizedBox(
+                height: 60.0,
+                width: 60.0,
+                child: CircularProgressIndicator(
+                  color: borderColor,
+
+                  value: progressValue,
+                  strokeWidth: 7.5,
+                ),
+              ),
+              Text(
+                '${(progressValue * 100).round()}%',
+                style: AppTextStyles.normal600(
+                  fontSize: 16.0,
+                  color: AppColors.text4Light,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(width: 10.0),
+          Expanded(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              mainAxisAlignment: MainAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Biology',
+                  style: AppTextStyles.normal600(
+                    fontSize: 16.0,
+                    color: AppColors.text4Light,
+                  ),
+                ),
+                const SizedBox(height: 4.0),
+                Text(
+                  '($year)',
+                  style: AppTextStyles.normal600(
+                    fontSize: 12.0,
+                    color: AppColors.text7Light,
+                  ),
+                ),
+                const SizedBox(height: 4.0),
+                Text(
+                  'Tap to retake',
+                  style: AppTextStyles.normal600(
+                    fontSize: 14.0,
+                    color: AppColors.text8Light,
+                  ),
+                ),
+              ],
+            ),
+          )
+        ],
+      ),
+    );
+  }

@@ -124,11 +124,12 @@ class _E_CBTDashboardState extends State<E_CBTDashboard> {
                   padding: const EdgeInsets.symmetric(horizontal: 8),
                 ),
                 child: const Text(
-              'new user',
+              'old user',
               style: TextStyle(
                 decoration: TextDecoration.underline,
               ),
             ),
+
           ),
             ],
           ),

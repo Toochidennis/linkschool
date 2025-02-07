@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/buttons/custom_long_elevated_button.dart';
@@ -54,7 +53,29 @@ class _GameDetailsState extends State<GameDetails> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: Constants.customAppBar(context: context,title: 'Hakuna Matata',showBackButton: true),
+      appBar: AppBar(
+        backgroundColor: AppColors.backgroundLight,
+        leading: Padding(
+          padding: const EdgeInsets.only(left: 16.0),
+          child: IconButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+            },
+            icon: Image.asset(
+              'assets/icons/arrow_back.png',
+              color: AppColors.primaryLight,
+              width: 34.0,
+              height: 34.0,
+            ),
+          ),
+        ),
+        title: Center(
+            child: Text(
+          'Hakuna Matata',
+          style:
+              AppTextStyles.normal600(fontSize: 20, color: AppColors.primaryLight),
+        )),
+      ),
       body: SingleChildScrollView(
         child: Column(
           children: [
@@ -77,32 +98,41 @@ class _GameDetailsState extends State<GameDetails> {
                 children: [
                   Text(
                     'Hakuna Matata King Saga',
-                    style: AppTextStyles.normal600(fontSize: 20, color: AppColors.gametitle),
+                    style: AppTextStyles.normal600(
+                        fontSize: 20, color: AppColors.gametitle),
                   ),
                   const Text(
                     'May contain ads and In-app purchases',
                     style: TextStyle(fontSize: 12, color: Colors.grey),
                   ),
                   const SizedBox(height: 20),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      
-                      reviewText(
-                        image: 'assets/icons/gamesicon/stars.png',
-                        reviews: '4.5',
-                        reviewDes: '1k reviews',
-                      ),
-                      reviewText(
-                        image: 'assets/icons/gamesicon/stars.png',
-                        reviewDes: '156 MB',
-                      ),
-                      reviewText(
-                        image:'assets/icons/gamesicon/+12.png',
-                        reviewDes: 'Rated for 12+',
-                      ),
-
-                    ],
+                  Container(
+                    height:50,
+                    child: ListView(
+                      scrollDirection: Axis.horizontal,
+                      children: [
+                        reviewText(
+                          image: 'assets/icons/gamesicon/stars.png',
+                          reviews: '4.5',
+                          reviewDes: '1k reviews',
+                        ),
+                        SizedBox(width: 80),
+                        reviewText(
+                          image: 'assets/icons/gamesicon/stars.png',
+                          reviewDes: '156 MB',
+                        ),
+                        SizedBox(width: 80),
+                        reviewText(
+                          image: 'assets/icons/gamesicon/+12.png',
+                          reviewDes: 'Rated for 12+',
+                        ),
+                        SizedBox(width: 80),
+                        reviewText(
+                          image: 'assets/icons/gamesicon/+12.png',
+                          reviewDes: 'Rated for 12+',
+                        )
+                      ],
+                    ),
                   ),
                   SizedBox(
                     height: 20,
@@ -159,27 +189,31 @@ class _GameDetailsState extends State<GameDetails> {
                           ],
                         ),
                       ),
-                      SizedBox(
-                        height: 20,
-                      ),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          
-                           Text('Games you may like',
-                          style: AppTextStyles.normal700(
-                            fontSize: 16,
-                            color: AppColors.gametitle,
-                          )),
-                          Container(
-                            height: 300,
-                            child: ListView.builder(
-                              physics: NeverScrollableScrollPhysics(),
-                              itemCount: likes.length,
-                              itemBuilder: (context, index) => likes[index],
+                      Padding(
+                        padding: const EdgeInsets.only(
+                          top: 20.0,
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Padding(
+                              padding: const EdgeInsets.only(bottom: 10),
+                              child: Text('you Might like',
+                                  style: AppTextStyles.normal500(
+                                    fontSize: 16,
+                                    color: AppColors.gametitle,
+                                  )),
                             ),
-                          ),
-                        ],
+                            Container(
+                              height: 400,
+                              child: ListView.builder(
+                                physics: NeverScrollableScrollPhysics(),
+                                itemCount: likes.length,
+                                itemBuilder: (context, index) => likes[index],
+                              ),
+                            ),
+                          ],
+                        ),
                       )
                     ],
                   )
@@ -227,18 +261,18 @@ Widget reviewText({
     crossAxisAlignment: CrossAxisAlignment.center,
     children: [
       Row(
-        
         mainAxisSize: MainAxisSize.min,
         children: [
           if (reviews != null)
             Text(reviews,
-                style: AppTextStyles.normal500(fontSize:12, color:AppColors.gametitle)
-            ),
-        
+                style: AppTextStyles.normal500(
+                    fontSize: 12, color: AppColors.gametitle)),
           Image.asset(image, width: 24, height: 24),
         ],
       ),
-      Text(reviewDes,  style: AppTextStyles.normal500(fontSize:12, color:AppColors.gametitle)),
+      Text(reviewDes,
+          style: AppTextStyles.normal500(
+              fontSize: 12, color: AppColors.gametitle)),
     ],
   );
 }

@@ -9,16 +9,18 @@ import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/e_library/e_games/gamesTab.dart';
 import 'package:linkschool/modules/explore/games/games_home.dart';
 
-class ElibraryDashboard extends StatefulWidget {
-  const ElibraryDashboard({super.key, required this.height});
+class forYouScreen extends StatefulWidget {
+  const forYouScreen({super.key, required this.height});
   final double height;
+
 
   @override
   // ignore: library_private_types_in_public_api
-  _ElibraryDashboardState createState() => _ElibraryDashboardState();
+  _forYouScreenState createState() => _forYouScreenState();
 }
 
-class _ElibraryDashboardState extends State<ElibraryDashboard> {
+
+class _forYouScreenState extends State<forYouScreen> {
   final List<Widget> gameItems = [
     GameCard(
       game: 'assets/images/games_1.png',
@@ -61,6 +63,8 @@ class _ElibraryDashboardState extends State<ElibraryDashboard> {
       endColor: AppColors.gamesColor2,
     )
   ];
+
+ 
 
   @override
   Widget build(BuildContext context) {
@@ -136,17 +140,62 @@ class _ElibraryDashboardState extends State<ElibraryDashboard> {
 }
 
 class buildForYou extends StatelessWidget {
-  const buildForYou({
+   buildForYou({
     super.key,
     required this.gameItems,
   });
 
   final List<Widget> gameItems;
 
+   final categories = [
+    _buildCategoriesCard(
+      subjectName: 'English',
+      subjectIcon: "english",
+      backgroundColor: AppColors.videoColor1,
+    ),
+    _buildCategoriesCard(
+      subjectName: 'Mathematics',
+      subjectIcon: "maths",
+      backgroundColor: AppColors.videoColor2,
+    ),
+    _buildCategoriesCard(
+      subjectName: 'Chemistry',
+      subjectIcon: "chemistry",
+      backgroundColor: AppColors.videoColor3,
+    ),
+    _buildCategoriesCard(
+      subjectName: 'Physics',
+      subjectIcon: "physics",
+      backgroundColor: AppColors.videoColor4,
+    ),
+    _buildCategoriesCard(
+      subjectName: 'Further Maths',
+      subjectIcon: "further_maths",
+      backgroundColor: AppColors.videoColor5,
+    ),
+    _buildCategoriesCard(
+      subjectName: 'Biology',
+      subjectIcon: "biology",
+      backgroundColor: AppColors.videoColor6,
+    ),
+    _buildCategoriesCard(
+      subjectName: 'Geography',
+      subjectIcon: "geography",
+      backgroundColor: AppColors.videoColor7,
+    ),
+    _buildCategoriesCard(
+      subjectName: 'Agric',
+      subjectIcon: "agric",
+      backgroundColor: AppColors.videoColor8,
+    ),
+  ];
+
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
       child: Column(children: [
+
+        Container(child: ListView.builder(itemBuilder: (context, index) =>  categories[index],),),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: headingWithAdvert(
@@ -533,5 +582,38 @@ Widget _ContinueWatching() {
         ),
       ],
     ),
+  );
+}
+
+Widget _buildCategoriesCard({
+  required String subjectName,
+  required String subjectIcon,
+  required Color backgroundColor,
+}) {
+  return Column(
+    mainAxisAlignment: MainAxisAlignment.start,
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      Container(
+        height: 60,
+        width: 60,
+        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 4.0),
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: backgroundColor,
+        ),
+        child: Image.asset(
+          'assets/icons/$subjectIcon.png',
+          color: Colors.white,
+          width: 24.0,
+          height: 24.0,
+        ),
+      ),
+      const SizedBox(height: 8.0),
+      Text(
+        subjectName,
+        style: AppTextStyles.normal500(fontSize: 12.0, color: Colors.black),
+      )
+    ],
   );
 }
