@@ -2,7 +2,6 @@ import 'package:curved_nav_bar/fab_bar/fab_bottom_app_bar_item.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
-import 'package:linkschool/modules/explore/admission/admission_detail_screen.dart';
 import 'package:linkschool/modules/explore/admission/admission_home_screen.dart';
 import '../../common/bottom_navigation_bar.dart';
 import '../../common/bottom_nav_item.dart';

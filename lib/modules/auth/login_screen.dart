@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
-import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/explore/home/explore_dashboard.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 

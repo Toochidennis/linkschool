@@ -14,7 +14,7 @@ import 'package:linkschool/modules/admin_portal/e_learning/select_topic_screen.d
 class AdminAssignmentScreen extends StatefulWidget {
   final Function(Assignment) onSave;
 
-  const AdminAssignmentScreen({Key? key, required this.onSave}) : super(key: key);
+  const AdminAssignmentScreen({super.key, required this.onSave});
 
   @override
   State<AdminAssignmentScreen> createState() => _AdminAssignmentScreenState();

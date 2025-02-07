@@ -7,7 +7,6 @@ import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/model/e-learning/question_model.dart';
 import 'package:linkschool/modules/admin_portal/e_learning/View/question/assessment_screen.dart';
-import 'package:linkschool/modules/admin_portal/e_learning/View/quiz/quiz_screen.dart';
 import 'package:linkschool/modules/admin_portal/e_learning/question_screen.dart';
 
 class StaffQuestionPreviewScreen extends StatefulWidget {

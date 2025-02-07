@@ -7,7 +7,6 @@ import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/common/widgets/portal/student/student_customized_appbar.dart';
 import 'package:linkschool/modules/explore/home/custom_button_item.dart';
 import 'package:linkschool/modules/staff_portal/home/form_classes_screen.dart';
-import 'package:linkschool/modules/staff_portal/home/staff_course_screen.dart';
 import 'package:linkschool/modules/student_portal/home/feed_details_screen.dart';
 import 'package:linkschool/modules/student_portal/home/new_post_dialog.dart';
 

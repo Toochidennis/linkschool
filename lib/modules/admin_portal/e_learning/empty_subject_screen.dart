@@ -19,7 +19,7 @@ import 'package:linkschool/modules/staff_portal/e_learning/view/staff_material_d
 class EmptySubjectScreen extends StatefulWidget {
   final String courseTitle;
 
-  const EmptySubjectScreen({Key? key, required this.courseTitle}) : super(key: key);
+  const EmptySubjectScreen({super.key, required this.courseTitle});
 
   @override
   State<EmptySubjectScreen> createState() => _EmptySubjectScreenState();

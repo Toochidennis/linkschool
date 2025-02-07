@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart'; // Import flutter_svg
 
 class SchoolProfileScreen extends StatelessWidget {
-  const SchoolProfileScreen({Key? key}) : super(key: key);
+  const SchoolProfileScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -81,7 +81,7 @@ class SchoolProfileScreen extends StatelessWidget {
 
 // school_header.dart
 class SchoolHeader extends StatelessWidget {
-  const SchoolHeader({Key? key}) : super(key: key);
+  const SchoolHeader({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -128,7 +128,7 @@ class SchoolHeader extends StatelessWidget {
 
 // map_section.dart
 class MapSection extends StatelessWidget {
-  const MapSection({Key? key}) : super(key: key);
+  const MapSection({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -171,7 +171,7 @@ class MapSection extends StatelessWidget {
 
 // gallery_section.dart
 class GallerySection extends StatelessWidget {
-  const GallerySection({Key? key}) : super(key: key);
+  const GallerySection({super.key});
 
   Widget _buildGalleryCategory(String title, List<String> imageUrls) {
     return Column(
@@ -416,7 +416,7 @@ class GallerySection extends StatelessWidget {
 
 // action_buttons.dart
 class ActionButtons extends StatelessWidget {
-  const ActionButtons({Key? key}) : super(key: key);
+  const ActionButtons({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -529,7 +529,7 @@ class ActionButtons extends StatelessWidget {
 
 // school_type_section.dart
 class SchoolTypeSection extends StatelessWidget {
-  const SchoolTypeSection({Key? key}) : super(key: key);
+  const SchoolTypeSection({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -555,7 +555,7 @@ class SchoolTypeSection extends StatelessWidget {
 
 // about_section.dart
 class AboutSection extends StatelessWidget {
-  const AboutSection({Key? key}) : super(key: key);
+  const AboutSection({super.key});
 
   @override
   Widget build(BuildContext context) {
