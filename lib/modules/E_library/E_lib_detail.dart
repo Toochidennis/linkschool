@@ -74,7 +74,7 @@ class _VideoDisplayState extends State<VideoDisplay> {
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisAlignment: MainAxisAlignment.start,
           children: [
-            const CustomSearchBar(),
+            
             Expanded(
               child: CustomScrollView(
                 physics: const BouncingScrollPhysics(),
@@ -102,10 +102,7 @@ class _VideoDisplayState extends State<VideoDisplay> {
                                 ),
                               );
                             },
-                            child: Padding(
-                              padding: const EdgeInsets.all(8.0),
-                              child: _buildWatchHistoryVideo(),
-                            ),
+                            child: _buildWatchHistoryVideo(),
                           ),
                           GestureDetector(
                             onTap: () {

@@ -82,7 +82,7 @@ class _VideosDashboardState extends State<VideosDashboard> {
                   SliverToBoxAdapter(
                     child: Constants.headingWithSeeAll600(
                       title: 'Watch history',
-                      titleSize: 18.0,
+                      titleSize: 14.0,
                       titleColor: AppColors.primaryLight,
                     ),
                   ),
@@ -133,7 +133,7 @@ class _VideosDashboardState extends State<VideosDashboard> {
                   SliverToBoxAdapter(
                     child: Constants.heading600(
                       title: 'Categories',
-                      titleSize: 18.0,
+                      titleSize: 16.0,
                       titleColor: AppColors.primaryLight,
                     ),
                   ),
@@ -143,14 +143,14 @@ class _VideosDashboardState extends State<VideosDashboard> {
                       double screenHeight = MediaQuery.of(context).size.height;
                       double screenWidth = MediaQuery.of(context).size.width;
 
-                      double height = screenHeight * 0.38;
+                      double height = screenHeight * 0.34;
                       double aspectRatio = (screenWidth / 4) / (height / 2);
 
                       return Container(
                         height: height,
                         padding: const EdgeInsets.symmetric(
-                          horizontal: 16.0,
-                          vertical: 16.0,
+                          horizontal: 3,
+                          vertical: 1.99,
                         ),
                         decoration: const BoxDecoration(
                           color: AppColors.videoCardColor,
@@ -180,11 +180,11 @@ class _VideosDashboardState extends State<VideosDashboard> {
                       );
                     }),
                   ),
-                  const SliverToBoxAdapter(child: SizedBox(height: 20.0)),
+                  const SliverToBoxAdapter(child: SizedBox(height: 19.0)),
                   SliverToBoxAdapter(
                     child: Constants.heading600(
                       title: 'Recommended for you',
-                      titleSize: 18.0,
+                      titleSize: 16.0,
                       titleColor: AppColors.primaryLight,
                     ),
                   ),
@@ -207,16 +207,16 @@ class _VideosDashboardState extends State<VideosDashboard> {
 
   Widget _buildWatchHistoryCard() {
     return Container(
-      height: 150,
-      width: 180,
+      height: 146,
+      width: 150,
       margin: const EdgeInsets.only(left: 16.0),
       child: Column(
         children: [
           Image.asset(
             'assets/images/video_1.png',
             fit: BoxFit.cover,
-            height: 100, // Adjust the height of the image as needed
-            width: double.infinity,
+            height: 92, // Adjust the height of the image as needed
+            width:150,
           ),
           const SizedBox(height: 4.0),
           Padding(
@@ -226,7 +226,7 @@ class _VideosDashboardState extends State<VideosDashboard> {
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
               style: AppTextStyles.normal500(
-                fontSize: 14.0,
+                fontSize: 12.0,
                 color: AppColors.backgroundDark,
               ),
             ),
@@ -237,13 +237,16 @@ class _VideosDashboardState extends State<VideosDashboard> {
             child: Row(
               children: [
                 const CircleAvatar(
-                  backgroundImage: NetworkImage('profileImageUrl'),
+                  // backgroundImage: NetworkImage('profileImageUrl'),
+                  backgroundColor: AppColors.videoColor9,
+                  child: const Icon(Icons.person_2_rounded, size: 14.0, 
+                  color: Colors.white,),
                   radius: 10.0,
-                ),
+                  ),
                 const SizedBox(width: 4.0),
                 Text(
                   'Toochi Dennis',
-                  style: AppTextStyles.normal500(
+                  style: AppTextStyles.normal400(
                     fontSize: 12.0,
                     color: AppColors.videoColor9,
                   ),
@@ -268,7 +271,7 @@ class _VideosDashboardState extends State<VideosDashboard> {
         Container(
           height: 60,
           width: 60,
-          padding: const EdgeInsets.all(24.0),
+          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 4.0),
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             color: backgroundColor,
@@ -283,7 +286,7 @@ class _VideosDashboardState extends State<VideosDashboard> {
         const SizedBox(height: 8.0),
         Text(
           subjectName,
-          style: AppTextStyles.normal500(fontSize: 11.0, color: Colors.black),
+          style: AppTextStyles.normal500(fontSize: 12.0, color: Colors.black),
         )
       ],
     );
@@ -291,9 +294,9 @@ class _VideosDashboardState extends State<VideosDashboard> {
 
   Widget _recommendedForYouCard() {
     return Container(
-      height: 150,
-      width: double.infinity,
-      padding: const EdgeInsets.all(16.0),
+      height: 121,
+      
+      padding: const EdgeInsets.only(left: 16.0, top: 16.0, right: 8.0, bottom: 8.0),
       decoration: const BoxDecoration(
         color: AppColors.videoCardColor,
         border: Border(
@@ -311,8 +314,8 @@ class _VideosDashboardState extends State<VideosDashboard> {
                 child: Image.asset(
                   'assets/images/video_1.png',
                   fit: BoxFit.cover,
-                  height: 110.0,
-                  width: 140.0,
+                  height: 80,
+                  width: 108,
                 ),
               ),
               Positioned(
@@ -330,7 +333,7 @@ class _VideosDashboardState extends State<VideosDashboard> {
               )
             ],
           ),
-          SizedBox(width: 10.0),
+          SizedBox(width: 8.0),
           Expanded(
             
             child: Column(
@@ -339,23 +342,23 @@ class _VideosDashboardState extends State<VideosDashboard> {
               children: [
                 Text(
                   'This is a mock data showing the info details of a recording.',
-                  style: AppTextStyles.normal500(
+                  style: AppTextStyles.normal400(
                     fontSize: 14.0,
                     color: AppColors.videoColor9,
                   ),
                 ),
-                SizedBox(height: 8.0),
+                SizedBox(height: 4.0),
                 Text('1hr 34mins', style: AppTextStyles.normal500(
                     fontSize: 10.0,
                     color: AppColors.videoColor9,
                   )),
-                SizedBox(height: 8.0),
+                SizedBox(height: 4.0),
                 Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Image.asset(
                       'assets/icons/views.png',
-                      width: 16.0,
+                      width: 16,
                       height: 16.0,
                     ),
                     Text(
