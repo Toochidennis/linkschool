@@ -515,14 +515,18 @@ Widget _ContinueWatching() {
           child: Row(
             children: [
               const CircleAvatar(
-                backgroundImage: NetworkImage(
-                  'profileImageUrl',
-                ),
-                radius: 10.0,
+                // backgroundImage: NetworkImage(
+                //   'profileImageUrl',
+                // ),
+                backgroundColor: AppColors.videoColor9,
+                child: const Icon(Icons.person_2_rounded, size: 13.0,
+                      color: Colors.white),
+                radius: 8.0,
               ),
               const SizedBox(width: 4.0),
+
               Text(
-                'Toochi Dennis',
+                'Dennis Toochi ',
                 style: AppTextStyles.normal500(
                   fontSize: 12.0,
                   color: AppColors.videoColor9,
