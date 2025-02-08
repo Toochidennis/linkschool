@@ -8,18 +8,25 @@ import 'package:linkschool/modules/explore/ebooks/subject_item.dart';
 class E_CBTDashboard extends StatefulWidget {
   const E_CBTDashboard({super.key});
 
-
   @override
   State<E_CBTDashboard> createState() => _E_CBTDashboardState();
-
 }
 
 class _E_CBTDashboardState extends State<E_CBTDashboard> {
   int selectedCategoryIndex = 0;
+  int _selectedexamCategoriesIndex = 0;
+  List<String> examCategories = <String>[
+    'WAEC',
+    'NECO',
+    'WAEC',
+    'JAMB',
+    'UTME',
+    'GCE',
+    'SATs',
+    'SATs',
+    'SATs'
+  ];
 
-
-    
-  
   List<SubjectItem> subjectItems = [
     SubjectItem.name(
       'Mathematics',
@@ -89,72 +96,96 @@ class _E_CBTDashboardState extends State<E_CBTDashboard> {
     ];
 
     return Scaffold(
-  body: Container(
-    decoration: Constants.customBoxDecoration(context),
-    child: CustomScrollView(
-      physics: const BouncingScrollPhysics(),
-      slivers: [
-        SliverToBoxAdapter(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 30.0),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: metrics,
+      body: Container(
+        decoration: Constants.customBoxDecoration(context),
+        child: CustomScrollView(
+          physics: const BouncingScrollPhysics(),
+          slivers: [
+            SliverToBoxAdapter(
+              child: SizedBox(
+                  height: 50,
+                  child: ListView.builder(
+                    scrollDirection: Axis.horizontal,
+                    itemCount: examCategories.length,
+                    itemBuilder: (context, index) {
+                      return Padding(
+                        padding: const EdgeInsets.all(10.0),
+                        child: Container(
+                          width: 53,
+                          height: 34,
+                          decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(4.0),
+                              border: Border.all(
+                                color: AppColors.cbtColor5,
+                              )),
+                          child: Text(
+                            examCategories[index],
+                            style: AppTextStyles.normal600(
+                              fontSize: 12.0,
+                              color: AppColors.backgroundDark,
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                  )),
             ),
-          ),
-        ),
-        const SliverToBoxAdapter(child: SizedBox(height: 11.0)),
-        SliverToBoxAdapter(
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Constants.headingWithSeeAll600(
-                title: 'Choose subject',
-                titleSize: 18.0,
-                titleColor: AppColors.text4Light,
-
-              ),
-
-              TextButton(
-            onPressed: () {
-              // Navigator.push(context, MaterialPageRoute(builder: (context) =>()));
-            },
-
-            style: TextButton.styleFrom(),
-            child: const Text(
-              'new user',
-              style: TextStyle(
-                decoration: TextDecoration.underline,
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 16.0, vertical: 30.0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: metrics,
+                ),
               ),
             ),
-          ),
-            ],
-          ),
-
+            const SliverToBoxAdapter(child: SizedBox(height: 11.0)),
+            SliverToBoxAdapter(
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Constants.headingWithSeeAll600(
+                    title: 'Choose subject',
+                    titleSize: 18.0,
+                    titleColor: AppColors.text4Light,
+                  ),
+                  TextButton(
+                    onPressed: () {
+                      // Navigator.push(context, MaterialPageRoute(builder: (context) =>()));
+                    },
+                    style: TextButton.styleFrom(),
+                    child: const Text(
+                      'new user',
+                      style: TextStyle(
+                        decoration: TextDecoration.underline,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            SliverList(
+              delegate: SliverChildBuilderDelegate(
+                (context, index) {
+                  final item = subjectItems[index];
+                  return _buildChooseSubjectCard(
+                    subject: item.subject,
+                    year: item.year,
+                    cardColor: item.cardColor,
+                    subjectIcon: item.subjectIcon,
+                  );
+                },
+                childCount: subjectItems.length,
+              ),
+            ),
+            const SliverToBoxAdapter(child: SizedBox(height: 100.0)),
+          ],
         ),
-        SliverList(
-          delegate: SliverChildBuilderDelegate(
-            (context, index) {
-              final item = subjectItems[index];
-              return _buildChooseSubjectCard(
-                subject: item.subject,
-                year: item.year,
-                cardColor: item.cardColor,
-                subjectIcon: item.subjectIcon,
-              );
-            },
-            childCount: subjectItems.length,
-          ),
-        ),
-        const SliverToBoxAdapter(child: SizedBox(height: 100.0)),
-      ],
-    ),
-  ),
-);
-
+      ),
+    );
   }
-
-
 
   Widget _buildPerformanceCard({
     required String title,
@@ -211,8 +242,6 @@ class _E_CBTDashboardState extends State<E_CBTDashboard> {
       ),
     );
   }
-
- 
 
   Widget _buildChooseSubjectCard({
     required String subject,

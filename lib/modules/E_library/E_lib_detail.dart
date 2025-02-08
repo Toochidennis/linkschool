@@ -306,7 +306,7 @@ class _VideoDisplayState extends State<VideoDisplay> {
       height: 121,
       width: double.infinity,
       padding:
-          const EdgeInsets.only(left: 16.0, top: 16.0, right: 8.0, bottom: 16.0),
+          const EdgeInsets.only(left: 16.0, top: 16.0, right: 8.0, bottom: 18.0),
       decoration: const BoxDecoration(
         color: AppColors.videoCardColor,
         border: Border(
