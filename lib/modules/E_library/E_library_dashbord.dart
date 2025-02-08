@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:linkschool/modules/E_library/E_lib_detail.dart';
-import 'package:linkschool/modules/E_library/cbt.dart';
-import 'package:linkschool/modules/E_library/elibrary-ebooks/library_ebook.dart';
-import 'package:linkschool/modules/E_library/e_games/gameCard.dart';
+import 'package:linkschool/modules/e_library/e_lib_detail.dart';
+import 'package:linkschool/modules/e_library/cbt.dart';
+import 'package:linkschool/modules/e_library/elibrary-ebooks/library_ebook.dart';
+import 'package:linkschool/modules/e_library/e_games/gameCard.dart';
+import 'package:linkschool/modules/e_library/foryou.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
@@ -110,7 +111,7 @@ class _ElibraryDashboardState extends State<ElibraryDashboard> {
                       ]),
                   Expanded(
                       child: TabBarView(children: [
-                    buildForYou(gameItems: gameItems),
+                    buildForYou(gameItems: gameItems, height: widget.height),
                     Expanded(child: E_CBTDashboard()),
                     Expanded(
                       child: LibraryEbook(),
@@ -121,9 +122,7 @@ class _ElibraryDashboardState extends State<ElibraryDashboard> {
                     Expanded(
                       child: VideoDisplay(),
                     ),
-                    Center(
-                      child: Text('page for E_book'),
-                    ),
+                   
                   ]))
                 ],
               ),
@@ -139,9 +138,11 @@ class buildForYou extends StatelessWidget {
   const buildForYou({
     super.key,
     required this.gameItems,
+    required this.height,
   });
 
   final List<Widget> gameItems;
+  final double height;
 
   @override
   Widget build(BuildContext context) {
@@ -149,11 +150,30 @@ class buildForYou extends StatelessWidget {
       child: Column(children: [
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: headingWithAdvert(
-            tag: 'Video',
-            title: 'Continue watching',
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              headingWithAdvert(
+                tag: 'Video',
+                title: 'Continue watching',
+              ),
+              GestureDetector(
+                onTap: () {
+                  Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => ForYouScreen(height: height)));
+                },
+                child: Text(
+                  'new user',
+                  style: AppTextStyles.normal600(
+                      fontSize: 16, color: AppColors.text2Light),
+                ),
+              )
+            ],
           ),
         ),
+
         // SizedBox(
         //   height: 8,
         // ),
@@ -519,12 +539,11 @@ Widget _ContinueWatching() {
                 //   'profileImageUrl',
                 // ),
                 backgroundColor: AppColors.videoColor9,
-                child: const Icon(Icons.person_2_rounded, size: 13.0,
-                      color: Colors.white),
+                child: const Icon(Icons.person_2_rounded,
+                    size: 13.0, color: Colors.white),
                 radius: 8.0,
               ),
               const SizedBox(width: 4.0),
-
               Text(
                 'Dennis Toochi ',
                 style: AppTextStyles.normal500(

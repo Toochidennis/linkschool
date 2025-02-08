@@ -116,7 +116,7 @@ class _ExploreDashboardState extends State<ExploreDashboard> {
         onTabSelected: widget.onTabSelected,
         onSwitch: widget.onSwitch,
         selectedIndex: widget.selectedIndex,
-      ),
+    ),
     );
   }
 }

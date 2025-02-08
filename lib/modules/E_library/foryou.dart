@@ -1,26 +1,28 @@
 import 'package:flutter/material.dart';
-import 'package:linkschool/modules/E_library/E_lib_detail.dart';
-import 'package:linkschool/modules/E_library/cbt.dart';
-import 'package:linkschool/modules/E_library/elibrary-ebooks/library_ebook.dart';
 import 'package:linkschool/modules/E_library/e_games/gameCard.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
-import 'package:linkschool/modules/e_library/e_games/gamesTab.dart';
-import 'package:linkschool/modules/explore/games/games_home.dart';
+// import 'package:linkschool/modules/E_library/E_lib_detail.dart';
+// import 'package:linkschool/modules/E_library/cbt.dart';
+// import 'package:linkschool/modules/E_library/elibrary-ebooks/library_ebook.dart';
 
-class forYouScreen extends StatefulWidget {
-  const forYouScreen({super.key, required this.height});
+// import 'package:linkschool/modules/E_library/e_games/gameCard.dart';
+// import 'package:linkschool/modules/common/app_colors.dart';
+// import 'package:linkschool/modules/common/constants.dart';
+// import 'package:linkschool/modules/common/text_styles.dart';
+// import 'package:linkschool/modules/e_library/e_games/gamesTab.dart';
+// import 'package:linkschool/modules/explore/games/games_home.dart';
+
+class ForYouScreen extends StatefulWidget {
+  const ForYouScreen({super.key, required this.height});
   final double height;
 
-
   @override
-  // ignore: library_private_types_in_public_api
-  _forYouScreenState createState() => _forYouScreenState();
+  State<ForYouScreen> createState() => _ForYouScreenState();
 }
 
-
-class _forYouScreenState extends State<forYouScreen> {
+class _ForYouScreenState extends State<ForYouScreen> {
   final List<Widget> gameItems = [
     GameCard(
       game: 'assets/images/games_1.png',
@@ -64,90 +66,189 @@ class _forYouScreenState extends State<forYouScreen> {
     )
   ];
 
- 
+  final categories = [
+    _buildCategoriesCard(
+      subjectName: 'English',
+      subjectIcon: "english",
+      backgroundColor: AppColors.videoColor1,
+    ),
+    _buildCategoriesCard(
+      subjectName: 'Mathematics',
+      subjectIcon: "maths",
+      backgroundColor: AppColors.videoColor2,
+    ),
+    _buildCategoriesCard(
+      subjectName: 'Chemistry',
+      subjectIcon: "chemistry",
+      backgroundColor: AppColors.videoColor3,
+    ),
+    _buildCategoriesCard(
+      subjectName: 'Physics',
+      subjectIcon: "physics",
+      backgroundColor: AppColors.videoColor4,
+    ),
+    _buildCategoriesCard(
+      subjectName: 'Further Maths',
+      subjectIcon: "further_maths",
+      backgroundColor: AppColors.videoColor5,
+    ),
+    _buildCategoriesCard(
+      subjectName: 'Biology',
+      subjectIcon: "biology",
+      backgroundColor: AppColors.videoColor6,
+    ),
+    _buildCategoriesCard(
+      subjectName: 'Geography',
+      subjectIcon: "geography",
+      backgroundColor: AppColors.videoColor7,
+    ),
+    _buildCategoriesCard(
+      subjectName: 'Agric',
+      subjectIcon: "agric",
+      backgroundColor: AppColors.videoColor8,
+    ),
+  ];
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: Constants.customBoxDecoration(context),
-      child: Column(
-        children: [
-          Expanded(
-            child: DefaultTabController(
-              length: 5,
-              child: Column(
+    return Scaffold(
+      body: Container(
+        decoration: Constants.customBoxDecoration(context),
+        child: SingleChildScrollView(
+            child: Padding(
+          padding: const EdgeInsets.only(top: 50),
+          child: Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.only(bottom: 16),
+                child: Container(
+                  height: 100,
+                  decoration: BoxDecoration(
+                    color: AppColors.examCard,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.1),
+                        blurRadius: 4,
+                        offset: const Offset(0, 0),
+                      ),
+                    ],
+                  ),
+                  child: ListView.builder(
+                    itemCount: 5,
+                    scrollDirection: Axis.horizontal,
+                    itemBuilder: (context, index) => Container(
+                      height: 100,
+                      width: 100,
+                      child: categories[index],
+                    ),
+                  ),
+                ),
+              ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  TabBar(
-                      indicatorColor: AppColors.text2Light,
-                      labelColor: AppColors.text2Light,
-                      tabs: [
-                        Tab(
-                          child: FittedBox(
-                              child: Text('For you',
-                                  style:
-                                      AppTextStyles.normal600(fontSize: 14))),
-                        ),
-                        Tab(
-                          child: FittedBox(
-                              child: Text('CBT',
-                                  style:
-                                      AppTextStyles.normal600(fontSize: 14))),
-                        ),
-                        Tab(
-                          child: FittedBox(
-                              child: Text('E-books',
-                                  style:
-                                      AppTextStyles.normal600(fontSize: 14))),
-                        ),
-                        Tab(
-                          child: FittedBox(
-                              child: Text('Games',
-                                  style:
-                                      AppTextStyles.normal600(fontSize: 14))),
-                        ),
-                        Tab(
-                          child: Flexible(
-                              child: Text('Videos',
-                                  style:
-                                      AppTextStyles.normal600(fontSize: 14))),
-                        ),
-                      ]),
-                  Expanded(
-                      child: TabBarView(children: [
-                    buildForYou(gameItems: gameItems),
-                    Expanded(child: E_CBTDashboard()),
-                    Expanded(
-                      child: LibraryEbook(),
+                  headingWithAdvert(
+                    tag: 'Video',
+                    title: 'Continue watching',
+                  ),
+                  GestureDetector(
+                    onTap: () {
+                      Navigator.pop(context);
+                    },
+                    child: Text(
+                      'Old user',
+                      style: AppTextStyles.normal600(
+                          fontSize: 16, color: AppColors.text2Light),
                     ),
-                    Expanded(
-                      child: GamesTab(),
-                    ),
-                    Expanded(
-                      child: VideoDisplay(),
-                    ),
-                    Center(
-                      child: Text('page for E_book'),
-                    ),
-                  ]))
+                  )
                 ],
               ),
-            ),
+              Padding(
+                padding: const EdgeInsets.only(top: 8.0),
+                child: SizedBox(
+                  height: 180,
+                  child: ListView(
+                    scrollDirection: Axis.horizontal,
+                    children: [
+                      _ContinueWatching(),
+                      _ContinueWatching(),
+                      _ContinueWatching(),
+                      _ContinueWatching(),
+                    ],
+                  ),
+                ),
+              ),
+              SizedBox(
+                height: 25,
+              ),
+              headingWithAdvert(tag: "Game", title: 'Game Everyone is playing'),
+              SizedBox(
+                height: 8,
+              ),
+              Container(
+                height: 200,
+                child: ListView.builder(
+                  padding: const EdgeInsets.only(right: 16.0),
+                  itemCount: gameItems.length,
+                  scrollDirection: Axis.horizontal,
+                  itemBuilder: (context, index) {
+                    return gameItems[index];
+                  },
+                ),
+              ),
+              SizedBox(
+                height: 5,
+              ),
+              blueHeading(tag: 'E-book', title: 'Suggested for you'),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Container(
+                  height: 250,
+                  width: double.infinity,
+                  child: ListView(
+                    scrollDirection: Axis.horizontal,
+                    children: [
+                      _books(
+                        image: 'assets/images/book_1.png',
+                        bookName: "Sugar Girl",
+                        editor: 'UBE Reader Boosters',
+                      ),
+                      _books(
+                        image: 'assets/images/book_2.png',
+                        bookName: "Sugar Girl",
+                        editor: 'UBE Reader Boosters',
+                      ),
+                      _books(
+                        image: 'assets/images/book_3.png',
+                        bookName: "Sugar Girl",
+                        editor: 'UBE Reader Boosters',
+                      ),
+                      _books(
+                        image: 'assets/images/book_4.png',
+                        bookName: "Sugar Girl",
+                        editor: 'UBE Reader Boosters',
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
           ),
-        ],
+        )),
       ),
     );
   }
 }
 
 class buildForYou extends StatelessWidget {
-   buildForYou({
+  buildForYou({
     super.key,
     required this.gameItems,
   });
 
   final List<Widget> gameItems;
 
-   final categories = [
+  final categories = [
     _buildCategoriesCard(
       subjectName: 'English',
       subjectIcon: "english",
@@ -194,8 +295,14 @@ class buildForYou extends StatelessWidget {
   Widget build(BuildContext context) {
     return SingleChildScrollView(
       child: Column(children: [
+        Container(
+          height: 50,
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            itemBuilder: (context, index) => categories[index],
+          ),
+        ),
 
-        Container(child: ListView.builder(itemBuilder: (context, index) =>  categories[index],),),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: headingWithAdvert(
@@ -605,6 +712,7 @@ Widget _buildCategoriesCard({
         child: Image.asset(
           'assets/icons/$subjectIcon.png',
           color: Colors.white,
+          fit: BoxFit.fill,
           width: 24.0,
           height: 24.0,
         ),
