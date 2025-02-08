@@ -126,7 +126,7 @@ class SchoolHeader extends StatelessWidget {
 
 // map_section.dart
 class MapSection extends StatelessWidget {
-  const MapSection({Key? key}) : super(key: key);
+  const MapSection({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -284,7 +284,7 @@ class GallerySection extends StatelessWidget {
                           name: 'John Doe',
                           role: '(Parent)',
                           testimoney:
-                              'DDLJ helped shape my child into the smart and excellent child that she is today. She always stands out!',
+                              'DDLJ helped shape my child into the smart and excellent child that she is today. She always stands out!', rating: 2,
                         ),
                         _TestimonyCard(
                           image:
@@ -292,7 +292,7 @@ class GallerySection extends StatelessWidget {
                           name: 'Mrs Jane Doe',
                           role: '(Parent)',
                           testimoney:
-                              'DDLJ helped shape my child into the smart and excellent child that she is today. She always stands out!',
+                              'DDLJ helped shape my child into the smart and excellent child that she is today. She always stands out!', rating: 3,
                         ),
                         _TestimonyCard(
                           image:
@@ -300,7 +300,7 @@ class GallerySection extends StatelessWidget {
                           name: 'Mrs Jane Doe',
                           role: '(Parent)',
                           testimoney:
-                              'DDLJ helped shape my child into the smart and excellent child that she is today. She always stands out!',
+                              'DDLJ helped shape my child into the smart and excellent child that she is today. She always stands out!', rating: 4,
                         ),
                         _TestimonyCard(
                           image:
@@ -308,7 +308,7 @@ class GallerySection extends StatelessWidget {
                           name: 'John Doe',
                           role: '(Parent)',
                           testimoney:
-                              'The years I spent as a juniorate student were some of the best years of my life',
+                              'The years I spent as a juniorate student were some of the best years of my life', rating: 5,
                         )
                       ],
                     ),
@@ -362,7 +362,7 @@ class ActionButtons extends StatelessWidget {
             TextButton.icon(
               onPressed: () {},
               style: ButtonStyle(
-                overlayColor: MaterialStateProperty.all(AppColors.detailsbuttonbg),
+                overlayColor: WidgetStateProperty.all(AppColors.detailsbuttonbg),
               ),
               icon: const Icon(Icons.call_sharp,size: 18,color: AppColors.detailsbutton),
               label:  Text('Get contact info', style: AppTextStyles.normal400(fontSize: 16, color: AppColors.detailsbutton)),
@@ -443,12 +443,10 @@ class _TestimonyCard extends StatelessWidget {
   final double rating;
 
   const _TestimonyCard(
-      {super.key,
-      required this.image,
+      {required this.image,
       required this.name,
       required this.role,
-      required this.testimoney,
-      this.rating = 4.5});
+      required this.testimoney, required this.rating});
 
   @override
   Widget build(BuildContext context) {

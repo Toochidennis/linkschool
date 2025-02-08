@@ -5,6 +5,8 @@ import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:percent_indicator/linear_percent_indicator.dart';
 
 class BookScreen extends StatefulWidget {
+  const BookScreen({super.key});
+
   @override
   State<BookScreen> createState() => _BookScreenState();
 }

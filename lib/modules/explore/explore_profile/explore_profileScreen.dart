@@ -16,6 +16,8 @@ class ProfileScreen extends StatelessWidget {
 }
 
 class ProfileHomeScreen extends StatefulWidget {
+  const ProfileHomeScreen({super.key});
+
   @override
   _ProfileHomeScreenState createState() => _ProfileHomeScreenState();
 }

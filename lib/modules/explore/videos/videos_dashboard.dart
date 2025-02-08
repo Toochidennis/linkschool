@@ -239,9 +239,9 @@ class _VideosDashboardState extends State<VideosDashboard> {
                 const CircleAvatar(
                   // backgroundImage: NetworkImage('profileImageUrl'),
                   backgroundColor: AppColors.videoColor9,
+                  radius: 10.0,
                   child: const Icon(Icons.person_2_rounded, size: 14.0, 
                   color: Colors.white,),
-                  radius: 10.0,
                   ),
                 const SizedBox(width: 4.0),
                 Text(

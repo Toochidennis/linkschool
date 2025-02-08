@@ -10,7 +10,7 @@ import 'app_navigation_flow.dart';
 // import 'package:smooth_page_indicator/smooth_page_indicator.dart';
 
 class Onboardingscreen extends StatefulWidget {
-  Onboardingscreen({super.key});
+  const Onboardingscreen({super.key});
 
   @override
   _OnboardingscreenState createState() => _OnboardingscreenState();
@@ -101,14 +101,14 @@ class _OnboardingscreenState extends State<Onboardingscreen> {
                                       onLoginSuccess: () {},
                                     )));
                       },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.buttonColor,
+                        shape: CircleBorder(),
+                      ),
                       child: Icon(
                         Icons.arrow_forward,
                         color: Colors.white,
                         size: 34,
-                      ),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.buttonColor,
-                        shape: CircleBorder(),
                       ),
                     )
                   else
@@ -118,14 +118,14 @@ class _OnboardingscreenState extends State<Onboardingscreen> {
                             duration: Duration(milliseconds: 500),
                             curve: Curves.easeIn);
                       },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.buttonColor,
+                        shape: CircleBorder(),
+                      ),
                       child: Icon(
                         Icons.arrow_forward,
                         color: Colors.white,
                         size: 34,
-                      ),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.buttonColor,
-                        shape: CircleBorder(),
                       ),
                     )
                 ],

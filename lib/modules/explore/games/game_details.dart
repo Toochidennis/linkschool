@@ -157,7 +157,7 @@ class _GameDetailsState extends State<GameDetails> {
                       SizedBox(
                         height: 10,
                       ),
-                      Container(
+                      SizedBox(
                         height: 150,
                         child: ListView(
                           scrollDirection: Axis.horizontal,
@@ -180,7 +180,7 @@ class _GameDetailsState extends State<GameDetails> {
                             fontSize: 16,
                             color: AppColors.gametitle,
                           )),
-                          Container(
+                          SizedBox(
                             height: 300,
                             child: ListView.builder(
                               physics: NeverScrollableScrollPhysics(),

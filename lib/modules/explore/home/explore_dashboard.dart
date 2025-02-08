@@ -4,7 +4,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:linkschool/modules/E_library/e_library_dashbord.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/explore/explore_profile/explore_profileScreen.dart';
-import 'package:linkschool/modules/explore/home/chat_screen.dart';
+import 'package:linkschool/modules/explore/chat/chat_screen.dart';
 import '../../common/bottom_navigation_bar.dart';
 import '../../common/bottom_nav_item.dart';
 import 'explore_home.dart';
