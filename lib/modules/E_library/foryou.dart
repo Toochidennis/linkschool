@@ -69,42 +69,42 @@ class _ForYouScreenState extends State<ForYouScreen> {
   final categories = [
     _buildCategoriesCard(
       subjectName: 'English',
-      subjectIcon: "english",
+      examIcon: "english",
       backgroundColor: AppColors.videoColor1,
     ),
     _buildCategoriesCard(
       subjectName: 'Mathematics',
-      subjectIcon: "maths",
+      examIcon: "maths",
       backgroundColor: AppColors.videoColor2,
     ),
     _buildCategoriesCard(
       subjectName: 'Chemistry',
-      subjectIcon: "chemistry",
+      examIcon: "chemistry",
       backgroundColor: AppColors.videoColor3,
     ),
     _buildCategoriesCard(
       subjectName: 'Physics',
-      subjectIcon: "physics",
+      examIcon: "physics",
       backgroundColor: AppColors.videoColor4,
     ),
     _buildCategoriesCard(
       subjectName: 'Further Maths',
-      subjectIcon: "further_maths",
+      examIcon: "further_maths",
       backgroundColor: AppColors.videoColor5,
     ),
     _buildCategoriesCard(
       subjectName: 'Biology',
-      subjectIcon: "biology",
+      examIcon: "biology",
       backgroundColor: AppColors.videoColor6,
     ),
     _buildCategoriesCard(
       subjectName: 'Geography',
-      subjectIcon: "geography",
+      examIcon: "geography",
       backgroundColor: AppColors.videoColor7,
     ),
     _buildCategoriesCard(
       subjectName: 'Agric',
-      subjectIcon: "agric",
+      examIcon: "agric",
       backgroundColor: AppColors.videoColor8,
     ),
   ];
@@ -248,60 +248,13 @@ class buildForYou extends StatelessWidget {
 
   final List<Widget> gameItems;
 
-  final categories = [
-    _buildCategoriesCard(
-      subjectName: 'English',
-      subjectIcon: "english",
-      backgroundColor: AppColors.videoColor1,
-    ),
-    _buildCategoriesCard(
-      subjectName: 'Mathematics',
-      subjectIcon: "maths",
-      backgroundColor: AppColors.videoColor2,
-    ),
-    _buildCategoriesCard(
-      subjectName: 'Chemistry',
-      subjectIcon: "chemistry",
-      backgroundColor: AppColors.videoColor3,
-    ),
-    _buildCategoriesCard(
-      subjectName: 'Physics',
-      subjectIcon: "physics",
-      backgroundColor: AppColors.videoColor4,
-    ),
-    _buildCategoriesCard(
-      subjectName: 'Further Maths',
-      subjectIcon: "further_maths",
-      backgroundColor: AppColors.videoColor5,
-    ),
-    _buildCategoriesCard(
-      subjectName: 'Biology',
-      subjectIcon: "biology",
-      backgroundColor: AppColors.videoColor6,
-    ),
-    _buildCategoriesCard(
-      subjectName: 'Geography',
-      subjectIcon: "geography",
-      backgroundColor: AppColors.videoColor7,
-    ),
-    _buildCategoriesCard(
-      subjectName: 'Agric',
-      subjectIcon: "agric",
-      backgroundColor: AppColors.videoColor8,
-    ),
-  ];
+ 
 
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
       child: Column(children: [
-        Container(
-          height: 50,
-          child: ListView.builder(
-            scrollDirection: Axis.horizontal,
-            itemBuilder: (context, index) => categories[index],
-          ),
-        ),
+       
 
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -694,7 +647,7 @@ Widget _ContinueWatching() {
 
 Widget _buildCategoriesCard({
   required String subjectName,
-  required String subjectIcon,
+  required String examIcon,
   required Color backgroundColor,
 }) {
   return Column(
@@ -708,14 +661,12 @@ Widget _buildCategoriesCard({
         decoration: BoxDecoration(
           shape: BoxShape.circle,
           color: backgroundColor,
+          image: DecorationImage(
+            image: AssetImage('assets/icons/$examIcon.png'),
+            fit: BoxFit.contain,
+          ),
         ),
-        child: Image.asset(
-          'assets/icons/$subjectIcon.png',
-          color: Colors.white,
-          fit: BoxFit.fill,
-          width: 24.0,
-          height: 24.0,
-        ),
+        
       ),
       const SizedBox(height: 8.0),
       Text(

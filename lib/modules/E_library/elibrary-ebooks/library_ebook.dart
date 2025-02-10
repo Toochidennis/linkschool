@@ -32,24 +32,28 @@ class _LibraryEbookState extends State<LibraryEbook> {
         // Wrap the entire screen with a SingleChildScrollView
         child: Container(
           decoration: Constants.customBoxDecoration(context),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'What do you want to\nread today?',
-                  style: AppTextStyles.normal600(
-                    fontSize: 24.0,
-                    color: Colors.black,
-                  ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                child: Column(
+                  children: [
+                    Text(
+                      'What do you want to\nread today?',
+                      style: AppTextStyles.normal600(
+                        fontSize: 24.0,
+                        color: Colors.black,
+                      ),
+                    ),
+                    SizedBox(height: 16.0), // Add spacing between title and categories
+                    _buildCategoryButtons(), // Styled category buttons
+                    SizedBox(height: 16.0),
+                  ],
                 ),
-                SizedBox(height: 16.0), // Add spacing between title and categories
-                _buildCategoryButtons(), // Styled category buttons
-                SizedBox(height: 16.0), // Add spacing before the TabBar
-                _buildTabController(),
-              ],
-            ),
+              ), // Add spacing before the TabBar
+              _buildTabController(),
+            ],
           ),
         ),
       ),
@@ -73,23 +77,16 @@ class _LibraryEbookState extends State<LibraryEbook> {
           },
           child: AnimatedContainer(
             duration: Duration(milliseconds: 300),
-            padding: EdgeInsets.symmetric(vertical: 12, horizontal:8),
+            padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: isSelected ? AppColors.admissionopen : AppColors.ebookCard, // Selected color
+              color: isSelected ? AppColors.ebookCart : AppColors.ebookCard, // Selected color
               borderRadius: BorderRadius.circular(6), // Rounded corners
-              border: Border.all(
-                color: AppColors.admissionopen, 
-                width: 2,
-              ),
+            
              
             ),
             child: Text(
               bookCategories[index],
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                color: isSelected ? Colors.white : Colors.black, // Dynamic text color
-              ),
+              style: AppTextStyles.normal600(fontSize: 18.0, color: isSelected ? AppColors.text6Light: AppColors.bookText),
             ),
           ),
         );
@@ -105,7 +102,8 @@ class _LibraryEbookState extends State<LibraryEbook> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           TabBar(
-            isScrollable: false,
+            isScrollable: true,
+            tabAlignment: TabAlignment.start,
             unselectedLabelColor: const Color.fromRGBO(90, 90, 90, 1),
             labelColor: AppColors.text2Light,
             labelStyle: AppTextStyles.normal600(

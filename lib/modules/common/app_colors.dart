@@ -259,4 +259,6 @@ class AppColors {
   static const Color examCardText = Color.fromRGBO(0, 0, 0, 1);
 
   static const Color examCardButton = Color.fromRGBO(30, 136, 229, 1);
+  static const Color ebookCart = Color.fromRGBO(18, 7, 123, 1);
+
 }
