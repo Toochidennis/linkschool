@@ -193,14 +193,14 @@ class buildForYou extends StatelessWidget {
           ),
         ),
         SizedBox(
-          height: 25,
+          height: 8,
         ),
         headingWithAdvert(tag: "Game", title: 'Game Everyone is playing'),
         SizedBox(
           height: 8,
         ),
         Container(
-          height: 200,
+          height: 155,
           child: ListView.builder(
             padding: const EdgeInsets.only(right: 16.0),
             itemCount: gameItems.length,
@@ -211,7 +211,7 @@ class buildForYou extends StatelessWidget {
           ),
         ),
         SizedBox(
-          height: 5,
+          height: 8,
         ),
         blueHeading(tag: 'E-book', title: 'Suggested for you'),
         Padding(
@@ -535,9 +535,7 @@ Widget _ContinueWatching() {
           child: Row(
             children: [
               const CircleAvatar(
-                // backgroundImage: NetworkImage(
-                //   'profileImageUrl',
-                // ),
+               
                 backgroundColor: AppColors.videoColor9,
                 child: const Icon(Icons.person_2_rounded,
                     size: 13.0, color: Colors.white),

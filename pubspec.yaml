@@ -96,11 +96,12 @@ flutter:
     - assets/images/gameDes/
     - assets/icons/gamesicon/
     - assets/images/video_images/
-    # - assets/icons/home.svg
+    - assets/icons/exams/
     # - assets/icons/e-learning.svg
     # - assets/icons/admission.svg
     # - assets/icons/games.svg
     # - assets/icons/cbt.svg
+
 
     # - assets/icons/portal.svg
     # - assets/icons/video.svg

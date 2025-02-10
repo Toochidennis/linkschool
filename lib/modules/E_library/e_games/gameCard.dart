@@ -25,8 +25,8 @@ class GameCard extends StatelessWidget {
     return Column(
       children: [
         Container(
-          height: 102,
-          width: 100,
+          height: 100,
+          width: 101,
            margin: const EdgeInsets.only(left: 16.0),
            padding: EdgeInsets.fromLTRB(16, 16, 16, 0),
           decoration: BoxDecoration(

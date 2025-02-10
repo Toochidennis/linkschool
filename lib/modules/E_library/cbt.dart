@@ -97,7 +97,7 @@ class _E_CBTDashboardState extends State<E_CBTDashboard> {
       slivers: [
         SliverToBoxAdapter(
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 30.0),
+            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: .0),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: metrics,

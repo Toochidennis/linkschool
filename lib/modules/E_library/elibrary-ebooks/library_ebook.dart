@@ -38,6 +38,7 @@ class _LibraryEbookState extends State<LibraryEbook> {
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16.0),
                 child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       'What do you want to\nread today?',
@@ -79,14 +80,14 @@ class _LibraryEbookState extends State<LibraryEbook> {
             duration: Duration(milliseconds: 300),
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: isSelected ? AppColors.ebookCart : AppColors.ebookCard, // Selected color
+              color: isSelected ? AppColors.ebookCart : AppColors.booksButtonColor, // Selected color
               borderRadius: BorderRadius.circular(6), // Rounded corners
             
              
             ),
             child: Text(
               bookCategories[index],
-              style: AppTextStyles.normal600(fontSize: 18.0, color: isSelected ? AppColors.text6Light: AppColors.bookText),
+              style: AppTextStyles.normal600(fontSize: 18.0, color: isSelected ? AppColors.text6Light: AppColors.booksButtonTextColor),
             ),
           ),
         );
@@ -98,40 +99,43 @@ class _LibraryEbookState extends State<LibraryEbook> {
   Widget _buildTabController() {
     return DefaultTabController(
       length: 2,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          TabBar(
-            isScrollable: true,
-            tabAlignment: TabAlignment.start,
-            unselectedLabelColor: const Color.fromRGBO(90, 90, 90, 1),
-            labelColor: AppColors.text2Light,
-            labelStyle: AppTextStyles.normal600(
-              fontSize: 16.0,
-              color: AppColors.text2Light,
-            ),
-            indicatorColor: AppColors.text2Light,
-            tabs: const [
-              Tab(text: 'All'),
-              Tab(text: 'Library'),
-            ],
-          ),
-          SizedBox(
-            height: MediaQuery.of(context).size.height * 0.7, // Adjust height dynamically
-            child: TabBarView(
-              physics: NeverScrollableScrollPhysics(), // Disable horizontal scrolling
-              children: [
-                const AllTab(),
-                Container(
-                  color: Colors.orange,
-                  child: const Center(
-                    child: Text('Tab 2'),
-                  ),
-                ),
+      child: Padding(
+        padding: const EdgeInsets.only(bottom: 10),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            TabBar(
+              isScrollable: true,
+              tabAlignment: TabAlignment.start,
+              unselectedLabelColor: const Color.fromRGBO(90, 90, 90, 1),
+              labelColor: AppColors.text2Light,
+              labelStyle: AppTextStyles.normal600(
+                fontSize: 16.0,
+                color: AppColors.text2Light,
+              ),
+              indicatorColor: AppColors.text2Light,
+              tabs: const [
+                Tab(text: 'All'),
+                Tab(text: 'Library'),
               ],
             ),
-          ),
-        ],
+            SizedBox(
+              height: MediaQuery.of(context).size.height * 0.7, // Adjust height dynamically
+              child: TabBarView(
+                physics: NeverScrollableScrollPhysics(), // Disable horizontal scrolling
+                children: [
+                  const AllTab(),
+                  Container(
+                    color: Colors.orange,
+                    child: const Center(
+                      child: Text('Tab 2'),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

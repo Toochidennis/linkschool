@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:linkschool/modules/E_library/e_lib_vids.dart';
+import 'package:linkschool/modules/e_library/e_lib_vids.dart';
 
 import '../common/app_colors.dart';
 import '../common/constants.dart';

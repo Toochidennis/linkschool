@@ -72,8 +72,8 @@ class _GameDetailsState extends State<GameDetails> {
         title: Center(
             child: Text(
           'Hakuna Matata',
-          style:
-              AppTextStyles.normal600(fontSize: 20, color: AppColors.primaryLight),
+          style: AppTextStyles.normal600(
+              fontSize: 20, color: AppColors.primaryLight),
         )),
       ),
       body: SingleChildScrollView(
@@ -92,7 +92,7 @@ class _GameDetailsState extends State<GameDetails> {
             ),
             const SizedBox(height: 10),
             Padding(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -107,26 +107,60 @@ class _GameDetailsState extends State<GameDetails> {
                   ),
                   const SizedBox(height: 20),
                   Container(
-                    height:50,
+                    height: 31,
                     child: ListView(
                       scrollDirection: Axis.horizontal,
                       children: [
+                   
                         reviewText(
                           image: 'assets/icons/gamesicon/stars.png',
                           reviews: '4.5',
                           reviewDes: '1k reviews',
                         ),
-                        SizedBox(width: 80),
+                        const SizedBox(height: 20),
+                        Padding(
+                          padding: const EdgeInsets.only(left: 32.0,right: 32.0),
+                          child: Container(
+                            width: 2,
+                            decoration: BoxDecoration(
+                              color: AppColors.attCheckColor1,
+                            ),
+                          ),
+                        ),
+                        //  SizedBox(width: 20),
                         reviewText(
-                          image: 'assets/icons/gamesicon/stars.png',
+                          image: 'assets/icons/gamesicon/downloading.png',
                           reviewDes: '156 MB',
                         ),
-                        SizedBox(width: 80),
+                        const SizedBox(height: 20),
+                        Padding(
+                          padding: const EdgeInsets.only(left: 32.0,right: 32.0),
+                          child: Container(
+                            width: 2,
+                            height: 2,
+                            decoration: BoxDecoration(
+
+                            color: AppColors.attCheckColor1,
+                          ),
+                        ),),
+
+                         
                         reviewText(
                           image: 'assets/icons/gamesicon/+12.png',
-                          reviewDes: 'Rated for 12+',
+                          reviewDes: 'downloads',
                         ),
-                        SizedBox(width: 80),
+                        
+                       Padding(
+                          padding: const EdgeInsets.only(left: 32.0,right: 32.0),
+                          child: Container(
+                            width: 2,
+                            decoration: BoxDecoration(
+                              color: AppColors.attCheckColor1,
+                            ),
+                          ),
+                        ),
+
+                     
                         reviewText(
                           image: 'assets/icons/gamesicon/+12.png',
                           reviewDes: 'Rated for 12+',
@@ -141,11 +175,12 @@ class _GameDetailsState extends State<GameDetails> {
                     text: 'Play now',
                     onPressed: () {},
                     backgroundColor: AppColors.bgXplore3,
-                    textStyle: AppTextStyles.normal500(
+                    borderRadius: 32.0,
+                    textStyle: AppTextStyles.normal600(
                         fontSize: 16, color: AppColors.assessmentColor1),
                   ),
                   SizedBox(
-                    height: 50,
+                    height: 20,
                   ),
                   Container(
                     child: Column(
@@ -156,10 +191,14 @@ class _GameDetailsState extends State<GameDetails> {
                           style: AppTextStyles.normal600(
                               fontSize: 16, color: AppColors.gametitle),
                         ),
-                        Text(
-                          'Benedict Timothy Carlton Cumberbatch CBE (born 19 July 1976) is an English actor. A graduate of the Victoria.',
-                          style: AppTextStyles.normal500(
-                              fontSize: 16, color: AppColors.gameText),
+                        Padding(
+                          padding: const EdgeInsets.only(top: 10),
+                          child: Text(
+                            'Benedict Timothy Carlton Cumberbatch CBE (born 19 July 1976) is an English actor. A graduate of the Victoria.',
+
+                            style: AppTextStyles.normal500(
+                                fontSize: 16, color: AppColors.gameText),
+                          ),
                         ),
                       ],
                     ),
@@ -261,13 +300,12 @@ Widget reviewText({
     crossAxisAlignment: CrossAxisAlignment.center,
     children: [
       Row(
-        mainAxisSize: MainAxisSize.min,
         children: [
           if (reviews != null)
             Text(reviews,
                 style: AppTextStyles.normal500(
                     fontSize: 12, color: AppColors.gametitle)),
-          Image.asset(image, width: 24, height: 24),
+          Image.asset(image, width: 16, height: 16),
         ],
       ),
       Text(reviewDes,
@@ -370,6 +408,7 @@ Widget _buildYouMightLikeCard({
                 ),
                 Container(
                   height: 32.0,
+                  width: 80,
                   decoration: BoxDecoration(
                     gradient: const LinearGradient(
                       begin: Alignment.topCenter,
@@ -391,13 +430,10 @@ Widget _buildYouMightLikeCard({
                           borderRadius: BorderRadius.circular(4.0),
                         ),
                       ),
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                        child: Text(
-                          'Play',
-                          style: AppTextStyles.normal600(
-                              fontSize: 14.0, color: AppColors.buttonColor1),
-                        ),
+                      child: Text(
+                        'Play',
+                        style: AppTextStyles.normal600(
+                            fontSize: 14.0, color: AppColors.buttonColor1),
                       ),
                     ),
                   ),
