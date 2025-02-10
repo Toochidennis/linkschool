@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:linkschool/modules/common/app_themes.dart';
-import 'package:linkschool/modules/explore/chat/services/deepseek_service.dart';
+import 'package:linkschool/modules/explore/chat/services/openai_service.dart';
 
 import 'package:linkschool/routes/onboardingScreen.dart';
 import 'package:provider/provider.dart';
@@ -20,14 +20,14 @@ void main() async{
   );
 
   // Verify API key is loaded
-  final apiKey = dotenv.env['DEEPSEEK_API_KEY'];
+  final apiKey = dotenv.env['OPENAI_API_KEY'];
   print('Loaded API key: ${apiKey?.substring(0, 10)}...');
 
   runApp(
     MultiProvider(
       providers: [
         Provider(
-          create: (_) => DeepSeekService(),
+          create: (_) => OpenAIService(),
         ),
       ],
       child: const MyApp(),

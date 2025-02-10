@@ -1,41 +1,58 @@
 import 'dart:convert';
+import 'dart:async';
 import 'package:http/http.dart' as http;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
-class DeepSeekService {
+class OpenAIService {
   final String apiKey;
-  // Updated to the correct DeepSeek endpoint
-  final String apiUrl = "https://api.deepseek.com/v1/chat/completions";
+  final String apiUrl = "https://api.openai.com/v1/chat/completions";
 
-  DeepSeekService({String? apiKey}) : apiKey = apiKey ?? dotenv.env['DEEPSEEK_API_KEY'] ?? '' {
+  OpenAIService({String? apiKey}) : apiKey = apiKey ?? dotenv.env['OPENAI_API_KEY'] ?? '' {
     if (this.apiKey.isEmpty) {
-      throw Exception('DeepSeek API key not found. Please check your .env file.');
+      throw Exception('OpenAI API key not found. Please check your .env file.');
     }
     print('API Key loaded: ${this.apiKey.substring(0, 10)}...'); // Print first 10 chars for verification
   }
 
+  final int _maxRequestsPerMinute = 20;
+  final _requestTimestamps = <DateTime>[];
+
+  Future<void> _waitForRateLimit() async {
+    final now = DateTime.now();
+    _requestTimestamps.add(now);
+    
+    if (_requestTimestamps.length > _maxRequestsPerMinute) {
+      final oldestTimestamp = _requestTimestamps.removeAt(0);
+      final timeSinceOldest = now.difference(oldestTimestamp);
+      
+      if (timeSinceOldest < const Duration(minutes: 1)) {
+        final timeToWait = const Duration(minutes: 1) - timeSinceOldest;
+        await Future.delayed(timeToWait);
+      }
+    }
+  }
+
   Future<String> sendMessage(String message) async {
+    await _waitForRateLimit();
     try {
       print('Attempting API call with key: ${apiKey.substring(0, 10)}...'); // Debug print
       
       final response = await http.post(
         Uri.parse(apiUrl),
         headers: {
-          'Authorization': apiKey,
+          'Authorization': 'Bearer $apiKey',
           'Content-Type': 'application/json',
-          'Accept': 'application/json',
         },
         body: jsonEncode({
+          'model': 'gpt-3.5-turbo',
           'messages': [
             {'role': 'user', 'content': message}
           ],
-          'model': 'deepseek-chat',
           'temperature': 0.7,
           'max_tokens': 1000,
         }),
       );
 
-      print('Full response headers: ${response.headers}'); // Debug print
       print('Response status code: ${response.statusCode}');
       print('Response body: ${response.body}');
 
@@ -46,7 +63,10 @@ class DeepSeekService {
         throw Exception('''Authentication failed. Please:
 1. Verify your API key is correct
 2. Make sure you have sufficient credits
-3. Check if your account is properly set up at https://platform.deepseek.com''');
+3. Check if your account is properly set up at https://platform.openai.com''');
+      } else if (response.statusCode == 429) {
+        final data = jsonDecode(response.body);
+        throw Exception('Quota exceeded: ${data['error']['message']}. Please check your OpenAI account and billing details.');
       } else {
         throw Exception('API Error: ${response.statusCode} - ${response.body}');
       }
@@ -56,6 +76,9 @@ class DeepSeekService {
     }
   }
 }
+
+
+
 
 
 // import 'dart:convert';
