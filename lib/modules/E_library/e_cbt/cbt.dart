@@ -13,8 +13,7 @@ class E_CBTDashboard extends StatefulWidget {
 }
 
 class _E_CBTDashboardState extends State<E_CBTDashboard> {
-  int selectedCategoryIndex = 0;
-  int _selectedexamCategoriesIndex = 0;
+  int? selectedexamCategoriesIndex = 0;
   List<String> examCategories = <String>[
     'WAEC',
     'NECO',
@@ -104,26 +103,44 @@ class _E_CBTDashboardState extends State<E_CBTDashboard> {
             SliverToBoxAdapter(
               child: SizedBox(
                   height: 50,
+                  width: 509.74,
                   child: ListView.builder(
+                    padding: EdgeInsets.fromLTRB(8, 4, 8, 4),
                     scrollDirection: Axis.horizontal,
                     itemCount: examCategories.length,
                     itemBuilder: (context, index) {
                       return Padding(
-                        padding: const EdgeInsets.all(10.0),
-                        child: Container(
-                          width: 53,
-                          height: 34,
-                          decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(4.0),
+                        padding: const EdgeInsets.fromLTRB(8, 4, 8, 4),
+                        child: GestureDetector(
+                          onTap: () {
+                            setState(() {
+                              selectedexamCategoriesIndex = index;
+                            });
+                          },
+                          child: Container(
+                            width: 53,
+                            height: 34,
+                            padding: EdgeInsets.fromLTRB(4, 4, 4, 8),
+                            // margin: EdgeInsets.all(10),
+                            decoration: BoxDecoration(
+                              color: selectedexamCategoriesIndex == index
+                                  ? Colors.blueAccent
+                                  : Colors.white,
+                              borderRadius: BorderRadius.circular(4),
                               border: Border.all(
-                                color: AppColors.cbtColor5,
-                              )),
-                          child: Text(
-                            examCategories[index],
-                            style: AppTextStyles.normal600(
-                              fontSize: 12.0,
-                              color: AppColors.backgroundDark,
+                                color: AppColors.attBorderColor1,
+                              ),
+                            ),
+                            alignment: Alignment.center,
+                            child: Text(
+                              examCategories[index],
+                              style: AppTextStyles.normal500(
+                                  color: selectedexamCategoriesIndex == index
+                                      ? AppColors.assessmentColor1
+                                      : AppColors.attCheckColor1,
+                                  fontSize: 12,
+                                  
+                                  ),
                             ),
                           ),
                         ),
@@ -133,8 +150,8 @@ class _E_CBTDashboardState extends State<E_CBTDashboard> {
             ),
             SliverToBoxAdapter(
               child: Padding(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 16.0, vertical: 30.0),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16.0, vertical: 16),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceAround,
                   children: metrics,

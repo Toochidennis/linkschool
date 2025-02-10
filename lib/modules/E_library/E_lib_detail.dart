@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:linkschool/modules/E_library/e_lib_vids.dart';
+import 'package:linkschool/modules/e_library/e_lib_subject_detail.dart';
 
 import '../common/app_colors.dart';
 import '../common/constants.dart';
@@ -81,7 +82,7 @@ class _VideoDisplayState extends State<VideoDisplay> {
                   SliverToBoxAdapter(
                     child: Constants.headingWithSeeAll600(
                       title: 'Watch history',
-                      titleSize: 18.0,
+                      titleSize: 16.0,
                       titleColor: AppColors.primaryLight,
                     ),
                   ),
@@ -128,29 +129,25 @@ class _VideoDisplayState extends State<VideoDisplay> {
                     ),
                   ),
                   SliverToBoxAdapter(
-                    child: Padding(padding: const EdgeInsets.only(left: 16.0, top: 8.0),
-                    child: Constants.heading600(
-                      title: 'Categories',
-                      titleSize: 18.0,
-                      titleColor: AppColors.primaryLight,
-
-                    ),
-                    )
-                  ),
+                      child: Constants.heading600(
+                    title: 'Categories',
+                    titleSize: 16.0,
+                    titleColor: AppColors.primaryLight,
+                  )),
                   const SliverToBoxAdapter(child: SizedBox(height: 10.0)),
                   SliverToBoxAdapter(
                     child: LayoutBuilder(builder: (context, constraints) {
                       double screenHeight = MediaQuery.of(context).size.height;
                       double screenWidth = MediaQuery.of(context).size.width;
 
-                      double height = screenHeight * 0.37;
+                      double height = screenHeight * 0.34;
                       double aspectRatio = (screenWidth / 4) / (height / 2);
 
                       return Container(
                         height: height,
                         padding: const EdgeInsets.symmetric(
-                          horizontal: 16.0,
-                          vertical: 16.0,
+                          horizontal: 3.2,
+                          vertical: 1.90,
                         ),
                         decoration: const BoxDecoration(
                           color: AppColors.videoCardColor,
@@ -174,18 +171,26 @@ class _VideoDisplayState extends State<VideoDisplay> {
                           ),
                           itemCount: categories.length,
                           itemBuilder: (context, index) {
-                            return categories[index];
+                            return GestureDetector(
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                      builder: (context) => ELibSubjectDetail()),
+                                );
+                              },
+                              child: categories[index],
+                            );
                           },
-
                         ),
                       );
                     }),
                   ),
-                  const SliverToBoxAdapter(child: SizedBox(height: 20.0)),
+                  const SliverToBoxAdapter(child: SizedBox(height: 19.0)),
                   SliverToBoxAdapter(
                     child: Constants.heading600(
                       title: 'Recommended for you',
-                      titleSize: 18.0,
+                      titleSize: 16.0,
                       titleColor: AppColors.primaryLight,
                     ),
                   ),
@@ -197,6 +202,7 @@ class _VideoDisplayState extends State<VideoDisplay> {
                       childCount: recommendations.length,
                     ),
                   ),
+                  SliverToBoxAdapter(child: SizedBox(height: 100,),)
                 ],
               ),
             ),
@@ -291,11 +297,10 @@ class _VideoDisplayState extends State<VideoDisplay> {
         Text(
           subjectName,
           style: AppTextStyles.normal500(
-        
             fontSize: 12.0,
             color: Colors.black,
-            
           ),
+          textAlign: TextAlign.center,
         )
       ],
     );
@@ -305,8 +310,8 @@ class _VideoDisplayState extends State<VideoDisplay> {
     return Container(
       height: 121,
       width: double.infinity,
-      padding:
-          const EdgeInsets.only(left: 16.0, top: 16.0, right: 8.0, bottom: 18.0),
+      padding: const EdgeInsets.only(
+          left: 16.0, top: 16.0, right: 8.0, bottom: 18.0),
       decoration: const BoxDecoration(
         color: AppColors.videoCardColor,
         border: Border(
