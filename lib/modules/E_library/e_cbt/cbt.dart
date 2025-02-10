@@ -8,18 +8,24 @@ import 'package:linkschool/modules/explore/ebooks/subject_item.dart';
 class E_CBTDashboard extends StatefulWidget {
   const E_CBTDashboard({super.key});
 
-
   @override
   State<E_CBTDashboard> createState() => _E_CBTDashboardState();
-
 }
 
 class _E_CBTDashboardState extends State<E_CBTDashboard> {
-  int selectedCategoryIndex = 0;
+  int? selectedexamCategoriesIndex = 0;
+  List<String> examCategories = <String>[
+    'WAEC',
+    'NECO',
+    'WAEC',
+    'JAMB',
+    'UTME',
+    'GCE',
+    'SATs',
+    'SATs',
+    'SATs'
+  ];
 
-
-    
-  
   List<SubjectItem> subjectItems = [
     SubjectItem.name(
       'Mathematics',
@@ -89,72 +95,103 @@ class _E_CBTDashboardState extends State<E_CBTDashboard> {
     ];
 
     return Scaffold(
-  body: Container(
-    decoration: Constants.customBoxDecoration(context),
-    child: CustomScrollView(
-      physics: const BouncingScrollPhysics(),
-      slivers: [
-        SliverToBoxAdapter(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 30.0),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: metrics,
+      body: Container(
+        decoration: Constants.customBoxDecoration(context),
+        child: CustomScrollView(
+          physics: const BouncingScrollPhysics(),
+          slivers: [
+            SliverToBoxAdapter(
+              child: SizedBox(
+                  height: 50,
+                  width: 509.74,
+                  child: ListView.builder(
+                    padding: const EdgeInsets.fromLTRB(8, 4, 8, 4),
+                    scrollDirection: Axis.horizontal,
+                    itemCount: examCategories.length,
+                    itemBuilder: (context, index) {
+                      return Padding(
+                        padding: const EdgeInsets.fromLTRB(8, 4, 8, 4),
+                        child: GestureDetector(
+                          onTap: () {
+                            setState(() {
+                              selectedexamCategoriesIndex = index;
+                            });
+                          },
+                          child: Container(
+                            width: 53,
+                            height: 34,
+                            padding: EdgeInsets.fromLTRB(4, 4, 4, 8),
+                            // margin: EdgeInsets.all(10),
+                            decoration: BoxDecoration(
+                              color: selectedexamCategoriesIndex == index
+                                  ? Colors.blueAccent
+                                  : Colors.white,
+                              borderRadius: BorderRadius.circular(4),
+                              border: Border.all(
+                                color: AppColors.attBorderColor1,
+                              ),
+                            ),
+                            alignment: Alignment.center,
+                            child: Text(
+                              examCategories[index],
+                              style: AppTextStyles.normal500(
+                                color: selectedexamCategoriesIndex == index
+                                    ? AppColors.assessmentColor1
+                                    : AppColors.attCheckColor1,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                  )),
             ),
-          ),
-        ),
-        const SliverToBoxAdapter(child: SizedBox(height: 11.0)),
-        SliverToBoxAdapter(
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Constants.headingWithSeeAll600(
-                title: 'Choose subject',
-                titleSize: 18.0,
-                titleColor: AppColors.text4Light,
-
-              ),
-
-              TextButton(
-            onPressed: () {
-
-            },
-
-            style: TextButton.styleFrom(),
-            child: const Text(
-              'new user',
-              style: TextStyle(
-                decoration: TextDecoration.underline,
+            const SliverToBoxAdapter(child: SizedBox(height: 11.0)),
+            SliverToBoxAdapter(
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Constants.headingWithSeeAll600(
+                    title: 'Choose subject',
+                    titleSize: 18.0,
+                    titleColor: AppColors.text4Light,
+                  ),
+                  TextButton(
+                    onPressed: () {
+                      // Navigator.push(context, MaterialPageRoute(builder: (context) =>()));
+                    },
+                    style: TextButton.styleFrom(),
+                    child: const Text(
+                      'new user',
+                      style: TextStyle(
+                        decoration: TextDecoration.underline,
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
-          ),
-            ],
-          ),
-
+            SliverList(
+              delegate: SliverChildBuilderDelegate(
+                (context, index) {
+                  final item = subjectItems[index];
+                  return _buildChooseSubjectCard(
+                    subject: item.subject,
+                    year: item.year,
+                    cardColor: item.cardColor,
+                    subjectIcon: item.subjectIcon,
+                  );
+                },
+                childCount: subjectItems.length,
+              ),
+            ),
+            const SliverToBoxAdapter(child: SizedBox(height: 100.0)),
+          ],
         ),
-        SliverList(
-          delegate: SliverChildBuilderDelegate(
-            (context, index) {
-              final item = subjectItems[index];
-              return _buildChooseSubjectCard(
-                subject: item.subject,
-                year: item.year,
-                cardColor: item.cardColor,
-                subjectIcon: item.subjectIcon,
-              );
-            },
-            childCount: subjectItems.length,
-          ),
-        ),
-        const SliverToBoxAdapter(child: SizedBox(height: 100.0)),
-      ],
-    ),
-  ),
-);
-
+      ),
+    );
   }
-
-
 
   Widget _buildPerformanceCard({
     required String title,
@@ -211,8 +248,6 @@ class _E_CBTDashboardState extends State<E_CBTDashboard> {
       ),
     );
   }
-
- 
 
   Widget _buildChooseSubjectCard({
     required String subject,

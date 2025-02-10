@@ -131,12 +131,10 @@ class _VideosDashboardState extends State<VideosDashboard> {
                     ),
                   ),
                   SliverToBoxAdapter(
-                    child: Padding(padding: const EdgeInsets.only(left: 16.0, top: 8),
                     child: Constants.heading600(
                       title: 'Categories',
                       titleSize: 16.0,
                       titleColor: AppColors.primaryLight,
-                    ),
                     )
                   ),
                   const SliverToBoxAdapter(child: SizedBox(height: 10.0)),
@@ -151,8 +149,8 @@ class _VideosDashboardState extends State<VideosDashboard> {
                       return Container(
                         height: height,
                         padding: const EdgeInsets.symmetric(
-                          horizontal: 3,
-                          vertical: 1.99,
+                          horizontal: 3.2,
+                          vertical: 1.90,
                         ),
                         decoration: const BoxDecoration(
                           color: AppColors.videoCardColor,
@@ -178,7 +176,9 @@ class _VideosDashboardState extends State<VideosDashboard> {
                           itemBuilder: (context, index) {
                             return categories[index];
                           },
+                          
                         ),
+                        alignment: Alignment.center,
                       );
                     }),
                   ),
@@ -294,7 +294,7 @@ class _VideosDashboardState extends State<VideosDashboard> {
           child: Text(
             subjectName,
             style: AppTextStyles.normal500(fontSize: 12.0, color: Colors.black),
-            
+            textAlign: TextAlign.center,
           ),
         )
       ],

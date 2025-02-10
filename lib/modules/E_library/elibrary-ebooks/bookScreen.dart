@@ -136,16 +136,19 @@ class BookProfileCard extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(vertical: 10),
                   child: Row(
                     children: [
-                      GestureDetector(
-                        onTap: () {},
-                        child: SvgPicture.asset('assets/icons/Shareicon.svg'),
-                      ),
-                      SizedBox(width: 10),
-                      GestureDetector(
+
+                       GestureDetector(
                         onTap: () {},
                         child:
                             SvgPicture.asset('assets/icons/download_icon.svg'),
                       ),
+                       SizedBox(width: 10),
+                      GestureDetector(
+                        onTap: () {},
+                        child: SvgPicture.asset('assets/icons/Shareicon.svg'),
+                      ),
+                     
+                     
                     ],
                   ),
                 ),
