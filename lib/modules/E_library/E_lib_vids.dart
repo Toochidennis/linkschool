@@ -63,7 +63,9 @@ class E_lib_vids extends StatelessWidget {
                             text: TextSpan(
                               text: 'Figma master class for biginner',
                               style: AppTextStyles.normal600(
-                                fontSize: 20,
+                                
+                              
+                                fontSize: 20.0,
                                 color: AppColors.assessmentColor2,
                               ),
                             ),
