@@ -7,14 +7,17 @@ class AuthService {
 
   Future<Map<String, dynamic>> login(String username, String password, String pin) async {
     try {
-      final response = await http.post(
-        Uri.parse('$baseUrl/login.php'),
-        body: {
-          'username': username,
-          'password': password,
-          'token': pin,
-        },
+      final response = await http.get(
+        Uri.parse('$baseUrl/login.php?username=practice&password=portal&token=5416'),
+        // body: {
+        //   'username': username,
+        //   'password': password,
+        //   'token': pin,
+        // },
       );
+
+      if(response.statusCode == 200) { print(response.body);}
+      
 
       if (response.statusCode == 200) {
         final jsonResponse = json.decode(response.body);
