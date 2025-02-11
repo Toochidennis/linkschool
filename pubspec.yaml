@@ -96,12 +96,8 @@ flutter:
     - assets/images/gameDes/
     - assets/icons/gamesicon/
     - assets/images/video_images/
-<<<<<<< HEAD
-    - assets/icons/exams/
-=======
     - assets/images/e-subject_detail/
     # - assets/icons/home.svg
->>>>>>> d387fb5817a3a4714e99facbda9365f1a2da7a8b
     # - assets/icons/e-learning.svg
     # - assets/icons/admission.svg
     # - assets/icons/games.svg

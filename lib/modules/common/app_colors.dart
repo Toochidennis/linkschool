@@ -260,4 +260,10 @@ class AppColors {
 
   static const Color examCardButton = Color.fromRGBO(30, 136, 229, 1);
   static const Color ebookCart = Color.fromRGBO(18, 7, 123, 1);
+
+  // cbt dialog colors
+  static const Color cbtDialogTitle = Color.fromRGBO(26, 26, 26, 1);
+  static const Color cbtDialogText = Color.fromRGBO(105, 99, 99, 1);
+  static const Color cbtDialogBorder = Color.fromRGBO(212, 38, 32, 1);
+  static const Color cbtDialogButton = Color.fromRGBO(56, 169, 94, 1);
 }
