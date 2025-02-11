@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:linkschool/modules/E_library/cbt.details.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/buttons/custom_medium_elevated_button.dart';
 import 'package:linkschool/modules/common/buttons/custom_outline_button_2.dart';
@@ -413,7 +414,7 @@ void _yearDialog(BuildContext context) {
                     minWidth: 156,
                     color: AppColors.cbtDialogButton,
                     onPressed: () {
-                      Navigator.pop(context);
+                      Navigator.push(context, MaterialPageRoute(builder: (context) => CbtDetailScreen()));
                     },
                     child: Text(
                       'Confirm',

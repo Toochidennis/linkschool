@@ -266,4 +266,5 @@ class AppColors {
   static const Color cbtDialogText = Color.fromRGBO(105, 99, 99, 1);
   static const Color cbtDialogBorder = Color.fromRGBO(212, 38, 32, 1);
   static const Color cbtDialogButton = Color.fromRGBO(56, 169, 94, 1);
+  static const Color cbtText = Color.fromRGBO(107, 20, 255, 1);
 }
