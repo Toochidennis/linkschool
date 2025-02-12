@@ -31,8 +31,9 @@ class _EbooksDashboardState extends State<EbooksDashboard> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: Constants.customAppBar(context: context),
+      appBar: Constants.customAppBar(context: context,showBackButton: true),
       body: Container(
+        padding: EdgeInsets.only(top: 30),
         decoration: Constants.customBoxDecoration(context),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -43,14 +44,16 @@ class _EbooksDashboardState extends State<EbooksDashboard> {
               child: Text(
                 'What do you want to\nread today?',
                 style: AppTextStyles.normal600(
-                  fontSize: 24.0,
+                  fontSize: 16.0,
                   color: Colors.black,
                 ),
               ),
             ),
-            const CustomSearchBar(),
+            CustomSearchBar(),
+           
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16.0),
+
               child: Wrap(
                 spacing: 10.0,
                 runSpacing: 10.0,

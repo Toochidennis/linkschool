@@ -24,7 +24,7 @@ FABBottomAppBarItem createBottomNavIcon({
     inActiveIcon: SvgPicture.asset(
       imagePath,
       colorFilter: const ColorFilter.mode(
-        AppColors.primaryLight,
+        AppColors.paymentTxtColor1,
         BlendMode.srcIn,
       ),
       height: height ?? 24.0,

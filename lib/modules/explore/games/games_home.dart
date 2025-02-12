@@ -1,6 +1,7 @@
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
+import 'package:linkschool/modules/E_library/e_games/game_details.dart';
 
 import '../../common/constants.dart';
 import '../../common/text_styles.dart';
@@ -82,11 +83,9 @@ class _GamesDashboardState extends State<GamesDashboard> {
     ];
 
     return Scaffold(
-      appBar: Constants.customAppBar(
-        context: context,
-        iconPath: 'assets/icons/search.png',
-      ),
+    appBar: Constants.customAppBar(context: context,showBackButton: true),
       body: Container(
+        padding: EdgeInsets.only(top: 35),
         decoration: Constants.customBoxDecoration(context),
         child: CustomScrollView(
           physics: const BouncingScrollPhysics(),
@@ -107,7 +106,10 @@ class _GamesDashboardState extends State<GamesDashboard> {
                   scrollDirection: Axis.horizontal,
                   itemCount: trendingItems.length,
                   itemBuilder: (context, index) {
-                    return trendingItems[index];
+                    return GestureDetector(
+                      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => GameDetails(),)),
+                      child: trendingItems[index]
+                      );
                   },
                 ),
               ),

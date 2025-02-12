@@ -1,7 +1,5 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
-import 'package:flutter/widgets.dart';
+import 'package:linkschool/modules/E_library/e_lib_vids.dart';
 
 import '../../common/app_colors.dart';
 import '../../common/constants.dart';
@@ -69,14 +67,14 @@ class _VideosDashboardState extends State<VideosDashboard> {
     ];
 
     return Scaffold(
-      appBar: Constants.customAppBar(context: context),
+      appBar: Constants.customAppBar(context:context, iconPath: 'assets/icons/search.png', iconSize: 20.0),
       body: Container(
         decoration: Constants.customBoxDecoration(context),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisAlignment: MainAxisAlignment.start,
           children: [
-            const CustomSearchBar(),
+            // const CustomSearchBar(),
             Expanded(
               child: CustomScrollView(
                 physics: const BouncingScrollPhysics(),
@@ -84,7 +82,7 @@ class _VideosDashboardState extends State<VideosDashboard> {
                   SliverToBoxAdapter(
                     child: Constants.headingWithSeeAll600(
                       title: 'Watch history',
-                      titleSize: 18.0,
+                      titleSize: 14.0,
                       titleColor: AppColors.primaryLight,
                     ),
                   ),
@@ -95,9 +93,39 @@ class _VideosDashboardState extends State<VideosDashboard> {
                         scrollDirection: Axis.horizontal,
                         padding: const EdgeInsets.only(right: 16.0),
                         children: [
-                          _buildWatchHistoryCard(),
-                          _buildWatchHistoryCard(),
-                          _buildWatchHistoryCard(),
+                          GestureDetector(
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => E_lib_vids(),
+                                ),
+                              );
+                            },
+                            child: _buildWatchHistoryCard(),
+                          ),
+                          GestureDetector(
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => E_lib_vids(),
+                                ),
+                              );
+                            },
+                            child: _buildWatchHistoryCard(),
+                          ),
+                          GestureDetector(
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => E_lib_vids(),
+                                ),
+                              );
+                            },
+                            child: _buildWatchHistoryCard(),
+                          ),
                         ],
                       ),
                     ),
@@ -105,9 +133,9 @@ class _VideosDashboardState extends State<VideosDashboard> {
                   SliverToBoxAdapter(
                     child: Constants.heading600(
                       title: 'Categories',
-                      titleSize: 18.0,
+                      titleSize: 16.0,
                       titleColor: AppColors.primaryLight,
-                    ),
+                    )
                   ),
                   const SliverToBoxAdapter(child: SizedBox(height: 10.0)),
                   SliverToBoxAdapter(
@@ -115,14 +143,14 @@ class _VideosDashboardState extends State<VideosDashboard> {
                       double screenHeight = MediaQuery.of(context).size.height;
                       double screenWidth = MediaQuery.of(context).size.width;
 
-                      double height = screenHeight * 0.3;
+                      double height = screenHeight * 0.34;
                       double aspectRatio = (screenWidth / 4) / (height / 2);
 
                       return Container(
                         height: height,
                         padding: const EdgeInsets.symmetric(
-                          horizontal: 16.0,
-                          vertical: 16.0,
+                          horizontal: 3.2,
+                          vertical: 1.90,
                         ),
                         decoration: const BoxDecoration(
                           color: AppColors.videoCardColor,
@@ -148,15 +176,17 @@ class _VideosDashboardState extends State<VideosDashboard> {
                           itemBuilder: (context, index) {
                             return categories[index];
                           },
+                          
                         ),
+                        alignment: Alignment.center,
                       );
                     }),
                   ),
-                  const SliverToBoxAdapter(child: SizedBox(height: 20.0)),
+                  const SliverToBoxAdapter(child: SizedBox(height: 19.0)),
                   SliverToBoxAdapter(
                     child: Constants.heading600(
                       title: 'Recommended for you',
-                      titleSize: 18.0,
+                      titleSize: 16.0,
                       titleColor: AppColors.primaryLight,
                     ),
                   ),
@@ -179,16 +209,16 @@ class _VideosDashboardState extends State<VideosDashboard> {
 
   Widget _buildWatchHistoryCard() {
     return Container(
-      height: 150,
-      width: 180,
+      height: 146,
+      width: 150,
       margin: const EdgeInsets.only(left: 16.0),
       child: Column(
         children: [
           Image.asset(
             'assets/images/video_1.png',
             fit: BoxFit.cover,
-            height: 100, // Adjust the height of the image as needed
-            width: double.infinity,
+            height: 92, // Adjust the height of the image as needed
+            width: 150,
           ),
           const SizedBox(height: 4.0),
           Padding(
@@ -198,7 +228,7 @@ class _VideosDashboardState extends State<VideosDashboard> {
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
               style: AppTextStyles.normal500(
-                fontSize: 14.0,
+                fontSize: 12.0,
                 color: AppColors.backgroundDark,
               ),
             ),
@@ -209,13 +239,19 @@ class _VideosDashboardState extends State<VideosDashboard> {
             child: Row(
               children: [
                 const CircleAvatar(
-                  backgroundImage: NetworkImage('profileImageUrl'),
-                  radius: 10.0,
+                  // backgroundImage: NetworkImage('profileImageUrl'),
+                  backgroundColor: AppColors.videoColor9,
+                  child: const Icon(
+                    Icons.person_2_rounded,
+                    size: 13.0,
+                    color: Colors.white,
+                  ),
+                  radius: 8.0,
                 ),
                 const SizedBox(width: 4.0),
                 Text(
-                  'Toochi Dennis',
-                  style: AppTextStyles.normal500(
+                  'Dennis Toochi',
+                  style: AppTextStyles.normal400(
                     fontSize: 12.0,
                     color: AppColors.videoColor9,
                   ),
@@ -238,7 +274,9 @@ class _VideosDashboardState extends State<VideosDashboard> {
       mainAxisSize: MainAxisSize.min,
       children: [
         Container(
-          padding: const EdgeInsets.all(24.0),
+          height: 60,
+          width: 60,
+          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 4.0),
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             color: backgroundColor,
@@ -251,9 +289,13 @@ class _VideosDashboardState extends State<VideosDashboard> {
           ),
         ),
         const SizedBox(height: 8.0),
-        Text(
-          subjectName,
-          style: AppTextStyles.normal500(fontSize: 11.0, color: Colors.black),
+        Padding(
+          padding: const EdgeInsets.only(left: 4.0),
+          child: Text(
+            subjectName,
+            style: AppTextStyles.normal500(fontSize: 12.0, color: Colors.black),
+            textAlign: TextAlign.center,
+          ),
         )
       ],
     );
@@ -261,9 +303,9 @@ class _VideosDashboardState extends State<VideosDashboard> {
 
   Widget _recommendedForYouCard() {
     return Container(
-      height: 140,
-      width: double.infinity,
-      padding: const EdgeInsets.all(16.0),
+      height: 121,
+      padding:
+          const EdgeInsets.only(left: 16.0, top: 16.0, right: 8.0, bottom:18),
       decoration: const BoxDecoration(
         color: AppColors.videoCardColor,
         border: Border(
@@ -281,8 +323,8 @@ class _VideosDashboardState extends State<VideosDashboard> {
                 child: Image.asset(
                   'assets/images/video_1.png',
                   fit: BoxFit.cover,
-                  height: 110.0,
-                  width: 140.0,
+                  height: 80,
+                  width: 108,
                 ),
               ),
               Positioned(
@@ -300,7 +342,7 @@ class _VideosDashboardState extends State<VideosDashboard> {
               )
             ],
           ),
-          SizedBox(width: 10.0),
+          SizedBox(width: 8.0),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -308,22 +350,30 @@ class _VideosDashboardState extends State<VideosDashboard> {
               children: [
                 Text(
                   'This is a mock data showing the info details of a recording.',
+                  style: AppTextStyles.normal400(
+                    fontSize: 14.0,
+                    color: AppColors.videoColor9,
+                  ),
                 ),
-                SizedBox(height: 8.0),
-                Text('1hr 34mins'),
-                SizedBox(height: 8.0),
+                SizedBox(height: 4.0),
+                Text('1hr 34mins',
+                    style: AppTextStyles.normal500(
+                      fontSize: 10.0,
+                      color: AppColors.videoColor9,
+                    )),
+                SizedBox(height: 4.0),
                 Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Image.asset(
                       'assets/icons/views.png',
-                      width: 16.0,
+                      width: 16,
                       height: 16.0,
                     ),
                     Text(
                       "345",
                       style: AppTextStyles.normal500(
-                        fontSize: 14.0,
+                        fontSize: 10.0,
                         color: Colors.black,
                       ),
                     ),
@@ -332,7 +382,7 @@ class _VideosDashboardState extends State<VideosDashboard> {
                     Text(
                       '${'12'}k',
                       style: AppTextStyles.normal500(
-                        fontSize: 14.0,
+                        fontSize: 10,
                         color: Colors.black,
                       ),
                     ),

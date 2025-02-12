@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:linkschool/modules/common/search_bar.dart';
 import 'package:linkschool/modules/explore/home/explore_item.dart';
+import 'package:linkschool/modules/news/news_details.dart';
 
 import '../../common/text_styles.dart';
 import '../../../modules/explore/games/games_home.dart';
@@ -88,6 +89,7 @@ class _ExploreHomeState extends State<ExploreHome> {
         backgroundColor: AppColors.exploreButton1Light,
         borderColor: AppColors.exploreButton1BorderLight,
         label: 'CBT',
+        textColor: AppColors.backgroundLight,
         iconPath: 'assets/icons/cbt.svg',
         destination: const CBTDashboard(),
       ),
@@ -116,14 +118,12 @@ class _ExploreHomeState extends State<ExploreHome> {
 
     return Container(
       decoration: Constants.customBoxDecoration(context),
-      padding: const EdgeInsets.only(bottom: 90.0),
+      padding: const EdgeInsets.only(bottom: 90.0,top:20),
       child: CustomScrollView(
         physics: const BouncingScrollPhysics(),
         controller: _controller,
         slivers: [
-          const SliverToBoxAdapter(
-            child: CustomSearchBar(),
-          ),
+         
           SliverToBoxAdapter(
             child: CarouselSlider(
               items: [
@@ -183,7 +183,10 @@ class _ExploreHomeState extends State<ExploreHome> {
           SliverList(
             delegate: SliverChildBuilderDelegate(
               (context, index) {
-                return newsItems[index];
+                return GestureDetector(
+                  onTap: ()=>(Navigator.push(context, MaterialPageRoute(builder: (context)=>NewsDetails()))),
+                  child: newsItems[index],
+                );
               },
               childCount: newsItems.length,
             ),
@@ -286,21 +289,23 @@ class _ExploreHomeState extends State<ExploreHome> {
     );
   }
 
-  Widget exploreButtonItem({
-    required Color backgroundColor,
-    required Color borderColor,
-    required String label,
-    required String iconPath,
-    required Widget destination,
-  }) {
-    return CustomButtonItem(
-      backgroundColor: backgroundColor,
-      borderColor: borderColor,
-      label: label,
-      iconPath: iconPath,
-      destination: destination,
-    );
-  }
+Widget exploreButtonItem({
+  required Color backgroundColor,
+  required Color borderColor,
+  required String label,
+  required String iconPath,
+  required Widget destination,
+  Color? textColor, // Make textColor optional and nullable
+}) {
+  return CustomButtonItem(
+    backgroundColor: backgroundColor,
+    borderColor: borderColor,
+    label: label,
+    textColor: textColor ?? AppColors.backgroundLight, // Provide a default color if null
+    iconPath: iconPath,
+    destination: destination,
+  );
+}
 
   Widget _buildNewsItem({
     required String profileImageUrl,
