@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
+import 'package:linkschool/modules/auth/login_screen.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
+import 'package:linkschool/routes/loginIn.dart';
 import 'package:linkschool/routes/select_school.dart';
 
 class NewsDetails extends StatefulWidget {
@@ -58,19 +60,7 @@ class _NewsDetailsState extends State<NewsDetails> {
                       padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
                       child: Column(
                         children: [
-                          GestureDetector(
-                            onTap: () {
-                              Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                      builder: (context) => SelectSchool()));
-                            },
-                            child: Icon(
-                              Icons.login,
-                              size: 24,
-                              color: AppColors.assessmentColor1,
-                            ),
-                          ),
+                          pageTesting(),
                           Text(
                             "This is a mock data showing the details of recording",
                             style: AppTextStyles.normal700(
@@ -227,6 +217,47 @@ class _NewsDetailsState extends State<NewsDetails> {
                 ],
               ),
             )));
+  }
+}
+
+class pageTesting extends StatelessWidget {
+  const pageTesting({
+    super.key,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Wrap(
+      children: [
+        GestureDetector(
+          onTap: () {
+            Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (context) => SelectSchool()));
+          },
+          child: Icon(
+            Icons.select_all_outlined,
+            size: 24,
+            color: AppColors.assessmentColor1,
+          ),
+        ),
+
+        GestureDetector(
+          onTap: () {
+            Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (context) => LoginScreens()));
+          },
+          child: Icon(
+            Icons.login,
+            size: 24,
+            color: AppColors.assessmentColor1,
+          ),
+        ),
+      ],
+    );
   }
 }
 
