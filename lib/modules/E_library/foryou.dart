@@ -1,25 +1,23 @@
 import 'package:flutter/material.dart';
-import 'package:linkschool/modules/e_library/e_lib_detail.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:linkschool/modules/e_library/cbt.dart';
-import 'package:linkschool/modules/e_library/elibrary-ebooks/library_ebook.dart';
 import 'package:linkschool/modules/e_library/e_games/gameCard.dart';
-import 'package:linkschool/modules/e_library/foryou.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/e_library/e_games/gamesTab.dart';
-import 'package:linkschool/modules/explore/games/games_home.dart';
+import 'package:linkschool/modules/e_library/e_lib_detail.dart';
+import 'package:linkschool/modules/e_library/elibrary-ebooks/library_ebook.dart';
 
-class ElibraryDashboard extends StatefulWidget {
-  const ElibraryDashboard({super.key, required this.height});
+class ForYouScreen extends StatefulWidget {
+  const ForYouScreen({super.key, required this.height});
   final double height;
 
   @override
-  // ignore: library_private_types_in_public_api
-  _ElibraryDashboardState createState() => _ElibraryDashboardState();
+  State<ForYouScreen> createState() => _ForYouScreenState();
 }
 
-class _ElibraryDashboardState extends State<ElibraryDashboard> {
+class _ForYouScreenState extends State<ForYouScreen> {
   final List<Widget> gameItems = [
     GameCard(
       game: 'assets/images/games_1.png',
@@ -63,86 +61,275 @@ class _ElibraryDashboardState extends State<ElibraryDashboard> {
     )
   ];
 
+  final categories = [
+    _buildCategoriesCard(
+      subjectName: 'Agric',
+      examIcon: "Agric",
+    ),
+    _buildCategoriesCard(
+      subjectName: 'BECE',
+      examIcon: "BECE",
+    ),
+    _buildCategoriesCard(
+      subjectName: 'GCE',
+      examIcon: "GCE",
+    ),
+    _buildCategoriesCard(
+      subjectName: 'IELTS',
+      examIcon: "IELTS",
+    ),
+    _buildCategoriesCard(
+      subjectName: 'JAMB',
+      examIcon: "JAMB",
+    ),
+    _buildCategoriesCard(
+      subjectName: 'NECO',
+      examIcon: "NECO",
+    ),
+    _buildCategoriesCard(
+      subjectName: 'SATs',
+      examIcon: "SATs",
+    ),
+    _buildCategoriesCard(
+      subjectName: 'WEAC',
+      examIcon: "WEAC",
+    ),
+  ];
+
+  bool _showSearchIcon = false;
+
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: Constants.customBoxDecoration(context),
-      child: Column(
-        children: [
-          Expanded(
-            child: DefaultTabController(
-              length: 5,
-              child: Column(
-                children: [
-                  TabBar(
-                      indicatorColor: AppColors.text2Light,
-                      labelColor: AppColors.text2Light,
-                      tabs: [
-                        Tab(
-                          child: FittedBox(
-                              child: Text('For you',
-                                  style:
-                                      AppTextStyles.normal600(fontSize: 14))),
-                        ),
-                        Tab(
-                          child: FittedBox(
-                              child: Text('CBT',
-                                  style:
-                                      AppTextStyles.normal600(fontSize: 14))),
-                        ),
-                        Tab(
-                          child: FittedBox(
-                              child: Text('E-books',
-                                  style:
-                                      AppTextStyles.normal600(fontSize: 14))),
-                        ),
-                        Tab(
-                          child: FittedBox(
-                              child: Text('Games',
-                                  style:
-                                      AppTextStyles.normal600(fontSize: 14))),
-                        ),
-                        Tab(
-                          child: Flexible(
-                              child: Text('Videos',
-                                  style:
-                                      AppTextStyles.normal600(fontSize: 14))),
-                        ),
-                      ]),
-                  Expanded(
-                      child: TabBarView(children: [
-                    buildForYou(gameItems: gameItems, height: widget.height),
-                    Expanded(child: E_CBTDashboard()),
-                    Expanded(
-                      child: LibraryEbook(),
-                    ),
-                    Expanded(
-                      child: GamesTab(),
-                    ),
-                    Expanded(
-                      child: VideoDisplay(),
-                    ),
-                   
-                  ]))
-                ],
-              ),
+    return Scaffold(
+      appBar: AppBar(
+        automaticallyImplyLeading: false,
+        backgroundColor: AppColors.paymentTxtColor1,
+        title: SvgPicture.asset('assets/icons/linkskool-logo.svg'),
+        actions: [
+          if (!_showSearchIcon)
+            IconButton(
+              icon: const Icon(Icons.search, color: Colors.white),
+              onPressed: () {
+                // Handle search action
+              },
             ),
-          ),
+          IconButton(
+            onPressed: () {},
+            icon: SvgPicture.asset(
+              'assets/icons/notifications.svg',
+              colorFilter:
+                  const ColorFilter.mode(Colors.white, BlendMode.srcIn),
+            ),
+          )
         ],
+        elevation: 0,
+      ),
+      body: Container(
+        decoration: Constants.customBoxDecoration(context),
+        child: DefaultTabController(
+            length: 5,
+            child: Column(
+              children: [
+                TabBar(
+                    indicatorColor: AppColors.text2Light,
+                    labelColor: AppColors.text2Light,
+                    tabs: [
+                      Tab(
+                        child: FittedBox(
+                            child: Text('For you',
+                                style:
+                                    AppTextStyles.normal600(fontSize: 14))),
+                      ),
+                      Tab(
+                        child: FittedBox(
+                            child: Text('CBT',
+                                style:
+                                    AppTextStyles.normal600(fontSize: 14))),
+                      ),
+                      Tab(
+                        child: FittedBox(
+                            child: Text('E-books',
+                                style:
+                                    AppTextStyles.normal600(fontSize: 14))),
+                      ),
+                      Tab(
+                        child: FittedBox(
+                            child: Text('Games',
+                                style:
+                                    AppTextStyles.normal600(fontSize: 14))),
+                      ),
+                      Tab(
+                        child: Flexible(
+                            child: Text('Videos',
+                                style:
+                                    AppTextStyles.normal600(fontSize: 14))),
+                      ),
+                    ]),
+                Expanded(
+                  child: TabBarView(
+                    children: [
+                      SingleChildScrollView(
+                          child: newForYouScreen(
+                              categories: categories, gameItems: gameItems)),
+                      Expanded(child: E_CBTDashboard()),
+                      Expanded(
+                        child: LibraryEbook(),
+                      ),
+                      Expanded(
+                        child: GamesTab(),
+                      ),
+                      Expanded(
+                        child: VideoDisplay(),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            )),
       ),
     );
   }
 }
 
+class newForYouScreen extends StatelessWidget {
+  const newForYouScreen({
+    super.key,
+    required this.categories,
+    required this.gameItems,
+  });
+
+  final List<Widget> categories;
+  final List<Widget> gameItems;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(bottom: 16, top: 16),
+          child: Container(
+            height: 100,
+            decoration: BoxDecoration(
+              color: AppColors.examCard,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.1),
+                  blurRadius: 4,
+                  offset: const Offset(0, 0),
+                ),
+              ],
+            ),
+            child: ListView.builder(
+              itemCount: categories.length,
+              scrollDirection: Axis.horizontal,
+              itemBuilder: (context, index) => Container(
+                height: 50,
+                width: 100,
+                child: categories[index],
+              ),
+            ),
+          ),
+        ),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            headingWithAdvert(
+              tag: 'Video',
+              title: 'Continue watching',
+            ),
+            GestureDetector(
+              onTap: () {
+                Navigator.pop(context);
+              },
+              child: Text(
+                'Old user',
+                style: AppTextStyles.normal600(
+                    fontSize: 16, color: AppColors.text2Light),
+              ),
+            )
+          ],
+        ),
+        Padding(
+          padding: const EdgeInsets.only(top: 8.0),
+          child: SizedBox(
+            height: 180,
+            child: ListView(
+              scrollDirection: Axis.horizontal,
+              children: [
+                _ContinueWatching(),
+                _ContinueWatching(),
+                _ContinueWatching(),
+                _ContinueWatching(),
+              ],
+            ),
+          ),
+        ),
+        SizedBox(
+          height: 25,
+        ),
+        headingWithAdvert(tag: "Game", title: 'Game Everyone is playing'),
+        SizedBox(
+          height: 8,
+        ),
+        Container(
+          height: 200,
+          child: ListView.builder(
+            padding: const EdgeInsets.only(right: 16.0),
+            itemCount: gameItems.length,
+            scrollDirection: Axis.horizontal,
+            itemBuilder: (context, index) {
+              return gameItems[index];
+            },
+          ),
+        ),
+        SizedBox(
+          height: 5,
+        ),
+        blueHeading(tag: 'E-book', title: 'Suggested for you'),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Container(
+            height: 250,
+            width: double.infinity,
+            child: ListView(
+              scrollDirection: Axis.horizontal,
+              children: [
+                _books(
+                  image: 'assets/images/book_1.png',
+                  bookName: "Sugar Girl",
+                  editor: 'UBE Reader Boosters',
+                ),
+                _books(
+                  image: 'assets/images/book_2.png',
+                  bookName: "Sugar Girl",
+                  editor: 'UBE Reader Boosters',
+                ),
+                _books(
+                  image: 'assets/images/book_3.png',
+                  bookName: "Sugar Girl",
+                  editor: 'UBE Reader Boosters',
+                ),
+                _books(
+                  image: 'assets/images/book_4.png',
+                  bookName: "Sugar Girl",
+                  editor: 'UBE Reader Boosters',
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 class buildForYou extends StatelessWidget {
-  const buildForYou({
+  buildForYou({
     super.key,
     required this.gameItems,
-    required this.height,
   });
 
   final List<Widget> gameItems;
-  final double height;
 
   @override
   Widget build(BuildContext context) {
@@ -150,30 +337,11 @@ class buildForYou extends StatelessWidget {
       child: Column(children: [
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              headingWithAdvert(
-                tag: 'Video',
-                title: 'Continue watching',
-              ),
-              GestureDetector(
-                onTap: () {
-                  Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (context) => ForYouScreen(height: height)));
-                },
-                child: Text(
-                  'new user',
-                  style: AppTextStyles.normal600(
-                      fontSize: 16, color: AppColors.text2Light),
-                ),
-              )
-            ],
+          child: headingWithAdvert(
+            tag: 'Video',
+            title: 'Continue watching',
           ),
         ),
-
         // SizedBox(
         //   height: 8,
         // ),
@@ -193,14 +361,14 @@ class buildForYou extends StatelessWidget {
           ),
         ),
         SizedBox(
-          height: 8,
+          height: 25,
         ),
         headingWithAdvert(tag: "Game", title: 'Game Everyone is playing'),
         SizedBox(
           height: 8,
         ),
         Container(
-          height: 155,
+          height: 200,
           child: ListView.builder(
             padding: const EdgeInsets.only(right: 16.0),
             itemCount: gameItems.length,
@@ -211,7 +379,7 @@ class buildForYou extends StatelessWidget {
           ),
         ),
         SizedBox(
-          height: 8,
+          height: 5,
         ),
         blueHeading(tag: 'E-book', title: 'Suggested for you'),
         Padding(
@@ -535,15 +703,14 @@ Widget _ContinueWatching() {
           child: Row(
             children: [
               const CircleAvatar(
-               
-                backgroundColor: AppColors.videoColor9,
-                child: const Icon(Icons.person_2_rounded,
-                    size: 13.0, color: Colors.white),
-                radius: 8.0,
+                backgroundImage: NetworkImage(
+                  'profileImageUrl',
+                ),
+                radius: 10.0,
               ),
               const SizedBox(width: 4.0),
               Text(
-                'Dennis Toochi ',
+                'Toochi Dennis',
                 style: AppTextStyles.normal500(
                   fontSize: 12.0,
                   color: AppColors.videoColor9,
@@ -552,6 +719,32 @@ Widget _ContinueWatching() {
             ],
           ),
         ),
+      ],
+    ),
+  );
+}
+
+Widget _buildCategoriesCard({
+  required String subjectName,
+  required String examIcon,
+}) {
+  return Padding(
+    padding: const EdgeInsets.only(top: 16),
+    child: Column(
+      mainAxisAlignment: MainAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        ClipRRect(
+            borderRadius: BorderRadius.circular(10),
+            child: Image.asset(
+              'assets/icons/exams/$examIcon.png',
+              fit: BoxFit.contain,
+            )),
+        const SizedBox(height: 8.0),
+        Text(
+          subjectName,
+          style: AppTextStyles.normal500(fontSize: 12.0, color: Colors.black),
+        )
       ],
     ),
   );

@@ -3,6 +3,7 @@ import 'package:flutter_svg/svg.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
+import 'package:linkschool/routes/select_school.dart';
 
 class NewsDetails extends StatefulWidget {
   const NewsDetails({super.key});
@@ -57,6 +58,19 @@ class _NewsDetailsState extends State<NewsDetails> {
                       padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
                       child: Column(
                         children: [
+                          GestureDetector(
+                            onTap: () {
+                              Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                      builder: (context) => SelectSchool()));
+                            },
+                            child: Icon(
+                              Icons.login,
+                              size: 24,
+                              color: AppColors.assessmentColor1,
+                            ),
+                          ),
                           Text(
                             "This is a mock data showing the details of recording",
                             style: AppTextStyles.normal700(
@@ -201,15 +215,12 @@ class _NewsDetailsState extends State<NewsDetails> {
                   ),
 
                   Container(
-                    height: 100,
+                    height: 395,
                     child: ListView.builder(
                       scrollDirection: Axis.horizontal,
                       itemCount: headNews.length,
                       itemBuilder: (context, index) {
-                        return Card(
-                          elevation: 4,
-                            color: AppColors.bgColor1,
-                            child: Text(headNews[index].toString()));
+                        return headNews[index];
                       },
                     ),
                   ),
@@ -220,65 +231,94 @@ class _NewsDetailsState extends State<NewsDetails> {
 }
 
 class relatedHeadlines extends StatelessWidget {
+  final String relatednews_Body =
+      " Aston Villa avoided relegation on the final day of the Premier League season as they drew 1-1 at West Ham United and other results went their way. ";
+
   const relatedHeadlines({
     super.key,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Container(
-          child: Image(
-            image: AssetImage(
-                'assets/images/news-images/related_headline_image.png'),
+    return Expanded(
+        child: Container(
             width: 220,
-            height: 92,
-          ),
-        ),
-        Column(children: [
-          Container(
-            child: Text(
-              "Aston Villa avoid relegation on final day",
-              style: AppTextStyles.normal700(
-                  fontSize: 16.0, color: AppColors.backgroundDark),
+            height: 299,
+            decoration: BoxDecoration(
+              color: AppColors.bgColor1,
+              borderRadius: BorderRadius.circular(3),
             ),
-          ),
-          Text(
-            "Aston Villa avoided relegation on the final day of the Premier League season as they drew 1-1 at West Ham United and other results went their way. ",
-            style: AppTextStyles.normal400(
-                fontSize: 12.0, color: AppColors.admissionTitle),
-          ),
-        ]),
-        Row(
-          children: [
-            Padding(
-              padding: const EdgeInsets.only(top: 2.33, left: 1.33),
-              child: Icon(
-                Icons.favorite_border,
-                size: 11.67,
-                weight: 13.33,
+            child: Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Image(
+                    image: AssetImage(
+                        'assets/images/news-images/related_headline_image.png'),
+                    width: 220,
+                    height: 92,
+                  ),
+                  Card(
+                      color: AppColors.assessmentColor1,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Container(
+                            width: 200,
+                            child: Text(
+                              "Aston Villa avoid relegation on final day",
+                              style: AppTextStyles.normal700(
+                                  fontSize: 16.0,
+                                  color: AppColors.backgroundDark),
+                            ),
+                          ),
+                          Text(
+                            relatednews_Body,
+                            style: AppTextStyles.normal400(
+                                fontSize: 12.0,
+                                color: AppColors.backgroundDark),
+                          ),
+                          Divider(),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                            children: [
+                              Padding(
+                                padding: const EdgeInsets.only(
+                                    top: 2.33, left: 1.33),
+                                child: Icon(
+                                  Icons.favorite_border,
+                                  size: 20,
+                                  weight: 20,
+                                ),
+                              ),
+                              Image(
+                                image: AssetImage(
+                                    "assets/images/news-images/chart_bubble_icon.png"),
+                                height: 20,
+                                width: 20,
+                              ),
+                              Padding(
+                                padding: const EdgeInsets.only(
+                                    top: 2.33, left: 1.33),
+                                child: Image(
+                                  image: AssetImage(
+                                      "assets/images/news-images/shareiconvector.png"),
+                                  height: 20,
+                                  width: 20,
+                                ),
+                              ),
+                            ],
+                          ),
+                          SizedBox(
+                            height: 20,
+                          )
+                        ],
+                      )),
+                ],
               ),
-            ),
-            Image(
-              image:
-                  AssetImage("assets/images/news-images/chart_bubble_icon.png"),
-              height: 11.67,
-              width: 13.33,
-            ),
-            Padding(
-              padding: const EdgeInsets.only(top: 2.33, left: 1.33),
-              child: Image(
-                image:
-                    AssetImage("assets/images/news-images/shareiconvector.png"),
-                height: 11.67,
-                width: 13.33,
-              ),
-            ),
-          ],
-        )
-      ],
-    );
+            )));
   }
 }
 

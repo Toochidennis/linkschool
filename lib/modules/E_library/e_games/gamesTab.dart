@@ -95,7 +95,7 @@ class _GamesTabState extends State<GamesTab> {
     return Scaffold(
      
       body: Container(
-        padding: EdgeInsets.only(top: 25),
+        padding: EdgeInsets.only(top: 25,bottom: 50),
         decoration: Constants.customBoxDecoration(context),
         child: CustomScrollView(
           physics: const BouncingScrollPhysics(),
@@ -110,7 +110,7 @@ class _GamesTabState extends State<GamesTab> {
             const SliverToBoxAdapter(child: SizedBox(height: 12.0)),
             SliverToBoxAdapter(
               child: SizedBox(
-                height: 180,
+                height: 170,
                 child: ListView.builder(
                   padding: const EdgeInsets.only(right: 16.0),
                   scrollDirection: Axis.horizontal,
@@ -124,7 +124,7 @@ class _GamesTabState extends State<GamesTab> {
                 ),
               ),
             ),
-            const SliverToBoxAdapter(child: SizedBox(height: 16.0)),
+            const SliverToBoxAdapter(child: SizedBox(height: 8.0)),
             SliverToBoxAdapter(
               child: Constants.heading500(
                 title: 'Suggested for you',
@@ -132,7 +132,7 @@ class _GamesTabState extends State<GamesTab> {
                 titleColor: Colors.black,
               ),
             ),
-            const SliverToBoxAdapter(child: SizedBox(height: 10.0)),
+            const SliverToBoxAdapter(child: SizedBox(height: 5.0)),
             SliverToBoxAdapter(
               child: CarouselSlider(
                 items: [
@@ -141,7 +141,7 @@ class _GamesTabState extends State<GamesTab> {
                   _buildSuggestedCard(right: 16.0),
                 ],
                 options: CarouselOptions(
-                  height: 280.0,
+                  height: 250.0,
                   padEnds: false,
                   viewportFraction: 0.95,
                   autoPlay: true,
@@ -150,7 +150,7 @@ class _GamesTabState extends State<GamesTab> {
                 ),
               ),
             ),
-            const SliverToBoxAdapter(child: SizedBox(height: 16.0)),
+            const SliverToBoxAdapter(child: SizedBox(height: 8.0)),
             SliverToBoxAdapter(
               child: Constants.heading600(
                 title: 'You might like',
@@ -413,6 +413,7 @@ class _GamesTabState extends State<GamesTab> {
                   ),
                   Container(
                     height: 35.0,
+                    width: 80,
                     decoration: BoxDecoration(
                       gradient: const LinearGradient(
                         begin: Alignment.topCenter,
@@ -434,13 +435,10 @@ class _GamesTabState extends State<GamesTab> {
                             borderRadius: BorderRadius.circular(4.0),
                           ),
                         ),
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                          child: Text(
-                            'Play',
-                            style: AppTextStyles.normal600(
-                                fontSize: 15.0, color: AppColors.buttonColor1),
-                          ),
+                        child: Text(
+                          'Play',
+                          style: AppTextStyles.normal600(
+                              fontSize: 15.0, color: AppColors.buttonColor1),
                         ),
                       ),
                     ),

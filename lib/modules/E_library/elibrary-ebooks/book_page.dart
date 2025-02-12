@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
+import 'package:linkschool/modules/common/buttons/custom_elevated_appbar_button.dart';
 import 'package:linkschool/modules/common/buttons/custom_long_elevated_button.dart';
+import 'package:linkschool/modules/common/buttons/custom_medium_elevated_button.dart';
 import 'package:linkschool/modules/common/buttons/custom_outline_button..dart';
+import 'package:linkschool/modules/common/constants.dart';
 
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/E_library/elibrary-ebooks/bookScreen.dart';
@@ -18,20 +21,43 @@ class _MybookPageState extends State<MybookPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(
+        backgroundColor: AppColors.backgroundLight,
+        leading: Padding(
+          padding: const EdgeInsets.only(left: 16.0),
+          child: IconButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+            },
+            icon: Image.asset(
+              'assets/icons/arrow_back.png',
+              color: AppColors.primaryLight,
+              width: 34.0,
+              height: 34.0,
+            ),
+          ),
+        ),
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 16.0),
+            child: IconButton(
+              onPressed: () {},
+              icon: Icon(
+                Icons.bookmark_border,
+                size: 29,
+                color: AppColors.primaryLight,
+              ),
+            ),
+          )
+        ],
+      ),
       body: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            SizedBox(height: 50),
-            IconButton(
-              onPressed: () {
-                Navigator.pop(context);
-              },
-              icon: Icon(Icons.arrow_back),
-            ),
             Container(
               height: 404,
-              padding: EdgeInsets.only(top:8),
+              padding: EdgeInsets.only(top: 12),
               width: double.infinity,
               decoration: BoxDecoration(
                 gradient: LinearGradient(
@@ -54,7 +80,7 @@ class _MybookPageState extends State<MybookPage> {
                   Text(
                     'Purple Hibiscus',
                     style: AppTextStyles.normal600(
-                      fontSize: 24,
+                      fontSize: 26,
                       color: AppColors.bookText,
                     ),
                   ),
@@ -84,7 +110,7 @@ class _MybookPageState extends State<MybookPage> {
             ),
             SizedBox(height: 8),
             Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16),
+              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               child: Column(
                 children: [
                   Text(
@@ -100,16 +126,40 @@ class _MybookPageState extends State<MybookPage> {
                   SizedBox(height: 10),
                   Row(
                     children: [
-                      CustomButton(text: 'Literature'),
-                      SizedBox(width: 10),
-                      CustomButton(text: 'Based on a true story'),
+                      OutlinedButton(
+                        onPressed: () {},
+                        child: Text('Literature',style: AppTextStyles.normal500(fontSize: 16,color: AppColors.eLearningBtnColor1),),
+                        style: OutlinedButton.styleFrom(
+                          backgroundColor: AppColors.grayColor,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                           side: BorderSide(color: AppColors.eLearningBtnColor1),
+                        ),
+                      ),
+                       SizedBox(width: 12),
+                      OutlinedButton(
+                        onPressed: () {},
+                        child: Text('Based on a true story',style: AppTextStyles.normal500(fontSize: 16,color: AppColors.eLearningBtnColor1),),
+                        style: OutlinedButton.styleFrom(
+                          backgroundColor: AppColors.grayColor,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                           side: BorderSide(color: AppColors.eLearningBtnColor1),
+                        ),
+                      )
                     ],
                   ),
-                  SizedBox(height: 40),
+                  SizedBox(height: 20),
                   CustomLongElevatedButton(
                     text: 'Start Reading',
                     onPressed: () {
-                      Navigator.push(context, MaterialPageRoute(builder: (context) => BookScreen(),));
+                      Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => BookScreen(),
+                          ));
                     },
                     backgroundColor: AppColors.bgXplore3,
                     textStyle: AppTextStyles.normal500(
@@ -125,21 +175,24 @@ class _MybookPageState extends State<MybookPage> {
   }
 }
 
-class CustomButton extends StatelessWidget {
-  final String text;
+// class CustomButton extends StatelessWidget {
+//   final String text;
 
-  const CustomButton({
-    super.key,
-    required this.text,
-  });
+//   const CustomButton({
+//     super.key,
+//     required this.text,
+//   });
 
-  @override
-  Widget build(BuildContext context) {
-    return CustomOutlineButton(
-      onPressed: () {},
-      text: text,
-      borderColor: AppColors.cbtBorderColor2,
-      textColor: AppColors.bookText1,
-    );
-  }
-}
+//  @override
+// Widget build(BuildContext context) {
+//   return Padding(
+//     padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0), // Adjust padding
+//     child: CustomOutlineButton(
+//       onPressed: () {},
+//       text: text,
+//       borderColor: AppColors.cbtBorderColor2,
+//       textColor: AppColors.bookText1,
+//     ),
+//   );
+// }
+// }

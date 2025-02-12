@@ -4,6 +4,7 @@ import 'package:linkschool/modules/auth/login_screen.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
+import 'package:linkschool/routes/select_school.dart';
 import 'app_navigation_flow.dart';
 import 'package:introduction_screen/introduction_screen.dart';
 import 'package:smooth_page_indicator/smooth_page_indicator.dart';
@@ -93,7 +94,7 @@ class _OnboardingscreenState extends State<Onboardingscreen> {
                       if (onLastPage) ElevatedButton(
                     onPressed: () {
                       _pageController.nextPage(duration:Duration(milliseconds: 500), curve: Curves.easeIn);
-                      Navigator.push(context, MaterialPageRoute(builder: (context) =>  LoginScreen(onLoginSuccess: () {  },)));
+                      Navigator.push(context, MaterialPageRoute(builder: (context) =>  SelectSchool()));
                     },
                     child: Icon(
                       Icons.arrow_forward,

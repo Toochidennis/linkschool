@@ -3,11 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:linkschool/modules/E_library/e_library_dashbord.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
-
 import 'package:linkschool/modules/explore/explore_profile/explore_profileScreen.dart';
-
-// import 'package:linkschool/modules/explore/explore-profile/explore_profileScreen.dart';
-
 import '../../common/bottom_navigation_bar.dart';
 import '../../common/bottom_nav_item.dart';
 import 'explore_home.dart';
@@ -45,24 +41,22 @@ class _ExploreDashboardState extends State<ExploreDashboard> {
     _initializeBodyItems();
   }
 
-
-
-
   void _initializeBodyItems() {
-      _bodyItems = [
+    _bodyItems = [
       ExploreHome(
         onSearchIconVisibilityChanged: _onSearchIconVisibilityChanged,
       ),
       ExploreAdmission(
-      height: MediaQuery.of(context).size.height,
-       ),
-      ElibraryDashboard( height: MediaQuery.of(context).size.height,),
-     ProfileScreen(
+        height: MediaQuery.of(context).size.height,
+      ),
+      ElibraryDashboard(
+        height: MediaQuery.of(context).size.height,
+      ),
+      ProfileScreen(
         height: MediaQuery.of(context).size.height,
         color: Colors.blue,
       ),
     ];
-    
   }
 
   List<FABBottomAppBarItem> _buildAppBarItems() {
@@ -90,7 +84,6 @@ class _ExploreDashboardState extends State<ExploreDashboard> {
 
   @override
   Widget build(BuildContext context) {
-
     return Scaffold(
       key: const ValueKey('explore_dashboard'),
       appBar: AppBar(
@@ -109,7 +102,8 @@ class _ExploreDashboardState extends State<ExploreDashboard> {
             onPressed: () {},
             icon: SvgPicture.asset(
               'assets/icons/notifications.svg',
-              colorFilter: const ColorFilter.mode(Colors.white, BlendMode.srcIn),
+              colorFilter:
+                  const ColorFilter.mode(Colors.white, BlendMode.srcIn),
             ),
           )
         ],
@@ -122,8 +116,7 @@ class _ExploreDashboardState extends State<ExploreDashboard> {
         onTabSelected: widget.onTabSelected,
         onSwitch: widget.onSwitch,
         selectedIndex: widget.selectedIndex,
-      ),
-  
+    ),
     );
   }
 }

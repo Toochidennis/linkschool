@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
@@ -13,23 +14,11 @@ class _BookScreenState extends State<BookScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: AppColors.backgroundLight,
-                leading: IconButton(
-          onPressed: () {
-            Navigator.of(context).pop();
-          },
-          icon: Image.asset(
-            'assets/icons/arrow_back.png',
-            color: AppColors.backgroundLight,
-            width: 34.0,
-            height: 34.0,
-          ),
-        ),
+      appBar: Constants.customAppBar(
+        context: context,
       ),
-      body:  Container(
+      body: Container(
         decoration: Constants.customBoxDecoration(context),
-        
         child: SingleChildScrollView(
           child: Stack(
             children: [
@@ -57,7 +46,10 @@ class _BookScreenState extends State<BookScreen> {
                           children: [
                             RichText(
                               text: TextSpan(
-                                style: AppTextStyles.normal400L(fontSize: 16, color:AppColors.bookText,height:30/16 ),
+                                style: AppTextStyles.normal400L(
+                                    fontSize: 16,
+                                    color: AppColors.bookText,
+                                    height: 30 / 16),
                                 children: [
                                   TextSpan(
                                     text:
@@ -75,14 +67,11 @@ class _BookScreenState extends State<BookScreen> {
                             ),
                           ],
                         ),
-                      
                       ],
                     ),
                   )
                 ],
               ),
-      
-              
             ],
           ),
         ),
@@ -97,7 +86,7 @@ class BookProfileCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(left: 16,top: 8,right: 16,bottom: 16),
+      padding: const EdgeInsets.only(top: 8, right: 16, bottom: 16),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -111,7 +100,7 @@ class BookProfileCard extends StatelessWidget {
               ),
               SizedBox(height: 8),
               LinearPercentIndicator(
-                width: 114,
+                width: 130,
                 lineHeight: 5.0,
                 percent: 0.5,
                 barRadius: Radius.circular(16),
@@ -143,19 +132,39 @@ class BookProfileCard extends StatelessWidget {
                   ),
                 ),
                 SizedBox(height: 10),
-                BookButtons(),
-                SizedBox(height: 10),
-                ElevatedButton(
-                  onPressed: () {},
-                  style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.bookbutton,
-                      fixedSize: Size(150, 40),
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(20))),
-                  child: Text(
-                    'Go to first page',
-                    style: AppTextStyles.normal500(
-                        fontSize: 16, color: AppColors.buttontext1),
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 10),
+                  child: Row(
+                    children: [
+
+                       GestureDetector(
+                        onTap: () {},
+                        child:
+                            SvgPicture.asset('assets/icons/download_icon.svg'),
+                      ),
+                       SizedBox(width: 10),
+                      GestureDetector(
+                        onTap: () {},
+                        child: SvgPicture.asset('assets/icons/Shareicon.svg'),
+                      ),
+                     
+                     
+                    ],
+                  ),
+                ),
+                Container(
+                  height: 34,
+                  child: ElevatedButton(
+                    onPressed: () {},
+                    style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.bookbutton,
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(40))),
+                    child: Text(
+                      'Go to first page',
+                      style: AppTextStyles.normal500(
+                          fontSize: 16, color: AppColors.buttontext1),
+                    ),
                   ),
                 )
               ],
@@ -167,34 +176,34 @@ class BookProfileCard extends StatelessWidget {
   }
 }
 
-class BookButtons extends StatelessWidget {
-  const BookButtons({super.key});
+// class BookButtons extends StatelessWidget {
+//   const BookButtons({super.key});
 
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        ElevatedButton(
-          onPressed: () {},
-          style: ElevatedButton.styleFrom(
-              shape: CircleBorder(),
-             fixedSize: Size(50, 50),
-              backgroundColor: AppColors.bookButton,
-              padding: EdgeInsets.all(16)),
-          child: Image(image: AssetImage('assets/icons/download-icon.png'),height: 26,width: 26,),
-        ),
-        SizedBox(width: 10),
-        ElevatedButton(
-          onPressed: () {},
-          style: ElevatedButton.styleFrom(
-          
-              shape: CircleBorder(),
-              backgroundColor: AppColors.bookButton,
-              fixedSize: Size(50, 50),
-              padding: EdgeInsets.all(16)),
-          child: Image(image: AssetImage('assets/icons/shareicon.png'),height: 24,width: 24,),
-        ),
-      ],
-    );
-  }
-}
+//   @override
+//   Widget build(BuildContext context) {
+//     return Row(
+//       children: [
+//         ElevatedButton(
+//           onPressed: () {},
+//           style: ElevatedButton.styleFrom(
+//               shape: CircleBorder(),
+//              fixedSize: Size(50, 50),
+//               backgroundColor: AppColors.bookButton,
+//               padding: EdgeInsets.all(16)),
+//           child: Image(image: AssetImage('assets/icons/download-icon.png'),height: 26,width: 26,),
+//         ),
+//         SizedBox(width: 10),
+//         ElevatedButton(
+//           onPressed: () {},
+//           style: ElevatedButton.styleFrom(
+
+//               shape: CircleBorder(),
+//               backgroundColor: AppColors.bookButton,
+//               fixedSize: Size(50, 50),
+//               padding: EdgeInsets.all(16)),
+//           child: Image(image: AssetImage('assets/icons/shareicon.png'),height: 24,width: 24,),
+//         ),
+//       ],
+//     );
+//   }
+// }

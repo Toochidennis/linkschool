@@ -252,4 +252,19 @@ class AppColors {
   static const Color bookText2 = Color.fromRGBO(255, 255, 255, 1);
   static const Color bookbutton = Color.fromRGBO(218, 218, 218, 1);
   static const Color buttontext1 = Color.fromRGBO(105, 105, 105, 1);
+
+  // exam colors
+  static const Color examCard = Color.fromRGBO(253, 253, 255, 1);
+  static const Color ebookCard = Color.fromRGBO(224, 224, 224, 1);
+  static const Color examCardText = Color.fromRGBO(0, 0, 0, 1);
+
+  static const Color examCardButton = Color.fromRGBO(30, 136, 229, 1);
+  static const Color ebookCart = Color.fromRGBO(18, 7, 123, 1);
+
+  // cbt dialog colors
+  static const Color cbtDialogTitle = Color.fromRGBO(26, 26, 26, 1);
+  static const Color cbtDialogText = Color.fromRGBO(105, 99, 99, 1);
+  static const Color cbtDialogBorder = Color.fromRGBO(212, 38, 32, 1);
+  static const Color cbtDialogButton = Color.fromRGBO(56, 169, 94, 1);
+  static const Color cbtText = Color.fromRGBO(107, 20, 255, 1);
 }

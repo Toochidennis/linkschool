@@ -1,8 +1,6 @@
-
 import 'package:flutter/material.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/buttons/custom_long_elevated_button.dart';
-
 import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 
@@ -55,7 +53,29 @@ class _GameDetailsState extends State<GameDetails> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: Constants.customAppBar(context: context,title: 'Hakuna Matata',showBackButton: true),
+      appBar: AppBar(
+        backgroundColor: AppColors.backgroundLight,
+        leading: Padding(
+          padding: const EdgeInsets.only(left: 16.0),
+          child: IconButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+            },
+            icon: Image.asset(
+              'assets/icons/arrow_back.png',
+              color: AppColors.primaryLight,
+              width: 34.0,
+              height: 34.0,
+            ),
+          ),
+        ),
+        title: Center(
+            child: Text(
+          'Hakuna Matata',
+          style: AppTextStyles.normal600(
+              fontSize: 20, color: AppColors.primaryLight),
+        )),
+      ),
       body: SingleChildScrollView(
         child: Column(
           children: [
@@ -72,38 +92,81 @@ class _GameDetailsState extends State<GameDetails> {
             ),
             const SizedBox(height: 10),
             Padding(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     'Hakuna Matata King Saga',
-                    style: AppTextStyles.normal600(fontSize: 20, color: AppColors.gametitle),
+                    style: AppTextStyles.normal600(
+                        fontSize: 20, color: AppColors.gametitle),
                   ),
                   const Text(
                     'May contain ads and In-app purchases',
                     style: TextStyle(fontSize: 12, color: Colors.grey),
                   ),
                   const SizedBox(height: 20),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      
-                      reviewText(
-                        image: 'assets/icons/gamesicon/stars.png',
-                        reviews: '4.5',
-                        reviewDes: '1k reviews',
-                      ),
-                      reviewText(
-                        image: 'assets/icons/gamesicon/stars.png',
-                        reviewDes: '156 MB',
-                      ),
-                      reviewText(
-                        image:'assets/icons/gamesicon/+12.png',
-                        reviewDes: 'Rated for 12+',
-                      ),
+                  Container(
+                    height: 31,
+                    child: ListView(
+                      scrollDirection: Axis.horizontal,
+                      children: [
+                   
+                        reviewText(
+                          image: 'assets/icons/gamesicon/stars.png',
+                          reviews: '4.5',
+                          reviewDes: '1k reviews',
+                        ),
+                        const SizedBox(height: 20),
+                        Padding(
+                          padding: const EdgeInsets.only(left: 32.0,right: 32.0),
+                          child: Container(
+                            width: 2,
+                            decoration: BoxDecoration(
+                              color: AppColors.attCheckColor1,
+                            ),
+                          ),
+                        ),
+                        //  SizedBox(width: 20),
+                        reviewText(
+                          image: 'assets/icons/gamesicon/downloading.png',
+                          reviewDes: '156 MB',
+                        ),
+                        const SizedBox(height: 20),
+                        Padding(
+                          padding: const EdgeInsets.only(left: 32.0,right: 32.0),
+                          child: Container(
+                            width: 2,
+                            height: 2,
+                            decoration: BoxDecoration(
 
-                    ],
+                            color: AppColors.attCheckColor1,
+                          ),
+                        ),),
+
+                         
+                        reviewText(
+                          image: 'assets/icons/gamesicon/+12.png',
+                          reviewDes: 'downloads',
+                        ),
+                        
+                       Padding(
+                          padding: const EdgeInsets.only(left: 32.0,right: 32.0),
+                          child: Container(
+                            width: 2,
+                            decoration: BoxDecoration(
+                              color: AppColors.attCheckColor1,
+                            ),
+                          ),
+                        ),
+
+                     
+                        reviewText(
+                          image: 'assets/icons/gamesicon/+12.png',
+                          reviewDes: 'Rated for 12+',
+                        )
+                      ],
+                    ),
                   ),
                   SizedBox(
                     height: 20,
@@ -112,11 +175,12 @@ class _GameDetailsState extends State<GameDetails> {
                     text: 'Play now',
                     onPressed: () {},
                     backgroundColor: AppColors.bgXplore3,
-                    textStyle: AppTextStyles.normal500(
+                    borderRadius: 32.0,
+                    textStyle: AppTextStyles.normal600(
                         fontSize: 16, color: AppColors.assessmentColor1),
                   ),
                   SizedBox(
-                    height: 50,
+                    height: 20,
                   ),
                   Container(
                     child: Column(
@@ -127,10 +191,14 @@ class _GameDetailsState extends State<GameDetails> {
                           style: AppTextStyles.normal600(
                               fontSize: 16, color: AppColors.gametitle),
                         ),
-                        Text(
-                          'Benedict Timothy Carlton Cumberbatch CBE (born 19 July 1976) is an English actor. A graduate of the Victoria.',
-                          style: AppTextStyles.normal500(
-                              fontSize: 16, color: AppColors.gameText),
+                        Padding(
+                          padding: const EdgeInsets.only(top: 10),
+                          child: Text(
+                            'Benedict Timothy Carlton Cumberbatch CBE (born 19 July 1976) is an English actor. A graduate of the Victoria.',
+
+                            style: AppTextStyles.normal500(
+                                fontSize: 16, color: AppColors.gameText),
+                          ),
                         ),
                       ],
                     ),
@@ -160,27 +228,31 @@ class _GameDetailsState extends State<GameDetails> {
                           ],
                         ),
                       ),
-                      SizedBox(
-                        height: 20,
-                      ),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          
-                           Text('Games you may like',
-                          style: AppTextStyles.normal700(
-                            fontSize: 16,
-                            color: AppColors.gametitle,
-                          )),
-                          Container(
-                            height: 300,
-                            child: ListView.builder(
-                              physics: NeverScrollableScrollPhysics(),
-                              itemCount: likes.length,
-                              itemBuilder: (context, index) => likes[index],
+                      Padding(
+                        padding: const EdgeInsets.only(
+                          top: 20.0,
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Padding(
+                              padding: const EdgeInsets.only(bottom: 10),
+                              child: Text('you Might like',
+                                  style: AppTextStyles.normal500(
+                                    fontSize: 16,
+                                    color: AppColors.gametitle,
+                                  )),
                             ),
-                          ),
-                        ],
+                            Container(
+                              height: 400,
+                              child: ListView.builder(
+                                physics: NeverScrollableScrollPhysics(),
+                                itemCount: likes.length,
+                                itemBuilder: (context, index) => likes[index],
+                              ),
+                            ),
+                          ],
+                        ),
                       )
                     ],
                   )
@@ -228,18 +300,17 @@ Widget reviewText({
     crossAxisAlignment: CrossAxisAlignment.center,
     children: [
       Row(
-        
-        mainAxisSize: MainAxisSize.min,
         children: [
           if (reviews != null)
             Text(reviews,
-                style: AppTextStyles.normal500(fontSize:12, color:AppColors.gametitle)
-            ),
-        
-          Image.asset(image, width: 24, height: 24),
+                style: AppTextStyles.normal500(
+                    fontSize: 12, color: AppColors.gametitle)),
+          Image.asset(image, width: 16, height: 16),
         ],
       ),
-      Text(reviewDes,  style: AppTextStyles.normal500(fontSize:12, color:AppColors.gametitle)),
+      Text(reviewDes,
+          style: AppTextStyles.normal500(
+              fontSize: 12, color: AppColors.gametitle)),
     ],
   );
 }
@@ -337,6 +408,7 @@ Widget _buildYouMightLikeCard({
                 ),
                 Container(
                   height: 32.0,
+                  width: 80,
                   decoration: BoxDecoration(
                     gradient: const LinearGradient(
                       begin: Alignment.topCenter,
@@ -358,13 +430,10 @@ Widget _buildYouMightLikeCard({
                           borderRadius: BorderRadius.circular(4.0),
                         ),
                       ),
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                        child: Text(
-                          'Play',
-                          style: AppTextStyles.normal600(
-                              fontSize: 14.0, color: AppColors.buttonColor1),
-                        ),
+                      child: Text(
+                        'Play',
+                        style: AppTextStyles.normal600(
+                            fontSize: 14.0, color: AppColors.buttonColor1),
                       ),
                     ),
                   ),
