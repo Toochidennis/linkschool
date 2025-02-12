@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:linkschool/modules/E_library/e_library_dashbord.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
+import 'package:linkschool/modules/explore/aiScreen/ai_screen.dart';
 import 'package:linkschool/modules/explore/explore_profile/explore_profileScreen.dart';
 import '../../common/bottom_navigation_bar.dart';
 import '../../common/bottom_nav_item.dart';
@@ -52,9 +53,9 @@ class _ExploreDashboardState extends State<ExploreDashboard> {
       ElibraryDashboard(
         height: MediaQuery.of(context).size.height,
       ),
-      ProfileScreen(
-        height: MediaQuery.of(context).size.height,
-        color: Colors.blue,
+      AiScreen(
+        // height: MediaQuery.of(context).size.height,
+        // color: Colors.blue,
       ),
     ];
   }
@@ -76,8 +77,8 @@ class _ExploreDashboardState extends State<ExploreDashboard> {
         height: 25.0,
       ),
       createBottomNavIcon(
-        imagePath: 'assets/icons/settings.svg',
-        text: 'Settings',
+        imagePath: 'assets/icons/Ai-cion.svg',
+        text: 'Ai',
       ),
     ];
   }
