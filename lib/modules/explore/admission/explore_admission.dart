@@ -83,26 +83,25 @@ class _ExploreAdmissionState extends State<ExploreAdmission> {
                             ),
                             CarouselSlider(
                               items: [
-                                // _SchoolsCard(
-                                //   context: context,
-                                //   schoolName: 'Daughters Of Divine Love',
-                                //   formPrice: '₦10,000.00',
-                                //   admissionStatus: 'Open',
-                                // ),
-                                // _TopSchoolsCard(
-                                //   context: context,
-                                //   schoolName: 'Another School',
-                                //   formPrice: '₦10,000.00',
-                                //   admissionStatus: 'Closed',
-                                // ),
+                                _SchoolCard(
+                                    context: context,
+                                    schoolName: 'Daughters Of Divine Love',
+                                    formPrice: '₦10,000.00',
+                                    admissionStatus: 'Closed'),
+                                _SchoolCard(
+                                    context: context,
+                                    schoolName: 'Daughters Of Divine Love',
+                                    formPrice: '₦10,000.00',
+                                    admissionStatus: 'Closed')
                               ],
                               options: CarouselOptions(
                                 height: 220.0,
-                                viewportFraction:0.8,
-                                padEnds: true,
+                                viewportFraction: 0.8,
+                                padEnds: false,
                                 autoPlay: true,
                                 enableInfiniteScroll: false,
                                 scrollDirection: Axis.horizontal,
+                                
                               ),
                             ),
                             SizedBox(
@@ -409,16 +408,15 @@ Widget _SchoolCard({
     child: Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.start,
         children: [
-          _SchoolImage(),
+          _TopSchoolImage(),
           const SizedBox(height: 5),
-          Padding(
-            padding: const EdgeInsets.only(left: 20),
-            child: _SchoolDescription(
-              schoolName: schoolName,
-              formPrice: formPrice,
-              admissionStatus: admissionStatus,
-            ),
+          _TopSchoolDescription(
+            schoolName: schoolName,
+            formPrice: formPrice,
+            admissionStatus: admissionStatus,
           ),
         ],
       ),
@@ -426,17 +424,13 @@ Widget _SchoolCard({
   );
 }
 
-
-
-
-
 Widget _TopSchoolImage() {
   return ClipRRect(
     child: Image.asset(
       'assets/images/explore-images/schools-in-Nigeria.jpg',
       fit: BoxFit.cover,
       height: 123,
-      width: 328,
+      width: 244,
     ),
   );
 }
@@ -464,7 +458,7 @@ Widget _TopSchoolDescription({
     padding: const EdgeInsetsDirectional.all(10.0),
     child: Row(
       children: [
-        _SchoolLogoImage(),
+        _TopSchoolLogoImage(),
         const SizedBox(width: 16),
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -500,7 +494,6 @@ Widget _TopSchoolDescription({
     ),
   );
 }
-
 
 // Reusable Widget: Based on Searches
 Widget _BasedOnSearches({

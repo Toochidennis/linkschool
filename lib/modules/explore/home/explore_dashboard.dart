@@ -54,9 +54,9 @@ class _ExploreDashboardState extends State<ExploreDashboard> {
         height: MediaQuery.of(context).size.height,
       ),
       AiScreen(
-        // height: MediaQuery.of(context).size.height,
-        // color: Colors.blue,
-      ),
+          // height: MediaQuery.of(context).size.height,
+          // color: Colors.blue,
+          ),
     ];
   }
 
@@ -92,20 +92,41 @@ class _ExploreDashboardState extends State<ExploreDashboard> {
         backgroundColor: AppColors.paymentTxtColor1,
         title: SvgPicture.asset('assets/icons/linkskool-logo.svg'),
         actions: [
-          if (!_showSearchIcon)
-            IconButton(
-              icon: const Icon(Icons.search, color: Colors.white),
-              onPressed: () {
-                // Handle search action
-              },
-            ),
-          IconButton(
-            onPressed: () {},
-            icon: SvgPicture.asset(
-              'assets/icons/notifications.svg',
-              colorFilter:
-                  const ColorFilter.mode(Colors.white, BlendMode.srcIn),
-            ),
+          Row(
+            children: [
+              if (!_showSearchIcon)
+                IconButton(
+                  icon: const Icon(Icons.search, color: Colors.white),
+                  onPressed: () {
+                    // Handle search action
+                  },
+                ),
+              IconButton(
+                onPressed: () {},
+                icon: SvgPicture.asset(
+                  'assets/icons/notifications.svg',
+                  colorFilter:
+                      const ColorFilter.mode(Colors.white, BlendMode.srcIn),
+                ),
+              ),
+              IconButton(
+                onPressed: () {
+                  Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) =>ProfileScreen(
+                          height: MediaQuery.of(context).size.height,
+                          color: Colors.white,
+                        ),
+                      ));
+                },
+                icon: SvgPicture.asset(
+                  'assets/icons/notifications.svg',
+                  colorFilter:
+                      const ColorFilter.mode(Colors.white, BlendMode.srcIn),
+                ),
+              )
+            ],
           )
         ],
         elevation: 0,
@@ -117,7 +138,7 @@ class _ExploreDashboardState extends State<ExploreDashboard> {
         onTabSelected: widget.onTabSelected,
         onSwitch: widget.onSwitch,
         selectedIndex: widget.selectedIndex,
-    ),
+      ),
     );
   }
 }
