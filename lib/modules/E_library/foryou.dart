@@ -138,31 +138,31 @@ class _ForYouScreenState extends State<ForYouScreen> {
                         child: FittedBox(
                             child: Text('For you',
                                 style:
-                                    AppTextStyles.normal600(fontSize: 14))),
+                                    AppTextStyles.normal600(fontSize: 14, color: AppColors.text2Light))),
                       ),
                       Tab(
                         child: FittedBox(
                             child: Text('CBT',
                                 style:
-                                    AppTextStyles.normal600(fontSize: 14))),
+                                    AppTextStyles.normal600(fontSize: 14, color: AppColors.text2Light))),
                       ),
                       Tab(
                         child: FittedBox(
                             child: Text('E-books',
                                 style:
-                                    AppTextStyles.normal600(fontSize: 14))),
+                                    AppTextStyles.normal600(fontSize: 14, color: AppColors.text2Light))),
                       ),
                       Tab(
                         child: FittedBox(
                             child: Text('Games',
                                 style:
-                                    AppTextStyles.normal600(fontSize: 14))),
+                                    AppTextStyles.normal600(fontSize: 14, color: AppColors.text2Light))),
                       ),
                       Tab(
                         child: Flexible(
                             child: Text('Videos',
                                 style:
-                                    AppTextStyles.normal600(fontSize: 14))),
+                                    AppTextStyles.normal600(fontSize: 14, color: AppColors.text2Light))),
                       ),
                     ]),
                 Expanded(

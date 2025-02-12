@@ -66,7 +66,7 @@ class AppTextStyles {
 
   static TextStyle normal600({
     required double fontSize,
-    Color? color,
+    required Color color,
   }) {
     return TextStyle(
       fontSize: fontSize,
@@ -76,6 +76,7 @@ class AppTextStyles {
 
     );
   }
+
   static TextStyle normal600L({
     required double fontSize,
     required Color color,

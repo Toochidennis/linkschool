@@ -58,7 +58,7 @@ class _ELibSubjectDetailState extends State<ELibSubjectDetail> {
                     ),
                   ),
                   child: SingleChildScrollView(
-                    padding: EdgeInsets.all(16),
+                    padding: EdgeInsets.only(left: 16, right: 16, top: 16),
                     scrollDirection: Axis.vertical,
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -73,12 +73,12 @@ class _ELibSubjectDetailState extends State<ELibSubjectDetail> {
                               fontSize: 20, color: AppColors.aboutTitle),
                         ),
                         Column(
-                          mainAxisAlignment: MainAxisAlignment.start,
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          // mainAxisAlignment: MainAxisAlignment.start,
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Row(
                                 mainAxisAlignment: MainAxisAlignment.start,
-                                crossAxisAlignment: CrossAxisAlignment.start,
+                                // crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Icon(
                                     Icons.access_time,
@@ -119,7 +119,7 @@ class _ELibSubjectDetailState extends State<ELibSubjectDetail> {
                           height: 10,
                         ),
                         Column(
-                          // mainAxisAlignment: MainAxisAlignment.start,
+                          mainAxisAlignment: MainAxisAlignment.start,
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
@@ -141,15 +141,16 @@ class _ELibSubjectDetailState extends State<ELibSubjectDetail> {
                         DefaultTabController(
                           length: 2,
                           child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisAlignment: MainAxisAlignment.start,
                             children: [
                               TabBar(
                                 isScrollable: true,
                                 tabAlignment: TabAlignment.start,
                                 labelColor: AppColors.bgBorder,
-                                unselectedLabelColor: AppColors.assessmentColor2,
+                                unselectedLabelColor:
+                                    AppColors.assessmentColor2,
                                 indicatorColor: AppColors.bgBorder,
-                
-
                                 tabs: const [
                                   Tab(
                                     text: 'Lessons(28)',
@@ -163,10 +164,86 @@ class _ELibSubjectDetailState extends State<ELibSubjectDetail> {
                                 height: 300, // Adjust height as needed
                                 child: TabBarView(
                                   children: [
-                                    // Lessons tab content
-                                    Center(child: Text('Lessons Content')),
+                                    Expanded(
+                                      child: ListView(
+                                        scrollDirection: Axis.vertical,
+                                        children: [
+                                          Padding(
+                                            padding: const EdgeInsets.only(
+                                                top: 4, bottom: 4),
+                                            child: Container(
+                                              child: Text(
+                                                'Elementary',
+                                                style: AppTextStyles.normal500(
+                                                    fontSize: 14,
+                                                    color: AppColors
+                                                        .assessmentColor2),
+                                              ),
+                                            ),
+                                          ),
+                                          subjectDetails(),
+                                          SizedBox(
+                                            height: 10,
+                                          ),
+                                          subjectDetails(),
+                                          SizedBox(
+                                            height: 10,
+                                          ),
+                                          subjectDetails(),
+                                          SizedBox(
+                                            height: 10,
+                                          ),
+                                          subjectDetails(),
+                                          SizedBox(
+                                            height: 10,
+                                          ),
+                                          subjectDetails(),
+                                          SizedBox(
+                                            height: 10,
+                                          ),
+                                          subjectDetails(),
+                                          SizedBox(
+                                            height: 20,
+                                          ),
+                                          Container(
+                                            child: Text(
+                                              'Junior Secondary',
+                                              style: AppTextStyles.normal500(
+                                                  fontSize: 14,
+                                                  color: AppColors
+                                                      .assessmentColor2),
+                                            ),
+                                          ),
+                                          subjectDetails(),
+                                          SizedBox(
+                                            height: 10,
+                                          ),
+                                          subjectDetails(),
+                                          SizedBox(
+                                            height: 10,
+                                          ),
+                                          subjectDetails(),
+                                          SizedBox(
+                                            height: 10,
+                                          ),
+                                          subjectDetails(),
+                                          SizedBox(
+                                            height: 10,
+                                          ),
+                                          subjectDetails(),
+                                          SizedBox(
+                                            height: 10,
+                                          ),
+                                          subjectDetails(),
+                                          SizedBox(
+                                            height: 200,
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+
                                     // Reviews tab content
-                                    Center(child: Text('Reviews Content')),
+                                    Expanded(child: Text(paratext)),
                                   ],
                                 ),
                               ),
@@ -179,5 +256,86 @@ class _ELibSubjectDetailState extends State<ELibSubjectDetail> {
         ],
       ),
     ));
+  }
+}
+
+class subjectDetails extends StatelessWidget {
+  const subjectDetails({
+    super.key,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 4, right: 12, left: 4),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+              mainAxisAlignment: MainAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  height: 40,
+                  width: 40,
+                  decoration: BoxDecoration(
+                    color: AppColors.bgColor3,
+                    borderRadius: BorderRadius.circular(50),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(10),
+                    child: Text(
+                      '02',
+                      style: AppTextStyles.normal500(
+                          fontSize: 14, color: AppColors.aboutTitle),
+                    ),
+                  ),
+                ),
+                SizedBox(
+                  width: 20,
+                ),
+                Column(
+                    mainAxisAlignment: MainAxisAlignment.start,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Improper Fraction',
+                            style: AppTextStyles.normal600(
+                                fontSize: 14.0,
+                                color: AppColors.admissionTitle),
+                          ),
+                          Column(children: [
+                            Text(
+                              '02:57:00',
+                              style: AppTextStyles.normal600(
+                                  fontSize: 12.0,
+                                  color: AppColors.admissionTitle),
+                            )
+                          ]),
+                        ],
+                      ),
+                    ]),
+                SizedBox(
+                  width: 80,
+                ),
+                Container(
+                  child: Icon(
+                    Icons.play_circle_fill_rounded,
+                    color: AppColors.bgBorder,
+                    size: 30,
+                  ),
+                )
+              ]),
+          Divider(
+            color: AppColors.attBorderColor1,
+            height: 10,
+          )
+        ],
+      ),
+    );
   }
 }
