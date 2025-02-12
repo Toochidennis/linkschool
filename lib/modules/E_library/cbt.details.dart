@@ -81,48 +81,60 @@ class _CbtDetailScreenState extends State<CbtDetailScreen> {
                 children: [
                    Row(
                      children: [
-                       Text('Year :'),
-                       Text('$selectedYear'),
+                       Text('Year :',style: AppTextStyles.normal500(fontSize: 16, color: AppColors.libtitle),),
+                       Text('$selectedYear',style: AppTextStyles.normal500(fontSize: 16, color:AppColors.text3Light)),
                      ],
                    ),
-                    DropdownButton<String>(
-                    
-                    items: years.map((int year) {
-                      return DropdownMenuItem<String>(
-                        value: year.toString(),
-                        child: Text(year.toString()),
-                      );
-                    }).toList(),
-                    onChanged: (String? value) {
-                      setState(() {
-                        selectedYear = value;
-                      });
-                    },
-                  ),
+                    Padding(
+                      padding: const EdgeInsets.only(right: 16.0),
+                      child: DropdownButton<String>(
+                      items: years.map((int year) {
+                        return DropdownMenuItem<String>(
+                          value: year.toString(),
+
+                          child: Text(year.toString()),
+                        );
+                      }).toList(),
+                      onChanged: (String? value) {
+                        setState(() {
+                          selectedYear = value;
+                        });
+                      },
+                                        ),
+                    ),
                 ],
               ),
                 Divider(),
 
-                Row(
-                  children: [
-                    Text('Duration :'),
-                    Text('2hrs 30 minutes'),
-                  ],
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 16.0),
+                  child: Row(
+                    children: [
+                      Text('Duration :',style: AppTextStyles.normal500(fontSize: 16,   color: AppColors.libtitle),),
+                      Text('2hrs 30 minutes',style: AppTextStyles.normal500(fontSize: 16, color:AppColors.text3Light)),
+                    ],
+                  ),
                 ),
                 Divider(),
 
-                Row(
-                  children: [
-                    Text('Instructions :'),
-                    Text('Answer all questions'),
-                  ],
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 16.0),
+                  child: Row(
+                    children: [
+                      Text('Instructions :',style: AppTextStyles.normal500(fontSize: 16,   color: AppColors.libtitle)),
+                      Text('Answer all questions',style: AppTextStyles.normal500(fontSize: 16, color:AppColors.text3Light)),
+                    ],
+                  ),
                 ),
                   Divider(),
-                CustomLongElevatedButton(
-                  text: 'Start Exam',
-                  onPressed:() => Navigator.push(context, MaterialPageRoute(builder: (context) => TestScreen())),
-                  backgroundColor: AppColors.bookText1,
-                  textStyle: AppTextStyles.normal500(fontSize: 18.0, color: AppColors.bookText2 ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical:8.0),
+                  child: CustomLongElevatedButton(
+                    text: 'Start Exam',
+                    onPressed:() => Navigator.push(context, MaterialPageRoute(builder: (context) => TestScreen())),
+                    backgroundColor: AppColors.bookText1,
+                    textStyle: AppTextStyles.normal500(fontSize: 18.0, color: AppColors.bookText2 ),
+                  ),
                 )
               
             ],

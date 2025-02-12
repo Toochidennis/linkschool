@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:linkschool/modules/E_library/elibrary-ebooks/fullpage.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
@@ -136,26 +137,26 @@ class BookProfileCard extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(vertical: 10),
                   child: Row(
                     children: [
-
-                       GestureDetector(
+                      GestureDetector(
                         onTap: () {},
                         child:
                             SvgPicture.asset('assets/icons/download_icon.svg'),
                       ),
-                       SizedBox(width: 10),
+                      SizedBox(width: 10),
                       GestureDetector(
                         onTap: () {},
                         child: SvgPicture.asset('assets/icons/Shareicon.svg'),
                       ),
-                     
-                     
                     ],
                   ),
                 ),
                 Container(
                   height: 34,
                   child: ElevatedButton(
-                    onPressed: () {},
+                    onPressed: () {
+                      Navigator.push(context,
+                          MaterialPageRoute(builder: (context) => FullPage()));
+                    },
                     style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.bookbutton,
                         shape: RoundedRectangleBorder(

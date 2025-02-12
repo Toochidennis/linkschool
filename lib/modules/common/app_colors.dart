@@ -268,5 +268,6 @@ class AppColors {
   static const Color cbtDialogButton = Color.fromRGBO(56, 169, 94, 1);
   static const Color cbtText = Color.fromRGBO(107, 20, 255, 1);
   // ai Screen
-  static const Color  aicircle = Color.fromRGBO(0, 61, 245, 1);
+  static const Color aicircle = Color.fromRGBO(0, 61, 245, 1);
+  static const Color aitext = Color.fromRGBO(102, 112, 133, 1);
 }

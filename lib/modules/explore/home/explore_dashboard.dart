@@ -77,8 +77,8 @@ class _ExploreDashboardState extends State<ExploreDashboard> {
         height: 25.0,
       ),
       createBottomNavIcon(
-        imagePath: 'assets/icons/settings.svg',
-        text: 'Settings',
+        imagePath: 'assets/icons/Ai-cion.svg',
+        text: 'Ai',
       ),
     ];
   }
