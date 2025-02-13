@@ -6,7 +6,18 @@ import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 
 class CbtDetailScreen extends StatefulWidget {
-  const CbtDetailScreen({super.key});
+  final int year;
+  final String subject;
+  final String subjectIcon;
+  final Color cardColor;
+
+  const CbtDetailScreen({
+    super.key,
+    required this.year,
+    required this.subject,
+    required this.subjectIcon,
+    required this.cardColor,
+  });
 
   @override
   State<CbtDetailScreen> createState() => _CbtDetailScreenState();
@@ -17,11 +28,26 @@ class _CbtDetailScreenState extends State<CbtDetailScreen> {
   Widget? selectedSubject;
 
   final List<Widget> subjectList = [
-    subjects(subjectName: 'Mathematics', subjectIcon: 'maths', subjectColor: AppColors.cbtCardColor1),
-    subjects(subjectName: 'English Language', subjectIcon: 'english', subjectColor: AppColors.cbtCardColor2),
-    subjects(subjectName: 'Chemistry', subjectIcon: 'chemistry', subjectColor: AppColors.cbtCardColor3),
-    subjects(subjectName: 'Physics', subjectIcon: 'physics', subjectColor: AppColors.cbtCardColor4),
-    subjects(subjectName: 'Biology', subjectIcon: 'biology', subjectColor: AppColors.cbtCardColor5),
+    subjects(
+        subjectName: 'Mathematics',
+        subjectIcon: 'maths',
+        subjectColor: AppColors.cbtCardColor1),
+    subjects(
+        subjectName: 'English Language',
+        subjectIcon: 'english',
+        subjectColor: AppColors.cbtCardColor2),
+    subjects(
+        subjectName: 'Chemistry',
+        subjectIcon: 'chemistry',
+        subjectColor: AppColors.cbtCardColor3),
+    subjects(
+        subjectName: 'Physics',
+        subjectIcon: 'physics',
+        subjectColor: AppColors.cbtCardColor4),
+    subjects(
+        subjectName: 'Biology',
+        subjectIcon: 'biology',
+        subjectColor: AppColors.cbtCardColor5),
   ];
 
   final List<int> years = [
@@ -58,18 +84,17 @@ class _CbtDetailScreenState extends State<CbtDetailScreen> {
                 children: List.generate(
                     5,
                     (index) => GestureDetector(
-                      onTap: () {
-                        Navigator.pop(context);
-                        setState(() {
-                          selectedSubject = subjectList[index];
-                        });
-                      },
-                      
-                      child: Padding(
+                          onTap: () {
+                            Navigator.pop(context);
+                            setState(() {
+                              selectedSubject = subjectList[index];
+                            });
+                          },
+                          child: Padding(
                             padding: const EdgeInsets.symmetric(vertical: 10),
                             child: subjectList[index],
                           ),
-                    )),
+                        )),
               ),
             );
           },
@@ -110,7 +135,7 @@ class _CbtDetailScreenState extends State<CbtDetailScreen> {
                         style: AppTextStyles.normal500(
                             fontSize: 16, color: AppColors.libtitle),
                       ),
-                      Text('$selectedYear',
+                      Text(widget.year.toString(),
                           style: AppTextStyles.normal500(
                               fontSize: 16, color: AppColors.text3Light)),
                     ],
