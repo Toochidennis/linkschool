@@ -122,7 +122,7 @@ class _E_CBTDashboardState extends State<E_CBTDashboard> {
                           padding: const EdgeInsets.fromLTRB(8, 4, 8, 4),
                           child: GestureDetector(
                             onTap: () {
-                              _yearDialog(context);
+                             
                               setState(() {
                                 selectedexamCategoriesIndex = index;
                               });
@@ -202,11 +202,16 @@ class _E_CBTDashboardState extends State<E_CBTDashboard> {
               delegate: SliverChildBuilderDelegate(
                 (context, index) {
                   final item = subjectItems[index];
-                  return _buildChooseSubjectCard(
-                    subject: item.subject,
-                    year: item.year,
-                    cardColor: item.cardColor,
-                    subjectIcon: item.subjectIcon,
+                  return GestureDetector(
+                    onTap: () {
+                      _yearDialog(context);
+                    },
+                    child: _buildChooseSubjectCard(
+                      subject: item.subject,
+                      year: item.year,
+                      cardColor: item.cardColor,
+                      subjectIcon: item.subjectIcon,
+                    ),
                   );
                 },
                 childCount: subjectItems.length,
@@ -405,7 +410,6 @@ void _yearDialog(BuildContext context) {
                     ),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8.0),
-                      
                       side: BorderSide(color: AppColors.cbtDialogBorder,width: 1.0),
                     ),
                   ),
@@ -414,7 +418,14 @@ void _yearDialog(BuildContext context) {
                     minWidth: 156,
                     color: AppColors.cbtDialogButton,
                     onPressed: () {
-                      Navigator.push(context, MaterialPageRoute(builder: (context) => CbtDetailScreen()));
+                     if(selectedYear != null){
+                      Navigator.pop(context);
+                      Navigator.push(context, MaterialPageRoute(builder: (context) => CbtDetailScreen(
+                        year: selectedYear!, subject: 'Mathematics',
+                        subjectIcon: 'maths',
+                        cardColor: AppColors.cbtCardColor1,
+                      )));
+                     }
                     },
                     child: Text(
                       'Confirm',

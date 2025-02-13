@@ -101,7 +101,7 @@ class _newCbtScreenState extends State<newCbtScreen> {
       ),
     ];
 
-      bool _showSearchIcon = false;
+    bool _showSearchIcon = false;
 
     return Scaffold(
       appBar: AppBar(
@@ -137,31 +137,30 @@ class _newCbtScreenState extends State<newCbtScreen> {
                 indicatorColor: AppColors.text2Light,
                 labelColor: AppColors.text2Light,
                 tabs: [
-                 
-                        Tab(
-                          child: FittedBox(
-                              child: Text('CBT',
-                                  style:
-                                      AppTextStyles.normal600(fontSize: 14, color: AppColors.text2Light))),
-                        ),
-                        Tab(
-                          child: FittedBox(
-                              child: Text('E-books',
-                                  style:
-                                      AppTextStyles.normal600(fontSize: 14, color: AppColors.text2Light))),
-                        ),
-                        Tab(
-                          child: FittedBox(
-                              child: Text('Games',
-                                  style:
-                                      AppTextStyles.normal600(fontSize: 14, color: AppColors.text2Light))),
-                        ),
-                        Tab(
-                          child: Flexible(
-                              child: Text('Videos',
-                                  style:
-                                      AppTextStyles.normal600(fontSize: 14, color: AppColors.text2Light))),
-                        ),
+                  Tab(
+                    child: FittedBox(
+                        child: Text('CBT',
+                            style: AppTextStyles.normal600(
+                                fontSize: 14, color: AppColors.text2Light))),
+                  ),
+                  Tab(
+                    child: FittedBox(
+                        child: Text('E-books',
+                            style: AppTextStyles.normal600(
+                                fontSize: 14, color: AppColors.text2Light))),
+                  ),
+                  Tab(
+                    child: FittedBox(
+                        child: Text('Games',
+                            style: AppTextStyles.normal600(
+                                fontSize: 14, color: AppColors.text2Light))),
+                  ),
+                  Tab(
+                    child: Flexible(
+                        child: Text('Videos',
+                            style: AppTextStyles.normal600(
+                                fontSize: 14, color: AppColors.text2Light))),
+                  ),
                 ],
               ),
               Expanded(
@@ -173,60 +172,69 @@ class _newCbtScreenState extends State<newCbtScreen> {
                         physics: const BouncingScrollPhysics(),
                         child: Column(
                           children: [
-
                             Container(
-                              color: AppColors.textFieldLight ,
-                  height: 50,
-                  width: 509.74,
-                  child: ListView.builder(
-                    padding: const EdgeInsets.fromLTRB(8, 4, 8, 4),
-                    scrollDirection: Axis.horizontal,
-                    itemCount: examCategories.length,
-                    itemBuilder: (context, index) {
-                      return Padding(
-                        padding: const EdgeInsets.fromLTRB(8, 4, 8, 4),
-                        child: GestureDetector(
-                          onTap: () {
-                            _yearDialog(context);
-                            setState(() {
-                              selectedexamCategoriesIndex = index;
-                            });
-                          },
-                          child: Container(
-                            width: 53,
-                            height: 34,
-                            padding: EdgeInsets.fromLTRB(4, 4, 4, 8),
-                            // margin: EdgeInsets.all(10),
-                            decoration: BoxDecoration(
-                              color: selectedexamCategoriesIndex == index
-                                  ? Colors.blueAccent
-                                  : Colors.white,
-                              borderRadius: BorderRadius.circular(4),
-                              border: Border.all(
-                                color: AppColors.attBorderColor1,
-                              ),
-                            ),
-                            alignment: Alignment.center,
-                            child: Text(
-                              examCategories[index],
-                              style: AppTextStyles.normal500(
-                                color: selectedexamCategoriesIndex == index
-                                    ? AppColors.assessmentColor1
-                                    : AppColors.attCheckColor1,
-                                fontSize: 12,
-                              ),
-                            ),
-                          ),
-                        ),
-                      );
-                    },
-                  )),
-                            
+                                color: AppColors.textFieldLight,
+                                height: 50,
+                                width: 509.74,
+                                child: ListView.builder(
+                                  padding:
+                                      const EdgeInsets.fromLTRB(8, 4, 8, 4),
+                                  scrollDirection: Axis.horizontal,
+                                  itemCount: examCategories.length,
+                                  itemBuilder: (context, index) {
+                                    return Padding(
+                                      padding:
+                                          const EdgeInsets.fromLTRB(8, 4, 8, 4),
+                                      child: GestureDetector(
+                                        onTap: () {
+                                          _yearDialog(context);
+                                          setState(() {
+                                            selectedexamCategoriesIndex = index;
+                                          });
+                                        },
+                                        child: Container(
+                                          width: 53,
+                                          height: 34,
+                                          padding:
+                                              EdgeInsets.fromLTRB(4, 4, 4, 8),
+                                          // margin: EdgeInsets.all(10),
+                                          decoration: BoxDecoration(
+                                            color:
+                                                selectedexamCategoriesIndex ==
+                                                        index
+                                                    ? Colors.blueAccent
+                                                    : Colors.white,
+                                            borderRadius:
+                                                BorderRadius.circular(4),
+                                            border: Border.all(
+                                              color: AppColors.attBorderColor1,
+                                            ),
+                                          ),
+                                          alignment: Alignment.center,
+                                          child: Text(
+                                            examCategories[index],
+                                            style: AppTextStyles.normal500(
+                                              color:
+                                                  selectedexamCategoriesIndex ==
+                                                          index
+                                                      ? AppColors
+                                                          .assessmentColor1
+                                                      : AppColors
+                                                          .attCheckColor1,
+                                              fontSize: 12,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                )),
                             Padding(
                               padding: const EdgeInsets.only(
                                   left: 16.0, right: 16.0, top: 16.0),
                               child: Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceAround,
                                 children: metrics,
                               ),
                             ),
@@ -261,7 +269,8 @@ class _newCbtScreenState extends State<newCbtScreen> {
                               padding:
                                   const EdgeInsets.symmetric(horizontal: 16.0),
                               child: Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
                                 children: [
                                   Constants.headingWithSeeAll600(
                                     title: 'Choose subject',
@@ -315,7 +324,6 @@ class _newCbtScreenState extends State<newCbtScreen> {
                       child: VideoDisplay(),
                     ),
                     // Second tab content
-                  
                   ],
                 ),
               ),
@@ -589,8 +597,8 @@ void _yearDialog(BuildContext context) {
                     ),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8.0),
-                      
-                      side: BorderSide(color: AppColors.cbtDialogBorder,width: 1.0),
+                      side: BorderSide(
+                          color: AppColors.cbtDialogBorder, width: 1.0),
                     ),
                   ),
                   MaterialButton(
