@@ -33,6 +33,7 @@ class OpenAIService {
   }
 
   Future<String> sendMessage(String message) async {
+    // Wait for rate limit to reset before making a new request. This prevents hitting the API too quickly.
     await _waitForRateLimit();
     try {
       print('Attempting API call with key: ${apiKey.substring(0, 10)}...'); // Debug print
