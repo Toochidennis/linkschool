@@ -414,6 +414,7 @@ void _yearDialog(BuildContext context) {
                     minWidth: 156,
                     color: AppColors.cbtDialogButton,
                     onPressed: () {
+                      Navigator.pop(context);
                       Navigator.push(context, MaterialPageRoute(builder: (context) => CbtDetailScreen()));
                     },
                     child: Text(

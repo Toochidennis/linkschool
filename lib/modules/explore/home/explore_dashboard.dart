@@ -121,7 +121,7 @@ class _ExploreDashboardState extends State<ExploreDashboard> {
                       ));
                 },
                 icon: SvgPicture.asset(
-                  'assets/icons/notifications.svg',
+                  'assets/icons/profile.svg',
                   colorFilter:
                       const ColorFilter.mode(Colors.white, BlendMode.srcIn),
                 ),

@@ -14,6 +14,15 @@ class CbtDetailScreen extends StatefulWidget {
 
 class _CbtDetailScreenState extends State<CbtDetailScreen> {
   String? selectedYear;
+  Widget? selectedSubject;
+
+  final List<Widget> subjectList = [
+    subjects(subjectName: 'Mathematics', subjectIcon: 'maths', subjectColor: AppColors.cbtCardColor1),
+    subjects(subjectName: 'English Language', subjectIcon: 'english', subjectColor: AppColors.cbtCardColor2),
+    subjects(subjectName: 'Chemistry', subjectIcon: 'chemistry', subjectColor: AppColors.cbtCardColor3),
+    subjects(subjectName: 'Physics', subjectIcon: 'physics', subjectColor: AppColors.cbtCardColor4),
+    subjects(subjectName: 'Biology', subjectIcon: 'biology', subjectColor: AppColors.cbtCardColor5),
+  ];
 
   final List<int> years = [
     2023,
@@ -32,21 +41,38 @@ class _CbtDetailScreenState extends State<CbtDetailScreen> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      shape: RoundedRectangleBorder(
+      shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
       builder: (BuildContext context) {
-        return Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: SizedBox(
-            height: MediaQuery.of(context).size.height * 0.40,
-            child: ListView(
-              children: List.generate(5, (index) => Padding(
-                padding: const EdgeInsets.symmetric(vertical: 10),
-                child: subjects(),
-              )),
-            ),
-          ),
+        return DraggableScrollableSheet(
+          initialChildSize: 0.4,
+          minChildSize: 0.2,
+          maxChildSize: 0.75,
+          expand: false,
+          builder: (context, scrollController) {
+            return Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: ListView(
+                controller: scrollController,
+                children: List.generate(
+                    5,
+                    (index) => GestureDetector(
+                      onTap: () {
+                        Navigator.pop(context);
+                        setState(() {
+                          selectedSubject = subjectList[index];
+                        });
+                      },
+                      
+                      child: Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 10),
+                            child: subjectList[index],
+                          ),
+                    )),
+              ),
+            );
+          },
         );
       },
     );
@@ -66,9 +92,9 @@ class _CbtDetailScreenState extends State<CbtDetailScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  subjects(),
+                  selectedSubject ?? subjectList[0], // Handle null case
                   GestureDetector(
-                   onTap: () => _examList(context),
+                    onTap: () => _examList(context),
                     child: Icon(Icons.arrow_drop_down_circle_outlined),
                   )
                 ],
@@ -158,8 +184,14 @@ class _CbtDetailScreenState extends State<CbtDetailScreen> {
 }
 
 class subjects extends StatelessWidget {
+  final String? subjectName;
+  final String? subjectIcon;
+  final Color? subjectColor;
   const subjects({
     super.key,
+    required this.subjectName,
+    required this.subjectIcon,
+    required this.subjectColor,
   });
 
   @override
@@ -170,12 +202,12 @@ class subjects extends StatelessWidget {
           width: 45,
           height: 45,
           decoration: BoxDecoration(
-            color: AppColors.cbtCardColor5,
+            color: subjectColor,
             borderRadius: BorderRadius.circular(4.0),
           ),
           child: Center(
             child: Image.asset(
-              'assets/icons/further_maths.png',
+              'assets/icons/$subjectIcon.png',
               width: 24.0,
               height: 24.0,
             ),
@@ -186,7 +218,7 @@ class subjects extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Further Mathematics',
+              subjectName!,
               style: AppTextStyles.normal500(
                 fontSize: 18.0,
                 color: AppColors.cbtText,
