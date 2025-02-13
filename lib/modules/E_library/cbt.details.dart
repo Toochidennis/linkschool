@@ -14,6 +14,15 @@ class CbtDetailScreen extends StatefulWidget {
 
 class _CbtDetailScreenState extends State<CbtDetailScreen> {
   String? selectedYear;
+  Widget? selectedSubject;
+
+  final List<Widget> subjectList = [
+    subjects(subjectName: 'Mathematics', subjectIcon: 'maths', subjectColor: AppColors.cbtCardColor1),
+    subjects(subjectName: 'English Language', subjectIcon: 'english', subjectColor: AppColors.cbtCardColor2),
+    subjects(subjectName: 'Chemistry', subjectIcon: 'chemistry', subjectColor: AppColors.cbtCardColor3),
+    subjects(subjectName: 'Physics', subjectIcon: 'physics', subjectColor: AppColors.cbtCardColor4),
+    subjects(subjectName: 'Biology', subjectIcon: 'biology', subjectColor: AppColors.cbtCardColor5),
+  ];
 
   final List<int> years = [
     2023,
@@ -28,6 +37,47 @@ class _CbtDetailScreenState extends State<CbtDetailScreen> {
     2014,
   ];
 
+  void _examList(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (BuildContext context) {
+        return DraggableScrollableSheet(
+          initialChildSize: 0.4,
+          minChildSize: 0.2,
+          maxChildSize: 0.75,
+          expand: false,
+          builder: (context, scrollController) {
+            return Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: ListView(
+                controller: scrollController,
+                children: List.generate(
+                    5,
+                    (index) => GestureDetector(
+                      onTap: () {
+                        Navigator.pop(context);
+                        setState(() {
+                          selectedSubject = subjectList[index];
+                        });
+                      },
+                      
+                      child: Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 10),
+                            child: subjectList[index],
+                          ),
+                    )),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -40,58 +90,37 @@ class _CbtDetailScreenState extends State<CbtDetailScreen> {
           child: Column(
             children: [
               Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Container(
-                    width: 45,
-                    height: 45,
-                    decoration: BoxDecoration(
-                      color: AppColors.cbtCardColor5,
-                      borderRadius: BorderRadius.circular(4.0),
-                    ),
-                    child: Center(
-                      child: Image.asset(
-                        'assets/icons/further_maths.png',
-                        width: 24.0,
-                        height: 24.0,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 10.0),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Further Mathematics',
-                          style: AppTextStyles.normal500(
-                            fontSize: 18.0,
-                            color: AppColors.cbtText,
-                          ),
-                        ),
-                        const SizedBox(height: 8.0),
-                      ],
-                    ),
-                  ),
-                 
+                  selectedSubject ?? subjectList[0], // Handle null case
+                  GestureDetector(
+                    onTap: () => _examList(context),
+                    child: Icon(Icons.arrow_drop_down_circle_outlined),
+                  )
                 ],
               ),
               Divider(),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                   Row(
-                     children: [
-                       Text('Year :',style: AppTextStyles.normal500(fontSize: 16, color: AppColors.libtitle),),
-                       Text('$selectedYear',style: AppTextStyles.normal500(fontSize: 16, color:AppColors.text3Light)),
-                     ],
-                   ),
-                    Padding(
-                      padding: const EdgeInsets.only(right: 16.0),
-                      child: DropdownButton<String>(
+                  Row(
+                    children: [
+                      Text(
+                        'Year :',
+                        style: AppTextStyles.normal500(
+                            fontSize: 16, color: AppColors.libtitle),
+                      ),
+                      Text('$selectedYear',
+                          style: AppTextStyles.normal500(
+                              fontSize: 16, color: AppColors.text3Light)),
+                    ],
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.only(right: 16.0),
+                    child: DropdownButton<String>(
                       items: years.map((int year) {
                         return DropdownMenuItem<String>(
                           value: year.toString(),
-
                           child: Text(year.toString()),
                         );
                       }).toList(),
@@ -100,47 +129,105 @@ class _CbtDetailScreenState extends State<CbtDetailScreen> {
                           selectedYear = value;
                         });
                       },
-                                        ),
                     ),
+                  ),
                 ],
               ),
-                Divider(),
-
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 16.0),
-                  child: Row(
-                    children: [
-                      Text('Duration :',style: AppTextStyles.normal500(fontSize: 16,   color: AppColors.libtitle),),
-                      Text('2hrs 30 minutes',style: AppTextStyles.normal500(fontSize: 16, color:AppColors.text3Light)),
-                    ],
-                  ),
+              Divider(),
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 16.0),
+                child: Row(
+                  children: [
+                    Text(
+                      'Duration :',
+                      style: AppTextStyles.normal500(
+                          fontSize: 16, color: AppColors.libtitle),
+                    ),
+                    Text('2hrs 30 minutes',
+                        style: AppTextStyles.normal500(
+                            fontSize: 16, color: AppColors.text3Light)),
+                  ],
                 ),
-                Divider(),
-
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 16.0),
-                  child: Row(
-                    children: [
-                      Text('Instructions :',style: AppTextStyles.normal500(fontSize: 16,   color: AppColors.libtitle)),
-                      Text('Answer all questions',style: AppTextStyles.normal500(fontSize: 16, color:AppColors.text3Light)),
-                    ],
-                  ),
+              ),
+              Divider(),
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 16.0),
+                child: Row(
+                  children: [
+                    Text('Instructions :',
+                        style: AppTextStyles.normal500(
+                            fontSize: 16, color: AppColors.libtitle)),
+                    Text('Answer all questions',
+                        style: AppTextStyles.normal500(
+                            fontSize: 16, color: AppColors.text3Light)),
+                  ],
                 ),
-                  Divider(),
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical:8.0),
-                  child: CustomLongElevatedButton(
-                    text: 'Start Exam',
-                    onPressed:() => Navigator.push(context, MaterialPageRoute(builder: (context) => TestScreen())),
-                    backgroundColor: AppColors.bookText1,
-                    textStyle: AppTextStyles.normal500(fontSize: 18.0, color: AppColors.bookText2 ),
-                  ),
-                )
-              
+              ),
+              Divider(),
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8.0),
+                child: CustomLongElevatedButton(
+                  text: 'Start Exam',
+                  onPressed: () => Navigator.push(context,
+                      MaterialPageRoute(builder: (context) => TestScreen())),
+                  backgroundColor: AppColors.bookText1,
+                  textStyle: AppTextStyles.normal500(
+                      fontSize: 18.0, color: AppColors.bookText2),
+                ),
+              )
             ],
           ),
         ),
       ),
+    );
+  }
+}
+
+class subjects extends StatelessWidget {
+  final String? subjectName;
+  final String? subjectIcon;
+  final Color? subjectColor;
+  const subjects({
+    super.key,
+    required this.subjectName,
+    required this.subjectIcon,
+    required this.subjectColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Container(
+          width: 45,
+          height: 45,
+          decoration: BoxDecoration(
+            color: subjectColor,
+            borderRadius: BorderRadius.circular(4.0),
+          ),
+          child: Center(
+            child: Image.asset(
+              'assets/icons/$subjectIcon.png',
+              width: 24.0,
+              height: 24.0,
+            ),
+          ),
+        ),
+        const SizedBox(width: 10.0),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              subjectName!,
+              style: AppTextStyles.normal500(
+                fontSize: 18.0,
+                color: AppColors.cbtText,
+              ),
+            ),
+            const SizedBox(height: 8.0),
+          ],
+        ),
+      ],
     );
   }
 }
