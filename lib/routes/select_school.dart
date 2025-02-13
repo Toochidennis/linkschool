@@ -4,6 +4,7 @@ import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/e_library/e_lib_subject_detail.dart';
 import 'package:linkschool/modules/explore/ebooks/custom_search_bar.dart';
+import 'package:linkschool/routes/login_in.dart';
 
 class SelectSchool extends StatefulWidget {
   const SelectSchool({super.key});
@@ -105,8 +106,9 @@ class _SelectSchoolState extends State<SelectSchool> {
                                 });
                               },
                               decoration: InputDecoration(
-                                fillColor: AppColors.assessmentColor1,
                                 hintText: 'Search',
+                                filled: true,
+                                fillColor: AppColors.assessmentColor1,
                                 contentPadding: EdgeInsets.symmetric(
                                     vertical: 8,
                                     horizontal: 22), // Reduces height
@@ -132,7 +134,12 @@ class _SelectSchoolState extends State<SelectSchool> {
                         itemBuilder: (context, index) {
                           return Column(
                             children: [
-                              _selectSchoolCount[index],
+                             GestureDetector(
+                              onTap: (){
+                                Navigator.push(context, MaterialPageRoute(builder: (context)=>LoginScreens()));
+                              },
+                              child: _selectSchoolCount[index],
+                             ),
                               Divider(),
                               SizedBox(
                                 height: 10,
@@ -148,11 +155,12 @@ class _SelectSchoolState extends State<SelectSchool> {
             ),
             Expanded(
               child: Container(
-                width: double.infinity,
+                  width: double.infinity,
                   decoration: BoxDecoration(color: AppColors.assessmentColor1),
                   child: Padding(
                     padding: const EdgeInsets.only(
-                        top: 8, ),
+                      top: 8,
+                    ),
                     child: Column(
                       children: [
                         SizedBox(height: 10),
