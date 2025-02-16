@@ -1,20 +1,29 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/svg.dart';
-import 'package:linkschool/modules/auth/login_screen.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
-import 'package:linkschool/routes/login_in.dart';
-import 'package:linkschool/routes/select_school.dart';
+import 'package:linkschool/modules/model/explore/home/news/news_model.dart';
+import 'package:linkschool/modules/providers/explore/home/news_provider.dart';
+
+import 'package:provider/provider.dart';
 
 class NewsDetails extends StatefulWidget {
-  const NewsDetails({super.key});
+  final NewsModel news;
+  const NewsDetails({super.key, required this.news});
 
   @override
   State<NewsDetails> createState() => _NewsDetailsState();
 }
 
 class _NewsDetailsState extends State<NewsDetails> {
+  @override
+  void initState() {
+    super.initState();
+    Future.microtask(() {
+      Provider.of<NewsProvider>(context, listen: false).fetchNews();
+    });
+  }
+
   final String para_body =
       "Crowds watched solemnly as the body of Rep. John Lewis crossed the Edmund Pettus Bridge one final time, 55 years after the civil rights icon marched for peace and was met with brutality in Selma, Alabama.";
 
@@ -61,6 +70,7 @@ class _NewsDetailsState extends State<NewsDetails> {
                       child: Column(
                         children: [
                           // pageTesting(),
+
                           Text(
                             "This is a mock data showing the details of recording",
                             style: AppTextStyles.normal700(
@@ -114,9 +124,9 @@ class _NewsDetailsState extends State<NewsDetails> {
                       child: Column(
                         children: [
                           newBodyText(
-                              para_body: para_body,
-                              para_body2: para_body2,
-                              para_body3: para_body3),
+                              para_body: widget.news.content,
+                              para_body2: widget.news.content,
+                              para_body3: widget.news.content),
                           newsActionButtons(),
                           SizedBox(
                             height: 25,
@@ -164,11 +174,11 @@ class _NewsDetailsState extends State<NewsDetails> {
                             child: Column(
                               children: [
                                 newBodyText(
-                                    para_body: para_body,
-                                    para_body2: para_body2,
-                                    para_body3: para_body3),
+                                    para_body: widget.news.content,
+                                    para_body2: widget.news.content,
+                                    para_body3: widget.news.content),
                                 Text(
-                                  para_body4,
+                                  widget.news.subject,
                                   style: AppTextStyles.normal400(
                                       fontSize: 14.0,
                                       color: AppColors.backgroundDark),
