@@ -66,11 +66,11 @@ class AppTextStyles {
 
   static TextStyle normal600({
     required double fontSize,
-    required Color color,
+    Color? color,
   }) {
     return TextStyle(
       fontSize: fontSize,
-      color: color ,
+      color: color ?? AppColors.textLight,
       fontWeight: FontWeight.w600,
       fontFamily: 'Urbanist',
 

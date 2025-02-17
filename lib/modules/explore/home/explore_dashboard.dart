@@ -1,9 +1,9 @@
 import 'package:curved_nav_bar/fab_bar/fab_bottom_app_bar_item.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:linkschool/modules/E_library/e_library_dashbord.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
-import 'package:linkschool/modules/explore/aiScreen/ai_screen.dart';
+import 'package:linkschool/modules/explore/ai_screen/ai_screen.dart';
+import 'package:linkschool/modules/explore/e_library/e_library_dashbord.dart';
 import 'package:linkschool/modules/explore/explore_profile/explore_profileScreen.dart';
 import 'package:linkschool/modules/explore/chat/chat_screen.dart';
 import '../../common/bottom_navigation_bar.dart';

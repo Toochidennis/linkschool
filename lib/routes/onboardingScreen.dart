@@ -3,6 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:linkschool/modules/auth/ui/login_screen.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
+import 'package:linkschool/routes/select_school.dart';
+import 'app_navigation_flow.dart';
+import 'package:introduction_screen/introduction_screen.dart';
 import 'package:smooth_page_indicator/smooth_page_indicator.dart';
 import 'app_navigation_flow.dart';
 // import 'package:introduction_screen/introduction_screen.dart';
@@ -87,47 +90,38 @@ class _OnboardingscreenState extends State<Onboardingscreen> {
                         'Skip',
                         style: TextStyle(fontSize: 20),
                       )),
-                  if (onLastPage)
-                    ElevatedButton(
-                      onPressed: () {
-                        _pageController.nextPage(
-                            duration: Duration(milliseconds: 500),
-                            curve: Curves.easeIn);
-                        Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                                builder: (context) => LoginScreen(
-                                      onLoginSuccess: () {},
-                                    )));
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.buttonColor,
-                        shape: CircleBorder(),
-                      ),
-                      child: Icon(
-                        Icons.arrow_forward,
-                        color: Colors.white,
-                        size: 34,
-                      ),
-                    )
-                  else
-                    ElevatedButton(
-                      onPressed: () {
-                        _pageController.nextPage(
-                            duration: Duration(milliseconds: 500),
-                            curve: Curves.easeIn);
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.buttonColor,
-                        shape: CircleBorder(),
-                      ),
-                      child: Icon(
-                        Icons.arrow_forward,
-                        color: Colors.white,
-                        size: 34,
-                      ),
-                    )
-                ],
+
+
+                      if (onLastPage) ElevatedButton(
+                    onPressed: () {
+                      _pageController.nextPage(duration:Duration(milliseconds: 500), curve: Curves.easeIn);
+                      Navigator.push(context, MaterialPageRoute(builder: (context) =>  SelectSchool()));
+                    },
+                    child: Icon(
+                      Icons.arrow_forward,
+                     color: Colors.white,
+                      size: 34,
+                                        ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.buttonColor,
+                      shape: CircleBorder(),
+                    ),
+                  ) else ElevatedButton(
+                    onPressed: () {
+                      _pageController.nextPage(duration:Duration(milliseconds: 500), curve: Curves.easeIn);
+
+
+                    },
+                    child: Icon(
+                      Icons.arrow_forward,
+                     color: Colors.white,
+                      size: 34,
+                                        ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.buttonColor,
+                      shape: CircleBorder(),
+                    ),
+                  ) ],
               ))
         ],
       ),

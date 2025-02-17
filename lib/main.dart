@@ -1,48 +1,12 @@
-// import 'package:flutter/material.dart';
-// import 'package:flutter/services.dart';
-// import 'package:flutter_dotenv/flutter_dotenv.dart';
-// import 'package:linkschool/modules/common/app_themes.dart';
-// import 'package:linkschool/modules/explore/chat/services/openai_service.dart';
-
-// import 'package:linkschool/routes/onboardingScreen.dart';
-// import 'package:provider/provider.dart';
-// // import 'package:linkschool/app_navigation_flow.dart';
-
-// void main() async{
-//   WidgetsFlutterBinding.ensureInitialized();
-//   await dotenv.load(fileName: ".env");
-//   SystemChrome.setSystemUIOverlayStyle(
-//     const SystemUiOverlayStyle(
-//       statusBarColor: Colors.transparent,
-//       statusBarIconBrightness: Brightness.light, // For Android (dark icons)
-//       statusBarBrightness: Brightness.dark, // For iOS (dark icons)
-//     ),
-//   );
-
-//   // Verify API key is loaded
-//   final apiKey = dotenv.env['OPENAI_API_KEY'];
-//   print('Loaded API key: ${apiKey?.substring(0, 10)}...');
-
-//   runApp(
-//     MultiProvider(
-//       providers: [
-//         Provider(
-//           create: (_) => OpenAIService(),
-//         ),
-//       ],
-//       child: const MyApp(),
-//     ),
-//   );
-//   // runApp(const MyApp());
-// }
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:linkschool/modules/common/app_themes.dart';
-import 'package:linkschool/modules/explore/chat/services/openai_service.dart';
-import 'package:linkschool/modules/auth/provider/auth_provider.dart';
+import 'package:linkschool/modules/providers/explore/home/news_provider.dart';
+import 'package:linkschool/modules/providers/explore/subject_provider.dart';
+
 import 'package:linkschool/routes/onboardingScreen.dart';
 import 'package:provider/provider.dart';
+// import 'package:linkschool/app_navigation_flow.dart';
 
 void main(dynamic dotenv) async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -50,23 +14,17 @@ void main(dynamic dotenv) async {
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(
       statusBarColor: Colors.transparent,
-      statusBarIconBrightness: Brightness.light,
-      statusBarBrightness: Brightness.dark,
+      statusBarIconBrightness: Brightness.light, // For Android (dark icons)
+      statusBarBrightness: Brightness.dark, // For iOS (dark icons)
     ),
   );
-
-  final apiKey = dotenv.env['OPENAI_API_KEY'];
-  print('Loaded API key: ${apiKey?.substring(0, 10)}...');
-
-  runApp(
-    MultiProvider(
-      providers: [
-        Provider(create: (_) => OpenAIService()),
-        ChangeNotifierProvider(create: (_) => AuthProvider()),
-      ],
-      child: const MyApp(),
-    ),
-  );
+  runApp(MultiProvider(
+    providers: [
+      ChangeNotifierProvider(create: (context) => NewsProvider()),
+      ChangeNotifierProvider(create: (context) => SubjectProvider()),
+    ],
+    child: const MyApp(),
+  ));
 }
 
 class MyApp extends StatelessWidget {
@@ -84,3 +42,5 @@ class MyApp extends StatelessWidget {
     );
   }
 }
+
+// AppNavigationFlow()
