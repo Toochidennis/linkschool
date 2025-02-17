@@ -1,25 +1,38 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
+
+import 'package:linkschool/modules/e_library/e_games/gamesTab.dart';
+import 'package:linkschool/modules/e_library/e_lib_detail.dart';
+
 
 import 'package:linkschool/modules/explore/ebooks/subject_item.dart';
 
 class newCbtScreen extends StatefulWidget {
   const newCbtScreen({super.key});
 
-
   @override
   State<newCbtScreen> createState() => _newCbtScreenState();
-
 }
 
 class _newCbtScreenState extends State<newCbtScreen> {
   int selectedCategoryIndex = 0;
 
+  int? selectedexamCategoriesIndex = 0;
+  List<String> examCategories = <String>[
+    'WAEC',
+    'NECO',
+    'WAEC',
+    'JAMB',
+    'UTME',
+    'GCE',
+    'SATs',
+    'SATs',
+    'SATs'
+  ];
 
-    
-  
   List<SubjectItem> subjectItems = [
     SubjectItem.name(
       'Mathematics',
@@ -70,7 +83,7 @@ class _newCbtScreenState extends State<newCbtScreen> {
         child: _buildPerformanceCard(
           imagePath: 'assets/icons/success.png',
           title: 'Success',
-          completionRate: '0%',
+          completionRate: '123%',
           backgroundColor: AppColors.cbtColor2,
           borderColor: AppColors.cbtBorderColor2,
         ),
@@ -80,7 +93,7 @@ class _newCbtScreenState extends State<newCbtScreen> {
         child: _buildPerformanceCard(
           imagePath: 'assets/icons/average.png',
           title: 'Average',
-          completionRate: '0%',
+          completionRate: '123%',
           backgroundColor: AppColors.cbtColor3,
           borderColor: AppColors.cbtBorderColor3,
           marginEnd: 16.0,
@@ -88,74 +101,238 @@ class _newCbtScreenState extends State<newCbtScreen> {
       ),
     ];
 
+    bool _showSearchIcon = false;
+
     return Scaffold(
-  body: Container(
-    decoration: Constants.customBoxDecoration(context),
-    child: CustomScrollView(
-      physics: const BouncingScrollPhysics(),
-      slivers: [
-        SliverToBoxAdapter(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 30.0),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: metrics,
+      appBar: AppBar(
+        automaticallyImplyLeading: false,
+        backgroundColor: AppColors.paymentTxtColor1,
+        title: SvgPicture.asset('assets/icons/linkskool-logo.svg'),
+        actions: [
+          if (!_showSearchIcon)
+            IconButton(
+              icon: const Icon(Icons.search, color: Colors.white),
+              onPressed: () {
+                // Handle search action
+              },
             ),
-          ),
-        ),
-        const SliverToBoxAdapter(child: SizedBox(height: 11.0)),
-        SliverToBoxAdapter(
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          IconButton(
+            onPressed: () {},
+            icon: SvgPicture.asset(
+              'assets/icons/notifications.svg',
+              colorFilter:
+                  const ColorFilter.mode(Colors.white, BlendMode.srcIn),
+            ),
+          )
+        ],
+        elevation: 0,
+      ),
+      body: Container(
+        decoration: Constants.customBoxDecoration(context),
+        child: DefaultTabController(
+          length: 4,
+          child: Column(
             children: [
-              Constants.headingWithSeeAll600(
-                title: 'Choose subject',
-                titleSize: 18.0,
-                titleColor: AppColors.text4Light,
-
+              TabBar(
+                indicatorColor: AppColors.text2Light,
+                labelColor: AppColors.text2Light,
+                tabs: [
+                  Tab(
+                    child: FittedBox(
+                        child: Text('CBT',
+                            style: AppTextStyles.normal600(
+                                fontSize: 14, color: AppColors.text2Light))),
+                  ),
+                  Tab(
+                    child: FittedBox(
+                        child: Text('E-books',
+                            style: AppTextStyles.normal600(
+                                fontSize: 14, color: AppColors.text2Light))),
+                  ),
+                  Tab(
+                    child: FittedBox(
+                        child: Text('Games',
+                            style: AppTextStyles.normal600(
+                                fontSize: 14, color: AppColors.text2Light))),
+                  ),
+                  Tab(
+                    child: Flexible(
+                        child: Text('Videos',
+                            style: AppTextStyles.normal600(
+                                fontSize: 14, color: AppColors.text2Light))),
+                  ),
+                ],
               ),
-
-              TextButton(
-                onPressed: () {
-                  Navigator.push(context, MaterialPageRoute(builder: (context) => const SizedBox()));
-                },
-                style: TextButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(horizontal: 8),
+              Expanded(
+                child: TabBarView(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.only(top: 16.0),
+                      child: SingleChildScrollView(
+                        physics: const BouncingScrollPhysics(),
+                        child: Column(
+                          children: [
+                            Container(
+                                color: AppColors.textFieldLight,
+                                height: 50,
+                                width: 509.74,
+                                child: ListView.builder(
+                                  padding:
+                                      const EdgeInsets.fromLTRB(8, 4, 8, 4),
+                                  scrollDirection: Axis.horizontal,
+                                  itemCount: examCategories.length,
+                                  itemBuilder: (context, index) {
+                                    return Padding(
+                                      padding:
+                                          const EdgeInsets.fromLTRB(8, 4, 8, 4),
+                                      child: GestureDetector(
+                                        onTap: () {
+                                          _yearDialog(context);
+                                          setState(() {
+                                            selectedexamCategoriesIndex = index;
+                                          });
+                                        },
+                                        child: Container(
+                                          width: 53,
+                                          height: 34,
+                                          padding:
+                                              EdgeInsets.fromLTRB(4, 4, 4, 8),
+                                          // margin: EdgeInsets.all(10),
+                                          decoration: BoxDecoration(
+                                            color:
+                                                selectedexamCategoriesIndex ==
+                                                        index
+                                                    ? Colors.blueAccent
+                                                    : Colors.white,
+                                            borderRadius:
+                                                BorderRadius.circular(4),
+                                            border: Border.all(
+                                              color: AppColors.attBorderColor1,
+                                            ),
+                                          ),
+                                          alignment: Alignment.center,
+                                          child: Text(
+                                            examCategories[index],
+                                            style: AppTextStyles.normal500(
+                                              color:
+                                                  selectedexamCategoriesIndex ==
+                                                          index
+                                                      ? AppColors
+                                                          .assessmentColor1
+                                                      : AppColors
+                                                          .attCheckColor1,
+                                              fontSize: 12,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                )),
+                            Padding(
+                              padding: const EdgeInsets.only(
+                                  left: 16.0, right: 16.0, top: 16.0),
+                              child: Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceAround,
+                                children: metrics,
+                              ),
+                            ),
+                            const SizedBox(height: 11.0),
+                            Constants.headingWithSeeAll600(
+                              title: 'Test history',
+                              titleSize: 18.0,
+                              titleColor: AppColors.text4Light,
+                            ),
+                            SizedBox(
+                              height: 100,
+                              child: ListView(
+                                scrollDirection: Axis.horizontal,
+                                padding: const EdgeInsets.only(right: 16.0),
+                                children: [
+                                  _buildHistoryCard(
+                                    courseName: 'Biology',
+                                    year: '2015',
+                                    progressValue: 0.5,
+                                    borderColor: AppColors.cbtColor3,
+                                  ),
+                                  _buildHistoryCard(
+                                    courseName: 'Biology',
+                                    year: '2015',
+                                    progressValue: 0.25,
+                                    borderColor: AppColors.cbtColor4,
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Padding(
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 16.0),
+                              child: Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Constants.headingWithSeeAll600(
+                                    title: 'Choose subject',
+                                    titleSize: 18.0,
+                                    titleColor: AppColors.text4Light,
+                                  ),
+                                  TextButton(
+                                    onPressed: () {
+                                      Navigator.pop(context);
+                                    },
+                                    style: TextButton.styleFrom(
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 8),
+                                    ),
+                                    child: const Text(
+                                      'new user',
+                                      style: TextStyle(
+                                        decoration: TextDecoration.underline,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            ListView.builder(
+                              shrinkWrap: true,
+                              physics: const NeverScrollableScrollPhysics(),
+                              itemCount: subjectItems.length,
+                              itemBuilder: (context, index) {
+                                final item = subjectItems[index];
+                                return _buildChooseSubjectCard(
+                                  subject: item.subject,
+                                  year: item.year,
+                                  cardColor: item.cardColor,
+                                  subjectIcon: item.subjectIcon,
+                                );
+                              },
+                            ),
+                            const SizedBox(height: 100.0),
+                          ],
+                        ),
+                      ),
+                    ),
+                    // Expanded(
+                    //   child: LibraryEbook(),
+                    // ),
+                    Expanded(
+                      child: GamesTab(),
+                    ),
+                    Expanded(
+                      child: VideoDisplay(),
+                    ),
+                    // Second tab content
+                  ],
                 ),
-                child: const Text(
-              'new user',
-              style: TextStyle(
-                decoration: TextDecoration.underline,
               ),
-            ),
-          ),
             ],
           ),
-
         ),
-        SliverList(
-          delegate: SliverChildBuilderDelegate(
-            (context, index) {
-              final item = subjectItems[index];
-              return _buildChooseSubjectCard(
-                subject: item.subject,
-                year: item.year,
-                cardColor: item.cardColor,
-                subjectIcon: item.subjectIcon,
-              );
-            },
-            childCount: subjectItems.length,
-          ),
-        ),
-        const SliverToBoxAdapter(child: SizedBox(height: 100.0)),
-      ],
-    ),
-  ),
-);
-
+      ),
+    );
   }
-
-
 
   Widget _buildPerformanceCard({
     required String title,
@@ -213,8 +390,6 @@ class _newCbtScreenState extends State<newCbtScreen> {
     );
   }
 
- 
-
   Widget _buildChooseSubjectCard({
     required String subject,
     required String year,
@@ -270,4 +445,184 @@ class _newCbtScreenState extends State<newCbtScreen> {
       ),
     );
   }
+}
+
+Widget _buildHistoryCard({
+  required String courseName,
+  required String year,
+  required double progressValue,
+  required borderColor,
+}) {
+  return Container(
+    width: 169,
+    margin: const EdgeInsets.only(left: 16.0),
+    padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+    decoration: BoxDecoration(
+      color: AppColors.backgroundLight,
+      borderRadius: BorderRadius.circular(4.0),
+      border: Border.all(color: borderColor),
+    ),
+    child: Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Stack(
+          alignment: Alignment.center,
+          children: [
+            SizedBox(
+              height: 60.0,
+              width: 60.0,
+              child: CircularProgressIndicator(
+                color: borderColor,
+                value: progressValue,
+                strokeWidth: 7.5,
+              ),
+            ),
+            Text(
+              '${(progressValue * 100).round()}%',
+              style: AppTextStyles.normal600(
+                fontSize: 16.0,
+                color: AppColors.text4Light,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(width: 10.0),
+        Expanded(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Biology',
+                style: AppTextStyles.normal600(
+                  fontSize: 16.0,
+                  color: AppColors.text4Light,
+                ),
+              ),
+              const SizedBox(height: 4.0),
+              Text(
+                '($year)',
+                style: AppTextStyles.normal600(
+                  fontSize: 12.0,
+                  color: AppColors.text7Light,
+                ),
+              ),
+              const SizedBox(height: 4.0),
+              Text(
+                'Tap to retake',
+                style: AppTextStyles.normal600(
+                  fontSize: 14.0,
+                  color: AppColors.text8Light,
+                ),
+              ),
+            ],
+          ),
+        )
+      ],
+    ),
+  );
+}
+
+void _yearDialog(BuildContext context) {
+  final List<int> years = List.generate(10, (index) => 2024 - index);
+  int? selectedYear;
+
+  showModalBottomSheet(
+    context: context,
+    builder: (BuildContext context) => StatefulBuilder(
+      builder: (BuildContext context, StateSetter setState) => Container(
+        height: 335,
+        width: 360,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              'Choose a year',
+              style: AppTextStyles.normal600(
+                fontSize: 26.0,
+                color: AppColors.cbtDialogTitle,
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Text(
+                'Select a year to practice questions',
+                style: AppTextStyles.normal600(
+                  fontSize: 14.0,
+                  color: AppColors.cbtDialogText,
+                ),
+              ),
+            ),
+            Expanded(
+              child: ListView.builder(
+                itemCount: years.length,
+                itemBuilder: (context, index) {
+                  return ListTile(
+                    title: Text(
+                      years[index].toString(),
+                      textAlign: TextAlign.center,
+                      style: AppTextStyles.normal600(
+                        fontSize: selectedYear == years[index] ? 24.0 : 16.0,
+                        color: selectedYear == years[index]
+                            ? AppColors.cbtDialogTitle
+                            : AppColors.booksButtonTextColor,
+                      ),
+                    ),
+                    onTap: () {
+                      setState(() {
+                        selectedYear = years[index];
+                      });
+                    },
+                  );
+                },
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  MaterialButton(
+                    height: 40,
+                    minWidth: 156,
+                    onPressed: () {
+                      Navigator.pop(context);
+                    },
+                    child: Text(
+                      'Cancel',
+                      style: AppTextStyles.normal600(
+                          fontSize: 16.0, color: AppColors.cbtDialogBorder),
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8.0),
+                      side: BorderSide(
+                          color: AppColors.cbtDialogBorder, width: 1.0),
+                    ),
+                  ),
+                  MaterialButton(
+                    height: 40,
+                    minWidth: 156,
+                    color: AppColors.cbtDialogButton,
+                    onPressed: () {
+                      Navigator.pop(context);
+                    },
+                    child: Text(
+                      'Confirm',
+                      style: AppTextStyles.normal600(
+                          fontSize: 16.0, color: AppColors.textFieldLight),
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8.0),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
 }

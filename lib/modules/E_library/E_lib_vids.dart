@@ -14,143 +14,170 @@ class E_lib_vids extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
         body: Container(
-            decoration: Constants.customBoxDecoration(context),
-            child:
-                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              SizedBox(
-                height: 270,
+      decoration: Constants.customBoxDecoration(context),
+      child: Stack(
+        children: [
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: ClipRRect(
+              child: Image(
+                image:
+                    AssetImage('assets/images/video_images/e-vids-image.png'),
                 width: double.infinity,
-                child: ClipRRect(
-                  child: Image(
-                      image: AssetImage(
-                          'assets/images/video_images/e-vids-image.png')),
-                  // SvgPicture.asset('assets/images/video_images/e-vids-image.png'),
+                fit: BoxFit.cover,
+              ),
+            ),
+          ),
+          Positioned(
+            top: 40,
+            left: 0,
+            child: IconButton(
+                onPressed: () => Navigator.pop(context),
+                icon:
+                    Icon(Icons.arrow_back, color: AppColors.assessmentColor3)),
+          ),
+          Positioned(
+            top: 270, // Adjust this value based on your needs
+            left: 0,
+            right: 0,
+            bottom: 0,
+            child: Column(
+              children: [
+                LinearProgressIndicator(
+                  value: 0.5,
+                  color: AppColors.admissionclosed,
+                  backgroundColor: AppColors.assessmentColor1,
                 ),
-              ),
-              Column(
-                children: [
-                  LinearProgressIndicator(
-                    value: 0.5,
-                    color: AppColors.admissionclosed,
-                    backgroundColor: AppColors.assessmentColor1,
-                  )
-                ],
-              ),
-              SizedBox(
-                height: 10,
-              ),
-              Column(
-                mainAxisAlignment: MainAxisAlignment.start,
-                // crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.only(left: 16.0),
-                    child: RichText(
-                      // textAlign: TextAlign.left,
-                      text: TextSpan(
-                        text: 'Figma master class for biginner',
-                        style: AppTextStyles.normal600(
-                          fontSize: 20,
-                          color: AppColors.assessmentColor2,
-                        ),
-                      ),
-                    ),
-                  )
-                ],
-              ),
-              Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.start,
-                  children: [
-                    Icon(Icons.access_time, size: 12),
-                    Padding(
-                      padding: const EdgeInsets.only(left: 4.0),
-                      child: RichText(
-                        text: TextSpan(
-                            text: '6h 30Mins . Lessons',
-                            style: AppTextStyles.normal400(
-                                fontSize: 12,
-                                color: AppColors.assessmentColor2)),
-                      ),
-                    )
-                  ],
-                ),
-              ),
+                Expanded(
+                  child: SingleChildScrollView(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        SizedBox(height: 10),
 
-              // SizedBox(
-              //   height: 10,
-              // ),
-              Container(
-                  margin: EdgeInsets.symmetric(horizontal: 16.0),
-                  height: 90,
-                  child: RichText(
-                    textAlign: TextAlign.justify,
-                    text: TextSpan(
-                      text: par_1,
-                      style: AppTextStyles.normal400(
-                          fontSize: 14, color: AppColors.assessmentColor2),
-                    ),
-                  )),
-
-              // Tabar
-
-              Expanded(
-                  child: DefaultTabController(
-                      length: 2,
-                      child: Column(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            TabBar(
-                              tabAlignment: TabAlignment.start,
-                              isScrollable: true,
-                              labelColor: AppColors.text2Light,
-                              indicatorColor: AppColors.text3Light,
-                              unselectedLabelColor: AppColors.assessmentColor2,
-                              dividerColor: Colors.transparent,
-                              tabs: [
-                                Tab(text: 'Lessons'),
-                                Tab(
-                                  text: 'Related',
-                                )
-                              ],
+                        Padding(
+                          padding: const EdgeInsets.only(left: 16.0),
+                          child: RichText(
+                            text: TextSpan(
+                              text: 'Figma master class for biginner',
+                              style: AppTextStyles.normal600(
+                                
+                              
+                                fontSize: 20.0,
+                                color: AppColors.assessmentColor2,
+                              ),
                             ),
-                            Expanded(
-                                child: TabBarView(children: [
-                              ListView(
-                                children: [
-                                  videoSection(),
-                                  SizedBox(height: 10),
-                                  videoSection(),
-                                  SizedBox(height: 10),
-                                  videoSection(),
-                                  SizedBox(height: 10),
-                                  videoSection(),
-                                  SizedBox(height: 10),
+                          ),
+                        ),
+
+                        // Time info
+                        Padding(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 8),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.start,
+                            children: [
+                              Icon(Icons.access_time, size: 12),
+                              Padding(
+                                padding: const EdgeInsets.only(left: 4.0),
+                                child: RichText(
+                                  text: TextSpan(
+                                      text: '6h 30Mins . Lessons',
+                                      style: AppTextStyles.normal400(
+                                          fontSize: 12,
+                                          color: AppColors.assessmentColor2)),
+                                ),
+                              )
+                            ],
+                          ),
+                        ),
+
+                        // Description
+                        Container(
+                            margin: EdgeInsets.symmetric(horizontal: 16.0),
+                            height: 90,
+                            child: RichText(
+                              textAlign: TextAlign.justify,
+                              text: TextSpan(
+                                text: par_1,
+                                style: AppTextStyles.normal400(
+                                    fontSize: 14,
+                                    color: AppColors.assessmentColor2),
+                              ),
+                            )),
+
+                        // Tab section
+                        DefaultTabController(
+                          length: 2,
+                          child: Column(
+                            children: [
+                              TabBar(
+                                tabAlignment: TabAlignment.start,
+                                isScrollable: true,
+                                labelColor: AppColors.text2Light,
+                                indicatorColor: AppColors.text3Light,
+                                unselectedLabelColor:
+                                    AppColors.assessmentColor2,
+                                dividerColor: Colors.transparent,
+                                tabs: [
+                                  Tab(text: 'Lessons'),
+                                  Tab(
+                                    text: 'Related',
+                                  )
                                 ],
                               ),
-                              ListView(
-                                // scrollDirection: Axis.horizontal,
-                                children: [
-                                  Container(
-                                      height: 100,
-                                      width: 350,
-                                      padding:
-                                          EdgeInsets.symmetric(horizontal: 16),
-                                      child: RichText(
-                                          text: TextSpan(
-                                              text: par_1,
-                                              style: AppTextStyles.normal400(
-                                                fontSize: 14,
-                                                color:
-                                                    AppColors.assessmentColor2,
-                                              ))))
-                                ],
-                              )
-                            ])),
-                          ])))
-            ])));
+                              SizedBox(
+                                height: 400, // Adjust height as needed
+                                child: TabBarView(
+                                  children: [
+                                    ListView(
+                                      children: [
+                                        videoSection(),
+                                        SizedBox(height: 10),
+                                        videoSection(),
+                                        SizedBox(height: 10),
+                                        videoSection(),
+                                        SizedBox(height: 10),
+                                        videoSection(),
+                                        SizedBox(height: 10),
+                                      ],
+                                    ),
+                                    ListView(
+                                      children: [
+                                        Container(
+                                            height: 100,
+                                            width: 350,
+                                            padding: EdgeInsets.symmetric(
+                                                horizontal: 16),
+                                            child: RichText(
+                                                text: TextSpan(
+                                                    text: par_1,
+                                                    style:
+                                                        AppTextStyles.normal400(
+                                                      fontSize: 14,
+                                                      color: AppColors
+                                                          .assessmentColor2,
+                                                    ))))
+                                      ],
+                                    )
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    ));
   }
 }
 

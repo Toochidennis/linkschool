@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:linkschool/modules/E_library/E_lib_detail.dart';
 import 'package:linkschool/modules/E_library/cbt.dart';
 import 'package:linkschool/modules/E_library/e_games/gameCard.dart';
-import 'package:linkschool/modules/E_library/elibrary_ebooks/library_ebook.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
@@ -80,38 +79,33 @@ class _ElibraryDashboardState extends State<ElibraryDashboard> {
                           child: FittedBox(
                               child: Text('For you',
                                   style:
-                                      AppTextStyles.normal600(fontSize: 14))),
+                                      AppTextStyles.normal600(fontSize: 14, color: AppColors.text2Light))),
                         ),
-
                         Tab(
                           child: FittedBox(
                               child: Text('CBT',
                                   style:
-                                      AppTextStyles.normal600(fontSize: 14))),
+                                      AppTextStyles.normal600(fontSize: 14, color: AppColors.text2Light))),
                         ),
-
                         Tab(
                           child: FittedBox(
                               child: Text('E-books',
                                   style:
-                                      AppTextStyles.normal600(fontSize: 14))),
-
+                                      AppTextStyles.normal600(fontSize: 14, color: AppColors.text2Light))),
                         ),
                         Tab(
                           child: FittedBox(
                               child: Text('Games',
                                   style:
-                                      AppTextStyles.normal600(fontSize: 14))),
-
+                                      AppTextStyles.normal600(fontSize: 14 , color: AppColors.text2Light))),
                         ),
                         Tab(
                           child: Flexible(
                               child: Text('Videos',
                                   style:
-                                      AppTextStyles.normal600(fontSize: 14))),
+                                      AppTextStyles.normal600(fontSize: 14, color: AppColors.text2Light))),
                         ),
                       ]),
-
                   Expanded(
                       child: TabBarView(children: [
                     SingleChildScrollView(
@@ -149,7 +143,7 @@ class _ElibraryDashboardState extends State<ElibraryDashboard> {
                         SizedBox(
                           height: 8,
                         ),
-                        SizedBox(
+                        Container(
                           height: 200,
                           child: ListView.builder(
                             padding: const EdgeInsets.only(right: 16.0),
@@ -166,7 +160,7 @@ class _ElibraryDashboardState extends State<ElibraryDashboard> {
                         blueHeading(tag: 'E-book', title: 'Suggested for you'),
                         Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 16),
-                          child: SizedBox(
+                          child: Container(
                             height: 250,
                             width: double.infinity,
                             child: ListView(
@@ -244,9 +238,9 @@ class _ElibraryDashboardState extends State<ElibraryDashboard> {
                       ]),
                     ),
                     Expanded(child: E_CBTDashboard()),
-                    Expanded(
-                      child: LibraryEbook(),
-                    ),
+                    // Expanded(
+                    //   child: LibraryEbook(),
+                    // ),
                     Expanded(
                       child: GamesTab(),
                     ),
@@ -484,7 +478,7 @@ Widget _ContinueWatching() {
         Image.asset(
           'assets/images/video_1.png',
           fit: BoxFit.cover,
-          height: 90, 
+          height: 90,
           width: 150,
         ),
         const SizedBox(height: 4.0),
@@ -506,14 +500,15 @@ Widget _ContinueWatching() {
           child: Row(
             children: [
               const CircleAvatar(
-                backgroundImage: NetworkImage(
-                  'profileImageUrl',
-                ),
-                radius: 10.0,
+               
+                backgroundColor: AppColors.videoColor9,
+                child: const Icon(Icons.person_2_rounded,
+                    size: 13.0, color: Colors.white),
+                radius: 8.0,
               ),
               const SizedBox(width: 4.0),
               Text(
-                'Toochi Dennis',
+                'Dennis Toochi ',
                 style: AppTextStyles.normal500(
                   fontSize: 12.0,
                   color: AppColors.videoColor9,

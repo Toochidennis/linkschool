@@ -32,7 +32,7 @@ static AppBar customAppBar({
   String? iconPath,
   bool? centerTitle,
   String? title,
-  bool showBackButton = true, 
+  bool showBackButton = true, double? iconSize, 
 }) {
   final Brightness brightness = Theme.of(context).brightness;
   var opacity = brightness == Brightness.light ? 0.1 : 0.15;

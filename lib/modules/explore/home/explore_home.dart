@@ -2,6 +2,7 @@ import 'package:carousel_slider/carousel_slider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:linkschool/modules/explore/home/explore_item.dart';
+import 'package:linkschool/modules/news/news_details.dart';
 
 import '../../common/text_styles.dart';
 import '../../../modules/explore/games/games_home.dart';
@@ -181,7 +182,10 @@ class _ExploreHomeState extends State<ExploreHome> {
           SliverList(
             delegate: SliverChildBuilderDelegate(
               (context, index) {
-                return newsItems[index];
+                return GestureDetector(
+                  onTap: ()=>(Navigator.push(context, MaterialPageRoute(builder: (context)=>NewsDetails()))),
+                  child: newsItems[index],
+                );
               },
               childCount: newsItems.length,
             ),

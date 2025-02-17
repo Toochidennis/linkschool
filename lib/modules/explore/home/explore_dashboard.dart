@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:linkschool/modules/E_library/e_library_dashbord.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
+import 'package:linkschool/modules/explore/aiScreen/ai_screen.dart';
 import 'package:linkschool/modules/explore/explore_profile/explore_profileScreen.dart';
 import 'package:linkschool/modules/explore/chat/chat_screen.dart';
 import '../../common/bottom_navigation_bar.dart';
@@ -63,7 +64,10 @@ class _ExploreDashboardState extends State<ExploreDashboard> {
       ElibraryDashboard(
         height: MediaQuery.of(context).size.height,
       ),
-      ChatScreen()
+      ProfileScreen(
+        height: MediaQuery.of(context).size.height,
+        color: Colors.blue,
+      ),
     ];
   }
 
@@ -86,8 +90,8 @@ class _ExploreDashboardState extends State<ExploreDashboard> {
         height: 25.0,
       ),
       createBottomNavIcon(
-        imagePath: 'assets/icons/profile/account.svg',
-        text: 'Ai',
+        imagePath: 'assets/icons/settings.svg',
+        text: 'Settings',
       ),
     ];
   }
@@ -106,24 +110,9 @@ class _ExploreDashboardState extends State<ExploreDashboard> {
         backgroundColor: AppColors.paymentTxtColor1,
         title: SvgPicture.asset('assets/icons/linkskool-logo.svg'),
         actions: [
-          // Conditional rendering of search or settings icon
-          if (widget.selectedIndex == 3)
+          if (!_showSearchIcon)
             IconButton(
-              icon: const Icon(Icons.settings, color: Colors.white),
-              onPressed: () {
-                // Navigate to Profile Screen when settings icon is clicked
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => ProfileScreen(
-                    height: MediaQuery.of(context).size.height,
-                    color: Colors.blue,
-                  )),
-                );
-              },
-            )
-          else if (_showSearchIcon)
-            IconButton(
-              icon: const Icon(Icons.settings, color: Colors.white),
+              icon: const Icon(Icons.search, color: Colors.white),
               onPressed: () {
                 // Handle search action
               },

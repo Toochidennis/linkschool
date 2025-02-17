@@ -38,14 +38,13 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:linkschool/modules/common/app_themes.dart';
 import 'package:linkschool/modules/explore/chat/services/openai_service.dart';
 import 'package:linkschool/modules/auth/provider/auth_provider.dart';
 import 'package:linkschool/routes/onboardingScreen.dart';
 import 'package:provider/provider.dart';
 
-void main() async {
+void main(dynamic dotenv) async {
   WidgetsFlutterBinding.ensureInitialized();
   await dotenv.load(fileName: ".env");
   SystemChrome.setSystemUIOverlayStyle(

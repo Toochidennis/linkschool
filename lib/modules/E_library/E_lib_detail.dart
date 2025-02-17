@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:linkschool/modules/E_library/e_lib_vids.dart';
+import 'package:linkschool/modules/e_library/e_lib_vids.dart';
+import 'package:linkschool/modules/e_library/e_lib_subject_detail.dart';
 
 import '../common/app_colors.dart';
 import '../common/constants.dart';
@@ -73,7 +74,6 @@ class _VideoDisplayState extends State<VideoDisplay> {
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisAlignment: MainAxisAlignment.start,
           children: [
-            
             Expanded(
               child: CustomScrollView(
                 physics: const BouncingScrollPhysics(),
@@ -81,7 +81,7 @@ class _VideoDisplayState extends State<VideoDisplay> {
                   SliverToBoxAdapter(
                     child: Constants.headingWithSeeAll600(
                       title: 'Watch history',
-                      titleSize: 18.0,
+                      titleSize: 16.0,
                       titleColor: AppColors.primaryLight,
                     ),
                   ),
@@ -128,26 +128,25 @@ class _VideoDisplayState extends State<VideoDisplay> {
                     ),
                   ),
                   SliverToBoxAdapter(
-                    child: Constants.heading600(
-                      title: 'Categories',
-                      titleSize: 18.0,
-                      titleColor: AppColors.primaryLight,
-                    ),
-                  ),
+                      child: Constants.heading600(
+                    title: 'Categories',
+                    titleSize: 16.0,
+                    titleColor: AppColors.primaryLight,
+                  )),
                   const SliverToBoxAdapter(child: SizedBox(height: 10.0)),
                   SliverToBoxAdapter(
                     child: LayoutBuilder(builder: (context, constraints) {
                       double screenHeight = MediaQuery.of(context).size.height;
                       double screenWidth = MediaQuery.of(context).size.width;
 
-                      double height = screenHeight * 0.38;
+                      double height = screenHeight * 0.34;
                       double aspectRatio = (screenWidth / 4) / (height / 2);
 
                       return Container(
                         height: height,
                         padding: const EdgeInsets.symmetric(
-                          horizontal: 16.0,
-                          vertical: 16.0,
+                          horizontal: 3.2,
+                          vertical: 1.90,
                         ),
                         decoration: const BoxDecoration(
                           color: AppColors.videoCardColor,
@@ -171,17 +170,26 @@ class _VideoDisplayState extends State<VideoDisplay> {
                           ),
                           itemCount: categories.length,
                           itemBuilder: (context, index) {
-                            return categories[index];
+                            return GestureDetector(
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                      builder: (context) => ELibSubjectDetail()),
+                                );
+                              },
+                              child: categories[index],
+                            );
                           },
                         ),
                       );
                     }),
                   ),
-                  const SliverToBoxAdapter(child: SizedBox(height: 20.0)),
+                  const SliverToBoxAdapter(child: SizedBox(height: 19.0)),
                   SliverToBoxAdapter(
                     child: Constants.heading600(
                       title: 'Recommended for you',
-                      titleSize: 18.0,
+                      titleSize: 16.0,
                       titleColor: AppColors.primaryLight,
                     ),
                   ),
@@ -193,6 +201,7 @@ class _VideoDisplayState extends State<VideoDisplay> {
                       childCount: recommendations.length,
                     ),
                   ),
+                  SliverToBoxAdapter(child: SizedBox(height: 100,),)
                 ],
               ),
             ),
@@ -234,12 +243,18 @@ class _VideoDisplayState extends State<VideoDisplay> {
             child: Row(
               children: [
                 const CircleAvatar(
-                  backgroundImage: NetworkImage('profileImageUrl'),
+                  // backgroundImage: NetworkImage('profileImageUrl'),
+                  backgroundColor: AppColors.videoColor9,
+                  child: const Icon(
+                    Icons.person_2_rounded,
+                    size: 14.0,
+                    color: Colors.white,
+                  ),
                   radius: 10.0,
                 ),
                 const SizedBox(width: 4.0),
                 Text(
-                  'Toochi Dennis',
+                  'Dennis Toochi ',
                   style: AppTextStyles.normal500(
                     fontSize: 12.0,
                     color: AppColors.videoColor9,
@@ -281,9 +296,10 @@ class _VideoDisplayState extends State<VideoDisplay> {
         Text(
           subjectName,
           style: AppTextStyles.normal500(
-            fontSize: 11.0,
+            fontSize: 12.0,
             color: Colors.black,
           ),
+          textAlign: TextAlign.center,
         )
       ],
     );
@@ -293,7 +309,8 @@ class _VideoDisplayState extends State<VideoDisplay> {
     return Container(
       height: 121,
       width: double.infinity,
-      padding: const EdgeInsets.only(left: 16.0, top: 16.0, right: 8.0, bottom: 8.0),
+      padding: const EdgeInsets.only(
+          left: 16.0, top: 16.0, right: 8.0, bottom: 18.0),
       decoration: const BoxDecoration(
         color: AppColors.videoCardColor,
         border: Border(
@@ -337,16 +354,17 @@ class _VideoDisplayState extends State<VideoDisplay> {
               mainAxisAlignment: MainAxisAlignment.start,
               children: [
                 Text(
-                  'This is a mock data showing the info details of a recording.',
-                 style: AppTextStyles.normal500(
-                    fontSize: 14.0,
-                    color: AppColors.videoColor9,
-                  )),
+                    'This is a mock data showing the info details of a recording.',
+                    style: AppTextStyles.normal500(
+                      fontSize: 14.0,
+                      color: AppColors.videoColor9,
+                    )),
                 SizedBox(height: 4.0),
-                Text('1hr 34mins',  style: AppTextStyles.normal500(
-                    fontSize: 10.0,
-                    color: AppColors.videoColor9,
-                  )),
+                Text('1hr 34mins',
+                    style: AppTextStyles.normal500(
+                      fontSize: 10.0,
+                      color: AppColors.videoColor9,
+                    )),
                 SizedBox(height: 4.0),
                 Row(
                   mainAxisSize: MainAxisSize.min,
