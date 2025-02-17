@@ -111,23 +111,13 @@ class _GameDetailsState extends State<GameDetails> {
                     child: ListView(
                       scrollDirection: Axis.horizontal,
                       children: [
-                   
                         reviewText(
                           image: 'assets/icons/gamesicon/stars.png',
                           reviews: '4.5',
                           reviewDes: '1k reviews',
                         ),
                         const SizedBox(height: 20),
-                        Padding(
-                          padding: const EdgeInsets.only(left: 32.0,right: 32.0),
-                          child: Container(
-                            width: 2,
-                            decoration: BoxDecoration(
-                              color: AppColors.attCheckColor1,
-                            ),
-                          ),
-                        ),
-                        //  SizedBox(width: 20),
+                        VerticalDivider(),
                         reviewText(
                           image: 'assets/icons/gamesicon/downloading.png',
                           reviewDes: '156 MB',
@@ -136,8 +126,8 @@ class _GameDetailsState extends State<GameDetails> {
                         Padding(
                           padding: const EdgeInsets.only(left: 32.0,right: 32.0),
                           child: Container(
-                            width: 2,
-                            height: 2,
+                            width: 1,
+                            height: 1,
                             decoration: BoxDecoration(
 
                             color: AppColors.attCheckColor1,
@@ -153,7 +143,8 @@ class _GameDetailsState extends State<GameDetails> {
                        Padding(
                           padding: const EdgeInsets.only(left: 32.0,right: 32.0),
                           child: Container(
-                            width: 2,
+                            width: 1,
+                            height: 1,
                             decoration: BoxDecoration(
                               color: AppColors.attCheckColor1,
                             ),
@@ -407,7 +398,7 @@ Widget _buildYouMightLikeCard({
                   ],
                 ),
                 Container(
-                  height: 32.0,
+                  height: 31.0,
                   width: 80,
                   decoration: BoxDecoration(
                     gradient: const LinearGradient(
@@ -446,3 +437,18 @@ Widget _buildYouMightLikeCard({
     ),
   );
 }
+
+
+Widget VerticalDivider() {
+  return Padding(
+    padding: const EdgeInsets.symmetric(horizontal: 16.0),
+    child: SizedBox(
+      width: 1, 
+      height: 1, 
+      child: DecoratedBox(
+        decoration: BoxDecoration(color: AppColors.attCheckColor1),
+      ),
+    ),
+  );
+}
+

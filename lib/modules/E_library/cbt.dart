@@ -122,7 +122,6 @@ class _E_CBTDashboardState extends State<E_CBTDashboard> {
                           padding: const EdgeInsets.fromLTRB(8, 4, 8, 4),
                           child: GestureDetector(
                             onTap: () {
-                             
                               setState(() {
                                 selectedexamCategoriesIndex = index;
                               });
@@ -410,7 +409,8 @@ void _yearDialog(BuildContext context) {
                     ),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8.0),
-                      side: BorderSide(color: AppColors.cbtDialogBorder,width: 1.0),
+                      side: BorderSide(
+                          color: AppColors.cbtDialogBorder, width: 1.0),
                     ),
                   ),
                   MaterialButton(
@@ -418,14 +418,18 @@ void _yearDialog(BuildContext context) {
                     minWidth: 156,
                     color: AppColors.cbtDialogButton,
                     onPressed: () {
-                     if(selectedYear != null){
-                      Navigator.pop(context);
-                      Navigator.push(context, MaterialPageRoute(builder: (context) => CbtDetailScreen(
-                        year: selectedYear!, subject: 'Mathematics',
-                        subjectIcon: 'maths',
-                        cardColor: AppColors.cbtCardColor1,
-                      )));
-                     }
+                      if (selectedYear != null) {
+                        Navigator.pop(context);
+                        Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) => CbtDetailScreen(
+                                      year: selectedYear!,
+                                      subject: 'Mathematics',
+                                      subjectIcon: 'maths',
+                                      cardColor: AppColors.cbtCardColor1,
+                                    )));
+                      }
                     },
                     child: Text(
                       'Confirm',
