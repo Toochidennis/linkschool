@@ -3,9 +3,8 @@ import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/buttons/custom_long_elevated_button.dart';
 import 'package:linkschool/modules/common/buttons/custom_outline_button..dart';
-
 import 'package:linkschool/modules/common/text_styles.dart';
-import 'package:linkschool/modules/E_library/elibrary-ebooks/bookScreen.dart';
+import 'package:linkschool/modules/explore/e_library/elibrary-ebooks/bookScreen.dart';
 
 class MybookPage extends StatefulWidget {
   const MybookPage({super.key});

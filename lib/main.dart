@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:linkschool/modules/common/app_themes.dart';
+import 'package:linkschool/modules/providers/explore/home/news_provider.dart';
+import 'package:linkschool/modules/providers/explore/subject_provider.dart';
 
 import 'package:linkschool/routes/onboardingScreen.dart';
+import 'package:provider/provider.dart';
 // import 'package:linkschool/app_navigation_flow.dart';
 
 void main() {
@@ -14,7 +17,13 @@ void main() {
       statusBarBrightness: Brightness.dark, // For iOS (dark icons)
     ),
   );
-  runApp(const MyApp());
+  runApp(MultiProvider(
+    providers: [
+      ChangeNotifierProvider(create: (context) => NewsProvider()),
+      ChangeNotifierProvider(create: (context) => SubjectProvider()),
+    ],
+    child: const MyApp(),
+  ));
 }
 
 class MyApp extends StatelessWidget {
