@@ -4,11 +4,12 @@ import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/explore/e_library/E_lib_detail.dart';
 import 'package:linkschool/modules/explore/e_library/cbt.dart';
-import 'package:linkschool/modules/explore/e_library/e_games/gameCard.dart';
 import 'package:linkschool/modules/explore/e_library/e_games/gamesTab.dart';
-import 'package:linkschool/modules/explore/e_library/elibrary-ebooks/library_ebook.dart';
 import 'package:linkschool/modules/explore/e_library/foryou.dart';
-// import 'package:linkschool/modules/explore/games/games_home.dart';
+
+import 'e_games/gameCard.dart';
+import 'elibrary-ebooks/library_ebook.dart';
+
 class ElibraryDashboard extends StatefulWidget {
   const ElibraryDashboard({super.key, required this.height});
   final double height;
@@ -147,31 +148,35 @@ class buildForYou extends StatelessWidget {
   Widget build(BuildContext context) {
     return SingleChildScrollView(
       child: Column(children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            headingWithAdvert(
-              tag: 'Video',
-              title: 'Continue watching',
-            ),
-            GestureDetector(
-              onTap: () {
-                Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (context) => ForYouScreen(height: height)));
-              },
-              child: Text(
-                'new user',
-                style: AppTextStyles.normal600(
-                    fontSize: 16, color: AppColors.text2Light),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              headingWithAdvert(
+                tag: 'Video',
+                title: 'Continue watching',
               ),
-            )
-          ],
+              GestureDetector(
+                onTap: () {
+                  Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => ForYouScreen(height: height)));
+                },
+                child: Text(
+                  'new user',
+                  style: AppTextStyles.normal600(
+                      fontSize: 16, color: AppColors.text2Light),
+                ),
+              )
+            ],
+          ),
         ),
 
         // SizedBox(
         //   height: 8,
+                
         // ),
         Padding(
           padding: const EdgeInsets.only(top: 8.0),
