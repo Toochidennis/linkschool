@@ -123,6 +123,7 @@ class _VideosDashboardState extends State<VideosDashboard> {
                                 ),
                               ),
                             ),
+                            alignment: Alignment.center,
                             child: GridView.builder(
                               physics: const NeverScrollableScrollPhysics(),
                               gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
@@ -136,7 +137,6 @@ class _VideosDashboardState extends State<VideosDashboard> {
                                 return categories[index];
                               },
                             ),
-                            alignment: Alignment.center,
                           );
                         }),
                       ),
@@ -200,12 +200,12 @@ class _VideosDashboardState extends State<VideosDashboard> {
               children: [
                 const CircleAvatar(
                   backgroundColor: AppColors.videoColor9,
+                  radius: 8.0,
                   child: Icon(
                     Icons.person_2_rounded,
                     size: 13.0,
                     color: Colors.white,
                   ),
-                  radius: 8.0,
                 ),
                 const SizedBox(width: 4.0),
                 Text(

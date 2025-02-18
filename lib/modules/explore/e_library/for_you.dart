@@ -98,7 +98,7 @@ class _ForYouScreenState extends State<ForYouScreen> {
     ),
   ];
 
-  bool _showSearchIcon = false;
+  final bool _showSearchIcon = false;
 
   @override
   Widget build(BuildContext context) {
@@ -224,7 +224,7 @@ class newForYouScreen extends StatelessWidget {
             child: ListView.builder(
               itemCount: categories.length,
               scrollDirection: Axis.horizontal,
-              itemBuilder: (context, index) => Container(
+              itemBuilder: (context, index) => SizedBox(
                 height: 50,
                 width: 100,
                 child: categories[index],
@@ -273,7 +273,7 @@ class newForYouScreen extends StatelessWidget {
         SizedBox(
           height: 8,
         ),
-        Container(
+        SizedBox(
           height: 200,
           child: ListView.builder(
             padding: const EdgeInsets.only(right: 16.0),
@@ -290,7 +290,7 @@ class newForYouScreen extends StatelessWidget {
         blueHeading(tag: 'E-book', title: 'Suggested for you'),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Container(
+          child: SizedBox(
             height: 250,
             width: double.infinity,
             child: ListView(
@@ -326,7 +326,7 @@ class newForYouScreen extends StatelessWidget {
 }
 
 class buildForYou extends StatelessWidget {
-  buildForYou({
+  const buildForYou({
     super.key,
     required this.gameItems,
   });
@@ -369,7 +369,7 @@ class buildForYou extends StatelessWidget {
         SizedBox(
           height: 8,
         ),
-        Container(
+        SizedBox(
           height: 200,
           child: ListView.builder(
             padding: const EdgeInsets.only(right: 16.0),
@@ -386,7 +386,7 @@ class buildForYou extends StatelessWidget {
         blueHeading(tag: 'E-book', title: 'Suggested for you'),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Container(
+          child: SizedBox(
             height: 250,
             width: double.infinity,
             child: ListView(
@@ -569,9 +569,9 @@ class _books extends StatelessWidget {
             SizedBox(
               height: 5,
             ),
-            Container(
+            SizedBox(
               width: 114,
-              child: new LinearProgressIndicator(
+              child: LinearProgressIndicator(
                 minHeight: 5,
                 value: 0.5,
                 color: AppColors.text2Light,

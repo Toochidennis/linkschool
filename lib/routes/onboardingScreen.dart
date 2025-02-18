@@ -97,30 +97,30 @@ class _OnboardingscreenState extends State<Onboardingscreen> {
                       _pageController.nextPage(duration:Duration(milliseconds: 500), curve: Curves.easeIn);
                       Navigator.push(context, MaterialPageRoute(builder: (context) =>  SelectSchool()));
                     },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.buttonColor,
+                      shape: CircleBorder(),
+                    ),
                     child: Icon(
                       Icons.arrow_forward,
                      color: Colors.white,
                       size: 34,
                                         ),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.buttonColor,
-                      shape: CircleBorder(),
-                    ),
                   ) else ElevatedButton(
                     onPressed: () {
                       _pageController.nextPage(duration:Duration(milliseconds: 500), curve: Curves.easeIn);
 
 
                     },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.buttonColor,
+                      shape: CircleBorder(),
+                    ),
                     child: Icon(
                       Icons.arrow_forward,
                      color: Colors.white,
                       size: 34,
                                         ),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.buttonColor,
-                      shape: CircleBorder(),
-                    ),
                   ) ],
               ))
         ],

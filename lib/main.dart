@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:linkschool/modules/common/app_themes.dart';
 import 'package:linkschool/modules/providers/explore/home/news_provider.dart';
 import 'package:linkschool/modules/providers/explore/subject_provider.dart';
@@ -8,9 +9,10 @@ import 'package:linkschool/routes/onboardingScreen.dart';
 import 'package:provider/provider.dart';
 // import 'package:linkschool/app_navigation_flow.dart';
 
-void main(dynamic dotenv) async {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await dotenv.load(fileName: ".env");
+
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(
       statusBarColor: Colors.transparent,
@@ -42,5 +44,3 @@ class MyApp extends StatelessWidget {
     );
   }
 }
-
-// AppNavigationFlow()

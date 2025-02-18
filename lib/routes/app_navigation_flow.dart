@@ -4,9 +4,9 @@ import 'package:flip_card/flip_card_controller.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:linkschool/modules/explore/home/explore_dashboard.dart';
 import 'package:linkschool/modules/auth/ui/login_screen.dart';
-import 'package:linkschool/modules/student_portal/student_dashboard.dart';
-import 'package:linkschool/modules/staff_portal/staff_dashboard.dart';
-import 'package:linkschool/modules/admin_portal/home/portal_dashboard.dart';
+import 'package:linkschool/modules/student/student_dashboard.dart';
+import 'package:linkschool/modules/staff/staff_dashboard.dart';
+import 'package:linkschool/modules/admin/home/portal_dashboard.dart';
 
 class AppNavigationFlow extends StatefulWidget {
   const AppNavigationFlow({super.key});

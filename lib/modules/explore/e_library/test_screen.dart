@@ -11,9 +11,9 @@ class TestScreen extends StatefulWidget {
 
 class _TestScreenState extends State<TestScreen> {
   int? _selectedOption;
-  bool _isAnswered = false;
-  bool _isCorrect = false;
-  bool _selected = true;
+  final bool _isAnswered = false;
+  final bool _isCorrect = false;
+  final bool _selected = true;
 
   @override
   Widget build(BuildContext context) {
@@ -72,13 +72,13 @@ class _TestScreenState extends State<TestScreen> {
         children: [
           const Row(
             children: [
-              const Text('02 of 15',
+              Text('02 of 15',
                   style: TextStyle(
                       fontSize: 18,
                       color: Colors.white,
                       fontWeight: FontWeight.w700)),
-              const SizedBox(width: 8),
-              const Text('Completed',
+              SizedBox(width: 8),
+              Text('Completed',
                   style: TextStyle(color: Colors.white, fontSize: 12)),
             ],
           ),

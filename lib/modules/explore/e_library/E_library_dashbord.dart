@@ -144,7 +144,7 @@ class _ElibraryDashboardState extends State<ElibraryDashboard> {
                         SizedBox(
                           height: 8,
                         ),
-                        Container(
+                        SizedBox(
                           height: 200,
                           child: ListView.builder(
                             padding: const EdgeInsets.only(right: 16.0),
@@ -161,7 +161,7 @@ class _ElibraryDashboardState extends State<ElibraryDashboard> {
                         blueHeading(tag: 'E-book', title: 'Suggested for you'),
                         Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 16),
-                          child: Container(
+                          child: SizedBox(
                             height: 250,
                             width: double.infinity,
                             child: ListView(
@@ -503,9 +503,9 @@ Widget _ContinueWatching() {
               const CircleAvatar(
                
                 backgroundColor: AppColors.videoColor9,
+                radius: 8.0,
                 child: const Icon(Icons.person_2_rounded,
                     size: 13.0, color: Colors.white),
-                radius: 8.0,
               ),
               const SizedBox(width: 4.0),
               Text(

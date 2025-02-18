@@ -513,7 +513,7 @@ Widget _BasedOnSearches({
     },
     child: Padding(
       padding: const EdgeInsets.symmetric(horizontal: 0),
-      child: Container(
+      child: SizedBox(
         width: 328,
         height: 220,
         child: Column(

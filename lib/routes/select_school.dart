@@ -126,7 +126,7 @@ class _SelectSchoolState extends State<SelectSchool> {
                           ],
                         )),
                     SizedBox(height: 10),
-                    Container(
+                    SizedBox(
                       height: 450,
                       child: ListView.builder(
                         itemCount: _selectSchoolCount.length,

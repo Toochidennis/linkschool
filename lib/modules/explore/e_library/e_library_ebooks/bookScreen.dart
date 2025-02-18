@@ -153,7 +153,7 @@ class BookProfileCard extends StatelessWidget {
                     ],
                   ),
                 ),
-                Container(
+                SizedBox(
                   height: 34,
                   child: ElevatedButton(
                     onPressed: () {},

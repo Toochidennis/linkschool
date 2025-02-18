@@ -1,10 +1,11 @@
 // lib/widgets/level_selection.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:linkschool/modules/admin/e_learning/empty_syllabus_screen.dart';
+import 'package:linkschool/modules/admin/result/class_detail/class_detail_screen.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
-import 'package:linkschool/modules/admin_portal/e_learning/empty_syllabus_screen.dart';
-import 'package:linkschool/modules/admin_portal/result/class_detail/class_detail_screen.dart';
+
 
 class LevelSelection extends StatefulWidget {
   // const LevelSelection({Key? key}) : super(key: key);

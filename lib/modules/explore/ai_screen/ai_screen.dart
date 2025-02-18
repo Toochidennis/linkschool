@@ -7,6 +7,8 @@ import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/explore/ai_screen/aichatbot.dart';
 
 class AiScreen extends StatefulWidget {
+  const AiScreen({super.key});
+
   @override
   _AiScreenState createState() => _AiScreenState();
 }

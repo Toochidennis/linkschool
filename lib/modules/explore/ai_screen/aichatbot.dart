@@ -6,6 +6,8 @@ import 'package:uuid/uuid.dart';
 
 
 class Aichatbot extends StatefulWidget {
+  const Aichatbot({super.key});
+
   @override
   _AichatbotState createState() => _AichatbotState();
 }

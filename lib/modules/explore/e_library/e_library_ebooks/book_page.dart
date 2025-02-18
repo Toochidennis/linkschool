@@ -127,7 +127,6 @@ class _MybookPageState extends State<MybookPage> {
                     children: [
                       OutlinedButton(
                         onPressed: () {},
-                        child: Text('Literature',style: AppTextStyles.normal500(fontSize: 16,color: AppColors.eLearningBtnColor1),),
                         style: OutlinedButton.styleFrom(
                           backgroundColor: AppColors.grayColor,
                           shape: RoundedRectangleBorder(
@@ -135,11 +134,11 @@ class _MybookPageState extends State<MybookPage> {
                           ),
                            side: BorderSide(color: AppColors.eLearningBtnColor1),
                         ),
+                        child: Text('Literature',style: AppTextStyles.normal500(fontSize: 16,color: AppColors.eLearningBtnColor1),),
                       ),
                        SizedBox(width: 12),
                       OutlinedButton(
                         onPressed: () {},
-                        child: Text('Based on a true story',style: AppTextStyles.normal500(fontSize: 16,color: AppColors.eLearningBtnColor1),),
                         style: OutlinedButton.styleFrom(
                           backgroundColor: AppColors.grayColor,
                           shape: RoundedRectangleBorder(
@@ -147,6 +146,7 @@ class _MybookPageState extends State<MybookPage> {
                           ),
                            side: BorderSide(color: AppColors.eLearningBtnColor1),
                         ),
+                        child: Text('Based on a true story',style: AppTextStyles.normal500(fontSize: 16,color: AppColors.eLearningBtnColor1),),
                       )
                     ],
                   ),

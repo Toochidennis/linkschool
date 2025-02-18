@@ -344,7 +344,7 @@ void _yearDialog(BuildContext context) {
   showModalBottomSheet(
     context: context,
     builder: (BuildContext context) => StatefulBuilder(
-      builder: (BuildContext context, StateSetter setState) => Container(
+      builder: (BuildContext context, StateSetter setState) => SizedBox(
         height: 335,
         width: 360,
         child: Column(
@@ -403,15 +403,15 @@ void _yearDialog(BuildContext context) {
                     onPressed: () {
                       Navigator.pop(context);
                     },
-                    child: Text(
-                      'Cancel',
-                      style: AppTextStyles.normal600(
-                          fontSize: 16.0, color: AppColors.cbtDialogBorder),
-                    ),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8.0),
                       side: BorderSide(
                           color: AppColors.cbtDialogBorder, width: 1.0),
+                    ),
+                    child: Text(
+                      'Cancel',
+                      style: AppTextStyles.normal600(
+                          fontSize: 16.0, color: AppColors.cbtDialogBorder),
                     ),
                   ),
                   MaterialButton(
@@ -432,13 +432,13 @@ void _yearDialog(BuildContext context) {
                                     )));
                       }
                     },
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8.0),
+                    ),
                     child: Text(
                       'Confirm',
                       style: AppTextStyles.normal600(
                           fontSize: 16.0, color: AppColors.textFieldLight),
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8.0),
                     ),
                   ),
                 ],
