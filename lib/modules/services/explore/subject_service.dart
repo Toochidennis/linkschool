@@ -9,12 +9,10 @@ class SubjectService {
       ? 'https://cors-anywhere.herokuapp.com/http://www.cbtportal.linkskool.com/api/getVideo.php'
       : 'http://www.cbtportal.linkskool.com/api/getVideo.php';
   Future<List<Subject>> getAllSubject() async {
-    
-    final response = await http.get(Uri.parse(_baseUrl),
-        headers: {
-          'Accept': 'application/json',
-          'X-Requested-With': 'XMLHttpRequest'
-        });
+    final response = await http.get(Uri.parse(_baseUrl), headers: {
+      'Accept': 'application/json',
+      'X-Requested-With': 'XMLHttpRequest'
+    });
     try {
       if (response.statusCode == 200) {
         print('Response: ${response.body}');
