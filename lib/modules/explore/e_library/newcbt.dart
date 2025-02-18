@@ -9,6 +9,7 @@ import 'package:linkschool/modules/explore/e_library/e_games/gamesTab.dart';
 import 'package:linkschool/modules/explore/e_library/elibrary-ebooks/library_ebook.dart';
 
 import 'package:linkschool/modules/explore/ebooks/subject_item.dart';
+import 'package:linkschool/modules/explore/videos/videos_dashboard.dart';
 
 class newCbtScreen extends StatefulWidget {
   const newCbtScreen({super.key});
@@ -321,7 +322,7 @@ class _newCbtScreenState extends State<newCbtScreen> {
                       child: GamesTab(),
                     ),
                     Expanded(
-                      child: VideoDisplay(),
+                      child: VideosDashboard(),
                     ),
                     // Second tab content
                   ],

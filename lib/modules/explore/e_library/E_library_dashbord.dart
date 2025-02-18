@@ -147,30 +147,27 @@ class buildForYou extends StatelessWidget {
   Widget build(BuildContext context) {
     return SingleChildScrollView(
       child: Column(children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              headingWithAdvert(
-                tag: 'Video',
-                title: 'Continue watching',
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            headingWithAdvert(
+              tag: 'Video',
+              title: 'Continue watching',
+            ),
+            GestureDetector(
+              onTap: () {
+                Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => ForYouScreen(height: height)));
+              },
+              child: Text(
+                'new user',
+                style: AppTextStyles.normal600(
+                    fontSize: 16, color: AppColors.text2Light),
               ),
-              GestureDetector(
-                onTap: () {
-                  Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (context) => ForYouScreen(height: height)));
-                },
-                child: Text(
-                  'new user',
-                  style: AppTextStyles.normal600(
-                      fontSize: 16, color: AppColors.text2Light),
-                ),
-              )
-            ],
-          ),
+            )
+          ],
         ),
 
         // SizedBox(

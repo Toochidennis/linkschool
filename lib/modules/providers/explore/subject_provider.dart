@@ -1,5 +1,5 @@
 import 'package:flutter/foundation.dart';
-import '../../model/explore/home/subject.dart';
+import '../../model/explore/home/subject_model.dart';
 import '../../services/explore/subject_service.dart';
 
 
@@ -20,7 +20,6 @@ class SubjectProvider with ChangeNotifier {
     } catch (error) {
       print('Error fetching subjects: $error');
     }
-
     _isLoading = false;
     notifyListeners();
   }

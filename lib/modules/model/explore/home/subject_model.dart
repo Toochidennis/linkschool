@@ -7,8 +7,8 @@ class Subject {
 
   factory Subject.fromJson(Map<String, dynamic> json) {
     return Subject(
-      id: json['id'],
-      name: json['name'],
+      id: json['id'] ?? '',
+      name: json['name'] ?? '',
       categories: (json['category'] as List)
           .map((category) => Category.fromJson(category))
           .toList(),
@@ -33,10 +33,10 @@ class Category {
 
   factory Category.fromJson(Map<String, dynamic> json) {
     return Category(
-      id: json['id'],
-      level: json['level'],
-      levelName: json['level_name'],
-      name: json['name'],
+      id: json['id'] ?? '',
+      level: json['level'] ?? '',
+      levelName: json['level_name'] ?? '',
+      name: json['name'] ?? '',
       videos: (json['videos'] as List)
           .map((video) => Video.fromJson(video))
           .toList(),
@@ -45,24 +45,23 @@ class Category {
 }
 
 class Video {
-  final String id;
   final String title;
   final String url;
   final String thumbnail;
+  final String author;
 
   Video({
-    required this.id,
     required this.title,
     required this.url,
     required this.thumbnail,
+    required this.author,
   });
-
   factory Video.fromJson(Map<String, dynamic> json) {
     return Video(
-      id: json['id'],
-      title: json['title'],
-      url: json['url'],
-      thumbnail: json['thumbnail'],
+      title: json['title'] ?? '',
+      url: json['url'] ?? '',
+      thumbnail: json['thumbnail'] ?? '',
+      author: json['author'] ?? '',
     );
   }
 }
