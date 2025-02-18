@@ -82,27 +82,45 @@ class _CBTDashboardState extends State<CBTDashboard> {
   }
 
   Widget _buildCBTCategories(CBTProvider provider) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16.0),
-      child: Wrap(
-        spacing: 10.0,
-        runSpacing: 10.0,
-        children: List.generate(
-          provider.isLoading ? 3 : provider.boardCodes.length,
-          (index) {
-            return BooksButtonItem(
-              label: provider.isLoading ? 'Category' : provider.boardCodes[index],
-              isSelected: provider.isLoading ? false : provider.boards.indexOf(provider.selectedBoard!) == index,
-              onPressed: () {
-                if (!provider.isLoading) {
-                  provider.selectBoard(provider.boards[index].boardCode);
-                }
-              },
+    if (provider.isLoading) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16.0),
+        child: GridView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 3,
+            childAspectRatio: 2.5,
+            crossAxisSpacing: 10,
+            mainAxisSpacing: 10,
+          ),
+          itemCount: 6, // Display 6 placeholder items
+          itemBuilder: (context, index) {
+            return Container(
+              decoration: BoxDecoration(
+                color: Colors.grey[300],
+                borderRadius: BorderRadius.circular(8),
+              ),
             );
           },
         ),
-      ),
-    );
+      );
+    } else {
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16.0),
+        child: Wrap(
+          spacing: 10.0,
+          runSpacing: 10.0,
+          children: provider.boardCodes.map((code) {
+            return BooksButtonItem(
+              label: code,
+              isSelected: provider.selectedBoard?.boardCode == code,
+              onPressed: () => provider.selectBoard(code),
+            );
+          }).toList(),
+        ),
+      );
+    }
   }
 
   Widget _buildPerformanceMetrics() {
@@ -195,7 +213,7 @@ class _CBTDashboardState extends State<CBTDashboard> {
             subjectIcon: subject.subjectIcon ?? 'default',
           );
         },
-        childCount: provider.isLoading ? 5 : provider.currentBoardSubjects.length,
+        childCount: provider.isLoading ? 10 : provider.currentBoardSubjects.length, // Increased to 10 placeholder items
       ),
     );
   }

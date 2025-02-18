@@ -18,19 +18,60 @@ class CBTBoardModel {
   });
 
   factory CBTBoardModel.fromJson(Map<String, dynamic> json) {
+    final String title = json['t'] ?? '';
+    final String boardCode = json['c'] ?? _getBoardCodeFromTitle(title);
+
     return CBTBoardModel(
       id: json['i'] ?? '',
       pictureUrl: json['p'] ?? '',
-      title: json['t'] ?? '',
-      boardCode: json['c'] ?? '',
+      title: title,
+      boardCode: boardCode,
       shortName: json['s'] ?? '',
       subjects: (json['d'] as List<dynamic>?)
-          ?.map((subject) => SubjectModel.fromJson(subject))
-          .toList() ?? [],
+              ?.map((subject) => SubjectModel.fromJson(subject))
+              .toList() ??
+          [],
     );
   }
-}
 
+  static String _getBoardCodeFromTitle(String title) {
+    switch (title) {
+      case 'Joint Admission And Matriculation Board':
+        return 'JAMB';
+      case 'SENIOR SCHOOL CERTIFICATE EXAMINATION':
+        return 'WAEC';
+      case 'BASIC CERTIFICATE EXAMINATION':
+        return 'BECE';
+      case 'Millionaire':
+        return 'Million';
+      case 'PRIMARY SCHOOL TRANSITION EXAMINATION':
+        return 'PSTE';
+      case 'ESUT POST UTME':
+        return 'ESUT';
+      case 'PRIMARY SCHOOL LEAVING CERTIFICATE':
+        return 'PSLC';
+      case 'Scratch Examination':
+        return 'SCE';
+      case 'Nationwide Common Entrance Examination':
+        return 'NCEE';
+      default:
+        return 'UNKNOWN';
+    }
+  }
+
+  // factory CBTBoardModel.fromJson(Map<String, dynamic> json) {
+  //   return CBTBoardModel(
+  //     id: json['i'] ?? '',
+  //     pictureUrl: json['p'] ?? '',
+  //     title: json['t'] ?? '',
+  //     boardCode: json['c'] ?? '',
+  //     shortName: json['s'] ?? '',
+  //     subjects: (json['d'] as List<dynamic>?)
+  //         ?.map((subject) => SubjectModel.fromJson(subject))
+  //         .toList() ?? [],
+  //   );
+  // }
+}
 
 class YearModel {
   final String id;

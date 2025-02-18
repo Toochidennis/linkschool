@@ -56,13 +56,45 @@ class CBTProvider extends ChangeNotifier {
     if (_selectedBoard == null) return [];
     
     // Assign icons and colors to subjects
-    final subjectIcons = {
-      'MATHEMATICS': 'maths',
-      'ENGLISH LANGUAGE': 'english',
-      'CHEMISTRY': 'chemistry',
-      'PHYSICS': 'physics',
-      'BIOLOGY': 'biology',
-    };
+    // final subjectIcons = {
+    //   'MATHEMATICS': 'maths',
+    //   'ENGLISH LANGUAGE': 'english',
+    //   'CHEMISTRY': 'chemistry',
+    //   'PHYSICS': 'physics',
+    //   'BIOLOGY': 'biology',
+    // };
+
+final subjectIcons = {
+  'MATHEMATICS': 'maths',
+  'ENGLISH LANGUAGE': 'english',
+  'CHEMISTRY': 'chemistry',
+  'PHYSICS': 'physics',
+  'BIOLOGY': 'biology',
+  'GOVERNMENT': 'government',
+  'ECONOMICS': 'economics',
+  'LITERATURE IN ENGLISH': 'literature',
+  'GEOGRAPHY': 'geography',
+  'ACCOUNTING': 'accounting',
+  'C. R. S': 'crs',
+  'COMMERCE': 'commerce',
+  'AGRICULTURAL SCIENCE': 'agriculture',
+  'CHRISTIAN RELIGIOUS STUDIES (CRS)': 'crs',
+  'FINANCIAL ACCOUNTING': 'accounting',
+  'BUSINESS EDUCATION': 'business',
+  'CIVIC EDUCATION': 'civic',
+  'HOME ECONOMICS': 'home_economics',
+  'SOCIAL STUDIES': 'social_studies',
+  'VERBAL APTITUDE': 'verbal_aptitude',
+  'QUANTITATIVE REASONING': 'quantitative_reasoning',
+  'GENERAL': 'general',
+  'COMPUTER': 'computer',
+  'BIBLE QUIZ': 'bible_quiz',
+  'HISTORY': 'history',
+  'MUSIC': 'music',
+  'ANIMALS': 'animals',
+  'SPORTS': 'sports',
+  'BASIC SCRATCH': 'scratch',
+};
 
     final colors = [
       AppColors.cbtCardColor1,
