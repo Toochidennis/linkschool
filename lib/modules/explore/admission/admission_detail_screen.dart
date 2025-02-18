@@ -124,7 +124,7 @@ class SchoolHeader extends StatelessWidget {
   }
 }
 
-// map_section.dart
+
 class MapSection extends StatelessWidget {
   const MapSection({super.key});
 
@@ -168,7 +168,7 @@ class MapSection extends StatelessWidget {
   }
 }
 
-// gallery_section.dart
+
 class GallerySection extends StatelessWidget {
   const GallerySection({super.key});
 
@@ -329,7 +329,7 @@ class GallerySection extends StatelessWidget {
   }
 }
 
-// action_buttons.dart
+
 class ActionButtons extends StatelessWidget {
   const ActionButtons({super.key});
 
@@ -379,7 +379,7 @@ class ActionButtons extends StatelessWidget {
   }
 }
 
-// school_type_section.dart
+
 class SchoolTypeSection extends StatelessWidget {
   const SchoolTypeSection({super.key});
 
@@ -405,7 +405,7 @@ class SchoolTypeSection extends StatelessWidget {
 
 
 
-// about_section.dart
+
 class AboutSection extends StatelessWidget {
   const AboutSection({super.key});
 
@@ -433,7 +433,7 @@ class AboutSection extends StatelessWidget {
 }
 
 
-// testimony Section
+
 
 class _TestimonyCard extends StatelessWidget {
   final String image;

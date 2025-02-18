@@ -5,7 +5,7 @@ import 'package:provider/provider.dart';
 import '../../common/app_colors.dart';
 import '../../common/constants.dart';
 import '../../common/text_styles.dart';
-import '../../model/explore/home/subject.dart';
+import '../../model/explore/home/subject_model.dart';
 import '../../providers/explore/subject_provider.dart';
 
 class VideosDashboard extends StatefulWidget {
@@ -39,7 +39,7 @@ class _VideosDashboardState extends State<VideosDashboard> {
         )).toList();
 
         final allVideos = subjects
-            .expand((subject) => subject.categories)
+            .expand((subject) => subject.categories ?? [])
             .expand((category) => category.videos)
             .toList();
 

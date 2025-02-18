@@ -1,14 +1,14 @@
 import 'package:flutter/foundation.dart';
-import '../../model/explore/home/subject.dart';
+import '../../model/explore/home/subject_model.dart';
 import '../../services/explore/subject_service.dart';
 
 
 class SubjectProvider with ChangeNotifier {
   final SubjectService _subjectService = SubjectService();
-  List<Subject> _subjects = [];
+  List<SubjectModel> _subjects = [];
   bool _isLoading = false;
 
-  List<Subject> get subjects => _subjects;
+  List<SubjectModel> get subjects => _subjects;
   bool get isLoading => _isLoading;
 
   Future<void> fetchSubjects() async {

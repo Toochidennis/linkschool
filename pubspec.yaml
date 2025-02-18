@@ -62,6 +62,7 @@ dependencies:
   provider: ^6.1.2
   foundation: ^0.0.5
   flutter_dotenv: ^5.2.1
+  skeletonizer: ^1.4.3
 
 dev_dependencies:
   flutter_test:
