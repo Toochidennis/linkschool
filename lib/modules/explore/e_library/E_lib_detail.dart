@@ -7,6 +7,7 @@ import '../../common/text_styles.dart';
 import '../../model/explore/home/subject_model.dart';
 import '../../providers/explore/subject_provider.dart';
 import '../e_library/cbt.details.dart';
+import 'package:skeletonizer/skeletonizer.dart';
 import '../e_library/e_lib_subject_detail.dart';
 
 class VideoDisplay extends StatefulWidget {
@@ -44,7 +45,7 @@ class _VideoDisplayState extends State<VideoDisplay> {
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
               style: AppTextStyles.normal500(
-                fontSize: 12.0,
+                fontSize: 16.0,
                 color: AppColors.backgroundDark,
               ),
             ),
@@ -90,7 +91,9 @@ class _VideoDisplayState extends State<VideoDisplay> {
       mainAxisAlignment: MainAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
-        Container(
+        Column(
+          children: [
+            Container(
           height: 60,
           width: 60,
           padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 4.0),
@@ -113,6 +116,8 @@ class _VideoDisplayState extends State<VideoDisplay> {
             style: AppTextStyles.normal500(fontSize: 12.0, color: Colors.black),
             textAlign: TextAlign.center,
           ),
+        )
+          ],
         )
       ],
     );
@@ -245,13 +250,128 @@ class _VideoDisplayState extends State<VideoDisplay> {
   ];
 
   @override
-  Widget build(BuildContext context) {
-    return Consumer<SubjectProvider>(
-      builder: (context, subjectProvider, child) {
-        if (subjectProvider.isLoading) {
-          return const Center(child: CircularProgressIndicator());
-        }
+Widget build(BuildContext context) {
+  return Consumer<SubjectProvider>(
+    builder: (context, subjectProvider, child) {
+      if (subjectProvider.isLoading) {
+        return Scaffold(
+          body: Skeletonizer(
+            child: Container(
+              decoration: Constants.customBoxDecoration(context),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: CustomScrollView(
+                      physics: const BouncingScrollPhysics(),
+                      slivers: [
+                        SliverToBoxAdapter(
+                          child: Constants.headingWithSeeAll600(
+                            title: 'Watch history',
+                            titleSize: 18.0,
+                            titleColor: AppColors.primaryLight,
+                          ),
+                        ),
+                        SliverToBoxAdapter(
+                          child: SizedBox(
+                            
+                            child: ListView.builder(
+                              itemCount: 7,
+                              scrollDirection: Axis.horizontal,
+                              itemBuilder: (context, index) {
+                                return _buildWatchHistoryCard(Video(
+                                  title: 'Loading...',
+                                  url: '',
+                                  thumbnail: '',
+                                  author: '',
+                                ));
+                              },
+                            ),
+                          ),
+                        ),
+                        SliverToBoxAdapter(
+                            child: Constants.heading600(
+                          title: 'Categories',
+                          titleSize: 18.0,
+                          titleColor: AppColors.primaryLight,
+                        )),
+                        const SliverToBoxAdapter(child: SizedBox(height: 10.0)),
+                        SliverToBoxAdapter(
+                          child: LayoutBuilder(builder: (context, constraints) {
+                            double screenHeight = MediaQuery.of(context).size.height;
+                            double screenWidth = MediaQuery.of(context).size.width;
+                            double height = screenHeight * 0.34;
+                            double aspectRatio = (screenWidth / 4) / (height / 1.8);
 
+                            return Container(
+                              height: height,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 3.2,
+                                vertical: 1.90,
+                              ),
+                              decoration: const BoxDecoration(
+                                color: AppColors.videoCardColor,
+                                border: Border(
+                                  bottom: BorderSide(
+                                    color: AppColors.videoCardBorderColor,
+                                  ),
+                                  top: BorderSide(
+                                    color: AppColors.videoCardBorderColor,
+                                  ),
+                                ),
+                              ),
+                              alignment: Alignment.center,
+                              child: GridView.builder(
+                                physics: const NeverScrollableScrollPhysics(),
+                                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                                  crossAxisCount: 4,
+                                  crossAxisSpacing: 16.0,
+                                  mainAxisSpacing: 16.0,
+                                  childAspectRatio: aspectRatio,
+                                ),
+                                itemCount: 8,
+                                itemBuilder: (context, index) {
+                                  return _buildCategoriesCard(
+                                    subjectName: 'Loading...',
+                                    subjectIcon: 'english',
+                                    backgroundColor: AppColors.videoColor1,
+                                  );
+                                },
+                              ),
+                            );
+                          }),
+                        ),
+                        const SliverToBoxAdapter(child: SizedBox(height: 19.0)),
+                        SliverToBoxAdapter(
+                          child: Constants.heading600(
+                            title: 'Recommended for you',
+                            titleSize: 16.0,
+                            titleColor: AppColors.primaryLight,
+                          ),
+                        ),
+                        SliverList(
+                          delegate: SliverChildBuilderDelegate(
+                            (context, index) {
+                              return _recommendedForYouCard(Video(
+                                title: 'Loading...',
+                                url: '',
+                                thumbnail: '',
+                                author: '',
+                              ));
+                            },
+                            childCount: 6,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      } else {
         final categories = subjectProvider.subjects
             .map((subject) => _buildCategoriesCard(
                   subjectName: subject.name,
@@ -271,6 +391,7 @@ class _VideoDisplayState extends State<VideoDisplay> {
             : allVideos;
 
         return Scaffold(
+         
           body: Container(
             decoration: Constants.customBoxDecoration(context),
             child: Column(
@@ -292,7 +413,7 @@ class _VideoDisplayState extends State<VideoDisplay> {
                         child: SizedBox(
                           height: 200.0,
                           child: ListView.builder(
-                            itemCount: 7,
+                            itemCount: allVideos.length,
                             scrollDirection: Axis.horizontal,
                             itemBuilder: (context, index) {
                               return GestureDetector(
@@ -304,8 +425,7 @@ class _VideoDisplayState extends State<VideoDisplay> {
                                               video: allVideos[index])),
                                     );
                                   },
-                                  child:
-                                      _buildWatchHistoryCard(allVideos[index]));
+                                  child: _buildWatchHistoryCard(allVideos[index]));
                             },
                           ),
                         ),
@@ -319,11 +439,8 @@ class _VideoDisplayState extends State<VideoDisplay> {
                       const SliverToBoxAdapter(child: SizedBox(height: 10.0)),
                       SliverToBoxAdapter(
                         child: LayoutBuilder(builder: (context, constraints) {
-                          double screenHeight =
-                              MediaQuery.of(context).size.height;
-                          double screenWidth =
-                              MediaQuery.of(context).size.width;
-
+                          double screenHeight = MediaQuery.of(context).size.height;
+                          double screenWidth = MediaQuery.of(context).size.width;
                           double height = screenHeight * 0.34;
                           double aspectRatio = (screenWidth / 4) / (height / 2);
 
@@ -347,8 +464,7 @@ class _VideoDisplayState extends State<VideoDisplay> {
                             alignment: Alignment.center,
                             child: GridView.builder(
                               physics: const NeverScrollableScrollPhysics(),
-                              gridDelegate:
-                                  SliverGridDelegateWithFixedCrossAxisCount(
+                              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                                 crossAxisCount: 4,
                                 crossAxisSpacing: 16.0,
                                 mainAxisSpacing: 16.0,
@@ -358,13 +474,12 @@ class _VideoDisplayState extends State<VideoDisplay> {
                               itemBuilder: (context, index) {
                                 return GestureDetector(
                                   onTap: () {
-
                                     Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                      builder: (context) =>
-                                          ELibSubjectDetail(subject: subjectProvider.subjects[index])),
-                                );
+                                      context,
+                                      MaterialPageRoute(
+                                          builder: (context) =>
+                                              ELibSubjectDetail(subject: subjectProvider.subjects[index])),
+                                    );
                                   },
                                   child: categories[index],
                                 );
@@ -400,8 +515,7 @@ class _VideoDisplayState extends State<VideoDisplay> {
                                     recommendationVideos[index]),
                               );
                             }
-                            return const SizedBox
-                                .shrink(); // Fallback for empty list
+                            return const SizedBox.shrink();
                           },
                           childCount: recommendationVideos.length,
                         ),
@@ -413,7 +527,7 @@ class _VideoDisplayState extends State<VideoDisplay> {
             ),
           ),
         );
-      },
-    );
-  }
-}
+      }
+    },
+  );
+}}

@@ -1,3 +1,4 @@
+import 'package:bottom_picker/bottom_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:linkschool/modules/explore/e_library/cbt.details.dart';
 import 'package:linkschool/modules/explore/ebooks/subject_item.dart';
@@ -429,116 +430,52 @@ class _CBTDashboardState extends State<CBTDashboard> {
     );
   }
 }
+
+
+
 void _yearDialog(BuildContext context) {
-  final List<int> years = List.generate(10, (index) => 2024 - index);
+  final List<int> years = List.generate(20, (index) => 2024 - index);
   int? selectedYear;
 
-  showModalBottomSheet(
-    context: context,
-    builder: (BuildContext context) => StatefulBuilder(
-      builder: (BuildContext context, StateSetter setState) => Container(
-        height: 335,
-        width: 360,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              'Choose a year',
-              style: AppTextStyles.normal600(
-                fontSize: 26.0,
-                color: AppColors.cbtDialogTitle,
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(8.0),
+  BottomPicker(
+    items: years
+        .map((year) => Center(
               child: Text(
-                'Select a year to practice questions',
-                style: AppTextStyles.normal600(
-                  fontSize: 14.0,
-                  color: AppColors.cbtDialogText,
+                year.toString(),
+                style: TextStyle(
+                  fontSize: 18.0,
+                  fontWeight: FontWeight.bold,
                 ),
               ),
-            ),
-            Expanded(
-              child: ListView.builder(
-                itemCount: years.length,
-                itemBuilder: (context, index) {
-                  return ListTile(
-                    title: Text(
-                      years[index].toString(),
-                      textAlign: TextAlign.center,
-                      style: AppTextStyles.normal600(
-                        fontSize: selectedYear == years[index] ? 24.0 : 16.0,
-                        color: selectedYear == years[index]
-                            ? AppColors.cbtDialogTitle
-                            : AppColors.booksButtonTextColor,
-                      ),
-                    ),
-                    onTap: () {
-                      setState(() {
-                        selectedYear = years[index];
-                      });
-                    },
-                  );
-                },
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  MaterialButton(
-                    height: 40,
-                    minWidth: 156,
-                    onPressed: () {
-                      Navigator.pop(context);
-                    },
-                    child: Text(
-                      'Cancel',
-                      style: AppTextStyles.normal600(
-                          fontSize: 16.0, color: AppColors.cbtDialogBorder),
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8.0),
-                      side: BorderSide(
-                          color: AppColors.cbtDialogBorder, width: 1.0),
-                    ),
-                  ),
-                  MaterialButton(
-                    height: 40,
-                    minWidth: 156,
-                    color: AppColors.cbtDialogButton,
-                    onPressed: () {
-                      if (selectedYear != null) {
-                        Navigator.pop(context);
-                        Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                                builder: (context) => CbtDetailScreen(
-                                      year: selectedYear!,
-                                      subject: 'Mathematics',
-                                      subjectIcon: 'maths',
-                                      cardColor: AppColors.cbtCardColor1,
-                                    )));
-                      }
-                    },
-                    child: Text(
-                      'Confirm',
-                      style: AppTextStyles.normal600(
-                          fontSize: 16.0, color: AppColors.textFieldLight),
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8.0),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
+            ))
+        .toList(),
+    pickerTitle: Text(
+      'Choose a Year',
+      style: TextStyle(
+        fontSize: 22.0,
+        fontWeight: FontWeight.bold,
       ),
     ),
-  );
+    titleAlignment: Alignment.center,
+    pickerTextStyle: AppTextStyles.normal700(fontSize: 32, color: Colors.black),
+    closeIconColor: Colors.red,
+    onChange: (index) {
+      selectedYear = years[index];
+    },
+    onSubmit: (index) {
+      if (selectedYear != null) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => CbtDetailScreen(
+              year: selectedYear!,
+              subject: 'Mathematics',
+              subjectIcon: 'maths',
+              cardColor: AppColors.cbtCardColor1,
+            ),
+          ),
+        );
+      }
+    },
+  ).show(context);
 }

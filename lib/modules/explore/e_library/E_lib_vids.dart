@@ -4,6 +4,7 @@ import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/model/explore/home/subject_model.dart';
 import 'package:chewie/chewie.dart';
+import 'package:skeletonizer/skeletonizer.dart';
 import 'package:video_player/video_player.dart';
 
 class E_lib_vids extends StatefulWidget {
@@ -14,7 +15,6 @@ class E_lib_vids extends StatefulWidget {
 }
 class _E_lib_vidsState extends State<E_lib_vids> {
   late VideoPlayerController _videoPlayerController;
-  bool _isInitialized = false;
   ChewieController? _chewieController;
   final String par_1 =
       "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Null leo enim, pretium vitae nisl sit amet, bibendum euismod velit. Fusce placerat sagittis mi, id aliquet felis vehicula ac. Suspendisse mi massa, suscipit in ex id, condimentum. ";
@@ -42,7 +42,7 @@ class _E_lib_vidsState extends State<E_lib_vids> {
       ),
     );
     setState(() {
-      _isInitialized = true;
+    
     });
   }
   @override
@@ -80,10 +80,15 @@ class _E_lib_vidsState extends State<E_lib_vids> {
                     )
                   : AspectRatio(
                       aspectRatio: 16 / 9,
-                      child: Center(child: CircularProgressIndicator()),
+                      child: Center(child: Skeletonizer(child: 
+                      Container(
+                        height: 300,
+                        width: double.infinity,
+                        color: Colors.black,
+                      )
+                      )),
                     ),
 
-              // Progress indicator (now part of the video player)
 
               SizedBox(height: 10),
 

@@ -8,6 +8,7 @@ class SubjectProvider with ChangeNotifier {
   List<Subject> _subjects = [];
   bool _isLoading = false;
 
+
   List<Subject> get subjects => _subjects;
   bool get isLoading => _isLoading;
 

@@ -2,7 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
+import 'package:linkschool/modules/explore/e_library/cbt.details.dart';
 import 'package:linkschool/modules/model/explore/home/subject_model.dart';
+import 'package:skeletonizer/skeletonizer.dart';
+import 'package:linkschool/modules/providers/explore/subject_provider.dart';
 
 class ELibSubjectDetail extends StatefulWidget {
   const ELibSubjectDetail({Key? key, this.subject}) : super(key: key);
@@ -12,10 +15,14 @@ class ELibSubjectDetail extends StatefulWidget {
   State<ELibSubjectDetail> createState() => _ELibSubjectDetailState();
 }
 
-class _ELibSubjectDetailState extends State<ELibSubjectDetail> with SingleTickerProviderStateMixin {
+class _ELibSubjectDetailState extends State<ELibSubjectDetail>
+    with SingleTickerProviderStateMixin {
   late TabController _tabController;
   final ScrollController _scrollController = ScrollController();
   bool _showFloatingTabBar = false;
+  bool _isLoading = true;
+  bool _hasError = false;
+  String _errorMessage = '';
 
   final String paratext =
       "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.";
@@ -25,6 +32,7 @@ class _ELibSubjectDetailState extends State<ELibSubjectDetail> with SingleTicker
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
     _scrollController.addListener(_onScroll);
+    _loadData();
   }
 
   @override
@@ -33,6 +41,37 @@ class _ELibSubjectDetailState extends State<ELibSubjectDetail> with SingleTicker
     _scrollController.dispose();
     _tabController.dispose();
     super.dispose();
+  }
+
+  Future<void> _loadData() async {
+    if (mounted) {
+      setState(() {
+        _isLoading = true;
+        _hasError = false;
+        _errorMessage = '';
+      });
+    }
+
+    try {
+      // Add your data fetching logic here
+      // Example:
+      // final subjectData = await SubjectProvider().fetchSubjectDetails(widget.subject?.id);
+      await Future.delayed(Duration(seconds: 2)); // Remove in production
+
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _hasError = true;
+          _errorMessage = 'Failed to load subject details. Please try again.';
+        });
+      }
+    }
   }
 
   void _onScroll() {
@@ -46,14 +85,55 @@ class _ELibSubjectDetailState extends State<ELibSubjectDetail> with SingleTicker
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Container(
-        decoration: Constants.customBoxDecoration(context),
-        child: Stack(
+      body: RefreshIndicator(
+        onRefresh: _loadData,
+        child: Skeletonizer(
+          enabled: _isLoading,
+          child: Container(
+            decoration: Constants.customBoxDecoration(context),
+            child: Stack(
+              children: [
+                if (!_isLoading) _buildBackgroundImage(),
+                _buildBackButton(),
+                if (_hasError) 
+                  _buildErrorView()
+                else
+                  _buildMainContent(),
+                if (_showFloatingTabBar && !_isLoading && !_hasError) 
+                  _buildFloatingTabBar(),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildErrorView() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            _buildBackgroundImage(),
-            _buildBackButton(),
-            _buildMainContent(),
-            if (_showFloatingTabBar) _buildFloatingTabBar(),
+            Icon(Icons.error_outline, size: 48, color: Colors.red),
+            SizedBox(height: 16),
+            Text(
+              _errorMessage,
+              textAlign: TextAlign.center,
+              style: AppTextStyles.normal500(
+                fontSize: 16,
+                color: AppColors.assessmentColor2,
+              ),
+            ),
+            SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: _loadData,
+              child: Text('Retry'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.bgBorder,
+              ),
+            ),
           ],
         ),
       ),
@@ -65,7 +145,8 @@ class _ELibSubjectDetailState extends State<ELibSubjectDetail> with SingleTicker
       left: 0,
       right: 0,
       child: Image(
-        image: AssetImage('assets/images/e-subject_detail/maths_colourful_words.png'),
+        image: AssetImage(
+            'assets/images/e-subject_detail/maths_colourful_words.png'),
         fit: BoxFit.cover,
         height: 338,
         width: 360,
@@ -120,7 +201,9 @@ class _ELibSubjectDetailState extends State<ELibSubjectDetail> with SingleTicker
                     unselectedLabelColor: AppColors.assessmentColor2,
                     indicatorColor: AppColors.bgBorder,
                     tabs: [
-                      Tab(text: 'Lessons(${widget.subject?.categories[0].videos.length ?? 0})'),
+                      Tab(
+                          text:
+                              'Lessons(${widget.subject?.categories.isEmpty ?? true ? 0 : widget.subject?.categories[0].videos.length})'),
                       Tab(text: 'Reviews'),
                     ],
                   ),
@@ -147,8 +230,9 @@ class _ELibSubjectDetailState extends State<ELibSubjectDetail> with SingleTicker
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            widget.subject?.name ?? '',
-            style: AppTextStyles.normal700(fontSize: 20, color: AppColors.aboutTitle),
+            widget.subject?.name ?? 'Subject Name',
+            style: AppTextStyles.normal700(
+                fontSize: 20, color: AppColors.aboutTitle),
           ),
           SizedBox(height: 8),
           _buildSubjectInfo(),
@@ -164,7 +248,8 @@ class _ELibSubjectDetailState extends State<ELibSubjectDetail> with SingleTicker
             onPressed: () {},
             child: Text(
               'Read More',
-              style: AppTextStyles.normal400(fontSize: 14, color: AppColors.bgBorder),
+              style: AppTextStyles.normal400(
+                  fontSize: 14, color: AppColors.bgBorder),
             ),
           ),
         ],
@@ -173,25 +258,55 @@ class _ELibSubjectDetailState extends State<ELibSubjectDetail> with SingleTicker
   }
 
   Widget _buildSubjectInfo() {
+    if (_isLoading) {
+      return Padding(
+        padding: EdgeInsets.symmetric(vertical: 8),
+        child: Row(
+          children: [
+            Container(
+              width: 80,
+              height: 12,
+              decoration: BoxDecoration(
+                color: Colors.grey[300],
+                borderRadius: BorderRadius.circular(6),
+              ),
+            ),
+            SizedBox(width: 8),
+            Container(
+              width: 80,
+              height: 12,
+              decoration: BoxDecoration(
+                color: Colors.grey[300],
+                borderRadius: BorderRadius.circular(6),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
     return Row(
       children: [
         Icon(Icons.access_time, size: 12),
         SizedBox(width: 4),
         Text(
           '3h 30min',
-          style: AppTextStyles.normal400(fontSize: 12, color: AppColors.admissionTitle),
+          style: AppTextStyles.normal400(
+              fontSize: 12, color: AppColors.admissionTitle),
         ),
         SizedBox(width: 8),
         Icon(Icons.access_time, size: 12),
         SizedBox(width: 4),
         Text(
           '3h 30min',
-          style: AppTextStyles.normal400(fontSize: 12, color: AppColors.admissionTitle),
+          style: AppTextStyles.normal400(
+              fontSize: 12, color: AppColors.admissionTitle),
         ),
         SizedBox(width: 8),
         Text(
-          '. 28 Lessons',
-          style: AppTextStyles.normal400(fontSize: 12, color: AppColors.admissionTitle),
+          '. ${widget.subject?.categories.fold<int>(0, (sum, category) => sum + (category.videos.length)) ?? 0} Lessons',
+          style: AppTextStyles.normal400(
+              fontSize: 12, color: AppColors.admissionTitle),
         ),
       ],
     );
@@ -212,7 +327,9 @@ class _ELibSubjectDetailState extends State<ELibSubjectDetail> with SingleTicker
           unselectedLabelColor: AppColors.assessmentColor2,
           indicatorColor: AppColors.bgBorder,
           tabs: [
-            Tab(text: 'Lessons(${widget.subject?.categories[01].videos.length ?? 0})'),
+            Tab(
+                text:
+                    'Lessons(${widget.subject?.categories.isEmpty ?? true ? 0 : widget.subject?.categories[0].videos.length})'),
             Tab(text: 'Reviews'),
           ],
         ),
@@ -221,16 +338,82 @@ class _ELibSubjectDetailState extends State<ELibSubjectDetail> with SingleTicker
   }
 
   Widget _buildLessonsTab() {
+    if (_isLoading) {
+       return Skeletonizer(
+         child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.video_library_outlined, 
+                  size: 48, 
+                  color: AppColors.assessmentColor2),
+              SizedBox(height: 16),
+              Text(
+                '',
+                style: AppTextStyles.normal500(
+                  fontSize: 16,
+                  color: AppColors.assessmentColor2,
+                ),
+              ),
+              SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: _loadData,
+                child: Text(''),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.bgBorder,
+                ),
+              ),
+            ],
+          ),
+               ),
+       );
+    }
+
+    if (widget.subject?.categories.isEmpty ?? true) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.video_library_outlined, 
+                size: 48, 
+                color: AppColors.assessmentColor2),
+            SizedBox(height: 16),
+            Text(
+              '',
+              style: AppTextStyles.normal500(
+                fontSize: 16,
+                color: AppColors.assessmentColor2,
+              ),
+            ),
+            SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: _loadData,
+              child: Text(''),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.bgBorder,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
     return ListView(
       padding: EdgeInsets.all(16),
       children: [
-        _buildLessonSection('Elementary', widget.subject?.categories[0].videos ?? []),
-        _buildLessonSection('Junior Secondary', widget.subject?.categories[1].videos ?? []),
+        _buildLessonSection(
+            'Elementary', widget.subject?.categories[0].videos ?? []),
+        _buildLessonSection(
+            'Junior Secondary', widget.subject?.categories[1].videos ?? []),
       ],
     );
   }
 
   Widget _buildLessonSection(String title, List<Video> videos) {
+    if (videos.isEmpty) {
+      return SizedBox.shrink();
+    }
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -238,7 +421,8 @@ class _ELibSubjectDetailState extends State<ELibSubjectDetail> with SingleTicker
           padding: const EdgeInsets.symmetric(vertical: 8.0),
           child: Text(
             title,
-            style: AppTextStyles.normal500(fontSize: 14, color: AppColors.assessmentColor2),
+            style: AppTextStyles.normal500(
+                fontSize: 14, color: AppColors.assessmentColor2),
           ),
         ),
         ...videos.map((video) => SubjectDetails(video: video)).toList(),
@@ -248,10 +432,24 @@ class _ELibSubjectDetailState extends State<ELibSubjectDetail> with SingleTicker
   }
 
   Widget _buildReviewsTab() {
+    if (_isLoading) {
+      return Center(
+        child: CircularProgressIndicator(
+          valueColor: AlwaysStoppedAnimation<Color>(AppColors.bgBorder),
+        ),
+      );
+    }
+
     return ListView(
       padding: EdgeInsets.all(16),
       children: [
-        Text(paratext),
+        Text(
+          paratext,
+          style: AppTextStyles.normal400(
+            fontSize: 14,
+            color: AppColors.assessmentColor2,
+          ),
+        ),
         // Add more review content here
       ],
     );
@@ -269,7 +467,8 @@ class _SliverAppBarDelegate extends SliverPersistentHeaderDelegate {
   double get maxExtent => _tabBar.preferredSize.height;
 
   @override
-  Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
+  Widget build(
+      BuildContext context, double shrinkOffset, bool overlapsContent) {
     return Container(
       color: AppColors.assessmentColor1,
       child: _tabBar,
@@ -317,25 +516,18 @@ class SubjectDetails extends StatelessWidget {
                   children: [
                     Text(
                       video.title,
-                      style: AppTextStyles.normal600(fontSize: 14.0, color: AppColors.admissionTitle),
+                      style: AppTextStyles.normal600(
+                          fontSize: 14.0, color: AppColors.admissionTitle),
                     ),
                     Text(
                       '02:57:00', // Replace with actual duration when available
-                      style: AppTextStyles.normal600(fontSize: 12.0, color: AppColors.admissionTitle),
+                      style: AppTextStyles.normal600(
+                          fontSize: 12.0, color: AppColors.admissionTitle),
                     ),
                   ],
                 ),
               ),
-              Icon(
-                Icons.play_circle_fill_rounded,
-                color: AppColors.bgBorder,
-                size: 30,
-              ),
             ],
-          ),
-          Divider(
-            color: AppColors.attBorderColor1,
-            height: 10,
           ),
         ],
       ),

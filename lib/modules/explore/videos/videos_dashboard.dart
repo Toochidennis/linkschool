@@ -24,7 +24,332 @@ class _VideosDashboardState extends State<VideosDashboard> {
     Provider.of<SubjectProvider>(context, listen: false).fetchSubjects();
   }
 
-  Widget _buildWatchHistoryCard(Video video) {
+  
+
+  
+
+  Color _getSubjectColor(String subjectName) {
+    switch (subjectName.toLowerCase()) {
+      case 'english language':
+        return AppColors.videoColor1;
+
+      case 'mathematics':
+        return AppColors.videoColor2;
+      case 'physics':
+        return AppColors.videoColor3;
+      case 'chemistry':
+        return AppColors.videoColor4;
+      case 'biology':
+        return AppColors.videoColor5;
+
+      default:
+        return AppColors.videoColor3;
+    }
+  }
+
+
+  List<String> subjectIcons = [
+    'english',
+    'maths',
+    'physics',
+    'chemistry',
+    'biology',
+  ];
+
+  @override
+Widget build(BuildContext context) {
+  return Consumer<SubjectProvider>(
+    builder: (context, subjectProvider, child) {
+      if (subjectProvider.isLoading) {
+        return Scaffold(
+          appBar: Constants.customAppBar(
+              context: context,
+              iconPath: 'assets/icons/search.png',
+              iconSize: 20.0),
+          body: Skeletonizer(
+            child: Container(
+              decoration: Constants.customBoxDecoration(context),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: CustomScrollView(
+                      physics: const BouncingScrollPhysics(),
+                      slivers: [
+                        SliverToBoxAdapter(
+                          child: Constants.headingWithSeeAll600(
+                            title: 'Watch history',
+                            titleSize: 18.0,
+                            titleColor: AppColors.primaryLight,
+                          ),
+                        ),
+                        SliverToBoxAdapter(
+                          child: SizedBox(
+                            
+                            child: ListView.builder(
+                              itemCount: 7,
+                              scrollDirection: Axis.horizontal,
+                              itemBuilder: (context, index) {
+                                return _buildWatchHistoryCard(Video(
+                                  title: 'Loading...',
+                                  url: '',
+                                  thumbnail: '',
+                                  author: '',
+                                ));
+                              },
+                            ),
+                          ),
+                        ),
+                        SliverToBoxAdapter(
+                            child: Constants.heading600(
+                          title: 'Categories',
+                          titleSize: 18.0,
+                          titleColor: AppColors.primaryLight,
+                        )),
+                        const SliverToBoxAdapter(child: SizedBox(height: 10.0)),
+                        SliverToBoxAdapter(
+                          child: LayoutBuilder(builder: (context, constraints) {
+                            double screenHeight = MediaQuery.of(context).size.height;
+                            double screenWidth = MediaQuery.of(context).size.width;
+                            double height = screenHeight * 0.34;
+                            double aspectRatio = (screenWidth / 4) / (height / 1.8);
+
+                            return Container(
+                              height: height,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 3.2,
+                                vertical: 1.90,
+                              ),
+                              decoration: const BoxDecoration(
+                                color: AppColors.videoCardColor,
+                                border: Border(
+                                  bottom: BorderSide(
+                                    color: AppColors.videoCardBorderColor,
+                                  ),
+                                  top: BorderSide(
+                                    color: AppColors.videoCardBorderColor,
+                                  ),
+                                ),
+                              ),
+                              alignment: Alignment.center,
+                              child: GridView.builder(
+                                physics: const NeverScrollableScrollPhysics(),
+                                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                                  crossAxisCount: 4,
+                                  crossAxisSpacing: 16.0,
+                                  mainAxisSpacing: 16.0,
+                                  childAspectRatio: aspectRatio,
+                                ),
+                                itemCount: 8,
+                                itemBuilder: (context, index) {
+                                  return _buildCategoriesCard(
+                                    subjectName: 'Loading...',
+                                    subjectIcon: 'english',
+                                    backgroundColor: AppColors.videoColor1,
+                                  );
+                                },
+                              ),
+                            );
+                          }),
+                        ),
+                        const SliverToBoxAdapter(child: SizedBox(height: 19.0)),
+                        SliverToBoxAdapter(
+                          child: Constants.heading600(
+                            title: 'Recommended for you',
+                            titleSize: 16.0,
+                            titleColor: AppColors.primaryLight,
+                          ),
+                        ),
+                        SliverList(
+                          delegate: SliverChildBuilderDelegate(
+                            (context, index) {
+                              return _recommendedForYouCard(Video(
+                                title: 'Loading...',
+                                url: '',
+                                thumbnail: '',
+                                author: '',
+                              ));
+                            },
+                            childCount: 6,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      } else {
+        final categories = subjectProvider.subjects
+            .map((subject) => _buildCategoriesCard(
+                  subjectName: subject.name,
+                  subjectIcon:
+                      subjectIcons[subjectProvider.subjects.indexOf(subject)],
+                  backgroundColor: _getSubjectColor(subject.name),
+                ))
+            .toList();
+
+        final allVideos = subjectProvider.subjects
+            .expand((subject) => subject.categories)
+            .expand((category) => category.videos)
+            .toList();
+
+        final recommendationVideos = allVideos.length > 4
+            ? allVideos.getRange(0, 6).toList()
+            : allVideos;
+
+        return Scaffold(
+          appBar: Constants.customAppBar(
+              context: context,
+              iconPath: 'assets/icons/search.png',
+              iconSize: 20.0),
+          body: Container(
+            decoration: Constants.customBoxDecoration(context),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: CustomScrollView(
+                    physics: const BouncingScrollPhysics(),
+                    slivers: [
+                      SliverToBoxAdapter(
+                        child: Constants.headingWithSeeAll600(
+                          title: 'Watch history',
+                          titleSize: 14.0,
+                          titleColor: AppColors.primaryLight,
+                        ),
+                      ),
+                      SliverToBoxAdapter(
+                        child: SizedBox(
+                          height: 200.0,
+                          child: ListView.builder(
+                            itemCount: allVideos.length,
+                            scrollDirection: Axis.horizontal,
+                            itemBuilder: (context, index) {
+                              return GestureDetector(
+                                  onTap: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                          builder: (context) => E_lib_vids(
+                                              video: allVideos[index])),
+                                    );
+                                  },
+                                  child: _buildWatchHistoryCard(allVideos[index]));
+                            },
+                          ),
+                        ),
+                      ),
+                      SliverToBoxAdapter(
+                          child: Constants.heading600(
+                        title: 'Categories',
+                        titleSize: 16.0,
+                        titleColor: AppColors.primaryLight,
+                      )),
+                      const SliverToBoxAdapter(child: SizedBox(height: 10.0)),
+                      SliverToBoxAdapter(
+                        child: LayoutBuilder(builder: (context, constraints) {
+                          double screenHeight = MediaQuery.of(context).size.height;
+                          double screenWidth = MediaQuery.of(context).size.width;
+                          double height = screenHeight * 0.34;
+                          double aspectRatio = (screenWidth / 4) / (height / 2);
+
+                          return Container(
+                            height: height,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 3.2,
+                              vertical: 1.90,
+                            ),
+                            decoration: const BoxDecoration(
+                              color: AppColors.videoCardColor,
+                              border: Border(
+                                bottom: BorderSide(
+                                  color: AppColors.videoCardBorderColor,
+                                ),
+                                top: BorderSide(
+                                  color: AppColors.videoCardBorderColor,
+                                ),
+                              ),
+                            ),
+                            alignment: Alignment.center,
+                            child: GridView.builder(
+                              physics: const NeverScrollableScrollPhysics(),
+                              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount: 4,
+                                crossAxisSpacing: 16.0,
+                                mainAxisSpacing: 16.0,
+                                childAspectRatio: aspectRatio,
+                              ),
+                              itemCount: categories.length,
+                              itemBuilder: (context, index) {
+                                return GestureDetector(
+                                  onTap: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                          builder: (context) =>
+                                              ELibSubjectDetail(subject: subjectProvider.subjects[index])),
+                                    );
+                                  },
+                                  child: categories[index],
+                                );
+                              },
+                            ),
+                          );
+                        }),
+                      ),
+                      const SliverToBoxAdapter(child: SizedBox(height: 19.0)),
+                      SliverToBoxAdapter(
+                        child: Constants.heading600(
+                          title: 'Recommended for you',
+                          titleSize: 16.0,
+                          titleColor: AppColors.primaryLight,
+                        ),
+                      ),
+                      SliverList(
+                        delegate: SliverChildBuilderDelegate(
+                          (context, index) {
+                            if (index < recommendationVideos.length) {
+                              return GestureDetector(
+                                onTap: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => E_lib_vids(
+                                        video: recommendationVideos[index],
+                                      ),
+                                    ),
+                                  );
+                                },
+                                child: _recommendedForYouCard(
+                                    recommendationVideos[index]),
+                              );
+                            }
+                            return const SizedBox.shrink();
+                          },
+                          childCount: recommendationVideos.length,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      }
+    },
+  );
+}}
+
+
+
+
+Widget _buildWatchHistoryCard(Video video) {
     return Container(
       height: 146,
       width: 150,
@@ -45,7 +370,7 @@ class _VideosDashboardState extends State<VideosDashboard> {
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
               style: AppTextStyles.normal500(
-                fontSize: 12.0,
+                fontSize: 16.0,
                 color: AppColors.backgroundDark,
               ),
             ),
@@ -80,6 +405,9 @@ class _VideosDashboardState extends State<VideosDashboard> {
     );
   }
 
+
+
+
   Widget _buildCategoriesCard({
     required String subjectName,
     required String subjectIcon,
@@ -91,7 +419,9 @@ class _VideosDashboardState extends State<VideosDashboard> {
       mainAxisAlignment: MainAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
-        Container(
+        Column(
+          children: [
+            Container(
           height: 60,
           width: 60,
           padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 4.0),
@@ -115,28 +445,12 @@ class _VideosDashboardState extends State<VideosDashboard> {
             textAlign: TextAlign.center,
           ),
         )
+          ],
+        )
       ],
     );
   }
 
-  Color _getSubjectColor(String subjectName) {
-    switch (subjectName.toLowerCase()) {
-      case 'english language':
-        return AppColors.videoColor1;
-
-      case 'mathematics':
-        return AppColors.videoColor2;
-      case 'physics':
-        return AppColors.videoColor3;
-      case 'chemistry':
-        return AppColors.videoColor4;
-      case 'biology':
-        return AppColors.videoColor5;
-
-      default:
-        return AppColors.videoColor3;
-    }
-  }
 
   Widget _recommendedForYouCard(Video video) {
     return Container(
@@ -236,194 +550,3 @@ class _VideosDashboardState extends State<VideosDashboard> {
       ),
     );
   }
-
-  List<String> subjectIcons = [
-    'english',
-    'maths',
-    'physics',
-    'chemistry',
-    'biology',
-  ];
-
-  @override
-  Widget build(BuildContext context) {
-    return Consumer<SubjectProvider>(
-      builder: (context, subjectProvider, child) {
-       
-
-        final categories = subjectProvider.subjects
-            .map((subject) => _buildCategoriesCard(
-                  subjectName: subject.name,
-                  subjectIcon:
-                      subjectIcons[subjectProvider.subjects.indexOf(subject)],
-                  backgroundColor: _getSubjectColor(subject.name),
-                ))
-            .toList();
-
-        final allVideos = subjectProvider.subjects
-            .expand((subject) => subject.categories)
-            .expand((category) => category.videos)
-            .toList();
-
-        final recommendationVideos = allVideos.length > 4
-            ? allVideos.getRange(0, 6).toList()
-            : allVideos;
-
-        return Scaffold(
-          appBar: Constants.customAppBar(
-              context: context,
-              iconPath: 'assets/icons/search.png',
-              iconSize: 20.0),
-          body: Container(
-            decoration: Constants.customBoxDecoration(context),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: CustomScrollView(
-                    physics: const BouncingScrollPhysics(),
-                    slivers: [
-                      SliverToBoxAdapter(
-                        child: Constants.headingWithSeeAll600(
-                          title: 'Watch history',
-                          titleSize: 14.0,
-                          titleColor: AppColors.primaryLight,
-                        ),
-                      ),
-                      SliverToBoxAdapter(
-                        child: Skeletonizer(
-                         
-                          child: SizedBox(
-                            height: 200.0,
-                            child: ListView.builder(
-                              itemCount: 7,
-                              scrollDirection: Axis.horizontal,
-                              itemBuilder: (context, index) {
-                                return GestureDetector(
-                                    onTap: () {
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                            builder: (context) => E_lib_vids(
-                                                video: allVideos[index])),
-                                      );
-                                    },
-                                    child:
-                                        Skeletonizer(child: _buildWatchHistoryCard(allVideos[index])));
-                              },
-                            ),
-                          ),
-                        ),
-                      ),
-                      SliverToBoxAdapter(
-                          child: Constants.heading600(
-                        title: 'Categories',
-                        titleSize: 16.0,
-                        titleColor: AppColors.primaryLight,
-                      )),
-                      const SliverToBoxAdapter(child: SizedBox(height: 10.0)),
-                      SliverToBoxAdapter(
-                        child: Skeletonizer(
-                          child: LayoutBuilder(builder: (context, constraints) {
-                            double screenHeight =
-                                MediaQuery.of(context).size.height;
-                            double screenWidth =
-                                MediaQuery.of(context).size.width;
-                          
-                            double height = screenHeight * 0.34;
-                            double aspectRatio = (screenWidth / 4) / (height / 2);
-                          
-                            return Container(
-                              height: height,
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 3.2,
-                                vertical: 1.90,
-                              ),
-                              decoration: const BoxDecoration(
-                                color: AppColors.videoCardColor,
-                                border: Border(
-                                  bottom: BorderSide(
-                                    color: AppColors.videoCardBorderColor,
-                                  ),
-                                  top: BorderSide(
-                                    color: AppColors.videoCardBorderColor,
-                                  ),
-                                ),
-                              ),
-                              alignment: Alignment.center,
-                              child: GridView.builder(
-                                physics: const NeverScrollableScrollPhysics(),
-                                gridDelegate:
-                                    SliverGridDelegateWithFixedCrossAxisCount(
-                                  crossAxisCount: 4,
-                                  crossAxisSpacing: 16.0,
-                                  mainAxisSpacing: 16.0,
-                                  childAspectRatio: aspectRatio,
-                                ),
-                                itemCount: categories.length,
-                                itemBuilder: (context, index) {
-                                  return GestureDetector(
-                                    onTap: () {
-                          
-                                      Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                        builder: (context) =>
-                                            ELibSubjectDetail(subject: subjectProvider.subjects[index])),
-                                  );
-                                    },
-                                    child: categories[index],
-                                  );
-                                },
-                              ),
-                            );
-                          }),
-                        ),
-                      ),
-                      const SliverToBoxAdapter(child: SizedBox(height: 19.0)),
-                      SliverToBoxAdapter(
-                        child: Constants.heading600(
-                          title: 'Recommended for you',
-                          titleSize: 16.0,
-                          titleColor: AppColors.primaryLight,
-                        ),
-                      ),
-                      SliverList(
-                        delegate: SliverChildBuilderDelegate(
-                          (context, index) {
-                            if (index < recommendationVideos.length) {
-                              return GestureDetector(
-                                onTap: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) => E_lib_vids(
-                                        video: recommendationVideos[index],
-                                      ),
-                                    ),
-                                  );
-                                },
-                                child: Skeletonizer(
-                                  child: _recommendedForYouCard(
-                                      recommendationVideos[index]),
-                                ),
-                              );
-                            }
-                            return const SizedBox
-                                .shrink(); // Fallback for empty list
-                          },
-                          childCount: recommendationVideos.length,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
-}
