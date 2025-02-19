@@ -7,6 +7,7 @@ import '../../common/text_styles.dart';
 import '../../model/explore/home/subject_model.dart';
 import '../../providers/explore/subject_provider.dart';
 import '../e_library/cbt.details.dart';
+import 'package:skeletonizer/skeletonizer.dart';
 import '../e_library/e_lib_subject_detail.dart';
 
 class VideosDashboard extends StatefulWidget {
@@ -248,9 +249,7 @@ class _VideosDashboardState extends State<VideosDashboard> {
   Widget build(BuildContext context) {
     return Consumer<SubjectProvider>(
       builder: (context, subjectProvider, child) {
-        if (subjectProvider.isLoading) {
-          return const Center(child: CircularProgressIndicator());
-        }
+       
 
         final categories = subjectProvider.subjects
             .map((subject) => _buildCategoriesCard(
@@ -293,24 +292,27 @@ class _VideosDashboardState extends State<VideosDashboard> {
                         ),
                       ),
                       SliverToBoxAdapter(
-                        child: SizedBox(
-                          height: 200.0,
-                          child: ListView.builder(
-                            itemCount: 7,
-                            scrollDirection: Axis.horizontal,
-                            itemBuilder: (context, index) {
-                              return GestureDetector(
-                                  onTap: () {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                          builder: (context) => E_lib_vids(
-                                              video: allVideos[index])),
-                                    );
-                                  },
-                                  child:
-                                      _buildWatchHistoryCard(allVideos[index]));
-                            },
+                        child: Skeletonizer(
+                         
+                          child: SizedBox(
+                            height: 200.0,
+                            child: ListView.builder(
+                              itemCount: 7,
+                              scrollDirection: Axis.horizontal,
+                              itemBuilder: (context, index) {
+                                return GestureDetector(
+                                    onTap: () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                            builder: (context) => E_lib_vids(
+                                                video: allVideos[index])),
+                                      );
+                                    },
+                                    child:
+                                        Skeletonizer(child: _buildWatchHistoryCard(allVideos[index])));
+                              },
+                            ),
                           ),
                         ),
                       ),
@@ -322,60 +324,62 @@ class _VideosDashboardState extends State<VideosDashboard> {
                       )),
                       const SliverToBoxAdapter(child: SizedBox(height: 10.0)),
                       SliverToBoxAdapter(
-                        child: LayoutBuilder(builder: (context, constraints) {
-                          double screenHeight =
-                              MediaQuery.of(context).size.height;
-                          double screenWidth =
-                              MediaQuery.of(context).size.width;
-
-                          double height = screenHeight * 0.34;
-                          double aspectRatio = (screenWidth / 4) / (height / 2);
-
-                          return Container(
-                            height: height,
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 3.2,
-                              vertical: 1.90,
-                            ),
-                            decoration: const BoxDecoration(
-                              color: AppColors.videoCardColor,
-                              border: Border(
-                                bottom: BorderSide(
-                                  color: AppColors.videoCardBorderColor,
-                                ),
-                                top: BorderSide(
-                                  color: AppColors.videoCardBorderColor,
+                        child: Skeletonizer(
+                          child: LayoutBuilder(builder: (context, constraints) {
+                            double screenHeight =
+                                MediaQuery.of(context).size.height;
+                            double screenWidth =
+                                MediaQuery.of(context).size.width;
+                          
+                            double height = screenHeight * 0.34;
+                            double aspectRatio = (screenWidth / 4) / (height / 2);
+                          
+                            return Container(
+                              height: height,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 3.2,
+                                vertical: 1.90,
+                              ),
+                              decoration: const BoxDecoration(
+                                color: AppColors.videoCardColor,
+                                border: Border(
+                                  bottom: BorderSide(
+                                    color: AppColors.videoCardBorderColor,
+                                  ),
+                                  top: BorderSide(
+                                    color: AppColors.videoCardBorderColor,
+                                  ),
                                 ),
                               ),
-                            ),
-                            alignment: Alignment.center,
-                            child: GridView.builder(
-                              physics: const NeverScrollableScrollPhysics(),
-                              gridDelegate:
-                                  SliverGridDelegateWithFixedCrossAxisCount(
-                                crossAxisCount: 4,
-                                crossAxisSpacing: 16.0,
-                                mainAxisSpacing: 16.0,
-                                childAspectRatio: aspectRatio,
+                              alignment: Alignment.center,
+                              child: GridView.builder(
+                                physics: const NeverScrollableScrollPhysics(),
+                                gridDelegate:
+                                    SliverGridDelegateWithFixedCrossAxisCount(
+                                  crossAxisCount: 4,
+                                  crossAxisSpacing: 16.0,
+                                  mainAxisSpacing: 16.0,
+                                  childAspectRatio: aspectRatio,
+                                ),
+                                itemCount: categories.length,
+                                itemBuilder: (context, index) {
+                                  return GestureDetector(
+                                    onTap: () {
+                          
+                                      Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                        builder: (context) =>
+                                            ELibSubjectDetail(subject: subjectProvider.subjects[index])),
+                                  );
+                                    },
+                                    child: categories[index],
+                                  );
+                                },
                               ),
-                              itemCount: categories.length,
-                              itemBuilder: (context, index) {
-                                return GestureDetector(
-                                  onTap: () {
-
-                                    Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                      builder: (context) =>
-                                          ELibSubjectDetail(subject: subjectProvider.subjects[index])),
-                                );
-                                  },
-                                  child: categories[index],
-                                );
-                              },
-                            ),
-                          );
-                        }),
+                            );
+                          }),
+                        ),
                       ),
                       const SliverToBoxAdapter(child: SizedBox(height: 19.0)),
                       SliverToBoxAdapter(
@@ -400,8 +404,10 @@ class _VideosDashboardState extends State<VideosDashboard> {
                                     ),
                                   );
                                 },
-                                child: _recommendedForYouCard(
-                                    recommendationVideos[index]),
+                                child: Skeletonizer(
+                                  child: _recommendedForYouCard(
+                                      recommendationVideos[index]),
+                                ),
                               );
                             }
                             return const SizedBox
