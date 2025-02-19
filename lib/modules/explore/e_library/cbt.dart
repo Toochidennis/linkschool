@@ -428,7 +428,7 @@ void _yearDialog(BuildContext context) {
                                       year: selectedYear!,
                                       subject: 'Mathematics',
                                       subjectIcon: 'maths',
-                                      cardColor: AppColors.cbtCardColor1,
+                                      cardColor: AppColors.cbtCardColor1, subjectList: [],
                                     )));
                       }
                     },

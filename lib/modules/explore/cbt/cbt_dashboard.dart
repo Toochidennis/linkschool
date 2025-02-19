@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:linkschool/modules/explore/e_library/cbt.details.dart';
+import 'package:linkschool/modules/model/explore/home/subject_model.dart';
 import 'package:provider/provider.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 import 'package:linkschool/modules/providers/explore/cbt_provider.dart';
 import '../../common/text_styles.dart';
 import '../../common/app_colors.dart';
 import '../../common/constants.dart';
+import '../components/year_picker_dialog.dart';
 import '../ebooks/books_button_item.dart';
 
 class CBTDashboard extends StatefulWidget {
@@ -356,57 +359,188 @@ class _CBTDashboardState extends State<CBTDashboard> {
     required Color cardColor,
     required String subjectIcon,
   }) {
-    return Container(
-      width: double.infinity,
-      height: 70,
-      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 5.0),
-      decoration: const BoxDecoration(
-        border: Border(top: BorderSide(color: AppColors.cbtColor5)),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 60,
-            decoration: BoxDecoration(
-              color: cardColor,
-              borderRadius: BorderRadius.circular(4.0),
-            ),
-            child: Center(
-              child: Image.asset(
-                'assets/icons/$subjectIcon.png',
-                width: 24.0,
-                height: 24.0,
+    return Consumer<CBTProvider>(
+      builder: (context, provider, child) {
+        // final subjectModel = provider.currentBoardSubjects.firstWhere(
+        //   (s) => s.name == subject,
+        //   orElse: () => SubjectModel(name: subject, years: []),
+        // );
+        final years = provider.getYearsForSubject(subject);
+
+        return GestureDetector(
+onTap: () {
+          if (years.isNotEmpty) {
+            final yearsList = years
+                .map((y) => int.tryParse(y))
+                .whereType<int>()
+                .toList()
+              ..sort((a, b) => b.compareTo(a));
+
+            YearPickerDialog.show(
+              context,
+              startYear: yearsList.first,
+              numberOfYears: yearsList.length,
+              title: 'Choose $subject Year',
+              subtitle: 'Select a year to practice $subject questions',
+              onYearSelected: (selectedYear) {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => CbtDetailScreen(
+                      year: selectedYear,
+                      subject: subject,
+                      subjectIcon: provider.getSubjectIcon(subject),
+                      cardColor: provider.getSubjectColor(subject),
+                      subjectList: provider.getOtherSubjects(subject),
+                    ),
+                  ),
+                );
+              },
+            );
+          } else {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('No years available for this subject'),
+                duration: Duration(seconds: 2),
               ),
+            );
+          }
+        },
+          child: Container(
+            width: double.infinity,
+            height: 70,
+            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 5.0),
+            decoration: const BoxDecoration(
+              border: Border(top: BorderSide(color: AppColors.cbtColor5)),
             ),
-          ),
-          const SizedBox(width: 10.0),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            child: Row(
               children: [
-                Text(
-                  subject,
-                  style: AppTextStyles.normal600(
-                    fontSize: 16.0,
-                    color: AppColors.backgroundDark,
+                Container(
+                  width: 60,
+                  decoration: BoxDecoration(
+                    color: cardColor,
+                    borderRadius: BorderRadius.circular(4.0),
+                  ),
+                  child: Center(
+                    child: Image.asset(
+                      'assets/icons/$subjectIcon.png',
+                      width: 24.0,
+                      height: 24.0,
+                    ),
                   ),
                 ),
-                const SizedBox(height: 8.0),
-                Text(
-                  year,
-                  style: AppTextStyles.normal600(
-                    fontSize: 12.0,
-                    color: AppColors.text9Light,
+                const SizedBox(width: 10.0),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        subject,
+                        style: AppTextStyles.normal600(
+                          fontSize: 16.0,
+                          color: AppColors.backgroundDark,
+                        ),
+                      ),
+                      const SizedBox(height: 8.0),
+                      Text(
+                        year,
+                        style: AppTextStyles.normal600(
+                          fontSize: 12.0,
+                          color: AppColors.text9Light,
+                        ),
+                      ),
+                    ],
                   ),
-                ),
+                )
               ],
             ),
-          )
-        ],
-      ),
+          ),
+        );
+      },
     );
   }
+
+  // Widget _buildChooseSubjectCard({
+  //   required String subject,
+  //   required String year,
+  //   required Color cardColor,
+  //   required String subjectIcon,
+  //   required List<String>? years,
+  // }) {
+  //   return GestureDetector(
+  //   onTap: () async {
+  //     if (years != null && years.isNotEmpty) {
+  //       final selectedYear = await showDialog<String>(
+  //         context: context,
+  //         builder: (context) => YearPickerDialog(years: years),
+  //       );
+
+  //       if (selectedYear != null) {
+  //         // Handle the selected year (e.g., navigate to a new screen)
+  //         print('Selected Year: $selectedYear');
+  //         // You can add navigation logic here
+  //       }
+  //     } else {
+  //       // Handle case where no years are available
+  //       ScaffoldMessenger.of(context).showSnackBar(
+  //         const SnackBar(content: Text('No years available for this subject')),
+  //       );
+  //     }
+  //   },
+  //     child: Container(
+  //       width: double.infinity,
+  //       height: 70,
+  //       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 5.0),
+  //       decoration: const BoxDecoration(
+  //         border: Border(top: BorderSide(color: AppColors.cbtColor5)),
+  //       ),
+  //       child: Row(
+  //         children: [
+  //           Container(
+  //             width: 60,
+  //             decoration: BoxDecoration(
+  //               color: cardColor,
+  //               borderRadius: BorderRadius.circular(4.0),
+  //             ),
+  //             child: Center(
+  //               child: Image.asset(
+  //                 'assets/icons/$subjectIcon.png',
+  //                 width: 24.0,
+  //                 height: 24.0,
+  //               ),
+  //             ),
+  //           ),
+  //           const SizedBox(width: 10.0),
+  //           Expanded(
+  //             child: Column(
+  //               crossAxisAlignment: CrossAxisAlignment.start,
+  //               children: [
+  //                 Text(
+  //                   subject,
+  //                   style: AppTextStyles.normal600(
+  //                     fontSize: 16.0,
+  //                     color: AppColors.backgroundDark,
+  //                   ),
+  //                 ),
+  //                 const SizedBox(height: 8.0),
+  //                 Text(
+  //                   year,
+  //                   style: AppTextStyles.normal600(
+  //                     fontSize: 12.0,
+  //                     color: AppColors.text9Light,
+  //                   ),
+  //                 ),
+  //               ],
+  //             ),
+  //           )
+  //         ],
+  //       ),
+  //     ),
+  //   );
+  // }
 }
+
+
 
 
 
