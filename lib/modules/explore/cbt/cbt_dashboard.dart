@@ -431,25 +431,22 @@ class _CBTDashboardState extends State<CBTDashboard> {
   }
 }
 
-
-
 void _yearDialog(BuildContext context) {
   final List<int> years = List.generate(20, (index) => 2024 - index);
-  int? selectedYear;
 
   BottomPicker(
     items: years
         .map((year) => Center(
               child: Text(
                 year.toString(),
-                style: TextStyle(
+                style: const TextStyle(
                   fontSize: 18.0,
                   fontWeight: FontWeight.bold,
                 ),
               ),
             ))
         .toList(),
-    pickerTitle: Text(
+    pickerTitle: const Text(
       'Choose a Year',
       style: TextStyle(
         fontSize: 22.0,
@@ -459,23 +456,21 @@ void _yearDialog(BuildContext context) {
     titleAlignment: Alignment.center,
     pickerTextStyle: AppTextStyles.normal700(fontSize: 32, color: Colors.black),
     closeIconColor: Colors.red,
-    onChange: (index) {
-      selectedYear = years[index];
-    },
     onSubmit: (index) {
-      if (selectedYear != null) {
+      Navigator.pop(context);
+      Future.delayed(const Duration(milliseconds: 10), () {
         Navigator.push(
           context,
           MaterialPageRoute(
             builder: (context) => CbtDetailScreen(
-              year: selectedYear!,
-              subject: 'Mathematics',
-              subjectIcon: 'maths',
+              year: years[index],
+              subject:'',
+              subjectIcon: '',
               cardColor: AppColors.cbtCardColor1,
             ),
           ),
         );
-      }
+      });
     },
   ).show(context);
 }

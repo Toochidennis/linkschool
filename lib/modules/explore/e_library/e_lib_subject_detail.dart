@@ -232,7 +232,7 @@ class _ELibSubjectDetailState extends State<ELibSubjectDetail>
           Text(
             widget.subject?.name ?? 'Subject Name',
             style: AppTextStyles.normal700(
-                fontSize: 20, color: AppColors.aboutTitle),
+                fontSize: 22, color: AppColors.aboutTitle),
           ),
           SizedBox(height: 8),
           _buildSubjectInfo(),
@@ -306,7 +306,7 @@ class _ELibSubjectDetailState extends State<ELibSubjectDetail>
         Text(
           '. ${widget.subject?.categories.fold<int>(0, (sum, category) => sum + (category.videos.length)) ?? 0} Lessons',
           style: AppTextStyles.normal400(
-              fontSize: 12, color: AppColors.admissionTitle),
+              fontSize: 16, color: AppColors.admissionTitle),
         ),
       ],
     );

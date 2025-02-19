@@ -157,7 +157,7 @@ Widget build(BuildContext context) {
                         SliverToBoxAdapter(
                           child: Constants.heading600(
                             title: 'Recommended for you',
-                            titleSize: 16.0,
+                            titleSize: 18.0,
                             titleColor: AppColors.primaryLight,
                           ),
                         ),
@@ -359,7 +359,7 @@ Widget _buildWatchHistoryCard(Video video) {
           Image.network(
             video.thumbnail,
             fit: BoxFit.cover,
-            height: 92,
+            height: 92, 
             width: 150,
           ),
           const SizedBox(height: 4.0),

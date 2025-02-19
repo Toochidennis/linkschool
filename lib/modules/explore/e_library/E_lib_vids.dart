@@ -98,7 +98,7 @@ class _E_lib_vidsState extends State<E_lib_vids> {
                 child: Text(
                   widget.video.title,
                   style: AppTextStyles.normal600(
-                    fontSize: 20.0,
+                    fontSize: 22.0,
                     color: AppColors.assessmentColor2,
                   ),
                 ),
@@ -117,7 +117,7 @@ class _E_lib_vidsState extends State<E_lib_vids> {
                       child: Text(
                         '${_videoPlayerController.value.duration.inMinutes}mins . Lessons',
                         style: AppTextStyles.normal400(
-                            fontSize: 12, color: AppColors.assessmentColor2),
+                            fontSize: 14, color: AppColors.assessmentColor2),
                       ),
                     )
                   ],
@@ -131,7 +131,7 @@ class _E_lib_vidsState extends State<E_lib_vids> {
                 child: Text(
                   par_1,
                   style: AppTextStyles.normal400(
-                      fontSize: 14, color: AppColors.assessmentColor2),
+                      fontSize: 16, color: AppColors.assessmentColor2),
                   textAlign: TextAlign.justify,
                 ),
               ),
@@ -242,14 +242,14 @@ class videoSection extends StatelessWidget {
                           child: Text(
                             'Bless the Lord oh my Soul',
                             style: AppTextStyles.normal500(
-                                fontSize: 14, color: AppColors.backgroundDark),
+                                fontSize: 16, color: AppColors.backgroundDark),
                           ),
                         ),
                         GestureDetector(
                           onTap: () => (print("Play Clicked")),
                           child: Icon(
                             Icons.play_circle_outline,
-                            size: 24,
+                            size: 20,
                           ),
                         )
                       ],
