@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:linkschool/modules/explore/e_library/E_lib_vids.dart';
+import 'package:linkschool/modules/providers/explore/subject_provider.dart';
 
 import 'package:provider/provider.dart';
 import '../../common/app_colors.dart';
 import '../../common/constants.dart';
 import '../../common/text_styles.dart';
 import '../../model/explore/home/subject_model.dart';
-import '../../providers/explore/subject_provider.dart';
+
 
 class VideosDashboard extends StatefulWidget {
   const VideosDashboard({super.key});

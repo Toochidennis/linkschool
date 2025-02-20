@@ -4,6 +4,7 @@ import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/buttons/custom_long_elevated_button.dart';
 import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
+import 'package:linkschool/modules/explore/components/year_picker_dialog.dart';
 import 'package:linkschool/modules/explore/e_library/test_screen.dart';
 import 'package:linkschool/modules/providers/explore/cbt_provider.dart';
 import 'package:provider/provider.dart';
@@ -29,8 +30,6 @@ class CbtDetailScreen extends StatefulWidget {
 }
 
 class _CbtDetailScreenState extends State<CbtDetailScreen> {
-  // String? selectedYear;
-  // Widget? selectedSubject;
   late String selectedSubject;
 
   @override
@@ -84,20 +83,51 @@ class _CbtDetailScreenState extends State<CbtDetailScreen> {
     );
   }
 
+  void _showYearPicker(BuildContext context) {
+    final provider = Provider.of<CBTProvider>(context, listen: false);
+    final years = provider.getYearsForSubject(selectedSubject);
+
+    if (years.isNotEmpty) {
+      final yearsList = years
+          .map((y) => int.tryParse(y))
+          .whereType<int>()
+          .toList()
+        ..sort((a, b) => b.compareTo(a));
+
+      YearPickerDialog.show(
+        context,
+        title: 'Choose $selectedSubject Year',
+        subtitle: 'Select a year to practice $selectedSubject questions',
+        startYear: yearsList.first,
+        numberOfYears: yearsList.length,
+        subject: selectedSubject,
+        subjectIcon: provider.getSubjectIcon(selectedSubject),
+        cardColor: provider.getSubjectColor(selectedSubject),
+        subjectList: widget.subjectList,
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('No years available for this subject'),
+          duration: Duration(seconds: 2),
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Consumer<CBTProvider>(
       builder: (context, provider, child) {
-      return Scaffold(
-        appBar: Constants.customAppBar(
-            context: context, title: 'WAEC/SSCE', centerTitle: true),
-        body: Container(
-          decoration: Constants.customBoxDecoration(context),
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              children: [
-
+        return Scaffold(
+          appBar: Constants.customAppBar(
+              context: context, title: 'WAEC/SSCE', centerTitle: true),
+          body: Container(
+            decoration: Constants.customBoxDecoration(context),
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                children: [
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -112,77 +142,83 @@ class _CbtDetailScreenState extends State<CbtDetailScreen> {
                       )
                     ],
                   ),
-                Divider(),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Row(
-                        children: [
-                          Text(
-                            'Year: ',
-                            style: AppTextStyles.normal500(
-                              fontSize: 16,
-                              color: AppColors.libtitle,
+                  Divider(),
+                  GestureDetector(
+                    onTap: () => _showYearPicker(context),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Row(
+                          children: [
+                            Text(
+                              'Year: ',
+                              style: AppTextStyles.normal500(
+                                fontSize: 16,
+                                color: AppColors.libtitle,
+                              ),
                             ),
-                          ),
-                          Text(
-                            widget.year.toString(),
-                            style: AppTextStyles.normal500(
-                              fontSize: 16,
-                              color: AppColors.text3Light,
+                            Text(
+                              widget.year.toString(),
+                              style: AppTextStyles.normal500(
+                                fontSize: 16,
+                                color: AppColors.text3Light,
+                              ),
                             ),
-                          ),
-                        ],
-                      ),
-                    ],
+                          ],
+                        ),
+                        Icon(Icons.arrow_drop_down_circle_outlined),
+                      ],
+                    ),
                   ),
-                Divider(),
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 16.0),
-                  child: Row(
-                    children: [
-                      Text(
-                        'Duration :',
-                        style: AppTextStyles.normal500(
-                            fontSize: 16, color: AppColors.libtitle),
-                      ),
-                      Text('2hrs 30 minutes',
+                  Divider(),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 16.0),
+                    child: Row(
+                      children: [
+                        Text(
+                          'Duration :',
                           style: AppTextStyles.normal500(
-                              fontSize: 16, color: AppColors.text3Light)),
-                    ],
+                              fontSize: 16, color: AppColors.libtitle),
+                        ),
+                        Text('2hrs 30 minutes',
+                            style: AppTextStyles.normal500(
+                                fontSize: 16, color: AppColors.text3Light)),
+                      ],
+                    ),
                   ),
-                ),
-                Divider(),
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 16.0),
-                  child: Row(
-                    children: [
-                      Text('Instructions :',
-                          style: AppTextStyles.normal500(
-                              fontSize: 16, color: AppColors.libtitle)),
-                      Text('Answer all questions',
-                          style: AppTextStyles.normal500(
-                              fontSize: 16, color: AppColors.text3Light)),
-                    ],
+                  Divider(),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 16.0),
+                    child: Row(
+                      children: [
+                        Text('Instructions :',
+                            style: AppTextStyles.normal500(
+                                fontSize: 16, color: AppColors.libtitle)),
+                        Text('Answer all questions',
+                            style: AppTextStyles.normal500(
+                                fontSize: 16, color: AppColors.text3Light)),
+                      ],
+                    ),
                   ),
-                ),
-                Divider(),
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 8.0),
-                  child: CustomLongElevatedButton(
-                    text: 'Start Exam',
-                    onPressed: () => Navigator.push(context,
-                        MaterialPageRoute(builder: (context) => TestScreen())),
-                    backgroundColor: AppColors.bookText1,
-                    textStyle: AppTextStyles.normal500(
-                        fontSize: 18.0, color: AppColors.bookText2),
-                  ),
-                )
-              ],
+                  Divider(),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 8.0),
+                    child: CustomLongElevatedButton(
+                      text: 'Start Exam',
+                      onPressed: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) => TestScreen())),
+                      backgroundColor: AppColors.bookText1,
+                      textStyle: AppTextStyles.normal500(
+                          fontSize: 18.0, color: AppColors.bookText2),
+                    ),
+                  )
+                ],
+              ),
             ),
           ),
-        ),
-      );
+        );
       },
     );
   }
