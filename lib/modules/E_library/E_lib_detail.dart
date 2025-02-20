@@ -175,7 +175,8 @@ class _VideoDisplayState extends State<VideoDisplay> {
                                 Navigator.push(
                                   context,
                                   MaterialPageRoute(
-                                      builder: (context) => ELibSubjectDetail()),
+                                      builder: (context) =>
+                                          ELibSubjectDetail()),
                                 );
                               },
                               child: categories[index],
@@ -201,7 +202,11 @@ class _VideoDisplayState extends State<VideoDisplay> {
                       childCount: recommendations.length,
                     ),
                   ),
-                  SliverToBoxAdapter(child: SizedBox(height: 100,),)
+                  SliverToBoxAdapter(
+                    child: SizedBox(
+                      height: 100,
+                    ),
+                  )
                 ],
               ),
             ),

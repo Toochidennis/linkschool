@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/constants.dart';
-import 'package:linkschool/modules/student_portal/elearning/assignment_detail_screen.dart';
-import 'package:linkschool/modules/student_portal/elearning/material_screen.dart';
+import 'package:linkschool/modules/student_portal/e_learning/assignment_detail_screen.dart';
+import 'package:linkschool/modules/student_portal/e_learning/material_screen.dart';
 
 class CourseContentScreen extends StatefulWidget {
   const CourseContentScreen({super.key});

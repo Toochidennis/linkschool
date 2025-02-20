@@ -5,7 +5,7 @@ import 'package:linkschool/modules/common/app_colors.dart';
 
 import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
-import 'package:linkschool/modules/student_portal/elearning/attachment_preview_screen.dart';
+import 'package:linkschool/modules/student_portal/e_learning/attachment_preview_screen.dart';
 
 class AssignmentDetailsScreen extends StatefulWidget {
   const AssignmentDetailsScreen({super.key});

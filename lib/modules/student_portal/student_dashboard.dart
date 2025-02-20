@@ -2,7 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:linkschool/modules/common/bottom_navigation_bar.dart';
 import 'package:linkschool/modules/common/bottom_nav_item.dart';
-import 'package:linkschool/modules/student_portal/elearning/student_elearning_home_screen.dart';
+import 'package:linkschool/modules/student_portal/e_learning/student_elearning_home_screen.dart';
 import 'package:linkschool/modules/student_portal/home/student_home_screen.dart';
 import 'package:linkschool/modules/student_portal/payment/student_payment_home_screen.dart';
 import 'package:linkschool/modules/student_portal/result/student_result_screen.dart';

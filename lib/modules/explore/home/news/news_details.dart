@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
+import 'package:linkschool/modules/explore/home/explore_news_date.dart';
 import 'package:linkschool/modules/model/explore/home/news/news_model.dart';
 import 'package:linkschool/modules/providers/explore/home/news_provider.dart';
 
@@ -9,7 +10,12 @@ import 'package:provider/provider.dart';
 
 class NewsDetails extends StatefulWidget {
   final NewsModel news;
-  const NewsDetails({super.key, required this.news});
+  final dynamic time;
+  const NewsDetails({
+    super.key,
+    required this.news,
+    required this.time,
+  });
 
   @override
   State<NewsDetails> createState() => _NewsDetailsState();
@@ -49,7 +55,9 @@ class _NewsDetailsState extends State<NewsDetails> {
   ];
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(
+    BuildContext context,
+  ) {
     return Scaffold(
         appBar: Constants.customAppBar(
             context: context, title: 'News', centerTitle: true),
@@ -72,7 +80,8 @@ class _NewsDetailsState extends State<NewsDetails> {
                           // pageTesting(),
 
                           Text(
-                            "This is a mock data showing the details of recording",
+                            // "This is a mock data showing the details of recording",
+                            widget.news.title,
                             style: AppTextStyles.normal700(
                               fontSize: 24.0,
                               color: AppColors.assessmentColor1,
@@ -80,11 +89,11 @@ class _NewsDetailsState extends State<NewsDetails> {
                             maxLines: 3,
                           ),
                           SizedBox(
-                            height: 10,
+                            height: 20,
                           ),
                           Row(
                             children: [
-                              Text("30 mins ago",
+                              Text(widget.time,
                                   style: AppTextStyles.normal700(
                                       fontSize: 12.0,
                                       color: AppColors.assessmentColor1)),
@@ -98,10 +107,14 @@ class _NewsDetailsState extends State<NewsDetails> {
                               SizedBox(
                                 width: 8,
                               ),
-                              Text("Vanguard News",
+                              Text(
+                                  // "Vanguard News",
+                                  widget.news.title,
                                   style: AppTextStyles.normal700(
                                       fontSize: 12.0,
                                       color: AppColors.assessmentColor1)),
+
+                              // =========================
                             ],
                           )
                         ],
@@ -109,40 +122,43 @@ class _NewsDetailsState extends State<NewsDetails> {
                     ),
                   ),
                   Container(
-                    width: 360,
-                    height: 156,
-                    decoration: BoxDecoration(
-                        image: DecorationImage(
-                            image: AssetImage(
-                                'assets/images/news-images/paper-test.png'),
-                            fit: BoxFit.cover)),
-                    // child: Image(image: AssetImage('assets/images/news-images/paper-test.png')),
-                  ),
+                      width: 360,
+                      height: 220,
+                      decoration: BoxDecoration(
+                          image: DecorationImage(
+                        image: NetworkImage(
+                          widget.news.image_url,
+                        ),
+                        fit: BoxFit.cover,
+                      ))
+                      // child: Image(image: AssetImage('assets/images/news-images/paper-test.png')),
+                      ),
                   Container(
                     child: Padding(
                       padding: const EdgeInsets.all(16.0),
                       child: Column(
                         children: [
                           newBodyText(
-                              para_body: widget.news.content,
-                              para_body2: widget.news.content,
-                              para_body3: widget.news.content),
-                          newsActionButtons(),
+                              // para_body: widget.news.content,
+                              // para_body2: widget.news.content,
+                              para_body: widget.news.content),
                           SizedBox(
                             height: 25,
                           ),
+                          _buildLikesButton(
+                              widget.news.user_like, widget.news.likes),
                           Container(
                             child: Column(
                               children: [
-                                Text(
-                                  "Lewis, she remarked. “My life is better, Selma is better, this nation and this world is better because of John Robert Lewis.”",
-                                  style: AppTextStyles.normal400(
-                                      fontSize: 14.0,
-                                      color: AppColors.backgroundDark),
-                                ),
-                                SizedBox(
-                                  width: 10,
-                                ),
+                                // Text(
+                                //   "Lewis, she remarked. “My life is better, Selma is better, this nation and this world is better because of John Robert Lewis.”",
+                                //   style: AppTextStyles.normal400(
+                                //       fontSize: 14.0,
+                                //       color: AppColors.backgroundDark),
+                                // ),
+                                // SizedBox(
+                                //   width: 10,
+                                // ),
                               ],
                             ),
                           ),
@@ -174,11 +190,11 @@ class _NewsDetailsState extends State<NewsDetails> {
                             child: Column(
                               children: [
                                 newBodyText(
-                                    para_body: widget.news.content,
-                                    para_body2: widget.news.content,
-                                    para_body3: widget.news.content),
+                                    // para_body: widget.news.content,
+                                    // para_body2: widget.news.content,
+                                    para_body: widget.news.content),
                                 Text(
-                                  widget.news.subject,
+                                  widget.news.title,
                                   style: AppTextStyles.normal400(
                                       fontSize: 14.0,
                                       color: AppColors.backgroundDark),
@@ -211,7 +227,7 @@ class _NewsDetailsState extends State<NewsDetails> {
                       titleColor: AppColors.aboutTitle,
                       titleSize: 16),
                   SizedBox(
-                    height: 8,
+                    height: 4,
                   ),
 
                   Container(
@@ -295,32 +311,47 @@ class relatedHeadlines extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.start,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Image(
-                    image: AssetImage(
-                        'assets/images/news-images/related_headline_image.png'),
-                    width: 220,
-                    height: 92,
-                  ),
                   Card(
                       color: AppColors.assessmentColor1,
+                      elevation: 5,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
+                          Image(
+                            image: AssetImage(
+                                'assets/images/news-images/related_headline_image.png'),
+                            width: 220,
+                            height: 92,
+                          ),
                           Container(
-                            width: 200,
-                            child: Text(
-                              "Aston Villa avoid relegation on final day",
-                              style: AppTextStyles.normal700(
-                                  fontSize: 16.0,
-                                  color: AppColors.backgroundDark),
-                            ),
-                          ),
-                          Text(
-                            relatednews_Body,
-                            style: AppTextStyles.normal400(
-                                fontSize: 12.0,
-                                color: AppColors.backgroundDark),
-                          ),
+                              width: 300,
+                              child: Wrap(
+                                children: [
+                                  Padding(
+                                    padding: const EdgeInsets.only(
+                                        left: 10, right: 10),
+                                    child: Text(
+                                      "Aston Villa avoid relegation on final day",
+                                      style: AppTextStyles.normal700(
+                                          fontSize: 16.0,
+                                          color: AppColors.backgroundDark),
+                                    ),
+                                  ),
+                                  Padding(
+                                    padding: const EdgeInsets.only(
+                                        left: 10, right: 10),
+                                    child: Text(
+                                      relatednews_Body,
+                                      style: AppTextStyles.normal400(
+                                          fontSize: 12.0,
+                                          color: AppColors.backgroundDark),
+                                    ),
+                                  ),
+                                ],
+                              )),
                           Divider(),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -353,7 +384,7 @@ class relatedHeadlines extends StatelessWidget {
                             ],
                           ),
                           SizedBox(
-                            height: 20,
+                            height: 10,
                           )
                         ],
                       )),
@@ -499,74 +530,65 @@ class recommendationSection extends StatelessWidget {
   }
 }
 
-class newsActionButtons extends StatelessWidget {
-  const newsActionButtons({
-    super.key,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(children: [
-      Row(
-        children: [
-          Icon(Icons.bookmark_border, size: 20),
-          SizedBox(
-            width: 150,
-          ),
-          Icon(
-            Icons.favorite,
-            size: 20,
-            color: AppColors.admissionclosed,
-          ),
-          Text(
-            "28",
-            style: AppTextStyles.normal400(
-                fontSize: 14.0, color: AppColors.admissionTitle),
-          ),
-          SizedBox(
-            width: 25,
-          ),
-          Image(
-            image:
-                AssetImage("assets/images/news-images/chart_bubble_icon.png"),
-            height: 11.67,
-            width: 13.33,
-          ),
-          Text(
-            "21",
-            style: AppTextStyles.normal400L(
-                fontSize: 12, color: AppColors.assessmentColor2),
-          ),
-          SizedBox(
-            width: 20,
-          ),
-          Image(
-            image: AssetImage("assets/images/news-images/shareiconvector.png"),
-            height: 11.67,
-            width: 13.33,
-          ),
-          Text(
-            "21",
-            style: AppTextStyles.normal400L(
-                fontSize: 12, color: AppColors.assessmentColor2),
-          )
-        ],
+Widget _buildLikesButton(userLikes, likeS) {
+  return Wrap(
+    children: [
+      Icon(Icons.bookmark_border, size: 20),
+      SizedBox(
+        width: 150,
+      ),
+      Icon(
+        Icons.favorite,
+        size: 20,
+        color: AppColors.admissionclosed,
+      ),
+      Text(
+        // "28",
+        userLikes.toString(),
+        style: AppTextStyles.normal400(
+            fontSize: 14.0, color: AppColors.admissionTitle),
+      ),
+      SizedBox(
+        width: 25,
+      ),
+      Image(
+        image: AssetImage("assets/images/news-images/chart_bubble_icon.png"),
+        height: 20,
+        width: 13.33,
+      ),
+      Text(
+        likeS.toString(),
+        style: AppTextStyles.normal400L(
+            fontSize: 12, color: AppColors.assessmentColor2),
+      ),
+      SizedBox(
+        width: 20,
+      ),
+      Image(
+        image: AssetImage("assets/images/news-images/shareiconvector.png"),
+        height: 20,
+        width: 13.33,
+      ),
+      Text(
+        "21",
+        style: AppTextStyles.normal400L(
+            fontSize: 12, color: AppColors.assessmentColor2),
       )
-    ]);
-  }
+    ],
+  );
 }
 
 class newBodyText extends StatelessWidget {
   const newBodyText({
     super.key,
+    // required this.para_body,
+    // required this.para_body2,
     required this.para_body,
-    required this.para_body2,
-    required this.para_body3,
   });
 
+  // final String para_body;
+  // final String para_body2;
   final String para_body;
-  final String para_body2;
-  final String para_body3;
 
   @override
   Widget build(BuildContext context) {
@@ -576,11 +598,11 @@ class newBodyText extends StatelessWidget {
             style: AppTextStyles.normal400(
                 fontSize: 14.0, color: AppColors.backgroundDark)),
         SizedBox(height: 20.0),
-        Text(para_body2,
+        Text(para_body,
             style: AppTextStyles.normal400(
                 fontSize: 14.0, color: AppColors.backgroundDark)),
         SizedBox(height: 20.0),
-        Text(para_body3,
+        Text(para_body,
             style: AppTextStyles.normal400(
                 fontSize: 14.0, color: AppColors.backgroundDark)),
         SizedBox(

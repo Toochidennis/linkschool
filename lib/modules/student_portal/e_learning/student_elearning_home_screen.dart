@@ -4,7 +4,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/widgets/portal/student/student_customized_appbar.dart';
-import 'package:linkschool/modules/student_portal/elearning/course_detail_screen.dart';
+import 'package:linkschool/modules/student_portal/e_learning/course_detail_screen.dart';
 import 'package:linkschool/modules/student_portal/home/new_post_dialog.dart';
 
 class StudentElearningScreen extends StatefulWidget {

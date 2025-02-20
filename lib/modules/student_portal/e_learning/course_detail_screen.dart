@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
-import 'package:linkschool/modules/student_portal/elearning/course_content_screen.dart';
-import 'package:linkschool/modules/student_portal/elearning/forum_screen.dart';
+import 'package:linkschool/modules/student_portal/e_learning/course_content_screen.dart';
+import 'package:linkschool/modules/student_portal/e_learning/forum_screen.dart';
 
 class CourseDetailScreen extends StatefulWidget {
   final String courseTitle;
