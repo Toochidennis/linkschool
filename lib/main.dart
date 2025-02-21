@@ -6,6 +6,8 @@ import 'package:linkschool/modules/providers/explore/subject_provider.dart';
 
 import 'package:linkschool/routes/onboardingScreen.dart';
 import 'package:provider/provider.dart';
+
+import 'modules/providers/explore/game/game_provider.dart';
 // import 'package:linkschool/app_navigation_flow.dart';
 
 void main() {
@@ -21,6 +23,7 @@ void main() {
     providers: [
       ChangeNotifierProvider(create: (context) => NewsProvider()),
       ChangeNotifierProvider(create: (context) => SubjectProvider()),
+      ChangeNotifierProvider(create: (context) => GameProvider()),
     ],
     child: const MyApp(),
   ));

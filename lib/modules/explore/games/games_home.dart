@@ -1,6 +1,9 @@
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
+import 'package:linkschool/modules/model/explore/games/game_model.dart';
+import 'package:linkschool/modules/providers/explore/game/game_provider.dart';
+import 'package:provider/provider.dart';
 import '../../common/constants.dart';
 import '../../common/text_styles.dart';
 import '../../common/app_colors.dart';
@@ -14,6 +17,12 @@ class GamesDashboard extends StatefulWidget {
 }
 
 class _GamesDashboardState extends State<GamesDashboard> {
+  @override
+  void initState() {
+    super.initState();
+    Provider.of<GameProvider>(context, listen: false).fetchGames();
+  }
+
   @override
   Widget build(BuildContext context) {
     final trendingItems = [
@@ -81,8 +90,11 @@ class _GamesDashboardState extends State<GamesDashboard> {
       ),
     ];
 
+    final gameProvider = Provider.of<GameProvider>(context);
+  final games = gameProvider.games;
+
     return Scaffold(
-    appBar: Constants.customAppBar(context: context,showBackButton: true),
+      appBar: Constants.customAppBar(context: context, showBackButton: true),
       body: Container(
         padding: EdgeInsets.only(top: 35),
         decoration: Constants.customBoxDecoration(context),
@@ -106,9 +118,12 @@ class _GamesDashboardState extends State<GamesDashboard> {
                   itemCount: trendingItems.length,
                   itemBuilder: (context, index) {
                     return GestureDetector(
-                      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => GameDetails(),)),
-                      child: trendingItems[index]
-                      );
+                        onTap: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => GameDetails(),
+                            )),
+                        child: trendingItems[index]);
                   },
                 ),
               ),
@@ -165,14 +180,14 @@ class _GamesDashboardState extends State<GamesDashboard> {
     );
   }
 
-  Widget _buildTrendingCard({
-    required Color startColor,
-    required Color endColor,
-    required String imagePath,
-    required String gameName,
-    required String platform,
-    required double rating,
-  }) {
+  Widget _buildTrendingCard(
+      {required Color startColor,
+      required Color endColor,
+      required String imagePath,
+      required String gameName,
+      required String platform,
+      required double rating,
+      Game}) {
     return Column(
       mainAxisAlignment: MainAxisAlignment.start,
       children: [

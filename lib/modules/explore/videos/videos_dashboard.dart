@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:linkschool/modules/explore/e_library/E_lib_vids.dart';
+import 'package:linkschool/modules/explore/videos/seeall_screen.dart';
 import 'package:provider/provider.dart';
 import '../../common/app_colors.dart';
 import '../../common/constants.dart';
@@ -24,9 +25,13 @@ class _VideosDashboardState extends State<VideosDashboard> {
     Provider.of<SubjectProvider>(context, listen: false).fetchSubjects();
   }
 
-  
-
-  
+  _navigateToSeeall() {
+    Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => SeeallScreen(),
+        ));
+  }
 
   Color _getSubjectColor(String subjectName) {
     switch (subjectName.toLowerCase()) {
@@ -47,7 +52,6 @@ class _VideosDashboardState extends State<VideosDashboard> {
     }
   }
 
-
   List<String> subjectIcons = [
     'english',
     'maths',
@@ -55,19 +59,177 @@ class _VideosDashboardState extends State<VideosDashboard> {
     'chemistry',
     'biology',
   ];
+  List<String> subjectName = [
+    'English',
+    'maths',
+    'physics',
+    'chemistry',
+    'biology',
+  ];
 
   @override
-Widget build(BuildContext context) {
-  return Consumer<SubjectProvider>(
-    builder: (context, subjectProvider, child) {
-      if (subjectProvider.isLoading) {
-        return Scaffold(
-          appBar: Constants.customAppBar(
-              context: context,
-              iconPath: 'assets/icons/search.png',
-              iconSize: 20.0),
-          body: Skeletonizer(
-            child: Container(
+  @override
+  Widget build(BuildContext context) {
+    return Consumer<SubjectProvider>(
+      builder: (context, subjectProvider, child) {
+        if (subjectProvider.isLoading) {
+          return Scaffold(
+            appBar: Constants.customAppBar(
+                context: context,
+                iconPath: 'assets/icons/search.png',
+                iconSize: 20.0),
+            body: Skeletonizer(
+              child: Container(
+                decoration: Constants.customBoxDecoration(context),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: CustomScrollView(
+                        physics: const BouncingScrollPhysics(),
+                        slivers: [
+                          SliverToBoxAdapter(
+                            child: Constants.headingWithSeeAll600(
+                              title: 'Watch history',
+                              titleSize: 18.0,
+                              SeeAllPressed: _navigateToSeeall,
+                              titleColor: AppColors.primaryLight,
+                            ),
+                          ),
+                          SliverToBoxAdapter(
+                            child: Container(
+                              height: 150.0,
+                              child: ListView.builder(
+                                itemCount: 7,
+                                scrollDirection: Axis.horizontal,
+                                itemBuilder: (context, index) {
+                                  return Skeletonizer(
+                                    child: Container(
+                                      width: 100,
+                                      color: Colors.amber,
+                                      height: 100,
+                                    ),
+                                  );
+                                },
+                              ),
+                            ),
+                          ),
+                          SliverToBoxAdapter(
+                            child: Text(
+                              'Categor',
+                              style: AppTextStyles.normal600(
+                                  fontSize: 20, color: AppColors.primaryLight),
+                            ),
+                          ),
+                          const SliverToBoxAdapter(
+                              child: SizedBox(height: 10.0)),
+                          SliverToBoxAdapter(
+                            child:
+                                LayoutBuilder(builder: (context, constraints) {
+                              double screenHeight =
+                                  MediaQuery.of(context).size.height;
+                              double screenWidth =
+                                  MediaQuery.of(context).size.width;
+                              double height = screenHeight * 0.34;
+                              double aspectRatio =
+                                  (screenWidth / 4) / (height / 2);
+
+                              return Container(
+                                height: height,
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 3.2,
+                                  vertical: 1.90,
+                                ),
+                                decoration: const BoxDecoration(
+                                  color: AppColors.videoCardColor,
+                                  border: Border(
+                                    bottom: BorderSide(
+                                      color: AppColors.videoCardBorderColor,
+                                    ),
+                                    top: BorderSide(
+                                      color: AppColors.videoCardBorderColor,
+                                    ),
+                                  ),
+                                ),
+                                alignment: Alignment.center,
+                                child: GridView.builder(
+                                  physics: const NeverScrollableScrollPhysics(),
+                                  gridDelegate:
+                                      SliverGridDelegateWithFixedCrossAxisCount(
+                                    crossAxisCount: 4,
+                                    crossAxisSpacing: 16.0,
+                                    mainAxisSpacing: 16.0,
+                                    childAspectRatio: aspectRatio,
+                                  ),
+                                  itemCount: 8,
+                                  itemBuilder: (context, index) {
+                                    return _buildCategoriesCard(
+                                      subjectName: 'Loading...',
+                                      subjectIcon: 'english',
+                                      backgroundColor: AppColors.videoColor1,
+                                    );
+                                  },
+                                ),
+                              );
+                            }),
+                          ),
+                          const SliverToBoxAdapter(
+                              child: SizedBox(height: 19.0)),
+                          SliverToBoxAdapter(
+                            child: Constants.heading600(
+                              title: 'Recommended for you',
+                              titleSize: 20.0,
+                              titleColor: AppColors.primaryLight,
+                            ),
+                          ),
+                          SliverList(
+                            delegate: SliverChildBuilderDelegate(
+                              (context, index) {
+                                return _recommendedForYouCard(Video(
+                                  title: 'Loading...',
+                                  url: '',
+                                  thumbnail: '',
+                                  author: '',
+                                ));
+                              },
+                              childCount: 6,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        } else {
+          final categories = subjectProvider.subjects
+              .map((subject) => _buildCategoriesCard(
+                    subjectName:
+                        subjectName[subjectProvider.subjects.indexOf(subject)],
+                    subjectIcon:
+                        subjectIcons[subjectProvider.subjects.indexOf(subject)],
+                    backgroundColor: _getSubjectColor(subject.name),
+                  ))
+              .toList();
+
+          final allVideos = subjectProvider.subjects
+              .expand((subject) => subject.categories)
+              .expand((category) => category.videos)
+              .toList();
+
+          final recommendationVideos = allVideos.length > 4
+              ? allVideos.getRange(0, 6).toList()
+              : allVideos;
+
+          return Scaffold(
+            appBar: Constants.customAppBar(
+                context: context,
+                iconPath: 'assets/icons/search.png',
+                iconSize: 20.0),
+            body: Container(
               decoration: Constants.customBoxDecoration(context),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -82,21 +244,27 @@ Widget build(BuildContext context) {
                             title: 'Watch history',
                             titleSize: 18.0,
                             titleColor: AppColors.primaryLight,
+                            SeeAllPressed:  _navigateToSeeall,
                           ),
                         ),
                         SliverToBoxAdapter(
                           child: SizedBox(
-                            
+                            height: 150.0,
                             child: ListView.builder(
-                              itemCount: 7,
+                              itemCount: allVideos.length,
                               scrollDirection: Axis.horizontal,
                               itemBuilder: (context, index) {
-                                return _buildWatchHistoryCard(Video(
-                                  title: 'Loading...',
-                                  url: '',
-                                  thumbnail: '',
-                                  author: '',
-                                ));
+                                return GestureDetector(
+                                    onTap: () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                            builder: (context) => E_lib_vids(
+                                                video: allVideos[index])),
+                                      );
+                                    },
+                                    child: _buildWatchHistoryCard(
+                                        allVideos[index]));
                               },
                             ),
                           ),
@@ -110,10 +278,13 @@ Widget build(BuildContext context) {
                         const SliverToBoxAdapter(child: SizedBox(height: 10.0)),
                         SliverToBoxAdapter(
                           child: LayoutBuilder(builder: (context, constraints) {
-                            double screenHeight = MediaQuery.of(context).size.height;
-                            double screenWidth = MediaQuery.of(context).size.width;
+                            double screenHeight =
+                                MediaQuery.of(context).size.height;
+                            double screenWidth =
+                                MediaQuery.of(context).size.width;
                             double height = screenHeight * 0.34;
-                            double aspectRatio = (screenWidth / 4) / (height / 1.8);
+                            double aspectRatio =
+                                (screenWidth / 4) / (height / 2);
 
                             return Container(
                               height: height,
@@ -133,22 +304,35 @@ Widget build(BuildContext context) {
                                 ),
                               ),
                               alignment: Alignment.center,
-                              child: GridView.builder(
-                                physics: const NeverScrollableScrollPhysics(),
-                                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                                  crossAxisCount: 4,
-                                  crossAxisSpacing: 16.0,
-                                  mainAxisSpacing: 16.0,
-                                  childAspectRatio: aspectRatio,
+                              child: Padding(
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 16),
+                                child: GridView.builder(
+                                  physics: const NeverScrollableScrollPhysics(),
+                                  gridDelegate:
+                                      SliverGridDelegateWithFixedCrossAxisCount(
+                                    crossAxisCount: 4,
+                                    crossAxisSpacing: 16.0,
+                                    mainAxisSpacing: 16.0,
+                                    childAspectRatio: aspectRatio,
+                                  ),
+                                  itemCount: categories.length,
+                                  itemBuilder: (context, index) {
+                                    return GestureDetector(
+                                      onTap: () {
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                              builder: (context) =>
+                                                  ELibSubjectDetail(
+                                                      subject: subjectProvider
+                                                          .subjects[index])),
+                                        );
+                                      },
+                                      child: categories[index],
+                                    );
+                                  },
                                 ),
-                                itemCount: 8,
-                                itemBuilder: (context, index) {
-                                  return _buildCategoriesCard(
-                                    subjectName: 'Loading...',
-                                    subjectIcon: 'english',
-                                    backgroundColor: AppColors.videoColor1,
-                                  );
-                                },
                               ),
                             );
                           }),
@@ -164,14 +348,25 @@ Widget build(BuildContext context) {
                         SliverList(
                           delegate: SliverChildBuilderDelegate(
                             (context, index) {
-                              return _recommendedForYouCard(Video(
-                                title: 'Loading...',
-                                url: '',
-                                thumbnail: '',
-                                author: '',
-                              ));
+                              if (index < recommendationVideos.length) {
+                                return GestureDetector(
+                                  onTap: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) => E_lib_vids(
+                                          video: recommendationVideos[index],
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                  child: _recommendedForYouCard(
+                                      recommendationVideos[index]),
+                                );
+                              }
+                              return const SizedBox.shrink();
                             },
-                            childCount: 6,
+                            childCount: recommendationVideos.length,
                           ),
                         ),
                       ],
@@ -180,240 +375,45 @@ Widget build(BuildContext context) {
                 ],
               ),
             ),
-          ),
-        );
-      } else {
-        final categories = subjectProvider.subjects
-            .map((subject) => _buildCategoriesCard(
-                  subjectName: subject.name,
-                  subjectIcon:
-                      subjectIcons[subjectProvider.subjects.indexOf(subject)],
-                  backgroundColor: _getSubjectColor(subject.name),
-                ))
-            .toList();
+          );
+        }
+      },
+    );
+  }
 
-        final allVideos = subjectProvider.subjects
-            .expand((subject) => subject.categories)
-            .expand((category) => category.videos)
-            .toList();
-
-        final recommendationVideos = allVideos.length > 4
-            ? allVideos.getRange(0, 6).toList()
-            : allVideos;
-
-        return Scaffold(
-          appBar: Constants.customAppBar(
-              context: context,
-              iconPath: 'assets/icons/search.png',
-              iconSize: 20.0),
-          body: Container(
-            decoration: Constants.customBoxDecoration(context),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: CustomScrollView(
-                    physics: const BouncingScrollPhysics(),
-                    slivers: [
-                      SliverToBoxAdapter(
-                        child: Constants.headingWithSeeAll600(
-                          title: 'Watch history',
-                          titleSize: 14.0,
-                          titleColor: AppColors.primaryLight,
-                        ),
-                      ),
-                      SliverToBoxAdapter(
-                        child: SizedBox(
-                          height: 200.0,
-                          child: ListView.builder(
-                            itemCount: allVideos.length,
-                            scrollDirection: Axis.horizontal,
-                            itemBuilder: (context, index) {
-                              return GestureDetector(
-                                  onTap: () {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                          builder: (context) => E_lib_vids(
-                                              video: allVideos[index])),
-                                    );
-                                  },
-                                  child: _buildWatchHistoryCard(allVideos[index]));
-                            },
-                          ),
-                        ),
-                      ),
-                      SliverToBoxAdapter(
-                          child: Constants.heading600(
-                        title: 'Categories',
-                        titleSize: 16.0,
-                        titleColor: AppColors.primaryLight,
-                      )),
-                      const SliverToBoxAdapter(child: SizedBox(height: 10.0)),
-                      SliverToBoxAdapter(
-                        child: LayoutBuilder(builder: (context, constraints) {
-                          double screenHeight = MediaQuery.of(context).size.height;
-                          double screenWidth = MediaQuery.of(context).size.width;
-                          double height = screenHeight * 0.34;
-                          double aspectRatio = (screenWidth / 4) / (height / 2);
-
-                          return Container(
-                            height: height,
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 3.2,
-                              vertical: 1.90,
-                            ),
-                            decoration: const BoxDecoration(
-                              color: AppColors.videoCardColor,
-                              border: Border(
-                                bottom: BorderSide(
-                                  color: AppColors.videoCardBorderColor,
-                                ),
-                                top: BorderSide(
-                                  color: AppColors.videoCardBorderColor,
-                                ),
-                              ),
-                            ),
-                            alignment: Alignment.center,
-                            child: GridView.builder(
-                              physics: const NeverScrollableScrollPhysics(),
-                              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                                crossAxisCount: 4,
-                                crossAxisSpacing: 16.0,
-                                mainAxisSpacing: 16.0,
-                                childAspectRatio: aspectRatio,
-                              ),
-                              itemCount: categories.length,
-                              itemBuilder: (context, index) {
-                                return GestureDetector(
-                                  onTap: () {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                          builder: (context) =>
-                                              ELibSubjectDetail(subject: subjectProvider.subjects[index])),
-                                    );
-                                  },
-                                  child: categories[index],
-                                );
-                              },
-                            ),
-                          );
-                        }),
-                      ),
-                      const SliverToBoxAdapter(child: SizedBox(height: 19.0)),
-                      SliverToBoxAdapter(
-                        child: Constants.heading600(
-                          title: 'Recommended for you',
-                          titleSize: 16.0,
-                          titleColor: AppColors.primaryLight,
-                        ),
-                      ),
-                      SliverList(
-                        delegate: SliverChildBuilderDelegate(
-                          (context, index) {
-                            if (index < recommendationVideos.length) {
-                              return GestureDetector(
-                                onTap: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) => E_lib_vids(
-                                        video: recommendationVideos[index],
-                                      ),
-                                    ),
-                                  );
-                                },
-                                child: _recommendedForYouCard(
-                                    recommendationVideos[index]),
-                              );
-                            }
-                            return const SizedBox.shrink();
-                          },
-                          childCount: recommendationVideos.length,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      }
-    },
-  );
-}}
-
-
-
-
-Widget _buildWatchHistoryCard(Video video) {
+  Widget _buildWatchHistoryCard(Video video) {
     return Container(
       height: 146,
       width: 150,
       margin: const EdgeInsets.only(left: 16.0),
-      child: Column(
-        children: [
-          Image.network(
-            video.thumbnail,
-            fit: BoxFit.cover,
-            height: 92, 
-            width: 150,
-          ),
-          const SizedBox(height: 4.0),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 4.0),
-            child: Text(
-              video.title,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: AppTextStyles.normal500(
-                fontSize: 16.0,
-                color: AppColors.backgroundDark,
-              ),
+      child: Column(children: [
+        Image.network(
+          video.thumbnail,
+          fit: BoxFit.cover,
+          height: 92,
+          width: 150,
+        ),
+        const SizedBox(height: 4.0),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 4.0),
+          child: Text(
+            video.title,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: AppTextStyles.normal500(
+              fontSize: 16.0,
+              color: AppColors.backgroundDark,
             ),
           ),
-          const SizedBox(height: 4.0),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 4.0),
-            child: Row(
-              children: [
-                const CircleAvatar(
-                  backgroundColor: AppColors.videoColor9,
-                  child: Icon(
-                    Icons.person_2_rounded,
-                    size: 13.0,
-                    color: Colors.white,
-                  ),
-                  radius: 8.0,
-                ),
-                const SizedBox(width: 4.0),
-                Text(
-                  'Dennis Toochi',
-                  style: AppTextStyles.normal400(
-                    fontSize: 12.0,
-                    color: AppColors.videoColor9,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
+        ),
+      ]),
     );
   }
-
-
-
 
   Widget _buildCategoriesCard({
     required String subjectName,
     required String subjectIcon,
     required Color backgroundColor,
-    // Video? video,
-    // Category? category,
   }) {
     return Column(
       mainAxisAlignment: MainAxisAlignment.start,
@@ -422,35 +422,36 @@ Widget _buildWatchHistoryCard(Video video) {
         Column(
           children: [
             Container(
-          height: 60,
-          width: 60,
-          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 4.0),
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: backgroundColor,
-          ),
-          child: Image.asset(
-            'assets/icons/$subjectIcon.png',
-            color: Colors.white,
-            width: 24.0,
-            height: 24.0,
-          ),
-        ),
-        const SizedBox(height: 8.0),
-        Padding(
-          padding: const EdgeInsets.only(left: 4.0),
-          child: Text(
-            subjectName,
-            style: AppTextStyles.normal500(fontSize: 12.0, color: Colors.black),
-            textAlign: TextAlign.center,
-          ),
-        )
+              height: 60,
+              width: 60,
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 16.0, vertical: 4.0),
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: backgroundColor,
+              ),
+              child: Image.asset(
+                'assets/icons/$subjectIcon.png',
+                color: Colors.white,
+                width: 24.0,
+                height: 24.0,
+              ),
+            ),
+            const SizedBox(height: 8.0),
+            Padding(
+              padding: const EdgeInsets.only(left: 4.0),
+              child: Text(
+                subjectName,
+                style: AppTextStyles.normal500(
+                    fontSize: 14.0, color: Colors.black),
+                textAlign: TextAlign.center,
+              ),
+            )
           ],
         )
       ],
     );
   }
-
 
   Widget _recommendedForYouCard(Video video) {
     return Container(
@@ -503,8 +504,8 @@ Widget _buildWatchHistoryCard(Video video) {
                   video.title,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  style: AppTextStyles.normal400(
-                    fontSize: 14.0,
+                  style: AppTextStyles.normal500(
+                    fontSize: 16.0,
                     color: AppColors.videoColor9,
                   ),
                 ),
@@ -512,7 +513,7 @@ Widget _buildWatchHistoryCard(Video video) {
                 Text(
                   '1hr 34mins',
                   style: AppTextStyles.normal500(
-                    fontSize: 10.0,
+                    fontSize: 14.0,
                     color: AppColors.videoColor9,
                   ),
                 ),
@@ -528,7 +529,7 @@ Widget _buildWatchHistoryCard(Video video) {
                     Text(
                       "345",
                       style: AppTextStyles.normal500(
-                        fontSize: 10.0,
+                        fontSize: 12.0,
                         color: Colors.black,
                       ),
                     ),
@@ -537,7 +538,7 @@ Widget _buildWatchHistoryCard(Video video) {
                     Text(
                       '12k',
                       style: AppTextStyles.normal500(
-                        fontSize: 10,
+                        fontSize: 12,
                         color: Colors.black,
                       ),
                     ),
@@ -550,3 +551,4 @@ Widget _buildWatchHistoryCard(Video video) {
       ),
     );
   }
+}

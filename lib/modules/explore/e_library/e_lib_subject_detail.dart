@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
+import 'package:linkschool/modules/explore/e_library/E_lib_vids.dart';
 import 'package:linkschool/modules/explore/e_library/cbt.details.dart';
 import 'package:linkschool/modules/model/explore/home/subject_model.dart';
 import 'package:skeletonizer/skeletonizer.dart';
@@ -23,6 +24,7 @@ class _ELibSubjectDetailState extends State<ELibSubjectDetail>
   bool _isLoading = true;
   bool _hasError = false;
   String _errorMessage = '';
+  bool _isTextExpanded = true;
 
   final String paratext =
       "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.";
@@ -53,10 +55,7 @@ class _ELibSubjectDetailState extends State<ELibSubjectDetail>
     }
 
     try {
-      // Add your data fetching logic here
-      // Example:
-      // final subjectData = await SubjectProvider().fetchSubjectDetails(widget.subject?.id);
-      await Future.delayed(Duration(seconds: 2)); // Remove in production
+      await Future.delayed(Duration(seconds: 1)); // Remove in production
 
       if (mounted) {
         setState(() {
@@ -95,11 +94,8 @@ class _ELibSubjectDetailState extends State<ELibSubjectDetail>
               children: [
                 if (!_isLoading) _buildBackgroundImage(),
                 _buildBackButton(),
-                if (_hasError) 
-                  _buildErrorView()
-                else
-                  _buildMainContent(),
-                if (_showFloatingTabBar && !_isLoading && !_hasError) 
+                if (_hasError) _buildErrorView() else _buildMainContent(),
+                if (_showFloatingTabBar && !_isLoading && !_hasError)
                   _buildFloatingTabBar(),
               ],
             ),
@@ -237,19 +233,28 @@ class _ELibSubjectDetailState extends State<ELibSubjectDetail>
           SizedBox(height: 8),
           _buildSubjectInfo(),
           SizedBox(height: 16),
-          Text(
-            paratext,
-            style: AppTextStyles.normal400(
-              fontSize: 16,
-              color: AppColors.assessmentColor2,
+          Text.rich(
+            TextSpan(
+              text: paratext,
+              style: AppTextStyles.normal400(
+                fontSize: 16,
+                color: AppColors.assessmentColor2,
+              ),
             ),
+            maxLines: _isTextExpanded ? null : 4,
+            overflow: TextOverflow.ellipsis,
           ),
           TextButton(
-            onPressed: () {},
+            onPressed: () {
+              setState(() {
+                _isTextExpanded = !_isTextExpanded;
+              });
+
+            },
             child: Text(
-              'Read More',
+              _isTextExpanded ? 'Read More' : 'Read Less',
               style: AppTextStyles.normal400(
-                  fontSize: 14, color: AppColors.bgBorder),
+                  fontSize: 16, color: AppColors.bgBorder),
             ),
           ),
         ],
@@ -292,7 +297,7 @@ class _ELibSubjectDetailState extends State<ELibSubjectDetail>
         Text(
           '3h 30min',
           style: AppTextStyles.normal400(
-              fontSize: 12, color: AppColors.admissionTitle),
+              fontSize: 14, color: AppColors.admissionTitle),
         ),
         SizedBox(width: 8),
         Icon(Icons.access_time, size: 12),
@@ -300,7 +305,7 @@ class _ELibSubjectDetailState extends State<ELibSubjectDetail>
         Text(
           '3h 30min',
           style: AppTextStyles.normal400(
-              fontSize: 12, color: AppColors.admissionTitle),
+              fontSize: 14, color: AppColors.admissionTitle),
         ),
         SizedBox(width: 8),
         Text(
@@ -339,14 +344,13 @@ class _ELibSubjectDetailState extends State<ELibSubjectDetail>
 
   Widget _buildLessonsTab() {
     if (_isLoading) {
-       return Skeletonizer(
-         child: Center(
+      return Skeletonizer(
+        child: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.video_library_outlined, 
-                  size: 48, 
-                  color: AppColors.assessmentColor2),
+              Icon(Icons.video_library_outlined,
+                  size: 48, color: AppColors.assessmentColor2),
               SizedBox(height: 16),
               Text(
                 '',
@@ -365,8 +369,8 @@ class _ELibSubjectDetailState extends State<ELibSubjectDetail>
               ),
             ],
           ),
-               ),
-       );
+        ),
+      );
     }
 
     if (widget.subject?.categories.isEmpty ?? true) {
@@ -374,9 +378,8 @@ class _ELibSubjectDetailState extends State<ELibSubjectDetail>
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.video_library_outlined, 
-                size: 48, 
-                color: AppColors.assessmentColor2),
+            Icon(Icons.video_library_outlined,
+                size: 48, color: AppColors.assessmentColor2),
             SizedBox(height: 16),
             Text(
               '',
@@ -409,27 +412,38 @@ class _ELibSubjectDetailState extends State<ELibSubjectDetail>
     );
   }
 
-  Widget _buildLessonSection(String title, List<Video> videos) {
-    if (videos.isEmpty) {
-      return SizedBox.shrink();
-    }
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(vertical: 8.0),
-          child: Text(
-            title,
-            style: AppTextStyles.normal500(
-                fontSize: 14, color: AppColors.assessmentColor2),
-          ),
-        ),
-        ...videos.map((video) => SubjectDetails(video: video)).toList(),
-        SizedBox(height: 20),
-      ],
-    );
+ Widget _buildLessonSection(String title, List<Video> videos) {
+  if (videos.isEmpty) {
+    return SizedBox.shrink();
   }
+
+  return Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8.0),
+        child: Text(
+          title,
+          style: AppTextStyles.normal600(
+              fontSize: 16, color: AppColors.assessmentColor2),
+        ),
+      ),
+      ...videos.map((video) => GestureDetector(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => E_lib_vids(video: video),
+                ),
+              );
+            },
+            child: SubjectDetails(video: video),
+          )),
+      SizedBox(height: 20),
+    ],
+  );
+}
+
 
   Widget _buildReviewsTab() {
     if (_isLoading) {
@@ -498,8 +512,8 @@ class SubjectDetails extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Container(
-                height: 40,
-                width: 40,
+                height: 50,
+                width: 50,
                 decoration: BoxDecoration(
                   color: AppColors.bgColor3,
                   borderRadius: BorderRadius.circular(50),
@@ -516,14 +530,16 @@ class SubjectDetails extends StatelessWidget {
                   children: [
                     Text(
                       video.title,
+                      maxLines: 2,
                       style: AppTextStyles.normal600(
-                          fontSize: 14.0, color: AppColors.admissionTitle),
+                          fontSize: 16.0, color: AppColors.admissionTitle),
                     ),
                     Text(
-                      '02:57:00', // Replace with actual duration when available
-                      style: AppTextStyles.normal600(
-                          fontSize: 12.0, color: AppColors.admissionTitle),
+                      '02:57:00',
+                      style: AppTextStyles.normal500(
+                          fontSize: 14.0, color: AppColors.admissionTitle),
                     ),
+                    SizedBox(height: 8),
                   ],
                 ),
               ),
