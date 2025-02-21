@@ -379,8 +379,9 @@ class _CBTDashboardState extends State<CBTDashboard> {
 
               YearPickerDialog.show(
                 context,
-                title: 'Choose $subject Year',
-                subtitle: 'Select a year to practice $subject questions',
+                title: 'Choose Year',
+                // title: 'Choose $subject Year',
+                // subtitle: 'Select a year to practice $subject questions',
                 startYear: yearsList.first,
                 numberOfYears: yearsList.length,
                 subject: subject,
