@@ -6,7 +6,7 @@ import '../../model/explore/home/subject_model.dart';
 
 class SubjectService {
   final String _baseUrl = kIsWeb
-      ? 'https://cors-anywhere.herokuapp.com/http://www.cbtportal.linkskool.com/api/getGame.php'
+      ? 'https://cors-anywhere.herokuapp.com/http://www.cbtportal.linkskool.com/api/getVideo.php'
       : 'http://www.cbtportal.linkskool.com/api/getGame.php';
   Future<List<Subject>> getAllSubject() async {
     final response = await http.get(Uri.parse(_baseUrl), headers: {
