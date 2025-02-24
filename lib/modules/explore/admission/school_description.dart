@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:linkschool/modules/common/constants.dart';
 class SchoolDescriptionScreen extends StatefulWidget {
+  const SchoolDescriptionScreen({super.key});
+
 
   
   @override

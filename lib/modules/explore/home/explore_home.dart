@@ -1,9 +1,12 @@
+// ignore_for_file: unused_local_variable
+
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
-import 'package:linkschool/modules/common/search_bar.dart';
 import 'package:linkschool/modules/explore/home/explore_item.dart';
-import 'package:linkschool/modules/news/news_details.dart';
+import 'package:linkschool/modules/explore/home/news/news_details.dart';
+import 'package:linkschool/modules/providers/explore/home/news_provider.dart';
+import 'package:provider/provider.dart';
 
 import '../../common/text_styles.dart';
 import '../../../modules/explore/games/games_home.dart';
@@ -32,6 +35,9 @@ class _ExploreHomeState extends State<ExploreHome> {
     super.initState();
     _controller = ScrollController();
     _controller.addListener(_onScroll);
+
+  // Fetch news data when the widget is initialized
+    Provider.of<NewsProvider>(context, listen: false).fetchNews();
   }
 
   @override
@@ -57,6 +63,7 @@ class _ExploreHomeState extends State<ExploreHome> {
 
   @override
   Widget build(BuildContext context) {
+    final newsProvider = Provider.of<NewsProvider>(context);
     final newsItems = [
       _buildNewsItem(
         profileImageUrl: 'https://via.placeholder.com/300',
@@ -118,12 +125,11 @@ class _ExploreHomeState extends State<ExploreHome> {
 
     return Container(
       decoration: Constants.customBoxDecoration(context),
-      padding: const EdgeInsets.only(bottom: 90.0,top:20),
+      padding: const EdgeInsets.only(bottom: 90.0, top: 20),
       child: CustomScrollView(
         physics: const BouncingScrollPhysics(),
         controller: _controller,
         slivers: [
-         
           SliverToBoxAdapter(
             child: CarouselSlider(
               items: [
@@ -183,14 +189,38 @@ class _ExploreHomeState extends State<ExploreHome> {
           SliverList(
             delegate: SliverChildBuilderDelegate(
               (context, index) {
+                final news = newsProvider.newsmodel[index];
                 return GestureDetector(
-                  onTap: ()=>(Navigator.push(context, MaterialPageRoute(builder: (context)=>NewsDetails()))),
-                  child: newsItems[index],
+                  // onTap: () => (),
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => NewsDetails(news: news),
+                    ),
+                  ),
+                  child: _buildNewsItem(
+                    profileImageUrl: 'https://via.placeholder.com/300',
+                    newsContent: news.content,
+                    time: news.datePosted,
+                    imageUrl: news.picRef,
+                  ),
                 );
               },
-              childCount: newsItems.length,
+              childCount: newsProvider.newsmodel.length,
             ),
           ),
+          // SliverList(
+          //   delegate: SliverChildBuilderDelegate(
+          //     (context, index) {
+          //       return GestureDetector(
+          //         onTap: () => (Navigator.push(context,
+          //             MaterialPageRoute(builder: (context) => NewsDetails()))),
+          //         child: newsItems[index],
+          //       );
+          //     },
+          //     childCount: newsItems.length,
+          //   ),
+          // ),
         ],
       ),
     );
@@ -289,69 +319,159 @@ class _ExploreHomeState extends State<ExploreHome> {
     );
   }
 
-Widget exploreButtonItem({
-  required Color backgroundColor,
-  required Color borderColor,
-  required String label,
-  required String iconPath,
-  required Widget destination,
-  Color? textColor, // Make textColor optional and nullable
+  Widget exploreButtonItem({
+    required Color backgroundColor,
+    required Color borderColor,
+    required String label,
+    required String iconPath,
+    required Widget destination,
+    Color? textColor, // Make textColor optional and nullable
+  }) {
+    return CustomButtonItem(
+      backgroundColor: backgroundColor,
+      borderColor: borderColor,
+      label: label,
+      textColor: textColor ??
+          AppColors.backgroundLight, // Provide a default color if null
+      iconPath: iconPath,
+      destination: destination,
+    );
+  }
+
+Widget _buildNewsItem({
+  required String profileImageUrl,
+  required String newsContent,
+  required String time,
+  required String imageUrl,
 }) {
-  return CustomButtonItem(
-    backgroundColor: backgroundColor,
-    borderColor: borderColor,
-    label: label,
-    textColor: textColor ?? AppColors.backgroundLight, // Provide a default color if null
-    iconPath: iconPath,
-    destination: destination,
+  return Consumer<NewsProvider>(
+    builder: (context, newsProvider, child) {
+      if (newsProvider.isLoading) {
+        return const Center(child: CircularProgressIndicator());
+      }
+
+      if (newsProvider.errorMessage.isNotEmpty) {
+        return Center(child: Text('Error: ${newsProvider.errorMessage}'));
+      }
+
+      if (newsProvider.newsmodel.isEmpty) {
+        return const Center(child: Text('No news available'));
+      }
+
+      final news = newsProvider.newsmodel[0]; // Use the first news item for example
+      return Card(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      news.subject,
+                      style: AppTextStyles.normal500(
+                        fontSize: 16.0,
+                        color: AppColors.text2Light,
+                      ),
+                    ),
+                    const SizedBox(height: 8.0),
+                    Text(
+                      news.content,
+                      maxLines: 3,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppTextStyles.normal500(
+                        fontSize: 14.0,
+                        color: AppColors.text4Light,
+                      ),
+                    ),
+                    const SizedBox(height: 8.0),
+                    Text(
+                      news.datePosted,
+                      style: AppTextStyles.normal500(
+                        fontSize: 12.0,
+                        color: AppColors.text4Light,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 16.0),
+              _buildNewsImage(imageUrl),
+            ],
+          ),
+        ),
+      );
+    },
   );
 }
 
-  Widget _buildNewsItem({
-    required String profileImageUrl,
-    required String newsContent,
-    required String time,
-    required String imageUrl,
-  }) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    newsContent,
-                    maxLines: 3,
-                    overflow: TextOverflow.ellipsis,
-                    style: AppTextStyles.normal500(
-                      fontSize: 14.0,
-                      color: AppColors.text4Light,
-                    ),
-                  ),
-                  const SizedBox(height: 8.0),
-                  Text(
-                    time,
-                    style: AppTextStyles.normal500(
-                      fontSize: 12.0,
-                      color: AppColors.text4Light,
-                    ),
-                  ),
-                  const SizedBox(height: 12.0),
-                  _buildActionButtons(),
-                ],
-              ),
-            ),
-            const SizedBox(width: 16.0),
-            _buildNewsImage(imageUrl),
-          ],
-        ),
-      ),
-    );
-  }
+  // Widget _buildNewsItem({
+  //   required String profileImageUrl,
+  //   required String newsContent,
+  //   required String time,
+  //   required String imageUrl,
+  // }) {
+  //   return Card(
+  //     child: Padding(
+  //       padding: const EdgeInsets.all(16.0),
+  //       child: Row(
+  //         crossAxisAlignment: CrossAxisAlignment.start,
+  //         children: [
+  //           Expanded(
+  //             child: Column(
+  //               crossAxisAlignment: CrossAxisAlignment.start,
+  //               children: [
+  //                 FutureBuilder<List<NewsModel>>(
+  //                     future: NewsService().getAllNews(),
+  //                     builder:
+  //                         (context, AsyncSnapshot<List<NewsModel>> snapshot) {
+  //                       if (snapshot.connectionState ==
+  //                           ConnectionState.waiting) {
+  //                         return const CircularProgressIndicator();
+  //                       }
+
+  //                       if (snapshot.hasError) {
+  //                         return Text('Error: ${snapshot.error}');
+  //                       }
+
+  //                       if (!snapshot.hasData || snapshot.data!.isEmpty) {
+  //                         return const Text('No news available');
+  //                       }
+
+  //                       final news = snapshot.data![1];
+  //                       return Text(news.subject);
+  //                     }),
+  //                 Text(
+  //                   newsContent,
+  //                   maxLines: 3,
+  //                   overflow: TextOverflow.ellipsis,
+  //                   style: AppTextStyles.normal500(
+  //                     fontSize: 14.0,
+  //                     color: AppColors.text4Light,
+  //                   ),
+  //                 ),
+  //                 const SizedBox(height: 8.0),
+  //                 Text(
+  //                   time,
+  //                   style: AppTextStyles.normal500(
+  //                     fontSize: 12.0,
+  //                     color: AppColors.text4Light,
+  //                   ),
+  //                 ),
+  //                 const SizedBox(height: 12.0),
+  //                 _buildActionButtons(),
+  //               ],
+  //             ),
+  //           ),
+  //           const SizedBox(width: 16.0),
+  //           _buildNewsImage(imageUrl),
+  //         ],
+  //       ),
+  //     ),
+  //   );
+  // }
 
 // Widget for action buttons (like, comment, share)
   Widget _buildActionButtons() {

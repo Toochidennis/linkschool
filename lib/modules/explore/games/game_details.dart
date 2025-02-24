@@ -1,8 +1,6 @@
-import 'package:carousel_slider/carousel_slider.dart';
 import 'package:flutter/material.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/buttons/custom_long_elevated_button.dart';
-import 'package:linkschool/modules/common/buttons/custom_medium_elevated_button.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 
 class GameDetails extends StatefulWidget {
@@ -157,7 +155,7 @@ class _GameDetailsState extends State<GameDetails> {
                       SizedBox(
                         height: 10,
                       ),
-                      Container(
+                      SizedBox(
                         height: 150,
                         child: ListView(
                           scrollDirection: Axis.horizontal,
@@ -180,7 +178,7 @@ class _GameDetailsState extends State<GameDetails> {
                             fontSize: 16,
                             color: AppColors.gametitle,
                           )),
-                          Container(
+                          SizedBox(
                             height: 300,
                             child: ListView.builder(
                               physics: NeverScrollableScrollPhysics(),
