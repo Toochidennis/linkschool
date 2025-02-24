@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:linkschool/modules/common/app_themes.dart';
+import 'package:linkschool/modules/providers/explore/home/e_book_provider.dart';
 import 'package:linkschool/modules/providers/explore/home/news_provider.dart';
 
 import 'package:linkschool/routes/onboardingScreen.dart';
@@ -16,8 +17,11 @@ void main() {
       statusBarBrightness: Brightness.dark, // For iOS (dark icons)
     ),
   );
-  runApp(ChangeNotifierProvider(
-    create: (context) => NewsProvider(),
+  runApp(MultiProvider(
+    providers: [
+      ChangeNotifierProvider(create: (context) => NewsProvider()),
+      ChangeNotifierProvider(create: (context) => BookProvider()),
+    ],
     child: const MyApp(),
   ));
 }

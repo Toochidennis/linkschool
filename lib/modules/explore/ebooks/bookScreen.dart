@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
+import 'package:linkschool/modules/providers/explore/home/e_book_provider.dart';
 import 'package:percent_indicator/linear_percent_indicator.dart';
+import 'package:provider/provider.dart';
 
 class BookScreen extends StatefulWidget {
   @override
@@ -12,9 +14,11 @@ class BookScreen extends StatefulWidget {
 class _BookScreenState extends State<BookScreen> {
   @override
   Widget build(BuildContext context) {
+    final _e_bookProvider = Provider.of<BookProvider>(context);
+    final e_booksmodel = _e_bookProvider.booksmodel.take(6).toList();
     return Scaffold(
       appBar: AppBar(
-                leading: IconButton(
+        leading: IconButton(
           onPressed: () {
             Navigator.of(context).pop();
           },
@@ -26,7 +30,7 @@ class _BookScreenState extends State<BookScreen> {
           ),
         ),
       ),
-      body:  Container(
+      body: Container(
         decoration: Constants.customBoxDecoration(context),
         padding: const EdgeInsets.only(top: 50),
         child: SingleChildScrollView(
@@ -77,14 +81,11 @@ class _BookScreenState extends State<BookScreen> {
                             ),
                           ],
                         ),
-                      
                       ],
                     ),
                   )
                 ],
               ),
-      
-              
             ],
           ),
         ),

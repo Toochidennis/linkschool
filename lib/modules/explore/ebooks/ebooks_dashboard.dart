@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:linkschool/modules/providers/explore/home/e_book_provider.dart';
+import 'package:provider/provider.dart';
 
 import '../../common/app_colors.dart';
 import '../../common/constants.dart';
@@ -30,8 +32,9 @@ class _EbooksDashboardState extends State<EbooksDashboard> {
 
   @override
   Widget build(BuildContext context) {
+    final bookProvider = Provider.of<BookProvider>(context);
     return Scaffold(
-      appBar: Constants.customAppBar(context: context,showBackButton: true),
+      appBar: Constants.customAppBar(context: context, showBackButton: true),
       body: Container(
         padding: EdgeInsets.only(top: 30),
         decoration: Constants.customBoxDecoration(context),
@@ -50,10 +53,8 @@ class _EbooksDashboardState extends State<EbooksDashboard> {
               ),
             ),
             CustomSearchBar(),
-           
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16.0),
-
               child: Wrap(
                 spacing: 10.0,
                 runSpacing: 10.0,
