@@ -28,7 +28,9 @@ Future<void> main() async {
     providers: [
       ChangeNotifierProvider(create: (context) => NewsProvider()),
       ChangeNotifierProvider(create: (context) => SubjectProvider()),
+      ChangeNotifierProvider(create: (_) => CBTProvider(CBTService())),
       ChangeNotifierProvider(create: (context) => GameProvider()),
+      ChangeNotifierProvider(create: (_) => ExamProvider()),
     ],
     child: const MyApp(),
   ));
