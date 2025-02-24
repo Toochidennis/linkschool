@@ -4,10 +4,14 @@ import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/explore/e_library/e_lib_detail.dart';
 import 'package:linkschool/modules/explore/e_library/cbt.dart';
-import 'package:linkschool/modules/explore/e_library/e_games/gameCard.dart';
 import 'package:linkschool/modules/explore/e_library/e_games/gamesTab.dart';
-// import 'package:linkschool/modules/explore/e_library/e_library_ebooks/library_ebook.dart';
-// import 'package:linkschool/modules/explore/games/games_home.dart';
+import 'package:linkschool/modules/explore/e_library/for_you.dart';
+// import 'package:linkschool/modules/explore/e_library/for_you.dart';
+
+
+import '../games/gameCard.dart';
+
+
 class ElibraryDashboard extends StatefulWidget {
   const ElibraryDashboard({super.key, required this.height});
   final double height;
@@ -258,6 +262,169 @@ class _ElibraryDashboardState extends State<ElibraryDashboard> {
           ),
         ],
       ),
+    );
+  }
+}
+
+class buildForYou extends StatelessWidget {
+  const buildForYou({
+    super.key,
+    required this.gameItems,
+    required this.height,
+  });
+
+  final List<Widget> gameItems;
+  final double height;
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      child: Column(children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              headingWithAdvert(
+                tag: 'Video',
+                title: 'Continue watching',
+              ),
+              GestureDetector(
+                onTap: () {
+                  Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => ForYouScreen(height: height)));
+                },
+                child: Text(
+                  'new user',
+                  style: AppTextStyles.normal600(
+                      fontSize: 16, color: AppColors.text2Light),
+                ),
+              )
+            ],
+          ),
+        ),
+
+        // SizedBox(
+        //   height: 8,
+                
+        // ),
+        Padding(
+          padding: const EdgeInsets.only(top: 8.0),
+          child: SizedBox(
+            height: 180,
+            child: ListView(
+              scrollDirection: Axis.horizontal,
+              children: [
+                _ContinueWatching(),
+                _ContinueWatching(),
+                _ContinueWatching(),
+                _ContinueWatching(),
+              ],
+            ),
+          ),
+        ),
+        SizedBox(
+          height: 8,
+        ),
+        headingWithAdvert(tag: "Game", title: 'Game Everyone is playing'),
+        SizedBox(
+          height: 8,
+        ),
+        Container(
+          height: 155,
+          child: ListView.builder(
+            padding: const EdgeInsets.only(right: 16.0),
+            itemCount: gameItems.length,
+            scrollDirection: Axis.horizontal,
+            itemBuilder: (context, index) {
+              return gameItems[index];
+            },
+          ),
+        ),
+        SizedBox(
+          height: 8,
+        ),
+        blueHeading(tag: 'E-book', title: 'Suggested for you'),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Container(
+            height: 250,
+            width: double.infinity,
+            child: ListView(
+              scrollDirection: Axis.horizontal,
+              children: [
+                _books(
+                  image: 'assets/images/book_1.png',
+                  bookName: "Sugar Girl",
+                  editor: 'UBE Reader Boosters',
+                ),
+                _books(
+                  image: 'assets/images/book_2.png',
+                  bookName: "Sugar Girl",
+                  editor: 'UBE Reader Boosters',
+                ),
+                _books(
+                  image: 'assets/images/book_3.png',
+                  bookName: "Sugar Girl",
+                  editor: 'UBE Reader Boosters',
+                ),
+                _books(
+                  image: 'assets/images/book_4.png',
+                  bookName: "Sugar Girl",
+                  editor: 'UBE Reader Boosters',
+                ),
+              ],
+            ),
+          ),
+        ),
+        blueHeading(
+          tag: 'CBT',
+          title: 'Continue taking tests',
+        ),
+        Divider(
+          height: 20,
+        ),
+        Column(
+          children: [
+            subjectCard(
+                subjectIcon: 'maths',
+                subjectName: 'Mathematics',
+                cardColor: AppColors.cbtCardColor1,
+                showProgressIndicator: true),
+            Divider(),
+            subjectCard(
+                subjectIcon: 'english',
+                subjectName: 'English Language',
+                cardColor: AppColors.cbtCardColor2,
+                showProgressIndicator: true),
+            Divider(),
+            subjectCard(
+                subjectIcon: 'chemistry',
+                subjectName: 'Chemistry',
+                cardColor: AppColors.cbtCardColor3,
+                showProgressIndicator: true),
+            Divider(),
+            subjectCard(
+              subjectIcon: 'physics',
+              subjectName: 'Physics',
+              subjectyear: '2001-2014',
+              cardColor: AppColors.cbtCardColor4,
+            ),
+            Divider(),
+            subjectCard(
+              cardColor: AppColors.cbtCardColor5,
+              subjectIcon: 'further_maths',
+              subjectName: 'Further Mathematics',
+              subjectyear: '2001-2023',
+            )
+          ],
+        ),
+        SizedBox(
+          height: 150,
+        )
+      ]),
     );
   }
 }

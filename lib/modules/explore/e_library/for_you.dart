@@ -4,12 +4,14 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
+// import 'package:linkschool/modules/explore/e_library/E_lib_detail.dart';
 
 import 'package:linkschool/modules/explore/e_library/cbt.dart';
-import 'package:linkschool/modules/explore/e_library/e_games/gameCard.dart';
-import 'package:linkschool/modules/explore/e_library/e_games/gamesTab.dart';
-import 'package:linkschool/modules/explore/e_library/e_lib_detail.dart';
 import 'package:linkschool/modules/explore/e_library/e_library_ebooks/library_e_book.dart';
+import 'package:linkschool/modules/explore/games/gameCard.dart';
+import 'package:linkschool/modules/explore/e_library/e_games/gamesTab.dart';
+import 'package:linkschool/modules/explore/videos/videos_dashboard.dart';
+// import 'package:linkschool/modules/explore/e_library/elibrary-ebooks/library_ebook.dart';
 
 class ForYouScreen extends StatefulWidget {
   const ForYouScreen({super.key, required this.height});
@@ -181,7 +183,7 @@ class _ForYouScreenState extends State<ForYouScreen> {
                         child: GamesTab(),
                       ),
                       Expanded(
-                        child: VideoDisplay(),
+                        child: VideosDashboard(),
                       ),
                     ],
                   ),

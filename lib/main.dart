@@ -9,6 +9,8 @@ import 'package:linkschool/modules/providers/explore/subject_provider.dart';
 import 'package:linkschool/modules/services/explore/cbt_service.dart';
 import 'package:linkschool/routes/onboardingScreen.dart';
 import 'package:provider/provider.dart';
+
+import 'modules/providers/explore/game/game_provider.dart';
 // import 'package:linkschool/app_navigation_flow.dart';
 
 Future<void> main() async {
@@ -26,8 +28,7 @@ Future<void> main() async {
     providers: [
       ChangeNotifierProvider(create: (context) => NewsProvider()),
       ChangeNotifierProvider(create: (context) => SubjectProvider()),
-      ChangeNotifierProvider(create: (_) => CBTProvider(CBTService())),
-      ChangeNotifierProvider(create: (_) => ExamProvider()),
+      ChangeNotifierProvider(create: (context) => GameProvider()),
     ],
     child: const MyApp(),
   ));
