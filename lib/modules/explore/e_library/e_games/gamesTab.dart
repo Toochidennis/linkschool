@@ -7,11 +7,8 @@ import 'package:linkschool/modules/explore/e_library/e_games/game_details.dart';
 
 import '../../../common/app_colors.dart';
 
-
-
 class GamesTab extends StatefulWidget {
   const GamesTab({super.key});
-
 
   @override
   State<GamesTab> createState() => _GamesTabState();
@@ -21,7 +18,6 @@ class _GamesTabState extends State<GamesTab> {
   @override
   Widget build(BuildContext context) {
     final trendingItems = [
-
       _buildTrendingCard(
         startColor: AppColors.gamesColor1,
         endColor: AppColors.gamesColor2,
@@ -95,9 +91,8 @@ class _GamesTabState extends State<GamesTab> {
     ];
 
     return Scaffold(
-     
       body: Container(
-        padding: EdgeInsets.only(top: 25,bottom: 50),
+        padding: EdgeInsets.only(top: 25, bottom: 50),
         decoration: Constants.customBoxDecoration(context),
         child: CustomScrollView(
           physics: const BouncingScrollPhysics(),
@@ -118,10 +113,7 @@ class _GamesTabState extends State<GamesTab> {
                   scrollDirection: Axis.horizontal,
                   itemCount: trendingItems.length,
                   itemBuilder: (context, index) {
-                    return GestureDetector(
-                      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => GameDetails(),)),
-                      child: trendingItems[index]
-                      );
+                    return trendingItems[index];
                   },
                 ),
               ),

@@ -190,7 +190,7 @@ class _VideosDashboardState extends State<VideosDashboard> {
                                   title: 'Loading...',
                                   url: '',
                                   thumbnail: '',
-                                  author: '',
+                                
                                 ));
                               },
                               childCount: 6,

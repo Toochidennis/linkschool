@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/buttons/custom_long_elevated_button.dart';
-import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
+import 'package:linkschool/modules/model/explore/games/game_model.dart';
 
 class GameDetails extends StatefulWidget {
-  const GameDetails({super.key});
+final Game game;
+   GameDetails({
+    super.key,
+    required this.game
+  });
 
   @override
   State<GameDetails> createState() => _GameDetailsState();
@@ -71,7 +75,7 @@ class _GameDetailsState extends State<GameDetails> {
         ),
         title: Center(
             child: Text(
-          'Hakuna Matata',
+              widget.game.title,
           style: AppTextStyles.normal600(
               fontSize: 20, color: AppColors.primaryLight),
         )),
@@ -82,10 +86,9 @@ class _GameDetailsState extends State<GameDetails> {
             Container(
               height: 326,
               width: double.infinity,
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 image: DecorationImage(
-                  image:
-                      AssetImage('assets/images/gameDes/gameDescription.png'),
+                  image:NetworkImage(widget.game.thumbnail),
                   fit: BoxFit.cover,
                 ),
               ),
@@ -97,7 +100,7 @@ class _GameDetailsState extends State<GameDetails> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Hakuna Matata King Saga',
+                    widget.game.title,
                     style: AppTextStyles.normal600(
                         fontSize: 20, color: AppColors.gametitle),
                   ),
@@ -124,24 +127,8 @@ class _GameDetailsState extends State<GameDetails> {
                         ),
                         const SizedBox(height: 20),
                         Padding(
-                          padding: const EdgeInsets.only(left: 32.0,right: 32.0),
-                          child: Container(
-                            width: 1,
-                            height: 1,
-                            decoration: BoxDecoration(
-
-                            color: AppColors.attCheckColor1,
-                          ),
-                        ),),
-
-                         
-                        reviewText(
-                          image: 'assets/icons/gamesicon/+12.png',
-                          reviewDes: 'downloads',
-                        ),
-                        
-                       Padding(
-                          padding: const EdgeInsets.only(left: 32.0,right: 32.0),
+                          padding:
+                              const EdgeInsets.only(left: 32.0, right: 32.0),
                           child: Container(
                             width: 1,
                             height: 1,
@@ -150,8 +137,21 @@ class _GameDetailsState extends State<GameDetails> {
                             ),
                           ),
                         ),
-
-                     
+                        reviewText(
+                          image: 'assets/icons/gamesicon/+12.png',
+                          reviewDes: 'downloads',
+                        ),
+                        Padding(
+                          padding:
+                              const EdgeInsets.only(left: 32.0, right: 32.0),
+                          child: Container(
+                            width: 1,
+                            height: 1,
+                            decoration: BoxDecoration(
+                              color: AppColors.attCheckColor1,
+                            ),
+                          ),
+                        ),
                         reviewText(
                           image: 'assets/icons/gamesicon/+12.png',
                           reviewDes: 'Rated for 12+',
@@ -164,7 +164,9 @@ class _GameDetailsState extends State<GameDetails> {
                   ),
                   CustomLongElevatedButton(
                     text: 'Play now',
-                    onPressed: () {},
+                    onPressed: () async{
+                      
+                    },
                     backgroundColor: AppColors.bgXplore3,
                     borderRadius: 32.0,
                     textStyle: AppTextStyles.normal600(
@@ -186,7 +188,6 @@ class _GameDetailsState extends State<GameDetails> {
                           padding: const EdgeInsets.only(top: 10),
                           child: Text(
                             'Benedict Timothy Carlton Cumberbatch CBE (born 19 July 1976) is an English actor. A graduate of the Victoria.',
-
                             style: AppTextStyles.normal500(
                                 fontSize: 16, color: AppColors.gameText),
                           ),
@@ -438,17 +439,15 @@ Widget _buildYouMightLikeCard({
   );
 }
 
-
 Widget VerticalDivider() {
   return Padding(
     padding: const EdgeInsets.symmetric(horizontal: 16.0),
     child: SizedBox(
-      width: 1, 
-      height: 1, 
+      width: 1,
+      height: 1,
       child: DecoratedBox(
         decoration: BoxDecoration(color: AppColors.attCheckColor1),
       ),
     ),
   );
 }
-

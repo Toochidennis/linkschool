@@ -17,7 +17,7 @@ class SubjectProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      _subjects = await _subjectService.getAllSubject();
+      _subjects = await _subjectService.getAllSubjects();
     } catch (error) {
       print('Error fetching subjects: $error');
     }

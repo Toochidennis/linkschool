@@ -4,27 +4,28 @@ import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import '../../model/explore/games/game_model.dart';
 
-
 class GameCard extends StatelessWidget {
-  final Game?gameurl; 
-  final String? game;
+  final String game;
   final String gameTitle;
   final String platform;
   final double rating;
   final Color beginColor;
   final Color endColor;
-  const GameCard(
-      {super.key,
-      required this.gameTitle,
-      required this.platform,
-      required this.rating,
-      required this.beginColor,
-      required this.endColor,
-      this.game, 
-      this.gameurl});
+
+  const GameCard({
+    super.key,
+    required this.gameTitle,
+    required this.platform,
+    required this.rating,
+    required this.beginColor,
+    required this.endColor,
+    required this.game,
+  });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(
+    BuildContext context,
+  ) {
     return Column(
       children: [
         Container(
@@ -38,8 +39,8 @@ class GameCard extends StatelessWidget {
                   begin: Alignment.topRight,
                   end: Alignment.bottomLeft,
                   colors: [beginColor, endColor])),
-          child: Image.network(
-             gameurl!.thumbnail,
+          child: Image.asset(
+            game,
             fit: BoxFit.contain,
           ),
         ),
@@ -47,7 +48,7 @@ class GameCard extends StatelessWidget {
           height: 8,
         ),
         Text(
-          gameurl!.gameUrl,
+          platform,
           style:
               AppTextStyles.normal500(fontSize: 13, color: AppColors.libText),
         ),

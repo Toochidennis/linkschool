@@ -1,30 +1,36 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
-
-import '../../model/explore/home/subject_model.dart';
+import 'package:linkschool/modules/model/explore/games/game_model.dart';
+ 
 
 class SubjectService {
-  final String _baseUrl = kIsWeb
-      ? 'https://cors-anywhere.herokuapp.com/http://www.cbtportal.linkskool.com/api/getVideo.php'
-      : 'http://www.cbtportal.linkskool.com/api/getGame.php';
-  Future<List<Subject>> getAllSubject() async {
-    final response = await http.get(Uri.parse(_baseUrl), headers: {
-      'Accept': 'application/json',
-      'X-Requested-With': 'XMLHttpRequest'
-    });
+   final String _baseUrl = kIsWeb
+ ? 'https://cors-anywhere.herokuapp.com/http://www.cbtportal.linkskool.com/api/getVideo.php'
+      : 'http://www.cbtportal.linkskool.com/api/getVideo.php';
+  
+  Future<Games?> fetchSubject() async {
     try {
+      final response = await http.get(Uri.parse(_baseUrl));
+
       if (response.statusCode == 200) {
-   
-        List<dynamic> jsonData = json.decode(response.body);
-        return jsonData.map((data) => Subject.fromJson(data)).toList();
+        print(response.body);
+        final Map<String, dynamic> data = json.decode(response.body);
+        return Games.fromJson(data);
       } else {
-        print('Error: ${response.statusCode}');
-        throw Exception('Failed to load subjects');
+        print("Failed to load games. Status Code: ${response.statusCode}");
+     
       }
     } catch (e) {
-      print('Error: $e');
-      throw Exception('Error fetching News: $e');
+      print("Error fetching games: $e");
+
     }
   }
+
+  getAllSubjects() {}
 }
+
+
+
+
+

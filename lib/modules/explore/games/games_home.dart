@@ -4,6 +4,7 @@ import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 import 'package:linkschool/modules/model/explore/games/game_model.dart';
 import 'package:linkschool/modules/providers/explore/game/game_provider.dart';
 import 'package:provider/provider.dart';
+import 'package:skeletonizer/skeletonizer.dart';
 import '../../common/constants.dart';
 import '../../common/text_styles.dart';
 import '../../common/app_colors.dart';
@@ -20,200 +21,168 @@ class _GamesDashboardState extends State<GamesDashboard> {
   @override
   void initState() {
     super.initState();
-    Provider.of<GameProvider>(context, listen: false).fetchGames();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Provider.of<GameProvider>(context, listen: false).fetchGames();
+    });
   }
 
   @override
   Widget build(BuildContext context) {
-    final trendingItems = [
-      _buildTrendingCard(
-        startColor: AppColors.gamesColor1,
-        endColor: AppColors.gamesColor2,
-        imagePath: 'assets/images/games_1.png',
-        gameName: 'Overwatch',
-        platform: 'Cross-platform',
-        rating: 2.5,
-      ),
-      _buildTrendingCard(
-        startColor: AppColors.gamesColor3,
-        endColor: AppColors.gamesColor4,
-        imagePath: 'assets/images/games_2.png',
-        gameName: 'Borderlands 2',
-        platform: 'Cross-platform',
-        rating: 3.5,
-      ),
-      _buildTrendingCard(
-        startColor: AppColors.gamesColor5,
-        endColor: AppColors.gamesColor6,
-        imagePath: 'assets/images/games_3.png',
-        gameName: 'Borderlands 2',
-        platform: 'Cross-platform',
-        rating: 3.5,
-      ),
-    ];
-    final likes = [
-      _buildYouMightLikeCard(
-        startColor: AppColors.gamesColor5,
-        endColor: AppColors.gamesColor6,
-        imagePath: 'assets/images/games_3.png',
-        gameName: 'Borderlands 2',
-        platform: 'Cross-platform',
-        rating: 3.5,
-        downloadCount: 10,
-      ),
-      _buildYouMightLikeCard(
-        startColor: AppColors.gamesColor3,
-        endColor: AppColors.gamesColor4,
-        imagePath: 'assets/images/games_2.png',
-        gameName: 'Borderlands 2',
-        platform: 'Cross-platform',
-        rating: 3.5,
-        downloadCount: 10,
-      ),
-      _buildYouMightLikeCard(
-        startColor: AppColors.gamesColor1,
-        endColor: AppColors.gamesColor2,
-        imagePath: 'assets/images/games_1.png',
-        gameName: 'Borderlands 2',
-        platform: 'Cross-platform',
-        rating: 3.5,
-        downloadCount: 10,
-      ),
-      _buildYouMightLikeCard(
-        startColor: AppColors.gamesColor5,
-        endColor: AppColors.gamesColor6,
-        imagePath: 'assets/images/games_3.png',
-        gameName: 'Borderlands 2',
-        platform: 'Cross-platform',
-        rating: 3.5,
-        downloadCount: 10,
-      ),
-    ];
-
-    final gameProvider = Provider.of<GameProvider>(context);
-  final games = gameProvider.games;
-
     return Scaffold(
       appBar: Constants.customAppBar(context: context, showBackButton: true),
-      body: Container(
-        padding: EdgeInsets.only(top: 35),
-        decoration: Constants.customBoxDecoration(context),
-        child: CustomScrollView(
-          physics: const BouncingScrollPhysics(),
-          slivers: [
-            SliverToBoxAdapter(
-              child: Constants.heading600(
-                title: 'Trending now',
-                titleSize: 20.0,
-                titleColor: Colors.black,
-              ),
-            ),
-            const SliverToBoxAdapter(child: SizedBox(height: 10.0)),
-            SliverToBoxAdapter(
+      body: Consumer<GameProvider>(
+        builder: (context, gameProvider, child) {
+          final games = gameProvider.games;
+
+          if (games == null) {
+            return const Center(
+                child: Skeletonizer(
               child: SizedBox(
-                height: 220,
-                child: ListView.builder(
-                  padding: const EdgeInsets.only(right: 16.0),
-                  scrollDirection: Axis.horizontal,
-                  itemCount: trendingItems.length,
-                  itemBuilder: (context, index) {
-                    return GestureDetector(
-                        onTap: () => Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => GameDetails(),
-                            )),
-                        child: trendingItems[index]);
-                  },
+                height: 100,
+                width: 200,
+              ),
+            ));
+          }
+
+          return Container(
+            padding: const EdgeInsets.only(top: 16),
+            decoration: Constants.customBoxDecoration(context),
+            child: CustomScrollView(
+              physics: const BouncingScrollPhysics(),
+              slivers: [
+                SliverToBoxAdapter(
+                  child: Constants.heading600(
+                    title: 'Trending now',
+                    titleSize: 20.0,
+                    titleColor: Colors.black,
+                  ),
                 ),
-              ),
-            ),
-            const SliverToBoxAdapter(child: SizedBox(height: 16.0)),
-            SliverToBoxAdapter(
-              child: Constants.heading600(
-                title: 'Suggested for you',
-                titleSize: 20.0,
-                titleColor: Colors.black,
-              ),
-            ),
-            const SliverToBoxAdapter(child: SizedBox(height: 10.0)),
-            SliverToBoxAdapter(
-              child: CarouselSlider(
-                items: [
-                  _buildSuggestedCard(left: 16.0),
-                  _buildSuggestedCard(),
-                  _buildSuggestedCard(right: 16.0),
-                ],
-                options: CarouselOptions(
-                  height: 280.0,
-                  padEnds: false,
-                  viewportFraction: 0.95,
-                  autoPlay: true,
-                  enableInfiniteScroll: false,
-                  scrollDirection: Axis.horizontal,
+                const SliverToBoxAdapter(child: SizedBox(height: 10.0)),
+                SliverToBoxAdapter(
+                  child: SizedBox(
+                    height: 180,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        _buildGameCard(
+                          context,
+                          games.cardGames,
+                          AppColors.gamesColor1,
+                          AppColors.gamesColor2,
+                        ),
+                        _buildGameCard(
+                          context,
+                          games.boardGames,
+                          AppColors.gamesColor3,
+                          AppColors.gamesColor4,
+                        ),
+                        _buildGameCard(
+                          context,
+                          games.puzzleGames,
+                          AppColors.gamesColor5,
+                          AppColors.gamesColor6,
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
-              ),
-            ),
-            const SliverToBoxAdapter(child: SizedBox(height: 16.0)),
-            SliverToBoxAdapter(
-              child: Constants.heading600(
-                title: 'You might like',
-                titleSize: 20.0,
-                titleColor: Colors.black,
-              ),
-            ),
-            const SliverToBoxAdapter(child: SizedBox(height: 10.0)),
-            SliverPadding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0),
-              sliver: SliverList(
-                delegate: SliverChildBuilderDelegate(
-                  (context, index) {
-                    return likes[index];
-                  },
-                  childCount: likes.length,
+                const SliverToBoxAdapter(child: SizedBox(height: 16.0)),
+                SliverToBoxAdapter(
+                  child: Constants.heading600(
+                    title: 'Suggested for you',
+                    titleSize: 20.0,
+                    titleColor: Colors.black,
+                  ),
                 ),
-              ),
+                const SliverToBoxAdapter(child: SizedBox(height: 10.0)),
+                SliverToBoxAdapter(
+                  child: CarouselSlider.builder(
+                    itemCount: games.puzzleGames.games.length,
+                    itemBuilder: (context, index, realIndex) {
+                      final game = games.puzzleGames.games[index];
+                      return _buildSuggestedCard(
+                        game: game,
+                        left: index == 0 ? 16.0 : 10.0,
+                        right: index == games.puzzleGames.games.length - 1
+                            ? 16.0
+                            : 0.0,
+                      );
+                    },
+                    options: CarouselOptions(
+                      height: 280.0,
+                      padEnds: false,
+                      viewportFraction: 0.95,
+                      autoPlay: true,
+                      enableInfiniteScroll: false,
+                      scrollDirection: Axis.horizontal,
+                    ),
+                  ),
+                ),
+                const SliverToBoxAdapter(child: SizedBox(height: 16.0)),
+                SliverToBoxAdapter(
+                  child: Constants.heading600(
+                    title: 'You might like',
+                    titleSize: 20.0,
+                    titleColor: Colors.black,
+                  ),
+                ),
+                const SliverToBoxAdapter(child: SizedBox(height: 10.0)),
+                SliverPadding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                  sliver: SliverList(
+                    delegate: SliverChildBuilderDelegate(
+                      (context, index) {
+                        final game = games.puzzleGames.games[index];
+                        return _buildYouMightLikeCard(
+                          game: game,
+                          startColor: AppColors.gamesColor5,
+                          endColor: AppColors.gamesColor6,
+                        );
+                      },
+                      childCount: 2,
+                    ),
+                  ),
+                ),
+              ],
             ),
-          ],
-        ),
+          );
+        },
       ),
     );
   }
 
-  Widget _buildTrendingCard(
-      {required Color startColor,
-      required Color endColor,
-      required String imagePath,
-      required String gameName,
-      required String platform,
-      required double rating,
-      Game}) {
+  Widget _buildTrendingCard({
+    required Game game,
+    required Color startColor,
+    required Color endColor,
+  }) {
     return Column(
       mainAxisAlignment: MainAxisAlignment.start,
       children: [
         Container(
           margin: const EdgeInsets.only(left: 16.0),
-          padding: const EdgeInsets.only(left: 16.0, right: 16.0, top: 16.0),
+          padding: const EdgeInsets.all(16.0),
           width: 125.0,
           height: 125.0,
           decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  startColor,
-                  endColor,
-                ],
-              ),
-              borderRadius: BorderRadius.circular(16.0)),
-          child: Image.asset(
-            imagePath,
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [startColor, endColor],
+            ),
+            borderRadius: BorderRadius.circular(16.0),
+          ),
+          child: Image.network(
+            game.thumbnail,
             fit: BoxFit.contain,
+            errorBuilder: (context, error, stackTrace) {
+              return const Icon(Icons.error);
+            },
           ),
         ),
         const SizedBox(height: 12.0),
         Text(
-          gameName,
+          game.title,
           style: AppTextStyles.normal500(
             fontSize: 15.0,
             color: Colors.black,
@@ -221,7 +190,7 @@ class _GamesDashboardState extends State<GamesDashboard> {
         ),
         const SizedBox(height: 2.0),
         Text(
-          platform,
+          game.date,
           style: AppTextStyles.normal500(
             fontSize: 13.0,
             color: AppColors.text5Light,
@@ -229,7 +198,7 @@ class _GamesDashboardState extends State<GamesDashboard> {
         ),
         const SizedBox(height: 2.0),
         RatingBar.builder(
-          initialRating: rating,
+          initialRating: double.tryParse(game.rating) ?? 0.0,
           minRating: 1,
           direction: Axis.horizontal,
           allowHalfRating: true,
@@ -247,6 +216,7 @@ class _GamesDashboardState extends State<GamesDashboard> {
   }
 
   Widget _buildSuggestedCard({
+    required Game game,
     double? left,
     double? right,
   }) {
@@ -257,26 +227,34 @@ class _GamesDashboardState extends State<GamesDashboard> {
         children: [
           ClipRRect(
             borderRadius: BorderRadius.circular(10.0),
-            // Add borderRadius for ClipRRect
-            child: Image.asset(
-              'assets/images/millionaire.png',
+            child: Image.network(
+              game.thumbnail,
               fit: BoxFit.cover,
               height: 200,
+              width: 408,
+              errorBuilder: (context, error, stackTrace) {
+                return Container(
+                  height: 200,
+                  width: 300,
+                  color: Colors.grey[300],
+                  child: const Icon(Icons.error),
+                );
+              },
             ),
           ),
           const SizedBox(height: 12.0),
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Millionaire Game',
+                    game.title,
                     style: Theme.of(context).textTheme.titleLarge,
                   ),
                   Text(
-                    'By Digital Dreams',
+                    game.date,
                     style: Theme.of(context).textTheme.titleSmall,
                   ),
                 ],
@@ -297,7 +275,12 @@ class _GamesDashboardState extends State<GamesDashboard> {
                 child: Padding(
                   padding: const EdgeInsets.all(2.0),
                   child: OutlinedButton(
-                    onPressed: () {},
+                    onPressed: () async {
+                      Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) => GameDetails(game: game)));
+                    },
                     style: OutlinedButton.styleFrom(
                       backgroundColor: AppColors.buttonColor1,
                       shape: RoundedRectangleBorder(
@@ -309,7 +292,9 @@ class _GamesDashboardState extends State<GamesDashboard> {
                       child: Text(
                         'Play',
                         style: AppTextStyles.normal500(
-                            fontSize: 14.0, color: Colors.white),
+                          fontSize: 14.0,
+                          color: Colors.white,
+                        ),
                       ),
                     ),
                   ),
@@ -323,13 +308,9 @@ class _GamesDashboardState extends State<GamesDashboard> {
   }
 
   Widget _buildYouMightLikeCard({
+    required Game game,
     required Color startColor,
     required Color endColor,
-    required String imagePath,
-    required String gameName,
-    required String platform,
-    required double rating,
-    required int downloadCount,
   }) {
     return Container(
       width: double.infinity,
@@ -337,22 +318,23 @@ class _GamesDashboardState extends State<GamesDashboard> {
       child: Row(
         children: [
           Container(
-            padding: const EdgeInsets.only(left: 16.0, right: 16.0, top: 16.0),
+            padding: const EdgeInsets.all(16.0),
             width: 90.0,
             height: 95.0,
             decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    startColor,
-                    endColor,
-                  ],
-                ),
-                borderRadius: BorderRadius.circular(10.0)),
-            child: Image.asset(
-              imagePath,
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [startColor, endColor],
+              ),
+              borderRadius: BorderRadius.circular(10.0),
+            ),
+            child: Image.network(
+              game.thumbnail,
               fit: BoxFit.contain,
+              errorBuilder: (context, error, stackTrace) {
+                return const Icon(Icons.error);
+              },
             ),
           ),
           const SizedBox(width: 10.0),
@@ -374,7 +356,8 @@ class _GamesDashboardState extends State<GamesDashboard> {
                     mainAxisAlignment: MainAxisAlignment.start,
                     children: [
                       Text(
-                        gameName,
+                        game.title,
+                        maxLines: 2,
                         style: AppTextStyles.normal500(
                           fontSize: 16.0,
                           color: Colors.black,
@@ -382,7 +365,7 @@ class _GamesDashboardState extends State<GamesDashboard> {
                       ),
                       const SizedBox(height: 2.0),
                       Text(
-                        platform,
+                        game.date,
                         style: AppTextStyles.normal500(
                           fontSize: 13.0,
                           color: AppColors.text5Light,
@@ -395,16 +378,7 @@ class _GamesDashboardState extends State<GamesDashboard> {
                           const Icon(Icons.star,
                               color: Colors.amber, size: 16.0),
                           Text(
-                            "$rating",
-                            style: AppTextStyles.normal500(
-                              fontSize: 14.0,
-                              color: Colors.black,
-                            ),
-                          ),
-                          const SizedBox(width: 16.0),
-                          const Icon(Icons.file_download_outlined, size: 16.0),
-                          Text(
-                            '${downloadCount}k',
+                            game.rating,
                             style: AppTextStyles.normal500(
                               fontSize: 14.0,
                               color: Colors.black,
@@ -416,6 +390,7 @@ class _GamesDashboardState extends State<GamesDashboard> {
                   ),
                   Container(
                     height: 45.0,
+                    width: 80,
                     decoration: BoxDecoration(
                       gradient: const LinearGradient(
                         begin: Alignment.topCenter,
@@ -430,7 +405,13 @@ class _GamesDashboardState extends State<GamesDashboard> {
                     child: Padding(
                       padding: const EdgeInsets.all(2.0),
                       child: OutlinedButton(
-                        onPressed: () {},
+                        onPressed: () async {
+                          // Handle game URL navigation
+                          // You can use url_launcher package here
+                          // if (await canLaunch(game.gameUrl)) {
+                          //   await launch(game.gameUrl);
+                          // }
+                        },
                         style: OutlinedButton.styleFrom(
                           backgroundColor: AppColors.backgroundLight,
                           shape: RoundedRectangleBorder(
@@ -442,7 +423,9 @@ class _GamesDashboardState extends State<GamesDashboard> {
                           child: Text(
                             'Play',
                             style: AppTextStyles.normal600(
-                                fontSize: 14.0, color: AppColors.buttonColor1),
+                              fontSize: 14.0,
+                              color: AppColors.buttonColor1,
+                            ),
                           ),
                         ),
                       ),
@@ -456,4 +439,81 @@ class _GamesDashboardState extends State<GamesDashboard> {
       ),
     );
   }
+}
+
+Widget _buildGameCard(BuildContext context, BoardGamesClass category,
+    Color startColor, Color endColor) {
+  final game = category.games.isNotEmpty ? category.games[0] : null;
+
+  if (game == null) {
+    return const SizedBox.shrink();
+  }
+
+  return GestureDetector(
+    onTap: () {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => GameDetails(game: game),
+        ),
+      );
+    },
+    child: Column(
+      mainAxisAlignment: MainAxisAlignment.start,
+      children: [
+        Container(
+          margin: const EdgeInsets.only(left: 16.0),
+          padding: const EdgeInsets.only(left: 16.0, right: 16.0, top: 16.0),
+          width: 89.0,
+          height: 88.0,
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [startColor, endColor],
+            ),
+            borderRadius: BorderRadius.circular(16.0),
+          ),
+          child: Image.network(
+            game.thumbnail,
+            fit: BoxFit.contain,
+            errorBuilder: (context, error, stackTrace) {
+              return const Icon(Icons.error);
+            },
+          ),
+        ),
+        const SizedBox(height: 12.0),
+        Text(
+          game.title,
+          style: AppTextStyles.normal500(
+            fontSize: 15.0,
+            color: Colors.black,
+          ),
+        ),
+        const SizedBox(height: 2.0),
+        Text(
+          category.name,
+          style: AppTextStyles.normal500(
+            fontSize: 13.0,
+            color: AppColors.text5Light,
+          ),
+        ),
+        const SizedBox(height: 2.0),
+        RatingBar.builder(
+          initialRating: double.tryParse(game.rating) ?? 0.0,
+          minRating: 1,
+          direction: Axis.horizontal,
+          allowHalfRating: true,
+          itemCount: 5,
+          itemSize: 14.0,
+          itemPadding: const EdgeInsets.symmetric(horizontal: 2.0),
+          itemBuilder: (context, _) => const Icon(
+            Icons.star,
+            color: Colors.amber,
+          ),
+          onRatingUpdate: (rating) {},
+        )
+      ],
+    ),
+  );
 }

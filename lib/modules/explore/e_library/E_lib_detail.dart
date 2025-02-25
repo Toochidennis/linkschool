@@ -7,7 +7,6 @@ import '../../common/constants.dart';
 import '../../common/text_styles.dart';
 import '../../model/explore/home/subject_model.dart';
 import '../../providers/explore/subject_provider.dart';
-import '../e_library/cbt.details.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 import '../e_library/e_lib_subject_detail.dart';
 
@@ -185,7 +184,7 @@ _navigateToSeeall() {
                                   title: 'Loading...',
                                   url: '',
                                   thumbnail: '',
-                                  author: '',
+                                
                                 ));
                               },
                               childCount: 6,

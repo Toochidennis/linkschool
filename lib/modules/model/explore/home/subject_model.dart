@@ -9,7 +9,7 @@ class Subject {
     return Subject(
       id: json['id'] ?? '',
       name: json['name'] ?? '',
-      categories: (json['category'] as List)
+      categories: (json['category'] as List<dynamic>? ?? [])
           .map((category) => Category.fromJson(category))
           .toList(),
     );
@@ -37,7 +37,7 @@ class Category {
       level: json['level'] ?? '',
       levelName: json['level_name'] ?? '',
       name: json['name'] ?? '',
-      videos: (json['videos'] as List)
+      videos: (json['videos'] as List<dynamic>? ?? [])
           .map((video) => Video.fromJson(video))
           .toList(),
     );
@@ -48,20 +48,18 @@ class Video {
   final String title;
   final String url;
   final String thumbnail;
-  final String author;
 
   Video({
     required this.title,
     required this.url,
     required this.thumbnail,
-    required this.author,
   });
+
   factory Video.fromJson(Map<String, dynamic> json) {
     return Video(
       title: json['title'] ?? '',
       url: json['url'] ?? '',
       thumbnail: json['thumbnail'] ?? '',
-      author: json['author'] ?? '',
     );
   }
 }
