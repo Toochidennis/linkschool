@@ -1,17 +1,20 @@
 class Video {
+  final String? id;
   final String title;
   final String url;
   final String thumbnail;
-  final String author;
+  final String? author;
 
   Video({
+    this.id,
     required this.title,
     required this.url,
     required this.thumbnail,
-    required this.author,
+    this.author,
   });
   factory Video.fromJson(Map<String, dynamic> json) {
     return Video(
+      id: json['id'] ?? '',
       title: json['title'] ?? '',
       url: json['url'] ?? '',
       thumbnail: json['thumbnail'] ?? '',

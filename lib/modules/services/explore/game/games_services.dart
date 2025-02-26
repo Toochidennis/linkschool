@@ -1,7 +1,9 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
-import 'package:linkschool/modules/model/explore/games/game_model.dart';
+
+import '../../../model/explore/home/game_model.dart';
+
  // Ensure the path is correct
 
 class GameService {
