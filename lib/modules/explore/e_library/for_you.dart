@@ -8,6 +8,7 @@ import 'package:linkschool/modules/explore/e_library/e_games/gamesTab.dart';
 import 'package:linkschool/modules/explore/e_library/e_library_ebooks/library_e_book.dart';
 import 'package:linkschool/modules/explore/videos/videos_dashboard.dart';
 import 'package:provider/provider.dart';
+import 'package:skeletonizer/skeletonizer.dart';
 import '../../model/explore/home/book_model.dart';
 import '../../model/explore/home/game_model.dart';
 import '../../model/explore/home/video_model.dart';
@@ -98,18 +99,17 @@ class ForYouContent extends StatelessWidget {
   Widget build(BuildContext context) {
     return Consumer<ForYouProvider>(
       builder: (context, forYouProvider, child) {
-        if (forYouProvider.isLoading) {
-          return Center(child: CircularProgressIndicator());
-        }
-
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildCategoriesSection(),
-            _buildContinueWatchingSection(forYouProvider.videos),
-            _buildGamesSection(forYouProvider.games),
-            _buildBooksSection(forYouProvider.books),
-          ],
+        return Skeletonizer(
+          enabled: forYouProvider.isLoading,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildCategoriesSection(),
+              _buildContinueWatchingSection(forYouProvider.videos),
+              _buildGamesSection(forYouProvider.games),
+              _buildBooksSection(forYouProvider.books),
+            ],
+          ),
         );
       },
     );
@@ -159,8 +159,8 @@ class ForYouContent extends StatelessWidget {
           height: 180,
           child: ListView.builder(
             scrollDirection: Axis.horizontal,
-            itemCount: videos.length,
-            itemBuilder: (context, index) => _ContinueWatching(video: videos[index]),
+            itemCount: videos.isEmpty ? 3 : videos.length,
+            itemBuilder: (context, index) => _ContinueWatching(video: videos.isEmpty ? Video.empty() : videos[index]),
           ),
         ),
       ],
@@ -178,9 +178,9 @@ class ForYouContent extends StatelessWidget {
           height: 200,
           child: ListView.builder(
             scrollDirection: Axis.horizontal,
-            itemCount: games.length,
+            itemCount: games.isEmpty ? 3 : games.length,
             itemBuilder: (context, index) {
-              final game = games[index];
+              final game = games.isEmpty ? Game.empty() : games[index];
               return GameCard(
                 game: game,
                 beginColor: AppColors.gamesColor1,
@@ -203,14 +203,135 @@ class ForYouContent extends StatelessWidget {
           height: 250,
           child: ListView.builder(
             scrollDirection: Axis.horizontal,
-            itemCount: books.length,
-            itemBuilder: (context, index) => _books(book: books[index]),
+            itemCount: books.isEmpty ? 3 : books.length,
+            itemBuilder: (context, index) => _books(book: books.isEmpty ? Book.empty() : books[index]),
           ),
         ),
       ],
     );
   }
 }
+
+// class ForYouContent extends StatelessWidget {
+//   const ForYouContent({super.key});
+
+//   @override
+//   Widget build(BuildContext context) {
+//     return Consumer<ForYouProvider>(
+//       builder: (context, forYouProvider, child) {
+//         if (forYouProvider.isLoading) {
+//           return Center(child: CircularProgressIndicator());
+//         }
+
+//         return Column(
+//           crossAxisAlignment: CrossAxisAlignment.start,
+//           children: [
+//             _buildCategoriesSection(),
+//             _buildContinueWatchingSection(forYouProvider.videos),
+//             _buildGamesSection(forYouProvider.games),
+//             _buildBooksSection(forYouProvider.books),
+//           ],
+//         );
+//       },
+//     );
+//   }
+
+//   Widget _buildCategoriesSection() {
+//     final categories = [
+//       _buildCategoriesCard(subjectName: 'Agric', examIcon: "Agric"),
+//       _buildCategoriesCard(subjectName: 'BECE', examIcon: "BECE"),
+//       _buildCategoriesCard(subjectName: 'GCE', examIcon: "GCE"),
+//       _buildCategoriesCard(subjectName: 'IELTS', examIcon: "IELTS"),
+//       _buildCategoriesCard(subjectName: 'JAMB', examIcon: "JAMB"),
+//       _buildCategoriesCard(subjectName: 'NECO', examIcon: "NECO"),
+//       _buildCategoriesCard(subjectName: 'SATs', examIcon: "SATs"),
+//       _buildCategoriesCard(subjectName: 'WEAC', examIcon: "WEAC"),
+//     ];
+
+//     return Padding(
+//       padding: const EdgeInsets.only(bottom: 16, top: 16),
+//       child: Container(
+//         height: 100,
+//         decoration: BoxDecoration(
+//           color: AppColors.examCard,
+//           boxShadow: [
+//             BoxShadow(
+//               color: Colors.black.withOpacity(0.1),
+//               blurRadius: 4,
+//               offset: const Offset(0, 0),
+//             ),
+//           ],
+//         ),
+//         child: ListView(
+//           scrollDirection: Axis.horizontal,
+//           children: categories,
+//         ),
+//       ),
+//     );
+//   }
+
+//   Widget _buildContinueWatchingSection(List<Video> videos) {
+//     return Column(
+//       crossAxisAlignment: CrossAxisAlignment.start,
+//       children: [
+//         headingWithAdvert(tag: 'Video', title: 'Continue watching'),
+//         SizedBox(height: 8),
+//         SizedBox(
+//           height: 180,
+//           child: ListView.builder(
+//             scrollDirection: Axis.horizontal,
+//             itemCount: videos.length,
+//             itemBuilder: (context, index) => _ContinueWatching(video: videos[index]),
+//           ),
+//         ),
+//       ],
+//     );
+//   }
+
+//   Widget _buildGamesSection(List<Game> games) {
+//     return Column(
+//       crossAxisAlignment: CrossAxisAlignment.start,
+//       children: [
+//         SizedBox(height: 25),
+//         headingWithAdvert(tag: "Game", title: 'Game Everyone is playing'),
+//         SizedBox(height: 8),
+//         SizedBox(
+//           height: 200,
+//           child: ListView.builder(
+//             scrollDirection: Axis.horizontal,
+//             itemCount: games.length,
+//             itemBuilder: (context, index) {
+//               final game = games[index];
+//               return GameCard(
+//                 game: game,
+//                 beginColor: AppColors.gamesColor1,
+//                 endColor: AppColors.gamesColor2,
+//               );
+//             },
+//           ),
+//         ),
+//       ],
+//     );
+//   }
+
+//   Widget _buildBooksSection(List<Book> books) {
+//     return Column(
+//       crossAxisAlignment: CrossAxisAlignment.start,
+//       children: [
+//         SizedBox(height: 25),
+//         blueHeading(tag: 'E-book', title: 'Suggested for you'),
+//         SizedBox(
+//           height: 250,
+//           child: ListView.builder(
+//             scrollDirection: Axis.horizontal,
+//             itemCount: books.length,
+//             itemBuilder: (context, index) => _books(book: books[index]),
+//           ),
+//         ),
+//       ],
+//     );
+//   }
+// }
 
 Widget _buildCategoriesCard({required String subjectName, required String examIcon}) {
   return Padding(
@@ -270,28 +391,6 @@ class _ContinueWatching extends StatelessWidget {
               ),
             ),
           ),
-          // const SizedBox(height: 4.0),
-          // Padding(
-          //   padding: const EdgeInsets.symmetric(horizontal: 4.0),
-          //   child: Row(
-          //     children: [
-          //       const CircleAvatar(
-          //         backgroundImage: NetworkImage(
-          //           'profileImageUrl', 
-          //         ),
-          //         radius: 10.0,
-          //       ),
-          //       const SizedBox(width: 4.0),
-          //       Text(
-          //         'Author Name', 
-          //         style: AppTextStyles.normal500(
-          //           fontSize: 12.0,
-          //           color: AppColors.videoColor9,
-          //         ),
-          //       ),
-          //     ],
-          //   ),
-          // ),
         ],
       ),
     );

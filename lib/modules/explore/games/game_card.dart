@@ -1,13 +1,10 @@
-// lib/widgets/game_card.dart
-
 import 'package:flutter/material.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 
 import '../../model/explore/home/game_model.dart';
-// import '../models/game_model.dart';
-// import '../screens/game_screen.dart';
+
 
 class GameCard extends StatelessWidget {
   final Game game;
@@ -25,12 +22,14 @@ class GameCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return GestureDetector(
       // onTap: () {
-      //   Navigator.push(
-      //     context,
-      //     MaterialPageRoute(
-      //       builder: (context) => GameScreen(game: game),
-      //     ),
-      //   );
+      //   if (game.title.isNotEmpty) {
+      //     Navigator.push(
+      //       context,
+      //       MaterialPageRoute(
+      //         builder: (context) => GameScreen(game: game),
+      //       ),
+      //     );
+      //   }
       // },
       child: Column(
         children: [
@@ -47,23 +46,25 @@ class GameCard extends StatelessWidget {
                 colors: [beginColor, endColor],
               ),
             ),
-            child: Image.network(
-              game.thumbnail,
-              fit: BoxFit.contain,
-              errorBuilder: (context, error, stackTrace) {
-                return Icon(Icons.error, color: Colors.red);
-              },
-            ),
+            child: game.thumbnail.isEmpty
+                ? Container(color: Colors.grey[300])
+                : Image.network(
+                    game.thumbnail,
+                    fit: BoxFit.contain,
+                    errorBuilder: (context, error, stackTrace) {
+                      return Icon(Icons.error, color: Colors.red);
+                    },
+                  ),
           ),
           SizedBox(height: 8),
           Text(
-            game.title,
+            game.title.isEmpty ? 'Loading...' : game.title,
             style: AppTextStyles.normal500(fontSize: 13, color: AppColors.libText),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
           Text(
-            'Cross-platform', // You might want to add this to your Game model if it's available
+            'Cross-platform',
             style: AppTextStyles.normal500(fontSize: 13, color: AppColors.text5Light),
           ),
           RatingBar.builder(
@@ -77,7 +78,7 @@ class GameCard extends StatelessWidget {
               Icons.star,
               color: Colors.amber,
             ),
-            onRatingUpdate: (_) {}, // Rating is read-only in this context
+            onRatingUpdate: (_) {},
           ),
         ],
       ),

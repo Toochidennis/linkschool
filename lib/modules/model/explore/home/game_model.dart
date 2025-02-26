@@ -74,7 +74,22 @@ class Game {
       description: json["description"] ?? '',
     );
   }
+
+  // Add empty constructor
+  factory Game.empty() {
+    return Game(
+      id: '',
+      gameUrl: '',
+      thumbnail: '',
+      rating: '0.0',
+      date: '',
+      title: '',
+      description: '',
+    );
+  }
 }
+
+
 
 
 // class Game {
