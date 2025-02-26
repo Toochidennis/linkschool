@@ -2,11 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
-import 'package:linkschool/modules/providers/explore/home/e_book_provider.dart';
+// import 'package:linkschool/modules/providers/explore/home/ebook_provider.dart';
+// import 'package:linkschool/modules/model/explore/home/news/ebook_model.dart';
+
 import 'package:percent_indicator/linear_percent_indicator.dart';
-import 'package:provider/provider.dart';
+// import 'package:provider/provider.dart';
 
 class BookScreen extends StatefulWidget {
+  // final bookdet = Provider.of<EbookProvider>;
+  // BookScreen({required this.book});
   @override
   State<BookScreen> createState() => _BookScreenState();
 }
@@ -14,8 +18,7 @@ class BookScreen extends StatefulWidget {
 class _BookScreenState extends State<BookScreen> {
   @override
   Widget build(BuildContext context) {
-    final _e_bookProvider = Provider.of<BookProvider>(context);
-    final e_booksmodel = _e_bookProvider.booksmodel.take(6).toList();
+    // final e_booksmodel = _e_bookProvider.booksmodel.take(6).toList();
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(

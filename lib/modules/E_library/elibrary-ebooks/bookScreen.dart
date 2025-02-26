@@ -4,9 +4,15 @@ import 'package:linkschool/modules/E_library/elibrary-ebooks/fullpage.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
+import 'package:linkschool/modules/model/explore/home/news/ebook_model.dart';
+// import 'package:linkschool/modules/providers/explore/home/ebook_provider.dart';
 import 'package:percent_indicator/linear_percent_indicator.dart';
+// import 'package:provider/provider.dart';
 
 class BookScreen extends StatefulWidget {
+  final Ebook suggestedBook;
+  const BookScreen({super.key, required this.suggestedBook});
+
   @override
   State<BookScreen> createState() => _BookScreenState();
 }
@@ -37,7 +43,7 @@ class _BookScreenState extends State<BookScreen> {
                       children: [
                         RichText(
                           text: TextSpan(
-                            text: 'Chapter 20',
+                            text: widget.suggestedBook.author,
                             style: AppTextStyles.normal600(
                                 fontSize: 20, color: AppColors.bookText),
                           ),

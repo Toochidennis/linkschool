@@ -1,9 +1,11 @@
+// ignore_for_file: unused_import
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:linkschool/modules/common/app_themes.dart';
-import 'package:linkschool/modules/providers/explore/home/e_book_provider.dart';
+import 'package:linkschool/modules/providers/explore/home/ebook_provider.dart';
 import 'package:linkschool/modules/providers/explore/home/news_provider.dart';
-
+import 'package:linkschool/modules/services/explore/home/ebook_service.dart';
 import 'package:linkschool/routes/onboardingScreen.dart';
 import 'package:provider/provider.dart';
 // import 'package:linkschool/app_navigation_flow.dart';
@@ -17,13 +19,35 @@ void main() {
       statusBarBrightness: Brightness.dark, // For iOS (dark icons)
     ),
   );
-  runApp(MultiProvider(
-    providers: [
-      ChangeNotifierProvider(create: (context) => NewsProvider()),
-      ChangeNotifierProvider(create: (context) => BookProvider()),
-    ],
-    child: const MyApp(),
-  ));
+  // runApp(
+  //   MultiProvider(
+  //     providers: [
+  //       ChangeNotifierProvider(create: (context) => NewsProvider()),
+  //       // Correctly provide BookProvider
+  //       ChangeNotifierProvider(
+  //           create: (context) => BookProvider(BookService())),
+  //       // Provide BookService instance
+  //       Provider<BookService>(
+  //         create: (_) => BookService(),
+  //       ),
+  //     ],
+  //     child: const MyApp(),
+  //   ),
+  // );
+
+  runApp(
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (context) => NewsProvider()),
+        // Provide BookProvider only
+        ChangeNotifierProvider(
+            create: (context) => EbookProvider(ebookService: EbookService())),
+        // ChangeNotifierProvider(
+        //     create: (_) => EbookProvider(ebookService: EbookService())),
+      ],
+      child: const MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {

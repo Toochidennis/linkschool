@@ -8,7 +8,7 @@ import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/e_library/e_games/gamesTab.dart';
-import 'package:linkschool/modules/explore/games/games_home.dart';
+// import 'package:linkschool/modules/explore/games/games_home.dart';
 
 class ElibraryDashboard extends StatefulWidget {
   const ElibraryDashboard({super.key, required this.height});
@@ -81,32 +81,37 @@ class _ElibraryDashboardState extends State<ElibraryDashboard> {
                         Tab(
                           child: FittedBox(
                               child: Text('For you',
-                                  style:
-                                      AppTextStyles.normal600(fontSize: 14, color: AppColors.text2Light))),
+                                  style: AppTextStyles.normal600(
+                                      fontSize: 14,
+                                      color: AppColors.text2Light))),
                         ),
                         Tab(
                           child: FittedBox(
                               child: Text('CBT',
-                                  style:
-                                      AppTextStyles.normal600(fontSize: 14, color: AppColors.text2Light))),
+                                  style: AppTextStyles.normal600(
+                                      fontSize: 14,
+                                      color: AppColors.text2Light))),
                         ),
                         Tab(
                           child: FittedBox(
                               child: Text('E-books',
-                                  style:
-                                      AppTextStyles.normal600(fontSize: 14, color: AppColors.text2Light))),
+                                  style: AppTextStyles.normal600(
+                                      fontSize: 14,
+                                      color: AppColors.text2Light))),
                         ),
                         Tab(
                           child: FittedBox(
                               child: Text('Games',
-                                  style:
-                                      AppTextStyles.normal600(fontSize: 14 , color: AppColors.text2Light))),
+                                  style: AppTextStyles.normal600(
+                                      fontSize: 14,
+                                      color: AppColors.text2Light))),
                         ),
                         Tab(
                           child: Flexible(
                               child: Text('Videos',
-                                  style:
-                                      AppTextStyles.normal600(fontSize: 14, color: AppColors.text2Light))),
+                                  style: AppTextStyles.normal600(
+                                      fontSize: 14,
+                                      color: AppColors.text2Light))),
                         ),
                       ]),
                   Expanded(
@@ -122,7 +127,6 @@ class _ElibraryDashboardState extends State<ElibraryDashboard> {
                     Expanded(
                       child: VideoDisplay(),
                     ),
-                   
                   ]))
                 ],
               ),
@@ -535,7 +539,6 @@ Widget _ContinueWatching() {
           child: Row(
             children: [
               const CircleAvatar(
-               
                 backgroundColor: AppColors.videoColor9,
                 child: const Icon(Icons.person_2_rounded,
                     size: 13.0, color: Colors.white),

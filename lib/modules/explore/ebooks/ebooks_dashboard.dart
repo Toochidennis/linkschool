@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:linkschool/modules/providers/explore/home/e_book_provider.dart';
+import 'package:linkschool/modules/providers/explore/home/ebook_provider.dart';
 import 'package:provider/provider.dart';
-
+// import 'ebook_provider.dart';
 import '../../common/app_colors.dart';
 import '../../common/constants.dart';
 import '../../common/search_bar.dart';
@@ -16,27 +16,26 @@ class EbooksDashboard extends StatefulWidget {
   State<EbooksDashboard> createState() => _EbooksDashboardState();
 }
 
-//TickerProviderStateMixin
-
 class _EbooksDashboardState extends State<EbooksDashboard> {
   int _selectedBookCategoriesIndex = 0;
 
-  final bookCategories = [
-    'Academic',
-    'Science Fiction',
-    'For WAEC',
-    'Self-help',
-    'Religious',
-    'Literature'
-  ];
+  @override
+  void initState() {
+    super.initState();
+    // Fetch books data when the widget is initialized
+    final bookProvider = Provider.of<EbookProvider>(context, listen: false);
+    bookProvider.fetchBooks();
+  }
 
   @override
   Widget build(BuildContext context) {
-    final bookProvider = Provider.of<BookProvider>(context);
+    final bookProvider = Provider.of<EbookProvider>(context);
+    final categories = bookProvider.categories;
+
     return Scaffold(
       appBar: Constants.customAppBar(context: context, showBackButton: true),
       body: Container(
-        padding: EdgeInsets.only(top: 30),
+        padding: const EdgeInsets.only(top: 30),
         decoration: Constants.customBoxDecoration(context),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -52,15 +51,15 @@ class _EbooksDashboardState extends State<EbooksDashboard> {
                 ),
               ),
             ),
-            CustomSearchBar(),
+            const CustomSearchBar(),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16.0),
               child: Wrap(
                 spacing: 10.0,
                 runSpacing: 10.0,
-                children: List.generate(bookCategories.length, (index) {
+                children: List.generate(categories.length, (index) {
                   return BooksButtonItem(
-                    label: bookCategories[index],
+                    label: categories[index],
                     isSelected: _selectedBookCategoriesIndex == index,
                     onPressed: () {
                       setState(() {
@@ -100,7 +99,7 @@ class _EbooksDashboardState extends State<EbooksDashboard> {
           Expanded(
             child: TabBarView(
               children: [
-                const AllTab(),
+                AllTab(selectedCategoryIndex: _selectedBookCategoriesIndex),
                 Container(
                   color: Colors.orange,
                   child: const Center(

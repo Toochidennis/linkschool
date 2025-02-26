@@ -1,46 +1,45 @@
 import 'package:flutter/material.dart';
-import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/E_library/elibrary-ebooks/book_page.dart';
+import 'package:linkschool/modules/providers/explore/home/ebook_provider.dart';
+import 'package:provider/provider.dart';
 import '../../common/app_colors.dart';
+import '../../common/constants.dart';
 import '../../common/text_styles.dart';
+// import 'book_page.dart';
 
 class AllTab extends StatelessWidget {
-  const AllTab({super.key});
+  final int selectedCategoryIndex;
+
+  const AllTab({super.key, required this.selectedCategoryIndex});
 
   @override
   Widget build(BuildContext context) {
-    final readingItems = [
-      _buildContinueReadingItem(
-        coverImage: 'assets/images/book_1.png',
-        bookTitle: 'Purple Hibiscus',
-        authorName: 'Chimamanda N. Adichie',
-        bookProgress: 0.2,
-      ),
-      _buildContinueReadingItem(
-        coverImage: 'assets/images/book_2.png',
-        bookTitle: 'Doom of Aliens',
-        authorName: 'K. S. Jenson',
-        bookProgress: 0.5,
-      ),
-    ];
+    final bookProvider = Provider.of<EbookProvider>(context);
+    final books = bookProvider.ebooks;
+    final categories = bookProvider.categories;
+    final selectedCategory = categories[selectedCategoryIndex];
 
-    final suggestedItems = [
-      _buildSuggestedForYouItem(
-        coverImage: 'assets/images/book_4.png',
-        bookTitle: 'Sugar Girl',
-        authorName: 'UBE Reader Boosters',
-      ),
-      _buildSuggestedForYouItem(
-        coverImage: 'assets/images/book_5.png',
-        bookTitle: 'Things Fall Apart',
-        authorName: 'Chinua Achebe',
-      ),
-      _buildSuggestedForYouItem(
-        coverImage: 'assets/images/book_3.png',
-        bookTitle: 'Americanah',
-        authorName: 'Chimamanda N. Adichie',
-      ),
-    ];
+    // Filter books based on the selected category
+    final filteredBooks = books
+        .where((book) => book.categories.contains(selectedCategory))
+        .toList();
+
+    final readingItems = filteredBooks.map((book) {
+      return _buildContinueReadingItem(
+        coverImage: book.thumbnail,
+        bookTitle: book.title,
+        authorName: book.author,
+        bookProgress: 0.2, // Adjust based on actual progress
+      );
+    }).toList();
+
+    final suggestedItems = filteredBooks.map((book) {
+      return _buildSuggestedForYouItem(
+        coverImage: book.thumbnail,
+        bookTitle: book.title,
+        authorName: book.author,
+      );
+    }).toList();
 
     return CustomScrollView(
       physics: const BouncingScrollPhysics(),
@@ -91,9 +90,16 @@ class AllTab extends StatelessWidget {
                 itemCount: suggestedItems.length,
                 scrollDirection: Axis.horizontal,
                 itemBuilder: (context, index) {
+                  final suggestbook = bookProvider.ebooks[index];
                   return GestureDetector(
-                    onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => MybookPage(),)),
-                    child: suggestedItems[index]);
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) =>
+                              MybookPage(suggestedbook: suggestbook)),
+                    ),
+                    child: suggestedItems[index],
+                  );
                 }),
           ),
         ),
@@ -142,7 +148,7 @@ class AllTab extends StatelessWidget {
               children: [
                 ClipRRect(
                   borderRadius: BorderRadius.circular(8.0),
-                  child: Image.asset(
+                  child: Image.network(
                     coverImage,
                     fit: BoxFit.cover,
                     height: 180,
@@ -152,7 +158,6 @@ class AllTab extends StatelessWidget {
                 const SizedBox(height: 4.0),
                 LinearProgressIndicator(
                   value: bookProgress,
-                  // Adjust the value (0.5 means 50% progress)
                   color: AppColors.primaryLight,
                 ),
                 const SizedBox(height: 4.0),
@@ -201,7 +206,7 @@ class AllTab extends StatelessWidget {
               children: [
                 ClipRRect(
                   borderRadius: BorderRadius.circular(8.0),
-                  child: Image.asset(
+                  child: Image.network(
                     coverImage,
                     fit: BoxFit.cover,
                     height: 180,

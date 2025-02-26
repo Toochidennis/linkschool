@@ -1,17 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
-import 'package:linkschool/modules/common/buttons/custom_elevated_appbar_button.dart';
 import 'package:linkschool/modules/common/buttons/custom_long_elevated_button.dart';
-import 'package:linkschool/modules/common/buttons/custom_medium_elevated_button.dart';
-import 'package:linkschool/modules/common/buttons/custom_outline_button..dart';
-import 'package:linkschool/modules/common/constants.dart';
+// import 'package:linkschool/modules/common/buttons/custom_elevated_appbar_button.dart';
+// import 'package:linkschool/modules/common/buttons/custom_medium_elevated_button.dart';
+// import 'package:linkschool/modules/common/buttons/custom_outline_button..dart';
+// import 'package:linkschool/modules/common/constants.dart';
 
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/E_library/elibrary-ebooks/bookScreen.dart';
+import 'package:linkschool/modules/model/explore/home/news/ebook_model.dart';
+// import 'package:linkschool/modules/providers/explore/home/ebook_provider.dart';
+// import 'package:provider/provider.dart';
 
 class MybookPage extends StatefulWidget {
-  const MybookPage({super.key});
+  final Ebook suggestedbook;
+
+  const MybookPage({super.key, required this.suggestedbook});
 
   @override
   State<MybookPage> createState() => _MybookPageState();
@@ -20,6 +25,8 @@ class MybookPage extends StatefulWidget {
 class _MybookPageState extends State<MybookPage> {
   @override
   Widget build(BuildContext context) {
+    // final bookProvider = Provider.of<EbookProvider>(context);
+    // final startreading_suggested = bookProvider.ebooks;
     return Scaffold(
       appBar: AppBar(
         backgroundColor: AppColors.backgroundLight,
@@ -71,14 +78,16 @@ class _MybookPageState extends State<MybookPage> {
               ),
               child: Column(
                 children: [
-                  Image(
-                    image: AssetImage('assets/images/book_1.png'),
+                  Image.network(
+                    // image: AssetImage('assets/images/book_1.png'),
+                    widget.suggestedbook.introduction,
                     height: 280,
                     width: 198,
                   ),
                   SizedBox(height: 12),
                   Text(
-                    'Purple Hibiscus',
+                    // 'Purple Hibiscus',
+                    widget.suggestedbook.title,
                     style: AppTextStyles.normal600(
                       fontSize: 26,
                       color: AppColors.bookText,
@@ -86,7 +95,8 @@ class _MybookPageState extends State<MybookPage> {
                   ),
                   SizedBox(height: 4),
                   Text(
-                    'by Chimamanda Adichie',
+                    // 'by Chimamanda Adichie',
+                    widget.suggestedbook.author,
                     style: AppTextStyles.normal400(
                       fontSize: 16,
                       color: AppColors.bookText,
@@ -114,9 +124,10 @@ class _MybookPageState extends State<MybookPage> {
               child: Column(
                 children: [
                   Text(
-                    'Benedict Timothy Carlton Cumberbatch CBE (born 19 July 1976) is an English actor. '
-                    'A graduate of the Victoria University of Manchester, he continued his training at '
-                    'the London Academy of Music and... he continued his training at the London Academy of Music and...',
+                    //   'Benedict Timothy Carlton Cumberbatch CBE (born 19 July 1976) is an English actor. '
+                    //   'A graduate of the Victoria University of Manchester, he continued his training at '
+                    //   'the London Academy of Music and... he continued his training at the London Academy of Music and...',
+                    widget.suggestedbook.introduction,
                     style: AppTextStyles.normal400(
                       fontSize: 16,
                       color: AppColors.bookText,
@@ -128,25 +139,36 @@ class _MybookPageState extends State<MybookPage> {
                     children: [
                       OutlinedButton(
                         onPressed: () {},
-                        child: Text('Literature',style: AppTextStyles.normal500(fontSize: 16,color: AppColors.eLearningBtnColor1),),
+                        child: Text(
+                          // 'Literature',
+                          widget.suggestedbook.categories.toString(),
+                          style: AppTextStyles.normal500(
+                              fontSize: 16,
+                              color: AppColors.eLearningBtnColor1),
+                        ),
                         style: OutlinedButton.styleFrom(
                           backgroundColor: AppColors.grayColor,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(16),
                           ),
-                           side: BorderSide(color: AppColors.eLearningBtnColor1),
+                          side: BorderSide(color: AppColors.eLearningBtnColor1),
                         ),
                       ),
-                       SizedBox(width: 12),
+                      SizedBox(width: 12),
                       OutlinedButton(
                         onPressed: () {},
-                        child: Text('Based on a true story',style: AppTextStyles.normal500(fontSize: 16,color: AppColors.eLearningBtnColor1),),
+                        child: Text(
+                          'Based on a true story',
+                          style: AppTextStyles.normal500(
+                              fontSize: 16,
+                              color: AppColors.eLearningBtnColor1),
+                        ),
                         style: OutlinedButton.styleFrom(
                           backgroundColor: AppColors.grayColor,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(16),
                           ),
-                           side: BorderSide(color: AppColors.eLearningBtnColor1),
+                          side: BorderSide(color: AppColors.eLearningBtnColor1),
                         ),
                       )
                     ],
@@ -158,10 +180,12 @@ class _MybookPageState extends State<MybookPage> {
                       Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => BookScreen(),
+                            builder: (context) => BookScreen(
+                              suggestedBook: widget.suggestedbook,
+                            ),
                           ));
                     },
-                    backgroundColor: AppColors.bgXplore3,
+                    backgroundColor: const Color.fromARGB(255, 21, 27, 33),
                     textStyle: AppTextStyles.normal500(
                         fontSize: 16, color: AppColors.assessmentColor1),
                   ),
