@@ -67,7 +67,16 @@ class AllTab extends StatelessWidget {
                 itemCount: readingItems.length,
                 scrollDirection: Axis.horizontal,
                 itemBuilder: (context, index) {
-                  return readingItems[index];
+                  final continueReading = bookProvider.ebooks[index];
+                  return GestureDetector(
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) =>
+                              MybookPage(suggestedbook: continueReading)),
+                    ),
+                    child: readingItems[index],
+                  );
                 }),
           ),
         ),
@@ -122,7 +131,15 @@ class AllTab extends StatelessWidget {
                 itemCount: suggestedItems.length,
                 scrollDirection: Axis.horizontal,
                 itemBuilder: (context, index) {
-                  return suggestedItems[index];
+                  final suggestedBook = bookProvider.ebooks[index];
+                  return GestureDetector(
+                    onTap: () => (Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) =>
+                                MybookPage(suggestedbook: suggestedBook)))),
+                    child: suggestedItems[index],
+                  );
                 }),
           ),
         ),

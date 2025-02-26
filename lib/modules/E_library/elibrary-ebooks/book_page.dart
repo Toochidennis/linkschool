@@ -80,7 +80,7 @@ class _MybookPageState extends State<MybookPage> {
                 children: [
                   Image.network(
                     // image: AssetImage('assets/images/book_1.png'),
-                    widget.suggestedbook.introduction,
+                    widget.suggestedbook.thumbnail,
                     height: 280,
                     width: 198,
                   ),
@@ -141,7 +141,7 @@ class _MybookPageState extends State<MybookPage> {
                         onPressed: () {},
                         child: Text(
                           // 'Literature',
-                          widget.suggestedbook.categories.toString(),
+                          widget.suggestedbook.categories.join(","),
                           style: AppTextStyles.normal500(
                               fontSize: 16,
                               color: AppColors.eLearningBtnColor1),
@@ -181,11 +181,11 @@ class _MybookPageState extends State<MybookPage> {
                           context,
                           MaterialPageRoute(
                             builder: (context) => BookScreen(
-                              suggestedBook: widget.suggestedbook,
-                            ),
+                                // suggestedBook: widget.suggestedbook,
+                                ),
                           ));
                     },
-                    backgroundColor: const Color.fromARGB(255, 21, 27, 33),
+                    backgroundColor: const Color.fromARGB(255, 30, 126, 223),
                     textStyle: AppTextStyles.normal500(
                         fontSize: 16, color: AppColors.assessmentColor1),
                   ),

@@ -93,7 +93,7 @@ class _LibraryEbookState extends State<LibraryEbook> {
               borderRadius: BorderRadius.circular(6), // Rounded corners
             ),
             child: Text(
-              categories[index],
+              categories[index].toUpperCase(),
               style: AppTextStyles.normal600(
                 fontSize: 18.0,
                 color: isSelected

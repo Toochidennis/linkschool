@@ -34,45 +34,53 @@ class _EbooksDashboardState extends State<EbooksDashboard> {
 
     return Scaffold(
       appBar: Constants.customAppBar(context: context, showBackButton: true),
-      body: Container(
-        padding: const EdgeInsets.only(top: 30),
-        decoration: Constants.customBoxDecoration(context),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisAlignment: MainAxisAlignment.start,
-          children: [
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0),
-              child: Text(
-                'What do you want to\nread today?',
-                style: AppTextStyles.normal600(
-                  fontSize: 16.0,
-                  color: Colors.black,
+      body: Scrollbar(
+        thumbVisibility: true, // Ensures the scrollbar is always visible
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          child: Container(
+            padding: const EdgeInsets.only(top: 30),
+            decoration: Constants.customBoxDecoration(context),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.start,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                  child: Text(
+                    'What do you want to\nread today?',
+                    style: AppTextStyles.normal600(
+                      fontSize: 16.0,
+                      color: Colors.black,
+                    ),
+                  ),
                 ),
-              ),
+                const CustomSearchBar(),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                  child: Wrap(
+                    spacing: 10.0,
+                    runSpacing: 10.0,
+                    children: List.generate(categories.length, (index) {
+                      return BooksButtonItem(
+                        label: categories[index].toUpperCase(),
+                        isSelected: _selectedBookCategoriesIndex == index,
+                        onPressed: () {
+                          setState(() {
+                            _selectedBookCategoriesIndex = index;
+                          });
+                        },
+                      );
+                    }),
+                  ),
+                ),
+                const SizedBox(height: 16.0),
+                SizedBox(
+                    height: MediaQuery.of(context).size.height * 0.6,
+                    child: _buildTabController()),
+              ],
             ),
-            const CustomSearchBar(),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0),
-              child: Wrap(
-                spacing: 10.0,
-                runSpacing: 10.0,
-                children: List.generate(categories.length, (index) {
-                  return BooksButtonItem(
-                    label: categories[index],
-                    isSelected: _selectedBookCategoriesIndex == index,
-                    onPressed: () {
-                      setState(() {
-                        _selectedBookCategoriesIndex = index;
-                      });
-                    },
-                  );
-                }),
-              ),
-            ),
-            const SizedBox(height: 16.0),
-            Expanded(child: _buildTabController()),
-          ],
+          ),
         ),
       ),
     );

@@ -10,8 +10,11 @@ import 'package:percent_indicator/linear_percent_indicator.dart';
 // import 'package:provider/provider.dart';
 
 class BookScreen extends StatefulWidget {
-  final Ebook suggestedBook;
-  const BookScreen({super.key, required this.suggestedBook});
+  // final Ebook suggestedBook;
+  const BookScreen({
+    super.key,
+    // required this.suggestedBook
+  });
 
   @override
   State<BookScreen> createState() => _BookScreenState();
@@ -43,7 +46,7 @@ class _BookScreenState extends State<BookScreen> {
                       children: [
                         RichText(
                           text: TextSpan(
-                            text: widget.suggestedBook.author,
+                            text: "Title",
                             style: AppTextStyles.normal600(
                                 fontSize: 20, color: AppColors.bookText),
                           ),
