@@ -21,7 +21,7 @@ class _VideoDisplayState extends State<VideoDisplay> {
   @override
   void initState() {
     super.initState();
-    Provider.of<SubjectProvider>(context, listen: false).fetchSubjects();
+    Provider.of<SubjectProvider>(context, listen: false).fetchSubject();
   }
 
   Color _getSubjectColor(String subjectName) {

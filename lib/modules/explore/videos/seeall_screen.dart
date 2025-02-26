@@ -4,7 +4,6 @@ import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/explore/e_library/E_lib_vids.dart';
 import 'package:linkschool/modules/explore/e_library/cbt.details.dart';
-import 'package:linkschool/modules/explore/e_library/e_games/game_details.dart';
 import 'package:linkschool/modules/model/explore/home/subject_model.dart';
 import 'package:linkschool/modules/providers/explore/subject_provider.dart';
 import 'package:provider/provider.dart';
@@ -20,7 +19,7 @@ class _SeeallScreenState extends State<SeeallScreen> {
   @override
   void initState() {
     super.initState();
-    Provider.of<SubjectProvider>(context, listen: false).fetchSubjects();
+    Provider.of<SubjectProvider>(context, listen: false).fetchSubject();
   }
 
   @override

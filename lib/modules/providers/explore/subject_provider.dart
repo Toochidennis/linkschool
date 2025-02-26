@@ -1,23 +1,27 @@
 import 'package:flutter/foundation.dart';
+import 'package:linkschool/modules/model/explore/home/subject_model.dart';
 import '../../model/explore/home/subject_model.dart';
 import '../../services/explore/subject_service.dart';
 
 
 class SubjectProvider with ChangeNotifier {
-  final SubjectService _subjectService = SubjectService();
+  
   List<Subject> _subjects = [];
   bool _isLoading = false;
-
-
+ String _errorMessage = '';
   List<Subject> get subjects => _subjects;
   bool get isLoading => _isLoading;
+    String get errorMessage => _errorMessage;
 
-  Future<void> fetchSubjects() async {
+final SubjectService _subjectService = SubjectService();
+  Future<void> fetchSubject() async {
     _isLoading = true;
+    _errorMessage = '';
     notifyListeners();
 
     try {
       _subjects = await _subjectService.getAllSubjects();
+      print('Fetched News: $_subjects');
     } catch (error) {
       print('Error fetching subjects: $error');
     }

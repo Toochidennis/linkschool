@@ -3,19 +3,27 @@ class Games {
     required this.cardGames,
     required this.puzzleGames,
     required this.boardGames,
+    required this.actionGames,
+    required this.sportsGames,
   });
 
   final BoardGamesClass cardGames;
   final BoardGamesClass puzzleGames;
   final BoardGamesClass boardGames;
+  final BoardGamesClass actionGames;
+  final BoardGamesClass sportsGames;
 
   factory Games.fromJson(Map<String, dynamic> json) {
     return Games(
       cardGames: BoardGamesClass.fromJson(json["Card Games"] ?? {}),
       puzzleGames: BoardGamesClass.fromJson(json["Puzzle Games"] ?? {}),
       boardGames: BoardGamesClass.fromJson(json["Board Games"] ?? {}),
+      actionGames: BoardGamesClass.fromJson(json["Action Games"] ?? {}),
+      sportsGames: BoardGamesClass.fromJson(json["Sports Games"] ?? {}),
     );
   }
+
+  where(bool Function(dynamic game) param0) {}
 }
 
 class BoardGamesClass {
@@ -33,7 +41,8 @@ class BoardGamesClass {
     return BoardGamesClass(
       id: json["id"] ?? '',
       name: json["name"] ?? '',
-      games: List<Game>.from((json["games"] ?? []).map((x) => Game.fromJson(x))),
+      games:
+          List<Game>.from((json["games"] ?? []).map((x) => Game.fromJson(x))),
     );
   }
 }
@@ -46,6 +55,7 @@ class Game {
     required this.rating,
     required this.date,
     required this.title,
+    required this.description,
   });
 
   final String id;
@@ -54,6 +64,7 @@ class Game {
   final String rating;
   final String date;
   final String title;
+  final String description;
 
   factory Game.fromJson(Map<String, dynamic> json) {
     return Game(
@@ -63,6 +74,7 @@ class Game {
       rating: json["rating"] ?? '',
       date: json["date"] ?? '',
       title: json["title"] ?? '',
+      description: json["description"] ?? '',
     );
   }
 }

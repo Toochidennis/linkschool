@@ -9,7 +9,7 @@ class Subject {
     return Subject(
       id: json['id'] ?? '',
       name: json['name'] ?? '',
-      categories: (json['category'] as List<dynamic>? ?? [])
+      categories: (json['category'] as List)
           .map((category) => Category.fromJson(category))
           .toList(),
     );
@@ -37,7 +37,7 @@ class Category {
       level: json['level'] ?? '',
       levelName: json['level_name'] ?? '',
       name: json['name'] ?? '',
-      videos: (json['videos'] as List<dynamic>? ?? [])
+      videos: (json['videos'] as List)
           .map((video) => Video.fromJson(video))
           .toList(),
     );

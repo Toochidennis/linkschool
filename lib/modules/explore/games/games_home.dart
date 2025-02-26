@@ -1,6 +1,7 @@
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
+import 'package:linkschool/modules/explore/games/game_details.dart';
 import 'package:linkschool/modules/model/explore/games/game_model.dart';
 import 'package:linkschool/modules/providers/explore/game/game_provider.dart';
 import 'package:provider/provider.dart';
@@ -8,7 +9,6 @@ import 'package:skeletonizer/skeletonizer.dart';
 import '../../common/constants.dart';
 import '../../common/text_styles.dart';
 import '../../common/app_colors.dart';
-import '../e_library/e_games/game_details.dart';
 
 class GamesDashboard extends StatefulWidget {
   const GamesDashboard({super.key});
@@ -44,6 +44,24 @@ class _GamesDashboardState extends State<GamesDashboard> {
             ));
           }
 
+          // Prepare a list of all game categories to display
+          final gameCategories = [
+            games.cardGames,
+            games.boardGames,
+            games.puzzleGames,
+            games.actionGames,
+            games.sportsGames
+          ];
+
+          // Define color pairs for each category
+          final colorPairs = [
+            [AppColors.gamesColor1, AppColors.gamesColor2],
+            [AppColors.gamesColor3, AppColors.gamesColor4],
+            [AppColors.gamesColor5, AppColors.gamesColor6],
+            [AppColors.gamesColor3, AppColors.gamesColor4],
+            [AppColors.gamesColor5, AppColors.gamesColor6],
+          ];
+
           return Container(
             padding: const EdgeInsets.only(top: 16),
             decoration: Constants.customBoxDecoration(context),
@@ -60,29 +78,18 @@ class _GamesDashboardState extends State<GamesDashboard> {
                 const SliverToBoxAdapter(child: SizedBox(height: 10.0)),
                 SliverToBoxAdapter(
                   child: SizedBox(
-                    height: 180,
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: [
-                        _buildGameCard(
+                    height: 200,
+                    child: ListView.builder(
+                      scrollDirection: Axis.horizontal,
+                      itemCount: gameCategories.length,
+                      itemBuilder: (context, index) {
+                        return _buildGameCard(
                           context,
-                          games.cardGames,
-                          AppColors.gamesColor1,
-                          AppColors.gamesColor2,
-                        ),
-                        _buildGameCard(
-                          context,
-                          games.boardGames,
-                          AppColors.gamesColor3,
-                          AppColors.gamesColor4,
-                        ),
-                        _buildGameCard(
-                          context,
-                          games.puzzleGames,
-                          AppColors.gamesColor5,
-                          AppColors.gamesColor6,
-                        ),
-                      ],
+                          gameCategories[index],
+                          colorPairs[index][0],
+                          colorPairs[index][1],
+                        );
+                      },
                     ),
                   ),
                 ),
@@ -133,13 +140,71 @@ class _GamesDashboardState extends State<GamesDashboard> {
                     delegate: SliverChildBuilderDelegate(
                       (context, index) {
                         final game = games.puzzleGames.games[index];
-                        return _buildYouMightLikeCard(
-                          game: game,
-                          startColor: AppColors.gamesColor5,
-                          endColor: AppColors.gamesColor6,
+                        return GestureDetector(
+                          onTap: () => GameDetails(game: game),
+                          child: _buildYouMightLikeCard(
+                            game: game,
+                            startColor: AppColors.gamesColor5,
+                            endColor: AppColors.gamesColor6,
+                          ),
                         );
                       },
                       childCount: 2,
+                    ),
+                  ),
+                ),
+                SliverToBoxAdapter(
+                  child: Constants.heading600(
+                    title: 'Sports Game',
+                    titleSize: 20.0,
+                    titleColor: Colors.black,
+                  ),
+                ),
+                const SliverToBoxAdapter(child: SizedBox(height: 10.0)),
+                SliverPadding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                  sliver: SliverList(
+                    delegate: SliverChildBuilderDelegate(
+                      (context, index) {
+                        final game = games.sportsGames.games[index];
+                        return GestureDetector(
+                          onTap: () => GameDetails(game: game),
+                          child: _buildYouMightLikeCard(
+                            game: game,
+                            startColor: AppColors.gamesColor5,
+                            endColor: AppColors.gamesColor6,
+                          ),
+                        );
+                      },
+                      childCount: games.sportsGames.games.length,
+                    ),
+                  ),
+                ),
+
+                SliverToBoxAdapter(
+                  child: Constants.heading600(
+                    title: 'Action Game',
+                    titleSize: 20.0,
+                    titleColor: Colors.black,
+                  ),
+                ),
+                const SliverToBoxAdapter(child: SizedBox(height: 10.0)),
+                SliverPadding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                  sliver: SliverList(
+                    delegate: SliverChildBuilderDelegate(
+                      (context, index) {
+                        final game = games.actionGames.games[index];
+                        return GestureDetector(
+                          onTap: () => GameDetails(game: game),
+                          child: _buildYouMightLikeCard(
+                            game: game,
+                            startColor: AppColors.gamesColor5,
+                            endColor: AppColors.gamesColor6,
+                          ),
+                        );
+                      },
+                      childCount: games.actionGames.games.length,
                     ),
                   ),
                 ),
@@ -231,11 +296,11 @@ class _GamesDashboardState extends State<GamesDashboard> {
               game.thumbnail,
               fit: BoxFit.cover,
               height: 200,
-              width: 408,
+              width: 400,
               errorBuilder: (context, error, stackTrace) {
                 return Container(
                   height: 200,
-                  width: 300,
+                  width: 400,
                   color: Colors.grey[300],
                   child: const Icon(Icons.error),
                 );
@@ -406,11 +471,11 @@ class _GamesDashboardState extends State<GamesDashboard> {
                       padding: const EdgeInsets.all(2.0),
                       child: OutlinedButton(
                         onPressed: () async {
-                          // Handle game URL navigation
-                          // You can use url_launcher package here
-                          // if (await canLaunch(game.gameUrl)) {
-                          //   await launch(game.gameUrl);
-                          // }
+                          Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) =>
+                                      GameDetails(game: game)));
                         },
                         style: OutlinedButton.styleFrom(
                           backgroundColor: AppColors.backgroundLight,
@@ -418,14 +483,11 @@ class _GamesDashboardState extends State<GamesDashboard> {
                             borderRadius: BorderRadius.circular(4.0),
                           ),
                         ),
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                          child: Text(
-                            'Play',
-                            style: AppTextStyles.normal600(
-                              fontSize: 14.0,
-                              color: AppColors.buttonColor1,
-                            ),
+                        child: Text(
+                          'Play',
+                          style: AppTextStyles.normal600(
+                            fontSize: 14.0,
+                            color: AppColors.buttonColor1,
                           ),
                         ),
                       ),
@@ -462,10 +524,10 @@ Widget _buildGameCard(BuildContext context, BoardGamesClass category,
       mainAxisAlignment: MainAxisAlignment.start,
       children: [
         Container(
-          margin: const EdgeInsets.only(left: 16.0),
-          padding: const EdgeInsets.only(left: 16.0, right: 16.0, top: 16.0),
-          width: 89.0,
-          height: 88.0,
+          margin: const EdgeInsets.only(left: 10.0),
+          padding: const EdgeInsets.only(left: 16.0, right: 10.0, top: 16.0),
+          width: 100.0,
+          height: 101.0,
           decoration: BoxDecoration(
             gradient: LinearGradient(
               begin: Alignment.topLeft,
@@ -483,11 +545,19 @@ Widget _buildGameCard(BuildContext context, BoardGamesClass category,
           ),
         ),
         const SizedBox(height: 12.0),
-        Text(
-          game.title,
-          style: AppTextStyles.normal500(
-            fontSize: 15.0,
-            color: Colors.black,
+        Padding(
+          padding: const EdgeInsets.only(left: 10.0),
+          child: SizedBox(
+            width: 90,
+            child: Text(
+              game.title,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: AppTextStyles.normal500(
+                fontSize: 15.0,
+                color: Colors.black,
+              ),
+            ),
           ),
         ),
         const SizedBox(height: 2.0),
@@ -498,7 +568,7 @@ Widget _buildGameCard(BuildContext context, BoardGamesClass category,
             color: AppColors.text5Light,
           ),
         ),
-        const SizedBox(height: 2.0),
+      const SizedBox(height: 2.0),
         RatingBar.builder(
           initialRating: double.tryParse(game.rating) ?? 0.0,
           minRating: 1,
