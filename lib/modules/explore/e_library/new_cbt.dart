@@ -3,7 +3,6 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
-import 'package:linkschool/modules/explore/e_library/e_lib_detail.dart';
 
 import 'package:linkschool/modules/explore/e_library/e_games/gamesTab.dart';
 // import 'package:linkschool/modules/explore/e_library/e_library_ebooks/library_ebook.dart';

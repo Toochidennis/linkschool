@@ -96,7 +96,7 @@ _navigateToSeeall() {
                             ),
                           ),
                           SliverToBoxAdapter(
-                            child: Container(
+                            child: SizedBox(
                               height: 200.0,
                               child: ListView.builder(
                                 itemCount: 7,

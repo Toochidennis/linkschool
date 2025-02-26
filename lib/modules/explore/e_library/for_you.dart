@@ -8,7 +8,7 @@ import 'package:linkschool/modules/common/text_styles.dart';
 
 import 'package:linkschool/modules/explore/e_library/cbt.dart';
 import 'package:linkschool/modules/explore/e_library/e_library_ebooks/library_e_book.dart';
-import 'package:linkschool/modules/explore/games/gameCard.dart';
+import 'package:linkschool/modules/explore/games/game_card.dart';
 import 'package:linkschool/modules/explore/e_library/e_games/gamesTab.dart';
 import 'package:linkschool/modules/explore/videos/videos_dashboard.dart';
 // import 'package:linkschool/modules/explore/e_library/elibrary-ebooks/library_ebook.dart';

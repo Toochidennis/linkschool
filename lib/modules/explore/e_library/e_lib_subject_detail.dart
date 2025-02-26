@@ -10,7 +10,7 @@ import 'package:skeletonizer/skeletonizer.dart';
 // import 'package:linkschool/modules/providers/explore/subject_provider.dart';
 
 class ELibSubjectDetail extends StatefulWidget {
-  const ELibSubjectDetail({Key? key, this.subject}) : super(key: key);
+  const ELibSubjectDetail({super.key, this.subject});
   final SubjectModel2? subject;
 
   @override
@@ -126,10 +126,10 @@ class _ELibSubjectDetailState extends State<ELibSubjectDetail>
             SizedBox(height: 16),
             ElevatedButton(
               onPressed: _loadData,
-              child: Text('Retry'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.bgBorder,
               ),
+              child: Text('Retry'),
             ),
           ],
         ),
@@ -363,10 +363,10 @@ class _ELibSubjectDetailState extends State<ELibSubjectDetail>
               SizedBox(height: 16),
               ElevatedButton(
                 onPressed: _loadData,
-                child: Text(''),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.bgBorder,
                 ),
+                child: Text(''),
               ),
             ],
           ),
@@ -392,10 +392,10 @@ class _ELibSubjectDetailState extends State<ELibSubjectDetail>
             SizedBox(height: 16),
             ElevatedButton(
               onPressed: _loadData,
-              child: Text(''),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.bgBorder,
               ),
+              child: Text(''),
             ),
           ],
         ),
@@ -497,7 +497,7 @@ class _SliverAppBarDelegate extends SliverPersistentHeaderDelegate {
 }
 
 class SubjectDetails extends StatelessWidget {
-  const SubjectDetails({Key? key, required this.video}) : super(key: key);
+  const SubjectDetails({super.key, required this.video});
   final Video video;
 
   @override

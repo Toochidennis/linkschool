@@ -98,7 +98,7 @@ class _VideosDashboardState extends State<VideosDashboard> {
                             ),
                           ),
                           SliverToBoxAdapter(
-                            child: Container(
+                            child: SizedBox(
                               height: 150.0,
                               child: ListView.builder(
                                 itemCount: 7,

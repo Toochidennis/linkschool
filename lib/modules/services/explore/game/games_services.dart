@@ -25,6 +25,7 @@ class GameService {
       print("Error fetching games: $e");
 
     }
+    return null;
   }
 }
 

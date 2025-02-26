@@ -12,7 +12,6 @@ import 'package:provider/provider.dart';
 import 'package:linkschool/modules/providers/explore/subject_provider.dart';
 import 'package:video_player/video_player.dart';
 
-import '../../model/explore/home/subject_model2.dart';
 
 class E_lib_vids extends StatefulWidget {
   const E_lib_vids({super.key, required this.video});

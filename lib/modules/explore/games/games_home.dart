@@ -1,7 +1,6 @@
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
-import 'package:linkschool/modules/model/explore/games/game_model.dart';
 import 'package:linkschool/modules/providers/explore/game/game_provider.dart';
 import 'package:provider/provider.dart';
 import '../../common/constants.dart';
@@ -186,8 +185,7 @@ class _GamesDashboardState extends State<GamesDashboard> {
       required String imagePath,
       required String gameName,
       required String platform,
-      required double rating,
-      Game}) {
+      required double rating}) {
     return Column(
       mainAxisAlignment: MainAxisAlignment.start,
       children: [

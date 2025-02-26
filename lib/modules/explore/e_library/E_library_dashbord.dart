@@ -9,7 +9,7 @@ import 'package:linkschool/modules/explore/e_library/for_you.dart';
 // import 'package:linkschool/modules/explore/e_library/for_you.dart';
 
 
-import '../games/gameCard.dart';
+import '../games/game_card.dart';
 
 
 class ElibraryDashboard extends StatefulWidget {
@@ -332,7 +332,7 @@ class buildForYou extends StatelessWidget {
         SizedBox(
           height: 8,
         ),
-        Container(
+        SizedBox(
           height: 155,
           child: ListView.builder(
             padding: const EdgeInsets.only(right: 16.0),
@@ -349,7 +349,7 @@ class buildForYou extends StatelessWidget {
         blueHeading(tag: 'E-book', title: 'Suggested for you'),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Container(
+          child: SizedBox(
             height: 250,
             width: double.infinity,
             child: ListView(
@@ -671,7 +671,7 @@ Widget _ContinueWatching() {
                
                 backgroundColor: AppColors.videoColor9,
                 radius: 8.0,
-                child: const Icon(Icons.person_2_rounded,
+                child: Icon(Icons.person_2_rounded,
                     size: 13.0, color: Colors.white),
               ),
               const SizedBox(width: 4.0),
