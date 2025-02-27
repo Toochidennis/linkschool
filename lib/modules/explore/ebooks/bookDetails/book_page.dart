@@ -6,9 +6,10 @@ import 'package:linkschool/modules/common/buttons/custom_long_elevated_button.da
 import 'package:linkschool/modules/common/buttons/custom_outline_button..dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/explore/e_library/e_library_ebooks/bookScreen.dart';
+import 'package:linkschool/modules/model/explore/home/book_model.dart';
 
 class MybookPage extends StatefulWidget {
-  const MybookPage({super.key});
+  const MybookPage({super.key, required Book book});
 
   @override
   State<MybookPage> createState() => _MybookPageState();
