@@ -7,7 +7,7 @@ import 'package:linkschool/modules/explore/e_library/cbt.dart';
 import 'package:linkschool/modules/explore/e_library/e_games/gamesTab.dart';
 import 'package:linkschool/modules/explore/e_library/foryou.dart';
 
-import '../games/gameCard.dart';
+import '../games/gamecard.dart';
 import 'elibrary-ebooks/library_ebook.dart';
 
 class ElibraryDashboard extends StatefulWidget {
