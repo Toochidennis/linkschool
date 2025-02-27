@@ -6,11 +6,13 @@ import 'package:linkschool/modules/common/text_styles.dart';
 // import 'package:linkschool/modules/model/explore/home/news/ebook_model.dart';
 
 import 'package:percent_indicator/linear_percent_indicator.dart';
+
+import '../../model/explore/home/news/ebook_model.dart';
 // import 'package:provider/provider.dart';
 
 class BookScreen extends StatefulWidget {
-  // final bookdet = Provider.of<EbookProvider>;
-  // BookScreen({required this.book});
+  final Ebook suggestedBook;
+  BookScreen({required this.suggestedBook});
   @override
   State<BookScreen> createState() => _BookScreenState();
 }
@@ -27,6 +29,7 @@ class _BookScreenState extends State<BookScreen> {
           },
           icon: Image.asset(
             'assets/icons/arrow_back.png',
+            // widget.suggestedBook.thumbnail,
             color: AppColors.backgroundLight,
             width: 34.0,
             height: 34.0,
@@ -43,7 +46,9 @@ class _BookScreenState extends State<BookScreen> {
                 children: [
                   Padding(
                     padding: const EdgeInsets.all(16),
-                    child: BookProfileCard(),
+                    child: BookProfileCard(
+                      suggestedBook: widget.suggestedBook,
+                    ),
                   ),
                   Divider(),
                   Padding(
@@ -53,7 +58,8 @@ class _BookScreenState extends State<BookScreen> {
                       children: [
                         RichText(
                           text: TextSpan(
-                            text: 'Chapter 20',
+                            text: widget.suggestedBook.introduction,
+                            // 'Chapter 20',
                             style: AppTextStyles.normal600(
                                 fontSize: 20, color: AppColors.bookText),
                           ),
@@ -69,14 +75,15 @@ class _BookScreenState extends State<BookScreen> {
                                     height: 2.5),
                                 children: [
                                   TextSpan(
-                                    text:
-                                        'Benedict Timothy Carlton Cumberbatch CBE (born 19 July 1976) is an English actor. '
-                                        'A graduate of the Victoria University of Manchester, he continued his training at the '
-                                        'London Academy of Music and Dramatic Art, obtaining a Master of Arts in Classical Acting. '
-                                        'He first performed at the Open Air Theatre, Regent\'s Park in Shakespearean productions and made his '
-                                        'West End debut in Richard Eyre\'s revival of Hedda Gabler in 2005.\n\n'
-                                        'Since then, he has starred in the Royal National Theatre productions After the Dance (2010) and '
-                                        'Frankenstein (2011). In 2015, he played the title role in Hamlet at the Barbican Theatre.',
+                                    text: widget.suggestedBook.introduction,
+
+                                    // 'Benedict Timothy Carlton Cumberbatch CBE (born 19 July 1976) is an English actor. '
+                                    // 'A graduate of the Victoria University of Manchester, he continued his training at the '
+                                    // 'London Academy of Music and Dramatic Art, obtaining a Master of Arts in Classical Acting. '
+                                    // 'He first performed at the Open Air Theatre, Regent\'s Park in Shakespearean productions and made his '
+                                    // 'West End debut in Richard Eyre\'s revival of Hedda Gabler in 2005.\n\n'
+                                    // 'Since then, he has starred in the Royal National Theatre productions After the Dance (2010) and '
+                                    // 'Frankenstein (2011). In 2015, he played the title role in Hamlet at the Barbican Theatre.',
                                   ),
                                 ],
                               ),
@@ -98,7 +105,10 @@ class _BookScreenState extends State<BookScreen> {
 }
 
 class BookProfileCard extends StatelessWidget {
-  const BookProfileCard({super.key});
+  final Ebook suggestedBook;
+
+  const BookProfileCard({Key? key, required this.suggestedBook})
+      : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -110,7 +120,7 @@ class BookProfileCard extends StatelessWidget {
             ClipRRect(
               borderRadius: BorderRadius.circular(8),
               child: Image.asset(
-                'assets/images/book_1.png',
+                suggestedBook.thumbnail,
                 height: 180,
                 width: 116,
                 fit: BoxFit.cover,
@@ -134,7 +144,7 @@ class BookProfileCard extends StatelessWidget {
             children: [
               RichText(
                 text: TextSpan(
-                  text: 'Purple Hibiscus',
+                  text: suggestedBook.title,
                   style: AppTextStyles.normal600(
                       fontSize: 26, color: AppColors.bookText),
                 ),
@@ -142,7 +152,7 @@ class BookProfileCard extends StatelessWidget {
               SizedBox(height: 4),
               RichText(
                 text: TextSpan(
-                  text: 'by Chimamanda Adichie',
+                  text: suggestedBook.author,
                   style: AppTextStyles.normal400(
                     fontSize: 16,
                     color: AppColors.booksButtonTextColor,
@@ -160,7 +170,8 @@ class BookProfileCard extends StatelessWidget {
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(20))),
                 child: Text(
-                  'Go to first page',
+                  // 'Go to first page',
+                  suggestedBook.chapters.toString(),
                   style: AppTextStyles.normal500(
                       fontSize: 16, color: AppColors.buttontext1),
                 ),

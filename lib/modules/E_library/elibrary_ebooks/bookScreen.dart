@@ -5,16 +5,15 @@ import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/model/explore/home/news/ebook_model.dart';
+// import 'package:linkschool/modules/model/explore/home/news/ebook_model.dart';
 // import 'package:linkschool/modules/providers/explore/home/ebook_provider.dart';
 import 'package:percent_indicator/linear_percent_indicator.dart';
 // import 'package:provider/provider.dart';
 
 class BookScreen extends StatefulWidget {
-  // final Ebook suggestedBook;
-  const BookScreen({
-    super.key,
-    // required this.suggestedBook
-  });
+  final Ebook suggestedBook;
+
+  const BookScreen({super.key, required this.suggestedBook});
 
   @override
   State<BookScreen> createState() => _BookScreenState();
@@ -36,7 +35,7 @@ class _BookScreenState extends State<BookScreen> {
                 children: [
                   Padding(
                     padding: const EdgeInsets.all(16),
-                    child: BookProfileCard(),
+                    child: BookProfileCard(suggestedBook: widget.suggestedBook),
                   ),
                   Divider(),
                   Padding(
@@ -46,7 +45,7 @@ class _BookScreenState extends State<BookScreen> {
                       children: [
                         RichText(
                           text: TextSpan(
-                            text: "Title",
+                            text: widget.suggestedBook.title,
                             style: AppTextStyles.normal600(
                                 fontSize: 20, color: AppColors.bookText),
                           ),
@@ -62,14 +61,14 @@ class _BookScreenState extends State<BookScreen> {
                                     height: 30 / 16),
                                 children: [
                                   TextSpan(
-                                    text:
-                                        'Benedict Timothy Carlton Cumberbatch CBE (born 19 July 1976) is an English actor. '
-                                        'A graduate of the Victoria University of Manchester, he continued his training at the '
-                                        'London Academy of Music and Dramatic Art, obtaining a Master of Arts in Classical Acting. '
-                                        'He first performed at the Open Air Theatre, Regent\'s Park in Shakespearean productions and made his '
-                                        'West End debut in Richard Eyre\'s revival of Hedda Gabler in 2005.\n\n'
-                                        'Since then, he has starred in the Royal National Theatre productions After the Dance (2010) and '
-                                        'Frankenstein (2011). In 2015, he played the title role in Hamlet at the Barbican Theatre.',
+                                    text: widget.suggestedBook.introduction,
+                                    // 'Benedict Timothy Carlton Cumberbatch CBE (born 19 July 1976) is an English actor. '
+                                    // 'A graduate of the Victoria University of Manchester, he continued his training at the '
+                                    // 'London Academy of Music and Dramatic Art, obtaining a Master of Arts in Classical Acting. '
+                                    // 'He first performed at the Open Air Theatre, Regent\'s Park in Shakespearean productions and made his '
+                                    // 'West End debut in Richard Eyre\'s revival of Hedda Gabler in 2005.\n\n'
+                                    // 'Since then, he has starred in the Royal National Theatre productions After the Dance (2010) and '
+                                    // 'Frankenstein (2011). In 2015, he played the title role in Hamlet at the Barbican Theatre.',
                                   ),
                                 ],
                               ),
@@ -91,7 +90,12 @@ class _BookScreenState extends State<BookScreen> {
 }
 
 class BookProfileCard extends StatelessWidget {
-  const BookProfileCard({super.key});
+  final Ebook suggestedBook;
+
+  BookProfileCard({
+    super.key,
+    required this.suggestedBook,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -102,8 +106,9 @@ class BookProfileCard extends StatelessWidget {
         children: [
           Column(
             children: [
-              Image.asset(
-                'assets/images/book_1.png',
+              Image.network(
+                suggestedBook.thumbnail,
+                // 'assets/images/book_1.png',
                 height: 173,
                 width: 114,
                 fit: BoxFit.cover,
@@ -126,7 +131,8 @@ class BookProfileCard extends StatelessWidget {
               children: [
                 RichText(
                   text: TextSpan(
-                    text: 'Purple Hibiscus',
+                    text: suggestedBook.title,
+                    // 'Purple Hibiscus',
                     style: AppTextStyles.normal600(
                         fontSize: 24, color: AppColors.bookText),
                   ),
@@ -134,7 +140,7 @@ class BookProfileCard extends StatelessWidget {
                 SizedBox(height: 4),
                 RichText(
                   text: TextSpan(
-                    text: 'by Chimamanda Adichie',
+                    text: 'by ' + suggestedBook.author,
                     style: AppTextStyles.normal500(
                       fontSize: 14,
                       color: AppColors.booksButtonTextColor,
@@ -163,8 +169,11 @@ class BookProfileCard extends StatelessWidget {
                   height: 34,
                   child: ElevatedButton(
                     onPressed: () {
-                      Navigator.push(context,
-                          MaterialPageRoute(builder: (context) => FullPage()));
+                      Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) =>
+                                  FullPage(continueReading: suggestedBook)));
                     },
                     style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.bookbutton,

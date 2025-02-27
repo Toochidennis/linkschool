@@ -8,7 +8,7 @@ import 'package:linkschool/modules/common/buttons/custom_long_elevated_button.da
 // import 'package:linkschool/modules/common/constants.dart';
 
 import 'package:linkschool/modules/common/text_styles.dart';
-import 'package:linkschool/modules/E_library/elibrary-ebooks/bookScreen.dart';
+import 'package:linkschool/modules/e_library/elibrary-ebooks/bookScreen.dart';
 import 'package:linkschool/modules/model/explore/home/news/ebook_model.dart';
 // import 'package:linkschool/modules/providers/explore/home/ebook_provider.dart';
 // import 'package:provider/provider.dart';
@@ -177,13 +177,15 @@ class _MybookPageState extends State<MybookPage> {
                   CustomLongElevatedButton(
                     text: 'Start Reading',
                     onPressed: () {
-                      Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => BookScreen(
-                                // suggestedBook: widget.suggestedbook,
-                                ),
-                          ));
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (context) {
+                            return BookScreen(
+                              suggestedBook: widget.suggestedbook,
+                            );
+                          },
+                        ),
+                      );
                     },
                     backgroundColor: const Color.fromARGB(255, 30, 126, 223),
                     textStyle: AppTextStyles.normal500(

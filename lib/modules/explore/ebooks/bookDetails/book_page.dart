@@ -5,10 +5,13 @@ import 'package:linkschool/modules/common/buttons/custom_long_elevated_button.da
 import 'package:linkschool/modules/common/buttons/custom_outline_button..dart';
 
 import 'package:linkschool/modules/common/text_styles.dart';
-import 'package:linkschool/modules/E_library/elibrary-ebooks/bookScreen.dart';
+import 'package:linkschool/modules/explore/ebooks/bookScreen.dart'
+    show BookScreen;
+import 'package:linkschool/modules/model/explore/home/news/ebook_model.dart';
 
 class MybookPage extends StatefulWidget {
-  const MybookPage({super.key});
+  final Ebook suggestedbook;
+  const MybookPage({super.key, required this.suggestedbook});
 
   @override
   State<MybookPage> createState() => _MybookPageState();
@@ -46,12 +49,16 @@ class _MybookPageState extends State<MybookPage> {
               child: Column(
                 children: [
                   Image(
-                    image: AssetImage('assets/images/book_1.png'),
+                    image: AssetImage(
+                      // 'assets/images/book_1.png'
+                      widget.suggestedbook.thumbnail,
+                    ),
                     height: 200,
                   ),
                   SizedBox(height: 12),
                   Text(
-                    'Purple Hibiscus',
+                    // 'Purple Hibiscus',
+                    widget.suggestedbook.title,
                     style: AppTextStyles.normal600(
                       fontSize: 24,
                       color: AppColors.bookText,
@@ -59,7 +66,8 @@ class _MybookPageState extends State<MybookPage> {
                   ),
                   SizedBox(height: 4),
                   Text(
-                    'by Chimamanda Adichie',
+                    // 'by Chimamanda Adichie',
+                    widget.suggestedbook.author,
                     style: AppTextStyles.normal400(
                       fontSize: 16,
                       color: AppColors.bookText,
@@ -87,9 +95,10 @@ class _MybookPageState extends State<MybookPage> {
               child: Column(
                 children: [
                   Text(
-                    'Benedict Timothy Carlton Cumberbatch CBE (born 19 July 1976) is an English actor. '
-                    'A graduate of the Victoria University of Manchester, he continued his training at '
-                    'the London Academy of Music and... he continued his training at the London Academy of Music and...',
+                    // 'Benedict Timothy Carlton Cumberbatch CBE (born 19 July 1976) is an English actor. '
+                    // 'A graduate of the Victoria University of Manchester, he continued his training at '
+                    // 'the London Academy of Music and... he continued his training at the London Academy of Music and...',
+                    widget.suggestedbook.chapters.entries.join(","),
                     style: AppTextStyles.normal400(
                       fontSize: 16,
                       color: AppColors.bookText,
@@ -108,7 +117,15 @@ class _MybookPageState extends State<MybookPage> {
                   CustomLongElevatedButton(
                     text: 'Start Reading',
                     onPressed: () {
-                      Navigator.push(context, MaterialPageRoute(builder: (context) => BookScreen(),));
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (context) {
+                            return BookScreen(
+                              suggestedBook: widget.suggestedbook,
+                            );
+                          },
+                        ),
+                      );
                     },
                     backgroundColor: AppColors.bgXplore3,
                     textStyle: AppTextStyles.normal500(
