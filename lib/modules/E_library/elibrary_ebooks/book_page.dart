@@ -8,7 +8,7 @@ import 'package:linkschool/modules/common/buttons/custom_long_elevated_button.da
 // import 'package:linkschool/modules/common/constants.dart';
 
 import 'package:linkschool/modules/common/text_styles.dart';
-import 'package:linkschool/modules/e_library/elibrary-ebooks/bookScreen.dart';
+import 'package:linkschool/modules/e_library/elibrary_ebooks/bookScreen.dart';
 import 'package:linkschool/modules/model/explore/home/news/ebook_model.dart';
 // import 'package:linkschool/modules/providers/explore/home/ebook_provider.dart';
 // import 'package:provider/provider.dart';
