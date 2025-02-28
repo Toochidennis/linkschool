@@ -1,19 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:linkschool/modules/model/explore/home/book_model.dart';
+import 'package:linkschool/modules/model/explore/home/game_model.dart';
 import 'package:provider/provider.dart';
+import 'package:skeletonizer/skeletonizer.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/explore/e_library/cbt.dart';
 import 'package:linkschool/modules/explore/e_library/e_games/gamesTab.dart';
+import 'package:linkschool/modules/explore/e_library/e_lib_vids.dart'; // Import the E_lib_vids screen
 import '../../model/explore/home/video_model.dart';
 import '../../providers/explore/for_you_provider.dart';
 import '../games/game_card.dart';
-// import 'package:linkschool/modules/explore/e_library/for_you.dart';
-// import 'package:linkschool/modules/explore/e_library/e_lib_detail.dart';
-// import '../providers/for_you_provider.dart';
-// import '../models/game_model.dart';
-// import '../models/video_model.dart';
-// import '../models/book_model.dart';
+import 'package:linkschool/modules/explore/e_library/e_library_ebooks/book_page.dart'; // Import the MybookPage
 
 class ElibraryDashboard extends StatefulWidget {
   const ElibraryDashboard({super.key, required this.height});
@@ -59,107 +58,105 @@ class _ElibraryDashboardState extends State<ElibraryDashboard> {
                         SingleChildScrollView(
                           child: Consumer<ForYouProvider>(
                             builder: (context, forYouProvider, child) {
-                              if (forYouProvider.isLoading) {
-                                return Center(child: CircularProgressIndicator());
-                              }
-                              return Column(
-                                children: [
-                                  // Continue watching section
-                                  headingWithAdvert(tag: 'Video', title: 'Continue watching'),
-                                  SizedBox(height: 8),
-                                  SizedBox(
-                                    height: 180,
-                                    child: ListView.builder(
-                                      scrollDirection: Axis.horizontal,
-                                      itemCount: forYouProvider.videos.length,
-                                      itemBuilder: (context, index) => _ContinueWatching(video: forYouProvider.videos[index]),
-                                    ),
-                                  ),
-                                  SizedBox(height: 25),
-                                  // Games section
-                                  headingWithAdvert(tag: "Game", title: 'Game Everyone is playing'),
-                                  SizedBox(height: 8),
-                                  SizedBox(
-                                    height: 200,
-                                    child: ListView.builder(
-                                      padding: const EdgeInsets.only(right: 16.0),
-                                      itemCount: forYouProvider.games.length,
-                                      scrollDirection: Axis.horizontal,
-                                      itemBuilder: (context, index) {
-                                        final game = forYouProvider.games[index];
-                                        return GameCard(
-                                          game: game,
-                                          beginColor: AppColors.gamesColor1,
-                                          endColor: AppColors.gamesColor2,
-                                        );
-                                      },
-                                    ),
-                                  ),
-                                  SizedBox(height: 5),
-                                  // Books section
-                                  blueHeading(tag: 'E-book', title: 'Suggested for you'),
-                                  Padding(
-                                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                                    child: SizedBox(
-                                      height: 250,
-                                      width: double.infinity,
+                              return Skeletonizer(
+                                enabled: forYouProvider.isLoading,
+                                child: Column(
+                                  children: [
+                                    // Continue watching section
+                                    headingWithAdvert(tag: 'Video', title: 'Continue watching'),
+                                    SizedBox(height: 8),
+                                    SizedBox(
+                                      height: 180,
                                       child: ListView.builder(
                                         scrollDirection: Axis.horizontal,
-                                        itemCount: forYouProvider.books.length,
+                                        itemCount: forYouProvider.videos.isEmpty ? 3 : forYouProvider.videos.length,
+                                        itemBuilder: (context, index) => _ContinueWatching(video: forYouProvider.videos.isEmpty ? Video.empty() : forYouProvider.videos[index], context: context,),
+                                      ),
+                                    ),
+                                    SizedBox(height: 25),
+                                    // Games section
+                                    headingWithAdvert(tag: "Game", title: 'Game Everyone is playing'),
+                                    SizedBox(height: 8),
+                                    SizedBox(
+                                      height: 200,
+                                      child: ListView.builder(
+                                        padding: const EdgeInsets.only(right: 16.0),
+                                        itemCount: forYouProvider.games.isEmpty ? 3 : forYouProvider.games.length,
+                                        scrollDirection: Axis.horizontal,
                                         itemBuilder: (context, index) {
-                                          final book = forYouProvider.books[index];
-                                          return _books(
-                                            image: book.thumbnail,
-                                            bookName: book.title,
-                                            editor: book.author,
+                                          final game = forYouProvider.games.isEmpty ? Game.empty() : forYouProvider.games[index];
+                                          return GameCard(
+                                            game: game,
+                                            beginColor: AppColors.gamesColor1,
+                                            endColor: AppColors.gamesColor2,
                                           );
                                         },
                                       ),
                                     ),
-                                  ),
-                                  // CBT section
-                                  blueHeading(tag: 'CBT', title: 'Continue taking tests'),
-                                  Divider(height: 20),
-                                  Column(
-                                    children: [
-                                      subjectCard(
-                                        subjectIcon: 'maths',
-                                        subjectName: 'Mathematics',
-                                        cardColor: AppColors.cbtCardColor1,
-                                        showProgressIndicator: true,
+                                    SizedBox(height: 5),
+                                    // Books section
+                                    blueHeading(tag: 'E-book', title: 'Suggested for you'),
+                                    Padding(
+                                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                                      child: SizedBox(
+                                        height: 250,
+                                        width: double.infinity,
+                                        child: ListView.builder(
+                                          scrollDirection: Axis.horizontal,
+                                          itemCount: forYouProvider.books.isEmpty ? 3 : forYouProvider.books.length,
+                                          itemBuilder: (context, index) {
+                                            final book = forYouProvider.books.isEmpty ? Book.empty() : forYouProvider.books[index];
+                                            return _books(
+                                              book: book, // Pass the book object
+                                            );
+                                          },
+                                        ),
                                       ),
-                                      Divider(),
-                                      subjectCard(
-                                        subjectIcon: 'english',
-                                        subjectName: 'English Language',
-                                        cardColor: AppColors.cbtCardColor2,
-                                        showProgressIndicator: true,
-                                      ),
-                                      Divider(),
-                                      subjectCard(
-                                        subjectIcon: 'chemistry',
-                                        subjectName: 'Chemistry',
-                                        cardColor: AppColors.cbtCardColor3,
-                                        showProgressIndicator: true,
-                                      ),
-                                      Divider(),
-                                      subjectCard(
-                                        subjectIcon: 'physics',
-                                        subjectName: 'Physics',
-                                        subjectyear: '2001-2014',
-                                        cardColor: AppColors.cbtCardColor4,
-                                      ),
-                                      Divider(),
-                                      subjectCard(
-                                        cardColor: AppColors.cbtCardColor5,
-                                        subjectIcon: 'further_maths',
-                                        subjectName: 'Further Mathematics',
-                                        subjectyear: '2001-2023',
-                                      ),
-                                    ],
-                                  ),
-                                  SizedBox(height: 150),
-                                ],
+                                    ),
+                                    // CBT section
+                                    blueHeading(tag: 'CBT', title: 'Continue taking tests'),
+                                    Divider(height: 20),
+                                    Column(
+                                      children: [
+                                        subjectCard(
+                                          subjectIcon: 'maths',
+                                          subjectName: 'Mathematics',
+                                          cardColor: AppColors.cbtCardColor1,
+                                          showProgressIndicator: true,
+                                        ),
+                                        Divider(),
+                                        subjectCard(
+                                          subjectIcon: 'english',
+                                          subjectName: 'English Language',
+                                          cardColor: AppColors.cbtCardColor2,
+                                          showProgressIndicator: true,
+                                        ),
+                                        Divider(),
+                                        subjectCard(
+                                          subjectIcon: 'chemistry',
+                                          subjectName: 'Chemistry',
+                                          cardColor: AppColors.cbtCardColor3,
+                                          showProgressIndicator: true,
+                                        ),
+                                        Divider(),
+                                        subjectCard(
+                                          subjectIcon: 'physics',
+                                          subjectName: 'Physics',
+                                          subjectyear: '2001-2014',
+                                          cardColor: AppColors.cbtCardColor4,
+                                        ),
+                                        Divider(),
+                                        subjectCard(
+                                          cardColor: AppColors.cbtCardColor5,
+                                          subjectIcon: 'further_maths',
+                                          subjectName: 'Further Mathematics',
+                                          subjectyear: '2001-2023',
+                                        ),
+                                      ],
+                                    ),
+                                    SizedBox(height: 150),
+                                  ],
+                                ),
                               );
                             },
                           ),
@@ -251,57 +248,65 @@ Widget subjectCard({
 }
 
 class _books extends StatelessWidget {
-  final String image;
-  final String bookName;
-  final String editor;
+  final Book book;
 
   const _books({
     super.key,
-    required this.image,
-    required this.bookName,
-    required this.editor,
+    required this.book,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(right: 8.0),
-      child: Container(
-        margin: EdgeInsets.fromLTRB(0, 10, 0, 0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              height: 173,
-              width: 114,
-              decoration: BoxDecoration(
-                image: DecorationImage(
-                  image: NetworkImage(image),
-                  fit: BoxFit.cover,
+    return GestureDetector(
+      onTap: () {
+        if (book.title.isNotEmpty) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => MybookPage(suggestedbook: book),
+            ),
+          );
+        }
+      },
+      child: Padding(
+        padding: const EdgeInsets.only(right: 8.0),
+        child: Container(
+          margin: EdgeInsets.fromLTRB(0, 10, 0, 0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                height: 173,
+                width: 114,
+                decoration: BoxDecoration(
+                  image: DecorationImage(
+                    image: NetworkImage(book.thumbnail),
+                    fit: BoxFit.cover,
+                  ),
                 ),
               ),
-            ),
-            SizedBox(height: 5),
-            SizedBox(
-              width: 114,
-              child: LinearProgressIndicator(
-                minHeight: 5,
-                value: 0.5,
-                color: AppColors.text2Light,
+              SizedBox(height: 5),
+              SizedBox(
+                width: 114,
+                child: LinearProgressIndicator(
+                  minHeight: 5,
+                  value: 0.5,
+                  color: AppColors.text2Light,
+                ),
               ),
-            ),
-            Text(
-              bookName,
-              style: AppTextStyles.normal600(
-                  fontSize: 16, color: AppColors.libText),
-            ),
-            Text(
-              editor,
-              style: AppTextStyles.normal400(
-                  fontSize: 14, color: AppColors.libtitle),
-            ),
-            SizedBox(height: 20),
-          ],
+              Text(
+                book.title,
+                style: AppTextStyles.normal600(
+                    fontSize: 16, color: AppColors.libText),
+              ),
+              Text(
+                book.author,
+                style: AppTextStyles.normal400(
+                    fontSize: 14, color: AppColors.libtitle),
+              ),
+              SizedBox(height: 20),
+            ],
+          ),
         ),
       ),
     );
@@ -380,127 +385,81 @@ class blueHeading extends StatelessWidget {
   }
 }
 
-Widget _ContinueWatching({required Video video}) {
-  return Container(
-    height: 147,
-    width: 150,
-    margin: const EdgeInsets.only(left: 16.0),
-    child: Column(
-      children: [
-        Image.network(
-          video.thumbnail,
-          fit: BoxFit.cover,
-          height: 90,
-          width: 150,
-        ),
-        const SizedBox(height: 4.0),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 4.0),
-          child: Text(
-            video.title,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            style: AppTextStyles.normal600(
-              fontSize: 14.0,
-              color: AppColors.backgroundDark,
+Widget _ContinueWatching({required Video video, required BuildContext context}) {
+  return GestureDetector(
+    onTap: () {
+      if (video.title.isNotEmpty) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => E_lib_vids(video: video),
+          ),
+        );
+      }
+    },
+    child: Container(
+      height: 147,
+      width: 150,
+      margin: const EdgeInsets.only(left: 16.0),
+      child: Column(
+        children: [
+          Image.network(
+            video.thumbnail,
+            fit: BoxFit.cover,
+            height: 90,
+            width: 150,
+          ),
+          const SizedBox(height: 4.0),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4.0),
+            child: Text(
+              video.title,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: AppTextStyles.normal600(
+                fontSize: 14.0,
+                color: AppColors.backgroundDark,
+              ),
             ),
           ),
-        ),
-        const SizedBox(height: 4.0),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 4.0),
-          child: Row(
-            children: [
-              const CircleAvatar(
-                backgroundColor: AppColors.videoColor9,
-                radius: 8.0,
-                child: Icon(Icons.person_2_rounded,
-                    size: 13.0, color: Colors.white),
-              ),
-              const SizedBox(width: 4.0),
-              Text(
-                'Author Name', // You might want to add this to your Video model
-                style: AppTextStyles.normal500(
-                  fontSize: 12.0,
-                  color: AppColors.videoColor9,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
+        ],
+      ),
     ),
   );
 }
 
 
 
+
 // import 'package:flutter/material.dart';
+// import 'package:linkschool/modules/model/explore/home/book_model.dart';
+// import 'package:linkschool/modules/model/explore/home/game_model.dart';
+// import 'package:provider/provider.dart';
+// import 'package:skeletonizer/skeletonizer.dart';
 // import 'package:linkschool/modules/common/app_colors.dart';
 // import 'package:linkschool/modules/common/constants.dart';
 // import 'package:linkschool/modules/common/text_styles.dart';
-// import 'package:linkschool/modules/explore/e_library/e_lib_detail.dart';
 // import 'package:linkschool/modules/explore/e_library/cbt.dart';
 // import 'package:linkschool/modules/explore/e_library/e_games/gamesTab.dart';
-// import 'package:linkschool/modules/explore/e_library/for_you.dart';
-// // import 'package:linkschool/modules/explore/e_library/for_you.dart';
-
-
+// import '../../model/explore/home/video_model.dart';
+// import '../../providers/explore/for_you_provider.dart';
 // import '../games/game_card.dart';
-
 
 // class ElibraryDashboard extends StatefulWidget {
 //   const ElibraryDashboard({super.key, required this.height});
 //   final double height;
 
 //   @override
-//   // ignore: library_private_types_in_public_api
 //   _ElibraryDashboardState createState() => _ElibraryDashboardState();
 // }
 
 // class _ElibraryDashboardState extends State<ElibraryDashboard> {
-//   final List<Widget> gameItems = [
-//     GameCard(
-//       gameImage: 'assets/images/games_1.png',
-//       gameTitle: 'Overwatch',
-//       platform: 'Cross-platform',
-//       rating: 4.5,
-//       beginColor: AppColors.gamesColor1,
-//       endColor: AppColors.gamesColor2,
-//     ),
-//     GameCard(
-//       gameImage: 'assets/images/games_2.png',
-//       gameTitle: 'Boarder lands',
-//       platform: 'Cross-platform',
-//       rating: 4.5,
-//       beginColor: AppColors.gamesColor3,
-//       endColor: AppColors.gamesColor4,
-//     ),
-//     GameCard(
-//       gameImage: 'assets/images/games_3.png',
-//       gameTitle: 'Overwatch',
-//       platform: 'Cross-platform',
-//       rating: 4.5,
-//       beginColor: AppColors.gamesColor5,
-//       endColor: AppColors.gamesColor6,
-//     ),
-//     GameCard(
-//       gameImage: 'assets/images/games_1.png',
-//       gameTitle: 'Overwatch',
-//       platform: 'Cross-platform',
-//       rating: 4.5,
-//       beginColor: AppColors.gamesColor7,
-//       endColor: AppColors.gamesColor8,
-//     ),
-//     GameCard(
-//       gameImage: 'assets/images/games_2.png',
-//       gameTitle: 'Overwatch',
-//       platform: 'Cross-platform',
-//       rating: 4.5,
-//       beginColor: AppColors.gamesColor1,
-//       endColor: AppColors.gamesColor2,
-//     )
-//   ];
+//   @override
+//   void initState() {
+//     super.initState();
+//     Future.microtask(() =>
+//         Provider.of<ForYouProvider>(context, listen: false).fetchForYouData());
+//   }
 
 //   @override
 //   Widget build(BuildContext context) {
@@ -514,354 +473,140 @@ Widget _ContinueWatching({required Video video}) {
 //               child: Column(
 //                 children: [
 //                   TabBar(
-//                       indicatorColor: AppColors.text2Light,
-//                       labelColor: AppColors.text2Light,
-//                       tabs: [
-//                         Tab(
-//                           child: FittedBox(
-//                               child: Text('For you',
-//                                   style:
-//                                       AppTextStyles.normal600(fontSize: 14, color: AppColors.text2Light))),
-//                         ),
-//                         Tab(
-//                           child: FittedBox(
-//                               child: Text('CBT',
-//                                   style:
-//                                       AppTextStyles.normal600(fontSize: 14, color: AppColors.text2Light))),
-//                         ),
-//                         Tab(
-//                           child: FittedBox(
-//                               child: Text('E-books',
-//                                   style:
-//                                       AppTextStyles.normal600(fontSize: 14, color: AppColors.text2Light))),
-//                         ),
-//                         Tab(
-//                           child: FittedBox(
-//                               child: Text('Games',
-//                                   style:
-//                                       AppTextStyles.normal600(fontSize: 14 , color: AppColors.text2Light))),
-//                         ),
-//                         Tab(
-//                           child: Flexible(
-//                               child: Text('Videos',
-//                                   style:
-//                                       AppTextStyles.normal600(fontSize: 14, color: AppColors.text2Light))),
-//                         ),
-//                       ]),
+//                     indicatorColor: AppColors.text2Light,
+//                     labelColor: AppColors.text2Light,
+//                     tabs: [
+//                       Tab(child: FittedBox(child: Text('For you', style: AppTextStyles.normal600(fontSize: 14, color: AppColors.text2Light)))),
+//                       Tab(child: FittedBox(child: Text('CBT', style: AppTextStyles.normal600(fontSize: 14, color: AppColors.text2Light)))),
+//                       Tab(child: FittedBox(child: Text('E-books', style: AppTextStyles.normal600(fontSize: 14, color: AppColors.text2Light)))),
+//                       Tab(child: FittedBox(child: Text('Games', style: AppTextStyles.normal600(fontSize: 14, color: AppColors.text2Light)))),
+//                       Tab(child: Flexible(child: Text('Videos', style: AppTextStyles.normal600(fontSize: 14, color: AppColors.text2Light)))),
+//                     ],
+//                   ),
 //                   Expanded(
-//                       child: TabBarView(children: [
-//                     SingleChildScrollView(
-//                       child: Column(children: [
-//                         Padding(
-//                           padding: const EdgeInsets.symmetric(horizontal: 16),
-//                           child: headingWithAdvert(
-//                             tag: 'Video',
-//                             title: 'Continue watching',
-//                           ),
-//                         ),
-//                         // SizedBox(
-//                         //   height: 8,
-//                         // ),
-//                         Padding(
-//                           padding: const EdgeInsets.only(top: 8.0),
-//                           child: SizedBox(
-//                             height: 180,
-//                             child: ListView(
-//                               scrollDirection: Axis.horizontal,
-//                               children: [
-//                                 _ContinueWatching(),
-//                                 _ContinueWatching(),
-//                                 _ContinueWatching(),
-//                                 _ContinueWatching(),
-//                               ],
-//                             ),
-//                           ),
-//                         ),
-//                         SizedBox(
-//                           height: 25,
-//                         ),
-//                         headingWithAdvert(
-//                             tag: "Game", title: 'Game Everyone is playing'),
-//                         SizedBox(
-//                           height: 8,
-//                         ),
-//                         SizedBox(
-//                           height: 200,
-//                           child: ListView.builder(
-//                             padding: const EdgeInsets.only(right: 16.0),
-//                             itemCount: gameItems.length,
-//                             scrollDirection: Axis.horizontal,
-//                             itemBuilder: (context, index) {
-//                               return gameItems[index];
+//                     child: TabBarView(
+//                       children: [
+//                         SingleChildScrollView(
+//                           child: Consumer<ForYouProvider>(
+//                             builder: (context, forYouProvider, child) {
+//                               return Skeletonizer(
+//                                 enabled: forYouProvider.isLoading,
+//                                 child: Column(
+//                                   children: [
+//                                     // Continue watching section
+//                                     headingWithAdvert(tag: 'Video', title: 'Continue watching'),
+//                                     SizedBox(height: 8),
+//                                     SizedBox(
+//                                       height: 180,
+//                                       child: ListView.builder(
+//                                         scrollDirection: Axis.horizontal,
+//                                         itemCount: forYouProvider.videos.isEmpty ? 3 : forYouProvider.videos.length,
+//                                         itemBuilder: (context, index) => _ContinueWatching(video: forYouProvider.videos.isEmpty ? Video.empty() : forYouProvider.videos[index]),
+//                                       ),
+//                                     ),
+//                                     SizedBox(height: 25),
+//                                     // Games section
+//                                     headingWithAdvert(tag: "Game", title: 'Game Everyone is playing'),
+//                                     SizedBox(height: 8),
+//                                     SizedBox(
+//                                       height: 200,
+//                                       child: ListView.builder(
+//                                         padding: const EdgeInsets.only(right: 16.0),
+//                                         itemCount: forYouProvider.games.isEmpty ? 3 : forYouProvider.games.length,
+//                                         scrollDirection: Axis.horizontal,
+//                                         itemBuilder: (context, index) {
+//                                           final game = forYouProvider.games.isEmpty ? Game.empty() : forYouProvider.games[index];
+//                                           return GameCard(
+//                                             game: game,
+//                                             beginColor: AppColors.gamesColor1,
+//                                             endColor: AppColors.gamesColor2,
+//                                           );
+//                                         },
+//                                       ),
+//                                     ),
+//                                     SizedBox(height: 5),
+//                                     // Books section
+//                                     blueHeading(tag: 'E-book', title: 'Suggested for you'),
+//                                     Padding(
+//                                       padding: const EdgeInsets.symmetric(horizontal: 16),
+//                                       child: SizedBox(
+//                                         height: 250,
+//                                         width: double.infinity,
+//                                         child: ListView.builder(
+//                                           scrollDirection: Axis.horizontal,
+//                                           itemCount: forYouProvider.books.isEmpty ? 3 : forYouProvider.books.length,
+//                                           itemBuilder: (context, index) {
+//                                             final book = forYouProvider.books.isEmpty ? Book.empty() : forYouProvider.books[index];
+//                                             return _books(
+//                                               image: book.thumbnail,
+//                                               bookName: book.title,
+//                                               editor: book.author,
+//                                             );
+//                                           },
+//                                         ),
+//                                       ),
+//                                     ),
+//                                     // CBT section
+//                                     blueHeading(tag: 'CBT', title: 'Continue taking tests'),
+//                                     Divider(height: 20),
+//                                     Column(
+//                                       children: [
+//                                         subjectCard(
+//                                           subjectIcon: 'maths',
+//                                           subjectName: 'Mathematics',
+//                                           cardColor: AppColors.cbtCardColor1,
+//                                           showProgressIndicator: true,
+//                                         ),
+//                                         Divider(),
+//                                         subjectCard(
+//                                           subjectIcon: 'english',
+//                                           subjectName: 'English Language',
+//                                           cardColor: AppColors.cbtCardColor2,
+//                                           showProgressIndicator: true,
+//                                         ),
+//                                         Divider(),
+//                                         subjectCard(
+//                                           subjectIcon: 'chemistry',
+//                                           subjectName: 'Chemistry',
+//                                           cardColor: AppColors.cbtCardColor3,
+//                                           showProgressIndicator: true,
+//                                         ),
+//                                         Divider(),
+//                                         subjectCard(
+//                                           subjectIcon: 'physics',
+//                                           subjectName: 'Physics',
+//                                           subjectyear: '2001-2014',
+//                                           cardColor: AppColors.cbtCardColor4,
+//                                         ),
+//                                         Divider(),
+//                                         subjectCard(
+//                                           cardColor: AppColors.cbtCardColor5,
+//                                           subjectIcon: 'further_maths',
+//                                           subjectName: 'Further Mathematics',
+//                                           subjectyear: '2001-2023',
+//                                         ),
+//                                       ],
+//                                     ),
+//                                     SizedBox(height: 150),
+//                                   ],
+//                                 ),
+//                               );
 //                             },
 //                           ),
 //                         ),
-//                         SizedBox(
-//                           height: 5,
-//                         ),
-//                         blueHeading(tag: 'E-book', title: 'Suggested for you'),
-//                         Padding(
-//                           padding: const EdgeInsets.symmetric(horizontal: 16),
-//                           child: SizedBox(
-//                             height: 250,
-//                             width: double.infinity,
-//                             child: ListView(
-//                               scrollDirection: Axis.horizontal,
-//                               children: [
-//                                 _books(
-//                                   image: 'assets/images/book_1.png',
-//                                   bookName: "Sugar Girl",
-//                                   editor: 'UBE Reader Boosters',
-//                                 ),
-//                                 _books(
-//                                   image: 'assets/images/book_2.png',
-//                                   bookName: "Sugar Girl",
-//                                   editor: 'UBE Reader Boosters',
-//                                 ),
-//                                 _books(
-//                                   image: 'assets/images/book_3.png',
-//                                   bookName: "Sugar Girl",
-//                                   editor: 'UBE Reader Boosters',
-//                                 ),
-//                                 _books(
-//                                   image: 'assets/images/book_4.png',
-//                                   bookName: "Sugar Girl",
-//                                   editor: 'UBE Reader Boosters',
-//                                 ),
-//                               ],
-//                             ),
-//                           ),
-//                         ),
-//                         blueHeading(
-//                           tag: 'CBT',
-//                           title: 'Continue taking tests',
-//                         ),
-//                         Divider(
-//                           height: 20,
-//                         ),
-//                         Column(
-//                           children: [
-//                             subjectCard(
-//                                 subjectIcon: 'maths',
-//                                 subjectName: 'Mathematics',
-//                                 cardColor: AppColors.cbtCardColor1,
-//                                 showProgressIndicator: true),
-//                             Divider(),
-//                             subjectCard(
-//                                 subjectIcon: 'english',
-//                                 subjectName: 'English Language',
-//                                 cardColor: AppColors.cbtCardColor2,
-//                                 showProgressIndicator: true),
-//                             Divider(),
-//                             subjectCard(
-//                                 subjectIcon: 'chemistry',
-//                                 subjectName: 'Chemistry',
-//                                 cardColor: AppColors.cbtCardColor3,
-//                                 showProgressIndicator: true),
-//                             Divider(),
-//                             subjectCard(
-//                               subjectIcon: 'physics',
-//                               subjectName: 'Physics',
-//                               subjectyear: '2001-2014',
-//                               cardColor: AppColors.cbtCardColor4,
-//                             ),
-//                             Divider(),
-//                             subjectCard(
-//                               cardColor: AppColors.cbtCardColor5,
-//                               subjectIcon: 'further_maths',
-//                               subjectName: 'Further Mathematics',
-//                               subjectyear: '2001-2023',
-//                             )
-//                           ],
-//                         ),
-//                         SizedBox(
-//                           height: 150,
-//                         )
-//                       ]),
+//                         Expanded(child: E_CBTDashboard()),
+//                         Center(child: Text('page for E-books')),
+//                         Expanded(child: GamesTab()),
+//                         Center(child: Text('page for Videos')),
+//                       ],
 //                     ),
-//                     Expanded(child: E_CBTDashboard()),
-//                     // Expanded(
-//                     //   child: LibraryEbook(),
-//                     // ),
-//                     Expanded(
-//                       child: GamesTab(),
-//                     ),
-//                     Expanded(
-//                       child: VideoDisplay(),
-//                     ),
-//                     Center(
-//                       child: Text('page for E_book'),
-//                     ),
-//                   ]))
+//                   ),
 //                 ],
 //               ),
 //             ),
 //           ),
 //         ],
 //       ),
-//     );
-//   }
-// }
-
-// class buildForYou extends StatelessWidget {
-//   const buildForYou({
-//     super.key,
-//     required this.gameItems,
-//     required this.height,
-//   });
-
-//   final List<Widget> gameItems;
-//   final double height;
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return SingleChildScrollView(
-//       child: Column(children: [
-//         Padding(
-//           padding: const EdgeInsets.symmetric(horizontal: 16),
-//           child: Row(
-//             mainAxisAlignment: MainAxisAlignment.spaceBetween,
-//             children: [
-//               headingWithAdvert(
-//                 tag: 'Video',
-//                 title: 'Continue watching',
-//               ),
-//               GestureDetector(
-//                 onTap: () {
-//                   Navigator.push(
-//                       context,
-//                       MaterialPageRoute(
-//                           builder: (context) => ForYouScreen(height: height)));
-//                 },
-//                 child: Text(
-//                   'new user',
-//                   style: AppTextStyles.normal600(
-//                       fontSize: 16, color: AppColors.text2Light),
-//                 ),
-//               )
-//             ],
-//           ),
-//         ),
-
-//         // SizedBox(
-//         //   height: 8,
-                
-//         // ),
-//         Padding(
-//           padding: const EdgeInsets.only(top: 8.0),
-//           child: SizedBox(
-//             height: 180,
-//             child: ListView(
-//               scrollDirection: Axis.horizontal,
-//               children: [
-//                 _ContinueWatching(),
-//                 _ContinueWatching(),
-//                 _ContinueWatching(),
-//                 _ContinueWatching(),
-//               ],
-//             ),
-//           ),
-//         ),
-//         SizedBox(
-//           height: 8,
-//         ),
-//         headingWithAdvert(tag: "Game", title: 'Game Everyone is playing'),
-//         SizedBox(
-//           height: 8,
-//         ),
-//         SizedBox(
-//           height: 155,
-//           child: ListView.builder(
-//             padding: const EdgeInsets.only(right: 16.0),
-//             itemCount: gameItems.length,
-//             scrollDirection: Axis.horizontal,
-//             itemBuilder: (context, index) {
-//               return gameItems[index];
-//             },
-//           ),
-//         ),
-//         SizedBox(
-//           height: 8,
-//         ),
-//         blueHeading(tag: 'E-book', title: 'Suggested for you'),
-//         Padding(
-//           padding: const EdgeInsets.symmetric(horizontal: 16),
-//           child: SizedBox(
-//             height: 250,
-//             width: double.infinity,
-//             child: ListView(
-//               scrollDirection: Axis.horizontal,
-//               children: [
-//                 _books(
-//                   image: 'assets/images/book_1.png',
-//                   bookName: "Sugar Girl",
-//                   editor: 'UBE Reader Boosters',
-//                 ),
-//                 _books(
-//                   image: 'assets/images/book_2.png',
-//                   bookName: "Sugar Girl",
-//                   editor: 'UBE Reader Boosters',
-//                 ),
-//                 _books(
-//                   image: 'assets/images/book_3.png',
-//                   bookName: "Sugar Girl",
-//                   editor: 'UBE Reader Boosters',
-//                 ),
-//                 _books(
-//                   image: 'assets/images/book_4.png',
-//                   bookName: "Sugar Girl",
-//                   editor: 'UBE Reader Boosters',
-//                 ),
-//               ],
-//             ),
-//           ),
-//         ),
-//         blueHeading(
-//           tag: 'CBT',
-//           title: 'Continue taking tests',
-//         ),
-//         Divider(
-//           height: 20,
-//         ),
-//         Column(
-//           children: [
-//             subjectCard(
-//                 subjectIcon: 'maths',
-//                 subjectName: 'Mathematics',
-//                 cardColor: AppColors.cbtCardColor1,
-//                 showProgressIndicator: true),
-//             Divider(),
-//             subjectCard(
-//                 subjectIcon: 'english',
-//                 subjectName: 'English Language',
-//                 cardColor: AppColors.cbtCardColor2,
-//                 showProgressIndicator: true),
-//             Divider(),
-//             subjectCard(
-//                 subjectIcon: 'chemistry',
-//                 subjectName: 'Chemistry',
-//                 cardColor: AppColors.cbtCardColor3,
-//                 showProgressIndicator: true),
-//             Divider(),
-//             subjectCard(
-//               subjectIcon: 'physics',
-//               subjectName: 'Physics',
-//               subjectyear: '2001-2014',
-//               cardColor: AppColors.cbtCardColor4,
-//             ),
-//             Divider(),
-//             subjectCard(
-//               cardColor: AppColors.cbtCardColor5,
-//               subjectIcon: 'further_maths',
-//               subjectName: 'Further Mathematics',
-//               subjectyear: '2001-2023',
-//             )
-//           ],
-//         ),
-//         SizedBox(
-//           height: 150,
-//         )
-//       ]),
 //     );
 //   }
 // }
@@ -941,7 +686,6 @@ Widget _ContinueWatching({required Video video}) {
 //   final String editor;
 
 //   const _books({
-//     // ignore: unused_element
 //     super.key,
 //     required this.image,
 //     required this.bookName,
@@ -961,14 +705,13 @@ Widget _ContinueWatching({required Video video}) {
 //               height: 173,
 //               width: 114,
 //               decoration: BoxDecoration(
-//                   image: DecorationImage(
-//                 image: AssetImage(image),
-//                 fit: BoxFit.cover,
-//               )),
+//                 image: DecorationImage(
+//                   image: NetworkImage(image),
+//                   fit: BoxFit.cover,
+//                 ),
+//               ),
 //             ),
-//             SizedBox(
-//               height: 5,
-//             ),
+//             SizedBox(height: 5),
 //             SizedBox(
 //               width: 114,
 //               child: LinearProgressIndicator(
@@ -987,9 +730,7 @@ Widget _ContinueWatching({required Video video}) {
 //               style: AppTextStyles.normal400(
 //                   fontSize: 14, color: AppColors.libtitle),
 //             ),
-//             SizedBox(
-//               height: 20,
-//             ),
+//             SizedBox(height: 20),
 //           ],
 //         ),
 //       ),
@@ -1021,9 +762,7 @@ Widget _ContinueWatching({required Video video}) {
 //             size: 4,
 //             color: AppColors.libtitle,
 //           ),
-//           SizedBox(
-//             width: 10,
-//           ),
+//           SizedBox(width: 10),
 //           Text(
 //             title,
 //             style:
@@ -1059,9 +798,7 @@ Widget _ContinueWatching({required Video video}) {
 //             size: 8,
 //             color: AppColors.libtitle,
 //           ),
-//           SizedBox(
-//             width: 10,
-//           ),
+//           SizedBox(width: 10),
 //           Text(
 //             title,
 //             style: AppTextStyles.normal700(
@@ -1073,15 +810,15 @@ Widget _ContinueWatching({required Video video}) {
 //   }
 // }
 
-// Widget _ContinueWatching() {
+// Widget _ContinueWatching({required Video video}) {
 //   return Container(
 //     height: 147,
 //     width: 150,
 //     margin: const EdgeInsets.only(left: 16.0),
 //     child: Column(
 //       children: [
-//         Image.asset(
-//           'assets/images/video_1.png',
+//         Image.network(
+//           video.thumbnail,
 //           fit: BoxFit.cover,
 //           height: 90,
 //           width: 150,
@@ -1090,7 +827,7 @@ Widget _ContinueWatching({required Video video}) {
 //         Padding(
 //           padding: const EdgeInsets.symmetric(horizontal: 4.0),
 //           child: Text(
-//             'Mastering the Act of Video editing',
+//             video.title,
 //             maxLines: 2,
 //             overflow: TextOverflow.ellipsis,
 //             style: AppTextStyles.normal600(
@@ -1099,29 +836,7 @@ Widget _ContinueWatching({required Video video}) {
 //             ),
 //           ),
 //         ),
-//         const SizedBox(height: 4.0),
-//         Padding(
-//           padding: const EdgeInsets.symmetric(horizontal: 4.0),
-//           child: Row(
-//             children: [
-//               const CircleAvatar(
-               
-//                 backgroundColor: AppColors.videoColor9,
-//                 radius: 8.0,
-//                 child: Icon(Icons.person_2_rounded,
-//                     size: 13.0, color: Colors.white),
-//               ),
-//               const SizedBox(width: 4.0),
-//               Text(
-//                 'Dennis Toochi ',
-//                 style: AppTextStyles.normal500(
-//                   fontSize: 12.0,
-//                   color: AppColors.videoColor9,
-//                 ),
-//               ),
-//             ],
-//           ),
-//         ),
+//         // const SizedBox(height: 4.0),
 //       ],
 //     ),
 //   );

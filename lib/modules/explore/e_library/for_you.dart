@@ -6,8 +6,8 @@ import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/explore/e_library/cbt.dart';
 import 'package:linkschool/modules/explore/e_library/e_games/gamesTab.dart';
 import 'package:linkschool/modules/explore/e_library/e_lib_vids.dart';
+import 'package:linkschool/modules/explore/e_library/e_library_ebooks/book_page.dart';
 import 'package:linkschool/modules/explore/e_library/e_library_ebooks/library_e_book.dart';
-import 'package:linkschool/modules/explore/ebooks/bookDetails/book_page.dart';
 import 'package:linkschool/modules/explore/videos/videos_dashboard.dart';
 import 'package:provider/provider.dart';
 import 'package:skeletonizer/skeletonizer.dart';
@@ -16,6 +16,7 @@ import '../../model/explore/home/game_model.dart';
 import '../../model/explore/home/video_model.dart';
 import '../../providers/explore/for_you_provider.dart';
 import '../games/game_card.dart';
+
 
 
 class ForYouScreen extends StatefulWidget {
@@ -293,7 +294,7 @@ class _books extends StatelessWidget {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => MybookPage(book: book),
+              builder: (context) => MybookPage(suggestedbook: book),
             ),
           );
         }
