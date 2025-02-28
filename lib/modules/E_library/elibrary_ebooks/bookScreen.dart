@@ -8,12 +8,13 @@ import 'package:linkschool/modules/model/explore/home/news/ebook_model.dart';
 // import 'package:linkschool/modules/model/explore/home/news/ebook_model.dart';
 // import 'package:linkschool/modules/providers/explore/home/ebook_provider.dart';
 import 'package:percent_indicator/linear_percent_indicator.dart';
+import 'package:share_plus/share_plus.dart';
 // import 'package:provider/provider.dart';
 
 class BookScreen extends StatefulWidget {
   final Ebook suggestedBook;
 
-  const BookScreen({super.key, required this.suggestedBook});
+  const BookScreen({Key? key, required this.suggestedBook}) : super(key: key);
 
   @override
   State<BookScreen> createState() => _BookScreenState();
@@ -159,7 +160,8 @@ class BookProfileCard extends StatelessWidget {
                       ),
                       SizedBox(width: 10),
                       GestureDetector(
-                        onTap: () {},
+                        onTap: () => (Share.share(
+                            suggestedBook.title + "/" + suggestedBook.author)),
                         child: SvgPicture.asset('assets/icons/Shareicon.svg'),
                       ),
                     ],

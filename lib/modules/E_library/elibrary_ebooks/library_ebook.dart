@@ -88,7 +88,7 @@ class _LibraryEbookState extends State<LibraryEbook> {
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
               color: isSelected
-                  ? AppColors.ebookCart
+                  ? AppColors.bgXplore3
                   : AppColors.booksButtonColor, // Selected color
               borderRadius: BorderRadius.circular(6), // Rounded corners
             ),

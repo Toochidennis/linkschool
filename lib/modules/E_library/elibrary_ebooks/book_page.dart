@@ -16,7 +16,7 @@ import 'package:linkschool/modules/model/explore/home/news/ebook_model.dart';
 class MybookPage extends StatefulWidget {
   final Ebook suggestedbook;
 
-  const MybookPage({super.key, required this.suggestedbook});
+  const MybookPage({Key? key, required this.suggestedbook}) : super(key: key);
 
   @override
   State<MybookPage> createState() => _MybookPageState();
@@ -136,12 +136,16 @@ class _MybookPageState extends State<MybookPage> {
                   ),
                   SizedBox(height: 10),
                   Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    mainAxisSize: MainAxisSize.max,
                     children: [
                       OutlinedButton(
                         onPressed: () {},
                         child: Text(
                           // 'Literature',
-                          widget.suggestedbook.categories.join(","),
+                          widget.suggestedbook.categories
+                              .join(" | ")
+                              .toUpperCase(),
                           style: AppTextStyles.normal500(
                               fontSize: 16,
                               color: AppColors.eLearningBtnColor1),
@@ -155,22 +159,22 @@ class _MybookPageState extends State<MybookPage> {
                         ),
                       ),
                       SizedBox(width: 12),
-                      OutlinedButton(
-                        onPressed: () {},
-                        child: Text(
-                          'Based on a true story',
-                          style: AppTextStyles.normal500(
-                              fontSize: 16,
-                              color: AppColors.eLearningBtnColor1),
-                        ),
-                        style: OutlinedButton.styleFrom(
-                          backgroundColor: AppColors.grayColor,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                          side: BorderSide(color: AppColors.eLearningBtnColor1),
-                        ),
-                      )
+                      // OutlinedButton(
+                      //   onPressed: () {},
+                      //   child: Text(
+                      //     'Based on a true story',
+                      //     style: AppTextStyles.normal500(
+                      //         fontSize: 16,
+                      //         color: AppColors.eLearningBtnColor1),
+                      //   ),
+                      //   style: OutlinedButton.styleFrom(
+                      //     backgroundColor: AppColors.grayColor,
+                      //     shape: RoundedRectangleBorder(
+                      //       borderRadius: BorderRadius.circular(16),
+                      //     ),
+                      //     side: BorderSide(color: AppColors.eLearningBtnColor1),
+                      //   ),
+                      // )
                     ],
                   ),
                   SizedBox(height: 20),
