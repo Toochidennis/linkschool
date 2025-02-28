@@ -373,8 +373,8 @@ class _GradingSettingsScreenState extends State<GradingSettingsScreen> {
       });
     });
 
-    // Determine if the field should only allow alphabets (for Grade)
-    bool isAlphabeticOnly = label == 'Grade';
+    // Determine if the field should use the alphabet keyboard (for Grade and Remark)
+    bool isAlphabeticOnly = label == 'Grade' || label == 'Remark';
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: Constants.gap),
