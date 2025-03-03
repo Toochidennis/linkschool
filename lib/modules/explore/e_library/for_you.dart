@@ -246,7 +246,7 @@ Widget _buildCategoriesCard({required String subjectName, required String examIc
 class _ContinueWatching extends StatelessWidget {
   final Video video;
 
-  const _ContinueWatching({super.key, required this.video});
+  const _ContinueWatching({required this.video});
 
   @override
   Widget build(BuildContext context) {
@@ -284,7 +284,7 @@ class _ContinueWatching extends StatelessWidget {
 class _books extends StatelessWidget {
   final Book book;
 
-  const _books({super.key, required this.book});
+  const _books({required this.book});
 
   @override
   Widget build(BuildContext context) {

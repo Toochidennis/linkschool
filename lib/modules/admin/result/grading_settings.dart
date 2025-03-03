@@ -1,14 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/svg.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/model/admin/grade_model.dart';
 import 'package:linkschool/modules/providers/admin/grade_provider.dart';
 import 'package:provider/provider.dart';
-
-
 
 class GradingSettingsScreen extends StatefulWidget {
   const GradingSettingsScreen({super.key});
@@ -54,7 +53,6 @@ class _GradingSettingsScreenState extends State<GradingSettingsScreen> {
         editingControllers['$itemId-Remark'] =
             TextEditingController(text: item['remark']);
 
-        // Initialize focus nodes for each input field
         focusNodes['$itemId-Grade'] = FocusNode();
         focusNodes['$itemId-Range'] = FocusNode();
         focusNodes['$itemId-Remark'] = FocusNode();
@@ -327,15 +325,34 @@ class _GradingSettingsScreenState extends State<GradingSettingsScreen> {
                 onEnter: (_) => setState(() => isHoveringAdd = true),
                 onExit: (_) => setState(() => isHoveringAdd = false),
                 child: ElevatedButton(
-                  onPressed: () {
+                  onPressed: () async {
                     if (gradeController.text.isNotEmpty &&
                         rangeController.text.isNotEmpty &&
                         remarkController.text.isNotEmpty) {
-                      gradeProvider.addGrade(
+                      bool isSuccess = await gradeProvider.addGrade(
                         gradeController.text,
                         rangeController.text,
                         remarkController.text,
                       );
+
+                      if (isSuccess) {
+                        Fluttertoast.showToast(
+                          msg: "Grade added successfully!",
+                          toastLength: Toast.LENGTH_SHORT,
+                          gravity: ToastGravity.TOP,
+                          backgroundColor: Colors.green,
+                          textColor: Colors.white,
+                        );
+                      } else {
+                        Fluttertoast.showToast(
+                          msg: "Failed to add grade!",
+                          toastLength: Toast.LENGTH_SHORT,
+                          gravity: ToastGravity.TOP,
+                          backgroundColor: Colors.red,
+                          textColor: Colors.white,
+                        );
+                      }
+
                       gradeController.clear();
                       rangeController.clear();
                       remarkController.clear();
@@ -373,7 +390,6 @@ class _GradingSettingsScreenState extends State<GradingSettingsScreen> {
       });
     });
 
-    // Determine if the field should use the alphabet keyboard (for Grade and Remark)
     bool isAlphabeticOnly = label == 'Grade' || label == 'Remark';
 
     return Padding(
@@ -404,8 +420,8 @@ class _GradingSettingsScreenState extends State<GradingSettingsScreen> {
                 textAlignVertical: TextAlignVertical.center,
                 keyboardType: isAlphabeticOnly ? TextInputType.text : TextInputType.number,
                 inputFormatters: isAlphabeticOnly
-                    ? [FilteringTextInputFormatter.allow(RegExp(r'[a-zA-Z]'))] // Allow only alphabets
-                    : [FilteringTextInputFormatter.digitsOnly], // Allow only numbers for Range
+                    ? [FilteringTextInputFormatter.allow(RegExp(r'[a-zA-Z]'))]
+                    : [FilteringTextInputFormatter.digitsOnly],
                 decoration: InputDecoration(
                   border: InputBorder.none,
                   contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 13),

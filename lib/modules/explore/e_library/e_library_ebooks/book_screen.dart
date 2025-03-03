@@ -94,7 +94,7 @@ class _BookScreenState extends State<BookScreen> {
 class BookProfileCard extends StatelessWidget {
   final Book suggestedBook;
 
-  BookProfileCard({
+  const BookProfileCard({
     super.key,
     required this.suggestedBook,
   });
@@ -142,7 +142,7 @@ class BookProfileCard extends StatelessWidget {
                 SizedBox(height: 4),
                 RichText(
                   text: TextSpan(
-                    text: 'by ' + suggestedBook.author,
+                    text: 'by ${suggestedBook.author}',
                     style: AppTextStyles.normal500(
                       fontSize: 14,
                       color: AppColors.booksButtonTextColor,
@@ -167,7 +167,7 @@ class BookProfileCard extends StatelessWidget {
                     ],
                   ),
                 ),
-                Container(
+                SizedBox(
                   height: 34,
                   child: ElevatedButton(
                     onPressed: () {

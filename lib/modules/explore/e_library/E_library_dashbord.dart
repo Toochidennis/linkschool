@@ -251,7 +251,6 @@ class _books extends StatelessWidget {
   final Book book;
 
   const _books({
-    super.key,
     required this.book,
   });
 

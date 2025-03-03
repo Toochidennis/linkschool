@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:linkschool/modules/model/admin/grade_model.dart';
 import 'package:linkschool/modules/services/admin/grade_service.dart';
 
-
 class GradeProvider with ChangeNotifier {
   final GradeService _gradeService = GradeService();
   List<Grade> _grades = [];
@@ -14,8 +13,13 @@ class GradeProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> addGrade(String gradeSymbol, String start, String remark) async {
-    await _gradeService.addGrade(gradeSymbol, start, remark);
-    await fetchGrades();
+  Future<bool> addGrade(String gradeSymbol, String start, String remark) async {
+    try {
+      await _gradeService.addGrade(gradeSymbol, start, remark);
+      await fetchGrades();
+      return true; // Success
+    } catch (e) {
+      return false; // Failure
+    }
   }
 }

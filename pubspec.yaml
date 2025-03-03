@@ -49,6 +49,7 @@ dependencies:
   skeletonizer: ^1.4.3
   bottom_picker: ^2.11.0
   flutter_dotenv: ^5.2.1
+  fluttertoast: ^8.2.12
 
 dev_dependencies:
   flutter_test:

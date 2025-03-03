@@ -29,13 +29,13 @@ class _GameDetailsState extends State<GameDetails> {
   Widget build(BuildContext context) {
     final gameProvider = Provider.of<GameProvider>(context);
 
-    final likes = gameProvider.games?.cardGames?.games
-       ?.map((game) => _buildYouMightLikeCard(
+    final likes = gameProvider.games?.cardGames.games
+       .map((game) => _buildYouMightLikeCard(
               game: game,
               startColor: AppColors.gamesColor5,
               endColor: AppColors.gamesColor6,
             ))
-       ?.toList() ??[];
+       .toList() ??[];
 
     final recommendedGames =
         gameProvider.games?.puzzleGames.games.map((game) => game).toList();
@@ -131,7 +131,7 @@ class _GameDetailsState extends State<GameDetails> {
                             color: AppColors.gametitle,
                           )),
                       const SizedBox(height: 10),
-                      Container(
+                      SizedBox(
                         height: 150,
                         child: ListView(
                           scrollDirection: Axis.horizontal,
@@ -150,7 +150,7 @@ class _GameDetailsState extends State<GameDetails> {
                                 fontSize: 16,
                                 color: AppColors.gametitle,
                               )),
-                          Container(
+                          SizedBox(
                             height: 300,
                             child: ListView.builder(
                               physics: NeverScrollableScrollPhysics(),
@@ -300,7 +300,7 @@ Widget _buildYouMightLikeCard({
                       children: [
                         const Icon(Icons.star, color: Colors.amber, size: 16.0),
                         Text(
-                          "${game.rating}",
+                          game.rating,
                           style: AppTextStyles.normal500(
                             fontSize: 14.0,
                             color: Colors.black,

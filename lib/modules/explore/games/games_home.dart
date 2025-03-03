@@ -2,7 +2,6 @@ import 'package:carousel_slider/carousel_slider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 import 'package:linkschool/modules/explore/games/game_details.dart';
-import 'package:linkschool/modules/model/explore/games/game_model.dart';
 import 'package:linkschool/modules/model/explore/home/game_model.dart';
 import 'package:linkschool/modules/providers/explore/game/game_provider.dart';
 import 'package:provider/provider.dart';
