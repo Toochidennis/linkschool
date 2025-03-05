@@ -289,16 +289,16 @@ class _books extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: () {
-        if (book.title.isNotEmpty) {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => MybookPage(suggestedbook: book),
-            ),
-          );
-        }
-      },
+      // onTap: () {
+      //   if (book.title.isNotEmpty) {
+      //     Navigator.push(
+      //       context,
+      //       MaterialPageRoute(
+      //         builder: (context) => MybookPage(suggestedbook: book),
+      //       ),
+      //     );
+      //   }
+      // },
       child: Padding(
         padding: const EdgeInsets.only(right: 8.0),
         child: Container(

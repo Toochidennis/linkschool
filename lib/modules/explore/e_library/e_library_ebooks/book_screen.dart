@@ -3,19 +3,20 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
-
 import 'package:linkschool/modules/explore/e_library/e_library_ebooks/full_page.dart';
-import 'package:linkschool/modules/model/explore/home/book_model.dart';
-
+// import 'package:linkschool/modules/e_library/elibrary_ebooks/fullpage.dart';
+import 'package:linkschool/modules/model/explore/home/news/ebook_model.dart';
 // import 'package:linkschool/modules/model/explore/home/news/ebook_model.dart';
 // import 'package:linkschool/modules/providers/explore/home/ebook_provider.dart';
 import 'package:percent_indicator/linear_percent_indicator.dart';
+import 'package:share_plus/share_plus.dart';
+// import 'package:share_plus/share_plus.dart';
 // import 'package:provider/provider.dart';
 
 class BookScreen extends StatefulWidget {
-  final Book suggestedBook;
+  final Ebook suggestedBook;
 
-  const BookScreen({super.key, required this.suggestedBook});
+  const BookScreen({Key? key, required this.suggestedBook}) : super(key: key);
 
   @override
   State<BookScreen> createState() => _BookScreenState();
@@ -92,9 +93,9 @@ class _BookScreenState extends State<BookScreen> {
 }
 
 class BookProfileCard extends StatelessWidget {
-  final Book suggestedBook;
+  final Ebook suggestedBook;
 
-  const BookProfileCard({
+  BookProfileCard({
     super.key,
     required this.suggestedBook,
   });
@@ -142,7 +143,7 @@ class BookProfileCard extends StatelessWidget {
                 SizedBox(height: 4),
                 RichText(
                   text: TextSpan(
-                    text: 'by ${suggestedBook.author}',
+                    text: 'by ' + suggestedBook.author,
                     style: AppTextStyles.normal500(
                       fontSize: 14,
                       color: AppColors.booksButtonTextColor,
@@ -161,13 +162,14 @@ class BookProfileCard extends StatelessWidget {
                       ),
                       SizedBox(width: 10),
                       GestureDetector(
-                        onTap: () {},
+                        onTap: () => (Share.share(
+                            suggestedBook.title + "/" + suggestedBook.author)),
                         child: SvgPicture.asset('assets/icons/Shareicon.svg'),
                       ),
                     ],
                   ),
                 ),
-                SizedBox(
+                Container(
                   height: 34,
                   child: ElevatedButton(
                     onPressed: () {

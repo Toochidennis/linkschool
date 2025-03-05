@@ -19,11 +19,11 @@ class NewsProvider with ChangeNotifier {
     notifyListeners();
     try {
       _newsmodel = await _newsService.getAllNews();
-            // Log the fetched news for debugging
+      // Log the fetched news for debugging
       print('Fetched News: $_newsmodel');
     } catch (e) {
       _errorMessage = 'Error fetching News: $e';
-            // Log the error for debugging
+      // Log the error for debugging
       print('Error in NewsProvider: $_errorMessage');
       // debugPrint('Error fetching News: $e');
     } finally {

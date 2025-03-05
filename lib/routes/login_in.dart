@@ -27,13 +27,13 @@ class _LoginScreensState extends State<LoginScreens> {
               left: 0,
               child: Container(
                   child: InkWell(
-                   onTap:()=>(Navigator.pop(context)),
-                    child: Icon(
-                Icons.arrow_back,
-                size: 16,
-                color: AppColors.attCheckColor1,
-              ),
-                  )
+                onTap: () => (Navigator.pop(context)),
+                child: Icon(
+                  Icons.arrow_back,
+                  size: 16,
+                  color: AppColors.attCheckColor1,
+                ),
+              )
                   // Constants.customAppBar(
                   //   context: context
                   // ),
@@ -98,7 +98,9 @@ class loginpage extends StatelessWidget {
             ),
             Text("Link",
                 style: AppTextStyles.normal700(
-                    fontSize: 16, color: AppColors.aboutTitle, )),
+                  fontSize: 16,
+                  color: AppColors.aboutTitle,
+                )),
             Text("Skool",
                 style: AppTextStyles.normal700(
                     fontSize: 16, color: AppColors.bgXplore1))
