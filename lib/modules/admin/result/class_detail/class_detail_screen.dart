@@ -44,30 +44,6 @@ class ClassDetailScreen extends StatelessWidget {
             fontSize: 14,
             borderRadius: 4.0,
           ),
-          // Padding(
-          //   padding: const EdgeInsets.symmetric(horizontal: 13.0),
-          //   child: SizedBox(
-          //     height: 32,
-          //     child: ElevatedButton(
-          //       onPressed: () {},
-          //       style: ElevatedButton.styleFrom(
-          //           backgroundColor: AppColors.videoColor4,
-          //           shape: RoundedRectangleBorder(
-          //             borderRadius: BorderRadius.circular(4.0),
-          //           ),
-          //           padding: const EdgeInsets.symmetric(horizontal: 8.0),
-          //           minimumSize: Size.zero,
-          //           tapTargetSize: MaterialTapTargetSize.shrinkWrap),
-          //       child: Text(
-          //         'See class list',
-          //         style: AppTextStyles.normal700(
-          //           fontSize: 14,
-          //           color: AppColors.backgroundLight,
-          //         ),
-          //       ),
-          //     ),
-          //   ),
-          // ),
         ],
         backgroundColor: AppColors.bgColor1,
         elevation: 0.0,
@@ -224,6 +200,3 @@ class ClassDetailScreen extends StatelessWidget {
     );
   }
 }
-
-
-

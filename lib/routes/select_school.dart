@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/common/constants.dart';
-import 'package:linkschool/modules/explore/ebooks/custom_search_bar.dart';
 import 'package:linkschool/routes/login_in.dart';
 
 class SelectSchool extends StatefulWidget {

@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:linkschool/modules/providers/explore/cbt_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:skeletonizer/skeletonizer.dart';
-import 'package:linkschool/modules/providers/explore/cbt_provider.dart';
 import '../../common/text_styles.dart';
 import '../../common/app_colors.dart';
 import '../../common/constants.dart';
+import '../components/year_picker_dialog.dart';
 import '../ebooks/books_button_item.dart';
 
 class CBTDashboard extends StatefulWidget {
@@ -82,27 +83,45 @@ class _CBTDashboardState extends State<CBTDashboard> {
   }
 
   Widget _buildCBTCategories(CBTProvider provider) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16.0),
-      child: Wrap(
-        spacing: 10.0,
-        runSpacing: 10.0,
-        children: List.generate(
-          provider.isLoading ? 3 : provider.boardCodes.length,
-          (index) {
-            return BooksButtonItem(
-              label: provider.isLoading ? 'Category' : provider.boardCodes[index],
-              isSelected: provider.isLoading ? false : provider.boards.indexOf(provider.selectedBoard!) == index,
-              onPressed: () {
-                if (!provider.isLoading) {
-                  provider.selectBoard(provider.boards[index].boardCode);
-                }
-              },
+    if (provider.isLoading) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16.0),
+        child: GridView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 3,
+            childAspectRatio: 2.5,
+            crossAxisSpacing: 10,
+            mainAxisSpacing: 10,
+          ),
+          itemCount: 6, // Display 6 placeholder items
+          itemBuilder: (context, index) {
+            return Container(
+              decoration: BoxDecoration(
+                color: Colors.grey[300],
+                borderRadius: BorderRadius.circular(8),
+              ),
             );
           },
         ),
-      ),
-    );
+      );
+    } else {
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16.0),
+        child: Wrap(
+          spacing: 10.0,
+          runSpacing: 10.0,
+          children: provider.boardCodes.map((code) {
+            return BooksButtonItem(
+              label: code,
+              isSelected: provider.selectedBoard?.boardCode == code,
+              onPressed: () => provider.selectBoard(code),
+            );
+          }).toList(),
+        ),
+      );
+    }
   }
 
   Widget _buildPerformanceMetrics() {
@@ -195,7 +214,10 @@ class _CBTDashboardState extends State<CBTDashboard> {
             subjectIcon: subject.subjectIcon ?? 'default',
           );
         },
-        childCount: provider.isLoading ? 5 : provider.currentBoardSubjects.length,
+        childCount: provider.isLoading
+            ? 10
+            : provider.currentBoardSubjects
+                .length, // Increased to 10 placeholder items
       ),
     );
   }
@@ -338,57 +360,102 @@ class _CBTDashboardState extends State<CBTDashboard> {
     required Color cardColor,
     required String subjectIcon,
   }) {
-    return Container(
-      width: double.infinity,
-      height: 70,
-      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 5.0),
-      decoration: const BoxDecoration(
-        border: Border(top: BorderSide(color: AppColors.cbtColor5)),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 60,
-            decoration: BoxDecoration(
-              color: cardColor,
-              borderRadius: BorderRadius.circular(4.0),
+    return Consumer<CBTProvider>(
+      builder: (context, provider, child) {
+        // final subjectModel = provider.currentBoardSubjects.firstWhere(
+        //   (s) => s.name == subject,
+        //   orElse: () => SubjectModel(name: subject, years: []),
+        // );
+        final years = provider.getYearsForSubject(subject);
+
+        return GestureDetector(
+          onTap: () {
+            if (years.isNotEmpty) {
+              final yearsList = years
+                  .map((y) => int.tryParse(y))
+                  .whereType<int>()
+                  .toList()
+                ..sort((a, b) => b.compareTo(a));
+
+              YearPickerDialog.show(
+                context,
+                title: 'Choose Year',
+                // title: 'Choose $subject Year',
+                // subtitle: 'Select a year to practice $subject questions',
+                startYear: yearsList.first,
+                numberOfYears: yearsList.length,
+                subject: subject,
+                subjectIcon: provider.getSubjectIcon(subject),
+                cardColor: provider.getSubjectColor(subject),
+                subjectList: provider.getOtherSubjects(
+                    subject), // This now expects a non-nullable List<String>
+              );
+            } else {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('No years available for this subject'),
+                  duration: Duration(seconds: 2),
+                ),
+              );
+            }
+          },
+          child: Container(
+            width: double.infinity,
+            height: 70,
+            padding:
+                const EdgeInsets.symmetric(horizontal: 16.0, vertical: 5.0),
+            decoration: const BoxDecoration(
+              border: Border(top: BorderSide(color: AppColors.cbtColor5)),
             ),
-            child: Center(
-              child: Image.asset(
-                'assets/icons/$subjectIcon.png',
-                width: 24.0,
-                height: 24.0,
-              ),
-            ),
-          ),
-          const SizedBox(width: 10.0),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            child: Row(
               children: [
-                Text(
-                  subject,
-                  style: AppTextStyles.normal600(
-                    fontSize: 16.0,
-                    color: AppColors.backgroundDark,
+                Container(
+                  width: 60,
+                  decoration: BoxDecoration(
+                    color: cardColor,
+                    borderRadius: BorderRadius.circular(4.0),
+                  ),
+                  child: Center(
+                    child: Image.asset(
+                      'assets/icons/$subjectIcon.png',
+                      width: 24.0,
+                      height: 24.0,
+                    ),
                   ),
                 ),
-                const SizedBox(height: 8.0),
-                Text(
-                  year,
-                  style: AppTextStyles.normal600(
-                    fontSize: 12.0,
-                    color: AppColors.text9Light,
+                const SizedBox(width: 10.0),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        subject,
+                        style: AppTextStyles.normal600(
+                          fontSize: 16.0,
+                          color: AppColors.backgroundDark,
+                        ),
+                      ),
+                      const SizedBox(height: 8.0),
+                      Text(
+                        year,
+                        style: AppTextStyles.normal600(
+                          fontSize: 12.0,
+                          color: AppColors.text9Light,
+                        ),
+                      ),
+                    ],
                   ),
-                ),
+                )
               ],
             ),
-          )
-        ],
-      ),
+          ),
+        );
+      },
     );
   }
 }
+
+
 
 
 

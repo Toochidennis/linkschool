@@ -1,13 +1,10 @@
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter/material.dart';
-import 'package:linkschool/modules/auth/ui/login_screen.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/routes/select_school.dart';
 import 'app_navigation_flow.dart';
-import 'package:introduction_screen/introduction_screen.dart';
 import 'package:smooth_page_indicator/smooth_page_indicator.dart';
-import 'app_navigation_flow.dart';
 // import 'package:introduction_screen/introduction_screen.dart';
 // import 'package:smooth_page_indicator/smooth_page_indicator.dart';
 

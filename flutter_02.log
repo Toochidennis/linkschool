@@ -1,0 +1,81 @@
+Flutter crash report.
+Please report a bug at https://github.com/flutter/flutter/issues.
+
+## command
+
+flutter run
+
+## exception
+
+RPCError: ext.flutter.inspector.show: (-32603) Unexpected DWDS error for callServiceExtension: WipError -32000 Promise was collected
+
+```
+#0      new _OutstandingRequest (package:vm_service/src/vm_service.dart:265:34)
+#1      VmService._call.<anonymous closure> (package:vm_service/src/vm_service.dart:1921:25)
+#2      VmService._call (package:vm_service/src/vm_service.dart:1933:8)
+#3      VmService.callServiceExtension (package:vm_service/src/vm_service.dart:1872:14)
+#4      FlutterVmService._checkedCallServiceExtension (package:flutter_tools/src/vmservice.dart:889:28)
+#5      FlutterVmService.invokeFlutterExtensionRpcRaw (package:flutter_tools/src/vmservice.dart:909:49)
+#6      FlutterVmService._flutterToggle (package:flutter_tools/src/vmservice.dart:704:21)
+<asynchronous suspension>
+#7      ResidentHandlers.debugToggleWidgetInspector (package:flutter_tools/src/resident_runner.dart:826:9)
+<asynchronous suspension>
+#8      TerminalHandler.processTerminalInput (package:flutter_tools/src/resident_runner.dart:1786:7)
+<asynchronous suspension>
+```
+
+## flutter doctor
+
+```
+[32m[✓][39m Flutter (Channel stable, 3.27.3, on Microsoft Windows [Version 10.0.22000.2538], locale en-US)
+    [32m•[39m Flutter version 3.27.3 on channel stable at C:\Users\USER\flutter
+    [32m•[39m Upstream repository https://github.com/flutter/flutter.git
+    [32m•[39m Framework revision c519ee916e (4 weeks ago), 2025-01-21 10:32:23 -0800
+    [32m•[39m Engine revision e672b006cb
+    [32m•[39m Dart version 3.6.1
+    [32m•[39m DevTools version 2.40.2
+
+[32m[✓][39m Windows Version (Installed version of Windows is version 10 or higher)
+
+[32m[✓][39m Android toolchain - develop for Android devices (Android SDK version 35.0.1)
+    [32m•[39m Android SDK at C:\Users\USER\AppData\Local\Android\sdk
+    [32m•[39m Platform android-35, build-tools 35.0.1
+    [32m•[39m Java binary at: C:\Program Files\Android\Android Studio\jbr\bin\java
+    [32m•[39m Java version OpenJDK Runtime Environment (build 21.0.4+-12508038-b607.1)
+    [32m•[39m All Android licenses accepted.
+
+[32m[✓][39m Chrome - develop for the web
+    [32m•[39m Chrome at C:\Users\USER\AppData\Local\Google\Chrome\Application\chrome.exe
+
+[31m[✗][39m Visual Studio - develop Windows apps
+    [31m✗[39m Visual Studio not installed; this is necessary to develop Windows apps.
+      Download at https://visualstudio.microsoft.com/downloads/.
+      Please install the "Desktop development with C++" workload, including all of its default components
+
+[32m[✓][39m Android Studio (version 2024.2)
+    [32m•[39m Android Studio at C:\Program Files\Android\Android Studio
+    [32m•[39m Flutter plugin can be installed from:
+      🔨 https://plugins.jetbrains.com/plugin/9212-flutter
+    [32m•[39m Dart plugin can be installed from:
+      🔨 https://plugins.jetbrains.com/plugin/6351-dart
+    [32m•[39m Java version OpenJDK Runtime Environment (build 21.0.4+-12508038-b607.1)
+
+[32m[✓][39m VS Code (version 1.96.4)
+    [32m•[39m VS Code at C:\Users\USER\AppData\Local\Programs\Microsoft VS Code
+    [32m•[39m Flutter extension version 3.104.0
+
+[32m[✓][39m VS Code (version 1.97.0-insider)
+    [32m•[39m VS Code at C:\Users\USER\AppData\Local\Programs\Microsoft VS Code Insiders
+    [32m•[39m Flutter extension can be installed from:
+      🔨 https://marketplace.visualstudio.com/items?itemName=Dart-Code.flutter
+
+[32m[✓][39m Connected device (3 available)
+    [32m•[39m Windows (desktop) • windows • windows-x64    • Microsoft Windows [Version 10.0.22000.2538]
+    [32m•[39m Chrome (web)      • chrome  • web-javascript • Google Chrome 133.0.6943.98
+    [32m•[39m Edge (web)        • edge    • web-javascript • Microsoft Edge 133.0.3065.59
+
+[32m[✓][39m Network resources
+    [32m•[39m All expected network resources are available.
+
+[33m![39m Doctor found issues in 1 category.
+```

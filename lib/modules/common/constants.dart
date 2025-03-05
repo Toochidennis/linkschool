@@ -102,6 +102,8 @@ static AppBar customAppBar({
     required String title,
     double? titleSize,
     Color? titleColor,
+    VoidCallback? SeeAllPressed,
+    
   }) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0),
@@ -116,7 +118,7 @@ static AppBar customAppBar({
             ),
           ),
           TextButton(
-            onPressed: () {},
+            onPressed: SeeAllPressed,
             style: TextButton.styleFrom(),
             child: const Text(
               'See all',
