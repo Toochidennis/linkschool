@@ -6,17 +6,11 @@ import 'package:linkschool/modules/model/explore/games/game_model.dart';
 import 'package:linkschool/modules/providers/explore/game/game_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:skeletonizer/skeletonizer.dart';
-import 'package:linkschool/modules/explore/games/game_details.dart';
-import 'package:linkschool/modules/model/explore/home/game_model.dart';
-import 'package:linkschool/modules/providers/explore/game/game_provider.dart';
-import 'package:provider/provider.dart';
-import 'package:skeletonizer/skeletonizer.dart';
 
 import '../../../common/app_colors.dart';
 import '../../../common/constants.dart';
 import '../../../common/text_styles.dart';
-import '../../../common/constants.dart';
-import '../../../common/text_styles.dart';
+import '../../../model/explore/home/game_model.dart';
 
 class GamesTab extends StatefulWidget {
   const GamesTab({super.key});
@@ -35,13 +29,12 @@ class _GamesTabState extends State<GamesTab> {
 
           if (games == null) {
             return const Center(
-              child: Skeletonizer(
-                child: SizedBox(
-                  height: 100,
-                  width: 200,
-                ),
+                child: Skeletonizer(
+              child: SizedBox(
+                height: 100,
+                width: 200,
               ),
-            );
+            ));
           }
 
           // Prepare a list of all game categories to display
@@ -215,6 +208,162 @@ class _GamesTabState extends State<GamesTab> {
     );
   }
 
+  Widget _buildTrendingCard({
+    required Game game,
+    required Color startColor,
+    required Color endColor,
+  }) {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.start,
+      children: [
+        Container(
+          margin: const EdgeInsets.only(left: 16.0),
+          padding: const EdgeInsets.all(16.0),
+          width: 125.0,
+          height: 125.0,
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [startColor, endColor],
+            ),
+            borderRadius: BorderRadius.circular(16.0),
+          ),
+          child: Image.network(
+            game.thumbnail,
+            fit: BoxFit.contain,
+            errorBuilder: (context, error, stackTrace) {
+              return const Icon(Icons.error);
+            },
+          ),
+        ),
+        const SizedBox(height: 12.0),
+        Text(
+          game.title,
+          style: AppTextStyles.normal500(
+            fontSize: 15.0,
+            color: Colors.black,
+          ),
+        ),
+        const SizedBox(height: 2.0),
+        Text(
+          game.date,
+          style: AppTextStyles.normal500(
+            fontSize: 13.0,
+            color: AppColors.text5Light,
+          ),
+        ),
+        const SizedBox(height: 2.0),
+        RatingBar.builder(
+          initialRating: double.tryParse(game.rating) ?? 0.0,
+          minRating: 1,
+          direction: Axis.horizontal,
+          allowHalfRating: true,
+          itemCount: 5,
+          itemSize: 14.0,
+          itemPadding: const EdgeInsets.symmetric(horizontal: 2.0),
+          itemBuilder: (context, _) => const Icon(
+            Icons.star,
+            color: Colors.amber,
+          ),
+          onRatingUpdate: (rating) {},
+        )
+      ],
+    );
+  }
+
+  Widget _buildSuggestedCard({
+    required Game game,
+    double? left,
+    double? right,
+  }) {
+    return Padding(
+      padding: EdgeInsets.only(left: left ?? 10.0, right: right ?? 0.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(10.0),
+            child: Image.network(
+              game.thumbnail,
+              fit: BoxFit.cover,
+              height: 200,
+              width: 400,
+              errorBuilder: (context, error, stackTrace) {
+                return Container(
+                  height: 200,
+                  width: 400,
+                  color: Colors.grey[300],
+                  child: const Icon(Icons.error),
+                );
+              },
+            ),
+          ),
+          const SizedBox(height: 12.0),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    game.title,
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
+                  Text(
+                    game.date,
+                    style: Theme.of(context).textTheme.titleSmall,
+                  ),
+                ],
+              ),
+              Container(
+                height: 45.0,
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      AppColors.buttonColor2,
+                      AppColors.buttonColor3,
+                    ],
+                  ),
+                  borderRadius: BorderRadius.circular(10.0),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(2.0),
+                  child: OutlinedButton(
+                    onPressed: () async {
+                      Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) => GameDetails(game: game)));
+                    },
+                    style: OutlinedButton.styleFrom(
+                      backgroundColor: AppColors.buttonColor1,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10.0),
+                      ),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                      child: Text(
+                        'Play',
+                        style: AppTextStyles.normal500(
+                          fontSize: 14.0,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildYouMightLikeCard({
     required Game game,
     required Color startColor,
@@ -261,6 +410,7 @@ class _GamesTabState extends State<GamesTab> {
                 children: [
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.start,
                     children: [
                       Text(
                         game.title,
@@ -292,7 +442,7 @@ class _GamesTabState extends State<GamesTab> {
                             ),
                           ),
                         ],
-                      ),
+                      )
                     ],
                   ),
                   Container(
@@ -314,11 +464,10 @@ class _GamesTabState extends State<GamesTab> {
                       child: OutlinedButton(
                         onPressed: () async {
                           Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => GameDetails(game: game),
-                            ),
-                          );
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) =>
+                                      GameDetails(game: game)));
                         },
                         style: OutlinedButton.styleFrom(
                           backgroundColor: AppColors.backgroundLight,
@@ -339,7 +488,7 @@ class _GamesTabState extends State<GamesTab> {
                 ],
               ),
             ),
-          ),
+          )
         ],
       ),
     );
@@ -426,100 +575,6 @@ Widget _buildGameCard(BuildContext context, BoardGamesClass category,
           ),
           onRatingUpdate: (rating) {},
         )
-      ],
-    ),
-  );
-}
-
-Widget _buildSuggestedCard({
-  required Game game,
-  required double left,
-  required double right,
-}) {
-  return Padding(
-    padding: EdgeInsets.only(left: left ?? 10.0, right: right ?? 0.0),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        ClipRRect(
-          borderRadius: BorderRadius.circular(10.0),
-          child: Image.network(
-            game.thumbnail,
-            fit: BoxFit.cover,
-            height: 200,
-            width: 400,
-            errorBuilder: (context, error, stackTrace) {
-              return Container(
-                height: 200,
-                width: 400,
-                color: Colors.grey[300],
-                child: const Icon(Icons.error),
-              );
-            },
-          ),
-        ),
-        const SizedBox(height: 12.0),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
-          children: [
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  game.title,
-                  style: Theme.of(context).textTheme.titleLarge,
-                ),
-                Text(
-                  game.date,
-                  style: Theme.of(context).textTheme.titleSmall,
-                ),
-              ],
-            ),
-            Container(
-              height: 45.0,
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    AppColors.buttonColor2,
-                    AppColors.buttonColor3,
-                  ],
-                ),
-                borderRadius: BorderRadius.circular(10.0),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(2.0),
-                child: OutlinedButton(
-                  onPressed: () async {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => GameDetails(game: game),
-                      ),
-                    );
-                  },
-                  style: OutlinedButton.styleFrom(
-                    backgroundColor: AppColors.buttonColor1,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10.0),
-                    ),
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                    child: Text(
-                      'Play',
-                      style: AppTextStyles.normal500(
-                        fontSize: 14.0,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
       ],
     ),
   );

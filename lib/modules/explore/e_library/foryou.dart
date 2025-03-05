@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
-
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
@@ -10,8 +9,10 @@ import 'package:linkschool/modules/explore/e_library/E_lib_detail.dart';
 import 'package:linkschool/modules/explore/e_library/cbt.dart';
 import 'package:linkschool/modules/explore/games/gamecard.dart';
 import 'package:linkschool/modules/explore/e_library/e_games/gamesTab.dart';
-import 'package:linkschool/modules/explore/e_library/elibrary-ebooks/library_ebook.dart';
+
 import 'package:linkschool/modules/explore/videos/videos_dashboard.dart';
+
+import 'e_library_ebooks/library_e_book.dart';
 
 class ForYouScreen extends StatefulWidget {
   const ForYouScreen({super.key, required this.height});
@@ -141,32 +142,37 @@ class _ForYouScreenState extends State<ForYouScreen> {
                       Tab(
                         child: FittedBox(
                             child: Text('For you',
-                                style:
-                                    AppTextStyles.normal600(fontSize: 14, color: AppColors.text2Light))),
+                                style: AppTextStyles.normal600(
+                                    fontSize: 14,
+                                    color: AppColors.text2Light))),
                       ),
                       Tab(
                         child: FittedBox(
                             child: Text('CBT',
-                                style:
-                                    AppTextStyles.normal600(fontSize: 14, color: AppColors.text2Light))),
+                                style: AppTextStyles.normal600(
+                                    fontSize: 14,
+                                    color: AppColors.text2Light))),
                       ),
                       Tab(
                         child: FittedBox(
                             child: Text('E-books',
-                                style:
-                                    AppTextStyles.normal600(fontSize: 14, color: AppColors.text2Light))),
+                                style: AppTextStyles.normal600(
+                                    fontSize: 14,
+                                    color: AppColors.text2Light))),
                       ),
                       Tab(
                         child: FittedBox(
                             child: Text('Games',
-                                style:
-                                    AppTextStyles.normal600(fontSize: 14, color: AppColors.text2Light))),
+                                style: AppTextStyles.normal600(
+                                    fontSize: 14,
+                                    color: AppColors.text2Light))),
                       ),
                       Tab(
                         child: Flexible(
                             child: Text('Videos',
-                                style:
-                                    AppTextStyles.normal600(fontSize: 14, color: AppColors.text2Light))),
+                                style: AppTextStyles.normal600(
+                                    fontSize: 14,
+                                    color: AppColors.text2Light))),
                       ),
                     ]),
                 Expanded(
