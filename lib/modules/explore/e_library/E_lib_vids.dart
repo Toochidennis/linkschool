@@ -1,13 +1,17 @@
+import 'package:chewie/chewie.dart';
 import 'package:flutter/material.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/common/constants.dart';
-import 'package:linkschool/modules/model/explore/home/subject_model.dart';
-import 'package:chewie/chewie.dart';
+import 'package:linkschool/modules/model/explore/home/video_model.dart';
+// import 'package:linkschool/modules/model/explore/home/subject_model.dart';
+// import 'package:chewie/chewie.dart';
+// import 'package:video_player/video_player.dart';
 import 'package:skeletonizer/skeletonizer.dart';
-import 'package:video_player/video_player.dart';
 import 'package:provider/provider.dart';
 import 'package:linkschool/modules/providers/explore/subject_provider.dart';
+import 'package:video_player/video_player.dart';
+
 
 class E_lib_vids extends StatefulWidget {
   const E_lib_vids({super.key, required this.video});

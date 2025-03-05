@@ -3,7 +3,8 @@ import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/buttons/custom_long_elevated_button.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:provider/provider.dart';
-import '../../model/explore/games/game_model.dart';
+
+import '../../model/explore/home/game_model.dart';
 import '../../providers/explore/game/game_provider.dart';
 
 class GameDetails extends StatefulWidget {
@@ -31,9 +32,9 @@ class _GameDetailsState extends State<GameDetails> {
 
     // Prepare recommended games list
     final recommendedGames = gameProvider.games?.puzzleGames.games ?? [];
-    
+
     // Prepare games you might like list
-    final gamesYouMightLike = gameProvider.games?.cardGames?.games ?? [];
+    final gamesYouMightLike = gameProvider.games?.cardGames.games ?? [];
 
     return Scaffold(
       appBar: AppBar(
@@ -71,7 +72,7 @@ class _GameDetailsState extends State<GameDetails> {
                     style: AppTextStyles.normal600(
                         fontSize: 22, color: AppColors.gametitle),
                   ),
-                  
+
                   // Game info row
                   Row(
                     children: [
@@ -93,9 +94,9 @@ class _GameDetailsState extends State<GameDetails> {
                       ),
                     ],
                   ),
-                  
+
                   const SizedBox(height: 20),
-                  
+
                   // Play now button
                   CustomLongElevatedButton(
                     text: 'Play now',
@@ -106,9 +107,9 @@ class _GameDetailsState extends State<GameDetails> {
                     textStyle: AppTextStyles.normal500(
                         fontSize: 16, color: AppColors.assessmentColor1),
                   ),
-                  
+
                   const SizedBox(height: 30),
-                  
+
                   // About this game section
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -126,9 +127,9 @@ class _GameDetailsState extends State<GameDetails> {
                       ),
                     ],
                   ),
-                  
+
                   const SizedBox(height: 30),
-                  
+
                   // Recommended games section
                   Text(
                     'Recommended',
@@ -141,7 +142,8 @@ class _GameDetailsState extends State<GameDetails> {
                   SizedBox(
                     height: 150,
                     child: recommendedGames.isEmpty
-                        ? const Center(child: Text('No recommended games available'))
+                        ? const Center(
+                            child: Text('No recommended games available'))
                         : ListView.builder(
                             scrollDirection: Axis.horizontal,
                             itemCount: recommendedGames.length,
@@ -150,9 +152,9 @@ class _GameDetailsState extends State<GameDetails> {
                             ),
                           ),
                   ),
-                  
+
                   const SizedBox(height: 20),
-                  
+
                   // Games you may like section
                   Text(
                     'Games you may like',
@@ -162,31 +164,29 @@ class _GameDetailsState extends State<GameDetails> {
                     ),
                   ),
                   const SizedBox(height: 10),
-                  gamesYouMightLike.isEmpty
-                      ? const Center(child: Text('No suggested games available'))
-                      : ListView.builder(
-                          shrinkWrap: true,
-                          physics: const NeverScrollableScrollPhysics(),
-                          itemCount: gamesYouMightLike.length,
-                          itemBuilder: (context, index) => GameCard(
-                            game: gamesYouMightLike[index],
-                            startColor: AppColors.gamesColor5,
-                            endColor: AppColors.gamesColor6,
-                            onPlay: () {
-                              // Navigate to the game page, but not to itself again
-                              if (widget.game.id != gamesYouMightLike[index].id) {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => GameDetails(
-                                      game: gamesYouMightLike[index],
-                                    ),
-                                  ),
-                                );
-                              }
-                            },
-                          ),
-                        ),
+                  ListView.builder(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    itemCount: gamesYouMightLike.length,
+                    itemBuilder: (context, index) => GameCard(
+                      game: gamesYouMightLike[index],
+                      startColor: AppColors.gamesColor5,
+                      endColor: AppColors.gamesColor6,
+                      onPlay: () {
+                        // Navigate to the game page, but not to itself again
+                        if (widget.game.id != gamesYouMightLike[index].id) {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => GameDetails(
+                                game: gamesYouMightLike[index],
+                              ),
+                            ),
+                          );
+                        }
+                      },
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -200,7 +200,7 @@ class _GameDetailsState extends State<GameDetails> {
 // Widget for recommended card - renamed to follow PascalCase convention
 class RecommendedCard extends StatelessWidget {
   final Game game;
-  
+
   const RecommendedCard({
     super.key,
     required this.game,
@@ -213,7 +213,7 @@ class RecommendedCard extends StatelessWidget {
       height: 150,
       width: 300,
       decoration: BoxDecoration(
-        color: AppColors.gameCard, 
+        color: AppColors.gameCard,
         borderRadius: BorderRadius.circular(20),
       ),
       child: ClipRRect(
@@ -222,8 +222,8 @@ class RecommendedCard extends StatelessWidget {
           // Using thumbnail instead of gameUrl for consistency
           game.thumbnail,
           fit: BoxFit.cover,
-          errorBuilder: (context, error, stackTrace) => 
-            const Center(child: Icon(Icons.error)),
+          errorBuilder: (context, error, stackTrace) =>
+              const Center(child: Icon(Icons.error)),
         ),
       ),
     );
@@ -256,7 +256,8 @@ class ReviewWidget extends StatelessWidget {
             if (reviews != null)
               Text(
                 reviews!,
-                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                style:
+                    const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
               ),
             const SizedBox(width: 4),
             Image.asset(
@@ -314,13 +315,13 @@ class GameCard extends StatelessWidget {
             child: Image.network(
               game.thumbnail,
               fit: BoxFit.contain,
-              errorBuilder: (context, error, stackTrace) => 
-                const Center(child: Icon(Icons.error, color: Colors.white)),
+              errorBuilder: (context, error, stackTrace) =>
+                  const Center(child: Icon(Icons.error, color: Colors.white)),
             ),
           ),
-          
+
           const SizedBox(width: 10.0),
-          
+
           // Game details area
           Expanded(
             child: Container(
@@ -361,12 +362,13 @@ class GameCard extends StatelessWidget {
                           overflow: TextOverflow.ellipsis,
                         ),
                         const SizedBox(height: 2.0),
-                        
+
                         // Rating and downloads
                         Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            const Icon(Icons.star, color: Colors.amber, size: 16.0),
+                            const Icon(Icons.star,
+                                color: Colors.amber, size: 16.0),
                             const SizedBox(width: 2),
                             Text(
                               "${game.rating}",
@@ -376,7 +378,8 @@ class GameCard extends StatelessWidget {
                               ),
                             ),
                             const SizedBox(width: 16.0),
-                            const Icon(Icons.file_download_outlined, size: 16.0),
+                            const Icon(Icons.file_download_outlined,
+                                size: 16.0),
                             const SizedBox(width: 2),
                             Text(
                               '150k', // Hardcoded value should be replaced
@@ -390,7 +393,7 @@ class GameCard extends StatelessWidget {
                       ],
                     ),
                   ),
-                  
+
                   // Play button
                   Container(
                     height: 45.0,
@@ -420,7 +423,7 @@ class GameCard extends StatelessWidget {
                           child: Text(
                             'Play',
                             style: AppTextStyles.normal600(
-                              fontSize: 14.0, 
+                              fontSize: 14.0,
                               color: AppColors.buttonColor1,
                             ),
                           ),

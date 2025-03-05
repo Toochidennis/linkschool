@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:linkschool/modules/explore/e_library/E_lib_vids.dart';
-import 'package:linkschool/modules/explore/videos/seeall_screen.dart';
+import 'package:linkschool/modules/explore/videos/see_all_screen.dart';
+// import 'package:linkschool/modules/explore/videos/see_all_screen.dart';
+
 import 'package:provider/provider.dart';
 import '../../common/app_colors.dart';
 import '../../common/constants.dart';
 import '../../common/text_styles.dart';
-import '../../model/explore/home/subject_model.dart';
+import '../../model/explore/home/video_model.dart';
 import '../../providers/explore/subject_provider.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 import '../e_library/e_lib_subject_detail.dart';
@@ -58,7 +60,7 @@ class _VideoDisplayState extends State<VideoDisplay> {
     'chemistry',
     'biology',
   ];
-_navigateToSeeall() {
+  _navigateToSeeall() {
     Navigator.push(
         context,
         MaterialPageRoute(
@@ -89,11 +91,10 @@ _navigateToSeeall() {
                               title: 'Watch history',
                               titleSize: 14.0,
                               titleColor: AppColors.primaryLight,
-
                             ),
                           ),
                           SliverToBoxAdapter(
-                            child: Container(
+                            child: SizedBox(
                               height: 200.0,
                               child: ListView.builder(
                                 itemCount: 7,
@@ -184,7 +185,6 @@ _navigateToSeeall() {
                                   title: 'Loading...',
                                   url: '',
                                   thumbnail: '',
-                                
                                 ));
                               },
                               childCount: 6,
@@ -231,11 +231,10 @@ _navigateToSeeall() {
                       slivers: [
                         SliverToBoxAdapter(
                           child: Constants.headingWithSeeAll600(
-                            title: 'Watch history',
-                            titleSize: 18.0,
-                            titleColor: AppColors.primaryLight,
-                            SeeAllPressed: _navigateToSeeall
-                          ),
+                              title: 'Watch history',
+                              titleSize: 18.0,
+                              titleColor: AppColors.primaryLight,
+                              SeeAllPressed: _navigateToSeeall),
                         ),
                         SliverToBoxAdapter(
                           child: SizedBox(
@@ -333,7 +332,6 @@ _navigateToSeeall() {
                         ),
                         SliverList(
                           delegate: SliverChildBuilderDelegate(
-                          
                             (context, index) {
                               if (index < recommendationVideos.length) {
                                 return GestureDetector(
@@ -355,10 +353,11 @@ _navigateToSeeall() {
                             },
                             childCount: recommendationVideos.length,
                           ),
-                        
                         ),
                         SliverToBoxAdapter(
-                          child: SizedBox(height: 100,),
+                          child: SizedBox(
+                            height: 100,
+                          ),
                         )
                       ],
                     ),
@@ -399,7 +398,6 @@ _navigateToSeeall() {
             ),
           ),
           const SizedBox(height: 4.0),
-          
         ],
       ),
     );

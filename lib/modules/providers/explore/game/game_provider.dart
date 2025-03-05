@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
-import 'package:linkschool/modules/model/explore/games/game_model.dart';
 import 'package:linkschool/modules/services/explore/game/games_services.dart';
+
+import '../../../model/explore/home/game_model.dart';
 
 
 class GameProvider with ChangeNotifier {

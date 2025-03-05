@@ -214,7 +214,7 @@ class _NewsDetailsState extends State<NewsDetails> {
                     height: 8,
                   ),
 
-                  Container(
+                  SizedBox(
                     height: 395,
                     child: ListView.builder(
                       scrollDirection: Axis.horizontal,
@@ -306,7 +306,7 @@ class relatedHeadlines extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Container(
+                          SizedBox(
                             width: 200,
                             child: Text(
                               "Aston Villa avoid relegation on final day",

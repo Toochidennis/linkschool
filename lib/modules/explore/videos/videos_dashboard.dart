@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:linkschool/modules/explore/e_library/E_lib_vids.dart';
-import 'package:linkschool/modules/explore/videos/seeall_screen.dart';
+import 'package:linkschool/modules/explore/videos/see_all_screen.dart';
+import 'package:linkschool/modules/model/explore/home/video_model.dart';
 import 'package:provider/provider.dart';
 import '../../common/app_colors.dart';
 import '../../common/constants.dart';
 import '../../common/text_styles.dart';
-import '../../model/explore/home/subject_model.dart';
 import '../../providers/explore/subject_provider.dart';
-import '../e_library/cbt.details.dart';
+// import '../e_library/cbt.details.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 import '../e_library/e_lib_subject_detail.dart';
 
@@ -98,7 +98,7 @@ class _VideosDashboardState extends State<VideosDashboard> {
                             ),
                           ),
                           SliverToBoxAdapter(
-                            child: Container(
+                            child: SizedBox(
                               height: 150.0,
                               child: ListView.builder(
                                 itemCount: 7,

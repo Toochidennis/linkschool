@@ -4,7 +4,6 @@ import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/explore/admission/admission_detail_screen.dart';
-import 'package:linkschool/modules/explore/home/explore_home.dart';
 
 class ExploreAdmission extends StatefulWidget {
   const ExploreAdmission({super.key, required this.height});
@@ -513,7 +512,7 @@ Widget _BasedOnSearches({
     },
     child: Padding(
       padding: const EdgeInsets.symmetric(horizontal: 0),
-      child: Container(
+      child: SizedBox(
         width: 328,
         height: 220,
         child: Column(

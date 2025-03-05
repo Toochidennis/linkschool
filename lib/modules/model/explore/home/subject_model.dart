@@ -1,65 +1,66 @@
-class Subject {
+import 'dart:ui';
+
+import 'package:linkschool/modules/common/app_colors.dart';
+
+import 'category_model.dart';
+import 'cbt_board_model.dart';
+// import 'video_model.dart';
+
+class SubjectModel {
   final String id;
   final String name;
-  final List<Category> categories;
+  final List<YearModel>? years;
+  final List<Category>? categories;
+  String? subjectIcon;
+  Color? cardColor;
 
-  Subject({required this.id, required this.name, required this.categories});
-
-  factory Subject.fromJson(Map<String, dynamic> json) {
-    return Subject(
-      id: json['id'] ?? '',
-      name: json['name'] ?? '',
-      categories: (json['category'] as List)
-          .map((category) => Category.fromJson(category))
-          .toList(),
-    );
-  }
-}
-
-class Category {
-  final String id;
-  final String level;
-  final String levelName;
-  final String name;
-  final List<Video> videos;
-
-  Category({
+  SubjectModel({
     required this.id,
-    required this.level,
-    required this.levelName,
     required this.name,
-    required this.videos,
+    this.categories,
+    this.years,
+    this.subjectIcon = 'N/A',
+    this.cardColor = AppColors.cbtCardColor1,
   });
 
-  factory Category.fromJson(Map<String, dynamic> json) {
-    return Category(
-      id: json['id'] ?? '',
-      level: json['level'] ?? '',
-      levelName: json['level_name'] ?? '',
-      name: json['name'] ?? '',
-      videos: (json['videos'] as List)
-          .map((video) => Video.fromJson(video))
+  factory SubjectModel.fromJson(Map<String, dynamic> json) {
+    return SubjectModel(
+      id: json['i'],
+      name: json['c'],
+      years: (json['y'] as List?)
+          ?.map((year) => YearModel.fromJson(year))
+          .toList(),
+      categories: (json['category'] as List?)
+          ?.map((category) => Category.fromJson(category))
           .toList(),
     );
   }
 }
 
-class Video {
-  final String title;
-  final String url;
-  final String thumbnail;
+// class Category {
+//   final String id;
+//   final String level;
+//   final String levelName;
+//   final String name;
+//   final List<Video> videos;
 
-  Video({
-    required this.title,
-    required this.url,
-    required this.thumbnail,
-  });
+//   Category({
+//     required this.id,
+//     required this.level,
+//     required this.levelName,
+//     required this.name,
+//     required this.videos,
+//   });
 
-  factory Video.fromJson(Map<String, dynamic> json) {
-    return Video(
-      title: json['title'] ?? '',
-      url: json['url'] ?? '',
-      thumbnail: json['thumbnail'] ?? '',
-    );
-  }
-}
+//   factory Category.fromJson(Map<String, dynamic> json) {
+//     return Category(
+//       id: json['id'] ?? '',
+//       level: json['level'] ?? '',
+//       levelName: json['level_name'] ?? '',
+//       name: json['name'] ?? '',
+//       videos: (json['videos'] as List)
+//           .map((video) => Video.fromJson(video))
+//           .toList(),
+//     );
+//   }
+// }

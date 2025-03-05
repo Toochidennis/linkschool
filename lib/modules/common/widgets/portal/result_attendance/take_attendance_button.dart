@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:linkschool/modules/admin/result/class_detail/attendance/take_class_attendance.dart';
+import 'package:linkschool/modules/admin/result/class_detail/attendance/take_course_attendance.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/buttons/custom_long_elevated_button.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
-import 'package:linkschool/modules/admin_portal/result/class_detail/attendance/take_course_attendance.dart';
-import 'package:linkschool/modules/admin_portal/result/class_detail/attendance/take_class_attendance.dart'; // Import the new screen
+
 
 class TakeAttendanceButton extends StatelessWidget {
   const TakeAttendanceButton({super.key});

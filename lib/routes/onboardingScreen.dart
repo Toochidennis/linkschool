@@ -1,16 +1,15 @@
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter/material.dart';
-import 'package:linkschool/modules/auth/login_screen.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
-import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/routes/select_school.dart';
 import 'app_navigation_flow.dart';
-import 'package:introduction_screen/introduction_screen.dart';
 import 'package:smooth_page_indicator/smooth_page_indicator.dart';
+// import 'package:introduction_screen/introduction_screen.dart';
+// import 'package:smooth_page_indicator/smooth_page_indicator.dart';
 
 class Onboardingscreen extends StatefulWidget {
-  Onboardingscreen({super.key});
+  const Onboardingscreen({super.key});
 
   @override
   _OnboardingscreenState createState() => _OnboardingscreenState();
@@ -43,34 +42,33 @@ class _OnboardingscreenState extends State<Onboardingscreen> {
       body: Stack(
         children: [
           Positioned(
-            
               child: SvgPicture.asset('assets/images/onboardng-image/Blur.svg',
                   fit: BoxFit.contain)),
           PageView.builder(
             onPageChanged: (index) {
-              setState((){  
-               if(onLastPage =(index ==2)){
-                print('the user is on the last page');
-               }
-
+              setState(() {
+                if (onLastPage = (index == 2)) {
+                  print('the user is on the last page');
+                }
               });
             },
             itemCount: _pages.length,
             controller: _pageController,
-            
             itemBuilder: (context, index) {
               return _pages[index];
             },
           ),
           Positioned(
-              bottom: 110,
-              left: 0,
-              right: 0,
-              child: Center(
-                  child: SmoothPageIndicator(
-                      effect: WormEffect(dotHeight: 10, dotWidth: 10),
-                      controller: _pageController,
-                      count: _pages.length))),
+            bottom: 110,
+            left: 0,
+            right: 0,
+            child: Center(
+              child: SmoothPageIndicator(
+                  effect: WormEffect(dotHeight: 10, dotWidth: 10),
+                  controller: _pageController,
+                  count: _pages.length),
+            ),
+          ),
           Positioned(
               bottom: 50,
               right: 16,
@@ -96,30 +94,30 @@ class _OnboardingscreenState extends State<Onboardingscreen> {
                       _pageController.nextPage(duration:Duration(milliseconds: 500), curve: Curves.easeIn);
                       Navigator.push(context, MaterialPageRoute(builder: (context) =>  SelectSchool()));
                     },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.buttonColor,
+                      shape: CircleBorder(),
+                    ),
                     child: Icon(
                       Icons.arrow_forward,
                      color: Colors.white,
                       size: 34,
                                         ),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.buttonColor,
-                      shape: CircleBorder(),
-                    ),
                   ) else ElevatedButton(
                     onPressed: () {
                       _pageController.nextPage(duration:Duration(milliseconds: 500), curve: Curves.easeIn);
 
 
                     },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.buttonColor,
+                      shape: CircleBorder(),
+                    ),
                     child: Icon(
                       Icons.arrow_forward,
                      color: Colors.white,
                       size: 34,
                                         ),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.buttonColor,
-                      shape: CircleBorder(),
-                    ),
                   ) ],
               ))
         ],

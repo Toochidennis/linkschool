@@ -1,32 +1,15 @@
 name: linkschool
 description: "A new Flutter project."
-# The following line prevents the package from being accidentally published to
-# pub.dev using `flutter pub publish`. This is preferred for private packages.
+
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 
-# The following defines the version and build number for your application.
-# A version number is three numbers separated by dots, like 1.2.43
-# followed by an optional build number separated by a +.
-# Both the version and the builder number may be overridden in flutter
-# build by specifying --build-name and --build-number, respectively.
-# In Android, build-name is used as versionName while build-number used as versionCode.
-# Read more about Android versioning at https://developer.android.com/studio/publish/versioning
-# In iOS, build-name is used as CFBundleShortVersionString while build-number is used as CFBundleVersion.
-# Read more about iOS versioning at
-# https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
-# In Windows, build-name is used as the major, minor, and patch parts
-# of the product and file versions while build-number is used as the build suffix.
+
 version: 1.0.0+1
 
 environment:
   sdk: '>=3.3.0 <4.0.0'
 
-# Dependencies specify other packages that your package needs in order to work.
-# To automatically upgrade your package dependencies to the latest versions
-# consider running `flutter pub upgrade --major-versions`. Alternatively,
-# dependencies can be manually updated by changing the version numbers below to
-# the latest version available on pub.dev. To see which dependencies have newer
-# versions available, run `flutter pub outdated`.
+
 dependencies:
   flutter:
     sdk: flutter
@@ -65,6 +48,8 @@ dependencies:
   video_player: ^2.9.2
   skeletonizer: ^1.4.3
   bottom_picker: ^2.11.0
+  flutter_dotenv: ^5.2.1
+  fluttertoast: ^8.2.12
   url_launcher: ^6.3.1
   motion_toast: ^2.11.0
 
@@ -72,26 +57,18 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
 
-  # The "flutter_lints" package below contains a set of recommended lints to
-  # encourage good coding practices. The lint set provided by the package is
-  # activated in the `analysis_options.yaml` file located at the root of your
-  # package. See that file for information about deactivating specific lint
-  # rules and activating additional ones.
+
   flutter_lints: ^5.0.0
 
-# For information on the generic Dart part of this file, see the
-# following page: https://dart.dev/tools/pub/pubspec
 
-# The following section is specific to Flutter packages.
 flutter:
 
-  # The following line ensures that the Material Icons font is
-  # included with your application, so that you can use the icons in
-  # the material Icons class.
+
   uses-material-design: true
 
-  # To add assets to your application, add an assets section, like this:
+
   assets:
+    - .env
     - assets/icons/
     - assets/images/
     - assets/icons/e_learning/
@@ -119,88 +96,6 @@ flutter:
     # - assets/icons/cbt.svg
 
 
-    # - assets/icons/portal.svg
-    # - assets/icons/video.svg
-    # - assets/icons/e-books.svg
-    # - assets/icons/linkskool-ai.svg
-    # - assets/icons/linkskool-logo.svg
-    # - assets/icons/settings.svg
-    # - assets/icons/comment.svg
-    # - assets/icons/share.svg
-    # - assets/icons/result.svg
-    # - assets/icons/payment.svg
-    # - assets/icons/profile.svg
-    # - assets/icons/explore.svg
-    # - assets/icons/arrow_back.png
-    # - assets/icons/test.png
-    # - assets/icons/success.png
-    # - assets/icons/average.png
-    # - assets/icons/search.png
-    # - assets/icons/maths.png
-    # - assets/icons/chemistry.png
-    # - assets/icons/physics.png
-    # - assets/icons/further_maths.png
-    # - assets/icons/english.png
-    # - assets/icons/biology.png
-    # - assets/icons/agric.png
-    # - assets/icons/views.png
-    # - assets/icons/geography.png
-    # - assets/images/millionaire.png
-    # - assets/images/ai.png
-    # - assets/images/video_1.png
-    # - assets/images/book_1.png
-    # - assets/images/book_2.png
-    # - assets/images/book_3.png
-    # - assets/images/book_4.png
-    # - assets/images/book_5.png
-    # - assets/images/games_1.png
-    # - assets/images/games_2.png
-    # - assets/images/games_3.png
-    # - assets/icons/grading.png
-    # - assets/icons/behaviour.png
-    # - assets/icons/tools.png
-    # - assets/icons/assessment.png
-    # - assets/images/box_bg1.png
-    # - assets/images/box_bg2.png
-    # - assets/images/box_bg3.png
-    # - assets/images/box_bg4.png
-    # - assets/images/box_bg5.png
-    # - assets/icons/result/comment.svg
-    # - assets/icons/result/skill.svg
-    # - assets/icons/result/course.svg
-    # - assets/icons/result/composite_result.svg
-    # - assets/icons/result/check.svg
-    # - assets/icons/result/edit.svg
-    # - assets/icons/result/delete.svg
-    # - assets/icons/result/grading.svg
-    # - assets/icons/result/assessment.svg
-    # - assets/icons/result/behaviour.svg
-    # - assets/icons/result/tool.svg
-    # - assets/images/result/bg_box1.svg
-    # - assets/images/result/bg_box2.svg
-    # - assets/images/result/bg_box3.svg
-    # - assets/images/result/bg_box4.svg
-    # - assets/images/result/bg_box5.svg
-    # - assets/images/result/top_container.svg
-    # - assets/icons/result/book.svg
-    # - assets/images/result/bg_course_reg.svg
-    # - assets/icons/result/search.svg
-    # - assets/icons/result/study_book.svg
-    # - assets/icons/result/eye.svg
-#     - images/a_dot_burr.jpeg
-#     - images/a_dot_ham.jpeg
-
-  # An image asset can refer to one or more resolution-specific "variants", see
-  # https://flutter.dev/assets-and-images/#resolution-aware
-
-  # For details regarding adding assets from package dependencies, see
-  # https://flutter.dev/assets-and-images/#from-packages
-
-  # To add custom fonts to your application, add a fonts section here,
-  # in this "flutter" section. Each entry in this list should have a
-  # "family" key with the font family name, and a "fonts" key with a
-  # list giving the asset and other descriptors for the font. For
-  # example:
   fonts:
      - family: Urbanist
        fonts:
@@ -215,11 +110,4 @@ flutter:
            weight: 600
          - asset: assets/fonts/urbanist/Urbanist-BoldItalic.ttf
            weight: 700
-#     - family: Inter
-#       fonts:
-#         - asset: assets/fonts/interFonts/LTInternet-Bold.ttf
-#           weight: 700
-#         - asset: assets/fonts/interFonts/LTInternet-Regular.ttf
-#           weight: 400
-  # For details regarding fonts from package dependencies,
-  # see https://flutter.dev/custom-fonts/#from-packages
+

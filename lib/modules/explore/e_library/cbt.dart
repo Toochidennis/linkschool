@@ -1,13 +1,10 @@
 import 'package:flutter/material.dart';
 
 import 'package:linkschool/modules/common/app_colors.dart';
-import 'package:linkschool/modules/common/buttons/custom_medium_elevated_button.dart';
-import 'package:linkschool/modules/common/buttons/custom_outline_button_2.dart';
 import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/explore/e_library/cbt.details.dart';
-
-import 'package:linkschool/modules/explore/e_library/newcbt.dart';
+import 'package:linkschool/modules/explore/e_library/new_cbt.dart';
 
 import 'package:linkschool/modules/explore/ebooks/subject_item.dart';
 
@@ -184,7 +181,7 @@ class _E_CBTDashboardState extends State<E_CBTDashboard> {
                       Navigator.push(
                           context,
                           MaterialPageRoute(
-                              builder: (context) => const newCbtScreen()));
+                              builder: (context) => const NewCbtScreen()));
                     },
                     style: TextButton.styleFrom(
                       padding: const EdgeInsets.symmetric(horizontal: 8),
@@ -345,7 +342,7 @@ void _yearDialog(BuildContext context) {
   showModalBottomSheet(
     context: context,
     builder: (BuildContext context) => StatefulBuilder(
-      builder: (BuildContext context, StateSetter setState) => Container(
+      builder: (BuildContext context, StateSetter setState) => SizedBox(
         height: 335,
         width: 360,
         child: Column(
@@ -404,15 +401,15 @@ void _yearDialog(BuildContext context) {
                     onPressed: () {
                       Navigator.pop(context);
                     },
-                    child: Text(
-                      'Cancel',
-                      style: AppTextStyles.normal600(
-                          fontSize: 16.0, color: AppColors.cbtDialogBorder),
-                    ),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8.0),
                       side: BorderSide(
                           color: AppColors.cbtDialogBorder, width: 1.0),
+                    ),
+                    child: Text(
+                      'Cancel',
+                      style: AppTextStyles.normal600(
+                          fontSize: 16.0, color: AppColors.cbtDialogBorder),
                     ),
                   ),
                   MaterialButton(
@@ -429,17 +426,17 @@ void _yearDialog(BuildContext context) {
                                       year: selectedYear!,
                                       subject: 'Mathematics',
                                       subjectIcon: 'maths',
-                                      cardColor: AppColors.cbtCardColor1,
+                                      cardColor: AppColors.cbtCardColor1, subjectList: [],
                                     )));
                       }
                     },
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8.0),
+                    ),
                     child: Text(
                       'Confirm',
                       style: AppTextStyles.normal600(
                           fontSize: 16.0, color: AppColors.textFieldLight),
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8.0),
                     ),
                   ),
                 ],
