@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:linkschool/modules/providers/explore/ebook_provider.dart';
-
+import 'package:linkschool/modules/providers/explore/home/ebook_provider.dart';
 import 'package:provider/provider.dart';
 // import 'ebook_provider.dart';
 import '../../common/app_colors.dart';
@@ -24,13 +23,13 @@ class _EbooksDashboardState extends State<EbooksDashboard> {
   void initState() {
     super.initState();
     // Fetch books data when the widget is initialized
-    final bookProvider = Provider.of<BookProvider>(context, listen: false);
+    final bookProvider = Provider.of<EbookProvider>(context, listen: false);
     bookProvider.fetchBooks();
   }
 
   @override
   Widget build(BuildContext context) {
-    final bookProvider = Provider.of<BookProvider>(context);
+    final bookProvider = Provider.of<EbookProvider>(context);
     final categories = bookProvider.categories;
 
     return Scaffold(

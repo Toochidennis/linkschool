@@ -237,7 +237,7 @@ _navigateToSeeall() {
                             title: 'Watch history',
                             titleSize: 18.0,
                             titleColor: AppColors.primaryLight,
-                            SeeAllPressed: _navigateToSeeall
+                            onPressed: _navigateToSeeall
                           ),
                         ),
                         SliverToBoxAdapter(
