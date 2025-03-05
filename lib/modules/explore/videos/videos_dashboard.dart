@@ -127,16 +127,12 @@ class _VideosDashboardState extends State<VideosDashboard> {
                           SliverToBoxAdapter(
                             child:
                                 LayoutBuilder(builder: (context, constraints) {
-                              double screenHeight =
-                                  MediaQuery.of(context).size.height;
                               double screenWidth =
                                   MediaQuery.of(context).size.width;
-                              double height = screenHeight * 0.34;
-                              double aspectRatio =
-                                  (screenWidth / 4) / (height / 2);
+
+                              double aspectRatio = (screenWidth / 4);
 
                               return Container(
-                                height: height,
                                 padding: const EdgeInsets.symmetric(
                                   horizontal: 3.2,
                                   vertical: 1.90,
@@ -190,7 +186,6 @@ class _VideosDashboardState extends State<VideosDashboard> {
                                   title: 'Loading...',
                                   url: '',
                                   thumbnail: '',
-                                  author: '',
                                 ));
                               },
                               childCount: 6,
@@ -244,7 +239,7 @@ class _VideosDashboardState extends State<VideosDashboard> {
                             title: 'Watch history',
                             titleSize: 18.0,
                             titleColor: AppColors.primaryLight,
-                            SeeAllPressed:  _navigateToSeeall,
+                            SeeAllPressed: _navigateToSeeall,
                           ),
                         ),
                         SliverToBoxAdapter(

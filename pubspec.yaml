@@ -50,6 +50,8 @@ dependencies:
   bottom_picker: ^2.11.0
   flutter_dotenv: ^5.2.1
   fluttertoast: ^8.2.12
+  url_launcher: ^6.3.1
+  motion_toast: ^2.11.0
 
 dev_dependencies:
   flutter_test:

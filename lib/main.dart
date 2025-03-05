@@ -15,6 +15,7 @@ import 'package:linkschool/modules/services/explore/cbt_service.dart';
 import 'package:linkschool/routes/onboardingScreen.dart';
 import 'package:provider/provider.dart';
 
+import 'modules/providers/admin/grade_provider.dart';
 import 'modules/providers/explore/game/game_provider.dart';
 
 
@@ -40,12 +41,11 @@ Future<void> main() async {
       ChangeNotifierProvider(create: (context) => GameProvider()),
       ChangeNotifierProvider(create: (_) => ExamProvider()),
       ChangeNotifierProvider(create: (context) => ForYouProvider()),
-      // Add GradeProvider here
       ChangeNotifierProvider(create: (context) => GradeProvider()),
-      // Add LevelProvider and ClassProvider here
       ChangeNotifierProvider(create: (context) => LevelProvider()),
       ChangeNotifierProvider(create: (context) => ClassProvider()),
       ChangeNotifierProvider(create: (_) => AssessmentProvider()),
+        // ChangeNotifierProvider(create: (context) => GradeProvider()),
     ],
     child: const MyApp(),
   ));
