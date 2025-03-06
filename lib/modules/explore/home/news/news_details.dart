@@ -261,7 +261,8 @@ Widget relatedHeadlines(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
                   IconButton(
-                      onPressed: () => (Share.share('dream ict')),
+                      onPressed: () =>
+                          (Share.share('dream ict/relatedheadline')),
                       icon: Icon(Icons.share)
                       // SvgPicture.asset(
                       //   'assets/icons/share.svg',

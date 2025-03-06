@@ -44,6 +44,9 @@ class _LibraryEbookState extends State<LibraryEbook> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    SizedBox(
+                      height: 16,
+                    ),
                     Text(
                       'What do you want to\nread today?',
                       style: AppTextStyles.normal600(
@@ -109,49 +112,17 @@ class _LibraryEbookState extends State<LibraryEbook> {
 
   /// *Builds the Tab Controller with Tabs*
   Widget _buildTabController() {
-    return DefaultTabController(
-      length: 2,
-      child: Padding(
-        padding: const EdgeInsets.only(bottom: 10),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            TabBar(
-              isScrollable: true,
-              tabAlignment: TabAlignment.start,
-              unselectedLabelColor: const Color.fromRGBO(90, 90, 90, 1),
-              labelColor: AppColors.text2Light,
-              labelStyle: AppTextStyles.normal600(
-                fontSize: 16.0,
-                color: AppColors.text2Light,
-              ),
-              indicatorColor: AppColors.text2Light,
-              tabs: const [
-                Tab(text: 'All'),
-                Tab(text: 'Library'),
-              ],
-            ),
-            SizedBox(
-              height: MediaQuery.of(context).size.height *
-                  0.7, // Adjust height dynamically
-              child: TabBarView(
-                physics:
-                    const NeverScrollableScrollPhysics(), // Disable horizontal scrolling
-                children: [
-                  AllTab(
-                      selectedCategoryIndex:
-                          _selectedBookCategoriesIndex), // Pass selected category index
-                  Container(
-                    color: Colors.orange,
-                    child: const Center(
-                      child: Text('Tab 2'),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
+    return Padding(
+      padding: const EdgeInsets.only(top: 4),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          AllTab(selectedCategoryIndex: _selectedBookCategoriesIndex),
+          SizedBox(
+            height: MediaQuery.of(context).size.height * 0.01,
+            // height: 1070, // Adjust height dynamically
+          ),
+        ],
       ),
     );
   }

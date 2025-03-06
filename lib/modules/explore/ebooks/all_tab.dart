@@ -42,109 +42,120 @@ class AllTab extends StatelessWidget {
       );
     }).toList();
 
-    return CustomScrollView(
-      physics: const BouncingScrollPhysics(),
-      slivers: [
-        SliverPadding(
-          padding: const EdgeInsets.only(left: 16.0, top: 16.0),
-          sliver: SliverToBoxAdapter(
+    return Container(
+      // height: 2500,
+      // physics: const FixedExtentScrollPhysics(),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Continue Reading Section
+          Padding(
+            padding: const EdgeInsets.only(left: 16.0, top: 16.0),
             child: Text(
               'Continue reading',
+              textAlign: TextAlign.start,
               style: AppTextStyles.normal500(
                 fontSize: 16.0,
                 color: AppColors.booksButtonTextColor,
               ),
             ),
           ),
-        ),
-        SliverToBoxAdapter(
-          child: Container(
+          SizedBox(height: 10.0),
+          Container(
             height: 260,
             margin: const EdgeInsets.only(right: 16.0),
             decoration: const BoxDecoration(
-                border:
-                    Border(bottom: BorderSide(color: AppColors.text6Light))),
+              border: Border(bottom: BorderSide(color: AppColors.text6Light)),
+            ),
             child: ListView.builder(
-                itemCount: readingItems.length,
-                scrollDirection: Axis.horizontal,
-                itemBuilder: (context, index) {
-                  final continueReading = bookProvider.ebooks[index];
-                  return GestureDetector(
-                    onTap: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (context) =>
-                              MybookPage(suggestedbook: continueReading)),
+              physics: const ClampingScrollPhysics(),
+              itemCount: readingItems.length,
+              scrollDirection: Axis.horizontal,
+              itemBuilder: (context, index) {
+                if (index >= bookProvider.ebooks.length) return SizedBox();
+                final continueReading = bookProvider.ebooks[index];
+                return GestureDetector(
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) =>
+                          MybookPage(suggestedbook: continueReading),
                     ),
-                    child: readingItems[index],
-                  );
-                }),
+                  ),
+                  child: readingItems[index],
+                );
+              },
+            ),
           ),
-        ),
-        const SliverToBoxAdapter(child: SizedBox(height: 10.0)),
-        SliverToBoxAdapter(
-          child: Constants.headingWithSeeAll600(
+
+          SizedBox(height: 20.0),
+          Constants.headingWithSeeAll600(
             title: 'Suggested for you',
             titleSize: 18.0,
             titleColor: AppColors.text2Light,
           ),
-        ),
-        SliverToBoxAdapter(
-          child: Container(
+          SizedBox(height: 10.0),
+          Container(
             height: 250,
             margin: const EdgeInsets.only(right: 16.0),
             decoration: const BoxDecoration(
-                border:
-                    Border(bottom: BorderSide(color: AppColors.text6Light))),
+              border: Border(bottom: BorderSide(color: AppColors.text6Light)),
+            ),
             child: ListView.builder(
-                itemCount: suggestedItems.length,
-                scrollDirection: Axis.horizontal,
-                itemBuilder: (context, index) {
-                  final suggestbook = bookProvider.ebooks[index];
-                  return GestureDetector(
-                    onTap: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (context) =>
-                              MybookPage(suggestedbook: suggestbook)),
+              itemCount: suggestedItems.length,
+              scrollDirection: Axis.horizontal,
+              itemBuilder: (context, index) {
+                if (index >= bookProvider.ebooks.length) return SizedBox();
+                final suggestBook = bookProvider.ebooks[index];
+                return GestureDetector(
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) =>
+                          MybookPage(suggestedbook: suggestBook),
                     ),
-                    child: suggestedItems[index],
-                  );
-                }),
+                  ),
+                  child: suggestedItems[index],
+                );
+              },
+            ),
           ),
-        ),
-        const SliverToBoxAdapter(child: SizedBox(height: 10.0)),
-        SliverToBoxAdapter(
-          child: Constants.headingWithSeeAll600(
+
+          SizedBox(height: 10.0),
+          Constants.headingWithSeeAll600(
             title: 'You might also like',
             titleSize: 18.0,
             titleColor: AppColors.text2Light,
           ),
-        ),
-        SliverToBoxAdapter(
-          child: Container(
+          SizedBox(height: 10.0),
+          Container(
             height: 250,
             margin: const EdgeInsets.only(right: 16.0),
             decoration: const BoxDecoration(
-                border:
-                    Border(bottom: BorderSide(color: AppColors.text6Light))),
+              border: Border(bottom: BorderSide(color: AppColors.text6Light)),
+            ),
             child: ListView.builder(
-                itemCount: suggestedItems.length,
-                scrollDirection: Axis.horizontal,
-                itemBuilder: (context, index) {
-                  final suggestedBook = bookProvider.ebooks[index];
-                  return GestureDetector(
-                    onTap: () => (Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (context) =>
-                                MybookPage(suggestedbook: suggestedBook)))),
-                    child: suggestedItems[index],
-                  );
-                }),
+              itemCount: suggestedItems.length,
+              scrollDirection: Axis.horizontal,
+              itemBuilder: (context, index) {
+                if (index >= bookProvider.ebooks.length) return SizedBox();
+                final suggestedBook = bookProvider.ebooks[index];
+                return GestureDetector(
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) =>
+                          MybookPage(suggestedbook: suggestedBook),
+                    ),
+                  ),
+                  child: suggestedItems[index],
+                );
+              },
+            ),
           ),
-        ),
-      ],
+          SizedBox(height: 80.0),
+        ],
+      ),
     );
   }
 

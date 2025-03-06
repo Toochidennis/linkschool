@@ -25,6 +25,7 @@ class MybookPage extends StatefulWidget {
 class _MybookPageState extends State<MybookPage> {
   @override
   Widget build(BuildContext context) {
+    // int selectedIndex= 0;
     // final bookProvider = Provider.of<EbookProvider>(context);
     // final startreading_suggested = bookProvider.ebooks;
     return Scaffold(
@@ -139,25 +140,37 @@ class _MybookPageState extends State<MybookPage> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     mainAxisSize: MainAxisSize.max,
                     children: [
-                      OutlinedButton(
-                        onPressed: () {},
-                        child: Text(
-                          // 'Literature',
-                          widget.suggestedbook.categories
-                              .join(" | ")
-                              .toUpperCase(),
-                          style: AppTextStyles.normal500(
-                              fontSize: 16,
-                              color: AppColors.eLearningBtnColor1),
-                        ),
-                        style: OutlinedButton.styleFrom(
-                          backgroundColor: AppColors.grayColor,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                          side: BorderSide(color: AppColors.eLearningBtnColor1),
-                        ),
+                      Wrap(
+                        spacing: 8.0,
+                        children: widget.suggestedbook.categories
+                            .asMap()
+                            .entries
+                            .map((entry) {
+                          String category = entry.value;
+                          return SingleChildScrollView(
+                            scrollDirection: Axis.horizontal,
+                            physics: AlwaysScrollableScrollPhysics(),
+                            child: OutlinedButton(
+                              onPressed: () {},
+                              child: Text(
+                                category.toUpperCase(),
+                                style: AppTextStyles.normal500(
+                                    fontSize: 14,
+                                    color: AppColors.eLearningBtnColor1),
+                              ),
+                              style: OutlinedButton.styleFrom(
+                                backgroundColor: AppColors.grayColor,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
+                                side: BorderSide(
+                                    color: AppColors.eLearningBtnColor1),
+                              ),
+                            ),
+                          );
+                        }).toList(),
                       ),
+
                       SizedBox(width: 12),
                       // OutlinedButton(
                       //   onPressed: () {},
