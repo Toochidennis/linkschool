@@ -4,11 +4,8 @@ import 'package:flutter_svg/svg.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
-
 import 'package:linkschool/modules/providers/admin/grade_provider.dart';
-import 'package:motion_toast/motion_toast.dart';
 import 'package:provider/provider.dart';
-
 import '../../model/admin/grade _model.dart';
 
 class GradingSettingsScreen extends StatefulWidget {
@@ -43,7 +40,6 @@ class _GradingSettingsScreenState extends State<GradingSettingsScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final gradeProvider = Provider.of<GradeProvider>(context, listen: false);
       gradeProvider.fetchGrades().then((_) {
-        // Initialize controllers after grades are fetched
         initializeControllers(gradeProvider.grades);
       });
     });
@@ -84,30 +80,25 @@ class _GradingSettingsScreenState extends State<GradingSettingsScreen> {
     super.dispose();
   }
 
-  // Future<void> _saveChanges(
-  //     BuildContext context, GradeProvider gradeProvider) async {
-  //   try {
-  //     // Validate the form
-
-  //     // Add the new grade
-  //     await gradeProvider.addGrade(
-  //       gradeController.text,
-  //       rangeController.text,
-  //       remarkController.text,
-  //     );
-
-  //     // Clear the form fields
-  //     gradeController.clear();
-  //     rangeController.clear();
-  //     remarkController.clear();
-
-  //     // Show success message
-
-  //   } catch (error) {
-  //     // Show error message
-
-  //   }
-  // }
+  Future<void> _saveChanges(
+      BuildContext context, GradeProvider gradeProvider) async {
+    try {
+      await gradeProvider.saveNewGrades(); // Save all new grades to the API
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Grade settings saved successfully'),
+          backgroundColor: AppColors.admissionopen,
+        ),
+      );
+    } catch (error) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to save grade settings: $error'),
+          backgroundColor: AppColors.admissionclosed,
+        ),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -139,6 +130,8 @@ class _GradingSettingsScreenState extends State<GradingSettingsScreen> {
           if (gradeProvider.isLoading) {
             return const Center(child: CircularProgressIndicator());
           } else {
+
+             initializeControllers(gradeProvider.grades);
             return Padding(
               padding: const EdgeInsets.all(Constants.padding),
               child: ListView(
@@ -148,11 +141,9 @@ class _GradingSettingsScreenState extends State<GradingSettingsScreen> {
                     style: TextStyle(fontSize: 18, color: Colors.grey),
                     textAlign: TextAlign.center,
                   ),
-                  const SizedBox(height: 20),
-                  ...gradeProvider.grades
-                      .map((grade) => buildFirstCard(grade, gradeProvider)),
-                  const SizedBox(height: Constants.gap),
                   buildSecondCard(gradeProvider),
+                  const SizedBox(height: 20),
+                  ...gradeProvider.grades.map((grade) => buildFirstCard(grade, gradeProvider))
                 ],
               ),
             );
@@ -163,8 +154,7 @@ class _GradingSettingsScreenState extends State<GradingSettingsScreen> {
         onEnter: (_) => setState(() => isHoveringSave = true),
         onExit: (_) => setState(() => isHoveringSave = false),
         child: FloatingActionButton(
-          onPressed: () =>
-              () {}, //_saveChanges(context, context.read<GradeProvider>()),
+          onPressed: () => _saveChanges(context, context.read<GradeProvider>()),
           backgroundColor:
               isHoveringSave ? Colors.blueGrey : AppColors.primaryLight,
           shape: const CircleBorder(),
@@ -242,9 +232,16 @@ class _GradingSettingsScreenState extends State<GradingSettingsScreen> {
                   MouseRegion(
                     onEnter: (_) => setState(() => isHoveringDelete = true),
                     onExit: (_) => setState(() => isHoveringDelete = false),
-                    child: SvgPicture.asset(
-                      'assets/icons/result/delete.svg',
-                      color: isHoveringDelete ? Colors.blueGrey : Colors.black,
+                    child: GestureDetector(
+                      onTap: () async {
+                        print(grade.id);
+                        await gradeProvider.deleteGrade(grade.id);
+                      },
+                      child: SvgPicture.asset(
+                        'assets/icons/result/delete.svg',
+                        color:
+                            isHoveringDelete ? Colors.blueGrey : Colors.black,
+                      ),
                     ),
                   ),
                 ],
@@ -351,88 +348,74 @@ class _GradingSettingsScreenState extends State<GradingSettingsScreen> {
     });
   }
 
-  Widget buildSecondCard(GradeProvider gradeProvider) {
-    return Card(
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(Constants.borderRadius),
-      ),
-      elevation: 3,
-      child: Padding(
-        padding: const EdgeInsets.all(Constants.padding),
-        child: Form(
-          key: _addFormKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              buildInputField('Grade', gradeController, (value) {},
-                  validator: (value) => _validateField(value, 'Grade')),
-              buildInputField('Range', rangeController, (value) {},
-                  validator: (value) => _validateField(value, 'Range')),
-              buildInputField('Remark', remarkController, (value) {},
-                  validator: (value) => _validateField(value, 'Remark')),
-              const SizedBox(height: Constants.gap),
-              Align(
-                alignment: Alignment.bottomRight,
-                child: MouseRegion(
-                  onEnter: (_) => setState(() => isHoveringAdd = true),
-                  onExit: (_) => setState(() => isHoveringAdd = false),
-                  child: ElevatedButton(
-                    onPressed: () async {
-                      if (_addFormKey.currentState!.validate()) {
-                        try {
-                          await gradeProvider.addGrade(
-                            gradeController.text,
-                            rangeController.text,
-                            remarkController.text,
-                          );
-                          gradeController.clear();
-                          rangeController.clear();
-                          remarkController.clear();
-                          MotionToast.success(
-                            title: Text(
-                              "Grade Added",
-                              style: AppTextStyles.normal600(
-                                fontSize: 16,
-                                color: AppColors.assessmentColor1,
-                              ),
-                            ),
-                            description: Text(
-                              "Grade added successfully!",
-                              style: AppTextStyles.normal400(
-                                fontSize: 14,
-                                color: AppColors.assessmentColor1,
-                              ),
-                            ),
-                          ).show(context);
-                        } catch (error) {
-                          print(
-                              'hey man this is my issue : ${error.toString()}');
-                        }
+ Widget buildSecondCard(GradeProvider gradeProvider) {
+  return Card(
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(Constants.borderRadius),
+    ),
+    elevation: 3,
+    child: Padding(
+      padding: const EdgeInsets.all(Constants.padding),
+      child: Form(
+        key: _addFormKey,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            buildInputField('Grade', gradeController, (value) {},
+                validator: (value) => _validateField(value, 'Grade')),
+            buildInputField('Range', rangeController, (value) {},
+                validator: (value) => _validateField(value, 'Range')),
+            buildInputField('Remark', remarkController, (value) {},
+                validator: (value) => _validateField(value, 'Remark')),
+            const SizedBox(height: Constants.gap),
+            Align(
+              alignment: Alignment.bottomRight,
+              child: MouseRegion(
+                onEnter: (_) => setState(() => isHoveringAdd = true),
+                onExit: (_) => setState(() => isHoveringAdd = false),
+                child: ElevatedButton(
+                  onPressed: () async {
+                    if (_addFormKey.currentState!.validate()) {
+                      try {
+                        await gradeProvider.addGrade(
+                          gradeController.text,
+                          rangeController.text,
+                          remarkController.text,
+                        );
+
+                        // Clear input fields
+                        gradeController.clear();
+                        rangeController.clear();
+                        remarkController.clear();
+                      } catch (error) {
+                        print('Failed to add grade: $error');
                       }
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: isHoveringAdd
-                          ? Colors.blueGrey
-                          : AppColors.secondaryLight,
-                      fixedSize: const Size(100, 30),
-                      shape: RoundedRectangleBorder(
-                        borderRadius:
-                            BorderRadius.circular(Constants.borderRadius),
-                      ),
+                    }
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: isHoveringAdd
+                        ? Colors.blueGrey
+                        : AppColors.secondaryLight,
+                    fixedSize: const Size(100, 30),
+                    shape: RoundedRectangleBorder(
+                      borderRadius:
+                          BorderRadius.circular(Constants.borderRadius),
                     ),
-                    child: const Text(
-                      'Add +',
-                      style: AppTextStyles.normal5Light,
-                    ),
+                  ),
+                  child: const Text(
+                    'Add +',
+                    style: AppTextStyles.normal5Light,
                   ),
                 ),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
-    );
-  }
+    ),
+  );
+}
+
 
   Widget buildInputField(
     String label,
@@ -461,6 +444,7 @@ class _GradingSettingsScreenState extends State<GradingSettingsScreen> {
               focusNode: focusNode,
               onChanged: onChanged,
               validator: validator,
+              
               decoration: InputDecoration(
                 border: OutlineInputBorder(
                   borderSide: BorderSide(
@@ -470,6 +454,7 @@ class _GradingSettingsScreenState extends State<GradingSettingsScreen> {
                   ),
                   borderRadius: BorderRadius.circular(4),
                 ),
+              
                 contentPadding:
                     const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
               ),
@@ -484,7 +469,6 @@ class _GradingSettingsScreenState extends State<GradingSettingsScreen> {
     if (value == null || value.isEmpty) {
       return 'Please enter a $fieldName';
     }
-
     return null;
   }
 }
