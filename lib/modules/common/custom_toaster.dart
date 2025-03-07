@@ -74,20 +74,54 @@ class CustomToaster {
 //   ScaffoldMessenger.of(context).showSnackBar(snackBar);
 // }
 
-  void toastSuccess(BuildContext context) {
+  static void toastSuccess(BuildContext context, String title, String message) {
     MotionToast.success(
       // icon: Icons.check_circle, // Success icon
-      title: const Text("Success"),
-      description: const Text("Operation completed successfully!"),
+      title: Text(title, style: TextStyle(color: Colors.white)),
+      description: Text(message, style: TextStyle(color: Colors.white)),
+      position: MotionToastPosition.top, // Change to top, center, or bottom
+      animationType: AnimationType.fromTop,
+      contentPadding: const EdgeInsets.all(10), // Adjust animation direction
+      // width: 300,
       // primaryColor: Colors.green, // Success color
     ).show(context);
   }
 
-  void toastWarning(BuildContext context) {
+  static void toastWarning(BuildContext context, String title, String message) {
     MotionToast.warning(
       // icon: Icons.check_circle, // Success icon
-      title: const Text("Warning"),
-      description: const Text("Operation not completed successfully!"),
+      title: Text(title, style: TextStyle(color: Colors.white)),
+      description: Text(message, style: TextStyle(color: Colors.white)),
+      position: MotionToastPosition.top, // Change to top, center, or bottom
+      animationType: AnimationType.fromTop,
+      contentPadding: const EdgeInsets.all(10), //// Adjust animation direction
+      // width: 300,
+      // primaryColor: Colors.green, // Success color
+    ).show(context);
+  }
+
+  static void toastInfo(BuildContext context, String title, String message) {
+    MotionToast.info(
+      // icon: Icons.check_circle, // Success icon
+      title: Text(title, style: TextStyle(color: Colors.white)),
+      description: Text(message, style: TextStyle(color: Colors.white)),
+      position: MotionToastPosition.top, // Change to top, center, or bottom
+      animationType: AnimationType.fromTop,
+      contentPadding: const EdgeInsets.all(10), //// Adjust animation direction
+      // width: 300,
+      // primaryColor: Colors.green, // Success color
+    ).show(context);
+  }
+
+  static void toastError(BuildContext context, String title, String message) {
+    MotionToast.error(
+      // icon: Icons.check_circle, // Success icon
+      title: Text(title, style: TextStyle(color: Colors.white)),
+      description: Text(message, style: TextStyle(color: Colors.white)),
+      position: MotionToastPosition.top, // Change to top, center, or bottom
+      animationType: AnimationType.fromTop,
+      contentPadding: const EdgeInsets.all(10), // // Adjust animation direction
+      // width: 300,
       // primaryColor: Colors.green, // Success color
     ).show(context);
   }

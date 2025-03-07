@@ -46,45 +46,6 @@ class _EbooksDashboardState extends State<EbooksDashboard> {
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisAlignment: MainAxisAlignment.start,
             children: [
-              Row(children: [
-                //  IconButton(
-                //   onPressed: () {
-                //     final toaster = CustomToaster();
-                //     toaster.successToast(message: "Hello World! from Digital Dreams, LinkSchool");
-                //   },
-                //   icon: Icon(
-                //     Icons.add_alert_rounded,
-                //     size: 14,
-                //     color: Colors.black
-                //   )),
-
-                //    IconButton(
-                //   onPressed: () {
-                //     final warningToaster = CustomToaster();
-                //     warningToaster.
-                //   },
-                //   icon: Icon(
-                //     Icons.add_alert_rounded,
-                //     size: 14,
-                //     color: Colors.black
-                //   )),
-
-                IconButton(
-                    onPressed: () {
-                      final warningToaster = CustomToaster();
-                      warningToaster.toastWarning(context);
-                    },
-                    icon: Icon(Icons.add_alert_rounded,
-                        size: 14, color: Colors.white)),
-
-                IconButton(
-                    onPressed: () {
-                      final warningToaster = CustomToaster();
-                      warningToaster.toastSuccess(context);
-                    },
-                    icon: Icon(Icons.add_alert_rounded,
-                        size: 14, color: Colors.white)),
-              ]),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16.0),
                 child: Text(
