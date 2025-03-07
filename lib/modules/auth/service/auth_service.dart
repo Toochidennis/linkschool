@@ -1,6 +1,8 @@
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
+
+
 class AuthService {
   Future<Map<String, dynamic>> login(String username, String password, String schoolCode) async {
     final url = Uri.parse('http://linkskool.com/developmentportal/api/login.php?username=$username&password=$password&token=$schoolCode');
@@ -9,16 +11,10 @@ class AuthService {
     if (response.statusCode == 200) {
       final responseData = json.decode(response.body);
       print('API Response: $responseData');
-      // Extract user data from the response
+
       if (responseData['status'] == 'success') {
-        // Assuming the user data is in the 'profile' key
-        final userData = responseData['profile'];
-        return {
-          'id': userData['id'],
-          'name': userData['name'],
-          'access_level': userData['access_level'],
-          'status': 'success',
-        };
+        // Return the entire API response
+        return responseData;
       } else {
         throw Exception('Invalid credentials');
       }
@@ -27,6 +23,35 @@ class AuthService {
     }
   }
 }
+
+
+
+// class AuthService {
+//   Future<Map<String, dynamic>> login(String username, String password, String schoolCode) async {
+//     final url = Uri.parse('http://linkskool.com/developmentportal/api/login.php?username=$username&password=$password&token=$schoolCode');
+//     final response = await http.get(url);
+
+//     if (response.statusCode == 200) {
+//       final responseData = json.decode(response.body);
+//       print('API Response: $responseData');
+//       // Extract user data from the response
+//       if (responseData['status'] == 'success') {
+//         // Assuming the user data is in the 'profile' key
+//         final userData = responseData['profile'];
+//         return {
+//           'id': userData['id'],
+//           'name': userData['name'],
+//           'access_level': userData['access_level'],
+//           'status': 'success',
+//         };
+//       } else {
+//         throw Exception('Invalid credentials');
+//       }
+//     } else {
+//       throw Exception('Failed to login');
+//     }
+//   }
+// }
 
 
 // import 'package:http/http.dart' as http;

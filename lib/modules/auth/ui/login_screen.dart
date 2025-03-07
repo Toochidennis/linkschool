@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:linkschool/modules/auth/provider/auth_provider.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
+import 'package:linkschool/modules/common/custom_toaster.dart';
 import 'package:linkschool/modules/explore/home/explore_dashboard.dart';
 import 'package:provider/provider.dart';
-// import 'package:shared_preferences/shared_preferences.dart';
-
+// import 'custom_toaster.dart'; // Import the CustomToaster
 
 class LoginScreen extends StatefulWidget {
   final VoidCallback onLoginSuccess;
@@ -28,6 +28,7 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _showUsernameCheck = false;
   bool _showPasswordCheck = false;
   bool _showSchoolCodeCheck = false;
+  bool _isLoading = false; 
   late double opacity;
 
   void _navigateToExploreDashboard() {
@@ -35,9 +36,9 @@ class _LoginScreenState extends State<LoginScreen> {
       context,
       MaterialPageRoute(
         builder: (context) => ExploreDashboard(
-          onSwitch: (bool value) {}, // Provide the required callback
-          selectedIndex: 0, // Provide initial index
-          onTabSelected: (int index) {}, // Provide the required callback
+          onSwitch: (bool value) {},
+          selectedIndex: 0,
+          onTabSelected: (int index) {},
         ),
       ),
     );
@@ -89,26 +90,34 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
+  Future<void> _login() async {
+    if (_formKey.currentState!.validate()) {
+      _formKey.currentState!.save();
 
-Future<void> _login() async {
-  if (_formKey.currentState!.validate()) {
-    _formKey.currentState!.save();
+      setState(() {
+        _isLoading = true; // Show loading spinner
+      });
 
-    final username = _usernameController.text;
-    final password = _passwordController.text;
-    final schoolCode = _schoolCodeController.text;
+      final username = _usernameController.text;
+      final password = _passwordController.text;
+      final schoolCode = _schoolCodeController.text;
 
-    final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    try {
-      await authProvider.login(username, password, schoolCode);
-      widget.onLoginSuccess(); // Ensure this is called
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Login failed: $e')),
-      );
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      try {
+        await authProvider.login(username, password, schoolCode);
+        widget.onLoginSuccess(); // Ensure this is called
+        CustomToaster.toastSuccess(
+            context, 'Success', 'Login successful!'); // Show success toast
+      } catch (e) {
+        CustomToaster.toastError(
+            context, 'Error', 'Login failed: $e'); // Show error toast
+      } finally {
+        setState(() {
+          _isLoading = false; // Hide loading spinner
+        });
+      }
     }
   }
-}
 
   @override
   Widget build(BuildContext context) {
@@ -191,16 +200,16 @@ Future<void> _login() async {
                             borderSide: BorderSide.none,
                           ),
                           suffixIcon: _showUsernameCheck
-                              ? Icon(Icons.check_circle, color: Colors.blue[700])
-                              : null,
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                              ? Icon(Icons.check_circle,
+                                  color: Colors.blue[700])
+                              : Icon(Icons.error, color: Colors.red),
+                          contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 14),
                         ),
                         onChanged: (value) {
-                          if (value.isEmpty) {
-                            setState(() {
-                              _showUsernameCheck = false;
-                            });
-                          }
+                          setState(() {
+                            _showUsernameCheck = value.isNotEmpty;
+                          });
                         },
                         validator: (value) {
                           if (value!.isEmpty) {
@@ -228,10 +237,15 @@ Future<void> _login() async {
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               if (_showPasswordCheck)
-                                Icon(Icons.check_circle, color: Colors.blue[700]),
+                                Icon(Icons.check_circle,
+                                    color: Colors.blue[700]),
+                              if (!_showPasswordCheck)
+                                Icon(Icons.error, color: Colors.red),
                               IconButton(
                                 icon: Icon(
-                                  _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                                  _obscurePassword
+                                      ? Icons.visibility_off
+                                      : Icons.visibility,
                                   color: Colors.blue[700],
                                 ),
                                 onPressed: () {
@@ -242,15 +256,14 @@ Future<void> _login() async {
                               ),
                             ],
                           ),
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                          contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 14),
                         ),
                         obscureText: _obscurePassword,
                         onChanged: (value) {
-                          if (value.isEmpty) {
-                            setState(() {
-                              _showPasswordCheck = false;
-                            });
-                          }
+                          setState(() {
+                            _showPasswordCheck = value.isNotEmpty;
+                          });
                         },
                         validator: (value) {
                           if (value!.isEmpty) {
@@ -272,16 +285,16 @@ Future<void> _login() async {
                             borderSide: BorderSide.none,
                           ),
                           suffixIcon: _showSchoolCodeCheck
-                              ? Icon(Icons.check_circle, color: Colors.blue[700])
-                              : null,
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                              ? Icon(Icons.check_circle,
+                                  color: Colors.blue[700])
+                              : Icon(Icons.error, color: Colors.red),
+                          contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 14),
                         ),
                         onChanged: (value) {
-                          if (value.isEmpty) {
-                            setState(() {
-                              _showSchoolCodeCheck = false;
-                            });
-                          }
+                          setState(() {
+                            _showSchoolCodeCheck = value.isNotEmpty;
+                          });
                         },
                         validator: (value) {
                           if (value!.isEmpty) {
@@ -311,21 +324,50 @@ Future<void> _login() async {
                         width: double.infinity,
                         height: 50,
                         child: ElevatedButton(
-                          onPressed: _login,
+                          onPressed: _isLoading
+                              ? null
+                              : _login, // Disable button when loading
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Color.fromRGBO(0, 80, 255, 1),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
                             ),
                           ),
-                          child: const Text(
-                            'Sign in',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                              color: AppColors.backgroundLight,
-                            ),
-                          ),
+                          child: _isLoading
+                              ? Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Text(
+                                      'Signing in...',
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w600,
+                                        color: AppColors.backgroundLight,
+                                      ),
+                                    ),
+                                    SizedBox(
+                                        width:
+                                            8), // Add spacing between text and spinner
+                                    SizedBox(
+                                      width: 20, // Set the width of the spinner
+                                      height:
+                                          20, // Set the height of the spinner
+                                      child: CircularProgressIndicator(
+                                        strokeWidth:
+                                            3, // Adjust the thickness of the spinner
+                                        color: AppColors.backgroundLight,
+                                      ),
+                                    ),
+                                  ],
+                                )
+                              : Text(
+                                  'Sign in',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
+                                    color: AppColors.backgroundLight,
+                                  ),
+                                ),
                         ),
                       ),
                     ],
@@ -341,6 +383,14 @@ Future<void> _login() async {
 }
 
 
+// import 'package:flutter/material.dart';
+// import 'package:linkschool/modules/auth/provider/auth_provider.dart';
+// import 'package:linkschool/modules/common/app_colors.dart';
+// import 'package:linkschool/modules/explore/home/explore_dashboard.dart';
+// import 'package:provider/provider.dart';
+// // import 'package:shared_preferences/shared_preferences.dart';
+
+
 // class LoginScreen extends StatefulWidget {
 //   final VoidCallback onLoginSuccess;
 
@@ -354,45 +404,49 @@ Future<void> _login() async {
 //   final _formKey = GlobalKey<FormState>();
 //   final _usernameFocus = FocusNode();
 //   final _passwordFocus = FocusNode();
+//   final _schoolCodeFocus = FocusNode();
 //   final _usernameController = TextEditingController();
 //   final _passwordController = TextEditingController();
+//   final _schoolCodeController = TextEditingController();
 
-//   String _role = 'student';
-//   String _username = '';
-//   String _password = '';
 //   bool _obscurePassword = true;
 //   bool _showUsernameCheck = false;
 //   bool _showPasswordCheck = false;
+//   bool _showSchoolCodeCheck = false;
 //   late double opacity;
 
-// void _navigateToExploreDashboard() {
-//   Navigator.pushReplacement(
-//     context,
-//     MaterialPageRoute(
-//       builder: (context) => ExploreDashboard(
-//         onSwitch: (bool value) {}, // Provide the required callback
-//         selectedIndex: 0, // Provide initial index
-//         onTabSelected: (int index) {}, // Provide the required callback
+//   void _navigateToExploreDashboard() {
+//     Navigator.pushReplacement(
+//       context,
+//       MaterialPageRoute(
+//         builder: (context) => ExploreDashboard(
+//           onSwitch: (bool value) {}, 
+//           selectedIndex: 0,
+//           onTabSelected: (int index) {}, 
+//         ),
 //       ),
-//     ),
-//   );
-// }
+//     );
+//   }
 
 //   @override
 //   void initState() {
 //     super.initState();
 //     _usernameFocus.addListener(_onUsernameFocusChange);
 //     _passwordFocus.addListener(_onPasswordFocusChange);
+//     _schoolCodeFocus.addListener(_onSchoolCodeFocusChange);
 //   }
 
 //   @override
 //   void dispose() {
 //     _usernameFocus.removeListener(_onUsernameFocusChange);
 //     _passwordFocus.removeListener(_onPasswordFocusChange);
+//     _schoolCodeFocus.removeListener(_onSchoolCodeFocusChange);
 //     _usernameFocus.dispose();
 //     _passwordFocus.dispose();
+//     _schoolCodeFocus.dispose();
 //     _usernameController.dispose();
 //     _passwordController.dispose();
+//     _schoolCodeController.dispose();
 //     super.dispose();
 //   }
 
@@ -412,35 +466,34 @@ Future<void> _login() async {
 //     }
 //   }
 
-//   Future<void> _login() async {
-//     if (_formKey.currentState!.validate()) {
-//       _formKey.currentState!.save();
-
-//       bool isValid = false;
-//       switch (_role) {
-//         case 'student':
-//           isValid = _username == 'student123' && _password == 'password123';
-//           break;
-//         case 'staff':
-//           isValid = _username == 'staff123' && _password == 'password123';
-//           break;
-//         case 'admin':
-//           isValid = _username == 'admin123' && _password == 'password123';
-//           break;
-//       }
-
-//       if (isValid) {
-//         final prefs = await SharedPreferences.getInstance();
-//         await prefs.setString('role', _role);
-//         await prefs.setBool('isLoggedIn', true);
-//         widget.onLoginSuccess();
-//       } else {
-//         ScaffoldMessenger.of(context).showSnackBar(
-//           const SnackBar(content: Text('Invalid username or password')),
-//         );
-//       }
+//   void _onSchoolCodeFocusChange() {
+//     if (!_schoolCodeFocus.hasFocus && _schoolCodeController.text.isNotEmpty) {
+//       setState(() {
+//         _showSchoolCodeCheck = true;
+//       });
 //     }
 //   }
+
+
+// Future<void> _login() async {
+//   if (_formKey.currentState!.validate()) {
+//     _formKey.currentState!.save();
+
+//     final username = _usernameController.text;
+//     final password = _passwordController.text;
+//     final schoolCode = _schoolCodeController.text;
+
+//     final authProvider = Provider.of<AuthProvider>(context, listen: false);
+//     try {
+//       await authProvider.login(username, password, schoolCode);
+//       widget.onLoginSuccess(); // Ensure this is called
+//     } catch (e) {
+//       ScaffoldMessenger.of(context).showSnackBar(
+//         SnackBar(content: Text('Login failed: $e')),
+//       );
+//     }
+//   }
+// }
 
 //   @override
 //   Widget build(BuildContext context) {
@@ -456,15 +509,15 @@ Future<void> _login() async {
 //         appBar: AppBar(
 //           backgroundColor: Color.fromRGBO(0, 80, 255, 1),
 //           elevation: 0,
-//         leading: IconButton(
-//           onPressed: _navigateToExploreDashboard,
-//           icon: Image.asset(
-//             'assets/icons/arrow_back.png',
-//             color: AppColors.backgroundLight,
-//             width: 34.0,
-//             height: 34.0,
+//           leading: IconButton(
+//             onPressed: _navigateToExploreDashboard,
+//             icon: Image.asset(
+//               'assets/icons/arrow_back.png',
+//               color: AppColors.backgroundLight,
+//               width: 34.0,
+//               height: 34.0,
+//             ),
 //           ),
-//         ),
 //           title: const Text(
 //             'Sign in',
 //             style: TextStyle(
@@ -485,7 +538,6 @@ Future<void> _login() async {
 //                 topLeft: Radius.circular(30),
 //                 topRight: Radius.circular(30),
 //               ),
-              
 //             ),
 //             child: SingleChildScrollView(
 //               child: Padding(
@@ -512,35 +564,11 @@ Future<void> _login() async {
 //                         ),
 //                       ),
 //                       const SizedBox(height: 32),
-//                       DropdownButtonFormField<String>(
-//                         value: _role,
-//                         decoration: InputDecoration(
-//                           filled: true,
-//                           fillColor: Colors.grey[100],
-//                           border: OutlineInputBorder(
-//                             borderRadius: BorderRadius.circular(12),
-//                             borderSide: BorderSide.none,
-//                           ),
-//                           contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-//                         ),
-//                         onChanged: (value) {
-//                           setState(() {
-//                             _role = value!;
-//                           });
-//                         },
-//                         items: ['student', 'staff', 'admin']
-//                             .map((role) => DropdownMenuItem<String>(
-//                                   value: role,
-//                                   child: Text(role),
-//                                 ))
-//                             .toList(),
-//                       ),
-//                       const SizedBox(height: 16),
 //                       TextFormField(
 //                         controller: _usernameController,
 //                         focusNode: _usernameFocus,
 //                         decoration: InputDecoration(
-//                           labelText: 'Username or email',
+//                           labelText: 'Username',
 //                           filled: true,
 //                           fillColor: Colors.grey[100],
 //                           border: OutlineInputBorder(
@@ -564,9 +592,6 @@ Future<void> _login() async {
 //                             return 'Please enter a username';
 //                           }
 //                           return null;
-//                         },
-//                         onSaved: (value) {
-//                           _username = value!;
 //                         },
 //                         onFieldSubmitted: (_) {
 //                           FocusScope.of(context).requestFocus(_passwordFocus);
@@ -618,8 +643,36 @@ Future<void> _login() async {
 //                           }
 //                           return null;
 //                         },
-//                         onSaved: (value) {
-//                           _password = value!;
+//                       ),
+//                       const SizedBox(height: 16),
+//                       TextFormField(
+//                         controller: _schoolCodeController,
+//                         focusNode: _schoolCodeFocus,
+//                         decoration: InputDecoration(
+//                           labelText: 'School Code',
+//                           filled: true,
+//                           fillColor: Colors.grey[100],
+//                           border: OutlineInputBorder(
+//                             borderRadius: BorderRadius.circular(12),
+//                             borderSide: BorderSide.none,
+//                           ),
+//                           suffixIcon: _showSchoolCodeCheck
+//                               ? Icon(Icons.check_circle, color: Colors.blue[700])
+//                               : null,
+//                           contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+//                         ),
+//                         onChanged: (value) {
+//                           if (value.isEmpty) {
+//                             setState(() {
+//                               _showSchoolCodeCheck = false;
+//                             });
+//                           }
+//                         },
+//                         validator: (value) {
+//                           if (value!.isEmpty) {
+//                             return 'Please enter a school code';
+//                           }
+//                           return null;
 //                         },
 //                       ),
 //                       const SizedBox(height: 8),
@@ -655,7 +708,7 @@ Future<void> _login() async {
 //                             style: TextStyle(
 //                               fontSize: 16,
 //                               fontWeight: FontWeight.w600,
-//                               color: AppColors.backgroundLight
+//                               color: AppColors.backgroundLight,
 //                             ),
 //                           ),
 //                         ),

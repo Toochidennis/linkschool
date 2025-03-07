@@ -13,43 +13,78 @@ class AuthProvider with ChangeNotifier {
   User? get user => _user;
   bool get isLoggedIn => _isLoggedIn;
 
-Future<void> login(String username, String password, String schoolCode) async {
-  try {
-    final response = await _authService.login(username, password, schoolCode);
-    if (response['status'] == 'success') {
-      if (response.containsKey('id') && response.containsKey('name') && response.containsKey('access_level')) {
-        _user = User.fromJson(response);
-        _isLoggedIn = true;
-
-        // Persist data in Hive
+  Future<void> login(String username, String password, String schoolCode) async {
+    try {
+      final response = await _authService.login(username, password, schoolCode);
+      if (response['status'] == 'success') {
+        // Save the entire API response to Hive
         final userBox = Hive.box('userData');
         await userBox.put('userData', response);
-        await userBox.put('accessLevel', _user!.accessLevel);
-        await userBox.put('isLoggedIn', true);
 
-        // Store the user role and login state in SharedPreferences
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setString('role', _user!.accessLevel);
-        await prefs.setBool('isLoggedIn', true); // Add this line
+        // Extract and save the user profile
+        if (response.containsKey('profile')) {
+          _user = User.fromJson(response['profile']);
+          _isLoggedIn = true;
+
+          await userBox.put('accessLevel', _user!.accessLevel);
+          await userBox.put('isLoggedIn', true);
+
+          // Store the user role and login state in SharedPreferences
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setString('role', _user!.accessLevel);
+          await prefs.setBool('isLoggedIn', true);
+        }
 
         notifyListeners();
       } else {
-        throw Exception('Invalid response format');
+        throw Exception('Invalid credentials');
       }
-    } else {
-      throw Exception('Invalid credentials');
+    } catch (e) {
+      throw Exception('Failed to login: $e');
     }
-  } catch (e) {
-    throw Exception('Failed to login: $e');
+  }
+
+  Future<void> logout() async {
+    final userBox = Hive.box('userData');
+    await userBox.clear();
+
+    _user = null;
+    _isLoggedIn = false;
+    notifyListeners();
+  }
+
+  Future<void> checkLoginStatus() async {
+    final userBox = Hive.box('userData');
+    final isLoggedIn = userBox.get('isLoggedIn', defaultValue: false);
+    final userData = userBox.get('userData');
+    final accessLevel = userBox.get('accessLevel');
+
+    print('Hive - Is Logged In: $isLoggedIn');
+    print('Hive - User Data: $userData');
+    print('Hive - Access Level: $accessLevel');
+
+    if (isLoggedIn && userData != null) {
+      _user = User.fromJson(userData['profile']);
+      _isLoggedIn = true;
+      notifyListeners();
+    }
   }
 }
+
+
+// class AuthProvider with ChangeNotifier {
+//   final AuthService _authService = AuthService();
+//   User? _user;
+//   bool _isLoggedIn = false;
+
+//   User? get user => _user;
+//   bool get isLoggedIn => _isLoggedIn;
 
 
 // Future<void> login(String username, String password, String schoolCode) async {
 //   try {
 //     final response = await _authService.login(username, password, schoolCode);
 //     if (response['status'] == 'success') {
-//       // Ensure the response contains the required fields
 //       if (response.containsKey('id') && response.containsKey('name') && response.containsKey('access_level')) {
 //         _user = User.fromJson(response);
 //         _isLoggedIn = true;
@@ -57,12 +92,20 @@ Future<void> login(String username, String password, String schoolCode) async {
 //         // Persist data in Hive
 //         final userBox = Hive.box('userData');
 //         await userBox.put('userData', response);
+//         print('Saved User Data: ${userBox.get('userData')}');
 //         await userBox.put('accessLevel', _user!.accessLevel);
 //         await userBox.put('isLoggedIn', true);
 
-//         // Store the user role in SharedPreferences
+//         // Persist levelName and className data
+//         if (response.containsKey('levelName') && response.containsKey('className')) {
+//           await userBox.put('levelName', response['levelName']);
+//           await userBox.put('className', response['className']);
+//         }
+
+//         // Store the user role and login state in SharedPreferences
 //         final prefs = await SharedPreferences.getInstance();
 //         await prefs.setString('role', _user!.accessLevel);
+//         await prefs.setBool('isLoggedIn', true);
 
 //         notifyListeners();
 //       } else {
@@ -76,33 +119,35 @@ Future<void> login(String username, String password, String schoolCode) async {
 //   }
 // }
 
-  Future<void> logout() async {
-    final userBox = Hive.box('userData');
-    await userBox.clear();
 
-    _user = null;
-    _isLoggedIn = false;
-    notifyListeners();
-  }
 
-Future<void> checkLoginStatus() async {
-  final userBox = Hive.box('userData');
-  final isLoggedIn = userBox.get('isLoggedIn', defaultValue: false);
-  final userData = userBox.get('userData');
-  final accessLevel = userBox.get('accessLevel');
+//   Future<void> logout() async {
+//     final userBox = Hive.box('userData');
+//     await userBox.clear();
 
-  print('Hive - Is Logged In: $isLoggedIn');
-  print('Hive - User Data: $userData');
-  print('Hive - Access Level: $accessLevel');
+//     _user = null;
+//     _isLoggedIn = false;
+//     notifyListeners();
+//   }
 
-  if (isLoggedIn && userData != null) {
-    _user = User.fromJson(userData);
-    _isLoggedIn = true;
-    notifyListeners();
-  }
-}
+// Future<void> checkLoginStatus() async {
+//   final userBox = Hive.box('userData');
+//   final isLoggedIn = userBox.get('isLoggedIn', defaultValue: false);
+//   final userData = userBox.get('userData');
+//   final accessLevel = userBox.get('accessLevel');
 
-}
+//   print('Hive - Is Logged In: $isLoggedIn');
+//   print('Hive - User Data: $userData');
+//   print('Hive - Access Level: $accessLevel');
+
+//   if (isLoggedIn && userData != null) {
+//     _user = User.fromJson(userData);
+//     _isLoggedIn = true;
+//     notifyListeners();
+//   }
+// }
+
+// }
 
 
 
