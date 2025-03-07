@@ -2,15 +2,13 @@
 
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:flutter/material.dart';
-import 'package:linkschool/modules/explore/home/news/allnews_screen.dart';
+import 'package:linkschool/modules/explore/home/news/all_news_screen.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:intl/intl.dart' show DateFormat;
 import 'package:linkschool/modules/explore/home/explore_item.dart';
-import 'package:linkschool/modules/model/explore/home/news/news_model.dart';
 import 'package:linkschool/modules/explore/home/news/news_details.dart';
 import 'package:linkschool/modules/providers/explore/home/news_provider.dart';
-import 'package:linkschool/modules/services/explore/home/news_service.dart';
 import 'package:provider/provider.dart';
 import '../../common/text_styles.dart';
 import 'package:intl/intl.dart';

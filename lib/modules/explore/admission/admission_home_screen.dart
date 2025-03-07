@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'admission_detail_screen.dart';
 
 class AdmissionHomeScreen extends StatelessWidget {
-  const AdmissionHomeScreen({Key? key}) : super(key: key);
+  const AdmissionHomeScreen({super.key});
 
   @override
   Widget build(BuildContext context) {

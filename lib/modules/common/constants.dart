@@ -3,6 +3,9 @@ import 'package:linkschool/modules/common/text_styles.dart';
 import 'app_colors.dart';
 
 class Constants {
+
+  static const String deepseekApiUrl = "https://api.deepseek.com/v1/chat/completions";
+
   static const double padding = 16.0;
   static const double gap = 10.0;
   static const double borderRadius = 8.0;
@@ -94,6 +97,7 @@ class Constants {
     double? titleSize,
     Color? titleColor,
     VoidCallback? onPressed,
+    
   }) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0),

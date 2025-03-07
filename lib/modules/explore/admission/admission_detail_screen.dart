@@ -7,7 +7,7 @@ import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 
 class SchoolProfileScreen extends StatelessWidget {
-  const SchoolProfileScreen({Key? key}) : super(key: key);
+  const SchoolProfileScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -86,7 +86,7 @@ class SchoolProfileScreen extends StatelessWidget {
 
 // school_header.dart
 class SchoolHeader extends StatelessWidget {
-  const SchoolHeader({Key? key}) : super(key: key);
+  const SchoolHeader({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -124,9 +124,10 @@ class SchoolHeader extends StatelessWidget {
   }
 }
 
-// map_section.dart
+
 class MapSection extends StatelessWidget {
-  const MapSection({Key? key}) : super(key: key);
+  const MapSection({super.key});
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -167,9 +168,9 @@ class MapSection extends StatelessWidget {
   }
 }
 
-// gallery_section.dart
+
 class GallerySection extends StatelessWidget {
-  const GallerySection({Key? key}) : super(key: key);
+  const GallerySection({super.key});
 
   Widget _buildGalleryCategory(String title, List<String> imageUrls) {
     return Column(
@@ -283,7 +284,7 @@ class GallerySection extends StatelessWidget {
                           name: 'John Doe',
                           role: '(Parent)',
                           testimoney:
-                              'DDLJ helped shape my child into the smart and excellent child that she is today. She always stands out!',
+                              'DDLJ helped shape my child into the smart and excellent child that she is today. She always stands out!', rating: 2,
                         ),
                         _TestimonyCard(
                           image:
@@ -291,7 +292,7 @@ class GallerySection extends StatelessWidget {
                           name: 'Mrs Jane Doe',
                           role: '(Parent)',
                           testimoney:
-                              'DDLJ helped shape my child into the smart and excellent child that she is today. She always stands out!',
+                              'DDLJ helped shape my child into the smart and excellent child that she is today. She always stands out!', rating: 3,
                         ),
                         _TestimonyCard(
                           image:
@@ -299,7 +300,7 @@ class GallerySection extends StatelessWidget {
                           name: 'Mrs Jane Doe',
                           role: '(Parent)',
                           testimoney:
-                              'DDLJ helped shape my child into the smart and excellent child that she is today. She always stands out!',
+                              'DDLJ helped shape my child into the smart and excellent child that she is today. She always stands out!', rating: 4,
                         ),
                         _TestimonyCard(
                           image:
@@ -307,7 +308,7 @@ class GallerySection extends StatelessWidget {
                           name: 'John Doe',
                           role: '(Parent)',
                           testimoney:
-                              'The years I spent as a juniorate student were some of the best years of my life',
+                              'The years I spent as a juniorate student were some of the best years of my life', rating: 5,
                         )
                       ],
                     ),
@@ -328,9 +329,9 @@ class GallerySection extends StatelessWidget {
   }
 }
 
-// action_buttons.dart
+
 class ActionButtons extends StatelessWidget {
-  const ActionButtons({Key? key}) : super(key: key);
+  const ActionButtons({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -361,7 +362,7 @@ class ActionButtons extends StatelessWidget {
             TextButton.icon(
               onPressed: () {},
               style: ButtonStyle(
-                overlayColor: MaterialStateProperty.all(AppColors.detailsbuttonbg),
+                overlayColor: WidgetStateProperty.all(AppColors.detailsbuttonbg),
               ),
               icon: const Icon(Icons.call_sharp,size: 18,color: AppColors.detailsbutton),
               label:  Text('Get contact info', style: AppTextStyles.normal400(fontSize: 16, color: AppColors.detailsbutton)),
@@ -378,9 +379,9 @@ class ActionButtons extends StatelessWidget {
   }
 }
 
-// school_type_section.dart
+
 class SchoolTypeSection extends StatelessWidget {
-  const SchoolTypeSection({Key? key}) : super(key: key);
+  const SchoolTypeSection({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -404,9 +405,9 @@ class SchoolTypeSection extends StatelessWidget {
 
 
 
-// about_section.dart
+
 class AboutSection extends StatelessWidget {
-  const AboutSection({Key? key}) : super(key: key);
+  const AboutSection({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -432,7 +433,7 @@ class AboutSection extends StatelessWidget {
 }
 
 
-// testimony Section
+
 
 class _TestimonyCard extends StatelessWidget {
   final String image;
@@ -442,12 +443,10 @@ class _TestimonyCard extends StatelessWidget {
   final double rating;
 
   const _TestimonyCard(
-      {super.key,
-      required this.image,
+      {required this.image,
       required this.name,
       required this.role,
-      required this.testimoney,
-      this.rating = 4.5});
+      required this.testimoney, required this.rating});
 
   @override
   Widget build(BuildContext context) {

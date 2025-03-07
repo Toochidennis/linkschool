@@ -18,7 +18,7 @@ class NewsService {
 
       // If response is successful (HTTP 200)
       if (response.statusCode == 200) {
-        print('API Response: ${response.body}');
+        // print('API Response: ${response.body}');
 
         // Decode the JSON response body
         final List<dynamic> jsonData = json.decode(response.body);

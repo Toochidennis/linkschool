@@ -16,6 +16,8 @@ class ProfileScreen extends StatelessWidget {
 }
 
 class ProfileHomeScreen extends StatefulWidget {
+  const ProfileHomeScreen({super.key});
+
   @override
   _ProfileHomeScreenState createState() => _ProfileHomeScreenState();
 }
@@ -26,6 +28,52 @@ class _ProfileHomeScreenState extends State<ProfileHomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(
+        title: Text(
+          'Profile',
+          style: AppTextStyles.normal600(fontSize: 18.0, color: AppColors.eLearningBtnColor1,)
+        ),
+        leading: IconButton(
+          onPressed: () {
+            Navigator.of(context).pop();
+          },
+          icon: Image.asset(
+            'assets/icons/arrow_back.png',
+            color: AppColors.eLearningBtnColor1,
+            width: 34.0,
+            height: 34.0,
+          ),
+        ),
+        backgroundColor: AppColors.backgroundLight,
+        // flexibleSpace: FlexibleSpaceBar(
+        //   background: Stack(
+        //     children: [
+        //       Positioned.fill(
+        //         child: Opacity(
+        //           opacity: opacity,
+        //           child: Image.asset(
+        //             'assets/images/background.png',
+        //             fit: BoxFit.cover,
+        //           ),
+        //         ),
+        //       )
+        //     ],
+        //   ),
+        // ),
+        actions: [
+          TextButton.icon(
+            onPressed: () {
+              // Implement download functionality
+            },
+            icon:
+                const Icon(Icons.download, color: AppColors.eLearningBtnColor1),
+            label: const Text(
+              'Download',
+              style: TextStyle(color: AppColors.eLearningBtnColor1),
+            ),
+          ),
+        ],
+      ),
         body: Container(
           decoration:Constants.customScreenDec0ration(),
       width: double.infinity,

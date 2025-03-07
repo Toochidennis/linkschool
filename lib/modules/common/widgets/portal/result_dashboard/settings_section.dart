@@ -1,11 +1,11 @@
 // lib/widgets/settings_section.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:linkschool/modules/admin/result/assessment_settings.dart';
+import 'package:linkschool/modules/admin/result/behaviour_settings_screen.dart';
+import 'package:linkschool/modules/admin/result/grading_settings.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
-import 'package:linkschool/modules/admin_portal/result/assessment_settings.dart';
-import 'package:linkschool/modules/admin_portal/result/behaviour_settings_screen.dart';
-import 'package:linkschool/modules/admin_portal/result/grading_settings.dart';
 
 
 

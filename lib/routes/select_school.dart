@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/common/constants.dart';
-import 'package:linkschool/modules/e_library/e_lib_subject_detail.dart';
-import 'package:linkschool/modules/explore/ebooks/custom_search_bar.dart';
 import 'package:linkschool/routes/login_in.dart';
 
 class SelectSchool extends StatefulWidget {
@@ -127,7 +125,7 @@ class _SelectSchoolState extends State<SelectSchool> {
                           ],
                         )),
                     SizedBox(height: 10),
-                    Container(
+                    SizedBox(
                       height: 450,
                       child: ListView.builder(
                         itemCount: _selectSchoolCount.length,
