@@ -4,7 +4,6 @@ import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/common/widgets/portal/student/custom_input_field.dart';
 
-
 class MaterialScreen extends StatefulWidget {
   const MaterialScreen({super.key});
 
@@ -12,9 +11,9 @@ class MaterialScreen extends StatefulWidget {
   State<MaterialScreen> createState() => _MaterialScreenState();
 }
 
-
 class _MaterialScreenState extends State<MaterialScreen> {
-  final String networkImage = 'https://img.freepik.com/free-vector/gradient-human-rights-day-background_52683-149974.jpg?t=st=1717832829~exp=1717833429~hmac=3e938edcacd7fef2a791b36c7d3decbf64248d9760dd7da0a304acee382b8a86';
+  final String networkImage =
+      'https://img.freepik.com/free-vector/gradient-human-rights-day-background_52683-149974.jpg?t=st=1717832829~exp=1717833429~hmac=3e938edcacd7fef2a791b36c7d3decbf64248d9760dd7da0a304acee382b8a86';
   late double opacity;
 
   final TextEditingController _commentController = TextEditingController();
@@ -24,7 +23,6 @@ class _MaterialScreenState extends State<MaterialScreen> {
     _commentController.dispose();
     super.dispose();
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -140,7 +138,7 @@ class _MaterialScreenState extends State<MaterialScreen> {
                 ],
               ),
               const Spacer(),
-                            CustomCommentInput(
+              CustomCommentInput(
                 controller: _commentController,
                 hintText: 'Add a comment...',
                 onSendPressed: () {
