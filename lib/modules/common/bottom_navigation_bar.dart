@@ -101,7 +101,7 @@ class _CustomNavigationBarState extends State<CustomNavigationBar>
                   ? AppColors.backgroundLight
                   : AppColors.backgroundDark,
               appBarItems: widget.appBarItems,
-              bodyItems: widget.bodyItems, onTabSelected: (int ) {  },
+              bodyItems: widget.bodyItems,
               // onTabSelected: widget.onTabSelected,
             ),
           ),

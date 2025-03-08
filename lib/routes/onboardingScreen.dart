@@ -87,38 +87,45 @@ class _OnboardingscreenState extends State<Onboardingscreen> {
                         'Skip',
                         style: TextStyle(fontSize: 20),
                       )),
-
-
-                      if (onLastPage) ElevatedButton(
-                    onPressed: () {
-                      _pageController.nextPage(duration:Duration(milliseconds: 500), curve: Curves.easeIn);
-                      Navigator.push(context, MaterialPageRoute(builder: (context) =>  SelectSchool()));
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.buttonColor,
-                      shape: CircleBorder(),
-                    ),
-                    child: Icon(
-                      Icons.arrow_forward,
-                     color: Colors.white,
-                      size: 34,
-                                        ),
-                  ) else ElevatedButton(
-                    onPressed: () {
-                      _pageController.nextPage(duration:Duration(milliseconds: 500), curve: Curves.easeIn);
-
-
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.buttonColor,
-                      shape: CircleBorder(),
-                    ),
-                    child: Icon(
-                      Icons.arrow_forward,
-                     color: Colors.white,
-                      size: 34,
-                                        ),
-                  ) ],
+                  if (onLastPage)
+                    ElevatedButton(
+                      onPressed: () {
+                        _pageController.nextPage(
+                            duration: Duration(milliseconds: 500),
+                            curve: Curves.easeIn);
+                        Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) => SelectSchool()));
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.buttonColor,
+                        shape: CircleBorder(),
+                      ),
+                      child: Icon(
+                        Icons.arrow_forward,
+                        color: Colors.white,
+                        size: 34,
+                      ),
+                    )
+                  else
+                    ElevatedButton(
+                      onPressed: () {
+                        _pageController.nextPage(
+                            duration: Duration(milliseconds: 500),
+                            curve: Curves.easeIn);
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.buttonColor,
+                        shape: CircleBorder(),
+                      ),
+                      child: Icon(
+                        Icons.arrow_forward,
+                        color: Colors.white,
+                        size: 34,
+                      ),
+                    )
+                ],
               ))
         ],
       ),

@@ -17,12 +17,11 @@ import 'package:linkschool/modules/providers/explore/subject_provider.dart';
 import 'package:linkschool/modules/services/explore/cbt_service.dart';
 import 'package:linkschool/modules/services/explore/home/ebook_service.dart';
 import 'package:linkschool/routes/onboardingScreen.dart';
+import 'package:linkschool/modules/providers/admin/course_registration_provider.dart';
 import 'package:provider/provider.dart';
 
 // import 'modules/providers/admin/grade_provider.dart';
 import 'modules/providers/explore/game/game_provider.dart';
-
-
 
 // import 'package:linkschool/app_navigation_flow.dart';
 
@@ -49,7 +48,8 @@ Future<void> main() async {
       ChangeNotifierProvider(create: (context) => LevelProvider()),
       ChangeNotifierProvider(create: (context) => ClassProvider()),
       ChangeNotifierProvider(create: (_) => AssessmentProvider()),
-        // ChangeNotifierProvider(create: (context) => GradeProvider()),
+      ChangeNotifierProvider(create: (context) => CourseRegistrationProvider()),
+      // ChangeNotifierProvider(create: (context) => GradeProvider()),
     ],
     child: const MyApp(),
   ));

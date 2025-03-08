@@ -6,7 +6,8 @@ import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/common/utils/custom_dropdown_utils.dart';
 import 'package:linkschool/modules/admin/result/class_detail/registration/course_registration.dart';
-
+import 'package:linkschool/modules/providers/admin/course_registration_provider.dart';
+import 'package:provider/provider.dart';
 
 class BulkRegistrationScreen extends StatefulWidget {
   const BulkRegistrationScreen({super.key});
@@ -16,15 +17,36 @@ class BulkRegistrationScreen extends StatefulWidget {
 }
 
 class _BulkRegistrationScreenState extends State<BulkRegistrationScreen> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Provider.of<CourseRegistrationProvider>(context, listen: false)
+          .fetchRegisteredCourses("73", "1", "2023"); // Pass your classId, term, year
+    });
+  }
+
+  String titleCase(String input) {
+  if (input.isEmpty) {
+    return input;
+  }
+  return input.split(' ').map((word) {
+    if (word.isEmpty) {
+      return word;
+    }
+    return word[0].toUpperCase() + word.substring(1).toLowerCase();
+  }).join(' ');
+}
+
   String _selectedTerm = 'First term';
-  
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
           onPressed: () {
-             Navigator.of(context).pop();
+            Navigator.of(context).pop();
           },
           icon: Image.asset(
             'assets/icons/arrow_back.png',
@@ -40,7 +62,9 @@ class _BulkRegistrationScreenState extends State<BulkRegistrationScreen> {
         child: Column(
           children: [
             _buildTopContainer(),
-            SizedBox(height: 32,),
+            SizedBox(
+              height: 32,
+            ),
             _buildStudentList(),
           ],
         ),
@@ -73,7 +97,8 @@ class _BulkRegistrationScreenState extends State<BulkRegistrationScreen> {
                 children: [
                   Container(
                     height: 42,
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                     decoration: BoxDecoration(
                       color: AppColors.regBgColor1,
                       borderRadius: BorderRadius.circular(24),
@@ -83,43 +108,67 @@ class _BulkRegistrationScreenState extends State<BulkRegistrationScreen> {
                       children: [
                         Text(
                           '2016/2017 academic session',
-                          style: AppTextStyles.normal600(fontSize: 12, color: AppColors.backgroundDark),
+                          style: AppTextStyles.normal600(
+                              fontSize: 12, color: AppColors.backgroundDark),
                         ),
-                        CustomDropdown(items: const [
-                          'First term',
-                          'Second term',
-                          'Third term',
-                        ], value: _selectedTerm, onChanged: (newValue) {
-                          setState(() {
-                            _selectedTerm = newValue!;
-                          });
-                        })
+                        CustomDropdown(
+                            items: const [
+                              'First term',
+                              'Second term',
+                              'Third term',
+                            ],
+                            value: _selectedTerm,
+                            onChanged: (newValue) {
+                              setState(() {
+                                _selectedTerm = newValue!;
+                              });
+                            })
                       ],
                     ),
                   ),
-                  const SizedBox(height: 34,),
+                  const SizedBox(
+                    height: 34,
+                  ),
                   Row(
                     children: [
                       const CircleAvatar(
                         backgroundColor: AppColors.regAvatarColor,
-                        child: Icon(Icons.person, color: AppColors.primaryLight, weight: 20.0,),
+                        child: Icon(
+                          Icons.person,
+                          color: AppColors.primaryLight,
+                          weight: 20.0,
+                        ),
                       ),
-                      const SizedBox(width: 12,),
+                      const SizedBox(
+                        width: 12,
+                      ),
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('Students', style: AppTextStyles.normal500(fontSize: 14, color: AppColors.backgroundLight)),
-                          const SizedBox(height: 5.0,),
-                          Text('345', style: AppTextStyles.normal700(fontSize: 17, color: AppColors.backgroundLight)),
+                          Text('Students',
+                              style: AppTextStyles.normal500(
+                                  fontSize: 14,
+                                  color: AppColors.backgroundLight)),
+                          const SizedBox(
+                            height: 5.0,
+                          ),
+                          Text('345',
+                              style: AppTextStyles.normal700(
+                                  fontSize: 17,
+                                  color: AppColors.backgroundLight)),
                         ],
                       ),
-                      SizedBox(width: 25,),
+                      SizedBox(
+                        width: 25,
+                      ),
                       Container(
                         width: 1,
                         height: 40,
                         color: AppColors.backgroundLight,
                       ),
-                      const SizedBox(width: 25,),
+                      const SizedBox(
+                        width: 25,
+                      ),
                       CircleAvatar(
                         backgroundColor: AppColors.backgroundLight,
                         child: Center(
@@ -131,13 +180,23 @@ class _BulkRegistrationScreenState extends State<BulkRegistrationScreen> {
                           ),
                         ),
                       ),
-                      const SizedBox(width: 12,),
+                      const SizedBox(
+                        width: 12,
+                      ),
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('Course Registered', style: AppTextStyles.normal500(fontSize: 14, color: AppColors.backgroundLight)),
-                          const SizedBox(height: 5.0,),
-                          Text('345', style: AppTextStyles.normal700(fontSize: 17, color: AppColors.backgroundLight)),
+                          Text('Course Registered',
+                              style: AppTextStyles.normal500(
+                                  fontSize: 14,
+                                  color: AppColors.backgroundLight)),
+                          const SizedBox(
+                            height: 5.0,
+                          ),
+                          Text('345',
+                              style: AppTextStyles.normal700(
+                                  fontSize: 17,
+                                  color: AppColors.backgroundLight)),
                         ],
                       ),
                     ],
@@ -156,74 +215,107 @@ class _BulkRegistrationScreenState extends State<BulkRegistrationScreen> {
       padding: EdgeInsets.symmetric(horizontal: 16.0),
       child: Column(
         children: [
-        _buildStudentListItem('Toochukwu Dennis', 0),
-        _buildStudentListItem('Toochukwu Dennis', 2),
-        _buildStudentListItem('Toochukwu Dennis', 1),
-        _buildStudentListItem('Toochukwu Dennis', 3),
-        _buildStudentListItem('Toochukwu Dennis', 0),
-        _buildStudentListItem('Toochukwu Dennis', 1),
-        _buildStudentListItem('Toochukwu Dennis', 2),
-        _buildStudentListItem('Toochukwu Dennis', 0),
-        _buildStudentListItem('Toochukwu Dennis', 1),
-        _buildStudentListItem('Toochukwu Dennis', 3),
+          _buildStudentListItem('Toochukwu Dennis', 0),
+          // _buildStudentListItem('Toochukwu Dennis', 2),
+          // _buildStudentListItem('Toochukwu Dennis', 1),
+          // _buildStudentListItem('Toochukwu Dennis', 3),
+          // _buildStudentListItem('Toochukwu Dennis', 0),
+          // _buildStudentListItem('Toochukwu Dennis', 1),
+          // _buildStudentListItem('Toochukwu Dennis', 2),
+          // _buildStudentListItem('Toochukwu Dennis', 0),
+          // _buildStudentListItem('Toochukwu Dennis', 1),
+          // _buildStudentListItem('Toochukwu Dennis', 3),
         ],
       ),
     );
   }
 
   Widget _buildStudentListItem(String name, int coursesRegistered) {
+    final courseProvider =
+        Provider.of<CourseRegistrationProvider>(context, listen: false);
+
+    if (courseProvider.isLoading) {
+      return Center(child: CircularProgressIndicator());
+    }
+
+    if (courseProvider.registeredCourses.isEmpty) {
+      return Center(child: Text("No registered courses found."));
+    }
+
     return Column(
-      children: [
-        Row(
+      children: courseProvider.registeredCourses.map((course) {
+        final registerdCourse = course.courseCount;
+        return Column(
           children: [
             Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                color: AppColors.primaryLight,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Icon(Icons.person, color: AppColors.backgroundLight),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              child: Row(
                 children: [
-                  Text(
-                    name,
-                    style: AppTextStyles.normal600(fontSize: 16, color: AppColors.backgroundDark),
+                  Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: AppColors.primaryLight,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Icon(Icons.person, color: AppColors.backgroundLight),
                   ),
-                  SizedBox(height: 8,),
-                  Text(
-                    '$coursesRegistered courses registered',
-                    style: AppTextStyles.normal400(fontSize: 12, color: Colors.grey),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          titleCase('${course.studentName}'),
+                          style: AppTextStyles.normal600(
+                            fontSize: 16,
+                            color: AppColors.backgroundDark,
+                          ),
+                        ),
+                        SizedBox(height: 2),
+                        Text(
+                          '${course.courseCount} courses registered', // Replace `someProperty` with the actual property you want to display
+                          style: AppTextStyles.normal400(
+                            fontSize: 12,
+                            color: Colors.grey,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  ElevatedButton(
+                    onPressed: () {
+                      if (registerdCourse > 0) {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (context) => CourseRegistrationScreen(
+                              studentName: name,
+                              coursesRegistered: coursesRegistered,
+                            ),
+                          ),
+                        );
+                      }
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.videoColor4,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    child: Text(
+                      (course.courseCount > 0) ? 'Edit' : 'Register',
+                      style: AppTextStyles.normal700(
+                        fontSize: 12,
+                        color: AppColors.backgroundLight,
+                      ),
+                    ),
                   ),
                 ],
               ),
             ),
-ElevatedButton(
-  onPressed: () {
-    if (coursesRegistered > 0) {
-      Navigator.of(context).push(
-        MaterialPageRoute(
-          builder: (context) => CourseRegistrationScreen(studentName: name, coursesRegistered: coursesRegistered),
-        ),
-      );
-    }
-  },
-  style: ElevatedButton.styleFrom(
-    backgroundColor: AppColors.videoColor4,
-    shape: RoundedRectangleBorder(
-      borderRadius: BorderRadius.circular(8),
-    ),
-  ),
-  child: Text(coursesRegistered > 0 ? 'Edit' : 'Register', style: AppTextStyles.normal700(fontSize: 12, color: AppColors.backgroundLight)),
-),
+            Divider(),
           ],
-        ),
-        Divider(),
-      ],
+        );
+      }).toList(),
     );
   }
 }
