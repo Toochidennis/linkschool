@@ -190,14 +190,6 @@ class _LevelSelectionState extends State<LevelSelection> {
                           _navigateToClassDetail(cls[0], cls[1]); // cls[0] is the class ID, cls[1] is the class_name
                         },
                       ),
-                        // child: _buildClassButton(
-                        //   '$levelPrefix ${classes[index]}',
-                        //   () {
-                        //     Navigator.of(context).pop();
-                        //     _navigateToClassDetail(
-                        //         '$levelPrefix ${classes[index]}');
-                        //   },
-                        // ),
                       );
                     },
                   ),
