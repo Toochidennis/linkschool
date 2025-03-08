@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
-import 'package:linkschool/modules/common/constants.dart'; // Import the constants file
+import 'package:linkschool/modules/common/constants.dart';
+import 'package:animated_custom_dropdown/custom_dropdown.dart';
+import '../../common/text_styles.dart';
 
 class BehaviourSettingScreen extends StatefulWidget {
   const BehaviourSettingScreen({super.key});
+
   @override
   State<BehaviourSettingScreen> createState() => _BehaviourSettingScreenState();
 }
@@ -15,53 +18,178 @@ class _BehaviourSettingScreenState extends State<BehaviourSettingScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: Constants.customAppBar(
-        context: context,
-        title: 'Skills and Behaviour',
-        centerTitle: true
+      appBar: AppBar(
+        leading: IconButton(
+          onPressed: () {
+            Navigator.of(context).pop();
+          },
+          icon: Image.asset(
+            'assets/icons/arrow_back.png',
+            color: AppColors.primaryLight,
+            width: 34.0,
+            height: 34.0,
+          ),
+        ),
+        title: Text(
+          'Skills and Behaviour ',
+          style: AppTextStyles.normal600(
+            fontSize: 18.0,
+            color: AppColors.primaryLight,
+          ),
+        ),
+        centerTitle: true,
+        backgroundColor: AppColors.backgroundLight,
       ),
       body: Container(
-        decoration: Constants.customBoxDecoration(context),
+        decoration: BoxDecoration(color: Colors.white),
         child: Padding(
           padding: const EdgeInsets.all(16.0),
           child: Column(
             children: [
-              SkillsList(
-                  skills: skills, onEdit: _editSkill, onDelete: _deleteSkill),
-              const SizedBox(
-                height: 10,
+              GestureDetector(
+                onTap: () {
+                  showDialog(
+                    context: context,
+                    builder: (BuildContext context) {
+                      return AlertDialog(
+                        title: const Text('Select Level'),
+                        content: SizedBox(
+                          width: double.maxFinite,
+                          child: ListView(
+                            shrinkWrap: true,
+                            children: [
+                              Padding(
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 4),
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(4),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.grey.withOpacity(0.2),
+                                        spreadRadius: 1,
+                                        blurRadius: 2,
+                                        offset: const Offset(0, 1),
+                                      ),
+                                    ],
+                                  ),
+                                  child: GestureDetector(
+                                    onTap: () {
+                                      Navigator.pop(context);
+                                    },
+                                    child: const ListTile(
+                                      title: Center(child: Text('Class 1')),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              Padding(
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 4),
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(4),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.grey.withOpacity(0.2),
+                                        spreadRadius: 1,
+                                        blurRadius: 2,
+                                        offset: const Offset(0, 1),
+                                      ),
+                                    ],
+                                  ),
+                                  child: GestureDetector(
+                                    onTap: () {
+                                      Navigator.of(context);
+                                    },
+                                    child: const ListTile(
+                                      title: Center(child: Text('Class 2')),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              Padding(
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 4),
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(4),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.grey.withOpacity(0.2),
+                                        spreadRadius: 1,
+                                        blurRadius: 2,
+                                        offset: const Offset(0, 1),
+                                      ),
+                                    ],
+                                  ),
+                                  child: GestureDetector(
+                                    onTap: () {
+                                      Navigator.pop(context);
+                                    },
+                                    child: const ListTile(
+                                      title: Center(child: Text('Class 3')),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        elevation: 24,
+                      );
+                    },
+                  );
+                },
+                child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  decoration: BoxDecoration(
+                    color: AppColors.backgroundLight,
+                    borderRadius: BorderRadius.circular(4.0),
+                    boxShadow: const [
+                      BoxShadow(
+                        color: AppColors.shadowColor,
+                        offset: Offset(0, 1),
+                        blurRadius: 0,
+                      ),
+                    ],
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text('Select Level'),
+                      const Icon(Icons.arrow_drop_down,
+                          color: AppColors.primaryLight),
+                    ],
+                  ),
+                ),
               ),
-              CustomInputField(
-                hintText: 'Add new skill or behaviour',
-                onSubmitted: _addSkill,
+              const SizedBox(height: 16),
+              Expanded(
+                child: SkillsList(
+                  skills: skills,
+                  onEdit: _editSkill,
+                  onDelete: _deleteSkill,
+                ),
               ),
             ],
           ),
         ),
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-                content: Text('Assessment settings saved successfully')),
-          );
-        },
+        onPressed: () => _showAddSkills(context),
         shape: const CircleBorder(),
         backgroundColor: AppColors.primaryLight,
-        child: Container(
-          decoration: BoxDecoration(
-              borderRadius: const BorderRadius.all(Radius.circular(100)),
-              boxShadow: [
-                BoxShadow(
-                    color: Colors.black.withOpacity(0.3),
-                    blurRadius: 7,
-                    spreadRadius: 7,
-                    offset: const Offset(3, 5))
-              ]),
-          child: const Icon(
-            Icons.save,
-            color: AppColors.backgroundLight,
-          ),
+        child: const Icon(
+          Icons.add,
+          color: AppColors.backgroundLight,
         ),
       ),
     );
@@ -69,20 +197,32 @@ class _BehaviourSettingScreenState extends State<BehaviourSettingScreen> {
 
   void _addSkill(String skill) {
     setState(() {
-      skills.add(skill);
+      skills.add(skill); // Add the new skill to the list
     });
   }
 
   void _editSkill(int index, String newSkill) {
     setState(() {
-      skills[index] = newSkill;
+      skills[index] = newSkill; // Update the skill at the given index
     });
   }
 
   void _deleteSkill(int index) {
     setState(() {
-      skills.removeAt(index);
+      skills.removeAt(index); // Remove the skill at the given index
     });
+  }
+
+  void _showAddSkills(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (BuildContext context) {
+        return AddSkillBottomSheet(
+          onAddSkill: _addSkill,
+        );
+      },
+    );
   }
 }
 
@@ -92,11 +232,11 @@ class SkillsList extends StatelessWidget {
   final Function(int) onDelete;
 
   const SkillsList({
-    super.key,
+    Key? key,
     required this.skills,
     required this.onEdit,
     required this.onDelete,
-  });
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -137,7 +277,17 @@ class _SkillItemState extends State<SkillItem> {
   @override
   void initState() {
     super.initState();
-    _controller = TextEditingController(text: widget.skill);
+    _controller = TextEditingController(
+        text: widget.skill); // Initialize with the current skill
+  }
+
+  @override
+  void didUpdateWidget(covariant SkillItem oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.skill != widget.skill) {
+      _controller.text =
+          widget.skill; // Update the controller if the skill changes
+    }
   }
 
   @override
@@ -151,8 +301,7 @@ class _SkillItemState extends State<SkillItem> {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: Container(
-        // width: 351,
-        padding: EdgeInsets.only(bottom: 10), // Match the width of the input field
+        padding: const EdgeInsets.only(bottom: 10),
         decoration: BoxDecoration(
           border: Border(
             bottom: BorderSide(
@@ -174,7 +323,6 @@ class _SkillItemState extends State<SkillItem> {
               child: Center(
                 child: SvgPicture.asset(
                   'assets/icons/result/skill.svg',
-                  // ignore: deprecated_member_use
                   color: AppColors.bgBorder,
                   width: 20,
                   height: 20,
@@ -228,24 +376,24 @@ class _SkillItemState extends State<SkillItem> {
   }
 }
 
-class CustomInputField extends StatefulWidget {
-  final String hintText;
-  final Function(String) onSubmitted;
+class AddSkillBottomSheet extends StatefulWidget {
+  final Function(String) onAddSkill;
 
-  const CustomInputField({
-    super.key,
-    required this.hintText,
-    required this.onSubmitted,
-  });
+  const AddSkillBottomSheet({Key? key, required this.onAddSkill})
+      : super(key: key);
 
   @override
-  _CustomInputFieldState createState() => _CustomInputFieldState();
+  _AddSkillBottomSheetState createState() => _AddSkillBottomSheetState();
 }
 
-class _CustomInputFieldState extends State<CustomInputField> {
+class _AddSkillBottomSheetState extends State<AddSkillBottomSheet> {
+  final TextEditingController _skillController = TextEditingController();
   final FocusNode _focusNode = FocusNode();
-  final TextEditingController _controller = TextEditingController();
   bool _isFocused = false;
+  List<String> levels = ['Class 1', 'Class 2', 'Class 3', 'Class 4', 'Class 5'];
+  List<String> types = ['Skills', 'Behaviour'];
+  String? selectedLevel;
+  String? selectedType;
 
   @override
   void initState() {
@@ -260,69 +408,103 @@ class _CustomInputFieldState extends State<CustomInputField> {
   @override
   void dispose() {
     _focusNode.dispose();
-    _controller.dispose();
+    _skillController.dispose();
     super.dispose();
   }
 
   void _submitSkill() {
-    if (_controller.text.isNotEmpty) {
-      widget.onSubmitted(_controller.text);
-      _controller.clear();
+    if (_skillController.text.isNotEmpty &&
+        selectedLevel != null &&
+        selectedType != null) {
+      widget.onAddSkill('${_skillController.text}\n -$selectedType');
+      Navigator.pop(context);
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please fill all fields')),
+      );
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: 351,
-      height: 48,
-      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
-      decoration: BoxDecoration(
-        border: Border(
-          bottom: BorderSide(
-            color:
-                _isFocused ? AppColors.primaryLight : const Color(0xFFB2B2B2),
-            width: _isFocused ? 2 : 1,
-          ),
-        ),
+    return Padding(
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.of(context).viewInsets.bottom,
+        left: 16,
+        right: 16,
+        top: 16,
       ),
-      child: Row(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          GestureDetector(
-            onTap: _submitSkill,
-            child: Container(
-              width: 32,
-              height: 32,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: Colors.white,
-                border: Border.all(
-                  color: AppColors.bgGray,
-                  width: 2,
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Add Skill',
+                style: AppTextStyles.normal600(
+                  fontSize: 20,
+                  color: const Color.fromRGBO(47, 85, 221, 1),
                 ),
               ),
-              child: const Icon(
-                Icons.add,
+              IconButton(
+                icon:
+                    SvgPicture.asset('assets/icons/profile/cancel_receipt.svg'),
                 color: AppColors.bgGray,
-                size: 24,
+                onPressed: () => Navigator.pop(context),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          TextField(
+            controller: _skillController,
+            decoration: InputDecoration(
+              hintText: 'Enter a skill',
+              border: OutlineInputBorder(),
+            ),
+            onSubmitted: (value) {
+              _submitSkill();
+            },
+          ),
+          const SizedBox(height: 16),
+          CustomDropdown<String>(
+            hintText: 'Select Level',
+            items: levels,
+            onChanged: (value) {
+              selectedLevel = value;
+            },
+          ),
+          const SizedBox(height: 16),
+          CustomDropdown<String>(
+            hintText: 'Select Type',
+            items: types,
+            onChanged: (value) {
+              selectedType = value;
+            },
+          ),
+          const SizedBox(height: 24),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: _submitSkill,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color.fromRGBO(47, 85, 221, 1),
+                minimumSize: const Size(double.infinity, 50),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10.0),
+                ),
+              ),
+              child: Text(
+                'Add Skill',
+                style: AppTextStyles.normal500(
+                  fontSize: 18,
+                  color: AppColors.backgroundLight,
+                ),
               ),
             ),
           ),
-          const SizedBox(width: 18),
-          Expanded(
-            child: TextField(
-              controller: _controller,
-              focusNode: _focusNode,
-              decoration: InputDecoration(
-                hintText: widget.hintText,
-                hintStyle: const TextStyle(color: AppColors.bgGrayLight),
-                border: InputBorder.none,
-              ),
-              onSubmitted: (value) {
-                _submitSkill();
-              },
-            ),
-          ),
+          const SizedBox(height: 16),
         ],
       ),
     );

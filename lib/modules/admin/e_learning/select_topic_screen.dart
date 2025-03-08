@@ -93,8 +93,11 @@ class _SelectTopicScreenState extends State<SelectTopicScreen> {
           padding: const EdgeInsets.all(16.0),
           child: Column(
             children: [
-              CustomInputField(
-                hintText: 'Add new Topic',
+              TextField(
+                decoration: InputDecoration(
+                  hintText: 'Add new Topic',
+                  border: OutlineInputBorder(),
+                ),
                 onSubmitted: _addTopic,
               ),
               const SizedBox(height: 10),

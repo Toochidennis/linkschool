@@ -383,7 +383,7 @@ class _GradingSettingsScreenState extends State<GradingSettingsScreen> {
                           remarkController.text,
                         );
 
-                        // Clear input fields
+                        
                         gradeController.clear();
                         rangeController.clear();
                         remarkController.clear();
@@ -424,7 +424,7 @@ class _GradingSettingsScreenState extends State<GradingSettingsScreen> {
     String? Function(String?)? validator,
   }) {
     final FocusNode focusNode =
-        focusNodes[label] ?? FocusNode(); // Ensure focusNode is not null
+        focusNodes[label] ?? FocusNode(); 
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: Constants.gap),

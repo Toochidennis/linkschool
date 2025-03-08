@@ -14,6 +14,7 @@ import 'package:linkschool/modules/providers/explore/subject_provider.dart';
 import 'package:linkschool/modules/services/explore/cbt_service.dart';
 import 'package:linkschool/routes/onboardingScreen.dart';
 import 'package:provider/provider.dart';
+import 'modules/providers/admin/behaviour_provider.dart';
 import 'modules/providers/explore/game/game_provider.dart';
 
 // import 'package:linkschool/app_navigation_flow.dart';
@@ -27,7 +28,7 @@ Future<void> main() async {
     const SystemUiOverlayStyle(
       statusBarColor: Colors.transparent,
       statusBarIconBrightness: Brightness.light, // For Android (dark icons)
-      statusBarBrightness: Brightness.dark, // For iOS (dark icons)
+      statusBarBrightness: Brightness.dark, 
     ),
   );
   runApp(MultiProvider(
@@ -44,6 +45,7 @@ Future<void> main() async {
       ChangeNotifierProvider(create: (context) => LevelProvider()),
       ChangeNotifierProvider(create: (context) => ClassProvider()),
       ChangeNotifierProvider(create: (_) => AssessmentProvider()),
+      ChangeNotifierProvider(create: (_)=>SkillsProvider())
     ],
     child: const MyApp(),
   ));
