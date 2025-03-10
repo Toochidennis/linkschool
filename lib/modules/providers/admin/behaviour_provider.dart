@@ -5,11 +5,10 @@ import '../../services/admin/behaviour_service.dart';
 class SkillsProvider with ChangeNotifier {
   final SkillService _skillService = SkillService();
   List<Skills> _skills = [];
-  List<Skills> _newSkills = [];
   bool _isLoading = false;
   String _error = '';
 
-  List<Skills> get skills => [..._skills, ..._newSkills];
+  List<Skills> get skills => _skills;
   bool get isLoading => _isLoading;
   String get error => _error;
 
@@ -20,7 +19,6 @@ class SkillsProvider with ChangeNotifier {
 
     try {
       _skills = await _skillService.getSkills();
-      _newSkills.clear();
       _error = '';
     } catch (e) {
       _error = e.toString();
@@ -31,46 +29,39 @@ class SkillsProvider with ChangeNotifier {
     }
   }
 
-  Future<void> addSkill(String skill_Name, String type, String level) async {
+Future<void> addSkill(String skillName, String type, String level) async {
+  _isLoading = true;
+  _error = '';
+  notifyListeners();
+
+  try {
+    // Convert type to API format if needed
+    final apiType = type == "Skills" ? "0" : "1";
+    
     final newSkill = Skills(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
-      skillName: skill_Name,
-      type: type,
+      skillName: skillName,
+      type: apiType,
       level: level,
     );
 
-    _newSkills.add(newSkill);
+    // Send the new skill to the API
+    await _skillService.addSkill(newSkill);
+
+    // Refresh the list
+    await fetchSkills();
+  } catch (e) {
+    _error = e.toString();
+    print("Add Skill Error: $_error");
+  } finally {
+    _isLoading = false;
     notifyListeners();
   }
+}
 
-  Future<void> saveNewSkills() async {
-    if (_newSkills.isEmpty) return;
-
-    _isLoading = true;
-    _error = '';
-    notifyListeners();
-
-    try {
-      await _skillService.addSkills(_newSkills);
-      await fetchSkills();
-      _newSkills.clear();
-    } catch (e) {
-      _error = e.toString();
-    } finally {
-      _isLoading = false;
-      notifyListeners();
-    }
-  }
-
-  // Delete a skill
   Future<void> deleteSkill(String id) async {
     _isLoading = true;
     _error = '';
-    notifyListeners();
-
-    // Remove the skill from both lists
-    _skills.removeWhere((skill) => skill.id == id);
-    _newSkills.removeWhere((skill) => skill.id == id);
     notifyListeners();
 
     try {
@@ -81,6 +72,24 @@ class SkillsProvider with ChangeNotifier {
       print("Delete Error: $_error");
     } finally {
       _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  void editSkillLocally(String id, String skillName, String typeDisplay, String level) {
+    // Find the skill to edit
+    final skillIndex = _skills.indexWhere((skill) => skill.id == id);
+    if (skillIndex != -1) {
+      // Convert display type back to numeric type
+      final type = typeDisplay == "Skills" ? "0" : "1";
+      
+      // Update the skill locally
+      _skills[skillIndex] = Skills(
+        id: id,
+        skillName: skillName,
+        type: type, // Store as "0" or "1"
+        level: level,
+      );
       notifyListeners();
     }
   }
