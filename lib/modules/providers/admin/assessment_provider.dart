@@ -6,7 +6,7 @@ import 'package:linkschool/modules/services/admin/assessment_service.dart';
 
 class AssessmentProvider with ChangeNotifier {
   final AssessmentService _assessmentService = AssessmentService();
-  List<Assessment> _assessments = [];
+  final List<Assessment> _assessments = [];
   bool _isLoading = false;
 
   List<Assessment> get assessments => _assessments;

@@ -36,7 +36,7 @@ class _LevelSelectionState extends State<LevelSelection> {
         ...widget.levelNames.map((level) {
           final levelName = level[1]; // level_name is at index 1
           return _buildLevelBox(levelName, 'assets/images/result/bg_box1.svg');
-        }).toList(),
+        }),
         const SizedBox(
           height: 100,
         )
@@ -323,16 +323,6 @@ void _navigateToClassDetail(String classId, String className) async {
   );
 }
 
-  // void _navigateToClassDetail(String className) async {
-  //   final userBox = Hive.box('userData');
-  //   await userBox.put('selectedClassId', className); // Persist selected class ID
-
-  //   Navigator.of(context).push(
-  //     MaterialPageRoute(
-  //       builder: (context) => ClassDetailScreen(className: className),
-  //     ),
-  //   );
-  // }
 }
 
 

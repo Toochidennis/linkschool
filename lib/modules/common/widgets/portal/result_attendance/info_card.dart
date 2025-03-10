@@ -5,7 +5,9 @@ import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/common/utils/dash_line_utils.dart';
 
 class InfoCard extends StatelessWidget {
-  const InfoCard({super.key});
+    final String? className;
+  final String? classId;
+  const InfoCard({super.key, this.className, this.classId});
 
   @override
   Widget build(BuildContext context) {

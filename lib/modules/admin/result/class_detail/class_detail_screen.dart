@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:hive/hive.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/common/utils/class_detail/explore_button_item_utils.dart';
@@ -123,7 +122,8 @@ class _ClassDetailScreenState extends State<ClassDetailScreen> {
                                 child: ExploreButtonItem(
                                   backgroundColor: AppColors.bgXplore1,
                                   label: 'Student Result',
-                                  iconPath: 'assets/icons/result/assessment_icon.svg',
+                                  iconPath:
+                                      'assets/icons/result/assessment_icon.svg',
                                   onTap: () =>
                                       showStudentResultOverlay(context),
                                 ),
@@ -132,7 +132,8 @@ class _ClassDetailScreenState extends State<ClassDetailScreen> {
                                 child: ExploreButtonItem(
                                   backgroundColor: AppColors.bgXplore2,
                                   label: 'Registration',
-                                  iconPath: 'assets/icons/result/registration_icon.svg',
+                                  iconPath:
+                                      'assets/icons/result/registration_icon.svg',
                                   onTap: () {
                                     Navigator.push(
                                         context,
@@ -146,14 +147,26 @@ class _ClassDetailScreenState extends State<ClassDetailScreen> {
                                 child: ExploreButtonItem(
                                   backgroundColor: AppColors.bgXplore3,
                                   label: 'Attendance',
-                                  iconPath: 'assets/icons/result/attendance_icon.svg',
+                                  iconPath:
+                                      'assets/icons/result/attendance_icon.svg',
                                   onTap: () {
                                     Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                            builder: (contex) =>
-                                                AttendanceScreen()));
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) => AttendanceScreen(
+                                          className: widget.className,
+                                          classId: widget.classId,
+                                        ),
+                                      ),
+                                    );
                                   },
+                                  // onTap: () {
+                                  //   Navigator.push(
+                                  //       context,
+                                  //       MaterialPageRoute(
+                                  //           builder: (contex) =>
+                                  //               AttendanceScreen()));
+                                  // },
                                 ),
                               ),
                             ],
@@ -177,11 +190,13 @@ class _ClassDetailScreenState extends State<ClassDetailScreen> {
                               child: Text(
                                 'No terms available for this class.',
                                 style: AppTextStyles.normal600(
-                                    fontSize: 16, color: AppColors.primaryLight),
+                                    fontSize: 16,
+                                    color: AppColors.primaryLight),
                               ),
                             ),
                           if (termProvider.terms.isNotEmpty)
-                            ..._buildTermRows(termProvider.terms), // Build term rows dynamically
+                            ..._buildTermRows(termProvider
+                                .terms), // Build term rows dynamically
                         ],
                       ),
                     ),
@@ -206,16 +221,64 @@ class _ClassDetailScreenState extends State<ClassDetailScreen> {
     );
   }
 
-  // Build term rows dynamically
   List<Widget> _buildTermRows(List<Map<String, dynamic>> terms) {
     print('Building Term Rows: $terms');
-    return terms.map((term) {
-      return TermRow(
-        term: term['termName'], // Use the term name
-        percent: 0.75, // Example progress value
-        indicatorColor: AppColors.primaryLight,
-        onTap: () => showTermOverlay(context),
+
+    // Group terms by year
+    Map<String, List<Map<String, dynamic>>> groupedTerms = {};
+    for (var term in terms) {
+      String year = term['year'];
+      if (!groupedTerms.containsKey(year)) {
+        groupedTerms[year] = [];
+      }
+      groupedTerms[year]!.add(term);
+    }
+
+    // Build widgets for each year group
+    return groupedTerms.entries.map((entry) {
+      String year = entry.key;
+      List<Map<String, dynamic>> yearTerms = entry.value;
+
+      // Interpolate the succeeding year
+      String nextYear = (int.parse(year) + 1).toString();
+      String header = '$year/$nextYear Session';
+
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8.0),
+            child: Text(
+              header,
+              style: AppTextStyles.normal700(
+                fontSize: 18,
+                color: AppColors.primaryLight,
+              ),
+            ),
+          ),
+          ...yearTerms.map((term) {
+            return TermRow(
+              term: term['termName'], // Use the term name
+              percent: 0.75, // Example progress value
+              indicatorColor: AppColors.primaryLight,
+              onTap: () => showTermOverlay(context),
+            );
+          }).toList(),
+        ],
       );
     }).toList();
   }
+
+  // // Build term rows dynamically
+  // List<Widget> _buildTermRows(List<Map<String, dynamic>> terms) {
+  //   print('Building Term Rows: $terms');
+  //   return terms.map((term) {
+  //     return TermRow(
+  //       term: term['termName'], // Use the term name
+  //       percent: 0.75, // Example progress value
+  //       indicatorColor: AppColors.primaryLight,
+  //       onTap: () => showTermOverlay(context),
+  //     );
+  //   }).toList();
+  // }
 }

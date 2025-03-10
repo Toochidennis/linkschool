@@ -12,7 +12,7 @@ import 'package:provider/provider.dart';
 import '../../model/admin/grade _model.dart';
 
 class GradingSettingsScreen extends StatefulWidget {
-  const GradingSettingsScreen({Key? key}) : super(key: key);
+  const GradingSettingsScreen({super.key});
 
   @override
   _GradingSettingsScreenState createState() => _GradingSettingsScreenState();
