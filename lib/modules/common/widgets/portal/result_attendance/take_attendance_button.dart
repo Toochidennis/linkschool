@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:hive/hive.dart';
 import 'package:linkschool/modules/admin/result/class_detail/attendance/take_class_attendance.dart';
 import 'package:linkschool/modules/admin/result/class_detail/attendance/take_course_attendance.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
@@ -47,34 +48,44 @@ class TakeAttendanceButton extends StatelessWidget {
     );
   }
 
-  void _showSelectCourseDialog(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      builder: (BuildContext context) {
-        return Container(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[
-              const Text('Select course to take attendance', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-              const SizedBox(height: 16),
-              Column(
-                children: ['Mathematics', 'English', 'Physics', 'Chemistry', 'Biology'].map((subject) {
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 8.0),
-                    child: _buildAttendanceButton(subject, () {
-                      Navigator.push(context, MaterialPageRoute(builder: (context) => TakeCourseAttendance()));
-                    }),
-                  );
-                }).toList(),
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
+void _showSelectCourseDialog(BuildContext context) {
+  // Get courses from Hive
+  final userDataBox = Hive.box('userData');
+  final coursesData = userDataBox.get('userData')?['courses'] ?? {};
+  final List<dynamic> courseRows = coursesData['rows'] ?? [];
+
+  showModalBottomSheet(
+    context: context,
+    builder: (BuildContext context) {
+      return Container(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            const Text('Select course to take attendance', 
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 16),
+            // Dynamic course list
+            Column(
+              children: courseRows.map<Widget>((course) {
+                final courseName = course[1]; // Get course name from row
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 8.0),
+                  child: _buildAttendanceButton(courseName, () {
+                    Navigator.push(context, 
+                      MaterialPageRoute(builder: (context) => 
+                        TakeCourseAttendance(courseId: course[0]))); // Pass course ID
+                  }),
+                );
+              }).toList(),
+            ),
+          ],
+        ),
+      );
+    },
+  );
+}
 
   Widget _buildAttendanceButton(String text, VoidCallback onPressed) {
     return Container(

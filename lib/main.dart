@@ -6,6 +6,7 @@ import 'package:linkschool/modules/auth/provider/auth_provider.dart';
 import 'package:linkschool/modules/common/app_themes.dart';
 import 'package:linkschool/modules/providers/admin/assessment_provider.dart';
 import 'package:linkschool/modules/providers/admin/class_provider.dart';
+import 'package:linkschool/modules/providers/admin/course_registration_provider.dart';
 import 'package:linkschool/modules/providers/admin/grade_provider.dart';
 import 'package:linkschool/modules/providers/admin/level_provider.dart';
 import 'package:linkschool/modules/providers/admin/term_provider.dart';
@@ -48,6 +49,7 @@ Future<void> main() async {
       ChangeNotifierProvider(create: (context) => ClassProvider()),
       ChangeNotifierProvider(create: (_) => AssessmentProvider()),
       ChangeNotifierProvider(create: (_) => TermProvider()),
+      ChangeNotifierProvider(create: (context) => CourseRegistrationProvider()),
     ],
     child: const MyApp(),
   ));
