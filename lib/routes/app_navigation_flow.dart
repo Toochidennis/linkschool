@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flip_card/flip_card.dart';
 import 'package:flip_card/flip_card_controller.dart';
+import 'package:linkschool/modules/auth/provider/auth_provider.dart';
+import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:linkschool/modules/explore/home/explore_dashboard.dart';
 import 'package:linkschool/modules/auth/ui/login_screen.dart';
@@ -27,6 +29,7 @@ class _AppNavigationFlowState extends State<AppNavigationFlow> {
     super.initState();
     _flipController = FlipCardController();
     _checkLoginStatus();
+      Provider.of<AuthProvider>(context, listen: false).checkLoginStatus();
   }
 
   Future<void> _checkLoginStatus() async {
@@ -36,6 +39,11 @@ class _AppNavigationFlowState extends State<AppNavigationFlow> {
       _isLoggedIn = prefs.getBool('isLoggedIn') ?? false;
       _showLogin = false;
     });
+
+    print('User Role: $_userRole');
+    print('Is Logged In: $_isLoggedIn');
+    // print('Hive - User Data: $userData');
+    // print('Hive - Access Level: $accessLevel');
   }
 
   void _handleSwitch(bool value) {
@@ -76,34 +84,38 @@ class _AppNavigationFlowState extends State<AppNavigationFlow> {
 
     if (_isLoggedIn) {
       switch (_userRole) {
-        case 'student':
-          return StudentDashboard(
-            onSwitch: _handleSwitch,
-            selectedIndex: _selectedIndex,
-            onTabSelected: _updateSelectedIndex,
-            onLogout: _handleLogout,
-          );
-        case 'staff':
+        case '1': // Staff
+        case '3': // Staff
           return StaffDashboard(
             onSwitch: _handleSwitch,
             selectedIndex: _selectedIndex,
             onTabSelected: _updateSelectedIndex,
             onLogout: _handleLogout,
           );
-        case 'admin':
+        case '2': // Admin
           return PortalDashboard(
             onSwitch: _handleSwitch,
             selectedIndex: _selectedIndex,
             onTabSelected: _updateSelectedIndex,
             onLogout: _handleLogout,
           );
+        case '0': // Student
+          return StudentDashboard(
+            onSwitch: _handleSwitch,
+            selectedIndex: _selectedIndex,
+            onTabSelected: _updateSelectedIndex,
+            onLogout: _handleLogout,
+          );
         default:
-          return Container();
+          return Center(
+            child: Text('Unknown user role: $_userRole'),
+          ); // Fallback for unknown roles
       }
     }
 
-    return Container();
+    return Container(); // Fallback for non-logg
   }
+
 
   @override
   Widget build(BuildContext context) {
@@ -117,10 +129,54 @@ class _AppNavigationFlowState extends State<AppNavigationFlow> {
           onTabSelected: _updateSelectedIndex,
         ),
         back: AnimatedSwitcher(
-          duration:  const Duration(milliseconds: 300),
+          duration: const Duration(milliseconds: 300),
           child: _getBackWidget(),
         ),
       ),
     );
   }
 }
+
+
+
+
+  // Widget _getBackWidget() {
+  //   if (_showLogin) {
+  //     return LoginScreen(
+  //       onLoginSuccess: () async {
+  //         await _checkLoginStatus();
+  //         setState(() {});
+  //       },
+  //     );
+  //   }
+
+  //   if (_isLoggedIn) {
+  //     switch (_userRole) {
+  //       case 'student':
+  //         return StudentDashboard(
+  //           onSwitch: _handleSwitch,
+  //           selectedIndex: _selectedIndex,
+  //           onTabSelected: _updateSelectedIndex,
+  //           onLogout: _handleLogout,
+  //         );
+  //       case 'staff':
+  //         return StaffDashboard(
+  //           onSwitch: _handleSwitch,
+  //           selectedIndex: _selectedIndex,
+  //           onTabSelected: _updateSelectedIndex,
+  //           onLogout: _handleLogout,
+  //         );
+  //       case 'admin':
+  //         return PortalDashboard(
+  //           onSwitch: _handleSwitch,
+  //           selectedIndex: _selectedIndex,
+  //           onTabSelected: _updateSelectedIndex,
+  //           onLogout: _handleLogout,
+  //         );
+  //       default:
+  //         return Container();
+  //     }
+  //   }
+
+  //   return Container();
+  // }

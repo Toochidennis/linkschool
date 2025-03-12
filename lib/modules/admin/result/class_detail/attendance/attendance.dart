@@ -8,7 +8,9 @@ import 'package:linkschool/modules/common/widgets/portal/result_attendance/take_
 
 
 class AttendanceScreen extends StatelessWidget {
-  const AttendanceScreen({super.key});
+    final String className;
+  final String classId;
+  const AttendanceScreen({super.key, required this.className, required this.classId});
 
   @override
   Widget build(BuildContext context) {
@@ -25,7 +27,8 @@ class AttendanceScreen extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 20),
                 child: Column(
                   children: [
-                    InfoCard(),
+                    // InfoCard(),
+                    InfoCard(className: className, classId: classId),
                     const SizedBox(height: 20),
                     TakeAttendanceButton(),
                     const SizedBox(height: 44),
