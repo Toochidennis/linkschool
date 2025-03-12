@@ -8,12 +8,17 @@ import 'package:linkschool/modules/student/result/student_annual_result_screen.d
 import 'package:percent_indicator/percent_indicator.dart';
 import 'package:fl_chart/fl_chart.dart';
 
-
 class StudentResultScreen extends StatelessWidget {
   final String studentName;
   final String className;
+  final String regId;
+  final int? studentId;
   const StudentResultScreen(
-      {super.key, required this.studentName, required this.className});
+      {super.key,
+      required this.studentName,
+      required this.className,
+      required this.regId,
+      this.studentId});
 
   @override
   Widget build(BuildContext context) {
@@ -46,7 +51,8 @@ class StudentResultScreen extends StatelessWidget {
                       MaterialPageRoute(builder: (context) => StudentList()));
                 },
                 backgroundColor: AppColors.videoColor4,
-                textStyle: AppTextStyles.normal700(fontSize: 14, color: AppColors.backgroundLight),
+                textStyle: AppTextStyles.normal700(
+                    fontSize: 14, color: AppColors.backgroundLight),
                 padding: const EdgeInsets.symmetric(horizontal: 8.0),
               ),
             ),
@@ -88,7 +94,7 @@ class StudentResultScreen extends StatelessWidget {
                         ),
                         const SizedBox(height: 10),
                         Text(
-                          'Toochukwu Dennis',
+                          studentName,
                           style: AppTextStyles.normal700(
                             fontSize: 20,
                             color: AppColors.primaryLight,
@@ -98,9 +104,8 @@ class StudentResultScreen extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 20),
-                  _buildInfoRow('Student ID:', '3ye7458918947y3'),
-                  _buildInfoRow('Class:', 'JSS2 A'),
-                  _buildInfoRow('Gender:', 'Female'),
+                  _buildInfoRow('Student ID:', regId),
+                  _buildInfoRow('Class:', className),
                   _buildInfoRow('Student Average:', '76.80%'),
                   const SizedBox(height: 30),
                   Text(
@@ -114,31 +119,27 @@ class StudentResultScreen extends StatelessWidget {
                   _buildTermRow(
                       'Third Term', 0.75, AppColors.exploreButton3Light),
                   const SizedBox(height: 30),
-                    CustomOutlineButton2(
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) =>
-                                const StudentAnnualResultScreen(),
-                          ),
-                        );
-                      },
-                      text: 'See annual result',
-                      borderColor: AppColors.videoColor4,
-                      textColor: AppColors.videoColor4,
-                      fontSize: 18,
-                      borderRadius: 10.0,
-                      buttonHeight: 48,
-                    ),
-                  // CustomLongElevatedButton(
-                  //   text: 'See annual result',
-                  //   onPressed: () {},
-                  //   backgroundColor: AppColors.videoColor4,
-                  //   textStyle: AppTextStyles.normal600(
-                  //       fontSize: 18, color: AppColors.backgroundLight),
-                  // ),
-                  SizedBox(height: 60,),
+                  CustomOutlineButton2(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) =>
+                              const StudentAnnualResultScreen(),
+                        ),
+                      );
+                    },
+                    text: 'See annual result',
+                    borderColor: AppColors.videoColor4,
+                    textColor: AppColors.videoColor4,
+                    fontSize: 18,
+                    borderRadius: 10.0,
+                    buttonHeight: 48,
+                  ),
+
+                  SizedBox(
+                    height: 60,
+                  ),
                   Text(
                     'Session average chart',
                     style: AppTextStyles.normal700(

@@ -11,9 +11,7 @@ import 'package:provider/provider.dart';
 
 
 void showStudentResultOverlay(BuildContext context, String classId) {
-
   Provider.of<StudentProvider>(context, listen: false).fetchStudents(classId);
-
   showModalBottomSheet(
     context: context,
     isScrollControlled: true,
@@ -82,7 +80,9 @@ void showStudentResultOverlay(BuildContext context, String classId) {
                                     MaterialPageRoute(
                                       builder: (context) => StudentResultScreen(
                                         studentName: student.name,
-                                        className: 'Student Result',
+                                        className: student.className, 
+                                       regId: student.regId,
+                                        studentId:student.id
                                       ),
                                     ),
                                   );
