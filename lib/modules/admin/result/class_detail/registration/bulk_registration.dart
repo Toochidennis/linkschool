@@ -22,21 +22,22 @@ class _BulkRegistrationScreenState extends State<BulkRegistrationScreen> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       Provider.of<CourseRegistrationProvider>(context, listen: false)
-          .fetchRegisteredCourses("73", "1", "2023"); // Pass your classId, term, year
+          .fetchRegisteredCourses(
+              "73", "1", "2023"); // Pass your classId, term, year
     });
   }
 
   String titleCase(String input) {
-  if (input.isEmpty) {
-    return input;
-  }
-  return input.split(' ').map((word) {
-    if (word.isEmpty) {
-      return word;
+    if (input.isEmpty) {
+      return input;
     }
-    return word[0].toUpperCase() + word.substring(1).toLowerCase();
-  }).join(' ');
-}
+    return input.split(' ').map((word) {
+      if (word.isEmpty) {
+        return word;
+      }
+      return word[0].toUpperCase() + word.substring(1).toLowerCase();
+    }).join(' ');
+  }
 
   String _selectedTerm = 'First term';
 
@@ -288,8 +289,11 @@ class _BulkRegistrationScreenState extends State<BulkRegistrationScreen> {
                         Navigator.of(context).push(
                           MaterialPageRoute(
                             builder: (context) => CourseRegistrationScreen(
-                              studentName: name,
+                              studentName: course.studentName,
                               coursesRegistered: coursesRegistered,
+
+                              //   studentName:'${course.student_name}',
+                              // coursesRegistered: '${course.id}',
                             ),
                           ),
                         );

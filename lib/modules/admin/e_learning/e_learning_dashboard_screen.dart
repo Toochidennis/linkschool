@@ -128,6 +128,7 @@ class _ELearningDashboardScreenState extends State<ELearningDashboardScreen> {
                   'Physics',
                   'Chemistry'
                 ],
+                levelNames: [],
               ),
             ),
           ],
@@ -348,7 +349,8 @@ class _ELearningDashboardScreenState extends State<ELearningDashboardScreen> {
             itemBuilder: (context, index) {
               final activity = activities[index];
               return Container(
-                margin: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 8.0),
+                margin:
+                    const EdgeInsets.symmetric(horizontal: 8.0, vertical: 8.0),
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(12.0),
                   color: Colors.white,

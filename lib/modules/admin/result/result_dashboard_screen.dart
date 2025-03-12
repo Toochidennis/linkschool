@@ -4,6 +4,7 @@ import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/widgets/portal/result_dashboard/level_selection.dart';
 import 'package:linkschool/modules/common/widgets/portal/result_dashboard/performance_chart.dart';
 import 'package:linkschool/modules/common/widgets/portal/result_dashboard/settings_section.dart';
+import 'package:hive/hive.dart';
 
 class ResultDashboardScreen extends StatefulWidget {
   final PreferredSizeWidget appBar;
@@ -18,6 +19,40 @@ class ResultDashboardScreen extends StatefulWidget {
 }
 
 class _ResultDashboardScreenState extends State<ResultDashboardScreen> {
+  Map<String, dynamic>? userData;
+  List<dynamic>? levelNames;
+  List<dynamic>? classNames;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserData();
+  }
+
+  Future<void> _loadUserData() async {
+    final userBox = Hive.box('userData');
+    final userData = userBox.get('userData');
+
+    if (userData != null) {
+      print('User Data: $userData');
+
+      // Extract levelName and className from the persisted JSON
+      final levelNameData = userData['levelName']?['rows'] ?? [];
+      final classNameData = userData['className']?['rows'] ?? [];
+
+      print('Level Names: $levelNameData');
+      print('Class Names: $classNameData');
+
+      setState(() {
+        this.userData = userData;
+        this.levelNames = levelNameData;
+        this.classNames = classNameData;
+      });
+    } else {
+      print('User data is null or not found in Hive');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -54,7 +89,14 @@ class _ResultDashboardScreenState extends State<ResultDashboardScreen> {
                 titleColor: AppColors.resultColor1,
               ),
             ),
-            const SliverToBoxAdapter(child: LevelSelection()),
+            SliverToBoxAdapter(
+              child: LevelSelection(
+                levelNames: levelNames ?? [], // list of level names
+                classNames: classNames ?? [], // list of class names
+                isSecondScreen: false, // Set to true for course selection
+                subjects: ['Math', 'Science', 'English'],
+              ),
+            ),
           ],
         ),
       ),
