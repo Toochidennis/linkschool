@@ -1,4 +1,3 @@
-// lib/modules/admin/result/class_detail/attendance/take_course_attendance.dart
 import 'package:flutter/material.dart';
 import 'package:linkschool/modules/providers/admin/student_provider.dart';
 import 'package:provider/provider.dart';
@@ -6,6 +5,7 @@ import 'package:intl/intl.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/buttons/custom_floating_save_button.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
+import 'package:linkschool/modules/common/custom_toaster.dart'; 
 
 
 
@@ -43,7 +43,15 @@ class _TakeCourseAttendanceState extends State<TakeCourseAttendance> {
 
     // Initialize provider with needed data
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<StudentProvider>().fetchStudents(widget.classId);
+      final provider = context.read<StudentProvider>();
+      provider.fetchStudents(widget.classId).then((_) {
+        // Fetch attendance data after students are loaded
+        provider.fetchAttendance(
+          classId: widget.classId!,
+          date: _currentDate,
+          courseId: widget.courseId!,
+        );
+      });
     });
   }
 
@@ -56,7 +64,7 @@ class _TakeCourseAttendanceState extends State<TakeCourseAttendance> {
 
   void _setCurrentDate() {
     final now = DateTime.now();
-    final formatter = DateFormat('EEEE dd MMMM, yyyy');
+    final formatter = DateFormat('yyyy-MM-dd HH:mm:ss'); // Format for API
     _currentDate = formatter.format(now);
   }
 
@@ -68,19 +76,18 @@ class _TakeCourseAttendanceState extends State<TakeCourseAttendance> {
       date: _currentDate,
     ).then((success) {
       if (success) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Attendance saved successfully'),
-          ),
+        CustomToaster.toastSuccess(
+          context,
+          'Success',
+          'Attendance saved successfully',
         );
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(provider.errorMessage.isNotEmpty
-                ? provider.errorMessage
-                : 'Failed to save attendance'),
-            backgroundColor: Colors.red,
-          ),
+        CustomToaster.toastError(
+          context,
+          'Error',
+          provider.errorMessage.isNotEmpty
+              ? provider.errorMessage
+              : 'Failed to save attendance',
         );
       }
     });
@@ -216,7 +223,6 @@ class _TakeCourseAttendanceState extends State<TakeCourseAttendance> {
 }
 
 
-
 // class TakeCourseAttendance extends StatefulWidget {
 //   final String? courseId;
 //   final String? classId;
@@ -241,14 +247,14 @@ class _TakeCourseAttendanceState extends State<TakeCourseAttendance> {
 //     Colors.brown,
 //     Colors.lime,
 //   ];
-  
+
 //   String _currentDate = '';
 
 //   @override
 //   void initState() {
 //     super.initState();
 //     _setCurrentDate();
-    
+
 //     // Initialize provider with needed data
 //     WidgetsBinding.instance.addPostFrameCallback((_) {
 //       context.read<StudentProvider>().fetchStudents(widget.classId);
@@ -273,22 +279,23 @@ class _TakeCourseAttendanceState extends State<TakeCourseAttendance> {
 //     provider.saveAttendance(
 //       classId: widget.classId,
 //       courseId: widget.courseId,
-//       date: _currentDate
+//       date: _currentDate,
 //     ).then((success) {
 //       if (success) {
-//         ScaffoldMessenger.of(context).showSnackBar(
-//           const SnackBar(
-//             content: Text('Attendance saved successfully'),
-//           ),
+//         // Show success toaster
+//         CustomToaster.toastSuccess(
+//           context,
+//           'Success',
+//           'Attendance saved successfully',
 //         );
 //       } else {
-//         ScaffoldMessenger.of(context).showSnackBar(
-//           SnackBar(
-//             content: Text(provider.errorMessage.isNotEmpty 
-//               ? provider.errorMessage 
-//               : 'Failed to save attendance'),
-//             backgroundColor: Colors.red,
-//           ),
+//         // Show error toaster
+//         CustomToaster.toastError(
+//           context,
+//           'Error',
+//           provider.errorMessage.isNotEmpty
+//               ? provider.errorMessage
+//               : 'Failed to save attendance',
 //         );
 //       }
 //     });
@@ -321,7 +328,7 @@ class _TakeCourseAttendanceState extends State<TakeCourseAttendance> {
 //           if (provider.isLoading) {
 //             return const Center(child: CircularProgressIndicator());
 //           }
-          
+
 //           if (provider.errorMessage.isNotEmpty) {
 //             return Center(child: Text(provider.errorMessage));
 //           }
@@ -371,7 +378,7 @@ class _TakeCourseAttendanceState extends State<TakeCourseAttendance> {
 //                   ),
 //                 ),
 //               ),
-              
+
 //               // Student List
 //               Expanded(
 //                 child: ListView.separated(
@@ -383,7 +390,7 @@ class _TakeCourseAttendanceState extends State<TakeCourseAttendance> {
 //                   itemBuilder: (context, index) {
 //                     final student = provider.students[index];
 //                     final colorIndex = index % _circleColors.length;
-                    
+
 //                     return ListTile(
 //                       tileColor: student.isSelected
 //                           ? const Color.fromRGBO(239, 227, 255, 1)
@@ -409,8 +416,15 @@ class _TakeCourseAttendanceState extends State<TakeCourseAttendance> {
 //           );
 //         },
 //       ),
-//       floatingActionButton: CustomFloatingSaveButton(
-//         onPressed: _onSavePressed,
+//       floatingActionButton: Consumer<StudentProvider>(
+//         builder: (context, provider, child) {
+//           // Show the floating button only if at least one student is selected
+//           return provider.selectedStudentIds.isNotEmpty
+//               ? CustomFloatingSaveButton(
+//                   onPressed: _onSavePressed,
+//                 )
+//               : Container();
+//         },
 //       ),
 //     );
 //   }
