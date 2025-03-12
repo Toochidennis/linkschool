@@ -67,7 +67,7 @@ class StudentService {
       for (int i = 0; i < studentIds.length; i++) {
         final studentId = studentIds[i];
         request.fields['register[$i][id]'] = studentId.toString();
-        request.fields['register[$i][name]'] = 'Student $studentId'; // Replace with actual student name if available
+        request.fields['register[$i][name]'] = 'Student $studentId'; 
       }
 
       // Send the request
