@@ -7,6 +7,8 @@ import 'package:linkschool/modules/common/app_themes.dart';
 import 'package:linkschool/modules/providers/admin/assessment_provider.dart';
 import 'package:linkschool/modules/providers/admin/class_course_provider.dart';
 import 'package:linkschool/modules/providers/admin/class_provider.dart';
+import 'package:linkschool/modules/providers/admin/course_registration_provider.dart';
+import 'package:linkschool/modules/providers/admin/getcurrent_course_registration_provider.dart';
 import 'package:linkschool/modules/providers/admin/grade_provider.dart';
 import 'package:linkschool/modules/providers/admin/level_provider.dart';
 import 'package:linkschool/modules/providers/admin/term_provider.dart';
@@ -16,12 +18,13 @@ import 'package:linkschool/modules/providers/explore/for_you_provider.dart';
 import 'package:linkschool/modules/providers/explore/home/ebook_provider.dart';
 import 'package:linkschool/modules/providers/explore/home/news_provider.dart';
 import 'package:linkschool/modules/providers/explore/subject_provider.dart';
+import 'package:linkschool/modules/services/admin/course_registration_service.dart';
 import 'package:linkschool/modules/services/explore/cbt_service.dart';
 import 'package:linkschool/modules/services/explore/home/ebook_service.dart';
 import 'package:linkschool/routes/onboardingScreen.dart';
 import 'package:provider/provider.dart';
 import 'modules/providers/explore/game/game_provider.dart';
-import 'package:linkschool/modules/providers/admin/course_registration_provider.dart';
+
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -54,6 +57,9 @@ Future<void> main() async {
           create: (_) => EbookProvider(ebookService: EbookService())),
       ChangeNotifierProvider(create: (_) => TermProvider()),
       ChangeNotifierProvider(create: (_) => StudentClassCourseProvider()),
+      ChangeNotifierProvider(
+          create: (_) => getCurrentCourseRegistrationProvider(),
+      ),
     ],
     child: const MyApp(),
   ));

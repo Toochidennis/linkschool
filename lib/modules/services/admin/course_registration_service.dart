@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:linkschool/modules/model/admin/course_registration_model.dart';
+import 'package:linkschool/modules/model/admin/getcurrent_registration_model.dart';
 
 class CourseRegistrationService {
   final String baseUrl =
@@ -51,5 +52,12 @@ class CourseRegistrationService {
       print("Error registering course: $e");
       return false;
     }
+  }
+
+  getCurrentCourseRegistration(String studentId) {}
+
+  Future<void> postCurrentCourseRegistration(
+      GetCurrentCourseRegistrationModel registration) async {
+    // Implement your API call or data persistence logic here
   }
 }

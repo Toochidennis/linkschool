@@ -13,17 +13,20 @@ class CourseRegistrationProvider with ChangeNotifier {
   bool get isLoading => _isLoading;
 
   //  Fetch registered courses (Fixed)
-  Future<void> fetchRegisteredCourses(
-      String classId, String term, String year) async {
-    _isLoading = true;
-    notifyListeners();
+  Future<void> fetchRegisteredCourses(String classId, String term, String year) async {
+  _isLoading = true;
+  notifyListeners();
 
-    _registeredCourses = await _courseRegistrationService
-        .fetchRegisteredCourses(classId, term, year);
-    print("$_registeredCourses");
-    _isLoading = false; 
-    notifyListeners();
+  try {
+    _registeredCourses = await _courseRegistrationService.fetchRegisteredCourses(classId, term, year);
+  } catch (e) {
+    print("Error fetching registered courses: $e");
+  } finally {
+    _isLoading = false;
+    notifyListeners(); // Ensures UI updates after loading
   }
+}
+
 
   //  Register a new course
   Future<void> registerCourse(CourseRegistrationModel course) async {

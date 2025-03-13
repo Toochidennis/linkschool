@@ -21,9 +21,10 @@ class _BulkRegistrationScreenState extends State<BulkRegistrationScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      Provider.of<CourseRegistrationProvider>(context, listen: false)
-          .fetchRegisteredCourses(
-              "73", "1", "2023"); // Pass your classId, term, year
+      Future.delayed(Duration(milliseconds: 100), () {
+        Provider.of<CourseRegistrationProvider>(context, listen: false)
+            .fetchRegisteredCourses("73", "1", "2023");
+      });
     });
   }
 
@@ -216,7 +217,7 @@ class _BulkRegistrationScreenState extends State<BulkRegistrationScreen> {
       padding: EdgeInsets.symmetric(horizontal: 16.0),
       child: Column(
         children: [
-          _buildStudentListItem('Toochukwu Dennis', 0),
+          _buildStudentListItem(),
           // _buildStudentListItem('Toochukwu Dennis', 2),
           // _buildStudentListItem('Toochukwu Dennis', 1),
           // _buildStudentListItem('Toochukwu Dennis', 3),
@@ -231,7 +232,7 @@ class _BulkRegistrationScreenState extends State<BulkRegistrationScreen> {
     );
   }
 
-  Widget _buildStudentListItem(String name, int coursesRegistered) {
+  Widget _buildStudentListItem() {
     final courseProvider =
         Provider.of<CourseRegistrationProvider>(context, listen: false);
 
@@ -290,7 +291,8 @@ class _BulkRegistrationScreenState extends State<BulkRegistrationScreen> {
                           MaterialPageRoute(
                             builder: (context) => CourseRegistrationScreen(
                               studentName: course.studentName,
-                              coursesRegistered: coursesRegistered,
+                              coursesRegistered: course.courseCount,
+                              studentId: course.studentId.toString(),
 
                               //   studentName:'${course.student_name}',
                               // coursesRegistered: '${course.id}',

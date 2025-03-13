@@ -5,9 +5,6 @@ import 'package:linkschool/modules/common/buttons/custom_long_elevated_button.da
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/common/utils/registration/registration_utils.dart';
 
-
-
-
 class ButtonSection extends StatelessWidget {
   const ButtonSection({super.key});
 

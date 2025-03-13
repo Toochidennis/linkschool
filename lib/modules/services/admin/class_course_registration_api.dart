@@ -6,8 +6,9 @@ class ClassCousreRegistrationApiService {
   final String baseUrl =
       "http://linkskool.com/developmentportal/api/classRegistration.php"; // Change this to your API
 
-  Future<bool> postStudentClass(StudentClassCourseRegistration studentClass) async {
-    final url = Uri.parse("$baseUrl/post-student-class");
+  Future<bool> postStudentClass(
+      StudentClassCourseRegistration studentClass) async {
+    final url = Uri.parse("$baseUrl");
 
     try {
       final response = await http.post(
@@ -19,6 +20,7 @@ class ClassCousreRegistrationApiService {
       );
 
       if (response.statusCode == 200 || response.statusCode == 201) {
+        print(response.body);
         return true; // Success
       } else {
         print("Error: ${response.body}");
