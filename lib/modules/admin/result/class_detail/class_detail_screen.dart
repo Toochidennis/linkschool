@@ -160,13 +160,6 @@ class _ClassDetailScreenState extends State<ClassDetailScreen> {
                                       ),
                                     );
                                   },
-                                  // onTap: () {
-                                  //   Navigator.push(
-                                  //       context,
-                                  //       MaterialPageRoute(
-                                  //           builder: (contex) =>
-                                  //               AttendanceScreen()));
-                                  // },
                                 ),
                               ),
                             ],
@@ -268,17 +261,4 @@ class _ClassDetailScreenState extends State<ClassDetailScreen> {
       );
     }).toList();
   }
-
-  // // Build term rows dynamically
-  // List<Widget> _buildTermRows(List<Map<String, dynamic>> terms) {
-  //   print('Building Term Rows: $terms');
-  //   return terms.map((term) {
-  //     return TermRow(
-  //       term: term['termName'], // Use the term name
-  //       percent: 0.75, // Example progress value
-  //       indicatorColor: AppColors.primaryLight,
-  //       onTap: () => showTermOverlay(context),
-  //     );
-  //   }).toList();
-  // }
 }
