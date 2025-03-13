@@ -14,8 +14,12 @@ import 'package:fl_chart/fl_chart.dart';
 class StudentResultScreen extends StatefulWidget {
   final String studentName;
   final String className;
-  const StudentResultScreen(
-      {super.key, required this.studentName, required this.className});
+  const StudentResultScreen({
+    super.key,
+    required this.studentName,
+    required this.className,
+
+  });
 
   @override
   State<StudentResultScreen> createState() => _StudentResultScreenState();

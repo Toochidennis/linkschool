@@ -19,7 +19,7 @@ void showStudentResultOverlay(BuildContext context, String classId) {
     backgroundColor: Colors.transparent,
     builder: (BuildContext context) {
       return GestureDetector(
-        onTap: () => Navigator.of(context).pop(),
+        onTap: () => Navigator.of(context).pop(), 
         child: DraggableScrollableSheet(
           initialChildSize: 0.4,
           minChildSize: 0.2,
@@ -82,7 +82,8 @@ void showStudentResultOverlay(BuildContext context, String classId) {
                                         studentName: student.name,
                                         className: student.className, 
                                        regId: student.regId,
-                                        studentId:student.id
+                                        studentId:student.id,
+                                        classId: classId,
                                       ),
                                     ),
                                   );

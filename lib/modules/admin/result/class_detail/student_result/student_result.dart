@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:linkschool/modules/providers/admin/student_provider.dart';
+import 'package:provider/provider.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/buttons/custom_medium_elevated_button.dart';
 import 'package:linkschool/modules/common/buttons/custom_outline_button_2.dart';
@@ -12,200 +14,294 @@ class StudentResultScreen extends StatelessWidget {
   final String studentName;
   final String className;
   final String regId;
+  final String classId;
   final int? studentId;
-  const StudentResultScreen(
-      {super.key,
-      required this.studentName,
-      required this.className,
-      required this.regId,
-      this.studentId});
+
+  const StudentResultScreen({
+    Key? key,
+    required this.classId,
+    required this.studentName,
+    required this.className,
+    required this.regId,
+    required this.studentId,
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          className,
-          style: AppTextStyles.normal600(fontSize: 18.0, color: Colors.black),
-        ),
-        leading: IconButton(
-          onPressed: () {
-            Navigator.of(context).pop();
-          },
-          icon: Image.asset(
-            'assets/icons/arrow_back.png',
-            color: AppColors.primaryLight,
-            width: 34.0,
-            height: 34.0,
+    return ChangeNotifierProvider(
+      create: (_) => StudentProvider()..fetchStudentTerms(studentId!),
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text(
+            className,
+            style: AppTextStyles.normal600(fontSize: 18.0, color: Colors.black),
           ),
-        ),
-        actions: [
-          SizedBox(
-            height: 32,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 13.0),
-              child: CustomMediumElevatedButton(
-                text: 'See student list',
-                onPressed: () {
-                  Navigator.push(context,
-                      MaterialPageRoute(builder: (context) => StudentList()));
-                },
-                backgroundColor: AppColors.videoColor4,
-                textStyle: AppTextStyles.normal700(
-                    fontSize: 14, color: AppColors.backgroundLight),
-                padding: const EdgeInsets.symmetric(horizontal: 8.0),
-              ),
+          leading: IconButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+            },
+            icon: Image.asset(
+              'assets/icons/arrow_back.png',
+              color: AppColors.primaryLight,
+              width: 34.0,
+              height: 34.0,
             ),
           ),
-        ],
-        backgroundColor: AppColors.backgroundLight,
-        elevation: 0.0,
-      ),
-      body: SingleChildScrollView(
-        child: ConstrainedBox(
-          constraints: BoxConstraints(
-            minHeight: MediaQuery.of(context).size.height -
-                AppBar().preferredSize.height,
-          ),
-          child: Stack(children: [
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const SizedBox(
-                    height: 30, // Reduced from 50 to 30
-                  ),
-                  Center(
-                    child: Column(
-                      children: [
-                        Container(
-                          width: 60,
-                          height: 60,
-                          decoration: const BoxDecoration(
-                            color: AppColors.primaryLight,
-                            shape: BoxShape.circle,
-                          ),
-                          child: const Icon(
-                            Icons.person,
-                            color: AppColors.backgroundLight,
-                            size: 40,
-                          ),
+          actions: [
+            SizedBox(
+              height: 32,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 13.0),
+                child: CustomMediumElevatedButton(
+                  text: 'See student list',
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => StudentList(
+                          classId: classId,
+                          
                         ),
-                        const SizedBox(height: 10),
-                        Text(
-                          studentName,
-                          style: AppTextStyles.normal700(
-                            fontSize: 20,
-                            color: AppColors.primaryLight,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  _buildInfoRow('Student ID:', regId),
-                  _buildInfoRow('Class:', className),
-                  _buildInfoRow('Student Average:', '76.80%'),
-                  const SizedBox(height: 30),
-                  Text(
-                    '2015/2016 Session',
-                    style: AppTextStyles.normal700(
-                        fontSize: 18, color: AppColors.primaryLight),
-                  ),
-                  const SizedBox(height: 10),
-                  _buildTermRow('First Term', 0.75, AppColors.primaryLight),
-                  _buildTermRow('Second Term', 0.75, AppColors.videoColor4),
-                  _buildTermRow(
-                      'Third Term', 0.75, AppColors.exploreButton3Light),
-                  const SizedBox(height: 30),
-                  CustomOutlineButton2(
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) =>
-                              const StudentAnnualResultScreen(),
-                        ),
-                      );
-                    },
-                    text: 'See annual result',
-                    borderColor: AppColors.videoColor4,
-                    textColor: AppColors.videoColor4,
-                    fontSize: 18,
-                    borderRadius: 10.0,
-                    buttonHeight: 48,
-                  ),
+                      ),
+                    );
+                  },
+                  backgroundColor: AppColors.videoColor4,
+                  textStyle: AppTextStyles.normal700(
+                      fontSize: 14, color: AppColors.backgroundLight),
+                  padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                ),
+              ),
+            ),
+          ],
+          backgroundColor: AppColors.backgroundLight,
+          elevation: 0.0,
+        ),
+        body: Consumer<StudentProvider>(
+          builder: (context, provider, child) {
+            // We'll use these variables to track the state without affecting the entire UI
+            bool hasData = provider.studentTerms != null &&
+                provider.studentTerms!['terms'] != null;
+            String year =
+                hasData ? provider.studentTerms!['terms'].keys.first : '';
+            var terms = hasData ? provider.studentTerms!['terms'] : null;
 
-                  SizedBox(
-                    height: 60,
-                  ),
-                  Text(
-                    'Session average chart',
-                    style: AppTextStyles.normal700(
-                      fontSize: 18,
-                      color: AppColors.primaryLight,
-                    ),
-                  ),
-                  const SizedBox(height: 40.0), // Increased from 15.0 to 30.0
-                  SizedBox(
-                    height: 200.0,
-                    child: BarChart(
-                      BarChartData(
-                        alignment: BarChartAlignment.spaceEvenly,
-                        maxY: 100,
-                        barTouchData: BarTouchData(enabled: false),
-                        titlesData: FlTitlesData(
-                          show: true,
-                          bottomTitles: AxisTitles(
-                            sideTitles: SideTitles(
-                              showTitles: true,
-                              getTitlesWidget: getTitles,
-                              reservedSize: 38,
+            return SingleChildScrollView(
+              child: ConstrainedBox(
+                constraints: BoxConstraints(
+                  minHeight: MediaQuery.of(context).size.height -
+                      AppBar().preferredSize.height,
+                ),
+                child: Stack(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const SizedBox(height: 30),
+                          Center(
+                            child: Column(
+                              children: [
+                                Container(
+                                  width: 60,
+                                  height: 60,
+                                  decoration: const BoxDecoration(
+                                    color: AppColors.primaryLight,
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: const Icon(
+                                    Icons.person,
+                                    color: AppColors.backgroundLight,
+                                    size: 40,
+                                  ),
+                                ),
+                                const SizedBox(height: 10),
+                                Text(
+                                  studentName,
+                                  style: AppTextStyles.normal700(
+                                    fontSize: 20,
+                                    color: AppColors.primaryLight,
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
-                          leftTitles: AxisTitles(
-                            sideTitles: SideTitles(
-                              showTitles: true,
-                              reservedSize: 40,
-                              getTitlesWidget: (value, meta) => Text(
-                                value.toInt().toString(),
-                                style: AppTextStyles.normal400(
-                                    color: Colors.black, fontSize: 12),
-                              ),
+                          const SizedBox(height: 20),
+                          _buildInfoRow('Student ID:', regId),
+                          _buildInfoRow('Class:', className),
+                          _buildInfoRow('Student Average:', '76.80%'),
+                          const SizedBox(height: 30),
+
+                          // Session Title - Always visible regardless of loading state
+                          Text(
+                            hasData
+                                ? '$year/${int.parse(year) + 1} Session'
+                                : '2023/2024 Session',
+                            style: AppTextStyles.normal700(
+                                fontSize: 18, color: AppColors.primaryLight),
+                          ),
+                          const SizedBox(height: 10),
+
+                          // Session Term Results Container - Shows loading state when needed
+                          provider.isLoading
+                              ? const Center(
+                                  child: Padding(
+                                    padding:
+                                        EdgeInsets.symmetric(vertical: 40.0),
+                                    child: CircularProgressIndicator(),
+                                  ),
+                                )
+                              : !hasData
+                                  ? const Center(
+                                      child: Padding(
+                                        padding: EdgeInsets.symmetric(
+                                            vertical: 40.0),
+                                        child: Text('No terms data available'),
+                                      ),
+                                    )
+                                  : Column(
+                                      children: [
+                                        if (terms[year]['1'] != null)
+                                          _buildTermRow(
+                                              'First Term',
+                                              double.parse(terms[year]['1']) /
+                                                  100,
+                                              AppColors.primaryLight),
+                                        if (terms[year]['2'] != null)
+                                          _buildTermRow(
+                                              'Second Term',
+                                              double.parse(terms[year]['2']) /
+                                                  100,
+                                              AppColors.videoColor4),
+                                        if (terms[year]['3'] != null)
+                                          _buildTermRow(
+                                              'Third Term',
+                                              double.parse(terms[year]['3']) /
+                                                  100,
+                                              AppColors.exploreButton3Light),
+                                      ],
+                                    ),
+
+                          const SizedBox(height: 30),
+                          CustomOutlineButton2(
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) =>
+                                      const StudentAnnualResultScreen(),
+                                ),
+                              );
+                            },
+                            text: 'See annual result',
+                            borderColor: AppColors.videoColor4,
+                            textColor: AppColors.videoColor4,
+                            fontSize: 18,
+                            borderRadius: 10.0,
+                            buttonHeight: 48,
+                          ),
+                          const SizedBox(height: 60),
+                          Text(
+                            'Session average chart',
+                            style: AppTextStyles.normal700(
+                              fontSize: 18,
+                              color: AppColors.primaryLight,
                             ),
                           ),
-                          topTitles: const AxisTitles(
-                              sideTitles: SideTitles(showTitles: false)),
-                          rightTitles: const AxisTitles(
-                              sideTitles: SideTitles(showTitles: false)),
-                        ),
-                        gridData: FlGridData(
-                          show: true,
-                          drawVerticalLine: false,
-                          horizontalInterval: 20,
-                          getDrawingHorizontalLine: (value) {
-                            return FlLine(
-                              color: Colors.black.withOpacity(0.3),
-                              strokeWidth: 1,
-                              dashArray: [5, 5],
-                            );
-                          },
-                        ),
-                        borderData: FlBorderData(show: false),
-                        barGroups: [
-                          _buildBarGroup(0, 60, AppColors.primaryLight),
-                          _buildBarGroup(1, 25, AppColors.videoColor4),
-                          _buildBarGroup(2, 75, AppColors.primaryLight),
+                          const SizedBox(height: 40.0),
+
+                          // Chart Container - Also shows loading state when needed
+                          SizedBox(
+                            height: 200.0,
+                            child: provider.isLoading
+                                ? const Center(
+                                    child: CircularProgressIndicator())
+                                : !hasData
+                                    ? const Center(
+                                        child: Text('No chart data available'))
+                                    : BarChart(
+                                        BarChartData(
+                                          alignment:
+                                              BarChartAlignment.spaceEvenly,
+                                          maxY: 100,
+                                          barTouchData:
+                                              BarTouchData(enabled: false),
+                                          titlesData: FlTitlesData(
+                                            show: true,
+                                            bottomTitles: AxisTitles(
+                                              sideTitles: SideTitles(
+                                                showTitles: true,
+                                                getTitlesWidget: getTitles,
+                                                reservedSize: 38,
+                                              ),
+                                            ),
+                                            leftTitles: AxisTitles(
+                                              sideTitles: SideTitles(
+                                                showTitles: true,
+                                                reservedSize: 40,
+                                                getTitlesWidget:
+                                                    (value, meta) => Text(
+                                                  value.toInt().toString(),
+                                                  style:
+                                                      AppTextStyles.normal400(
+                                                          color: Colors.black,
+                                                          fontSize: 12),
+                                                ),
+                                              ),
+                                            ),
+                                            topTitles: const AxisTitles(
+                                                sideTitles: SideTitles(
+                                                    showTitles: false)),
+                                            rightTitles: const AxisTitles(
+                                                sideTitles: SideTitles(
+                                                    showTitles: false)),
+                                          ),
+                                          gridData: FlGridData(
+                                            show: true,
+                                            drawVerticalLine: false,
+                                            horizontalInterval: 20,
+                                            getDrawingHorizontalLine: (value) {
+                                              return FlLine(
+                                                color: Colors.black
+                                                    .withOpacity(0.3),
+                                                strokeWidth: 1,
+                                                dashArray: [5, 5],
+                                              );
+                                            },
+                                          ),
+                                          borderData: FlBorderData(show: false),
+                                          barGroups: [
+                                            if (terms[year]['1'] != null)
+                                              _buildBarGroup(
+                                                  0,
+                                                  double.parse(
+                                                      terms[year]['1']),
+                                                  AppColors.primaryLight),
+                                            if (terms[year]['2'] != null)
+                                              _buildBarGroup(
+                                                  1,
+                                                  double.parse(
+                                                      terms[year]['2']),
+                                                  AppColors.videoColor4),
+                                            if (terms[year]['3'] != null)
+                                              _buildBarGroup(
+                                                  2,
+                                                  double.parse(
+                                                      terms[year]['3']),
+                                                  AppColors.primaryLight),
+                                          ],
+                                          groupsSpace: 0,
+                                        ),
+                                      ),
+                          ),
                         ],
-                        groupsSpace: 0, // Reduced space between bars
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-          ]),
+            );
+          },
         ),
       ),
     );
@@ -246,9 +342,10 @@ class StudentResultScreen extends StatelessWidget {
       width: double.infinity,
       height: 75,
       decoration: const BoxDecoration(
-          border: Border(
-        bottom: BorderSide(color: AppColors.borderGray, width: 1),
-      )),
+        border: Border(
+          bottom: BorderSide(color: AppColors.borderGray, width: 1),
+        ),
+      ),
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 16.0),
         child: Row(
@@ -313,7 +410,6 @@ class StudentResultScreen extends StatelessWidget {
     return SideTitleWidget(
       space: 4.0,
       meta: meta,
-      // meta: TitleMeta(axisSide: meta.axisSide),
       child: Text(text,
           style: AppTextStyles.normal400(fontSize: 12, color: Colors.black)),
     );

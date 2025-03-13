@@ -92,37 +92,33 @@ class StudentService {
     }
   }
 
-  Future<bool> postStudent({
-    required int studentId,
-  }) async {
+   Future<Map<String, dynamic>> fetchStudentTerms(int studentId) async {
     try {
       final request = http.MultipartRequest(
         'POST',
         Uri.parse('$_baseUrl/studentTerms.php'),
       );
 
-      request.fields.addAll({'id': studentId.toString()});
+      // Add form-data fields
+      request.fields['id'] = studentId.toString();
+      request.fields['_db'] = _dbParam;
 
+      // Send the request
       final response = await request.send();
 
+      // Parse the response
       if (response.statusCode == 200) {
         final responseData = await response.stream.bytesToString();
-        final jsonResponse = json.decode(responseData);
-
-        if (jsonResponse['status'] == 'success') {
-          return true;
-        } else {
-          throw Exception(
-              jsonResponse['message'] ?? 'Failed to save attendance');
-        }
+        return json.decode(responseData);
       } else {
-        throw Exception('Failed to save attendance: ${response.statusCode}');
+        throw Exception('Failed to load student terms: ${response.statusCode}');
       }
     } catch (e) {
-      debugPrint('Error saving attendance: $e');
-      throw Exception('Error saving attendance: $e');
+      debugPrint('Error fetching student terms: $e');
+      throw Exception('Error fetching student terms: $e');
     }
   }
+
 }
 
 

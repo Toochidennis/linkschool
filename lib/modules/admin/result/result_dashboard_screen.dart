@@ -5,8 +5,7 @@ import 'package:linkschool/modules/common/widgets/portal/result_dashboard/level_
 import 'package:linkschool/modules/common/widgets/portal/result_dashboard/performance_chart.dart';
 import 'package:linkschool/modules/common/widgets/portal/result_dashboard/settings_section.dart';
 import 'package:hive/hive.dart';
-import 'package:linkschool/modules/providers/admin/student_provider.dart';
-import 'package:provider/provider.dart';
+
 
 class ResultDashboardScreen extends StatefulWidget {
   final PreferredSizeWidget appBar;
