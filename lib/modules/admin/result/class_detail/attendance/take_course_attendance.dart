@@ -5,9 +5,8 @@ import 'package:intl/intl.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/buttons/custom_floating_save_button.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
-import 'package:linkschool/modules/common/custom_toaster.dart'; 
-
-
+import 'package:linkschool/modules/common/custom_toaster.dart';
+// import 'package:hive/hive.dart';
 
 class TakeCourseAttendance extends StatefulWidget {
   final String? courseId;
@@ -51,6 +50,13 @@ class _TakeCourseAttendanceState extends State<TakeCourseAttendance> {
           date: _currentDate,
           courseId: widget.courseId!,
         );
+
+        // Fetch local attendance data
+        provider.fetchLocalAttendance(
+          classId: widget.classId!,
+          date: _currentDate,
+          courseId: widget.courseId!,
+        );
       });
     });
   }
@@ -74,8 +80,16 @@ class _TakeCourseAttendanceState extends State<TakeCourseAttendance> {
       classId: widget.classId,
       courseId: widget.courseId,
       date: _currentDate,
-    ).then((success) {
+    ).then((success) async {
       if (success) {
+        // Save attendance data locally
+        await provider.saveLocalAttendance(
+          classId: widget.classId!,
+          date: _currentDate,
+          courseId: widget.courseId!,
+          studentIds: provider.selectedStudentIds,
+        );
+
         CustomToaster.toastSuccess(
           context,
           'Success',
@@ -223,6 +237,15 @@ class _TakeCourseAttendanceState extends State<TakeCourseAttendance> {
 }
 
 
+// ``import 'package:flutter/material.dart';
+// import 'package:linkschool/modules/providers/admin/student_provider.dart';
+// import 'package:provider/provider.dart';
+// import 'package:intl/intl.dart';
+// import 'package:linkschool/modules/common/app_colors.dart';
+// import 'package:linkschool/modules/common/buttons/custom_floating_save_button.dart';
+// import 'package:linkschool/modules/common/text_styles.dart';
+// import 'package:linkschool/modules/common/custom_toaster.dart';
+
 // class TakeCourseAttendance extends StatefulWidget {
 //   final String? courseId;
 //   final String? classId;
@@ -257,7 +280,15 @@ class _TakeCourseAttendanceState extends State<TakeCourseAttendance> {
 
 //     // Initialize provider with needed data
 //     WidgetsBinding.instance.addPostFrameCallback((_) {
-//       context.read<StudentProvider>().fetchStudents(widget.classId);
+//       final provider = context.read<StudentProvider>();
+//       provider.fetchStudents(widget.classId).then((_) {
+//         // Fetch attendance data after students are loaded
+//         provider.fetchAttendance(
+//           classId: widget.classId!,
+//           date: _currentDate,
+//           courseId: widget.courseId!,
+//         );
+//       });
 //     });
 //   }
 
@@ -270,7 +301,7 @@ class _TakeCourseAttendanceState extends State<TakeCourseAttendance> {
 
 //   void _setCurrentDate() {
 //     final now = DateTime.now();
-//     final formatter = DateFormat('EEEE dd MMMM, yyyy');
+//     final formatter = DateFormat('yyyy-MM-dd HH:mm:ss'); // Format for API
 //     _currentDate = formatter.format(now);
 //   }
 
@@ -282,14 +313,12 @@ class _TakeCourseAttendanceState extends State<TakeCourseAttendance> {
 //       date: _currentDate,
 //     ).then((success) {
 //       if (success) {
-//         // Show success toaster
 //         CustomToaster.toastSuccess(
 //           context,
 //           'Success',
 //           'Attendance saved successfully',
 //         );
 //       } else {
-//         // Show error toaster
 //         CustomToaster.toastError(
 //           context,
 //           'Error',
@@ -428,4 +457,4 @@ class _TakeCourseAttendanceState extends State<TakeCourseAttendance> {
 //       ),
 //     );
 //   }
-// }
+// }``

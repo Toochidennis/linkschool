@@ -27,6 +27,7 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
     await Hive.initFlutter();
   await Hive.openBox('userData');
+  await Hive.openBox('attendance');
   await dotenv.load(fileName: ".env");
 
   SystemChrome.setSystemUIOverlayStyle(

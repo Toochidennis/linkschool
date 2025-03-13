@@ -37,7 +37,7 @@ class TakeAttendanceButton extends StatelessWidget {
                   context,
                   MaterialPageRoute(
                       builder: (context) =>
-                          TakeClassAttendance()), // Navigate to TakeClassAttendance
+                          TakeClassAttendance(classId: classId)), // Navigate to TakeClassAttendance
                 );
               }),
               const SizedBox(height: 16),
@@ -81,7 +81,7 @@ class TakeAttendanceButton extends StatelessWidget {
                           context,
                           MaterialPageRoute(
                               builder: (context) => TakeCourseAttendance(
-                                  courseId: course[0], classId: classId))); // Pass course ID
+                                  courseId: course[0], classId: classId))); 
                     }),
                   );
                 }).toList(),
