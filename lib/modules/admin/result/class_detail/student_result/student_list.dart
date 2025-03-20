@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:linkschool/modules/admin/result/class_detail/student_result/student_result.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:provider/provider.dart';
 
+import '../../../../common/widgets/portal/class_detail/overlays.dart';
 import '../../../../providers/admin/student_provider.dart';
 
 class StudentList extends StatefulWidget {
@@ -110,20 +110,8 @@ class _StudentListState extends State<StudentList> {
                         style: AppTextStyles.normal500(
                             fontSize: 18, color: AppColors.textLight),
                       ),
-                      onTap: () {
-                        Navigator.push(context, 
-
-                        MaterialPageRoute(
-                          builder: (context) => StudentResultScreen(
-                            studentName: student.name,
-                            className: student.className,
-                            regId: student.regId,
-                            studentId: student.id,
-                            classId: widget.classId,
-                          ),
-                        )
-                        );
-                      },
+                      onTap: () =>
+                          showStudentResultOverlay(context, widget.classId),
                     );
                   },
                 );

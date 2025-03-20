@@ -5,10 +5,12 @@ import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/buttons/custom_medium_elevated_button.dart';
 import 'package:linkschool/modules/common/buttons/custom_outline_button_2.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
-import 'package:linkschool/modules/admin/result/class_detail/student_result/student_list.dart';
+
 import 'package:linkschool/modules/student/result/student_annual_result_screen.dart';
 import 'package:percent_indicator/percent_indicator.dart';
 import 'package:fl_chart/fl_chart.dart';
+
+import '../../../../common/widgets/portal/class_detail/overlays.dart';
 
 class StudentResultScreen extends StatelessWidget {
   final String studentName;
@@ -54,17 +56,7 @@ class StudentResultScreen extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 13.0),
                 child: CustomMediumElevatedButton(
                   text: 'See student list',
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => StudentList(
-                          classId: classId,
-                          
-                        ),
-                      ),
-                    );
-                  },
+                  onPressed: ()=> showStudentResultOverlay(context,classId),
                   backgroundColor: AppColors.videoColor4,
                   textStyle: AppTextStyles.normal700(
                       fontSize: 14, color: AppColors.backgroundLight),

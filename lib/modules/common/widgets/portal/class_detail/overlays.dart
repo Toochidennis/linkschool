@@ -3,12 +3,9 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:linkschool/modules/admin/result/class_detail/student_result/course_result_screen.dart';
 import 'package:linkschool/modules/admin/result/class_detail/student_result/student_result.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
-
 import 'package:linkschool/modules/providers/admin/student_provider.dart';
 import 'package:linkschool/modules/staff/e_learning/form_classes/staff_skill_behaviour_screen.dart';
 import 'package:provider/provider.dart';
-
-
 
 void showStudentResultOverlay(BuildContext context, String classId) {
   Provider.of<StudentProvider>(context, listen: false).fetchStudents(classId);
@@ -105,6 +102,8 @@ void showStudentResultOverlay(BuildContext context, String classId) {
   );
 }
 
+
+
 void showTermOverlay(BuildContext context) {
   showModalBottomSheet(
     context: context,
@@ -120,6 +119,7 @@ void showTermOverlay(BuildContext context) {
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 16.0),
           child: Column(
+
             children: [
               Expanded(
                 child: ListView.separated(
