@@ -1,12 +1,12 @@
-// lib/providers/attendance_provider.dart
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
 import 'package:linkschool/modules/model/admin/student_model.dart';
 import 'package:linkschool/modules/services/admin/student_service.dart';
+import 'package:linkschool/modules/services/api/service_locator.dart';
 
 
 class StudentProvider extends ChangeNotifier {
-  final StudentService _studentService = StudentService();
+  final StudentService _studentService = locator<StudentService>();
 
   List<Student> _students = [];
   bool _isLoading = false;
@@ -188,6 +188,15 @@ class StudentProvider extends ChangeNotifier {
 }
 
 
+
+
+// // lib/providers/attendance_provider.dart
+// import 'package:flutter/material.dart';
+// import 'package:hive/hive.dart';
+// import 'package:linkschool/modules/model/admin/student_model.dart';
+// import 'package:linkschool/modules/services/admin/student_service.dart';
+
+
 // class StudentProvider extends ChangeNotifier {
 //   final StudentService _studentService = StudentService();
 
@@ -233,72 +242,74 @@ class StudentProvider extends ChangeNotifier {
 //   }
 
 //   // Fetch attendance data and update student selection status
-// // In StudentProvider
-// Future<void> fetchLocalAttendance({
-//   required String classId,
-//   required String date,
-//   required String courseId,
-// }) async {
-//   try {
-//     final attendanceBox = Hive.box('attendance');
-//     final key = '$classId-$date-$courseId';
-//     final attendedStudentIds = attendanceBox.get(key, defaultValue: <int>[]);
+//   Future<void> fetchAttendance({
+//     required String classId,
+//     required String date,
+//     required String courseId,
+//   }) async {
+//     try {
+//       _isLoading = true;
+//       _errorMessage = '';
+//       notifyListeners();
 
-//     // Update the selection status of students
-//     for (var student in _students) {
-//       student.isSelected = attendedStudentIds.contains(student.id);
+//       // Fetch the list of student IDs whose attendance has already been taken
+//       final attendedStudentIds = await _studentService.getAttendance(
+//         classId: classId,
+//         date: date,
+//         courseId: courseId,
+//       );
+
+//       // Update the selection status of students
+//       for (var student in _students) {
+//         student.isSelected = attendedStudentIds.contains(student.id);
+//       }
+
+//       _isLoading = false;
+//       notifyListeners();
+//     } catch (e) {
+//       _isLoading = false;
+//       _errorMessage = e.toString();
+//       notifyListeners();
 //     }
-
-//     notifyListeners();
-//   } catch (e) {
-//     debugPrint('Error fetching local attendance: $e');
 //   }
-// }
 
-// Future<void> saveLocalAttendance({
-//   required String classId,
-//   required String date,
-//   required String courseId,
-//   required List<int> studentIds,
-// }) async {
-//   try {
-//     final attendanceBox = Hive.box('attendance');
-//     final key = '$classId-$date-$courseId';
-//     await attendanceBox.put(key, studentIds);
-//   } catch (e) {
-//     debugPrint('Error saving local attendance: $e');
+//   // Fetch local attendance data
+//   Future<void> fetchLocalAttendance({
+//     required String classId,
+//     required String date,
+//     required String courseId,
+//   }) async {
+//     try {
+//       final attendanceBox = Hive.box('attendance');
+//       final key = '$classId-$date-$courseId';
+//       final attendedStudentIds = attendanceBox.get(key, defaultValue: <int>[]);
+
+//       // Update the selection status of students
+//       for (var student in _students) {
+//         student.isSelected = attendedStudentIds.contains(student.id);
+//       }
+
+//       notifyListeners();
+//     } catch (e) {
+//       debugPrint('Error fetching local attendance: $e');
+//     }
 //   }
-// }
-//   // Future<void> fetchAttendance({
-//   //   required String classId,
-//   //   required String date,
-//   //   required String courseId,
-//   // }) async {
-//   //   try {
-//   //     _isLoading = true;
-//   //     _errorMessage = '';
-//   //     notifyListeners();
 
-//   //     // Fetch the list of student IDs whose attendance has already been taken
-//   //     final attendedStudentIds = await _studentService.getAttendance(
-//   //       classId: classId,
-//   //       date: date,
-//   //       courseId: courseId,
-//   //     );
-
-//   //     // Update the selection status of students
-//   //     for (var student in _students) {
-//   //       student.isSelected = attendedStudentIds.contains(student.id);
-//   //     }
-
-//   //     _isLoading = false;
-//   //     notifyListeners();
-//   //   } catch (e) {
-//   //     _isLoading = false;
-//   //     _errorMessage = e.toString();
-//   //     notifyListeners();
-//   //   }
-//   // }
+//   // Save attendance locally
+//   Future<void> saveLocalAttendance({
+//     required String classId,
+//     required String date,
+//     required String courseId,
+//     required List<int> studentIds,
+//   }) async {
+//     try {
+//       final attendanceBox = Hive.box('attendance');
+//       final key = '$classId-$date-$courseId';
+//       await attendanceBox.put(key, studentIds);
+//     } catch (e) {
+//       debugPrint('Error saving local attendance: $e');
+//     }
+//   }
 
 //   // Toggle selection for a single student
 //   void toggleStudentSelection(int index) {
