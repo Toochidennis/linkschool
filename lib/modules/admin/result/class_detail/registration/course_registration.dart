@@ -84,10 +84,7 @@ class _CourseRegistrationScreenState extends State<CourseRegistrationScreen> {
 
   @override
   Widget build(BuildContext context) {
-    Future.microtask(() {
-      Provider.of<getCurrentCourseRegistrationProvider>(context, listen: false)
-          .fetchCurrentCourseRegistration(widget.studentId, "72", "1", "2023");
-    });
+    final provider = Provider.of<ClassCourseProvider>(context);
     return Scaffold(
       extendBodyBehindAppBar: true,
       appBar: AppBar(
@@ -161,9 +158,24 @@ class _CourseRegistrationScreenState extends State<CourseRegistrationScreen> {
                         child: FloatingActionButton(
                           onPressed: () async {
                             // Access the provider without listening to changes
-                            final providerClassRegistration =
-                                Provider.of<StudentClassCourseProvider>(context,
-                                    listen: false);
+                            if (provider.isLoading) {
+                              // Show a loading indicator if the provider is already loading
+                              showDialog(
+                                context: context,
+                                barrierDismissible: false,
+                                builder: (context) => Center(
+                                  child: CircularProgressIndicator(),
+                                ),
+                              );
+                              return; // Exit the function to prevent further execution
+                            }
+
+                            if (provider.errorMessage.isNotEmpty) {
+                              // Show an error message if there's an error in the provider
+                              CustomToaster.toastError(
+                                  context, "Error", "Provider error detected");
+                              return; // Exit the function to prevent further execution
+                            }
 
                             // Map selected courses to Course objects
                             List<Course> selectedCourses = [];
@@ -173,16 +185,15 @@ class _CourseRegistrationScreenState extends State<CourseRegistrationScreen> {
                                     .add(Course(courseId: subjects[i]));
                               }
                             }
-
                             // Create a StudentClassCourseRegistration object
-                            StudentClassCourseRegistration studentClassReg =
-                                StudentClassCourseRegistration(
-                              classId: widget
-                                  .studentId, // Replace with actual classId
-                              term: 'First Term', // Replace with actual term
-                              year: getCurrentAcademicSession().split('/')[0],
-                              course: selectedCourses,
-                              studentId: widget.studentId,
+                            final classData = ClassCourseModel(
+                              classId: '272',
+                              term: '2023',
+                              year: '2023',
+                              course:
+                                  selectedCourses, // Use the populated selectedCourses list
+                              studentId: widget
+                                  .studentId, // Use the studentId from the widget
                             );
 
                             // Show a loading indicator
@@ -193,28 +204,6 @@ class _CourseRegistrationScreenState extends State<CourseRegistrationScreen> {
                                 child: CircularProgressIndicator(),
                               ),
                             );
-
-                            // Submit the data
-                            bool success = await providerClassRegistration
-                                .submitStudentClass(studentClassReg);
-
-                            // Hide the loading indicator
-                            Navigator.of(context).pop();
-
-                            // Show a SnackBar based on the result
-                            CustomToaster.toastSuccess(
-                                context,
-                                "success",
-                                success
-                                    ? "Class submitted successfully"
-                                    : "Failed to submit class");
-                            // ScaffoldMessenger.of(context).showSnackBar(
-                            //   SnackBar(
-                            //     content: Text(success
-                            //         ? 'Class submitted successfully!'
-                            //         : 'Failed to submit class.'),
-                            //   ),
-                            // );
                           },
                           backgroundColor: isHoveringSave
                               ? Colors.blueGrey

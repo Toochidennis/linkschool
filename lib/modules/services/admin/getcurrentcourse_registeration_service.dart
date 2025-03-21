@@ -14,7 +14,7 @@ class GetcurrentcourseRegisterationService {
     }
 
     final Uri url = Uri.parse(
-        '$baseUrl?_db=linkskoo_practice&student_Id=$student_Id&classID=$classID&term=$term&year=$year');
+        '$baseUrl?_db=linkskoo_practice&student_Id=$student_Id&classID=$classID&term=$term&Year=$year');
 
     final response = await http.get(url);
 

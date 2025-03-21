@@ -59,6 +59,7 @@ dependencies:
   # motion_toast: ^2.11.0
   share_plus: ^10.1.4
   hive_flutter: ^1.1.0
+  get_it: ^8.0.3
 
 dev_dependencies:
   flutter_test:

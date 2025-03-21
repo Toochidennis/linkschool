@@ -4,6 +4,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:linkschool/modules/auth/provider/auth_provider.dart';
 import 'package:linkschool/modules/common/app_themes.dart';
+import 'package:linkschool/modules/model/admin/class_course_registration_model.dart';
 import 'package:linkschool/modules/providers/admin/assessment_provider.dart';
 import 'package:linkschool/modules/providers/admin/class_course_provider.dart';
 import 'package:linkschool/modules/providers/admin/class_provider.dart';
@@ -30,6 +31,8 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Hive.initFlutter();
   await Hive.openBox('userData');
+  //  Hive.registerAdapter(CourseRegistrationModelAdapter());
+  await Hive.openBox('currentCourseRegistrationBox');
   await dotenv.load(fileName: ".env");
 
   SystemChrome.setSystemUIOverlayStyle(
@@ -56,7 +59,7 @@ Future<void> main() async {
       ChangeNotifierProvider(
           create: (_) => EbookProvider(ebookService: EbookService())),
       ChangeNotifierProvider(create: (_) => TermProvider()),
-      ChangeNotifierProvider(create: (_) => StudentClassCourseProvider()),
+      ChangeNotifierProvider(create: (_) => ClassCourseProvider()),
       ChangeNotifierProvider(
           create: (_) => getCurrentCourseRegistrationProvider(),
       ),
