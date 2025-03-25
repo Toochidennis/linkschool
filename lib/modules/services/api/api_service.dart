@@ -43,7 +43,7 @@ class ApiResponse<T> {
     return ApiResponse<T>(
       success: isSuccess,
       message: message,
-      statusCode: 200, // This will be overridden by the ApiService
+      statusCode: 200, 
       data: parsedData,
       rawData: json,
     );
