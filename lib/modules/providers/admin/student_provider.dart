@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:linkschool/modules/model/admin/student_model.dart';
 import 'package:linkschool/modules/services/admin/student_service.dart';
+import 'package:hive/hive.dart';
 
 class StudentProvider extends ChangeNotifier {
   final StudentService _studentService;
@@ -13,6 +14,7 @@ class StudentProvider extends ChangeNotifier {
   bool _selectAll = false;
   Student? _student;
   Map<String, dynamic>? _studentTerms;
+  List<int> _localAttendance = [];
 
   // Getters
   List<Student> get students => _students;
@@ -50,6 +52,107 @@ class StudentProvider extends ChangeNotifier {
       _errorMessage = e.toString();
       notifyListeners();
     }
+  }
+
+  // Fetch attendance data
+  Future<void> fetchAttendance({
+    required String classId, 
+    required String date, 
+    required String courseId,
+  }) async {
+    // Implement attendance fetching logic if needed
+    notifyListeners();
+  }
+
+  // Fetch local attendance data
+  Future<void> fetchLocalAttendance({
+    required String classId, 
+    required String date, 
+    required String courseId,
+  }) async {
+    try {
+      final attendanceBox = await Hive.openBox('attendance');
+      final key = '${classId}_${date}_$courseId';
+      
+      final localData = attendanceBox.get(key);
+      if (localData is List<int>) {
+        _localAttendance = localData;
+        
+        // Mark students as selected based on local attendance
+        for (var student in _students) {
+          student.isSelected = _localAttendance.contains(student.id);
+        }
+        
+        notifyListeners();
+      }
+    } catch (e) {
+      debugPrint('Error fetching local attendance: $e');
+    }
+  }
+
+  // Save attendance
+  Future<bool> saveAttendance({
+    required String? classId, 
+    required String? courseId, 
+    required String date,
+  }) async {
+    if (classId == null || courseId == null) {
+      _errorMessage = 'Class or Course ID is missing';
+      notifyListeners();
+      return false;
+    }
+
+    try {
+      final success = await _studentService.saveAttendance(
+        classId: classId,
+        courseId: courseId,
+        studentIds: selectedStudentIds,
+        date: date,
+      );
+
+      if (success) {
+        _errorMessage = '';
+      } else {
+        _errorMessage = 'Failed to save attendance';
+      }
+
+      notifyListeners();
+      return success;
+    } catch (e) {
+      _errorMessage = e.toString();
+      notifyListeners();
+      return false;
+    }
+  }
+
+  // Save local attendance
+  Future<void> saveLocalAttendance({
+    required String classId, 
+    required String date, 
+    required String courseId, 
+    required List<int> studentIds,
+  }) async {
+    try {
+      final attendanceBox = await Hive.openBox('attendance');
+      final key = '${classId}_${date}_$courseId';
+      
+      await attendanceBox.put(key, studentIds);
+      
+      _localAttendance = studentIds;
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Error saving local attendance: $e');
+    }
+  }
+
+  // Reset provider state
+  void reset() {
+    _students = [];
+    _isLoading = false;
+    _errorMessage = '';
+    _selectAll = false;
+    _localAttendance = [];
+    notifyListeners();
   }
 
   // Toggle selection for a single student
@@ -104,17 +207,6 @@ class StudentProvider extends ChangeNotifier {
     } finally {
       _isLoading = false;
       notifyListeners();
-    }
-  }
-
-  Future<Student?> _getStudentDetails(int studentId) async {
-    try {
-      // Call the API and parse the response
-      final response = await _studentService.getStudentsByClass(studentId.toString());
-      return response.isNotEmpty ? response.first : null;
-    } catch (e) {
-      _errorMessage = e.toString();
-      return null;
     }
   }
 }
