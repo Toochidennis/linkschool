@@ -1,4 +1,5 @@
 import 'package:get_it/get_it.dart';
+import 'package:linkschool/modules/auth/provider/auth_provider.dart';
 import 'package:linkschool/modules/auth/service/auth_service.dart';
 import 'package:linkschool/modules/providers/admin/behavour_provider.dart';
 import 'package:linkschool/modules/providers/admin/grade_provider.dart';
@@ -55,8 +56,16 @@ void setupServiceLocator() {
   locator.registerLazySingleton<LevelService>(() => LevelService());
   locator.registerLazySingleton<TermService>(() => TermService());
 
-  // Register the missing services
+
+ // Register AuthService
   locator.registerLazySingleton<AuthService>(() => AuthService());
+
+  // Register AuthProvider with AuthService dependency
+  locator.registerLazySingleton<AuthProvider>(
+    () => AuthProvider()
+  );
+
+    // Register the missing services
   locator.registerLazySingleton<CourseRegistrationService>(() => CourseRegistrationService());
   locator.registerLazySingleton<AssessmentService>(() => AssessmentService());
 }
