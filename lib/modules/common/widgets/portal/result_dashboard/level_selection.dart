@@ -1,4 +1,3 @@
-// lib/widgets/level_selection.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:hive_flutter/hive_flutter.dart';
@@ -27,6 +26,7 @@ class LevelSelection extends StatefulWidget {
 
 class _LevelSelectionState extends State<LevelSelection> {
   String _selectedLevel = '';
+  String _selectedLevelId = '';
 
   @override
   Widget build(BuildContext context) {
@@ -34,8 +34,9 @@ class _LevelSelectionState extends State<LevelSelection> {
       children: [
         // Dynamically generate level boxes based on levelNames
         ...widget.levelNames.map((level) {
+          final levelId = level[0]; // level_id is at index 0
           final levelName = level[1]; // level_name is at index 1
-          return _buildLevelBox(levelName, 'assets/images/result/bg_box1.svg');
+          return _buildLevelBox(levelId, levelName, 'assets/images/result/bg_box1.svg');
         }),
         const SizedBox(
           height: 100,
@@ -44,9 +45,9 @@ class _LevelSelectionState extends State<LevelSelection> {
     );
   }
 
-  Widget _buildLevelBox(String levelText, String backgroundImagePath) {
+  Widget _buildLevelBox(String levelId, String levelText, String backgroundImagePath) {
     return GestureDetector(
-      onTap: () => _toggleOverlay(levelText),
+      onTap: () => _toggleOverlay(levelId, levelText),
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
         child: Container(
@@ -87,7 +88,7 @@ class _LevelSelectionState extends State<LevelSelection> {
                         borderRadius: BorderRadius.circular(4),
                       ),
                       child: TextButton(
-                        onPressed: () => _toggleOverlay(levelText),
+                        onPressed: () => _toggleOverlay(levelId, levelText),
                         style: TextButton.styleFrom(
                           padding: const EdgeInsets.symmetric(
                               horizontal: 8, vertical: 8),
@@ -113,9 +114,10 @@ class _LevelSelectionState extends State<LevelSelection> {
     );
   }
 
-  void _toggleOverlay(String level) {
+  void _toggleOverlay(String levelId, String levelText) {
     setState(() {
-      _selectedLevel = level;
+      _selectedLevel = levelText;
+      _selectedLevelId = levelId;
       if (widget.isSecondScreen) {
         _showCourseSelectionDialog(); // Show course selection dialog
       } else {
@@ -125,30 +127,10 @@ class _LevelSelectionState extends State<LevelSelection> {
   }
 
   void _showClassSelectionDialog() {
-    final classes =
-        widget.classNames ?? ['A', 'B', 'C', 'D', 'E']; // Default classes
-    final levelPrefix = _selectedLevel.split(' ')[0];
-
-    // Find the selected level's ID
-    final selectedLevel = widget.levelNames.firstWhere(
-      (level) => level[1] == _selectedLevel, // level[1] is the level_name
-      orElse: () => null,
-    );
-
-    if (selectedLevel == null) {
-      print('Selected level not found in levelNames');
-      return;
-    }
-
-    // Convert the selected level ID to an integer
-    final selectedLevelId =
-        int.parse(selectedLevel[0]); // level[0] is the level ID
-
-    // Filter classes based on the selected level's ID
-    final filteredClasses = classes.where((cls) {
-      final classLevelId = int.parse(cls[2]); // cls[2] is the level_id
-      return classLevelId == selectedLevelId;
-    }).toList();
+    // Filter classes that match the selected level
+    final filteredClasses = (widget.classNames ?? [])
+        .where((cls) => cls[2] == _selectedLevelId)
+        .toList();
 
     showModalBottomSheet(
       context: context,
@@ -183,13 +165,13 @@ class _LevelSelectionState extends State<LevelSelection> {
                       return Padding(
                         padding: const EdgeInsets.symmetric(
                             horizontal: 16, vertical: 8),
-                      child: _buildClassButton(
-                        cls[1], // cls[1] is the class_name
-                        () {
-                          Navigator.of(context).pop();
-                          _navigateToClassDetail(cls[0], cls[1]); // cls[0] is the class ID, cls[1] is the class_name
-                        },
-                      ),
+                        child: _buildClassButton(
+                          cls[1], // class name
+                          () {
+                            Navigator.of(context).pop();
+                            _navigateToClassDetail(cls[0], cls[1]); // class ID, class name
+                          },
+                        ),
                       );
                     },
                   ),
@@ -309,20 +291,19 @@ class _LevelSelectionState extends State<LevelSelection> {
     );
   }
 
-void _navigateToClassDetail(String classId, String className) async {
-  final userBox = Hive.box('userData');
-  await userBox.put('selectedClassId', classId); // Persist selected class ID
+  void _navigateToClassDetail(String classId, String className) async {
+    final userBox = Hive.box('userData');
+    await userBox.put('selectedClassId', classId); // Persist selected class ID
 
-  Navigator.of(context).push(
-    MaterialPageRoute(
-      builder: (context) => ClassDetailScreen(
-        classId: classId,
-        className: className,
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => ClassDetailScreen(
+          classId: classId,
+          className: className,
+        ),
       ),
-    ),
-  );
-}
-
+    );
+  }
 }
 
 

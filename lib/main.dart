@@ -23,12 +23,22 @@ import 'modules/providers/explore/game/game_provider.dart';
 import 'modules/providers/admin/grade_provider.dart';
 
 Future<void> main() async {
+  // Ensure Flutter bindings are initialized
   WidgetsFlutterBinding.ensureInitialized();
   
-  // Initialize Hive
-  await Hive.initFlutter();
-  await Hive.openBox('userData');
-  await Hive.openBox('attendance');
+  // Initialize Hive with more robust error handling
+  try {
+    await Hive.initFlutter();
+    
+    // Open multiple boxes with error handling
+    await Hive.openBox('userData');
+    await Hive.openBox('attendance');
+    await Hive.openBox('loginResponse');
+    
+    print('Hive initialized successfully');
+  } catch (e) {
+    print('Error initializing Hive: $e');
+  }
   
   // Load environment variables
   await dotenv.load(fileName: ".env");
