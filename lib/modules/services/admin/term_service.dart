@@ -2,6 +2,8 @@ import 'package:hive/hive.dart';
 import 'package:linkschool/modules/services/api/api_service.dart';
 import 'package:linkschool/modules/services/api/service_locator.dart';
 
+// https://linkskool.net/api/v3/portal/courses/registrations/terms?year=2025&class_id=69&_db={{DB}}
+
 class TermService {
   late ApiService _apiService;
 

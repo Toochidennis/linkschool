@@ -288,6 +288,4 @@ List<Widget> _buildTermRows(List<Map<String, dynamic>> terms) {
     );
   }).toList();
 }
-
-
 }
