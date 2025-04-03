@@ -36,7 +36,7 @@ class _LevelSelectionState extends State<LevelSelection> {
         ...widget.levelNames.map((level) {
           final levelName = level[1]; // level_name is at index 1
           return _buildLevelBox(levelName, 'assets/images/result/bg_box1.svg');
-        }).toList(),
+        }),
         const SizedBox(
           height: 100,
         )

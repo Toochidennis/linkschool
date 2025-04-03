@@ -95,7 +95,7 @@ class _NewsDetailsState extends State<NewsDetails> {
                       ),
                       TextButton(
                           onPressed: () => (Share.share(
-                              'dream ict' + '/' + widget.news.title)),
+                              'dream ict' '/' + widget.news.title)),
                           style: TextButton.styleFrom(
                             backgroundColor:
                                 Colors.white, // Button background color
@@ -176,7 +176,7 @@ class _NewsDetailsState extends State<NewsDetails> {
                 titleSize: 16),
             SizedBox(height: 4),
 
-            Container(
+            SizedBox(
               height: 395,
               child: ListView.builder(
                 // shrinkWrap: true,
@@ -341,7 +341,7 @@ Widget recommendationSection(
               ),
             ),
             const SizedBox(width: 16.0),
-            Container(
+            SizedBox(
               width: 100.0,
               height: 120.0,
               child: Column(
@@ -391,9 +391,9 @@ Widget _buildLikesButton() {
   );
 }
 
-Widget textSection(para_body) {
+Widget textSection(paraBody) {
   return Text(
-    para_body,
+    paraBody,
     style: AppTextStyles.normal400(
         fontSize: 14.0, color: AppColors.backgroundDark),
   );

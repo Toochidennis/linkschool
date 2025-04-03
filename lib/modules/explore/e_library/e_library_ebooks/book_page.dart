@@ -11,7 +11,7 @@ import 'package:linkschool/modules/model/explore/home/news/ebook_model.dart';
 class MybookPage extends StatefulWidget {
   final Ebook suggestedbook;
 
-  const MybookPage({Key? key, required this.suggestedbook}) : super(key: key);
+  const MybookPage({super.key, required this.suggestedbook});
 
   @override
   State<MybookPage> createState() => _MybookPageState();
@@ -147,18 +147,18 @@ class _MybookPageState extends State<MybookPage> {
                             physics: AlwaysScrollableScrollPhysics(),
                             child: OutlinedButton(
                               onPressed: () {},
-                              child: Text(
-                                category.toUpperCase(),
-                                style: AppTextStyles.normal500(
-                                    fontSize: 14,
-                                    color: AppColors.eLearningBtnColor1),
-                              ),
                               style: OutlinedButton.styleFrom(
                                 backgroundColor: AppColors.grayColor,
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(16),
                                 ),
                                 side: BorderSide(
+                                    color: AppColors.eLearningBtnColor1),
+                              ),
+                              child: Text(
+                                category.toUpperCase(),
+                                style: AppTextStyles.normal500(
+                                    fontSize: 14,
                                     color: AppColors.eLearningBtnColor1),
                               ),
                             ),

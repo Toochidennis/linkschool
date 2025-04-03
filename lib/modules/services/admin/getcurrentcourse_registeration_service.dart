@@ -8,13 +8,13 @@ class GetcurrentcourseRegisterationService {
 
   // Fetch current course registration data
   Future<GetCurrentCourseRegistrationModel> getCurrentCourseRegistration(
-      String student_Id, String classID, String term, String year) async {
-    if (student_Id.isEmpty || classID.isEmpty || term.isEmpty || year.isEmpty) {
+      String studentId, String classID, String term, String year) async {
+    if (studentId.isEmpty || classID.isEmpty || term.isEmpty || year.isEmpty) {
       throw Exception('All parameters must be provided and non-empty');
     }
 
     final Uri url = Uri.parse(
-        '$baseUrl?_db=linkskoo_practice&student_Id=$student_Id&classID=$classID&term=$term&Year=$year');
+        '$baseUrl?_db=linkskoo_practice&student_Id=$studentId&classID=$classID&term=$term&Year=$year');
 
     final response = await http.get(url);
 

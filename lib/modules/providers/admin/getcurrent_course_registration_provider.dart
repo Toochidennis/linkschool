@@ -14,13 +14,13 @@ class getCurrentCourseRegistrationProvider with ChangeNotifier {
 
   // Fetch current course registration
   Future<void> fetchCurrentCourseRegistration(
-      student_Id, classID, term, Year) async {
+      studentId, classID, term, Year) async {
     _isLoading = true;
     notifyListeners();
 
     try {
       _currentRegistration = await _service.getCurrentCourseRegistration(
-          student_Id, classID, term, Year); // Fixed method call
+          studentId, classID, term, Year); // Fixed method call
     } catch (e) {
       // Handle error
       print("Error fetching course registration: $e");

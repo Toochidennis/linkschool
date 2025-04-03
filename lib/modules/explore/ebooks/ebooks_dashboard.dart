@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:linkschool/modules/common/custom_toaster.dart';
 import 'package:linkschool/modules/providers/explore/home/ebook_provider.dart';
 import 'package:provider/provider.dart';
 // import 'ebook_provider.dart';
-import '../../common/app_colors.dart';
 import '../../common/constants.dart';
 import '../../common/search_bar.dart';
 import '../../common/text_styles.dart';

@@ -141,7 +141,7 @@ class _CourseRegistrationScreenState extends State<CourseRegistrationScreen> {
                           ),
                           const SizedBox(height: 4.0),
                           Text(
-                            getCurrentAcademicSession() + ' Academic Session',
+                            '${getCurrentAcademicSession()} Academic Session',
                             style: AppTextStyles.normal400(
                               fontSize: 16,
                               color: Colors.white70,

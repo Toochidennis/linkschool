@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:hive/hive.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/common/utils/class_detail/explore_button_item_utils.dart';

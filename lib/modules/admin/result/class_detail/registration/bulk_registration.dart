@@ -267,7 +267,7 @@ class _BulkRegistrationScreenState extends State<BulkRegistrationScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          titleCase('${course.studentName}'),
+                          titleCase(course.studentName),
                           style: AppTextStyles.normal600(
                             fontSize: 16,
                             color: AppColors.backgroundDark,

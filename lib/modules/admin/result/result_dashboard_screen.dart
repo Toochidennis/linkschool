@@ -45,8 +45,8 @@ class _ResultDashboardScreenState extends State<ResultDashboardScreen> {
 
       setState(() {
         this.userData = userData;
-        this.levelNames = levelNameData;
-        this.classNames = classNameData;
+        levelNames = levelNameData;
+        classNames = classNameData;
       });
     } else {
       print('User data is null or not found in Hive');
