@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:linkschool/modules/providers/admin/student_provider.dart';
+import 'package:linkschool/modules/services/admin/student_service.dart';
+import 'package:linkschool/modules/services/api/service_locator.dart';
 import 'package:provider/provider.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/buttons/custom_medium_elevated_button.dart';
@@ -31,7 +33,7 @@ class StudentResultScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
-      create: (_) => StudentProvider()..fetchStudentTerms(studentId!),
+      create: (_) => StudentProvider(StudentService(locator()))..fetchStudentTerms(studentId!),
       child: Scaffold(
         appBar: AppBar(
           title: Text(

@@ -35,7 +35,7 @@ dependencies:
   jiffy: ^6.3.2
   skeletonizer: ^1.4.3
   get_it: ^8.0.3
-  
+  # xml: ^6.4.0
   # shimmer: ^3.0.0
   # shared_preferences: ^2.3.2
   # flutter_charts: ^0.5.2
@@ -78,7 +78,7 @@ flutter:
 
 
   assets:
-    - .env
+#    - .env
     - assets/icons/
     - assets/images/
     - assets/icons/e_learning/

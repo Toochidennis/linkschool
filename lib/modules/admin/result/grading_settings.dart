@@ -9,59 +9,53 @@ import 'package:provider/provider.dart';
 import '../../model/admin/grade _model.dart';
 
 class GradingSettingsScreen extends StatefulWidget {
-  const GradingSettingsScreen({Key? key}) : super(key: key);
+  const GradingSettingsScreen({super.key});
 
   @override
   _GradingSettingsScreenState createState() => _GradingSettingsScreenState();
 }
 
 class _GradingSettingsScreenState extends State<GradingSettingsScreen> {
+  String? selectedGrade;
+  String? selectedRange;
+  String? selectedRemark;
   String? focusedField;
+
   bool isHoveringEdit = false;
   bool isHoveringDelete = false;
   bool isHoveringAdd = false;
   bool isHoveringSave = false;
 
-  final TextEditingController gradeController = TextEditingController();
-  final TextEditingController rangeController = TextEditingController();
-  final TextEditingController remarkController = TextEditingController();
+  TextEditingController gradeController = TextEditingController();
+  TextEditingController rangeController = TextEditingController();
+  TextEditingController remarkController = TextEditingController();
 
-  final Map<String, bool> editingStates = {};
-  final Map<String, TextEditingController> editingControllers = {};
-  final Map<String, FocusNode> focusNodes = {};
-  final _addFormKey =
-      GlobalKey<FormState>(); // Key for the "add new grade" form
-  final Map<String, GlobalKey<FormState>> formKeys =
-      {}; // Form keys for each grade item
+  Map<String, bool> editingStates = {};
+  Map<String, TextEditingController> editingControllers = {};
+  Map<String, FocusNode> focusNodes = {};
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final gradeProvider = Provider.of<GradeProvider>(context, listen: false);
-      gradeProvider.fetchGrades().then((_) {
-        initializeControllers(gradeProvider.grades);
-      });
-    });
+    initializeControllers();
+    context.read<GradeProvider>().fetchGrades();
   }
 
-  void initializeControllers(List<Grade> grades) {
-    for (var grade in grades) {
-      String itemId = grade.id;
+  void initializeControllers() {
+    for (var item in gradingList) {
+      String itemId = item['id'] ?? '';
       if (itemId.isNotEmpty) {
         editingControllers['$itemId-Grade'] =
-            TextEditingController(text: grade.grade_Symbol);
+            TextEditingController(text: item['grade']);
         editingControllers['$itemId-Range'] =
-            TextEditingController(text: grade.start);
+            TextEditingController(text: item['range']);
         editingControllers['$itemId-Remark'] =
-            TextEditingController(text: grade.remark);
+            TextEditingController(text: item['remark']);
 
+        // Initialize focus nodes for each input field
         focusNodes['$itemId-Grade'] = FocusNode();
         focusNodes['$itemId-Range'] = FocusNode();
         focusNodes['$itemId-Remark'] = FocusNode();
-
-        // Ensure editing state is initialized, defaults to false
-        editingStates[itemId] = false;
       }
     }
   }
@@ -74,34 +68,18 @@ class _GradingSettingsScreenState extends State<GradingSettingsScreen> {
     for (var focusNode in focusNodes.values) {
       focusNode.dispose();
     }
-    gradeController.dispose();
-    rangeController.dispose();
-    remarkController.dispose();
     super.dispose();
   }
 
-  Future<void> _saveChanges(
-      BuildContext context, GradeProvider gradeProvider) async {
-    try {
-      await gradeProvider.saveNewGrades(); // Save all new grades to the API
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Grade settings saved successfully'),
-          backgroundColor: AppColors.admissionopen,
-        ),
-      );
-    } catch (error) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Failed to save grade settings: $error'),
-          backgroundColor: AppColors.admissionclosed,
-        ),
-      );
-    }
-  }
+  List<Map<String, String>> gradingList = [
+    {'id': '1', 'grade': 'A', 'range': '80 - 100', 'remark': 'Excellent'}
+  ];
 
   @override
   Widget build(BuildContext context) {
+    final gradeProvider = context.watch<GradeProvider>();
+    final grades = gradeProvider.grades;
+
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
@@ -125,51 +103,45 @@ class _GradingSettingsScreenState extends State<GradingSettingsScreen> {
         centerTitle: true,
         backgroundColor: AppColors.backgroundLight,
       ),
-      body: Consumer<GradeProvider>(
-        builder: (context, gradeProvider, child) {
-          if (gradeProvider.isLoading) {
-            return const Center(child: CircularProgressIndicator());
-          } else {
-
-             initializeControllers(gradeProvider.grades);
-            return Padding(
-              padding: const EdgeInsets.all(Constants.padding),
-              child: ListView(
-                children: [
-                  const Text(
-                    'Add and update grade details',
-                    style: TextStyle(fontSize: 18, color: Colors.grey),
-                    textAlign: TextAlign.center,
-                  ),
-                  buildSecondCard(gradeProvider),
-                  const SizedBox(height: 20),
-                  ...gradeProvider.grades.map((grade) => buildFirstCard(grade, gradeProvider))
-                ],
-              ),
-            );
-          }
-        },
+      body: Padding(
+        padding: const EdgeInsets.all(Constants.padding),
+        child: ListView(
+          children: [
+            const Text(
+              'Add and update grade details',
+              style: TextStyle(fontSize: 18, color: Colors.grey),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 20),
+            ...grades.map((grade) => buildFirstCard(grade)),
+            const SizedBox(height: Constants.gap),
+            buildSecondCard(gradeProvider),
+          ],
+        ),
       ),
       floatingActionButton: MouseRegion(
         onEnter: (_) => setState(() => isHoveringSave = true),
         onExit: (_) => setState(() => isHoveringSave = false),
         child: FloatingActionButton(
-          onPressed: () => _saveChanges(context, context.read<GradeProvider>()),
+          onPressed: () {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                  content: Text('Grade settings saved successfully')),
+            );
+          },
           backgroundColor:
               isHoveringSave ? Colors.blueGrey : AppColors.primaryLight,
           shape: const CircleBorder(),
           child: Container(
             decoration: BoxDecoration(
-              borderRadius: const BorderRadius.all(Radius.circular(100)),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.3),
-                  blurRadius: 7,
-                  spreadRadius: 7,
-                  offset: const Offset(3, 5),
-                ),
-              ],
-            ),
+                borderRadius: const BorderRadius.all(Radius.circular(100)),
+                boxShadow: [
+                  BoxShadow(
+                      color: Colors.black.withOpacity(0.3),
+                      blurRadius: 7,
+                      spreadRadius: 7,
+                      offset: const Offset(3, 5)),
+                ]),
             child: const Icon(
               Icons.save,
               color: AppColors.backgroundLight,
@@ -180,12 +152,12 @@ class _GradingSettingsScreenState extends State<GradingSettingsScreen> {
     );
   }
 
-  Widget buildFirstCard(Grade grade, GradeProvider gradeProvider) {
+  Widget buildFirstCard(Grade grade) {
     String itemId = grade.id;
     bool isEditing = editingStates[itemId] ?? false;
 
-    if (!formKeys.containsKey(itemId)) {
-      formKeys[itemId] = GlobalKey<FormState>();
+    if (itemId.isEmpty) {
+      return const SizedBox(); 
     }
 
     return Card(
@@ -196,82 +168,57 @@ class _GradingSettingsScreenState extends State<GradingSettingsScreen> {
       elevation: 3,
       child: Padding(
         padding: const EdgeInsets.all(Constants.padding),
-        child: Form(
-          key: formKeys[itemId],
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  MouseRegion(
-                    onEnter: (_) => setState(() => isHoveringEdit = true),
-                    onExit: (_) => setState(() => isHoveringEdit = false),
-                    child: GestureDetector(
-                      onTap: () {
-                        if (isEditing) {
-                          if (formKeys[itemId]!.currentState!.validate()) {
-                            // Save changes if validation passes
-                            setState(() {
-                              editingStates[itemId] = false;
-                            });
-                          }
-                        } else {
-                          editItem(itemId);
-                        }
-                      },
-                      child: SvgPicture.asset(
-                        isEditing
-                            ? 'assets/icons/result/check.svg'
-                            : 'assets/icons/result/edit.svg',
-                        color: isHoveringEdit ? Colors.blueGrey : Colors.black,
-                      ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                MouseRegion(
+                  onEnter: (_) => setState(() => isHoveringEdit = true),
+                  onExit: (_) => setState(() => isHoveringEdit = false),
+                  child: GestureDetector(
+                    onTap: () =>
+                        isEditing ? saveItem(itemId) : editItem(itemId),
+                    child: SvgPicture.asset(
+                      isEditing
+                          ? 'assets/icons/result/check.svg'
+                          : 'assets/icons/result/edit.svg',
+                      color: isHoveringEdit ? Colors.blueGrey : Colors.black,
                     ),
                   ),
-                  const SizedBox(width: 16),
-                  MouseRegion(
-                    onEnter: (_) => setState(() => isHoveringDelete = true),
-                    onExit: (_) => setState(() => isHoveringDelete = false),
-                    child: GestureDetector(
-                      onTap: () async {
-                        print(grade.id);
-                        await gradeProvider.deleteGrade(grade.id);
-                      },
-                      child: SvgPicture.asset(
-                        'assets/icons/result/delete.svg',
-                        color:
-                            isHoveringDelete ? Colors.blueGrey : Colors.black,
-                      ),
+                ),
+                const SizedBox(width: 16),
+                MouseRegion(
+                  onEnter: (_) => setState(() => isHoveringDelete = true),
+                  onExit: (_) => setState(() => isHoveringDelete = false),
+                  child: GestureDetector(
+                    onTap: () => deleteItem(grade),
+                    child: SvgPicture.asset(
+                      'assets/icons/result/delete.svg',
+                      color: isHoveringDelete ? Colors.blueGrey : Colors.black,
                     ),
                   ),
-                ],
-              ),
-              const SizedBox(height: Constants.gap),
-              buildEditableRow('Grade:', itemId, isEditing,
-                  (value) => _validateField(value, 'Grade')),
-              buildEditableRow('Range:', itemId, isEditing,
-                  (value) => _validateField(value, 'Range')),
-              buildEditableRow('Remark:', itemId, isEditing,
-                  (value) => _validateField(value, 'Remark')),
-            ],
-          ),
+                ),
+              ],
+            ),
+            const SizedBox(height: Constants.gap),
+            buildEditableRow('Grade:', itemId, isEditing),
+            buildEditableRow('Range:', itemId, isEditing),
+            buildEditableRow('Remark:', itemId, isEditing),
+          ],
         ),
       ),
     );
   }
 
-  Widget buildEditableRow(
-    String title,
-    String itemId,
-    bool isEditing,
-    String? Function(String?)? validator,
-  ) {
+  Widget buildEditableRow(String title, String itemId, bool isEditing) {
     String key = '$itemId-${title.replaceAll(':', '')}';
     TextEditingController? controller = editingControllers[key];
     FocusNode? focusNode = focusNodes[key];
 
     if (controller == null || focusNode == null) {
-      return const SizedBox();
+      return const SizedBox(); 
     }
 
     focusNode.addListener(() {
@@ -294,8 +241,7 @@ class _GradingSettingsScreenState extends State<GradingSettingsScreen> {
           const SizedBox(width: 8),
           Expanded(
             child: isEditing
-                ? TextFormField(
-                    key: Key(key),
+                ? TextField(
                     focusNode: focusNode,
                     controller: controller,
                     style: AppTextStyles.normal500(
@@ -305,29 +251,16 @@ class _GradingSettingsScreenState extends State<GradingSettingsScreen> {
                     cursorColor: AppColors.primaryLight,
                     decoration: InputDecoration(
                       border: InputBorder.none,
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 10,
-                      ),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
                       focusedBorder: OutlineInputBorder(
-                        borderSide:
-                            const BorderSide(color: AppColors.primaryLight),
+                        borderSide: const BorderSide(color: AppColors.primaryLight),
                         borderRadius: BorderRadius.circular(4),
                       ),
                       enabledBorder: OutlineInputBorder(
                         borderSide: const BorderSide(color: Colors.grey),
                         borderRadius: BorderRadius.circular(4),
                       ),
-                      errorBorder: OutlineInputBorder(
-                        borderSide: const BorderSide(color: Colors.redAccent),
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      focusedErrorBorder: OutlineInputBorder(
-                        borderSide: const BorderSide(color: Colors.redAccent),
-                        borderRadius: BorderRadius.circular(4),
-                      ),
                     ),
-                    validator: validator,
                   )
                 : Text(
                     controller.text,
@@ -348,25 +281,43 @@ class _GradingSettingsScreenState extends State<GradingSettingsScreen> {
     });
   }
 
- Widget buildSecondCard(GradeProvider gradeProvider) {
-  return Card(
-    shape: RoundedRectangleBorder(
-      borderRadius: BorderRadius.circular(Constants.borderRadius),
-    ),
-    elevation: 3,
-    child: Padding(
-      padding: const EdgeInsets.all(Constants.padding),
-      child: Form(
-        key: _addFormKey,
+  void deleteItem(Grade grade) {
+    setState(() {
+      gradingList.removeWhere((item) => item['id'] == grade.id);
+      editingControllers.remove('${grade.id}-Grade');
+      editingControllers.remove('${grade.id}-Range');
+      editingControllers.remove('${grade.id}-Remark');
+      editingStates.remove(grade.id);
+    });
+  }
+
+  void saveItem(String itemId) {
+    setState(() {
+      editingStates[itemId] = false;
+      int index = gradingList.indexWhere((item) => item['id'] == itemId);
+      if (index != -1) {
+        gradingList[index]['grade'] = editingControllers['$itemId-Grade']!.text;
+        gradingList[index]['range'] = editingControllers['$itemId-Range']!.text;
+        gradingList[index]['remark'] =
+            editingControllers['$itemId-Remark']!.text;
+      }
+    });
+  }
+
+  Widget buildSecondCard(GradeProvider gradeProvider) {
+    return Card(
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(Constants.borderRadius),
+      ),
+      elevation: 3,
+      child: Padding(
+        padding: const EdgeInsets.all(Constants.padding),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            buildInputField('Grade', gradeController, (value) {},
-                validator: (value) => _validateField(value, 'Grade')),
-            buildInputField('Range', rangeController, (value) {},
-                validator: (value) => _validateField(value, 'Range')),
-            buildInputField('Remark', remarkController, (value) {},
-                validator: (value) => _validateField(value, 'Remark')),
+            buildInputField('Grade', gradeController, (value) {}),
+            buildInputField('Range', rangeController, (value) {}),
+            buildInputField('Remark', remarkController, (value) {}),
             const SizedBox(height: Constants.gap),
             Align(
               alignment: Alignment.bottomRight,
@@ -374,22 +325,18 @@ class _GradingSettingsScreenState extends State<GradingSettingsScreen> {
                 onEnter: (_) => setState(() => isHoveringAdd = true),
                 onExit: (_) => setState(() => isHoveringAdd = false),
                 child: ElevatedButton(
-                  onPressed: () async {
-                    if (_addFormKey.currentState!.validate()) {
-                      try {
-                        await gradeProvider.addGrade(
-                          gradeController.text,
-                          rangeController.text,
-                          remarkController.text,
-                        );
-
-                        
-                        gradeController.clear();
-                        rangeController.clear();
-                        remarkController.clear();
-                      } catch (error) {
-                        print('Failed to add grade: $error');
-                      }
+                  onPressed: () {
+                    if (gradeController.text.isNotEmpty &&
+                        rangeController.text.isNotEmpty &&
+                        remarkController.text.isNotEmpty) {
+                      gradeProvider.addGrade(
+                        gradeController.text,
+                        rangeController.text,
+                        remarkController.text,
+                      );
+                      gradeController.clear();
+                      rangeController.clear();
+                      remarkController.clear();
                     }
                   },
                   style: ElevatedButton.styleFrom(
@@ -412,19 +359,19 @@ class _GradingSettingsScreenState extends State<GradingSettingsScreen> {
           ],
         ),
       ),
-    ),
-  );
-}
+    );
+  }
 
+  Widget buildInputField(String label, TextEditingController controller, ValueChanged<String> onChanged) {
+    final FocusNode focusNode = FocusNode();
+    
+    focusNode.addListener(() {
+      setState(() {
+        focusedField = focusNode.hasFocus ? label : null;
+      });
+    });
 
-  Widget buildInputField(
-    String label,
-    TextEditingController controller,
-    ValueChanged<String> onChanged, {
-    String? Function(String?)? validator,
-  }) {
-    final FocusNode focusNode =
-        focusNodes[label] ?? FocusNode(); 
+    bool isNumericOnly = label == 'Grade' || label == 'Range';
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: Constants.gap),
@@ -439,36 +386,38 @@ class _GradingSettingsScreenState extends State<GradingSettingsScreen> {
           ),
           const SizedBox(width: 16),
           Expanded(
-            child: TextFormField(
-              controller: controller, // Ensure controller is not null
-              focusNode: focusNode,
-              onChanged: onChanged,
-              validator: validator,
-              
-              decoration: InputDecoration(
-                border: OutlineInputBorder(
-                  borderSide: BorderSide(
-                    color: focusedField == label
-                        ? AppColors.primaryLight
-                        : Colors.grey,
-                  ),
-                  borderRadius: BorderRadius.circular(4),
+            child: Container(
+              height: 34,
+              decoration: BoxDecoration(
+                border: Border.all(
+                  color: focusedField == label ? AppColors.primaryLight : Colors.grey,
                 ),
-              
-                contentPadding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: TextField(
+                focusNode: focusNode,
+                controller: controller,
+                onChanged: onChanged,
+                textAlignVertical: TextAlignVertical.center,
+                keyboardType: isNumericOnly ? TextInputType.number : TextInputType.text,
+                inputFormatters: isNumericOnly
+                    ? [FilteringTextInputFormatter.digitsOnly]
+                    : null,
+                decoration: InputDecoration(
+                  border: InputBorder.none,
+                  contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 13),
+                  focusedBorder: OutlineInputBorder(
+                    borderSide: BorderSide(color: AppColors.primaryLight),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                ),
+                style: TextStyle(fontSize: 14),
+                cursorColor: AppColors.primaryLight,
               ),
             ),
           ),
         ],
       ),
     );
-  }
-
-  String? _validateField(String? value, String fieldName) {
-    if (value == null || value.isEmpty) {
-      return 'Please enter a $fieldName';
-    }
-    return null;
   }
 }

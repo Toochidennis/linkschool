@@ -19,7 +19,7 @@ void setupServiceLocator() {
   locator.registerLazySingleton<ClassService>(() => ClassService());
   locator.registerLazySingleton<GradeService>(() => GradeService());
   locator.registerLazySingleton<LevelService>(() => LevelService());
-  locator.registerLazySingleton<StudentService>(() => StudentService());
+  locator.registerLazySingleton<StudentService>(() => StudentService(locator()));
   locator.registerLazySingleton<TermService>(() => TermService());
 
   // Register the missing services
