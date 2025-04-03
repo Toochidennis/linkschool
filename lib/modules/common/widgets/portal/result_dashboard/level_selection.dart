@@ -1,26 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 import 'package:linkschool/modules/admin/e_learning/empty_syllabus_screen.dart';
-import 'package:linkschool/modules/model/admin/class_model.dart';
-import 'package:linkschool/modules/providers/admin/class_provider.dart';
-import 'package:linkschool/modules/providers/admin/level_provider.dart';
-import 'package:provider/provider.dart';
 import 'package:linkschool/modules/admin/result/class_detail/class_detail_screen.dart';
-// import 'package:linkschool/modules/common/app_colors.dart';
-// import 'package:linkschool/modules/common/text_styles.dart';
-// import 'package:linkschool/modules/providers/level_provider.dart';
-// import 'package:linkschool/modules/providers/class_provider.dart';
-
-
+import 'package:linkschool/modules/common/app_colors.dart';
+import 'package:linkschool/modules/common/text_styles.dart';
 
 class LevelSelection extends StatefulWidget {
-  final bool isSecondScreen;
-  final List<String> subjects;
+  final List<dynamic> levelNames; // List of level names
+  final List<dynamic>? classNames;
+  final List<String>? subjects; // Add subjects for course selection
+  final bool isSecondScreen; // Flag to determine if it's for courses or classes
 
   const LevelSelection({
     super.key,
-    this.isSecondScreen = false,
-    this.subjects = const [],
+    required this.levelNames,
+    this.classNames,
+    this.subjects = const [], // Default empty list for subjects
+    this.isSecondScreen = false, // Default to class selection
   });
 
   @override
@@ -28,74 +25,29 @@ class LevelSelection extends StatefulWidget {
 }
 
 class _LevelSelectionState extends State<LevelSelection> {
-  // List of background images for level containers
-  final List<String> _backgroundImages = [
-    'assets/images/result/bg_box1.svg',
-    'assets/images/result/bg_box2.svg',
-    'assets/images/result/bg_box3.svg',
-    'assets/images/result/bg_box4.svg',
-    'assets/images/result/bg_box5.svg',
-  ];
-
-  @override
-  void initState() {
-    super.initState();
-    if (!widget.isSecondScreen) {
-      // Fetch levels only if it's not the second screen (e.g., ResultDashboardScreen)
-      Provider.of<LevelProvider>(context, listen: false).fetchLevels();
-    }
-  }
+  String _selectedLevel = '';
+  String _selectedLevelId = '';
 
   @override
   Widget build(BuildContext context) {
-    final levelProvider = Provider.of<LevelProvider>(context);
-    final classProvider = Provider.of<ClassProvider>(context);
-
     return Column(
-      children: widget.isSecondScreen
-          ? _buildSubjectBoxes()
-          : _buildLevelBoxes(levelProvider, classProvider), 
+      children: [
+        // Dynamically generate level boxes based on levelNames
+        ...widget.levelNames.map((level) {
+          final levelId = level[0]; // level_id is at index 0
+          final levelName = level[1]; // level_name is at index 1
+          return _buildLevelBox(levelId, levelName, 'assets/images/result/bg_box1.svg');
+        }),
+        const SizedBox(
+          height: 100,
+        )
+      ],
     );
   }
 
-  List<Widget> _buildLevelBoxes(LevelProvider levelProvider, ClassProvider classProvider) {
-    if (levelProvider.levels.isEmpty) {
-      return [const Center(child: CircularProgressIndicator())]; // Show loading indicator
-    }
-
-    return levelProvider.levels.asMap().entries.map((entry) {
-      final index = entry.key;
-      final level = entry.value;
-      final backgroundImage = _backgroundImages[index % _backgroundImages.length]; // Cycle through background images
-
-      return _buildLevelBox(
-        level.levelName ?? 'N/A', // Handle null levelName
-        backgroundImage, // Use different background image for each level
-        () {
-          // Fetch classes for the selected level
-          classProvider.fetchClasses(level.id ?? '').then((_) {
-            _showClassSelectionDialog(classProvider.classes);
-          });
-        },
-      );
-    }).toList();
-  }
-
-  List<Widget> _buildSubjectBoxes() {
-    return widget.subjects.map((subject) {
-      return _buildLevelBox(
-        subject,
-        'assets/images/result/bg_box1.svg', // Default background image for subjects
-        () {
-          _showCourseSelectionDialog();
-        },
-      );
-    }).toList();
-  }
-
-  Widget _buildLevelBox(String text, String backgroundImagePath, VoidCallback onTap) {
+  Widget _buildLevelBox(String levelId, String levelText, String backgroundImagePath) {
     return GestureDetector(
-      onTap: onTap,
+      onTap: () => _toggleOverlay(levelId, levelText),
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
         child: Container(
@@ -104,6 +56,7 @@ class _LevelSelectionState extends State<LevelSelection> {
             borderRadius: BorderRadius.circular(10),
             color: Colors.transparent,
           ),
+          clipBehavior: Clip.antiAlias,
           child: Stack(
             children: [
               SvgPicture.asset(
@@ -119,29 +72,35 @@ class _LevelSelectionState extends State<LevelSelection> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Text(
-                      text,
-                      style: TextStyle(
-                        fontSize: 20.0,
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                      ),
+                      levelText,
+                      style: AppTextStyles.normal700P(
+                          fontSize: 20.0,
+                          color: AppColors.backgroundLight,
+                          height: 1.04),
                     ),
                     const SizedBox(height: 40),
                     Container(
                       width: 170,
                       height: 32,
                       decoration: BoxDecoration(
-                        border: Border.all(color: Colors.white, width: 1),
+                        border: Border.all(
+                            color: AppColors.backgroundLight, width: 1),
                         borderRadius: BorderRadius.circular(4),
                       ),
                       child: TextButton(
-                        onPressed: onTap,
+                        onPressed: () => _toggleOverlay(levelId, levelText),
+                        style: TextButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 8),
+                          minimumSize: Size.zero,
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        ),
                         child: Text(
-                          widget.isSecondScreen ? 'View Subjects' : 'View level performance',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.white,
-                          ),
+                          'View level performance',
+                          style: AppTextStyles.normal700P(
+                              fontSize: 12,
+                              color: AppColors.backgroundLight,
+                              height: 1.2),
                         ),
                       ),
                     ),
@@ -155,7 +114,24 @@ class _LevelSelectionState extends State<LevelSelection> {
     );
   }
 
-  void _showClassSelectionDialog(List<Class> classes) {
+  void _toggleOverlay(String levelId, String levelText) {
+    setState(() {
+      _selectedLevel = levelText;
+      _selectedLevelId = levelId;
+      if (widget.isSecondScreen) {
+        _showCourseSelectionDialog(); // Show course selection dialog
+      } else {
+        _showClassSelectionDialog(); // Show class selection dialog
+      }
+    });
+  }
+
+  void _showClassSelectionDialog() {
+    // Filter classes that match the selected level
+    final filteredClasses = (widget.classNames ?? [])
+        .where((cls) => cls[2] == _selectedLevelId)
+        .toList();
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -177,22 +153,23 @@ class _LevelSelectionState extends State<LevelSelection> {
                 const SizedBox(height: 24),
                 Text(
                   'Select Class',
-                  style: TextStyle(fontSize: 24, color: Colors.black),
+                  style: AppTextStyles.normal600(
+                      fontSize: 24, color: Colors.black),
                 ),
                 const SizedBox(height: 24),
                 Flexible(
                   child: ListView.builder(
-                    itemCount: classes.length,
+                    itemCount: filteredClasses.length,
                     itemBuilder: (context, index) {
-                      final classItem = classes[index];
+                      final cls = filteredClasses[index];
                       return Padding(
                         padding: const EdgeInsets.symmetric(
                             horizontal: 16, vertical: 8),
                         child: _buildClassButton(
-                          classItem.className ?? 'N/A',
+                          cls[1], // class name
                           () {
                             Navigator.of(context).pop();
-                            _navigateToClassDetail(classItem.className ?? 'N/A');
+                            _navigateToClassDetail(cls[0], cls[1]); // class ID, class name
                           },
                         ),
                       );
@@ -208,6 +185,9 @@ class _LevelSelectionState extends State<LevelSelection> {
   }
 
   void _showCourseSelectionDialog() {
+    final subjects =
+        widget.subjects ?? ['Math', 'Science', 'English']; // Default subjects
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -229,17 +209,18 @@ class _LevelSelectionState extends State<LevelSelection> {
                 const SizedBox(height: 24),
                 Text(
                   'Select Course',
-                  style: TextStyle(fontSize: 24, color: Colors.black),
+                  style: AppTextStyles.normal600(
+                      fontSize: 24, color: Colors.black),
                 ),
                 const SizedBox(height: 24),
                 Flexible(
                   child: ListView.builder(
-                    itemCount: widget.subjects.length,
+                    itemCount: subjects.length,
                     itemBuilder: (context, index) {
                       return Padding(
                         padding: const EdgeInsets.symmetric(
                             horizontal: 24, vertical: 8),
-                        child: _buildSubjectButton(widget.subjects[index]),
+                        child: _buildSubjectButton(subjects[index]),
                       );
                     },
                   ),
@@ -255,20 +236,29 @@ class _LevelSelectionState extends State<LevelSelection> {
   Widget _buildClassButton(String text, VoidCallback onPressed) {
     return Container(
       decoration: BoxDecoration(
-        boxShadow: [BoxShadow(color: Colors.grey.withOpacity(0.3), spreadRadius: 1, blurRadius: 3, offset: const Offset(0, 2))],
+        boxShadow: [
+          BoxShadow(
+              color: Colors.grey.withOpacity(0.3),
+              spreadRadius: 1,
+              blurRadius: 3,
+              offset: const Offset(0, 2))
+        ],
       ),
       child: Material(
-        color: Colors.white,
+        color: AppColors.dialogBtnColor,
         child: InkWell(
           onTap: onPressed,
           borderRadius: BorderRadius.circular(4),
           child: Ink(
-            decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(4)),
+            decoration: BoxDecoration(
+                color: Colors.white, borderRadius: BorderRadius.circular(4)),
             child: Container(
               width: double.infinity,
               height: 50,
               alignment: Alignment.center,
-              child: Text(text, style: TextStyle(fontSize: 16, color: Colors.black)),
+              child: Text(text,
+                  style: AppTextStyles.normal600(
+                      fontSize: 16, color: AppColors.backgroundDark)),
             ),
           ),
         ),
@@ -301,23 +291,21 @@ class _LevelSelectionState extends State<LevelSelection> {
     );
   }
 
-  void _navigateToClassDetail(String className) {
+  void _navigateToClassDetail(String classId, String className) async {
+    final userBox = Hive.box('userData');
+    await userBox.put('selectedClassId', classId); // Persist selected class ID
+
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (context) => ClassDetailScreen(className: className),
+        builder: (context) => ClassDetailScreen(
+          classId: classId,
+          className: className,
+        ),
       ),
     );
   }
 }
 
-
-// // lib/widgets/level_selection.dart
-// import 'package:flutter/material.dart';
-// import 'package:flutter_svg/flutter_svg.dart';
-// import 'package:linkschool/modules/admin/e_learning/empty_syllabus_screen.dart';
-// import 'package:linkschool/modules/admin/result/class_detail/class_detail_screen.dart';
-// import 'package:linkschool/modules/common/app_colors.dart';
-// import 'package:linkschool/modules/common/text_styles.dart';
 
 
 // class LevelSelection extends StatefulWidget {

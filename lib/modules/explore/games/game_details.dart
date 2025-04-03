@@ -36,7 +36,7 @@ class _GameDetailsState extends State<GameDetails> {
     final recommendedGames = gameProvider.games?.puzzleGames.games ?? [];
     
     // Prepare games you might like list
-    final gamesYouMightLike = gameProvider.games?.cardGames?.games ?? [];
+    final gamesYouMightLike = gameProvider.games?.cardGames.games ?? [];
 
     return Scaffold(
       appBar: AppBar(
@@ -372,7 +372,7 @@ class GameCard extends StatelessWidget {
                             const Icon(Icons.star, color: Colors.amber, size: 16.0),
                             const SizedBox(width: 2),
                             Text(
-                              "${game.rating}",
+                              game.rating,
                               style: AppTextStyles.normal500(
                                 fontSize: 14.0,
                                 color: Colors.black,

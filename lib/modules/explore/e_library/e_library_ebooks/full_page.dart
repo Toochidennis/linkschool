@@ -6,7 +6,7 @@ import 'package:linkschool/modules/model/explore/home/news/ebook_model.dart';
 
 class FullPage extends StatefulWidget {
   final Ebook continueReading;
-  const FullPage({Key? key, required this.continueReading}) : super(key: key);
+  const FullPage({super.key, required this.continueReading});
 
   @override
   State<FullPage> createState() => _FullPageState();

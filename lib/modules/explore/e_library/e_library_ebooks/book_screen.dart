@@ -16,7 +16,7 @@ import 'package:share_plus/share_plus.dart';
 class BookScreen extends StatefulWidget {
   final Ebook suggestedBook;
 
-  const BookScreen({Key? key, required this.suggestedBook}) : super(key: key);
+  const BookScreen({super.key, required this.suggestedBook});
 
   @override
   State<BookScreen> createState() => _BookScreenState();
@@ -95,7 +95,7 @@ class _BookScreenState extends State<BookScreen> {
 class BookProfileCard extends StatelessWidget {
   final Ebook suggestedBook;
 
-  BookProfileCard({
+  const BookProfileCard({
     super.key,
     required this.suggestedBook,
   });
@@ -143,7 +143,7 @@ class BookProfileCard extends StatelessWidget {
                 SizedBox(height: 4),
                 RichText(
                   text: TextSpan(
-                    text: 'by ' + suggestedBook.author,
+                    text: 'by ${suggestedBook.author}',
                     style: AppTextStyles.normal500(
                       fontSize: 14,
                       color: AppColors.booksButtonTextColor,
@@ -163,13 +163,13 @@ class BookProfileCard extends StatelessWidget {
                       SizedBox(width: 10),
                       GestureDetector(
                         onTap: () => (Share.share(
-                            suggestedBook.title + "/" + suggestedBook.author)),
+                            "${suggestedBook.title}/${suggestedBook.author}")),
                         child: SvgPicture.asset('assets/icons/Shareicon.svg'),
                       ),
                     ],
                   ),
                 ),
-                Container(
+                SizedBox(
                   height: 34,
                   child: ElevatedButton(
                     onPressed: () {

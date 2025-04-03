@@ -1,48 +1,89 @@
-import 'dart:convert';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
-import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:convert';
+
 
 class AuthService {
-  static const String baseUrl = 'http://linkskool.com/developmentportal/api';
+  Future<ApiResponse<Map<String, dynamic>>> login(String username, String password, String schoolCode) async {
+    final apiBaseUrl = dotenv.env['API_BASE_URL'] ?? '';
+    final apiKey = dotenv.env['API_KEY'] ?? '';
 
-  Future<Map<String, dynamic>> login(String username, String password, String pin) async {
     try {
-      final response = await http.get(
-        Uri.parse('$baseUrl/login.php?username=practice&password=portal&token=5416'),
-        // body: {
-        //   'username': username,
-        //   'password': password,
-        //   'token': pin,
-        // },
+      final response = await http.post(
+        Uri.parse('$apiBaseUrl/portal/auth/login'),
+        headers: {
+          'Content-Type': 'application/json',
+          'X-API-KEY': apiKey,
+        },
+        body: jsonEncode({
+          'username': username,
+          'password': password,
+          'school_code': int.parse(schoolCode),
+        }),
       );
 
-      if(response.statusCode == 200) { print(response.body);}
-      
+      final Map<String, dynamic> responseBody = jsonDecode(response.body);
 
-      if (response.statusCode == 200) {
-        final jsonResponse = json.decode(response.body);
-        
-        if (jsonResponse['status'] == 'success') {
-          final prefs = await SharedPreferences.getInstance();
-          await prefs.setBool('loginStatus', true);
-          await prefs.setString('username', username);
-          await prefs.setString('userpassword', password);
-          await prefs.setString('schoolcode', pin);
-          
-          return jsonResponse;
-        } else {
-          throw Exception(jsonResponse['message'] ?? 'Login failed');
-        }
+      if (response.statusCode == 200 && responseBody['success'] == true) {
+        return ApiResponse<Map<String, dynamic>>(
+          success: true,
+          message: responseBody['message'],
+          rawData: responseBody['response'],
+        );
       } else {
-        throw Exception('Server error');
+        return ApiResponse<Map<String, dynamic>>(
+          success: false,
+          message: responseBody['message'] ?? 'Login failed',
+        );
       }
     } catch (e) {
-      throw Exception('Network error: $e');
+      return ApiResponse<Map<String, dynamic>>(
+        success: false,
+        message: 'Network error: $e',
+      );
     }
   }
-
-  Future<void> logout() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.clear();
-  }
 }
+
+class ApiResponse<T> {
+  final bool success;
+  final String message;
+  final T? rawData;
+
+  ApiResponse({
+    required this.success,
+    required this.message,
+    this.rawData,
+  });
+}
+
+
+
+// import 'package:linkschool/modules/auth/model/user.dart';
+// import 'package:linkschool/modules/services/api/api_service.dart';
+// import 'package:linkschool/modules/services/api/service_locator.dart';
+// class AuthService {
+//   final ApiService _apiService = locator<ApiService>();
+
+//   Future<ApiResponse<Map<String, dynamic>>> login(String username, String password, String schoolCode) async {
+//     return await _apiService.get(
+//       endpoint: 'login.php',
+//       queryParams: {
+//         'username': username,
+//         'password': password,
+//         'token': schoolCode,
+//       },
+//     );
+//   }
+  
+//   // Additional auth methods can be added here
+//   Future<ApiResponse<User>> getUserProfile(String userId) async {
+//     return await _apiService.get(
+//       endpoint: 'user_profile.php',
+//       queryParams: {
+//         'user_id': userId,
+//       },
+//       fromJson: (json) => User.fromJson(json),
+//     );
+//   }
+// }

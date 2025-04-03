@@ -118,7 +118,7 @@ class _AllnewsScreenState extends State<AllnewsScreen> {
                 ),
               ),
               const SizedBox(width: 16.0),
-              Container(
+              SizedBox(
                 width: 100.0,
                 height: 120.0,
                 child: Column(

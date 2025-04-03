@@ -40,6 +40,7 @@ class _ExploreHomeState extends State<ExploreHome> {
     Share.share('https://flutter.dev');
   }
 
+  @override
   void initState() {
     super.initState();
     _controller = ScrollController();
@@ -544,7 +545,7 @@ class _ExploreHomeState extends State<ExploreHome> {
 
 // Widget for the news image
   Widget _buildNewsImage(String imageUrl) {
-    return Container(
+    return SizedBox(
       width: 80.0,
       height: 85.0,
       child: ClipRRect(
