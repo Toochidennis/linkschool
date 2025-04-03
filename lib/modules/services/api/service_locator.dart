@@ -1,3 +1,4 @@
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:get_it/get_it.dart';
 import 'package:linkschool/modules/auth/provider/auth_provider.dart';
 import 'package:linkschool/modules/auth/service/auth_service.dart';
@@ -18,8 +19,13 @@ import 'package:linkschool/modules/services/admin/behaviour_service.dart';
 final GetIt locator = GetIt.instance;
 
 void setupServiceLocator() {
-  // Register API Service as a singleton
-  locator.registerLazySingleton<ApiService>(() => ApiService());
+  // // Initialize API Service with proper configuration
+  locator.registerLazySingleton<ApiService>(() => ApiService(
+    baseUrl: dotenv.env['API_BASE_URL'],
+    apiKey: dotenv.env['API_KEY'],
+  ));
+  // // Register API Service as a singleton
+  // locator.registerLazySingleton<ApiService>(() => ApiService());
 
   // Register SkillService with ApiService dependency
   locator.registerLazySingleton<SkillService>(
@@ -54,7 +60,13 @@ void setupServiceLocator() {
   // Register other services as lazySingletons
   locator.registerLazySingleton<ClassService>(() => ClassService());
   locator.registerLazySingleton<LevelService>(() => LevelService());
-  locator.registerLazySingleton<TermService>(() => TermService());
+  // locator.registerLazySingleton<TermService>(() => TermService());
+    // Register TermService with ApiService dependency
+  locator.registerLazySingleton<TermService>(() {
+    final service = TermService();
+    service.apiService = locator<ApiService>();
+    return service;
+  });
 
 
  // Register AuthService
@@ -69,35 +81,3 @@ void setupServiceLocator() {
   locator.registerLazySingleton<CourseRegistrationService>(() => CourseRegistrationService());
   locator.registerLazySingleton<AssessmentService>(() => AssessmentService());
 }
-
-
-
-// import 'package:get_it/get_it.dart';
-// import 'package:linkschool/modules/auth/service/auth_service.dart';
-// import 'package:linkschool/modules/services/api/api_service.dart';
-// import 'package:linkschool/modules/services/admin/class_service.dart';
-// import 'package:linkschool/modules/services/admin/grade_service.dart';
-// import 'package:linkschool/modules/services/admin/level_service.dart';
-// import 'package:linkschool/modules/services/admin/student_service.dart';
-// import 'package:linkschool/modules/services/admin/term_service.dart';
-// import 'package:linkschool/modules/services/admin/course_registration_service.dart'; // Add this
-// import 'package:linkschool/modules/services/admin/assessment_service.dart'; // Add this
-
-// final GetIt locator = GetIt.instance;
-
-// void setupServiceLocator() {
-//   // Register API Service as a singleton
-//   locator.registerLazySingleton<ApiService>(() => ApiService());
-
-//   // Register other services as lazySingletons
-//   locator.registerLazySingleton<ClassService>(() => ClassService());
-//   locator.registerLazySingleton<GradeService>(() => GradeService());
-//   locator.registerLazySingleton<LevelService>(() => LevelService());
-//   locator.registerLazySingleton<StudentService>(() => StudentService());
-//   locator.registerLazySingleton<TermService>(() => TermService());
-
-//   // Register the missing services
-//   locator.registerLazySingleton<AuthService>(() => AuthService());
-//   locator.registerLazySingleton<CourseRegistrationService>(() => CourseRegistrationService());
-//   locator.registerLazySingleton<AssessmentService>(() => AssessmentService());
-// }

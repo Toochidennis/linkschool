@@ -1,8 +1,7 @@
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-// import 'package:linkschool/modules/auth/model/user.dart';
-// import 'package:linkschool/modules/services/api/service_locator.dart';
+
 
 class AuthService {
   Future<ApiResponse<Map<String, dynamic>>> login(String username, String password, String schoolCode) async {

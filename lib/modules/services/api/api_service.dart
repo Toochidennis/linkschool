@@ -61,18 +61,23 @@ class ApiResponse<T> {
 // Base API Service
 class ApiService {
   final String baseUrl;
+  final String? apiKey;
   final Map<String, String> _defaultHeaders = {
     'Content-Type': 'application/json',
     'Accept': 'application/json',
   };
 
   // Constructor with optional baseUrl parameter
-  ApiService({String? baseUrl}) 
-      : baseUrl = baseUrl ?? dotenv.env['API_BASE_URL'] ?? 'http://linkskool.com/developmentportal/api';
+  ApiService({String? baseUrl, String? apiKey}) 
+      : baseUrl = baseUrl ?? dotenv.env['API_BASE_URL'] ?? 'https://linkskool.net/api/v3',        
+        apiKey = apiKey ?? dotenv.env['API_KEY'] {
+    print('Initializing ApiService with baseUrl: $baseUrl');
+  }
 
   // Add authorization header (for authenticated requests)
   void setAuthToken(String token) {
     _defaultHeaders['Authorization'] = 'Bearer $token';
+    print('Auth token set in headers');
   }
 
   // Generic request method that handles all HTTP methods and payload types
@@ -85,16 +90,30 @@ class ApiService {
     T Function(Map<String, dynamic> json)? fromJson,
   }) async {
     try {
-      // Prepare the URI with query parameters
+
+            // Prepare headers
+      final headers = Map<String, String>.from(_defaultHeaders);
+      if (apiKey != null) {
+        headers['X-API-KEY'] = apiKey!;
+      }
+
+      // Prepare URI
       final uri = Uri.parse('$baseUrl/$endpoint').replace(
         queryParameters: queryParams,
       );
 
-      // Prepare headers based on payload type
-      final headers = Map<String, String>.from(_defaultHeaders);
-      if (payloadType == PayloadType.FORM_DATA) {
-        headers.remove('Content-Type'); // Let http package set the correct boundary
-      }
+      print('Making ${method.toString()} request to: ${uri.toString()}');
+      print('Headers: ${headers.keys.join(', ')}');
+      // // Prepare the URI with query parameters
+      // final uri = Uri.parse('$baseUrl/$endpoint').replace(
+      //   queryParameters: queryParams,
+      // );
+
+      // // Prepare headers based on payload type
+      // final headers = Map<String, String>.from(_defaultHeaders);
+      // if (payloadType == PayloadType.FORM_DATA) {
+      //   headers.remove('Content-Type'); // Let http package set the correct boundary
+      // }
 
       // Initialize the request
       http.Response response;

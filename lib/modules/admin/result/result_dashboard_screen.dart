@@ -23,6 +23,7 @@ class _ResultDashboardScreenState extends State<ResultDashboardScreen> {
   Map<String, dynamic>? userData;
   List<dynamic> levelNames = [];
   List<dynamic> classNames = [];
+  List<dynamic> levelsWithClasses = []; // New list to store only levels with classes
 
   @override
   void initState() {
@@ -80,9 +81,26 @@ class _ResultDashboardScreenState extends State<ResultDashboardScreen> {
             cls['class_name'] ?? '', 
             (cls['level_id'] ?? '').toString()
           ]).toList();
+          
+          // Filter out classes with empty class_name or zero level_id
+          List<dynamic> validClasses = classNames.where((cls) => 
+            cls[1].toString().isNotEmpty && 
+            cls[2].toString() != '0'
+          ).toList();
+          
+          // Create a set of level IDs that have valid classes
+          Set<String> levelIdsWithClasses = validClasses
+              .map<String>((cls) => cls[2].toString())
+              .toSet();
+          
+          // Filter levelNames to include only those with classes
+          levelsWithClasses = levelNames.where((level) => 
+            levelIdsWithClasses.contains(level[0].toString())
+          ).toList();
 
           print('Processed Level Names: $levelNames');
           print('Processed Class Names: $classNames');
+          print('Levels with Classes: $levelsWithClasses');
         });
       } else {
         print('No valid user data found in Hive');
@@ -130,7 +148,7 @@ class _ResultDashboardScreenState extends State<ResultDashboardScreen> {
             ),
             SliverToBoxAdapter(
               child: LevelSelection(
-                levelNames: levelNames, 
+                levelNames: levelsWithClasses, // Use the filtered levels list
                 classNames: classNames, 
                 isSecondScreen: false,
                 subjects: [
@@ -147,6 +165,8 @@ class _ResultDashboardScreenState extends State<ResultDashboardScreen> {
   }
 }
 
+
+
 // import 'package:flutter/material.dart';
 // import 'package:linkschool/modules/common/app_colors.dart';
 // import 'package:linkschool/modules/common/constants.dart';
@@ -154,6 +174,7 @@ class _ResultDashboardScreenState extends State<ResultDashboardScreen> {
 // import 'package:linkschool/modules/common/widgets/portal/result_dashboard/performance_chart.dart';
 // import 'package:linkschool/modules/common/widgets/portal/result_dashboard/settings_section.dart';
 // import 'package:hive/hive.dart';
+// import 'dart:convert';
 
 // class ResultDashboardScreen extends StatefulWidget {
 //   final PreferredSizeWidget appBar;
@@ -169,8 +190,8 @@ class _ResultDashboardScreenState extends State<ResultDashboardScreen> {
 
 // class _ResultDashboardScreenState extends State<ResultDashboardScreen> {
 //   Map<String, dynamic>? userData;
-//   List<dynamic>? levelNames;
-//   List<dynamic>? classNames;
+//   List<dynamic> levelNames = [];
+//   List<dynamic> classNames = [];
 
 //   @override
 //   void initState() {
@@ -179,26 +200,64 @@ class _ResultDashboardScreenState extends State<ResultDashboardScreen> {
 //   }
 
 //   Future<void> _loadUserData() async {
-//     final userBox = Hive.box('userData');
-//     final userData = userBox.get('userData');
+//     try {
+//       final userBox = Hive.box('userData');
+      
+//       // Debug: Print all keys in the box
+//       print('Hive Box Keys: ${userBox.keys.toList()}');
+      
+//       // Try different approaches to retrieve the data
+//       final storedUserData = userBox.get('userData');
+//       final storedLoginResponse = userBox.get('loginResponse');
+      
+//       print('Stored userData: $storedUserData');
+//       print('Stored loginResponse: $storedLoginResponse');
 
-//     if (userData != null) {
-//       print('User Data: $userData'); 
+//       // Determine which stored data to use
+//       dynamic dataToProcess;
+//       if (storedUserData != null) {
+//         dataToProcess = storedUserData;
+//       } else if (storedLoginResponse != null) {
+//         dataToProcess = storedLoginResponse;
+//       }
 
-//       // Extract levelName and className from the persisted JSON
-//       final levelNameData = userData['levelName']?['rows'] ?? [];
-//       final classNameData = userData['className']?['rows'] ?? [];
+//       if (dataToProcess != null) {
+//         // Ensure dataToProcess is a Map
+//         Map<String, dynamic> processedData = dataToProcess is String 
+//             ? json.decode(dataToProcess) 
+//             : dataToProcess;
 
-//       print('Level Names: $levelNameData'); 
-//       print('Class Names: $classNameData'); 
+//         // Extract data from different possible structures
+//         final response = processedData['response'] ?? processedData;
+//         final data = response['data'] ?? response;
 
-//       setState(() {
-//         this.userData = userData;
-//         levelNames = levelNameData;
-//         classNames = classNameData;
-//       });
-//     } else {
-//       print('User data is null or not found in Hive');
+//         // Extract levels and classes
+//         final levels = data['levels'] ?? [];
+//         final classes = data['classes'] ?? [];
+
+//         setState(() {
+//           userData = processedData;
+//           // Transform levels to match the previous format [id, level_name]
+//           levelNames = levels.map((level) => [
+//             (level['id'] ?? '').toString(), 
+//             level['level_name'] ?? ''
+//           ]).toList();
+          
+//           // Transform classes to match the previous format [id, class_name, level_id]
+//           classNames = classes.map((cls) => [
+//             (cls['id'] ?? '').toString(), 
+//             cls['class_name'] ?? '', 
+//             (cls['level_id'] ?? '').toString()
+//           ]).toList();
+
+//           print('Processed Level Names: $levelNames');
+//           print('Processed Class Names: $classNames');
+//         });
+//       } else {
+//         print('No valid user data found in Hive');
+//       }
+//     } catch (e) {
+//       print('Error loading user data: $e');
 //     }
 //   }
 
@@ -240,9 +299,9 @@ class _ResultDashboardScreenState extends State<ResultDashboardScreen> {
 //             ),
 //             SliverToBoxAdapter(
 //               child: LevelSelection(
-//                 levelNames: levelNames ?? [], // list of level names
-//                 classNames: classNames ?? [], // list of class names
-//                 isSecondScreen: false, // Set to true for course selection
+//                 levelNames: levelNames, 
+//                 classNames: classNames, 
+//                 isSecondScreen: false,
 //                 subjects: [
 //                   'Math',
 //                   'Science',
