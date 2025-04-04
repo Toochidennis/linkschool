@@ -24,8 +24,6 @@ void setupServiceLocator() {
     baseUrl: dotenv.env['API_BASE_URL'],
     apiKey: dotenv.env['API_KEY'],
   ));
-  // // Register API Service as a singleton
-  // locator.registerLazySingleton<ApiService>(() => ApiService());
 
   // Register SkillService with ApiService dependency
   locator.registerLazySingleton<SkillService>(

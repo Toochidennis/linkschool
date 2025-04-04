@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:hive/hive.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
@@ -10,7 +11,6 @@ import 'package:linkschool/modules/admin/result/class_detail/attendance/attendan
 import 'package:linkschool/modules/admin/result/class_detail/registration/registration.dart';
 import 'package:linkschool/modules/common/buttons/custom_elevated_appbar_button.dart';
 import 'package:linkschool/modules/providers/admin/term_provider.dart';
-import 'package:provider/provider.dart';
 
 class ClassDetailScreen extends StatefulWidget {
   final String className;

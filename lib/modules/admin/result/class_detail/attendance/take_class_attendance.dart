@@ -245,6 +245,7 @@ class _TakeClassAttendanceState extends State<TakeClassAttendance> {
 // import 'package:linkschool/modules/common/buttons/custom_floating_save_button.dart';
 // import 'package:linkschool/modules/common/text_styles.dart';
 // import 'package:linkschool/modules/common/custom_toaster.dart';
+// // import 'package:hive/hive.dart';
 
 // class TakeClassAttendance extends StatefulWidget {
 //   final String? classId;
@@ -285,7 +286,14 @@ class _TakeClassAttendanceState extends State<TakeClassAttendance> {
 //         provider.fetchAttendance(
 //           classId: widget.classId!,
 //           date: _currentDate,
-//           courseId: '0', // Set courseId to zero
+//           courseId: '0', // Set courseId to zero for class attendance
+//         );
+
+//         // Fetch local attendance data
+//         provider.fetchLocalAttendance(
+//           classId: widget.classId!,
+//           date: _currentDate,
+//           courseId: '0',
 //         );
 //       });
 //     });
@@ -308,10 +316,18 @@ class _TakeClassAttendanceState extends State<TakeClassAttendance> {
 //     final provider = context.read<StudentProvider>();
 //     provider.saveAttendance(
 //       classId: widget.classId,
-//       courseId: '0', // Set courseId to zero
+//       courseId: '0', // Set courseId to zero for class attendance
 //       date: _currentDate,
-//     ).then((success) {
+//     ).then((success) async {
 //       if (success) {
+//         // Save attendance data locally
+//         await provider.saveLocalAttendance(
+//           classId: widget.classId!,
+//           date: _currentDate,
+//           courseId: '0',
+//           studentIds: provider.selectedStudentIds,
+//         );
+
 //         CustomToaster.toastSuccess(
 //           context,
 //           'Success',
