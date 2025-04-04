@@ -96,9 +96,7 @@ class MyApp extends StatelessWidget {
       theme: AppThemes.lightTheme,
       darkTheme: AppThemes.darkTheme,
       themeMode: ThemeMode.system,
-      home: Container(
-        color: Colors.amber,
-      ),
+      home: Onboardingscreen(),
     );
   }
 }

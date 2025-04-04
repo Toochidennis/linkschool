@@ -78,7 +78,7 @@ flutter:
 
 
   assets:
-#    - .env
+    - .env
     - assets/icons/
     - assets/images/
     - assets/icons/e_learning/
