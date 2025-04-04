@@ -1,13 +1,15 @@
-import 'package:flutter/foundation.dart';
+// import 'package:flutter/foundation.dart';
 
 class Student {
   final int id;
   final String name;
+  final String registrationNo;
   bool isSelected;
 
   Student({
     required this.id,
     required this.name,
+    required this.registrationNo, 
     this.isSelected = false,
   });
 
@@ -16,15 +18,17 @@ class Student {
     return Student(
       id: this.id,
       name: this.name,
+      registrationNo: this.registrationNo, 
       isSelected: isSelected ?? this.isSelected,
     );
   }
 
-  // Factory constructor to create a Student object from JSON
+  // Updated to match API response fields
   factory Student.fromJson(Map<String, dynamic> json) {
     return Student(
       id: json['id'] is int ? json['id'] : int.parse(json['id'].toString()),
-      name: json['name'] ?? '',
+      name: json['student_name'] ?? '',  
+      registrationNo: json['registration_no'] ?? '',  
     );
   }
 
@@ -32,11 +36,11 @@ class Student {
   Map<String, dynamic> toJson() {
     return {
       'id': id,
-      'name': name,
+      'student_name': name,  
+      'registration_no': registrationNo,  
     };
   }
 }
-
 
 
 // class Student {
