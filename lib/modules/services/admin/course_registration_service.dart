@@ -6,11 +6,12 @@ class CourseRegistrationService {
   final ApiService _apiService = locator<ApiService>();
 
   Future<ApiResponse<List<CourseRegistrationModel>>> fetchRegisteredCourses(
-      String classId, String term, String year) async {
+    String classId, String term, String year) async {
+    
     final response = await _apiService.get(
-      endpoint: 'courseRegistration.php',
+      endpoint: 'portal/courseRegistration',
       queryParams: {
-        '_db': 'linksckoo_practice',
+        '_db': 'aamlmgzmy_linksckoo_practice',
         'class_id': classId,
         'term': term,
         'year': year,
@@ -19,12 +20,11 @@ class CourseRegistrationService {
 
     if (response.success && response.rawData != null) {
       // Parse the list of courses
-      final List<dynamic> coursesJson =
-          response.rawData!['data'] ?? response.rawData!;
+      final List<dynamic> coursesJson = response.rawData!['data'] ?? response.rawData!;
       final courses = coursesJson
           .map((json) => CourseRegistrationModel.fromJson(json))
           .toList();
-
+      
       return ApiResponse<List<CourseRegistrationModel>>(
         success: true,
         message: response.message,
@@ -33,7 +33,7 @@ class CourseRegistrationService {
         rawData: response.rawData,
       );
     }
-
+    
     return ApiResponse<List<CourseRegistrationModel>>(
       success: false,
       message: response.message,
@@ -43,13 +43,12 @@ class CourseRegistrationService {
     );
   }
 
-  Future<ApiResponse<bool>> registerCourse(
-      CourseRegistrationModel course) async {
+  Future<ApiResponse<bool>> registerCourse(CourseRegistrationModel course) async {
     final response = await _apiService.post(
       endpoint: 'courseRegistration.php',
       body: course.toJson(),
     );
-
+    
     return ApiResponse<bool>(
       success: response.success,
       message: response.message,
@@ -60,10 +59,12 @@ class CourseRegistrationService {
   }
 }
 
+
+
+
 // import 'dart:convert';
 // import 'package:http/http.dart' as http;
 // import 'package:linkschool/modules/model/admin/course_registration_model.dart';
-// import 'package:linkschool/modules/model/admin/getcurrent_registration_model.dart';
 
 // class CourseRegistrationService {
 //   final String baseUrl =
@@ -74,7 +75,7 @@ class CourseRegistrationService {
 //       String classId, String term, String year) async {
 //     try {
 //       final Uri url = Uri.parse(
-//           "$baseUrl?_db=linkskoo_practice&class_id=$classId&term=$term&year=$year");
+//           "$baseUrl?_db=linksckoo_practice&class_id=$classId&term=$term&year=$year");
 //       final http.Response response = await http.get(url);
 
 //       if (response.statusCode == 200) {
@@ -114,12 +115,5 @@ class CourseRegistrationService {
 //       print("Error registering course: $e");
 //       return false;
 //     }
-//   }
-
-//   getCurrentCourseRegistration(String studentId) {}
-
-//   Future<void> postCurrentCourseRegistration(
-//       GetCurrentCourseRegistrationModel registration) async {
-//     // Implement your API call or data persistence logic here
 //   }
 // }

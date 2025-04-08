@@ -1,28 +1,27 @@
-import 'dart:convert';
-import 'package:http/http.dart' as http;
 import 'package:linkschool/modules/model/admin/class_course_registration_model.dart';
+import 'package:linkschool/modules/services/api/api_service.dart';
+import 'package:linkschool/modules/services/api/service_locator.dart';
 
 class ClassCourseApiService {
-  static const String _baseUrl = 'http://linkskool.com/developmentportal/api/classRegistration.php';
+  // static const String _baseUrl = 'http://linkskool.com/developmentportal/api/classRegistration.php';
+final ApiService _apiService  = locator<ApiService>();
 
-  Future<void> postClassCourse(ClassCourseModel data) async {
-    final url = Uri.parse(_baseUrl);
-    final headers = {'Content-Type': 'application/json'};
-    final body = jsonEncode(data.toJson());
+  Future<ApiResponse<bool>> postClassCourse(ClassCourseModel studentClass) async {
+   
 
-    final response = await http.post(
-      url,
-      headers: headers,
-      body: body,
+    final response = await _apiService.post(
+    endpoint: 'courseRegistration',
+      body: studentClass.toJson(),
     );
 
-    if (response.statusCode == 200) {
-      print('Data posted successfully');
-      print('Response body: ${response.body}');
-    } else {
-      throw Exception('Failed to post data: ${response.statusCode}');
-    }
-  }
+   return ApiResponse<bool>(
+      success: response.success,
+      message: response.message,
+      statusCode: response.statusCode,
+      data: response.success,
+      rawData: response.rawData,
+    );
+}
 }
 // import 'package:http/http.dart' as http;
 // import 'package:linkschool/modules/model/admin/class_course_registration_model.dart';

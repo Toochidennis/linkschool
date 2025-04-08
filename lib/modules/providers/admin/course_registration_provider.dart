@@ -4,8 +4,7 @@ import 'package:linkschool/modules/services/admin/course_registration_service.da
 import 'package:linkschool/modules/services/api/service_locator.dart';
 
 class CourseRegistrationProvider with ChangeNotifier {
-  final CourseRegistrationService _courseRegistrationService =
-      locator<CourseRegistrationService>();
+  final CourseRegistrationService _courseRegistrationService = locator<CourseRegistrationService>();
   List<CourseRegistrationModel> _registeredCourses = [];
   bool _isLoading = false;
 
@@ -13,14 +12,12 @@ class CourseRegistrationProvider with ChangeNotifier {
   bool get isLoading => _isLoading;
 
   // Fetch registered courses
-  Future<void> fetchRegisteredCourses(
-      String classId, String term, String year) async {
+  Future<void> fetchRegisteredCourses(String classId, String term, String year) async {
     _isLoading = true;
     notifyListeners();
 
     try {
-      final response = await _courseRegistrationService.fetchRegisteredCourses(
-          classId, term, year);
+      final response = await _courseRegistrationService.fetchRegisteredCourses(classId, term, year);
 
       if (response.success && response.data != null) {
         _registeredCourses = response.data!;
@@ -85,6 +82,9 @@ class CourseRegistrationProvider with ChangeNotifier {
     notifyListeners();
   }
 }
+
+
+
 // import 'package:flutter/material.dart';
 // import 'package:linkschool/modules/model/admin/course_registration_model.dart';
 // import 'package:linkschool/modules/services/admin/course_registration_service.dart';
@@ -100,19 +100,17 @@ class CourseRegistrationProvider with ChangeNotifier {
 //   bool get isLoading => _isLoading;
 
 //   //  Fetch registered courses (Fixed)
-//   Future<void> fetchRegisteredCourses(String classId, String term, String year) async {
-//   _isLoading = true;
-//   notifyListeners();
+//   Future<void> fetchRegisteredCourses(
+//       String classId, String term, String year) async {
+//     _isLoading = true;
+//     notifyListeners();
 
-//   try {
-//     _registeredCourses = await _courseRegistrationService.fetchRegisteredCourses(classId, term, year);
-//   } catch (e) {
-//     print("Error fetching registered courses: $e");
-//   } finally {
-//     _isLoading = false;
-//     notifyListeners(); // Ensures UI updates after loading
+//     _registeredCourses = await _courseRegistrationService
+//         .fetchRegisteredCourses(classId, term, year);
+//     print("$_registeredCourses");
+//     _isLoading = false; 
+//     notifyListeners();
 //   }
-// }
 
 //   //  Register a new course
 //   Future<void> registerCourse(CourseRegistrationModel course) async {

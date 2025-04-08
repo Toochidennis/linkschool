@@ -127,8 +127,7 @@ class _ELearningDashboardScreenState extends State<ELearningDashboardScreen> {
                   'English',
                   'Physics',
                   'Chemistry'
-                ],
-                levelNames: [],
+                ], levelNames: [], 
               ),
             ),
           ],

@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:linkschool/modules/model/admin/getcurrent_registration_model.dart';
 import 'package:linkschool/modules/services/admin/getcurrentcourse_registeration_service.dart';
+import 'package:linkschool/modules/services/api/service_locator.dart';
 
 class getCurrentCourseRegistrationProvider with ChangeNotifier {
-  final GetcurrentcourseRegisterationService _service =
-      GetcurrentcourseRegisterationService();
-  GetCurrentCourseRegistrationModel? _currentRegistration;
+  final GetcurrentcourseRegisterationService _currentregistrationservice =
+      locator<GetcurrentcourseRegisterationService>();
+  List<CurrentCourseRegistrationModel> _currentRegistration = [];
   bool _isLoading = false;
 
-  GetCurrentCourseRegistrationModel? get currentRegistration =>
+  List<CurrentCourseRegistrationModel> get currentRegistration =>
       _currentRegistration;
   bool get isLoading => _isLoading;
 
@@ -19,8 +20,15 @@ class getCurrentCourseRegistrationProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      _currentRegistration = await _service.getCurrentCourseRegistration(
-          studentId, classID, term, Year); // Fixed method call
+      final response = await _currentregistrationservice.getCurrentCourseRegistration(
+          studentId, classID, term, Year); 
+          
+        if(response.success && response.data != null){
+          _currentRegistration = response.data!;
+        }else{
+          _currentRegistration =[];
+          debugPrint('No Current course Found');
+        }// Fixed method call
     } catch (e) {
       // Handle error
       print("Error fetching course registration: $e");

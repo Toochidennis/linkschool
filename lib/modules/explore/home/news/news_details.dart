@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/svg.dart';
 // import 'package:linkschool/modules/explore/home/news/allnews_screen.dart';
 // import 'package:share_plus/share_plus.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
@@ -95,7 +94,7 @@ class _NewsDetailsState extends State<NewsDetails> {
                       ),
                       TextButton(
                           onPressed: () => (Share.share(
-                              'dream ict' '/' + widget.news.title)),
+                              'dream ict/${widget.news.title}')),
                           style: TextButton.styleFrom(
                             backgroundColor:
                                 Colors.white, // Button background color

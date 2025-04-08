@@ -6,6 +6,7 @@ import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/common/utils/registration/registration_utils.dart';
 
 class ButtonSection extends StatelessWidget {
+
   const ButtonSection({super.key});
 
   @override

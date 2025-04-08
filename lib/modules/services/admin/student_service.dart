@@ -1,29 +1,35 @@
 import 'package:flutter/foundation.dart';
 import 'package:linkschool/modules/model/admin/student_model.dart';
-
-import 'package:hive/hive.dart';
 import 'package:linkschool/modules/services/api/api_service.dart';
-import 'package:linkschool/modules/services/api/service_locator.dart';
+import 'package:hive/hive.dart';
 
 class StudentService {
-  final ApiService _apiService = locator<ApiService>();
-  static const String _dbParam = 'linkskoo_practice';
+  final ApiService _apiService;
+
+  StudentService(this._apiService);
 
   Future<List<Student>> getStudentsByClass(String classId) async {
     try {
-      final response = await _apiService.get(
+      final response = await _apiService.get<List<Student>>(
         endpoint: 'getStudents.php',
         queryParams: {
           'class_id': classId,
-          '_db': _dbParam,
+          '_db': 'linkskoo_practice',
+        },
+        fromJson: (json) {
+          if (json['data'] is List) {
+            return (json['data'] as List)
+                .map((item) => Student.fromJson(item))
+                .toList();
+          }
+          return [];
         },
       );
 
       if (response.success) {
-        final List<dynamic> data = response.rawData?['data'] ?? [];
-        return data.map((item) => Student.fromJson(item)).toList();
+        return response.data ?? [];
       } else {
-        throw Exception('Failed to load students: ${response.message}');
+        throw Exception(response.message);
       }
     } catch (e) {
       debugPrint('Error fetching students: $e');
@@ -31,37 +37,6 @@ class StudentService {
     }
   }
 
-  // Fetch attendance data for a specific class, date, and course
-  Future<List<int>> getAttendance({
-    required String classId,
-    required String date,
-    required String courseId,
-  }) async {
-    try {
-      final response = await _apiService.get(
-        endpoint: 'getAttendance.php',
-        queryParams: {
-          '_db': _dbParam,
-          'class': classId,
-          'date': date,
-          'course': courseId,
-        },
-      );
-
-      if (response.success) {
-        final List<dynamic> data = response.rawData?['data'] ?? [];
-        // Extract student IDs from the response
-        return data.map<int>((item) => item['id'] as int).toList();
-      } else {
-        throw Exception('Failed to fetch attendance: ${response.message}');
-      }
-    } catch (e) {
-      debugPrint('Error fetching attendance: $e');
-      throw Exception('Error fetching attendance: $e');
-    }
-  }
-
-  // Save attendance using the setAttendance API
   Future<bool> saveAttendance({
     required String classId,
     required String courseId,
@@ -82,8 +57,8 @@ class StudentService {
       final year = schoolProfile['year'];
       final term = schoolProfile['term'];
 
-      // Prepare the form-data payload
-      Map<String, dynamic> formData = {
+      // Prepare the payload
+      final payload = {
         'staff': staffId.toString(),
         'course': courseId,
         'date': date,
@@ -96,24 +71,42 @@ class StudentService {
       // Add student IDs and names to the register array
       for (int i = 0; i < studentIds.length; i++) {
         final studentId = studentIds[i];
-        formData['register[$i][id]'] = studentId.toString();
-        formData['register[$i][name]'] = 'Student $studentId'; // Replace with actual student name if available
+        payload['register[$i][id]'] = studentId.toString();
+        payload['register[$i][name]'] = 'Student $studentId';
       }
 
-      final response = await _apiService.post(
+      final response = await _apiService.post<Map<String, dynamic>>(
         endpoint: 'setAttendance.php',
-        body: formData,
+        body: payload,
+        payloadType: PayloadType.FORM_DATA,
+      );
+
+      return response.success;
+    } catch (e) {
+      debugPrint('Error saving attendance: $e');
+      throw Exception('Error saving attendance: $e');
+    }
+  }
+
+  Future<Map<String, dynamic>> fetchStudentTerms(int studentId) async {
+    try {
+      final response = await _apiService.post<Map<String, dynamic>>(
+        endpoint: 'studentTerms.php',
+        body: {
+          'id': studentId.toString(),
+          '_db': 'linkskoo_practice',
+        },
         payloadType: PayloadType.FORM_DATA,
       );
 
       if (response.success) {
-        return true;
+        return response.rawData ?? {};
       } else {
         throw Exception(response.message);
       }
     } catch (e) {
-      debugPrint('Error saving attendance: $e');
-      throw Exception('Error saving attendance: $e');
+      debugPrint('Error fetching student terms: $e');
+      throw Exception('Error fetching student terms: $e');
     }
   }
 }

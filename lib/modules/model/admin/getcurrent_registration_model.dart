@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-class GetCurrentCourseRegistrationModel {
+class CurrentCourseRegistrationModel {
   final String? classID;
   final String? year;
   final String? term;
@@ -8,7 +8,7 @@ class GetCurrentCourseRegistrationModel {
   final int courseId;
   final String courseName;
 
-  GetCurrentCourseRegistrationModel(
+  CurrentCourseRegistrationModel(
       {required this.student_Id,
       required this.classID,
       required this.year,
@@ -17,9 +17,9 @@ class GetCurrentCourseRegistrationModel {
       required this.courseName});
 
   // Factory constructor for creating an instance from JSON
-  factory GetCurrentCourseRegistrationModel.fromJson(
+  factory CurrentCourseRegistrationModel.fromJson(
       Map<String, dynamic> json) {
-    return GetCurrentCourseRegistrationModel(
+    return CurrentCourseRegistrationModel(
       student_Id: json['student_id'],
       classID: json['class_Id'], // Ensure the correct JSON key
       year: json['year'],
@@ -42,8 +42,8 @@ class GetCurrentCourseRegistrationModel {
   }
 
   // Convert JSON string to model instance
-  static GetCurrentCourseRegistrationModel fromJsonString(String jsonString) {
-    return GetCurrentCourseRegistrationModel.fromJson(json.decode(jsonString));
+  static CurrentCourseRegistrationModel fromJsonString(String jsonString) {
+    return CurrentCourseRegistrationModel.fromJson(json.decode(jsonString));
   }
 
   // Convert model instance to JSON string

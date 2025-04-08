@@ -3,7 +3,11 @@ class Student {
   final String name;
   bool isSelected;
 
-  Student({required this.id, required this.name, this.isSelected = false});
+  Student({
+    required this.id, 
+    required this.name, 
+    this.isSelected = false
+  });
 
   factory Student.fromJson(Map<String, dynamic> json) {
     return Student(

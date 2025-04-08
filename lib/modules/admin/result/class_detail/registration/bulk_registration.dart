@@ -1,7 +1,7 @@
 // ignore_for_file: deprecated_member_use
-
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
+import 'package:hive/hive.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/common/utils/custom_dropdown_utils.dart';
@@ -17,28 +17,43 @@ class BulkRegistrationScreen extends StatefulWidget {
 }
 
 class _BulkRegistrationScreenState extends State<BulkRegistrationScreen> {
+  // final classId = class_id;
+  // final term = term;
+  // final year = year;
+
   @override
   void initState() {
     super.initState();
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      Future.delayed(Duration(milliseconds: 100), () {
-        Provider.of<CourseRegistrationProvider>(context, listen: false)
-            .fetchRegisteredCourses("73", "1", "2023");
-      });
+      Provider.of<CourseRegistrationProvider>(context, listen: false)
+          .fetchRegisteredCourses("73", "1", "2023"); // Pass your classId, term, year
     });
+
+     _debugHiveContents();
   }
+ 
+//  to get the stored data on local storage
+
+  void _debugHiveContents() {
+  final userBox = Hive.box('userData');
+  print('Hive box keys: ${userBox.keys.toList()}');
+  for (var key in userBox.keys) {
+    print('Hive key $key: ${userBox.get(key)}');
+  }
+}
 
   String titleCase(String input) {
-    if (input.isEmpty) {
-      return input;
-    }
-    return input.split(' ').map((word) {
-      if (word.isEmpty) {
-        return word;
-      }
-      return word[0].toUpperCase() + word.substring(1).toLowerCase();
-    }).join(' ');
+  if (input.isEmpty) {
+    return input;
   }
+  return input.split(' ').map((word) {
+    if (word.isEmpty) {
+      return word;
+    }
+    return word[0].toUpperCase() + word.substring(1).toLowerCase();
+  }).join(' ');
+}
 
   String _selectedTerm = 'First term';
 
@@ -217,22 +232,13 @@ class _BulkRegistrationScreenState extends State<BulkRegistrationScreen> {
       padding: EdgeInsets.symmetric(horizontal: 16.0),
       child: Column(
         children: [
-          _buildStudentListItem(),
-          // _buildStudentListItem('Toochukwu Dennis', 2),
-          // _buildStudentListItem('Toochukwu Dennis', 1),
-          // _buildStudentListItem('Toochukwu Dennis', 3),
-          // _buildStudentListItem('Toochukwu Dennis', 0),
-          // _buildStudentListItem('Toochukwu Dennis', 1),
-          // _buildStudentListItem('Toochukwu Dennis', 2),
-          // _buildStudentListItem('Toochukwu Dennis', 0),
-          // _buildStudentListItem('Toochukwu Dennis', 1),
-          // _buildStudentListItem('Toochukwu Dennis', 3),
+          _buildStudentListItem('Toochukwu Dennis', 0),
         ],
       ),
     );
   }
 
-  Widget _buildStudentListItem() {
+  Widget _buildStudentListItem(String name, int coursesRegistered) {
     final courseProvider =
         Provider.of<CourseRegistrationProvider>(context, listen: false);
 
@@ -245,83 +251,57 @@ class _BulkRegistrationScreenState extends State<BulkRegistrationScreen> {
     }
 
     return Column(
-      children: courseProvider.registeredCourses.map((course) {
-        final registerdCourse = course.courseCount;
-        return Column(
+      children: [
+        Row(
           children: [
             Container(
-              child: Row(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: AppColors.primaryLight,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Icon(Icons.person, color: AppColors.backgroundLight),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Container(
-                    width: 40,
-                    height: 40,
-                    decoration: BoxDecoration(
-                      color: AppColors.primaryLight,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Icon(Icons.person, color: AppColors.backgroundLight),
+                  Text(
+                    name,
+                    style: AppTextStyles.normal600(fontSize: 16, color: AppColors.backgroundDark),
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          titleCase(course.studentName),
-                          style: AppTextStyles.normal600(
-                            fontSize: 16,
-                            color: AppColors.backgroundDark,
-                          ),
-                        ),
-                        SizedBox(height: 2),
-                        Text(
-                          '${course.courseCount} courses registered', // Replace `someProperty` with the actual property you want to display
-                          style: AppTextStyles.normal400(
-                            fontSize: 12,
-                            color: Colors.grey,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  ElevatedButton(
-                    onPressed: () {
-                      if (registerdCourse > 0) {
-                        Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (context) => CourseRegistrationScreen(
-                              studentName: course.studentName,
-                              coursesRegistered: course.courseCount,
-                              studentId: course.studentId.toString(),
-
-                              //   studentName:'${course.student_name}',
-                              // coursesRegistered: '${course.id}',
-                            ),
-                          ),
-                        );
-                      }
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.videoColor4,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                    child: Text(
-                      (course.courseCount > 0) ? 'Edit' : 'Register',
-                      style: AppTextStyles.normal700(
-                        fontSize: 12,
-                        color: AppColors.backgroundLight,
-                      ),
-                    ),
+                  SizedBox(height: 8,),
+                  Text(
+                    '$coursesRegistered courses registered',
+                    style: AppTextStyles.normal400(fontSize: 12, color: Colors.grey),
                   ),
                 ],
               ),
             ),
-            Divider(),
+ElevatedButton(
+  onPressed: () {
+    if (coursesRegistered > 0) {
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (context) => CourseRegistrationScreen(studentName: name, coursesRegistered: coursesRegistered, studentId:'',),
+        ),
+      );
+    }
+  },
+  style: ElevatedButton.styleFrom(
+    backgroundColor: AppColors.videoColor4,
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(8),
+    ),
+  ),
+  child: Text(coursesRegistered > 0 ? 'Edit' : 'Register', style: AppTextStyles.normal700(fontSize: 12, color: AppColors.backgroundLight)),
+),
           ],
-        );
-      }).toList(),
+        ),
+        Divider(),
+      ],
     );
   }
 }

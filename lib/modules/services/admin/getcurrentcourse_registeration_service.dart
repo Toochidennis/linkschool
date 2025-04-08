@@ -1,50 +1,66 @@
-import 'package:http/http.dart' as http;
-import 'dart:convert'; // Import for JSON conversion
+// Import for JSON conversion
 import 'package:linkschool/modules/model/admin/getcurrent_registration_model.dart';
+import 'package:linkschool/modules/services/api/api_service.dart';
+import 'package:linkschool/modules/services/api/service_locator.dart';
 
 class GetcurrentcourseRegisterationService {
-  final String baseUrl =
-      "http://linkskool.com/developmentportal/api/courseRegistration.php";
+  final ApiService _apiService = locator<ApiService>(); 
 
   // Fetch current course registration data
-  Future<GetCurrentCourseRegistrationModel> getCurrentCourseRegistration(
+  Future<ApiResponse<List<CurrentCourseRegistrationModel>>> getCurrentCourseRegistration(
       String studentId, String classID, String term, String year) async {
-    if (studentId.isEmpty || classID.isEmpty || term.isEmpty || year.isEmpty) {
-      throw Exception('All parameters must be provided and non-empty');
-    }
+    // if (studentId.isEmpty || classID.isEmpty || term.isEmpty || year.isEmpty) {
+    //   throw Exception('All parameters must be provided and non-empty');
+    // }
 
-    final Uri url = Uri.parse(
-        '$baseUrl?_db=linkskoo_practice&student_Id=$studentId&classID=$classID&term=$term&Year=$year');
+    
 
-    final response = await http.get(url);
-
-    if (response.statusCode == 200) {
-      try {
-        print(response.body); // Debugging: Print the response body
-        return GetCurrentCourseRegistrationModel.fromJsonString(response.body);
-      } catch (e) {
-        throw Exception('Failed to parse JSON: $e');
+    final response = await _apiService.get(
+      endpoint:'portal/courseRegisteration',
+      queryParams:{
+        '_db':'aamlmgzmy_linksckoo_practice',
+        'student_id':studentId,
+        'class_id':classID,
+        'term':term,
+        'year':year,
       }
-    } else {
-      throw Exception(
-          'Failed to load course registration data: ${response.body}');
-    }
+    );
+
+    if (response.success && response.rawData != null) {
+      final List<dynamic> currentcoursesJson = response.rawData!['data'] ?? response.rawData!;
+      final currentcourses = currentcoursesJson.map((json)=>CurrentCourseRegistrationModel.fromJson(json)).toList();
+      
+      return ApiResponse<List<CurrentCourseRegistrationModel>>(
+        success:true,
+        message:response.message,
+        statusCode:response.statusCode,
+        data:currentcourses,
+        rawData:response.rawData,
+      );
+  }
+
+   return ApiResponse<List<CurrentCourseRegistrationModel>>(
+        success:false,
+        message:response.message,
+        statusCode:response.statusCode,
+        data:[],
+        rawData:response.rawData,
+      );
   }
 
 // Post current course registration data
-  Future<void> postgetCurrentCourseRegistration(
-      GetCurrentCourseRegistrationModel registration) async {
-    final Uri url = Uri.parse('baseUrl');
+  Future<ApiResponse<bool>> postCurrentCourseRegistration(
+      CurrentCourseRegistrationModel currentcourseregistration) async {
+  
+    final response = await _apiService.post(
+      endpoint: 'courseRegistration.php',
+      body: currentcourseregistration.toJson());
+   
 
-    final response = await http.post(
-      url,
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode(registration.toJson()), // Ensure correct JSON format
-    );
-
-    if (response.statusCode != 201) {
-      throw Exception(
-          'Failed to post course registration data: ${response.body}');
-    }
+    return ApiResponse(
+      success: response.success,
+      message: response.message, 
+      statusCode: response.statusCode,
+      rawData: response.rawData);
   }
 }
