@@ -41,7 +41,7 @@ class TermService {
 
       // Make API request
       final response = await _apiService.get(
-        endpoint: 'portal/courses/registrations/terms',
+        endpoint: 'portal/course-registrations/terms',
         queryParams: {
           'year': year,
           'class_id': classId,

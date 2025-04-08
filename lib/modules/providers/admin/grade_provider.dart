@@ -5,7 +5,7 @@ import 'package:linkschool/modules/services/admin/grade_service.dart';
 class GradeProvider with ChangeNotifier {
   final GradeService _gradeService;
   List<Grade> _grades = [];
-  List<Grade> _newGrades = [];
+  final List<Grade> _newGrades = [];
   bool _isLoading = false;
   String _error = '';
 

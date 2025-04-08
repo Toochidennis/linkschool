@@ -1,6 +1,7 @@
 // ignore_for_file: deprecated_member_use
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
+import 'package:hive/hive.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/common/utils/custom_dropdown_utils.dart';
@@ -9,35 +10,100 @@ import 'package:linkschool/modules/providers/admin/course_registration_provider.
 import 'package:provider/provider.dart';
 
 class BulkRegistrationScreen extends StatefulWidget {
-  const BulkRegistrationScreen({super.key});
+  final String classId;
+  
+  const BulkRegistrationScreen({
+    super.key,
+    required this.classId,
+  });
 
   @override
   State<BulkRegistrationScreen> createState() => _BulkRegistrationScreenState();
 }
 
 class _BulkRegistrationScreenState extends State<BulkRegistrationScreen> {
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      Provider.of<CourseRegistrationProvider>(context, listen: false)
-          .fetchRegisteredCourses("73", "1", "2023"); // Pass your classId, term, year
-    });
+  String _selectedTerm = 'First term';
+  Map<String, dynamic> _settings = {};
+  int _totalRegisteredCourses = 0;
+  int _totalStudents = 0;
+  String _academicSession = '';
+  
+  // @override
+  // void initState() {
+  //   super.initState();
+  //   _loadSettingsFromHive();
+  //   WidgetsBinding.instance.addPostFrameCallback((_) {
+  //     _fetchRegisteredStudents();
+  //   });
+  // }
+
+@override
+void initState() {
+  super.initState();
+  _loadSettingsFromHive();
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    // Make sure widget.classId is not null or empty
+    if (widget.classId.isNotEmpty) {
+      _fetchRegisteredStudents();
+    } else {
+      // Log error or handle missing classId
+      debugPrint('Error: Missing classId parameter');
+    }
+  });
+}
+
+  void _loadSettingsFromHive() {
+    final userBox = Hive.box('userData');
+    final userData = userBox.get('userData');
+    
+    if (userData != null && userData['data'] != null && userData['data']['settings'] != null) {
+      setState(() {
+        _settings = Map<String, dynamic>.from(userData['data']['settings']);
+        
+        // Set selected term based on settings
+        int termNumber = _settings['term'] ?? 1;
+        _selectedTerm = termNumber == 1 
+            ? 'First term' 
+            : termNumber == 2 
+                ? 'Second term' 
+                : 'Third term';
+                
+        // Set academic session
+        _academicSession = "${int.parse(_settings['year'] ?? '2023') - 1}/${_settings['year'] ?? '2023'} academic session";
+      });
+    }
+  }
+
+  void _fetchRegisteredStudents() {
+    // Extract term number from the selected term
+    int termNumber = _selectedTerm == 'First term' 
+        ? 1 
+        : _selectedTerm == 'Second term' 
+            ? 2 
+            : 3;
+
+  // Debug print to verify params
+  debugPrint('Fetching students with classId: ${widget.classId}, term: $termNumber, year: ${_settings['year'] ?? '2023'}');
+            
+    Provider.of<CourseRegistrationProvider>(context, listen: false)
+        .fetchRegisteredCourses(
+            widget.classId, 
+            termNumber.toString(), 
+            _settings['year'] ?? '2023'
+        );
   }
 
   String titleCase(String input) {
-  if (input.isEmpty) {
-    return input;
-  }
-  return input.split(' ').map((word) {
-    if (word.isEmpty) {
-      return word;
+    if (input.isEmpty) {
+      return input;
     }
-    return word[0].toUpperCase() + word.substring(1).toLowerCase();
-  }).join(' ');
-}
-
-  String _selectedTerm = 'First term';
+    return input.split(' ').map((word) {
+      if (word.isEmpty) {
+        return word;
+      }
+      return word[0].toUpperCase() + word.substring(1).toLowerCase();
+    }).join(' ');
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -57,16 +123,26 @@ class _BulkRegistrationScreenState extends State<BulkRegistrationScreen> {
         backgroundColor: AppColors.backgroundLight,
         elevation: 0.0,
       ),
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            _buildTopContainer(),
-            SizedBox(
-              height: 32,
+      body: Consumer<CourseRegistrationProvider>(
+        builder: (context, provider, child) {
+          // Update counters when data is loaded
+          if (!provider.isLoading && provider.registeredCourses.isNotEmpty) {
+            _totalStudents = provider.registeredCourses.length;
+            _totalRegisteredCourses = provider.registeredCourses
+                .where((student) => student.courseCount > 0)
+                .length;
+          }
+          
+          return SingleChildScrollView(
+            child: Column(
+              children: [
+                _buildTopContainer(),
+                SizedBox(height: 32),
+                _buildStudentList(provider),
+              ],
             ),
-            _buildStudentList(),
-          ],
-        ),
+          );
+        },
       ),
     );
   }
@@ -106,7 +182,7 @@ class _BulkRegistrationScreenState extends State<BulkRegistrationScreen> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          '2016/2017 academic session',
+                          _academicSession,
                           style: AppTextStyles.normal600(
                               fontSize: 12, color: AppColors.backgroundDark),
                         ),
@@ -120,14 +196,13 @@ class _BulkRegistrationScreenState extends State<BulkRegistrationScreen> {
                             onChanged: (newValue) {
                               setState(() {
                                 _selectedTerm = newValue!;
+                                _fetchRegisteredStudents();
                               });
                             })
                       ],
                     ),
                   ),
-                  const SizedBox(
-                    height: 34,
-                  ),
+                  const SizedBox(height: 34),
                   Row(
                     children: [
                       const CircleAvatar(
@@ -138,9 +213,7 @@ class _BulkRegistrationScreenState extends State<BulkRegistrationScreen> {
                           weight: 20.0,
                         ),
                       ),
-                      const SizedBox(
-                        width: 12,
-                      ),
+                      const SizedBox(width: 12),
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -148,26 +221,20 @@ class _BulkRegistrationScreenState extends State<BulkRegistrationScreen> {
                               style: AppTextStyles.normal500(
                                   fontSize: 14,
                                   color: AppColors.backgroundLight)),
-                          const SizedBox(
-                            height: 5.0,
-                          ),
-                          Text('345',
+                          const SizedBox(height: 5.0),
+                          Text(_totalStudents.toString(),
                               style: AppTextStyles.normal700(
                                   fontSize: 17,
                                   color: AppColors.backgroundLight)),
                         ],
                       ),
-                      SizedBox(
-                        width: 25,
-                      ),
+                      SizedBox(width: 25),
                       Container(
                         width: 1,
                         height: 40,
                         color: AppColors.backgroundLight,
                       ),
-                      const SizedBox(
-                        width: 25,
-                      ),
+                      const SizedBox(width: 25),
                       CircleAvatar(
                         backgroundColor: AppColors.backgroundLight,
                         child: Center(
@@ -179,9 +246,7 @@ class _BulkRegistrationScreenState extends State<BulkRegistrationScreen> {
                           ),
                         ),
                       ),
-                      const SizedBox(
-                        width: 12,
-                      ),
+                      const SizedBox(width: 12),
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -189,10 +254,8 @@ class _BulkRegistrationScreenState extends State<BulkRegistrationScreen> {
                               style: AppTextStyles.normal500(
                                   fontSize: 14,
                                   color: AppColors.backgroundLight)),
-                          const SizedBox(
-                            height: 5.0,
-                          ),
-                          Text('345',
+                          const SizedBox(height: 5.0),
+                          Text(_totalRegisteredCourses.toString(),
                               style: AppTextStyles.normal700(
                                   fontSize: 17,
                                   color: AppColors.backgroundLight)),
@@ -209,103 +272,97 @@ class _BulkRegistrationScreenState extends State<BulkRegistrationScreen> {
     );
   }
 
-  Widget _buildStudentList() {
-    return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 16.0),
-      child: Column(
-        children: [
-          _buildStudentListItem('Toochukwu Dennis', 0),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildStudentListItem(String name, int coursesRegistered) {
-    final courseProvider =
-        Provider.of<CourseRegistrationProvider>(context, listen: false);
-
-    if (courseProvider.isLoading) {
+  Widget _buildStudentList(CourseRegistrationProvider provider) {
+    if (provider.isLoading) {
       return Center(child: CircularProgressIndicator());
     }
 
-    if (courseProvider.registeredCourses.isEmpty) {
-      return Center(child: Text("No registered courses found."));
+    if (provider.registeredCourses.isEmpty) {
+      return Center(child: Text("No registered students found."));
     }
 
-    return Column(
-      children: courseProvider.registeredCourses.map((course) {
-        final registerdCourse = course.courseCount;
-        return Column(
-          children: [
-            Container(
-              child: Row(
-                children: [
-                  Container(
-                    width: 40,
-                    height: 40,
-                    decoration: BoxDecoration(
-                      color: AppColors.primaryLight,
-                      borderRadius: BorderRadius.circular(8),
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: 16.0),
+      child: Column(
+        children: provider.registeredCourses.map((student) {
+          return Column(
+            children: [
+              Container(
+                child: Row(
+                  children: [
+                    Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: AppColors.primaryLight,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Icon(Icons.person, color: AppColors.backgroundLight),
                     ),
-                    child: Icon(Icons.person, color: AppColors.backgroundLight),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          titleCase('${course.studentName}'),
-                          style: AppTextStyles.normal600(
-                            fontSize: 16,
-                            color: AppColors.backgroundDark,
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            titleCase(student.studentName),
+                            style: AppTextStyles.normal600(
+                              fontSize: 16,
+                              color: AppColors.backgroundDark,
+                            ),
                           ),
-                        ),
-                        SizedBox(height: 2),
-                        Text(
-                          '${course.courseCount} courses registered', // Replace `someProperty` with the actual property you want to display
-                          style: AppTextStyles.normal400(
-                            fontSize: 12,
-                            color: Colors.grey,
+                          SizedBox(height: 2),
+                          Text(
+                            '${student.courseCount} courses registered',
+                            style: AppTextStyles.normal400(
+                              fontSize: 12,
+                              color: Colors.grey,
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
-                  ElevatedButton(
-                    onPressed: () {
-                      if (registerdCourse > 0) {
+                    ElevatedButton(
+                      onPressed: () {
                         Navigator.of(context).push(
                           MaterialPageRoute(
                             builder: (context) => CourseRegistrationScreen(
-                              studentName: name,
-                              coursesRegistered: coursesRegistered,
+                              studentName: student.studentName,
+                              // studentId: student.studentId,
+                              coursesRegistered: student.courseCount,
+                              classId: widget.classId,
+                              // term: _selectedTerm == 'First term' 
+                              //     ? '1' 
+                              //     : _selectedTerm == 'Second term' 
+                              //         ? '2' 
+                              //         : '3',
+                              // year: _settings['year'] ?? '2023',
                             ),
                           ),
                         );
-                      }
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.videoColor4,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.videoColor4,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      child: Text(
+                        (student.courseCount > 0) ? 'Edit' : 'Register',
+                        style: AppTextStyles.normal700(
+                          fontSize: 12,
+                          color: AppColors.backgroundLight,
+                        ),
                       ),
                     ),
-                    child: Text(
-                      (course.courseCount > 0) ? 'Edit' : 'Register',
-                      style: AppTextStyles.normal700(
-                        fontSize: 12,
-                        color: AppColors.backgroundLight,
-                      ),
-                    ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-            Divider(),
-          ],
-        );
-      }).toList(),
+              Divider(),
+            ],
+          );
+        }).toList(),
+      ),
     );
   }
 }

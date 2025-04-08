@@ -12,9 +12,8 @@ class StudentService {
     try {
       // Use the new API endpoint and format
       final response = await _apiService.get<List<Student>>(
-        endpoint: 'portal/students/class',
+        endpoint: 'portal/classes/$classId/students',
         queryParams: {
-          'class_id': classId,
           '_db': 'aalmgzmy_linkskoo_practice',
         },
         fromJson: (json) {

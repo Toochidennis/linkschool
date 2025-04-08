@@ -148,7 +148,7 @@ class _ResultDashboardScreenState extends State<ResultDashboardScreen> {
             ),
             SliverToBoxAdapter(
               child: LevelSelection(
-                levelNames: levelsWithClasses, // Use the filtered levels list
+                levelNames: levelsWithClasses, // Use filtered levels list
                 classNames: classNames, 
                 isSecondScreen: false,
                 subjects: [

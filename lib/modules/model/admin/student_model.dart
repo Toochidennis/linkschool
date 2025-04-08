@@ -16,9 +16,9 @@ class Student {
   // Create a copy of student with updated isSelected value
   Student copyWith({bool? isSelected}) {
     return Student(
-      id: this.id,
-      name: this.name,
-      registrationNo: this.registrationNo, 
+      id: id,
+      name: name,
+      registrationNo: registrationNo, 
       isSelected: isSelected ?? this.isSelected,
     );
   }

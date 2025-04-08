@@ -43,9 +43,9 @@ class _ClassDetailScreenState extends State<ClassDetailScreen> {
 void _debugHiveContents() {
   final userBox = Hive.box('userData');
   print('Hive box keys: ${userBox.keys.toList()}');
-  userBox.keys.forEach((key) {
+  for (var key in userBox.keys) {
     print('Hive key $key: ${userBox.get(key)}');
-  });
+  }
 }
 
   // void _loadTerms() async {
@@ -159,7 +159,7 @@ void _debugHiveContents() {
                                         context,
                                         MaterialPageRoute(
                                             builder: (context) =>
-                                                const RegistrationScreen()));
+                                                RegistrationScreen(classId: widget.classId)));
                                   },
                                 ),
                               ),
@@ -283,7 +283,7 @@ List<Widget> _buildTermRows(List<Map<String, dynamic>> terms) {
             indicatorColor: AppColors.primaryLight,
             onTap: () => showTermOverlay(context),
           );
-        }).toList(),
+        }),
       ],
     );
   }).toList();
