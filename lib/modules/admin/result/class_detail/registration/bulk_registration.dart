@@ -28,14 +28,6 @@ class _BulkRegistrationScreenState extends State<BulkRegistrationScreen> {
   int _totalStudents = 0;
   String _academicSession = '';
   
-  // @override
-  // void initState() {
-  //   super.initState();
-  //   _loadSettingsFromHive();
-  //   WidgetsBinding.instance.addPostFrameCallback((_) {
-  //     _fetchRegisteredStudents();
-  //   });
-  // }
 
 @override
 void initState() {

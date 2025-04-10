@@ -73,38 +73,44 @@ class _TakeClassAttendanceState extends State<TakeClassAttendance> {
     _currentDate = formatter.format(now);
   }
 
-  void _onSavePressed() {
-    final provider = context.read<StudentProvider>();
-    provider.saveAttendance(
-      classId: widget.classId,
-      courseId: '0', // Set courseId to zero for class attendance
-      date: _currentDate,
-    ).then((success) async {
-      if (success) {
-        // Save attendance data locally
-        await provider.saveLocalAttendance(
-          classId: widget.classId!,
-          date: _currentDate,
-          courseId: '0',
-          studentIds: provider.selectedStudentIds,
-        );
+void _onSavePressed() {
+  final provider = context.read<StudentProvider>();
+  
+  // Format the current date and time in the required format
+  final now = DateTime.now();
+  final formatter = DateFormat('yyyy-MM-dd HH:mm:ss');
+  final formattedDate = formatter.format(now);
+  
+  provider.saveAttendance(
+    classId: widget.classId,
+    courseId: '0', // Set courseId to zero for class attendance
+    date: formattedDate,
+  ).then((success) async {
+    if (success) {
+      // Save attendance data locally
+      await provider.saveLocalAttendance(
+        classId: widget.classId!,
+        date: formattedDate,
+        courseId: '0',
+        studentIds: provider.selectedStudentIds,
+      );
 
-        CustomToaster.toastSuccess(
-          context,
-          'Success',
-          'Class attendance saved successfully',
-        );
-      } else {
-        CustomToaster.toastError(
-          context,
-          'Error',
-          provider.errorMessage.isNotEmpty
-              ? provider.errorMessage
-              : 'Failed to save class attendance',
-        );
-      }
-    });
-  }
+      CustomToaster.toastSuccess(
+        context,
+        'Success',
+        'Class attendance saved successfully',
+      );
+    } else {
+      CustomToaster.toastError(
+        context,
+        'Error',
+        provider.errorMessage.isNotEmpty
+            ? provider.errorMessage
+            : 'Failed to save class attendance',
+      );
+    }
+  });
+}
 
   @override
   Widget build(BuildContext context) {

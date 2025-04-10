@@ -90,40 +90,44 @@ class StudentProvider extends ChangeNotifier {
     }
   }
 
-  // Save attendance
-  Future<bool> saveAttendance({
-    required String? classId, 
-    required String? courseId, 
-    required String date,
-  }) async {
-    if (classId == null || courseId == null) {
-      _errorMessage = 'Class or Course ID is missing';
-      notifyListeners();
-      return false;
-    }
 
-    try {
-      final success = await _studentService.saveAttendance(
-        classId: classId,
-        courseId: courseId,
-        studentIds: selectedStudentIds,
-        date: date,
-      );
-
-      if (success) {
-        _errorMessage = '';
-      } else {
-        _errorMessage = 'Failed to save attendance';
-      }
-
-      notifyListeners();
-      return success;
-    } catch (e) {
-      _errorMessage = e.toString();
-      notifyListeners();
-      return false;
-    }
+Future<bool> saveAttendance({
+  required String? classId, 
+  required String? courseId, 
+  required String date,
+}) async {
+  if (classId == null || courseId == null) {
+    _errorMessage = 'Class or Course ID is missing';
+    notifyListeners();
+    return false;
   }
+
+  try {
+    // Get selected students with their complete data (not just IDs)
+    final selectedStudents = _students.where((student) => student.isSelected).toList();
+    
+    final success = await _studentService.saveAttendance(
+      classId: classId,
+      courseId: courseId,
+      studentIds: selectedStudentIds,
+      date: date,
+      selectedStudents: selectedStudents,
+    );
+
+    if (success) {
+      _errorMessage = '';
+    } else {
+      _errorMessage = 'Failed to save attendance';
+    }
+
+    notifyListeners();
+    return success;
+  } catch (e) {
+    _errorMessage = e.toString();
+    notifyListeners();
+    return false;
+  }
+}
 
   // Save local attendance
   Future<void> saveLocalAttendance({
