@@ -7,6 +7,7 @@ import '../../common/constants.dart';
 import '../../common/text_styles.dart';
 import '../../model/explore/home/video_model.dart';
 import '../../providers/explore/subject_provider.dart';
+
 import 'package:skeletonizer/skeletonizer.dart';
 import '../e_library/e_lib_subject_detail.dart';
 
@@ -21,7 +22,7 @@ class _VideoDisplayState extends State<VideoDisplay> {
   @override
   void initState() {
     super.initState();
-    Provider.of<SubjectProvider>(context, listen: false).fetchSubject();
+    Provider.of<SubjectProvider>(context, listen: false).fetchSubjects();
   }
 
   Color _getSubjectColor(String subjectName) {
@@ -183,6 +184,7 @@ class _VideoDisplayState extends State<VideoDisplay> {
                                   title: 'Loading...',
                                   url: '',
                                   thumbnail: '',
+                                  author: '',
                                 ));
                               },
                               childCount: 6,
@@ -229,10 +231,11 @@ class _VideoDisplayState extends State<VideoDisplay> {
                       slivers: [
                         SliverToBoxAdapter(
                           child: Constants.headingWithSeeAll600(
-                              title: 'Watch history',
-                              titleSize: 18.0,
-                              titleColor: AppColors.primaryLight,
-                              SeeAllPressed: _navigateToSeeall),
+                            title: 'Watch history',
+                            titleSize: 18.0,
+                            titleColor: AppColors.primaryLight,
+                            onPressed: _navigateToSeeall
+                          ),
                         ),
                         SliverToBoxAdapter(
                           child: SizedBox(

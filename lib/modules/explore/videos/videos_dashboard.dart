@@ -22,7 +22,7 @@ class _VideosDashboardState extends State<VideosDashboard> {
   @override
   void initState() {
     super.initState();
-    Provider.of<SubjectProvider>(context, listen: false).fetchSubject();
+    Provider.of<SubjectProvider>(context, listen: false).fetchSubjects();
   }
 
   _navigateToSeeall() {
@@ -93,7 +93,7 @@ class _VideosDashboardState extends State<VideosDashboard> {
                             child: Constants.headingWithSeeAll600(
                               title: 'Watch history',
                               titleSize: 18.0,
-                              SeeAllPressed: _navigateToSeeall,
+                              onPressed: _navigateToSeeall,
                               titleColor: AppColors.primaryLight,
                             ),
                           ),
@@ -239,7 +239,7 @@ class _VideosDashboardState extends State<VideosDashboard> {
                             title: 'Watch history',
                             titleSize: 18.0,
                             titleColor: AppColors.primaryLight,
-                            SeeAllPressed: _navigateToSeeall,
+                            onPressed: _navigateToSeeall,
                           ),
                         ),
                         SliverToBoxAdapter(

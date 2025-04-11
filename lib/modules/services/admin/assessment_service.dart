@@ -2,7 +2,6 @@
 import 'package:linkschool/modules/services/api/api_service.dart';
 import 'package:linkschool/modules/services/api/service_locator.dart';
 
-
 class AssessmentService {
   final ApiService _apiService = locator<ApiService>();
 

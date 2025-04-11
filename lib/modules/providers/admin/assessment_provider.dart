@@ -99,7 +99,7 @@ class AssessmentProvider with ChangeNotifier {
 
 // class AssessmentProvider with ChangeNotifier {
 //   final AssessmentService _assessmentService = AssessmentService();
-//   List<Assessment> _assessments = [];
+//   final List<Assessment> _assessments = [];
 //   bool _isLoading = false;
 
 //   List<Assessment> get assessments => _assessments;
@@ -153,52 +153,5 @@ class AssessmentProvider with ChangeNotifier {
 //   void showToast(String message) {
 //     // You can use a global toast utility or ScaffoldMessenger here
 //     debugPrint(message); // For debugging purposes
-//   }
-// }
-
-// class AssessmentProvider with ChangeNotifier {
-//   final AssessmentService _assessmentService = AssessmentService();
-//   List<Assessment> _assessments = [];
-//   bool _isLoading = false;
-
-//   List<Assessment> get assessments => _assessments;
-//   bool get isLoading => _isLoading;
-
-//   // Add an assessment
-//   void addAssessment(Assessment assessment) {
-//     _assessments.add(assessment);
-//     notifyListeners();
-//   }
-
-//   // Remove an assessment
-//   void removeAssessment(Assessment assessment) {
-//     _assessments.remove(assessment);
-//     notifyListeners();
-//   }
-
-//   // Save assessments to the API
-//   Future<void> saveAssessments() async {
-//     _isLoading = true;
-//     notifyListeners();
-
-//     try {
-//       final List<Map<String, dynamic>> payload = _assessments.map((assessment) {
-//         return assessment.toJson();
-//       }).toList();
-
-//       final response = await _assessmentService.saveAssessments(payload);
-
-//       if (response['status'] == 'success') {
-//         _assessments.clear(); // Clear the list after successful save
-//         notifyListeners();
-//       } else {
-//         throw Exception(response['message']);
-//       }
-//     } catch (e) {
-//       rethrow;
-//     } finally {
-//       _isLoading = false;
-//       notifyListeners();
-//     }
 //   }
 // }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:hive/hive.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/common/utils/class_detail/explore_button_item_utils.dart';
@@ -32,14 +33,33 @@ class _ClassDetailScreenState extends State<ClassDetailScreen> {
   void initState() {
     super.initState();
     _termProvider = Provider.of<TermProvider>(context, listen: false);
-    _loadTerms();
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadTerms();
+    });
+    _debugHiveContents();
+    // _loadTerms();
   }
 
-  void _loadTerms() async {
+void _debugHiveContents() {
+  final userBox = Hive.box('userData');
+  print('Hive box keys: ${userBox.keys.toList()}');
+  userBox.keys.forEach((key) {
+    print('Hive key $key: ${userBox.get(key)}');
+  });
+}
+
+  // void _loadTerms() async {
+  //   print('Loading terms for classId: ${widget.classId}');
+  //   await _termProvider.fetchTerms(widget.classId);
+  // }
+  Future<void> _loadTerms() async {
     print('Loading terms for classId: ${widget.classId}');
-    await _termProvider.fetchTerms(widget.classId);
+    try {
+      await _termProvider.fetchTerms(widget.classId);
+    } catch (e) {
+      print('Error loading terms: $e');
+    }
   }
-
   @override
   Widget build(BuildContext context) {
     final termProvider = Provider.of<TermProvider>(context);
@@ -125,7 +145,7 @@ class _ClassDetailScreenState extends State<ClassDetailScreen> {
                                   iconPath:
                                       'assets/icons/result/assessment_icon.svg',
                                   onTap: () =>
-                                      showStudentResultOverlay(context,widget.classId),
+                                      showStudentResultOverlay(context,widget.classId,widget.className),
                                 ),
                               ),
                               Expanded(
@@ -175,12 +195,12 @@ class _ClassDetailScreenState extends State<ClassDetailScreen> {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.start,
                             children: [
-                              Text(
-                                'Terms',
-                                style: AppTextStyles.normal700(
-                                    fontSize: 18,
-                                    color: AppColors.primaryLight),
-                              ),
+                              // Text(
+                              //   'Terms',
+                              //   style: AppTextStyles.normal700(
+                              //       fontSize: 18,
+                              //       color: AppColors.primaryLight),
+                              // ),
                             ],
                           ),
                           const SizedBox(height: 10),
@@ -209,7 +229,7 @@ class _ClassDetailScreenState extends State<ClassDetailScreen> {
             const Center(
               child: CircularProgressIndicator(), // Show loading indicator
             ),
-          if (termProvider.error != null)
+           if (termProvider.error != null && !termProvider.isLoading)
             Center(
               child: Text(
                 termProvider.error!,
@@ -221,64 +241,60 @@ class _ClassDetailScreenState extends State<ClassDetailScreen> {
     );
   }
 
-  List<Widget> _buildTermRows(List<Map<String, dynamic>> terms) {
-    print('Building Term Rows: $terms');
-
-    // Group terms by year
-    Map<String, List<Map<String, dynamic>>> groupedTerms = {};
-    for (var term in terms) {
-      String year = term['year'];
-      if (!groupedTerms.containsKey(year)) {
-        groupedTerms[year] = [];
-      }
-      groupedTerms[year]!.add(term);
-    }
-
-    // Build widgets for each year group
-    return groupedTerms.entries.map((entry) {
-      String year = entry.key;
-      List<Map<String, dynamic>> yearTerms = entry.value;
-
-      // Interpolate the succeeding year
-      String nextYear = (int.parse(year) + 1).toString();
-      String header = '$year/$nextYear Session';
-
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 8.0),
-            child: Text(
-              header,
-              style: AppTextStyles.normal700(
-                fontSize: 18,
-                color: AppColors.primaryLight,
-              ),
-            ),
-          ),
-          ...yearTerms.map((term) {
-            return TermRow(
-              term: term['termName'], // Use the term name
-              percent: 0.75, // Example progress value
-              indicatorColor: AppColors.primaryLight,
-              onTap: () => showTermOverlay(context),
-            );
-          }).toList(),
-        ],
-      );
-    }).toList();
+List<Widget> _buildTermRows(List<Map<String, dynamic>> terms) {
+  // Group terms by year
+  final groupedTerms = <String, List<Map<String, dynamic>>>{};
+  
+  for (final term in terms) {
+    final year = term['year'];
+    groupedTerms.putIfAbsent(year, () => []).add(term);
   }
 
-  // // Build term rows dynamically
-  // List<Widget> _buildTermRows(List<Map<String, dynamic>> terms) {
-  //   print('Building Term Rows: $terms');
-  //   return terms.map((term) {
-  //     return TermRow(
-  //       term: term['termName'], // Use the term name
-  //       percent: 0.75, // Example progress value
-  //       indicatorColor: AppColors.primaryLight,
-  //       onTap: () => showTermOverlay(context),
-  //     );
-  //   }).toList();
-  // }
+  return groupedTerms.entries.map((entry) {
+    final year = entry.key;
+    final yearTerms = entry.value;
+    final nextYear = (int.parse(year) + 1).toString();
+    final header = '$year/$nextYear Session';
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8.0),
+          child: Text(
+            header,
+            style: AppTextStyles.normal700(
+              fontSize: 18,
+              color: AppColors.primaryLight,
+            ),
+          ),
+        ),
+        ...yearTerms.map((term) {
+          // Format term display according to requirements
+          String formattedTerm;
+          final termId = term['termId'];
+          
+          if (termId == 1) {
+            formattedTerm = 'First term';
+          } else if (termId == 2) {
+            formattedTerm = 'Second term';
+          } else if (termId == 3) {
+            formattedTerm = 'Third term';
+          } else {
+            formattedTerm = 'No term available for this session';
+          }
+          
+          return TermRow(
+            term: formattedTerm,
+            percent: 0.75,
+            indicatorColor: AppColors.primaryLight,
+            onTap: () => showTermOverlay(context),
+          );
+        }).toList(),
+      ],
+    );
+  }).toList();
+}
+
+
 }

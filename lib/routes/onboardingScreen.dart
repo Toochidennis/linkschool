@@ -136,7 +136,9 @@ Widget OnbordingItems({
     child: Column(
       children: [
         Container(
-            margin: EdgeInsets.only(top: 180), child: SvgPicture.asset(image)),
+          margin: const EdgeInsets.only(top: 180),
+          child: SvgPicture.asset(
+            image),),
         SizedBox(
           height: 10,
         ),

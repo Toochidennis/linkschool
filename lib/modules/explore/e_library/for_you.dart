@@ -6,7 +6,6 @@ import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/explore/e_library/cbt.dart';
 import 'package:linkschool/modules/explore/e_library/e_games/gamesTab.dart';
 import 'package:linkschool/modules/explore/e_library/e_lib_vids.dart';
-import 'package:linkschool/modules/explore/e_library/e_library_ebooks/book_page.dart';
 import 'package:linkschool/modules/explore/e_library/e_library_ebooks/library_e_book.dart';
 import 'package:linkschool/modules/explore/videos/videos_dashboard.dart';
 import 'package:provider/provider.dart';
@@ -289,16 +288,16 @@ class _books extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: () {
-        if (book.title.isNotEmpty) {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => MybookPage(suggestedbook: book),
-            ),
-          );
-        }
-      },
+      // onTap: () {
+      //   if (book.title.isNotEmpty) {
+      //     Navigator.push(
+      //       context,
+      //       MaterialPageRoute(
+      //         builder: (context) => MybookPage(suggestedbook: book),
+      //       ),
+      //     );
+      //   }
+      // },
       child: Padding(
         padding: const EdgeInsets.only(right: 8.0),
         child: Container(

@@ -20,7 +20,7 @@ class _SeeallScreenState extends State<SeeallScreen> {
   @override
   void initState() {
     super.initState();
-    Provider.of<SubjectProvider>(context, listen: false).fetchSubject();
+    Provider.of<SubjectProvider>(context, listen: false).fetchSubjects();
   }
 
   @override

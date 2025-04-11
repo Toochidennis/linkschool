@@ -101,6 +101,7 @@ class _LoginScreenState extends State<LoginScreen> {
       final username = _usernameController.text;
       final password = _passwordController.text;
       final schoolCode = _schoolCodeController.text;
+      
 
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
       try {
@@ -111,6 +112,7 @@ class _LoginScreenState extends State<LoginScreen> {
       } catch (e) {
         CustomToaster.toastError(
             context, 'Error', 'Login failed: $e'); // Show error toast
+            print('error:$e');
       } finally {
         setState(() {
           _isLoading = false; // Hide loading spinner

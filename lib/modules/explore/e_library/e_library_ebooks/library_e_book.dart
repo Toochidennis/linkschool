@@ -2,12 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
-import 'package:linkschool/modules/providers/explore/ebook_provider.dart';
-
+import 'package:linkschool/modules/providers/explore/home/ebook_provider.dart';
 import 'package:provider/provider.dart';
 // import 'package:linkschool/modules/E_library/books_button_item.dart';
 import 'package:linkschool/modules/explore/ebooks/all_tab.dart';
-
+// import '../../common/app_colors.dart';
+// import '../../common/constants.dart';
+// import '../../common/text_styles.dart';
 // import '../providers/explore/home/e_book_provider.dart'; // Import the EbookProvider
 
 class LibraryEbook extends StatefulWidget {
@@ -24,13 +25,13 @@ class _LibraryEbookState extends State<LibraryEbook> {
   void initState() {
     super.initState();
     // Fetch books data when the widget is initialized
-    final bookProvider = Provider.of<BookProvider>(context, listen: false);
+    final bookProvider = Provider.of<EbookProvider>(context, listen: false);
     bookProvider.fetchBooks();
   }
 
   @override
   Widget build(BuildContext context) {
-    final bookProvider = Provider.of<BookProvider>(context);
+    final bookProvider = Provider.of<EbookProvider>(context);
     final categories = bookProvider.categories;
 
     return Scaffold(
@@ -90,7 +91,7 @@ class _LibraryEbookState extends State<LibraryEbook> {
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
               color: isSelected
-                  ? AppColors.ebookCart
+                  ? AppColors.bgXplore3
                   : AppColors.booksButtonColor, // Selected color
               borderRadius: BorderRadius.circular(6), // Rounded corners
             ),

@@ -7,7 +7,7 @@ import 'package:linkschool/modules/providers/admin/student_provider.dart';
 import 'package:linkschool/modules/staff/e_learning/form_classes/staff_skill_behaviour_screen.dart';
 import 'package:provider/provider.dart';
 
-void showStudentResultOverlay(BuildContext context, String classId) {
+void showStudentResultOverlay(BuildContext context, String classId,String className) {
   Provider.of<StudentProvider>(context, listen: false).fetchStudents(classId);
   showModalBottomSheet(
     context: context,

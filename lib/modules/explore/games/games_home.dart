@@ -2,7 +2,7 @@ import 'package:carousel_slider/carousel_slider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 import 'package:linkschool/modules/explore/games/game_details.dart';
-import 'package:linkschool/modules/model/explore/games/game_model.dart';
+import 'package:linkschool/modules/model/explore/home/game_model.dart';
 import 'package:linkschool/modules/providers/explore/game/game_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:skeletonizer/skeletonizer.dart';
@@ -405,6 +405,9 @@ class _GamesDashboardState extends State<GamesDashboard> {
               errorBuilder: (context, error, stackTrace) {
                 return const Icon(Icons.error);
               },
+              // errorBuilder: (context, error, stackTrace) {
+              //   return const Icon(Icons.error);
+              // },
             ),
           ),
           const SizedBox(width: 10.0),
@@ -449,6 +452,7 @@ class _GamesDashboardState extends State<GamesDashboard> {
                               color: Colors.amber, size: 16.0),
                           Text(
                             game.rating,
+                            // game.rating,
                             style: AppTextStyles.normal500(
                               fontSize: 14.0,
                               color: Colors.black,

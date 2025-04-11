@@ -3,14 +3,13 @@ import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/buttons/custom_long_elevated_button.dart';
 
+
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/explore/e_library/e_library_ebooks/book_screen.dart';
-import 'package:linkschool/modules/model/explore/home/book_model.dart';
-
-
+import 'package:linkschool/modules/model/explore/home/news/ebook_model.dart';
 
 class MybookPage extends StatefulWidget {
-  final Book suggestedbook;
+  final Ebook suggestedbook;
 
   const MybookPage({super.key, required this.suggestedbook});
 
@@ -21,8 +20,8 @@ class MybookPage extends StatefulWidget {
 class _MybookPageState extends State<MybookPage> {
   @override
   Widget build(BuildContext context) {
-    // final bookProvider = Provider.of<Brovider>(context);
-    // final startreading_suggested = bookProvider.B;
+    // final bookProvider = Provider.of<EbookProvider>(context);
+    // final startreading_suggested = bookProvider.ebooks;
     return Scaffold(
       appBar: AppBar(
         backgroundColor: AppColors.backgroundLight,
@@ -132,6 +131,8 @@ class _MybookPageState extends State<MybookPage> {
                   ),
                   SizedBox(height: 10),
                   Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    mainAxisSize: MainAxisSize.max,
                     children: [
                       OutlinedButton(
                         onPressed: () {},
@@ -144,29 +145,31 @@ class _MybookPageState extends State<MybookPage> {
                         ),
                         child: Text(
                           // 'Literature',
-                          widget.suggestedbook.categories.join(","),
+                          widget.suggestedbook.categories
+                              .join(" | ")
+                              .toUpperCase(),
                           style: AppTextStyles.normal500(
                               fontSize: 16,
                               color: AppColors.eLearningBtnColor1),
                         ),
                       ),
                       SizedBox(width: 12),
-                      OutlinedButton(
-                        onPressed: () {},
-                        style: OutlinedButton.styleFrom(
-                          backgroundColor: AppColors.grayColor,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                          side: BorderSide(color: AppColors.eLearningBtnColor1),
-                        ),
-                        child: Text(
-                          'Based on a true story',
-                          style: AppTextStyles.normal500(
-                              fontSize: 16,
-                              color: AppColors.eLearningBtnColor1),
-                        ),
-                      )
+                      // OutlinedButton(
+                      //   onPressed: () {},
+                      //   child: Text(
+                      //     'Based on a true story',
+                      //     style: AppTextStyles.normal500(
+                      //         fontSize: 16,
+                      //         color: AppColors.eLearningBtnColor1),
+                      //   ),
+                      //   style: OutlinedButton.styleFrom(
+                      //     backgroundColor: AppColors.grayColor,
+                      //     shape: RoundedRectangleBorder(
+                      //       borderRadius: BorderRadius.circular(16),
+                      //     ),
+                      //     side: BorderSide(color: AppColors.eLearningBtnColor1),
+                      //   ),
+                      // )
                     ],
                   ),
                   SizedBox(height: 20),

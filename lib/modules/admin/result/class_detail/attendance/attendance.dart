@@ -30,7 +30,7 @@ class AttendanceScreen extends StatelessWidget {
                     // InfoCard(),
                     InfoCard(className: className, classId: classId),
                     const SizedBox(height: 20),
-                    TakeAttendanceButton(),
+                    TakeAttendanceButton(classId: classId),
                     const SizedBox(height: 44),
                     AttendanceHistoryHeader(),
                     const SizedBox(height: 16),

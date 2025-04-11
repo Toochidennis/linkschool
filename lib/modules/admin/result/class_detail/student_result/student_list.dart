@@ -111,7 +111,8 @@ class _StudentListState extends State<StudentList> {
                             fontSize: 18, color: AppColors.textLight),
                       ),
                       onTap: () =>
-                          showStudentResultOverlay(context, widget.classId),
+                          showStudentResultOverlay(context, widget.classId,
+                              student.name),
                     );
                   },
                 );

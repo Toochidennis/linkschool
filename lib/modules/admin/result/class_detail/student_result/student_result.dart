@@ -58,7 +58,7 @@ class StudentResultScreen extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 13.0),
                 child: CustomMediumElevatedButton(
                   text: 'See student list',
-                  onPressed: ()=> showStudentResultOverlay(context,classId),
+                  onPressed: ()=> showStudentResultOverlay(context,classId,className),
                   backgroundColor: AppColors.videoColor4,
                   textStyle: AppTextStyles.normal700(
                       fontSize: 14, color: AppColors.backgroundLight),
