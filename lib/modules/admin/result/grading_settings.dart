@@ -164,8 +164,8 @@ class _GradingSettingsScreenState extends State<GradingSettingsScreen> {
         onEnter: (_) => setState(() => isHoveringSave = true),
         onExit: (_) => setState(() => isHoveringSave = false),
         child: FloatingActionButton(
-          onPressed: () =>
-              () {}, //_saveChanges(context, context.read<GradeProvider>()),
+         onPressed: () async {
+  await context.read<GradeProvider>().saveNewGrades();},
           backgroundColor:
               isHoveringSave ? Colors.blueGrey : AppColors.primaryLight,
           shape: const CircleBorder(),
@@ -243,10 +243,16 @@ class _GradingSettingsScreenState extends State<GradingSettingsScreen> {
                   MouseRegion(
                     onEnter: (_) => setState(() => isHoveringDelete = true),
                     onExit: (_) => setState(() => isHoveringDelete = false),
-                    child: SvgPicture.asset(
-                      'assets/icons/result/delete.svg',
-                      color: isHoveringDelete ? Colors.blueGrey : Colors.black,
-                    ),
+                    child: GestureDetector(
+  onTap: () async {
+    await gradeProvider.deleteGrade(grade.id);
+  },
+  child: SvgPicture.asset(
+    'assets/icons/result/delete.svg',
+    color: isHoveringDelete ? Colors.blueGrey : Colors.black,
+  ),
+),
+
                   ),
                 ],
               ),

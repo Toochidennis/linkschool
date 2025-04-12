@@ -88,27 +88,54 @@ class StudentService {
     }
   }
 
-  Future<Map<String, dynamic>> fetchStudentTerms(int studentId) async {
-    try {
-      final response = await _apiService.post<Map<String, dynamic>>(
-        endpoint: 'studentTerms.php',
-        body: {
-          'id': studentId.toString(),
-          '_db': 'linkskoo_practice',
-        },
-        payloadType: PayloadType.FORM_DATA,
-      );
+Future<Map<String, Map<String, double>>> fetchStudentTerms(int studentId) async {
+  try {
+    final response = await _apiService.get<Map<String, Map<String, double>>>(
+      endpoint: 'portal/students/$studentId/result-terms',
+      queryParams: {
+        '_db': 'aalmgzmy_linkskoo_practice',
+      },
+      fromJson: (json) {
+        final resultTerms = json['result_terms'];
+       
 
-      if (response.success) {
-        return response.rawData ?? {};
-      } else {
-        throw Exception(response.message);
-      }
-    } catch (e) {
-      debugPrint('Error fetching student terms: $e');
-      throw Exception('Error fetching student terms: $e');
+        if (resultTerms is! Map<String, dynamic>) {
+          print('AAAAAAA : $resultTerms');
+          throw Exception('No terms data found in the API response');
+        }
+
+        final Map<String, Map<String, double>> terms = {};
+
+        resultTerms.forEach((year, data) {
+          final termsList = data['terms'] as List<dynamic>? ?? [];
+          final Map<String, double> termMap = {};
+
+          for (var termData in termsList) {
+            final term = termData['term'].toString(); // "2"
+            final avg = double.tryParse(termData['average_score'].toString()) ?? 0.0;
+            termMap[term] = avg;
+          }
+
+          terms[year] = termMap;
+        });
+
+        return terms;
+      },
+    );
+
+    if (response.success) {
+      print('ssssssssss ${response.data}');
+      return response.data ?? {};
+    } else {
+      print(">>>>>>>>>>>>>>>>>${response.message}");
+      throw Exception(response.message);
     }
+  } catch (e) {
+    debugPrint('Error fetching student terms: $e');
+    throw Exception('Error fetching student terms: $e');
   }
+}
+
 }
 
 

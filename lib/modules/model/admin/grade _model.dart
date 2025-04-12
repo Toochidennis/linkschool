@@ -13,9 +13,9 @@ class Grade {
 
   factory Grade.fromJson(Map<String, dynamic> json) {
     return Grade(
-      id: json['id'],
+      id: json['id'].toString(),
       grade_Symbol: json['grade_symbol'] ?? "",
-      start: json['start'] ?? "",
+     start: json['start']?.toString() ?? "",
       remark: json['remark'] ?? "",
     );
   }

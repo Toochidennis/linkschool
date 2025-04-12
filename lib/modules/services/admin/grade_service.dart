@@ -1,4 +1,3 @@
-
 import 'package:hive/hive.dart';
 import 'package:linkschool/modules/model/admin/grade _model.dart';
 import 'package:linkschool/modules/services/api/api_service.dart';
@@ -9,42 +8,36 @@ class GradeService {
   GradeService(this._apiService);
 
   Future<List<Grade>> getGrades() async {
-    // get token 
-    // Get required parameters from Hive
-      final userBox = Hive.box('userData');
-      final loginData = userBox.get('userData') ?? userBox.get('loginResponse');
-      
-      if (loginData == null) {
-        throw Exception('No login data available');
-      }
+    final userBox = Hive.box('userData');
+    final loginData = userBox.get('userData') ?? userBox.get('loginResponse');
 
-      final token = loginData['token'] ?? userBox.get('token');
-          
-      // Set authentication token
-      if (token != null) {
-        _apiService.setAuthToken(token);
-        print(token);
-      }
+    if (loginData == null) {
+      throw Exception('No login data available');
+    }
+
+    final token = loginData['token'] ?? userBox.get('token');
+
+    if (token != null) {
+      _apiService.setAuthToken(token);
+      print('Token set: $token');
+    }
 
     final response = await _apiService.get<List<Grade>>(
       endpoint: 'portal/grades',
       queryParams: {
-          '_db': 'aalmgzmy_linkskoo_practice',
-        },
+        '_db': 'aalmgzmy_linkskoo_practice',
+      },
       fromJson: (json) {
-        if (json['status'] == 'success' && json['grades'] is List) {
+        if (json['success'] == true && json['grades'] is List) {
           return (json['grades'] as List)
               .map((gradeJson) => Grade.fromJson(gradeJson))
               .toList();
         }
-         print(json['message']);
         throw Exception('Failed to load grades: ${json['message']}');
-       
       },
     );
 
     if (!response.success) {
-      print(response);
       throw Exception(response.message);
     }
 
@@ -52,36 +45,60 @@ class GradeService {
   }
 
   Future<void> addGrades(List<Grade> grades) async {
-    final requestBody = grades
-        .map((grade) => {
-              'grade_symbol': grade.grade_Symbol!,
-              'start': grade.start!,
-              'remark': grade.remark!,
-              '_db': 'linkskoo_practice',
-            })
-        .toList();
+    for (var grade in grades) {
+      final requestBody = {
+        'grade_symbol': grade.grade_Symbol!,
+        'start': grade.start!,
+        'remark': grade.remark!,
+        '_db': 'aalmgzmy_linkskoo_practice',
+      };
 
-    final response = await _apiService.post<Map<String, dynamic>>(
-      endpoint:'portal/grades',
-      body: requestBody,
-    );
+      final response = await _apiService.post<Map<String, dynamic>>(
+        endpoint: 'portal/grades',
+        body: requestBody,
+      );
 
-    if (!response.success) {
-      throw Exception('Failed to add grades: ${response.message}');
+      if (!response.success) {
+        print('Failed to add grade ${grade.grade_Symbol}: ${response.message}');
+        throw Exception('Failed to add grade: ${response.message}');
+      } else {
+        print('Grade added: ${grade.grade_Symbol}');
+      }
     }
   }
 
   Future<void> deleteGrades(String id) async {
     final response = await _apiService.delete<Map<String, dynamic>>(
       endpoint: 'portal/grades',
-      body: {'id': id},
+      body: {
+        'id': id,
+        '_db': 'aalmgzmy_linkskoo_practice',
+      },
     );
 
     if (!response.success) {
-      throw Exception('Failed to delete grades: ${response.message}');
+      print('Failed to delete grade with ID $id: ${response.message}');
+      throw Exception('Failed to delete grade: ${response.message}');
+    } else {
+      print('Grade with ID $id deleted successfully');
     }
   }
 }
+
+
+
+
+// Future<void> deleteGrades(String id) async {
+//     final response = await _apiService.delete<Map<String, dynamic>>(
+//       endpoint: 'portal/grades',
+//       body: {'id': id},
+//     );
+
+
+//     if (!response.success) {
+//       throw Exception('Failed to delete grades: ${response.message}');
+//     }
+//   }
 
 
 // import 'dart:convert';
