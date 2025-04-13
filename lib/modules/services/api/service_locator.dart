@@ -2,8 +2,10 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:get_it/get_it.dart';
 import 'package:linkschool/modules/auth/provider/auth_provider.dart';
 import 'package:linkschool/modules/auth/service/auth_service.dart';
+import 'package:linkschool/modules/providers/admin/attendance_provider.dart';
 import 'package:linkschool/modules/providers/admin/behavour_provider.dart';
 import 'package:linkschool/modules/providers/admin/grade_provider.dart';
+import 'package:linkschool/modules/services/admin/attendance_service.dart';
 import 'package:linkschool/modules/services/api/api_service.dart';
 import 'package:linkschool/modules/services/admin/class_service.dart';
 import 'package:linkschool/modules/services/admin/grade_service.dart';
@@ -78,4 +80,15 @@ void setupServiceLocator() {
     // Register the missing services
   locator.registerLazySingleton<CourseRegistrationService>(() => CourseRegistrationService());
   locator.registerLazySingleton<AssessmentService>(() => AssessmentService());
+
+
+  // Register AttendanceService
+  locator.registerLazySingleton<AttendanceService>(
+    () => AttendanceService(locator<ApiService>())
+  );
+
+  // Register AttendanceProvider
+  locator.registerLazySingleton<AttendanceProvider>(
+    () => AttendanceProvider()
+  );
 }
