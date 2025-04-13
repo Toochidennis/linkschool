@@ -9,6 +9,8 @@ class StudentService {
 
   StudentService(this._apiService);
 
+
+
   Future<List<Student>> getStudentsByClass(String classId) async {
     try {
       // Use the dynamic DB name from environment config
@@ -37,6 +39,93 @@ class StudentService {
       throw Exception('Error fetching students: $e');
     }
   }
+
+  // method to fetch all students
+  Future<List<Student>> getAllStudents() async {
+    try {
+      final userBox = Hive.box('userData');
+      final loginData = userBox.get('userData') ?? userBox.get('loginResponse');
+      final db = loginData?['_db'] ?? EnvConfig.dbName;
+      
+      final response = await _apiService.get<List<Student>>(
+        endpoint: 'portal/students',
+        queryParams: {
+          '_db': db,
+        },
+        fromJson: (json) {
+          if (json['students'] is List) {
+            return (json['students'] as List)
+                .map((item) => Student.fromJson(item))
+                .toList();
+          }
+          return [];
+        },
+      );
+
+      if (response.success) {
+        return response.data ?? [];
+      } else {
+        throw Exception(response.message);
+      }
+    } catch (e) {
+      debugPrint('Error fetching all students: $e');
+      throw Exception('Error fetching all students: $e');
+    }
+  }
+
+  // method to fetch student result terms
+Future<Map<String, dynamic>> getStudentResultTerms(int studentId) async {
+  try {
+    final userBox = Hive.box('userData');
+    final loginData = userBox.get('userData') ?? userBox.get('loginResponse');
+    final db = loginData?['_db'] ?? EnvConfig.dbName;
+    
+    final response = await _apiService.get(
+      endpoint: 'portal/students/$studentId/result-terms',
+      queryParams: {
+        '_db': db,
+      },
+    );
+
+    if (response.success) {
+      // Check if result_terms is a Map, if not, convert it to a Map
+      var resultTerms = response.rawData?['result_terms'];
+      
+      // If resultTerms is null, return an empty map
+      if (resultTerms == null) {
+        return {};
+      }
+      
+      // If resultTerms is a List, convert it to a Map with a default key
+      if (resultTerms is List) {
+        // Create a properly structured map to match the expected format
+        Map<String, dynamic> formattedTerms = {};
+        
+        // If we have data, use the first year from the first item
+        if (resultTerms.isNotEmpty && resultTerms[0] is Map) {
+          // Extract the year from the first item if available
+          var firstItem = resultTerms[0] as Map;
+          String year = firstItem.containsKey('year') ? firstItem['year'].toString() : "2024";
+          
+          // Structure the data properly
+          formattedTerms[year] = {
+            "terms": resultTerms,
+          };
+        }
+        
+        return formattedTerms;
+      }
+      
+      // If resultTerms is already a Map, return it directly
+      return resultTerms;
+    } else {
+      throw Exception(response.message);
+    }
+  } catch (e) {
+    debugPrint('Error fetching student result terms: $e');
+    throw Exception('Error fetching student result terms: $e');
+  }
+}
 
   Future<bool> saveAttendance({
     required String classId,
@@ -269,4 +358,6 @@ Future<List<Map<String, dynamic>>> getCourseAttendance({
       throw Exception('Error fetching attendance records: $e');
     }
   }
+
+
 }

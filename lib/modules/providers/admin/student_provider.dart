@@ -10,6 +10,7 @@ class StudentProvider extends ChangeNotifier {
   StudentProvider(this._studentService);
   
   List<Student> _students = [];
+  List<Student> _allStudents = [];
   bool _isLoading = false;
   String _errorMessage = '';
   bool _selectAll = false;
@@ -20,6 +21,7 @@ class StudentProvider extends ChangeNotifier {
 
   // Getters
   List<Student> get students => _students;
+  List<Student> get allStudents => _allStudents; 
   bool get isLoading => _isLoading;
   String get errorMessage => _errorMessage;
   bool get selectAll => _selectAll;
@@ -49,6 +51,53 @@ class StudentProvider extends ChangeNotifier {
       _students = fetchedStudents;
       _isLoading = false;
       
+      notifyListeners();
+    } catch (e) {
+      _isLoading = false;
+      _errorMessage = e.toString();
+      notifyListeners();
+    }
+  }
+
+ Future<void> fetchAllStudents() async {
+    try {
+      _isLoading = true;
+      _errorMessage = '';
+      notifyListeners();
+
+      final fetchedStudents = await _studentService.getAllStudents();
+      
+      _allStudents = fetchedStudents;
+      _isLoading = false;
+      
+      notifyListeners();
+    } catch (e) {
+      _isLoading = false;
+      _errorMessage = e.toString();
+      notifyListeners();
+    }
+  }
+
+  Future<void> fetchStudentResultTerms(int studentId) async {
+    try {
+      _isLoading = true;
+      _errorMessage = '';
+      notifyListeners();
+
+      final fetchedTerms = await _studentService.getStudentResultTerms(studentId);
+      
+      _studentTerms = fetchedTerms;
+      
+      // Find and set the current student
+      _student = _allStudents.firstWhere(
+        (student) => student.id == studentId,
+        orElse: () => _students.firstWhere(
+          (student) => student.id == studentId,
+          orElse: () => throw Exception('Student not found'),
+        ),
+      );
+      
+      _isLoading = false;
       notifyListeners();
     } catch (e) {
       _isLoading = false;

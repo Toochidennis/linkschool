@@ -1,4 +1,5 @@
 import 'package:hive/hive.dart';
+import 'package:linkschool/config/env_config.dart';
 import 'package:linkschool/modules/services/api/api_service.dart';
 import 'package:linkschool/modules/services/api/service_locator.dart';
 
@@ -81,4 +82,20 @@ class TermService {
       throw Exception('Failed to load terms: ${e.toString()}');
     }
   }
+
+  // Future<Map<String, dynamic>?> fetchStudentResultTerms(int studentId) async {
+  //   try {
+  //     final response = await _apiService.get(
+  //       endpoint: 'portal/students/$studentId/result-terms',
+  //       queryParams: {'_db': EnvConfig.dbName},
+  //     );
+
+  //     if (response.success) {
+  //       return response.data['result_terms'];
+  //     }
+  //     return null;
+  //   } catch (e) {
+  //     throw Exception('Failed to fetch student result terms: $e');
+  //   }
+  // }
 }
