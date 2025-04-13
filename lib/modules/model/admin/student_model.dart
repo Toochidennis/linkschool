@@ -1,29 +1,30 @@
-// import 'package:flutter/foundation.dart';
-
 class Student {
   final int id;
   final String name;
   final String registrationNo;
   bool isSelected;
-
+  bool hasAttended; // Add this property
+  
   Student({
     required this.id,
     required this.name,
     required this.registrationNo, 
     this.isSelected = false,
+    this.hasAttended = false, // Initialize as false
   });
-
-  // Create a copy of student with updated isSelected value
-  Student copyWith({bool? isSelected}) {
+  
+  // Update the copyWith method to include hasAttended
+  Student copyWith({bool? isSelected, bool? hasAttended}) {
     return Student(
       id: id,
       name: name,
       registrationNo: registrationNo, 
       isSelected: isSelected ?? this.isSelected,
+      hasAttended: hasAttended ?? this.hasAttended,
     );
   }
-
-  // Updated to match API response fields
+  
+  // Keep the existing fromJson factory
   factory Student.fromJson(Map<String, dynamic> json) {
     return Student(
       id: json['id'] is int ? json['id'] : int.parse(json['id'].toString()),
@@ -31,8 +32,8 @@ class Student {
       registrationNo: json['registration_no'] ?? '',  
     );
   }
-
-  // Convert Student object to JSON
+  
+  // Keep the existing toJson method
   Map<String, dynamic> toJson() {
     return {
       'id': id,
@@ -41,7 +42,6 @@ class Student {
     };
   }
 }
-
 
 // class Student {
 //   final int id;

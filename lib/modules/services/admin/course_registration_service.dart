@@ -10,7 +10,7 @@ class CourseRegistrationService {
     
     // Use the registered-students endpoint
     final response = await _apiService.get(
-      endpoint: 'portal/classes/${classId}/registered-students',
+      endpoint: 'portal/classes/$classId/registered-students',
       queryParams: {
         '_db': 'aalmgzmy_linkskoo_practice',
         'year': year,

@@ -7,7 +7,6 @@ import 'package:linkschool/modules/common/buttons/custom_floating_save_button.da
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/common/custom_toaster.dart';
 
-
 class TakeClassAttendance extends StatefulWidget {
   final String? classId;
   const TakeClassAttendance({super.key, this.classId});
@@ -33,6 +32,7 @@ class _TakeClassAttendanceState extends State<TakeClassAttendance> {
   ];
 
   String _currentDate = '';
+  String _formattedDateForDisplay = '';
 
   @override
   void initState() {
@@ -40,23 +40,37 @@ class _TakeClassAttendanceState extends State<TakeClassAttendance> {
     _setCurrentDate();
 
     // Initialize provider with needed data
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
       final provider = context.read<StudentProvider>();
-      provider.fetchStudents(widget.classId).then((_) {
-        // Fetch attendance data after students are loaded
-        provider.fetchAttendance(
+      
+      // First, fetch students
+      await provider.fetchStudents(widget.classId);
+      
+      // After students are loaded, load the attendance data
+      if (widget.classId != null) {
+        // Format date for API: YYYY-MM-DD 00:00:00
+        final dateForApi = "${_currentDate.split(' ')[0]} 00:00:00";
+        
+        // Load attended students data (previously marked attendance)
+        await provider.loadAttendedStudents(
           classId: widget.classId!,
           date: _currentDate,
-          courseId: '0', // Set courseId to zero for class attendance
         );
-
-        // Fetch local attendance data
-        provider.fetchLocalAttendance(
+        
+        // Fetch latest attendance data from API
+        await provider.fetchAttendance(
+          classId: widget.classId!,
+          date: dateForApi,
+          courseId: '0',
+        );
+        
+        // Load local attendance data (students selected for current attendance)
+        await provider.fetchLocalAttendance(
           classId: widget.classId!,
           date: _currentDate,
           courseId: '0',
         );
-      });
+      }
     });
   }
 
@@ -70,22 +84,27 @@ class _TakeClassAttendanceState extends State<TakeClassAttendance> {
   void _setCurrentDate() {
     final now = DateTime.now();
     final formatter = DateFormat('yyyy-MM-dd HH:mm:ss'); // Format for API
+    final displayFormatter = DateFormat('MMM dd, yyyy'); // Format for display
+    
     _currentDate = formatter.format(now);
+    _formattedDateForDisplay = displayFormatter.format(now);
   }
 
-void _onSavePressed() {
-  final provider = context.read<StudentProvider>();
-  
-  // Format the current date and time in the required format
-  final now = DateTime.now();
-  final formatter = DateFormat('yyyy-MM-dd HH:mm:ss');
-  final formattedDate = formatter.format(now);
-  
-  provider.saveAttendance(
-    classId: widget.classId,
-    courseId: '0', // Set courseId to zero for class attendance
-    date: formattedDate,
-  ).then((success) async {
+  void _onSavePressed() async {
+    final provider = context.read<StudentProvider>();
+
+    // Format the current date for API request
+    final now = DateTime.now();
+    final formatter = DateFormat('yyyy-MM-dd HH:mm:ss');
+    final formattedDate = formatter.format(now);
+    final dateForApi = "${formattedDate.split(' ')[0]} 00:00:00";
+
+    final success = await provider.saveAttendance(
+      classId: widget.classId,
+      courseId: '0', // Set courseId to zero for class attendance
+      date: formattedDate,
+    );
+    
     if (success) {
       // Save attendance data locally
       await provider.saveLocalAttendance(
@@ -93,6 +112,13 @@ void _onSavePressed() {
         date: formattedDate,
         courseId: '0',
         studentIds: provider.selectedStudentIds,
+      );
+      
+      // Refresh attendance data from API to update UI
+      await provider.fetchAttendance(
+        classId: widget.classId!,
+        date: dateForApi,
+        courseId: '0',
       );
 
       CustomToaster.toastSuccess(
@@ -109,8 +135,7 @@ void _onSavePressed() {
             : 'Failed to save class attendance',
       );
     }
-  });
-}
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -118,7 +143,7 @@ void _onSavePressed() {
       appBar: AppBar(
         backgroundColor: AppColors.backgroundLight,
         title: Text(
-          _currentDate,
+          _formattedDateForDisplay,
           style: AppTextStyles.normal500(
               fontSize: 18, color: AppColors.backgroundDark),
         ),
@@ -176,7 +201,8 @@ void _onSavePressed() {
                                 ? AppColors.attCheckColor1
                                 : AppColors.attBgColor1,
                             shape: BoxShape.circle,
-                            border: Border.all(color: AppColors.attCheckColor1)),
+                            border:
+                                Border.all(color: AppColors.attCheckColor1)),
                         child: Icon(
                           Icons.check,
                           color: provider.selectAll
@@ -214,10 +240,23 @@ void _onSavePressed() {
                         ),
                       ),
                       title: Text(student.name),
-                      trailing: student.isSelected
-                          ? const Icon(Icons.check_circle,
-                              color: AppColors.attCheckColor2)
-                          : null,
+                      trailing: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          // Show a green check if the student has already been marked as attended
+                          if (student.hasAttended)
+                            const Icon(Icons.check_circle, color: Colors.green),
+
+                          // Show a small space between icons if both are shown
+                          if (student.hasAttended && student.isSelected)
+                            const SizedBox(width: 8),
+
+                          // Show purple check if the student is currently selected
+                          if (student.isSelected)
+                            const Icon(Icons.check_circle,
+                                color: AppColors.attCheckColor2),
+                        ],
+                      ),
                       onTap: () => provider.toggleStudentSelection(index),
                     );
                   },
