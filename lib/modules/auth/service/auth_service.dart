@@ -1,121 +1,89 @@
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
 
-
 class AuthService {
-  Future<Map<String, dynamic>> login(String username, String password, String schoolCode) async {
-    final url = Uri.parse('http://linkskool.com/developmentportal/api/login.php?username=$username&password=$password&token=$schoolCode');
-    final response = await http.get(url);
+  Future<ApiResponse<Map<String, dynamic>>> login(String username, String password, String schoolCode) async {
+    final apiBaseUrl = dotenv.env['API_BASE_URL'] ?? '';
+    final apiKey = dotenv.env['API_KEY'] ?? '';
 
-    if (response.statusCode == 200) {
-      final responseData = json.decode(response.body);
-      print('API Response: $responseData');
+    try {
+      final response = await http.post(
+        Uri.parse('$apiBaseUrl/portal/auth/login'),
+        headers: {
+          'Content-Type': 'application/json',
+          'X-API-KEY': apiKey,
+        },
+        body: jsonEncode({
+          'username': username,
+          'password': password,
+          'school_code': int.parse(schoolCode),
+        }),
+      );
 
-      if (responseData['status'] == 'success') {
-        // Return the entire API response
-        return responseData;
+      final Map<String, dynamic> responseBody = jsonDecode(response.body);
+
+      if (response.statusCode == 200 && responseBody['success'] == true) {
+        return ApiResponse<Map<String, dynamic>>(
+          success: true,
+          message: responseBody['message'],
+          rawData: responseBody['response'],
+        );
       } else {
-        throw Exception('Invalid credentials');
+        return ApiResponse<Map<String, dynamic>>(
+          success: false,
+          message: responseBody['message'] ?? 'Login failed',
+        );
       }
-    } else {
-      throw Exception('Failed to login');
+    } catch (e) {
+      return ApiResponse<Map<String, dynamic>>(
+        success: false,
+        message: 'Network error: $e',
+      );
     }
   }
 }
 
+class ApiResponse<T> {
+  final bool success;
+  final String message;
+  final T? rawData;
+
+  ApiResponse({
+    required this.success,
+    required this.message,
+    this.rawData,
+  });
+}
 
 
+
+// import 'package:linkschool/modules/auth/model/user.dart';
+// import 'package:linkschool/modules/services/api/api_service.dart';
+// import 'package:linkschool/modules/services/api/service_locator.dart';
 // class AuthService {
-//   Future<Map<String, dynamic>> login(String username, String password, String schoolCode) async {
-//     final url = Uri.parse('http://linkskool.com/developmentportal/api/login.php?username=$username&password=$password&token=$schoolCode');
-//     final response = await http.get(url);
+//   final ApiService _apiService = locator<ApiService>();
 
-//     if (response.statusCode == 200) {
-//       final responseData = json.decode(response.body);
-//       print('API Response: $responseData');
-//       // Extract user data from the response
-//       if (responseData['status'] == 'success') {
-//         // Assuming the user data is in the 'profile' key
-//         final userData = responseData['profile'];
-//         return {
-//           'id': userData['id'],
-//           'name': userData['name'],
-//           'access_level': userData['access_level'],
-//           'status': 'success',
-//         };
-//       } else {
-//         throw Exception('Invalid credentials');
-//       }
-//     } else {
-//       throw Exception('Failed to login');
-//     }
+//   Future<ApiResponse<Map<String, dynamic>>> login(String username, String password, String schoolCode) async {
+//     return await _apiService.get(
+//       endpoint: 'login.php',
+//       queryParams: {
+//         'username': username,
+//         'password': password,
+//         'token': schoolCode,
+//       },
+//     );
 //   }
-// }
-
-
-// import 'package:http/http.dart' as http;
-// import 'dart:convert';
-
-// class AuthService {
-//   Future<Map<String, dynamic>> login(String username, String password, String schoolCode) async {
-//     final url = Uri.parse('http://linkskool.com/developmentportal/api/login.php?username=$username&password=$password&token=$schoolCode');
-//     final response = await http.get(url);
-
-//     if (response.statusCode == 200) {
-//       return json.decode(response.body);
-//     } else {
-//       throw Exception('Failed to login');
-//     }
-//   }
-// }
-
-
-// import 'dart:convert';
-// import 'package:http/http.dart' as http;
-// import 'package:shared_preferences/shared_preferences.dart';
-
-// class AuthService {
-//   static const String baseUrl = 'http://linkskool.com/developmentportal/api';
-
-//   Future<Map<String, dynamic>> login(String username, String password, String pin) async {
-//     try {
-//       final response = await http.get(
-//         Uri.parse('$baseUrl/login.php?username=practice&password=portal&token=5416'),
-//         // body: {
-//         //   'username': username,
-//         //   'password': password,
-//         //   'token': pin,
-//         // },
-//       );
-
-//       if(response.statusCode == 200) { print(response.body);}
-      
-
-//       if (response.statusCode == 200) {
-//         final jsonResponse = json.decode(response.body);
-        
-//         if (jsonResponse['status'] == 'success') {
-//           final prefs = await SharedPreferences.getInstance();
-//           await prefs.setBool('loginStatus', true);
-//           await prefs.setString('username', username);
-//           await prefs.setString('userpassword', password);
-//           await prefs.setString('schoolcode', pin);
-          
-//           return jsonResponse;
-//         } else {
-//           throw Exception(jsonResponse['message'] ?? 'Login failed');
-//         }
-//       } else {
-//         throw Exception('Server error');
-//       }
-//     } catch (e) {
-//       throw Exception('Network error: $e');
-//     }
-//   }
-
-//   Future<void> logout() async {
-//     final prefs = await SharedPreferences.getInstance();
-//     await prefs.clear();
+  
+//   // Additional auth methods can be added here
+//   Future<ApiResponse<User>> getUserProfile(String userId) async {
+//     return await _apiService.get(
+//       endpoint: 'user_profile.php',
+//       queryParams: {
+//         'user_id': userId,
+//       },
+//       fromJson: (json) => User.fromJson(json),
+//     );
 //   }
 // }

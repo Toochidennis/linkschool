@@ -1,17 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:hive/hive.dart'; // Import Hive
+import 'package:hive/hive.dart'; 
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 
 class CourseRegistrationScreen extends StatefulWidget {
   final String studentName;
   final int coursesRegistered;
+  final String classId;
   
   const CourseRegistrationScreen({
     super.key, 
     required this.studentName, 
-    required this.coursesRegistered
+    required this.coursesRegistered,
+    required this.classId
   });
 
   @override
@@ -21,17 +23,17 @@ class CourseRegistrationScreen extends StatefulWidget {
 class _CourseRegistrationScreenState extends State<CourseRegistrationScreen> {
   late List<bool> selectedSubjects;
   late List<Color> subjectColors;
-  late List<String> subjects;
-
+  late List<Map<String, dynamic>> courses;
+  
   @override
   void initState() {
     super.initState();
     // Load courses from Hive on initialization
-    subjects = getSubjectsFromHive();
-    selectedSubjects = List<bool>.filled(subjects.length, false);
+    courses = getCoursesFromHive();
+    selectedSubjects = List<bool>.filled(courses.length, false);
     // Initialize colors with primary colors cycle
     subjectColors = List.generate(
-      subjects.length, 
+      courses.length, 
       (index) => Colors.primaries[index % Colors.primaries.length]
     );
     
@@ -42,12 +44,26 @@ class _CourseRegistrationScreenState extends State<CourseRegistrationScreen> {
   }
 
   // Method to retrieve courses from Hive storage
-  List<String> getSubjectsFromHive() {
+  List<Map<String, dynamic>> getCoursesFromHive() {
     final userDataBox = Hive.box('userData');
-    final coursesData = userDataBox.get('userData')?['courses'] ?? {};
-    return coursesData['rows']
-        ?.map<String>((row) => row[1] as String) // Get course names from row index 1
-        ?.toList() ?? [];
+    
+    // Try to get courses from the userData directly
+    final userData = userDataBox.get('userData');
+    if (userData != null && 
+        userData['response'] != null && 
+        userData['response']['data'] != null && 
+        userData['response']['data']['courses'] != null) {
+      return List<Map<String, dynamic>>.from(userData['response']['data']['courses']);
+    }
+    
+    // Alternatively, try to get from the specific 'courses' key if saved separately
+    final courses = userDataBox.get('courses');
+    if (courses != null && courses is List) {
+      return List<Map<String, dynamic>>.from(courses);
+    }
+    
+    // Return empty list if no data is found
+    return [];
   }
 
   bool isHoveringSave = false; 
@@ -112,33 +128,47 @@ class _CourseRegistrationScreenState extends State<CourseRegistrationScreen> {
                     Positioned(
                       bottom: 2.0,
                       right: 8.0,
-                      child: FloatingActionButton(
-                        onPressed: () {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Courses saved successfully')),
-                          );
-                        },
-                        backgroundColor: isHoveringSave 
-                            ? Colors.blueGrey 
-                            : AppColors.primaryLight,
-                        shape: const CircleBorder(),
-                        child: Container(
-                          width: 50,
-                          height: 50,
-                          decoration: BoxDecoration(
-                            borderRadius: const BorderRadius.all(Radius.circular(100)),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.3),
-                                blurRadius: 7,
-                                spreadRadius: 7,
-                                offset: const Offset(3, 5),
-                              ),
-                            ],
-                          ),
-                          child: const Icon(
-                            Icons.save,
-                            color: AppColors.backgroundLight,
+                      child: MouseRegion(
+                        onEnter: (_) => setState(() => isHoveringSave = true),
+                        onExit: (_) => setState(() => isHoveringSave = false),
+                        child: FloatingActionButton(
+                          onPressed: () {
+                            // Get list of selected course IDs
+                            List<int> selectedCourseIds = [];
+                            for (int i = 0; i < selectedSubjects.length; i++) {
+                              if (selectedSubjects[i]) {
+                                selectedCourseIds.add(courses[i]['id']);
+                              }
+                            }
+                            
+                            // Here you can implement API call to save selected courses
+                            // For now, just show a success message
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Courses saved successfully')),
+                            );
+                          },
+                          backgroundColor: isHoveringSave 
+                              ? Colors.blueGrey 
+                              : AppColors.primaryLight,
+                          shape: const CircleBorder(),
+                          child: Container(
+                            width: 50,
+                            height: 50,
+                            decoration: BoxDecoration(
+                              borderRadius: const BorderRadius.all(Radius.circular(100)),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.3),
+                                  blurRadius: 7,
+                                  spreadRadius: 7,
+                                  offset: const Offset(3, 5),
+                                ),
+                              ],
+                            ),
+                            child: const Icon(
+                              Icons.save,
+                              color: AppColors.backgroundLight,
+                            ),
                           ),
                         ),
                       ),
@@ -167,58 +197,63 @@ class _CourseRegistrationScreenState extends State<CourseRegistrationScreen> {
                       topLeft: Radius.circular(20.0),
                       topRight: Radius.circular(20.0),
                     ),
-                    child: ListView.builder(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                      itemCount: subjects.length,
-                      itemBuilder: (context, index) {
-                        return Container(
-                          decoration: BoxDecoration(
-                            color: selectedSubjects[index] 
-                                ? Colors.grey[200] 
-                                : Colors.white,
-                            border: Border(
-                              bottom: BorderSide(
-                                color: Colors.grey[300]!,
-                                width: 1,
-                              ),
-                            ),
-                          ),
-                          child: ListTile(
-                            leading: CircleAvatar(
-                              backgroundColor: subjectColors[index],
-                              child: Text(
-                                subjects[index][0].toUpperCase(),
-                                style: const TextStyle(color: Colors.white),
-                              ),
-                            ),
-                            title: Text(subjects[index]),
-                            trailing: GestureDetector(
-                              onTap: () {
-                                setState(() {
-                                  selectedSubjects[index] = !selectedSubjects[index];
-                                });
-                              },
-                              child: Container(
-                                width: 24,
-                                height: 24,
+                    child: courses.isEmpty
+                        ? const Center(child: Text('No courses available'))
+                        : ListView.builder(
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                            itemCount: courses.length,
+                            itemBuilder: (context, index) {
+                              final course = courses[index];
+                              final courseName = course['course_name'] as String;
+                              
+                              return Container(
                                 decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
                                   color: selectedSubjects[index] 
-                                      ? Colors.green 
+                                      ? Colors.grey[200] 
                                       : Colors.white,
-                                  border: Border.all(color: Colors.grey),
+                                  border: Border(
+                                    bottom: BorderSide(
+                                      color: Colors.grey[300]!,
+                                      width: 1,
+                                    ),
+                                  ),
                                 ),
-                                child: selectedSubjects[index]
-                                    ? const Icon(Icons.check, 
-                                        size: 16, 
-                                        color: Colors.white)
-                                    : null,
-                              ),
-                            ),
+                                child: ListTile(
+                                  leading: CircleAvatar(
+                                    backgroundColor: subjectColors[index],
+                                    child: Text(
+                                      courseName.isNotEmpty ? courseName[0].toUpperCase() : '?',
+                                      style: const TextStyle(color: Colors.white),
+                                    ),
+                                  ),
+                                  title: Text(courseName),
+                                  trailing: GestureDetector(
+                                    onTap: () {
+                                      setState(() {
+                                        selectedSubjects[index] = !selectedSubjects[index];
+                                      });
+                                    },
+                                    child: Container(
+                                      width: 24,
+                                      height: 24,
+                                      decoration: BoxDecoration(
+                                        shape: BoxShape.circle,
+                                        color: selectedSubjects[index] 
+                                            ? Colors.green 
+                                            : Colors.white,
+                                        border: Border.all(color: Colors.grey),
+                                      ),
+                                      child: selectedSubjects[index]
+                                          ? const Icon(Icons.check, 
+                                              size: 16, 
+                                              color: Colors.white)
+                                          : null,
+                                    ),
+                                  ),
+                                ),
+                              );
+                            },
                           ),
-                        );
-                      },
-                    ),
                   ),
                 ),
               ),

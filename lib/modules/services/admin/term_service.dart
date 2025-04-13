@@ -1,82 +1,84 @@
-import 'package:http/http.dart' as http;
-import 'dart:convert';
+import 'package:hive/hive.dart';
+import 'package:linkschool/modules/services/api/api_service.dart';
+import 'package:linkschool/modules/services/api/service_locator.dart';
+
+// https://linkskool.net/api/v3/portal/courses/registrations/terms?year=2025&class_id=69&_db={{DB}}
 
 class TermService {
-  // Fetch terms for a specific class ID
+  late ApiService _apiService;
+
+  // Constructor
+  TermService([ApiService? apiService]) {
+    _apiService = apiService ?? locator<ApiService>();
+  }
+
+  set apiService(ApiService service) => _apiService = service;
+
   Future<List<Map<String, dynamic>>> fetchTerms(String classId) async {
-    final url = Uri.parse(
-        'https://linkskool.com/developmentportal/api/jsonTerms.php?_db=linkskoo_practice&class=$classId');
-    final response = await http.get(url);
-
-    if (response.statusCode == 200) {
-      final responseData = json.decode(response.body);
-
-      // Debugging: Print the raw API response
-      print('Raw API Response: $responseData');
-
-      // Check if the response is a list
-      if (responseData is List) {
-        print('API Response is a List');
-
-        // Check if the list is not empty
-        if (responseData.isNotEmpty) {
-          final termsData = responseData[0]; // Access the first item in the list
-          print('First Item in List: $termsData');
-
-          // Check if the first item is a map
-          if (termsData is Map<String, dynamic>) {
-            print('First Item is a Map');
-
-            // Convert the nested terms data into a list of maps
-            List<Map<String, dynamic>> terms = [];
-            termsData.forEach((year, data) {
-              print('Processing Year: $year, Data: $data');
-
-              // Check if the data is a map and contains the 'terms' key
-              if (data is Map<String, dynamic> && data.containsKey('terms')) {
-                final termsValue = data['terms'];
-
-                // Handle cases where 'terms' is a map or a list
-                if (termsValue is Map<String, dynamic>) {
-                  print('Year Terms (Map): $termsValue');
-
-                  termsValue.forEach((termId, termName) {
-                    terms.add({
-                      'year': year,
-                      'termId': termId,
-                      'termName': termName,
-                    });
-                  });
-                } else if (termsValue is List) {
-                  print('Year Terms (List): $termsValue');
-                  // Skip or handle lists (e.g., ignore null values)
-                  if (termsValue.isNotEmpty && termsValue[0] != null) {
-                    print('Skipping non-null list terms');
-                  }
-                } else {
-                  print('Invalid terms format for year: $year');
-                }
-              } else {
-                print('Invalid data format for year: $year');
-              }
-            });
-
-            return terms;
-          } else {
-            print('First Item is not a Map');
-            throw Exception('Invalid API response format: Expected a Map');
-          }
-        } else {
-          print('API Response List is empty');
-          throw Exception('Invalid API response format: Empty List');
-        }
-      } else {
-        print('API Response is not a List');
-        throw Exception('Invalid API response format: Expected a List');
+    try {
+      // Get required parameters from Hive
+      final userBox = Hive.box('userData');
+      final loginData = userBox.get('userData') ?? userBox.get('loginResponse');
+      
+      if (loginData == null) {
+        throw Exception('No login data available');
       }
-    } else {
-      print('Failed to load terms. Status Code: ${response.statusCode}');
-      throw Exception('Failed to load terms');
+
+      // Extract needed parameters
+      final responseData = loginData['response'] ?? loginData;
+      final data = responseData['data'] ?? {};
+      final settings = data['settings'] ?? {};
+      final db = loginData['_db'] ?? 'aalmgzmy_linkskoo_practice';
+      final year = settings['year']?.toString() ?? '2025';
+      final token = loginData['token'] ?? userBox.get('token');
+
+      // Set authentication token
+      if (token != null) {
+        _apiService.setAuthToken(token);
+      }
+
+      print('Fetching terms for class $classId (year: $year, db: $db)');
+
+      // Make API request
+      final response = await _apiService.get(
+        endpoint: 'portal/course-registrations/terms',
+        queryParams: {
+          'year': year,
+          'class_id': classId,
+          '_db': db,
+        },
+      );
+
+      if (!response.success) {
+        throw Exception(response.message ?? 'Failed to fetch terms');
+      }
+
+      // Parse response
+      final resData = response.rawData;
+      if (resData == null || resData['sessions'] == null) {
+        return [];
+      }
+
+      final sessions = resData['sessions'] as Map<String, dynamic>;
+      final terms = <Map<String, dynamic>>[];
+
+      sessions.forEach((year, sessionData) {
+        if (sessionData is Map && sessionData['terms'] is List) {
+          for (var term in (sessionData['terms'] as List)) {
+            terms.add({
+              'year': year,
+              'termId': term,
+              'termName': 'Term $term',
+            });
+          }
+        }
+      });
+
+      print('Successfully fetched ${terms.length} terms');
+      return terms;
+    } catch (e) {
+      print('Error fetching terms: $e');
+      throw Exception('Failed to load terms: ${e.toString()}');
     }
   }
 }
