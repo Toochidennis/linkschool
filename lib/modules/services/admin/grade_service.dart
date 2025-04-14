@@ -77,7 +77,7 @@ class GradeService {
     );
 
     if (!response.success) {
-      print('Failed to delete grade with ID $id: ${response.message}');
+      print('Failed to delete grade with ID  ${response.message}');
       throw Exception('Failed to delete grade: ${response.message}');
     } else {
       print('Grade with ID $id deleted successfully');

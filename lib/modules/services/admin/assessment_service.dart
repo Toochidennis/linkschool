@@ -15,13 +15,17 @@ class AssessmentService {
   // Additional assessment methods can be added here
   Future<ApiResponse<List<dynamic>>> getAssessments(String classId, String termId) async {
     return await _apiService.get(
-      endpoint: 'assessments.php',
+      endpoint: 'portal/assessments ',
       queryParams: {
         'class_id': classId,
         'term_id': termId,
       },
+  
     );
+    print(classId);
+    print(termId);
   }
+
 }
 
 

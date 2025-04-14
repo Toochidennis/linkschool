@@ -7,9 +7,9 @@ import '../../../../common/widgets/portal/class_detail/overlays.dart';
 import '../../../../providers/admin/student_provider.dart';
 
 class StudentList extends StatefulWidget {
-  final String classId;
+  
 
-  const StudentList({super.key, required this.classId});
+  const StudentList({super.key, required });
 
   @override
   State createState() => _StudentListState();
@@ -20,10 +20,10 @@ class _StudentListState extends State<StudentList> {
   void initState() {
     super.initState();
 
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      Provider.of<StudentProvider>(context, listen: false)
-          .fetchStudents(widget.classId);
-    });
+    // WidgetsBinding.instance.addPostFrameCallback((_) {
+    //   Provider.of<StudentProvider>(context, listen: false)
+    //       .fetchStudents(widget.classId);
+    // });
   }
 
   @override
@@ -111,8 +111,8 @@ class _StudentListState extends State<StudentList> {
                             fontSize: 18, color: AppColors.textLight),
                       ),
                       onTap: () =>
-                          showStudentResultOverlay(context, widget.classId,
-                              student.name),
+                          showStudentResultOverlay(context, 
+                             ),
                     );
                   },
                 );

@@ -54,6 +54,7 @@ class GradeProvider with ChangeNotifier {
 
     try {
       await _gradeService.addGrades(_newGrades);
+      _grades.addAll(_newGrades);
       await fetchGrades();
       _newGrades.clear();
       notifyListeners();
