@@ -235,7 +235,7 @@ class StudentResultScreen extends StatelessWidget {
                           termData['percent'], 
                           indicatorColor
                         );
-                      }).toList(),
+                      }),
                       
                       const SizedBox(height: 30),
                       CustomOutlineButton2(

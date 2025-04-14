@@ -11,9 +11,9 @@ class AttendanceHistoryList extends StatefulWidget {
   final String classId;
   
   const AttendanceHistoryList({
-    Key? key, 
+    super.key, 
     required this.classId,
-  }) : super(key: key);
+  });
 
   @override
   State<AttendanceHistoryList> createState() => _AttendanceHistoryListState();

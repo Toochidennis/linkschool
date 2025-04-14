@@ -1,5 +1,4 @@
 import 'package:hive/hive.dart';
-import 'package:linkschool/config/env_config.dart';
 import 'package:linkschool/modules/services/api/api_service.dart';
 import 'package:linkschool/modules/services/api/service_locator.dart';
 
