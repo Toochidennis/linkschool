@@ -9,8 +9,6 @@ class StudentService {
 
   StudentService(this._apiService);
 
-
-
   Future<List<Student>> getStudentsByClass(String classId) async {
     try {
       // Use the dynamic DB name from environment config
@@ -359,5 +357,61 @@ Future<List<Map<String, dynamic>>> getCourseAttendance({
     }
   }
 
+Future<bool> updateAttendance({
+  required int attendanceId,
+  required List<int> studentIds,
+  required List<Student> selectedStudents,
+}) async {
+  try {
+    // Fetch locally persisted login data
+    final userDataBox = Hive.box('userData');
+    final userData = userDataBox.get('userData');
+    
+    if (userData == null) {
+      throw Exception('User data not found');
+    }
+    
+    final profile = userData['data']['profile'];
 
+    if (profile == null) {
+      throw Exception('Profile data not found');
+    }
+
+    final staffId = profile['id'];
+    
+    // Build register array with student IDs and names
+    final register = selectedStudents
+        .map((student) => {
+              'id': student.id,
+              'name': student.name,
+            })
+        .toList();
+
+    // Prepare the payload according to API requirements
+    final payload = {
+      '_db': EnvConfig.dbName,
+      'staff_id': staffId,
+      'count': studentIds.length,
+      'register': register,
+    };
+
+    debugPrint('Updating attendance with payload: $payload');
+
+    // Use the existing put method from ApiService
+    final response = await _apiService.put<Map<String, dynamic>>(
+      endpoint: 'portal/attendance/$attendanceId',
+      body: payload,
+      payloadType: PayloadType.JSON,
+    );
+
+    if (!response.success) {
+      debugPrint('API Error: ${response.message}');
+    }
+
+    return response.success;
+  } catch (e) {
+    debugPrint('Error updating attendance: $e');
+    throw Exception('Error updating attendance: $e');
+  }
+}
 }

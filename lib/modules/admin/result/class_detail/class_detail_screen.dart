@@ -48,10 +48,6 @@ void _debugHiveContents() {
   }
 }
 
-  // void _loadTerms() async {
-  //   print('Loading terms for classId: ${widget.classId}');
-  //   await _termProvider.fetchTerms(widget.classId);
-  // }
   Future<void> _loadTerms() async {
     print('Loading terms for classId: ${widget.classId}');
     try {

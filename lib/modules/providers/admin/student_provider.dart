@@ -18,6 +18,8 @@ class StudentProvider extends ChangeNotifier {
   Map<String, dynamic>? _studentTerms;
   List<int> _localAttendance = [];
   List<int> _attendedStudentIds = [];
+  int? _currentAttendanceId;
+bool _hasExistingAttendance = false;
 
   // Getters
   List<Student> get students => _students;
@@ -32,6 +34,102 @@ class StudentProvider extends ChangeNotifier {
   List<int> get attendedStudentIds => _attendedStudentIds;
   Student? get student => _student;
   Map<String, dynamic>? get studentTerms => _studentTerms;
+int? get currentAttendanceId => _currentAttendanceId;
+bool get hasExistingAttendance => _hasExistingAttendance;
+
+// Future<bool> updateAttendance({
+//   required int attendanceId,
+// }) async {
+//   try {
+//     _isLoading = true;
+//     notifyListeners();
+    
+//     // Get newly selected students with their complete data (not just IDs)
+//     final selectedStudents = _students.where((student) => student.isSelected).toList();
+    
+//     final success = await _studentService.updateAttendance(
+//       attendanceId: attendanceId,
+//       studentIds: selectedStudentIds,
+//       selectedStudents: selectedStudents,
+//     );
+
+//     if (success) {
+//       _errorMessage = '';
+      
+//       // Update the attended students list with newly selected students
+//       final updatedAttendedIds = [..._attendedStudentIds];
+      
+//       // Add any newly selected student IDs that aren't already in the attended list
+//       for (final studentId in selectedStudentIds) {
+//         if (!updatedAttendedIds.contains(studentId)) {
+//           updatedAttendedIds.add(studentId);
+//         }
+//       }
+      
+//       _attendedStudentIds = updatedAttendedIds;
+      
+//       // Update the hasAttended property for all students
+//       for (int i = 0; i < _students.length; i++) {
+//         final isAttended = _attendedStudentIds.contains(_students[i].id);
+//         _students[i] = _students[i].copyWith(hasAttended: isAttended);
+//       }
+//     } else {
+//       _errorMessage = 'Failed to update attendance';
+//     }
+
+//     _isLoading = false;
+//     notifyListeners();
+//     return success;
+//   } catch (e) {
+//     _isLoading = false;
+//     _errorMessage = e.toString();
+//     notifyListeners();
+//     return false;
+//   }
+// }
+
+  Future<bool> updateAttendance({required int attendanceId}) async {
+    try {
+      _isLoading = true;
+      notifyListeners();
+      
+      final studentsToMark = _students.where((s) => s.isMarkedPresent).toList();
+      final studentIdsToMark = studentsToMark.map((s) => s.id).toList();
+      
+      final success = await _studentService.updateAttendance(
+        attendanceId: attendanceId,
+        studentIds: studentIdsToMark,
+        selectedStudents: studentsToMark,
+      );
+
+      if (success) {
+        _errorMessage = '';
+        _attendedStudentIds = studentIdsToMark;
+        
+        for (int i = 0; i < _students.length; i++) {
+          final isAttended = _attendedStudentIds.contains(_students[i].id);
+          _students[i] = _students[i].copyWith(
+            hasAttended: isAttended,
+            isSelected: false
+          );
+        }
+        
+        _selectAll = false;
+      } else {
+        _errorMessage = 'Failed to update attendance';
+      }
+
+      _isLoading = false;
+      notifyListeners();
+      return success;
+    } catch (e) {
+      _isLoading = false;
+      _errorMessage = e.toString();
+      notifyListeners();
+      return false;
+    }
+  }
+
 
   // Fetch students for a specific class
   Future<void> fetchStudents(String? classId) async {
@@ -106,7 +204,7 @@ class StudentProvider extends ChangeNotifier {
     }
   }
 
-  // Fetch attendance data from API
+// Modify the fetchAttendance method to store the attendance ID
 Future<void> fetchAttendance({
   required String classId, 
   required String date, 
@@ -122,10 +220,20 @@ Future<void> fetchAttendance({
     );
     
     _attendedStudentIds = [];
+    _currentAttendanceId = null;
+    _hasExistingAttendance = false;
     
     // Process each attendance record
     if (attendanceRecords.isNotEmpty) {
       final firstRecord = attendanceRecords[0];
+      
+      // Store the attendance ID for later use in update
+      if (firstRecord.containsKey('id')) {
+        _currentAttendanceId = firstRecord['id'] is int 
+            ? firstRecord['id'] 
+            : int.tryParse(firstRecord['id'].toString());
+        _hasExistingAttendance = _currentAttendanceId != null;
+      }
       
       if (firstRecord['register'] != null) {
         // Handle register data - it might be a List or a String
@@ -177,7 +285,7 @@ Future<void> fetchAttendance({
   }
 }
 
-
+// Modify the fetchCourseAttendance method to store the attendance ID
 Future<void> fetchCourseAttendance({
   required String classId, 
   required String date, 
@@ -195,10 +303,20 @@ Future<void> fetchCourseAttendance({
     );
     
     _attendedStudentIds = [];
+    _currentAttendanceId = null;
+    _hasExistingAttendance = false;
     
     // Process each attendance record
     if (attendanceRecords.isNotEmpty) {
       final firstRecord = attendanceRecords[0]; // Get the first record
+      
+      // Store the attendance ID for later use in update
+      if (firstRecord.containsKey('id')) {
+        _currentAttendanceId = firstRecord['id'] is int 
+            ? firstRecord['id'] 
+            : int.tryParse(firstRecord['id'].toString());
+        _hasExistingAttendance = _currentAttendanceId != null;
+      }
       
       if (firstRecord['register'] != null) {
         // The register field contains a JSON string with potential leading space
@@ -506,6 +624,8 @@ Future<bool> saveCourseAttendance({
     _selectAll = false;
     _localAttendance = [];
     _attendedStudentIds = [];
+  _currentAttendanceId = null;
+  _hasExistingAttendance = false;
     notifyListeners();
   }
 
@@ -527,13 +647,26 @@ Future<bool> saveCourseAttendance({
   void toggleSelectAll() {
     _selectAll = !_selectAll;
     
-    // Update all students
     for (int i = 0; i < _students.length; i++) {
-      _students[i] = _students[i].copyWith(isSelected: _selectAll);
+      _students[i] = _students[i].copyWith(
+        isSelected: _selectAll,
+        hasAttended: _selectAll ? _students[i].hasAttended : false
+      );
     }
     
     notifyListeners();
   }
+
+  // void toggleSelectAll() {
+  //   _selectAll = !_selectAll;
+    
+  //   // Update all students
+  //   for (int i = 0; i < _students.length; i++) {
+  //     _students[i] = _students[i].copyWith(isSelected: _selectAll);
+  //   }
+    
+  //   notifyListeners();
+  // }
 
   // Check if all students are selected and update _selectAll accordingly
   void _updateSelectAllStatus() {
