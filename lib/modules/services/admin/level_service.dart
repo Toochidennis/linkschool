@@ -1,51 +1,61 @@
+import 'package:hive/hive.dart';
 import 'package:linkschool/modules/model/admin/level_model.dart';
 import 'package:linkschool/modules/services/api/api_service.dart';
 import 'package:linkschool/modules/services/api/service_locator.dart';
-
 
 class LevelService {
   final ApiService _apiService = locator<ApiService>();
 
   Future<List<Level>> fetchLevels() async {
     try {
+      final userBox = Hive.box('userData');
+      final dbName = userBox.get('_db') ?? 'aalmgzmy_linkskoo_practice';
+
       final response = await _apiService.get(
-        endpoint: 'getLevel.php',
-        queryParams: {'_db': 'linkskoo_practice'},
+        endpoint: 'portal/assessments',
+        queryParams: {'_db': dbName},
       );
 
-      if (response.success) {
-        final List<dynamic> levelsJson = response.rawData?['levels'] ?? [];
-        return levelsJson.map((json) => Level.fromJson(json)).toList();
+      if (response.success && response.rawData?['response'] != null) {
+        final Map<String, dynamic> levelsData = response.rawData!['response'];
+        return levelsData.entries.map((entry) {
+          return Level.fromJson({
+            'level_id': entry.value['level_id'],
+            'level_name': entry.value['level_name'],
+            'assessments': entry.value['assessments'],
+          });
+        }).toList();
       } else {
-        throw Exception('Failed to load levels: ${response.message}');
+        throw Exception(response.message ?? 'Failed to load levels');
       }
     } catch (e) {
       throw Exception('Failed to load levels: $e');
     }
   }
+
+  Future<Level> getLevelDetails(String levelId) async {
+    try {
+      final userBox = Hive.box('userData');
+      final dbName = userBox.get('_db') ?? 'aalmgzmy_linkskoo_practice';
+
+      final response = await _apiService.get(
+        endpoint: 'portal/assessments/$levelId',
+        queryParams: {'_db': dbName},
+      );
+
+      if (response.success && response.rawData?['response'] != null) {
+        final levelData = response.rawData!['response'].values.first;
+        return Level.fromJson({
+          'level_id': levelData['level_id'],
+          'level_name': levelData['level_name'],
+          'assessments': levelData['assessments'],
+        });
+      } else {
+        throw Exception(response.message ?? 'Failed to load level details');
+      }
+    } catch (e) {
+      throw Exception('Failed to load level details: $e');
+    }
+  }
 }
 
-
-
-// import 'dart:convert';
-// import 'package:http/http.dart' as http;
-// import 'package:linkschool/modules/model/admin/level_model.dart';
-// // import '../models/level_model.dart';
-
-
-
-// class LevelService {
-//   Future<List<Level>> fetchLevels() async {
-//     final response = await http.get(
-//       Uri.parse('https://linkskool.com/developmentportal/api/getLevel.php?_db=linkskoo_practice'),
-//     );
-
-//     if (response.statusCode == 200) {
-//       final Map<String, dynamic> data = json.decode(response.body);
-//       final List<dynamic> levelsJson = data['levels'];
-//       return levelsJson.map((json) => Level.fromJson(json)).toList();
-//     } else {
-//       throw Exception('Failed to load levels');
-//     }
-//   }
-// }

@@ -259,6 +259,7 @@ class ApiService {
     required String endpoint,
     dynamic body,
     Map<String, dynamic>? queryParams,
+    PayloadType payloadType = PayloadType.JSON, //newly added
     T Function(Map<String, dynamic> json)? fromJson,
   }) {
     return request<T>(
@@ -266,6 +267,7 @@ class ApiService {
       method: HttpMethod.PUT,
       body: body,
       queryParams: queryParams,
+      payloadType: payloadType,
       fromJson: fromJson,
     );
   }
