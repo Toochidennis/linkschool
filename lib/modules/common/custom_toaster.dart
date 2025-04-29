@@ -9,7 +9,7 @@ class CustomToaster {
       title: Text(title, style: TextStyle(color: Colors.white)),
       description: Text(message, style: TextStyle(color: Colors.white)),
       position: MotionToastPosition.top, 
-      animationType: AnimationType.fromTop,
+      animationType: AnimationType.slideInFromTop,
       contentPadding: const EdgeInsets.all(10), 
 
     ).show(context);
@@ -20,7 +20,7 @@ class CustomToaster {
       title: Text(title, style: TextStyle(color: Colors.white)),
       description: Text(message, style: TextStyle(color: Colors.white)),
       position: MotionToastPosition.top, 
-      animationType: AnimationType.fromTop,
+      animationType: AnimationType.slideInFromTop,
       contentPadding: const EdgeInsets.all(10), 
     ).show(context);
   }
@@ -30,7 +30,7 @@ class CustomToaster {
       title: Text(title, style: TextStyle(color: Colors.white)),
       description: Text(message, style: TextStyle(color: Colors.white)),
       position: MotionToastPosition.top, // Change to top, center, or bottom
-      animationType: AnimationType.fromTop,
+      animationType: AnimationType.slideInFromTop,
       contentPadding: const EdgeInsets.all(10), 
     ).show(context);
   }
@@ -40,7 +40,7 @@ class CustomToaster {
       title: Text(title, style: TextStyle(color: Colors.white)),
       description: Text(message, style: TextStyle(color: Colors.white)),
       position: MotionToastPosition.top, // Change to top, center, or bottom
-      animationType: AnimationType.fromTop,
+      animationType: AnimationType.slideInFromTop,
       contentPadding: const EdgeInsets.all(10), // // Adjust animation direction
     ).show(context);
   }
