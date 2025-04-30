@@ -11,7 +11,7 @@ class Student {
   
   Student({
     required this.id,
-     required this.name,
+    required this.name,
     required this.surname,
     required this.firstName,
     required this.middleName,
@@ -23,15 +23,26 @@ class Student {
 
   String get fullName => '$surname $firstName ${middleName.isNotEmpty ? middleName : ''}'.trim();
   
-  Student copyWith({bool? isSelected, bool? hasAttended}) {
+  bool get isMarkedPresent => hasAttended || isSelected;
+  
+  Student copyWith({
+    bool? isSelected, 
+    bool? hasAttended,
+    String? name,
+    String? surname,
+    String? firstName,
+    String? middleName,
+    String? registrationNo,
+    String? pictureUrl,
+  }) {
     return Student(
       id: id,
-      name: name,
-      surname: surname,
-      firstName: firstName,
-      middleName: middleName,
-      registrationNo: registrationNo,
-      pictureUrl: pictureUrl,
+      name: name ?? this.name,
+      surname: surname ?? this.surname,
+      firstName: firstName ?? this.firstName,
+      middleName: middleName ?? this.middleName,
+      registrationNo: registrationNo ?? this.registrationNo,
+      pictureUrl: pictureUrl ?? this.pictureUrl,
       isSelected: isSelected ?? this.isSelected,
       hasAttended: hasAttended ?? this.hasAttended,
     );
@@ -40,7 +51,7 @@ class Student {
   factory Student.fromJson(Map<String, dynamic> json) {
     return Student(
       id: json['id'] is int ? json['id'] : int.parse(json['id'].toString()),
-       name: json['student_name'] ?? '', 
+      name: json['student_name'] ?? '', 
       surname: json['surname'] ?? '',
       firstName: json['first_name'] ?? '',
       middleName: json['middle'] ?? '',
@@ -66,44 +77,67 @@ class Student {
 // class Student {
 //   final int id;
 //   final String name;
+//   final String surname;
+//   final String firstName;
+//   final String middleName;
 //   final String registrationNo;
+//   final String? pictureUrl;
 //   bool isSelected;
-//   bool hasAttended; // Add this property
-  
+//   bool hasAttended;
+
 //   Student({
 //     required this.id,
 //     required this.name,
-//     required this.registrationNo, 
+//     required this.surname,
+//     required this.firstName,
+//     required this.middleName,
+//     required this.registrationNo,
+//     this.pictureUrl,
 //     this.isSelected = false,
-//     this.hasAttended = false, // Initialize as false
+//     this.hasAttended = false,
 //   });
-  
-//   // Update the copyWith method to include hasAttended
-//   Student copyWith({bool? isSelected, bool? hasAttended}) {
+
+//   String get fullName =>
+//       '$surname $firstName ${middleName.isNotEmpty ? middleName : ''}'.trim();
+
+//   // Getter to determine the visual state
+//   bool get isMarkedPresent => hasAttended || isSelected;
+
+//   Student copyWith({bool? isSelected, bool? hasAttended,}) {
 //     return Student(
 //       id: id,
 //       name: name,
-//       registrationNo: registrationNo, 
+//       surname: surname,
+//       firstName: firstName,
+//       middleName: middleName,
+//       registrationNo: registrationNo,
+//       pictureUrl: pictureUrl,
 //       isSelected: isSelected ?? this.isSelected,
 //       hasAttended: hasAttended ?? this.hasAttended,
 //     );
 //   }
-  
-//   // Keep the existing fromJson factory
+
 //   factory Student.fromJson(Map<String, dynamic> json) {
 //     return Student(
 //       id: json['id'] is int ? json['id'] : int.parse(json['id'].toString()),
-//       name: json['student_name'] ?? '',  
-//       registrationNo: json['registration_no'] ?? '',  
+//       name: json['student_name'] ?? '',
+//       surname: json['surname'] ?? '',
+//       firstName: json['first_name'] ?? '',
+//       middleName: json['middle'] ?? '',
+//       registrationNo: json['registration_no'] ?? '',
+//       pictureUrl: json['picture_url'],
 //     );
 //   }
-  
-//   // Keep the existing toJson method
+
 //   Map<String, dynamic> toJson() {
 //     return {
 //       'id': id,
-//       'student_name': name,  
-//       'registration_no': registrationNo,  
+//       'student_name': name,
+//       'surname': surname,
+//       'first_name': firstName,
+//       'middle': middleName,
+//       'registration_no': registrationNo,
+//       'picture_url': pictureUrl,
 //     };
 //   }
 // }
