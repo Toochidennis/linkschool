@@ -22,7 +22,7 @@ class ButtonSection extends StatelessWidget {
             onPressed: () => Navigator.push(
                 context,
                 MaterialPageRoute(
-                    builder: (context) => BulkRegistrationScreen(classId:classId))),
+                    builder: (context) => BulkRegistrationScreen(classId: classId,))),
             backgroundColor: AppColors.videoColor4,
             textStyle: AppTextStyles.normal600(
                 fontSize: 16, color: AppColors.backgroundLight),

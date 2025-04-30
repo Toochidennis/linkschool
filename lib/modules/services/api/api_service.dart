@@ -104,16 +104,6 @@ class ApiService {
 
       print('Making ${method.toString()} request to: ${uri.toString()}');
       print('Headers: ${headers.keys.join(', ')}');
-      // // Prepare the URI with query parameters
-      // final uri = Uri.parse('$baseUrl/$endpoint').replace(
-      //   queryParameters: queryParams,
-      // );
-
-      // // Prepare headers based on payload type
-      // final headers = Map<String, String>.from(_defaultHeaders);
-      // if (payloadType == PayloadType.FORM_DATA) {
-      //   headers.remove('Content-Type'); // Let http package set the correct boundary
-      // }
 
       // Initialize the request
       http.Response response;

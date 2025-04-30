@@ -6,7 +6,7 @@ import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/common/utils/registration/registration_utils.dart';
 
 class ButtonSection extends StatelessWidget {
-final String classId;
+  final String classId;
   const ButtonSection({super.key, required this.classId});
 
   @override
@@ -20,7 +20,7 @@ final String classId;
             onPressed: () => Navigator.push(
                 context,
                 MaterialPageRoute(
-                    builder: (context) => BulkRegistrationScreen(classId:classId))),
+                    builder: (context) => BulkRegistrationScreen(classId:classId,))),
             backgroundColor: AppColors.videoColor4,
             textStyle: AppTextStyles.normal600(
                 fontSize: 16, color: AppColors.backgroundLight),

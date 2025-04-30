@@ -6,7 +6,8 @@ import 'dart:math';
 
 class AttendanceHistoryScreen extends StatefulWidget {
   final String date;
-  const AttendanceHistoryScreen({super.key, required this.date});
+  final String? attendanceId;
+  const AttendanceHistoryScreen({super.key, required this.date, this. attendanceId});
 
   @override
   _AttendanceHistoryScreenState createState() => _AttendanceHistoryScreenState();

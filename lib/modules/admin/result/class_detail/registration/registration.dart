@@ -9,7 +9,7 @@ import 'package:linkschool/modules/common/widgets/portal/result_register/top_con
 
 
 class RegistrationScreen extends StatefulWidget {
-   final String classId;
+  final String classId;
   const RegistrationScreen({super.key, required this.classId});
 
   @override
@@ -54,7 +54,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                 });
               },
             ),
-            ButtonSection(classId:widget.classId),
+            ButtonSection(classId: widget.classId),
             const SizedBox(height: 25),
             HistorySection(),
           ],

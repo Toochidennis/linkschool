@@ -4,8 +4,18 @@ import 'package:linkschool/modules/admin/result/class_detail/student_result/cour
 import 'package:linkschool/modules/admin/result/class_detail/student_result/student_result.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/staff/e_learning/form_classes/staff_skill_behaviour_screen.dart';
+import 'package:provider/provider.dart';
+import 'package:linkschool/modules/providers/admin/student_provider.dart';
 
 void showStudentResultOverlay(BuildContext context) {
+  // Get StudentProvider
+  final studentProvider = Provider.of<StudentProvider>(context, listen: false);
+  
+  // Fetch all students if not already loaded
+  if (studentProvider.allStudents.isEmpty) {
+    studentProvider.fetchAllStudents();
+  }
+
   showModalBottomSheet(
     context: context,
     isScrollControlled: true,
@@ -38,41 +48,67 @@ void showStudentResultOverlay(BuildContext context) {
                             borderRadius: BorderRadius.circular(10),
                           ),
                         ),
+                        onChanged: (value) {
+                          // Filter functionality could be added here
+                        },
                       ),
                     ),
                     Expanded(
-                      child: ListView.separated(
-                        controller: controller,
-                        itemCount: 4,
-                        separatorBuilder: (context, index) => const Divider(),
-                        itemBuilder: (context, index) {
-                          final studentNames = [
-                            'Tochukwu Dennis',
-                            'Vincent Rapheal',
-                            'Victor Anya',
-                            'Joseph Onwe'
-                          ];
-                          final studentName = studentNames[index];
-                          return ListTile(
-                            leading: CircleAvatar(
-                              backgroundColor: Colors
-                                  .primaries[index % Colors.primaries.length],
+                      child: Consumer<StudentProvider>(
+                        builder: (context, provider, child) {
+                          if (provider.isLoading) {
+                            return const Center(
+                              child: CircularProgressIndicator(),
+                            );
+                          }
+                          
+                          if (provider.errorMessage.isNotEmpty) {
+                            return Center(
                               child: Text(
-                                studentName[0],
-                                style: const TextStyle(color: Colors.white),
+                                'Error: ${provider.errorMessage}',
+                                style: const TextStyle(color: Colors.red),
                               ),
-                            ),
-                            title: Text(studentName),
-                            onTap: () {
-                              Navigator.pop(context);
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => StudentResultScreen(
-                                    studentName: studentName,
-                                    className: 'Student Result',
+                            );
+                          }
+                          
+                          if (provider.allStudents.isEmpty) {
+                            return const Center(
+                              child: Text('No students available'),
+                            );
+                          }
+                          
+                          return ListView.separated(
+                            controller: controller,
+                            itemCount: provider.allStudents.length,
+                            separatorBuilder: (context, index) => const Divider(),
+                            itemBuilder: (context, index) {
+                              final student = provider.allStudents[index];
+                              final firstLetter = student.fullName.isNotEmpty ? 
+                                  student.fullName[0].toUpperCase() : 'S';
+                              
+                              return ListTile(
+                                leading: CircleAvatar(
+                                  backgroundColor: Colors.primaries[index % Colors.primaries.length],
+                                  child: Text(
+                                    firstLetter,
+                                    style: const TextStyle(color: Colors.white),
                                   ),
                                 ),
+                                title: Text(student.fullName),
+                                onTap: () {
+                                  // Fetch student result terms and navigate
+                                  provider.fetchStudentResultTerms(student.id);
+                                  Navigator.pop(context);
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => StudentResultScreen(
+                                        studentName: student.fullName,
+                                        className: 'Student Result',
+                                      ),
+                                    ),
+                                  );
+                                },
                               );
                             },
                           );
@@ -90,8 +126,8 @@ void showStudentResultOverlay(BuildContext context) {
   );
 }
 
-
 void showTermOverlay(BuildContext context) {
+  // Original implementation remains unchanged
   showModalBottomSheet(
     context: context,
     isScrollControlled: true,
@@ -186,6 +222,106 @@ void showTermOverlay(BuildContext context) {
   );
 }
 
+
+
+// import 'package:flutter/material.dart';
+// import 'package:flutter_svg/flutter_svg.dart';
+// import 'package:linkschool/modules/admin/result/class_detail/student_result/course_result_screen.dart';
+// import 'package:linkschool/modules/admin/result/class_detail/student_result/student_result.dart';
+// import 'package:linkschool/modules/common/app_colors.dart';
+// import 'package:linkschool/modules/providers/admin/student_provider.dart';
+// import 'package:linkschool/modules/staff/e_learning/form_classes/staff_skill_behaviour_screen.dart';
+// import 'package:provider/provider.dart'; // Added missing import for Provider
+
+
+
+// void showStudentResultOverlay(BuildContext context) {
+//   showModalBottomSheet(
+//     context: context,
+//     isScrollControlled: true,
+//     isDismissible: true,
+//     backgroundColor: Colors.transparent,
+//     builder: (BuildContext context) {
+//       return GestureDetector(
+//         onTap: () => Navigator.of(context).pop(),
+//         child: DraggableScrollableSheet(
+//           initialChildSize: 0.4,
+//           minChildSize: 0.2,
+//           maxChildSize: 0.5,
+//           builder: (_, controller) {
+//             return GestureDetector(
+//               onTap: () {},
+//               child: Container(
+//                 decoration: const BoxDecoration(
+//                   color: Colors.white,
+//                   borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+//                 ),
+//                 child: Column(
+//                   children: [
+//                     Padding(
+//                       padding: const EdgeInsets.all(16.0),
+//                       child: TextField(
+//                         decoration: InputDecoration(
+//                           hintText: 'Search...',
+//                           prefixIcon: const Icon(Icons.search),
+//                           border: OutlineInputBorder(
+//                             borderRadius: BorderRadius.circular(10),
+//                           ),
+//                         ),
+//                       ),
+//                     ),
+//                     Expanded(
+//                       child: ListView.separated(
+//                         controller: controller,
+//                         itemCount: 4,
+//                         separatorBuilder: (context, index) => const Divider(),
+//                         itemBuilder: (context, index) {
+//                           final studentNames = [
+//                             'Tochukwu Dennis',
+//                             'Vincent Rapheal',
+//                             'Victor Anya',
+//                             'Joseph Onwe'
+//                           ];
+//                           final studentName = studentNames[index];
+//                           return ListTile(
+//                             leading: CircleAvatar(
+//                               backgroundColor: Colors
+//                                   .primaries[index % Colors.primaries.length],
+//                               child: Text(
+//                                 studentName[0],
+//                                 style: const TextStyle(color: Colors.white),
+//                               ),
+//                             ),
+//                             title: Text(studentName),
+//                             onTap: () {
+//                               Navigator.pop(context);
+//                               Navigator.push(
+//                                 context,
+//                                 MaterialPageRoute(
+//                                   builder: (context) => StudentResultScreen(
+//                                     student: student,
+//                                     className: 'Student Result',
+//                                   ),
+//                                 ),
+//                               );
+//                             },
+//                           );
+//                         },
+//                       ),
+//                     ),
+//                   ],
+//                 ),
+//               ),
+//             );
+//           },
+//         ),
+//       );
+//     },
+//   );
+// }
+
+
+
 // void showTermOverlay(BuildContext context) {
 //   showModalBottomSheet(
 //     context: context,
@@ -259,6 +395,14 @@ void showTermOverlay(BuildContext context) {
 //                               builder: (context) => CourseResultScreen(),
 //                             ),
 //                           );
+//                         } else if (labels[index] == 'Skills and Behaviour') {
+//                           Navigator.pop(context);
+//                           Navigator.push(
+//                             context,
+//                             MaterialPageRoute(
+//                               builder: (context) => StaffSkillsBehaviourScreen(),
+//                             ),
+//                           );
 //                         }
 //                       },
 //                     );
@@ -272,3 +416,4 @@ void showTermOverlay(BuildContext context) {
 //     },
 //   );
 // }
+
