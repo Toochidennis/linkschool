@@ -2,7 +2,6 @@
 import 'package:linkschool/modules/model/admin/getcurrent_registration_model.dart';
 import 'package:linkschool/modules/services/api/api_service.dart';
 import 'package:linkschool/modules/services/api/service_locator.dart';
-
 class GetcurrentcourseRegisterationService {
   final ApiService _apiService = locator<ApiService>(); 
 

@@ -58,6 +58,7 @@ class CourseRegistrationProvider with ChangeNotifier {
           _registeredCourses[index] = updatedStudent;
         }
         debugPrint('Course registered successfully');
+        print(course.classId);
       } else {
         debugPrint('Failed to register course: ${response.message}');
       }

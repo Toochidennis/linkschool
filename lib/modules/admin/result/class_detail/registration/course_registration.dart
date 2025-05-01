@@ -125,54 +125,74 @@ class _CourseRegistrationScreenState extends State<CourseRegistrationScreen> {
                         ],
                       ),
                     ),
-                    Positioned(
-                      bottom: 2.0,
-                      right: 8.0,
-                      child: MouseRegion(
-                        onEnter: (_) => setState(() => isHoveringSave = true),
-                        onExit: (_) => setState(() => isHoveringSave = false),
-                        child: FloatingActionButton(
-                          onPressed: () {
-                            // Get list of selected course IDs
-                            List<int> selectedCourseIds = [];
-                            for (int i = 0; i < selectedSubjects.length; i++) {
-                              if (selectedSubjects[i]) {
-                                selectedCourseIds.add(courses[i]['id']);
-                              }
-                            }
-                            
-                            // Here you can implement API call to save selected courses
-                            // For now, just show a success message
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Courses saved successfully')),
-                            );
-                          },
-                          backgroundColor: isHoveringSave 
-                              ? Colors.blueGrey 
-                              : AppColors.primaryLight,
-                          shape: const CircleBorder(),
-                          child: Container(
-                            width: 50,
-                            height: 50,
-                            decoration: BoxDecoration(
-                              borderRadius: const BorderRadius.all(Radius.circular(100)),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withOpacity(0.3),
-                                  blurRadius: 7,
-                                  spreadRadius: 7,
-                                  offset: const Offset(3, 5),
-                                ),
-                              ],
-                            ),
-                            child: const Icon(
-                              Icons.save,
-                              color: AppColors.backgroundLight,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
+               if (courses != null)
+  Positioned(
+    bottom: 2.0,
+    right: 8.0,
+    child: MouseRegion(
+      onEnter: (_) => setState(() => isHoveringSave = true),
+      onExit: (_) => setState(() => isHoveringSave = false),
+      child: FloatingActionButton(
+        onPressed: selectedSubjects.contains(true)
+            ? () async {
+                // Get list of selected course IDs
+                List<int> selectedCourseIds = [];
+                for (int i = 0; i < selectedSubjects.length; i++) {
+                  if (selectedSubjects[i]) {
+                    selectedCourseIds.add(courses[i]['id']);
+                  }
+                }
+
+                // Make sure there are selected courses
+                if (selectedCourseIds.isNotEmpty) {
+                  // Send the list of selected course IDs to the API
+                  // bool success = await postCurrentCourseRegistration(selectedCourseIds);
+                   bool success = true;
+                  // Show success or failure message
+                  if (success) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Courses saved successfully: $selectedCourseIds')),
+                    );
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Failed to save courses')),
+                    );
+                  }
+                } else {
+                  // Handle the case when no courses are selected
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('No courses selected')),
+                  );
+                }
+              }
+            : null, // disable button if no course is selected
+        backgroundColor: isHoveringSave
+            ? Colors.blueGrey
+            : AppColors.primaryLight,
+        shape: const CircleBorder(),
+        child: Container(
+          width: 50,
+          height: 50,
+          decoration: BoxDecoration(
+            borderRadius: const BorderRadius.all(Radius.circular(100)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.3),
+                blurRadius: 7,
+                spreadRadius: 7,
+                offset: const Offset(3, 5),
+              ),
+            ],
+          ),
+          child: const Icon(
+            Icons.save,
+            color: AppColors.backgroundLight,
+          ),
+        ),
+      ),
+    ),
+  )
+
                   ],
                 ),
               ),
