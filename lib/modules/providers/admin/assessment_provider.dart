@@ -7,25 +7,43 @@ class AssessmentProvider with ChangeNotifier {
   final AssessmentService _assessmentService = locator<AssessmentService>();
   final List<Assessment> _assessments = [];
   bool _isLoading = false;
-
+  String? _errorMessage;
+  
+  // Getters for state variables
   List<Assessment> get assessments => _assessments;
   bool get isLoading => _isLoading;
+  String? get errorMessage => _errorMessage;
+  
+  // Clear error message
+  void clearError() {
+    _errorMessage = null;
+    notifyListeners();
+  }
 
-  // Add an assessment
+  // Add an assessment to the local collection
   void addAssessment(Assessment assessment) {
     _assessments.add(assessment);
     notifyListeners();
   }
 
-  // Remove an assessment
+  // Update an existing assessment
+  void updateAssessment(int index, Assessment updatedAssessment) {
+    if (index >= 0 && index < _assessments.length) {
+      _assessments[index] = updatedAssessment;
+      notifyListeners();
+    }
+  }
+
+  // Remove an assessment from the local collection
   void removeAssessment(Assessment assessment) {
     _assessments.remove(assessment);
     notifyListeners();
   }
 
-  // Save assessments to the API
-  Future<void> saveAssessments() async {
+  // Save assessments to the API - implemented the previously commented method
+  Future<bool> saveAssessments() async {
     _isLoading = true;
+    _errorMessage = null;
     notifyListeners();
 
     try {
@@ -33,125 +51,64 @@ class AssessmentProvider with ChangeNotifier {
         return assessment.toJson();
       }).toList();
 
-      final response = await _assessmentService.saveAssessments(payload);
-
-      if (response.success) {
-        // Do not clear the assessments list after successful save
-        showToast('Assessments saved successfully');
-      } else {
-        throw Exception(response.message);
-      }
-    } catch (e) {
-      showToast('Failed to save assessments: ${e.toString()}');
-      rethrow;
-    } finally {
+      await _assessmentService.addAssessments(payload);
       _isLoading = false;
       notifyListeners();
+      return true;
+    } catch (e) {
+      _errorMessage = 'Failed to save assessments: ${e.toString()}';
+      _isLoading = false;
+      notifyListeners();
+      return false;
     }
   }
 
-  // Fetch assessments from the API
-  Future<void> fetchAssessments(String classId, String termId) async {
-    _isLoading = true;
-    notifyListeners();
+  // Fetch assessments from the API with improved error handling
+  Future<void> fetchAssessments() async {
+  _isLoading = true;
+  notifyListeners();
 
-    try {
-      final response = await _assessmentService.getAssessments(classId, termId);
+  try {
+    final response = await _assessmentService.getAssessments();
 
-      if (response.success && response.rawData != null) {
-        _assessments.clear();
+    if (response.success && response.rawData != null) {
+      _assessments.clear();
 
-        // Parse the response data
-        final List<dynamic> assessmentsJson = response.rawData!['data'] ?? [];
-        for (var json in assessmentsJson) {
-          _assessments.add(Assessment.fromJson(json));
-        }
-      } else {
-        throw Exception(response.message);
-      }
-    } catch (e) {
-      showToast('Failed to fetch assessments: ${e.toString()}');
-    } finally {
-      _isLoading = false;
-      notifyListeners();
+      final raw = response.rawData!;
+
+      raw.forEach((classKey, classData) {
+        if (classData is Map &&
+            classData['assessments'] is List &&
+            classData['level_id'] != null) {
+
+          int levelId = classData['level_id'];
+          String levelName = classData['level_name'] ?? classKey;
+
+          for (var json in classData['assessments']) {
+            _assessments.add(
+              Assessment.fromJson(
+                json, 
+                levelId: levelId,
+                levelName: levelName,
+              ),
+            );
+          }
+        }}
+      );
+    } else {
+      throw Exception(response.message);
     }
-  }
-
-  // Clear all assessments (optional, for resetting the form)
-  void clearAssessments() {
-    _assessments.clear();
+  } catch (e) {
+    print('Failed to fetch assessments: ${e.toString()}');
+  } finally {
+    _isLoading = false;
     notifyListeners();
-  }
-
-  // Show a toast message for UI feedback
-  void showToast(String message) {
-    // You can use a global toast utility or ScaffoldMessenger here
-    debugPrint(message); // For debugging purposes
   }
 }
-
-
-// import 'package:flutter/material.dart';
-// import 'package:linkschool/modules/model/admin/assessment_model.dart';
-// import 'package:linkschool/modules/services/admin/assessment_service.dart';
-
-
-
-// class AssessmentProvider with ChangeNotifier {
-//   final AssessmentService _assessmentService = AssessmentService();
-//   final List<Assessment> _assessments = [];
-//   bool _isLoading = false;
-
-//   List<Assessment> get assessments => _assessments;
-//   bool get isLoading => _isLoading;
-
-//   // Add an assessment
-//   void addAssessment(Assessment assessment) {
-//     _assessments.add(assessment);
-//     notifyListeners();
-//   }
-
-//   // Remove an assessment
-//   void removeAssessment(Assessment assessment) {
-//     _assessments.remove(assessment);
-//     notifyListeners();
-//   }
-
-//   // Save assessments to the API
-//   Future<void> saveAssessments() async {
-//     _isLoading = true;
-//     notifyListeners();
-
-//     try {
-//       final List<Map<String, dynamic>> payload = _assessments.map((assessment) {
-//         return assessment.toJson();
-//       }).toList();
-
-//       final response = await _assessmentService.saveAssessments(payload);
-
-//       if (response['status'] == 'success') {
-//         // Do not clear the assessments list after successful save
-//         showToast('Assessments saved successfully');
-//       } else {
-//         throw Exception(response['message']);
-//       }
-//     } catch (e) {
-//       rethrow;
-//     } finally {
-//       _isLoading = false;
-//       notifyListeners();
-//     }
-//   }
-
-//   // Clear all assessments (optional, for resetting the form)
-//   void clearAssessments() {
-//     _assessments.clear();
-//     notifyListeners();
-//   }
-
-//   // Show a toast message (optional, for UI feedback)
-//   void showToast(String message) {
-//     // You can use a global toast utility or ScaffoldMessenger here
-//     debugPrint(message); // For debugging purposes
-//   }
-// }
+  
+  // Get assessments for a specific level
+  List<Assessment> getAssessmentsByLevel(String levelId) {
+    return _assessments.where((assessment) => 
+      assessment.levelId.toString() == levelId).toList();
+  }
+}

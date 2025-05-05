@@ -7,7 +7,8 @@ import 'package:linkschool/modules/staff/e_learning/form_classes/staff_skill_beh
 import 'package:provider/provider.dart';
 import 'package:linkschool/modules/providers/admin/student_provider.dart';
 
-void showStudentResultOverlay(BuildContext context) {
+// In overlays.dart
+void showStudentResultOverlay(BuildContext context, {String? className}) {
   // Get StudentProvider
   final studentProvider = Provider.of<StudentProvider>(context, listen: false);
   
@@ -96,15 +97,19 @@ void showStudentResultOverlay(BuildContext context) {
                                 ),
                                 title: Text(student.fullName),
                                 onTap: () {
-                                  // Fetch student result terms and navigate
+                                  // Fetch student result terms
                                   provider.fetchStudentResultTerms(student.id);
                                   Navigator.pop(context);
+                                  
+                                  // Use student's class name if className parameter is not provided
+                                  final displayClassName = className ?? student.name ?? 'Student Result';
+                                  
                                   Navigator.push(
                                     context,
                                     MaterialPageRoute(
                                       builder: (context) => StudentResultScreen(
                                         studentName: student.fullName,
-                                        className: 'Student Result',
+                                        className: displayClassName,
                                       ),
                                     ),
                                   );

@@ -88,7 +88,7 @@ Future<Map<String, dynamic>> getStudentResultTerms(int studentId) async {
     );
 
     if (response.success) {
-      // Check if result_terms is a Map, if not, convert it to a Map
+      
       var resultTerms = response.rawData?['result_terms'];
       
       // If resultTerms is null, return an empty map
@@ -96,14 +96,14 @@ Future<Map<String, dynamic>> getStudentResultTerms(int studentId) async {
         return {};
       }
       
-      // If resultTerms is a List, convert it to a Map with a default key
+      
       if (resultTerms is List) {
-        // Create a properly structured map to match the expected format
+        
         Map<String, dynamic> formattedTerms = {};
         
-        // If we have data, use the first year from the first item
+     
         if (resultTerms.isNotEmpty && resultTerms[0] is Map) {
-          // Extract the year from the first item if available
+        
           var firstItem = resultTerms[0] as Map;
           String year = firstItem.containsKey('year') ? firstItem['year'].toString() : "2024";
           

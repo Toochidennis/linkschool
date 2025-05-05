@@ -5,6 +5,7 @@ import 'package:hive_flutter/hive_flutter.dart';
 import 'package:linkschool/modules/auth/provider/auth_provider.dart';
 import 'package:linkschool/modules/common/app_themes.dart';
 import 'package:linkschool/modules/providers/admin/assessment_provider.dart';
+import 'package:linkschool/modules/providers/admin/behaviour_provider.dart';
 import 'package:linkschool/modules/providers/admin/class_provider.dart';
 import 'package:linkschool/modules/providers/admin/course_registration_provider.dart';
 import 'package:linkschool/modules/providers/admin/level_provider.dart';
@@ -68,6 +69,7 @@ Future<void> main() async {
         ChangeNotifierProvider(create: (_) => ForYouProvider()),
         
         // Use the GradeProvider from service locator
+         ChangeNotifierProvider(create: (_) => locator<SkillsProvider>()),
         ChangeNotifierProvider(create: (_) => locator<GradeProvider>()),
         
         ChangeNotifierProvider(create: (_) => LevelProvider()),
@@ -77,7 +79,9 @@ Future<void> main() async {
         ChangeNotifierProvider(create: (_) => CourseRegistrationProvider()),
         
         // Use the StudentProvider from service locator
-        ChangeNotifierProvider(create: (_) => locator<StudentProvider>()),
+       ChangeNotifierProvider(create: (_) => locator<StudentProvider>()),
+     
+   
       ],
       child: const MyApp(),
     ),

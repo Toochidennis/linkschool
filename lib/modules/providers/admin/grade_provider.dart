@@ -33,7 +33,7 @@ class GradeProvider with ChangeNotifier {
     }
   }
 
-  Future<void> addGrade(String gradeSymbol, String start, String remark) async {
+  Future<Grade> addGrade(String gradeSymbol, String start, String remark) async {
     final newGrade = Grade(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
       grade_Symbol: gradeSymbol,
@@ -43,6 +43,8 @@ class GradeProvider with ChangeNotifier {
 
     _newGrades.add(newGrade);
     notifyListeners();
+
+     return newGrade;
   }
 
   Future<void> saveNewGrades() async {
@@ -53,11 +55,14 @@ class GradeProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      await _gradeService.addGrades(_newGrades);
-      _grades.addAll(_newGrades);
-      await fetchGrades();
+     
+      
+       await _gradeService.addGrades(_newGrades);
+    _grades.addAll(_newGrades);
       _newGrades.clear();
-      notifyListeners();
+        notifyListeners();
+         
+         
     } catch (e) {
       _error = e.toString();
       notifyListeners();
@@ -71,11 +76,11 @@ class GradeProvider with ChangeNotifier {
     _isLoading = true;
     _error = '';
     notifyListeners();
-
+   
     _grades.removeWhere((grade) => grade.id == id);
     _newGrades.removeWhere((grade) => grade.id == id);
     notifyListeners();
-
+  await fetchGrades();
     try {
       await _gradeService.deleteGrades(id);
       await fetchGrades();

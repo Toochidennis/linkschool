@@ -2,7 +2,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:get_it/get_it.dart';
 import 'package:linkschool/modules/auth/provider/auth_provider.dart';
 import 'package:linkschool/modules/auth/service/auth_service.dart';
-import 'package:linkschool/modules/providers/admin/behavour_provider.dart';
+import 'package:linkschool/modules/providers/admin/behaviour_provider.dart';
 import 'package:linkschool/modules/providers/admin/grade_provider.dart';
 import 'package:linkschool/modules/services/api/api_service.dart';
 import 'package:linkschool/modules/services/admin/class_service.dart';
@@ -32,7 +32,7 @@ void setupServiceLocator() {
     () => SkillService(locator<ApiService>())
   );
 
-  // Register SkillsProvider with SkillService dependency
+  // Register SkillsProvider with SkillService dependen
   locator.registerLazySingleton<SkillsProvider>(
     () => SkillsProvider(locator<SkillService>())
   );

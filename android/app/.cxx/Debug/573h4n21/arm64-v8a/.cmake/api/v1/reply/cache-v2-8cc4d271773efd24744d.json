@@ -11,7 +11,7 @@
 				}
 			],
 			"type" : "UNINITIALIZED",
-			"value" : "x86"
+			"value" : "arm64-v8a"
 		},
 		{
 			"name" : "ANDROID_NDK",
@@ -23,7 +23,7 @@
 				}
 			],
 			"type" : "UNINITIALIZED",
-			"value" : "C:\\Users\\ewoch\\AppData\\Local\\Android\\sdk\\ndk\\26.3.11579264"
+			"value" : "C:\\Users\\ewoch\\AppData\\Local\\Android\\Sdk\\ndk\\26.3.11579264"
 		},
 		{
 			"name" : "ANDROID_PLATFORM",
@@ -63,7 +63,7 @@
 				}
 			],
 			"type" : "UNINITIALIZED",
-			"value" : "x86"
+			"value" : "arm64-v8a"
 		},
 		{
 			"name" : "CMAKE_ANDROID_NDK",
@@ -75,7 +75,7 @@
 				}
 			],
 			"type" : "UNINITIALIZED",
-			"value" : "C:\\Users\\ewoch\\AppData\\Local\\Android\\sdk\\ndk\\26.3.11579264"
+			"value" : "C:\\Users\\ewoch\\AppData\\Local\\Android\\Sdk\\ndk\\26.3.11579264"
 		},
 		{
 			"name" : "CMAKE_AR",
@@ -151,7 +151,7 @@
 				}
 			],
 			"type" : "INTERNAL",
-			"value" : "c:/Users/ewoch/Documents/linkschool/android/app/.cxx/Debug/573h4n21/x86"
+			"value" : "c:/Users/ewoch/Documents/linkschool/android/app/.cxx/Debug/573h4n21/arm64-v8a"
 		},
 		{
 			"name" : "CMAKE_CACHE_MAJOR_VERSION",
@@ -751,7 +751,7 @@
 				}
 			],
 			"type" : "UNINITIALIZED",
-			"value" : "C:\\Users\\ewoch\\Documents\\linkschool\\build\\app\\intermediates\\cxx\\Debug\\573h4n21\\obj\\x86"
+			"value" : "C:\\Users\\ewoch\\Documents\\linkschool\\build\\app\\intermediates\\cxx\\Debug\\573h4n21\\obj\\arm64-v8a"
 		},
 		{
 			"name" : "CMAKE_LINKER",
@@ -779,7 +779,7 @@
 				}
 			],
 			"type" : "UNINITIALIZED",
-			"value" : "C:\\Users\\ewoch\\AppData\\Local\\Android\\sdk\\cmake\\3.22.1\\bin\\ninja.exe"
+			"value" : "C:\\Users\\ewoch\\AppData\\Local\\Android\\Sdk\\cmake\\3.22.1\\bin\\ninja.exe"
 		},
 		{
 			"name" : "CMAKE_MODULE_LINKER_FLAGS",
@@ -1023,7 +1023,7 @@
 				}
 			],
 			"type" : "UNINITIALIZED",
-			"value" : "C:\\Users\\ewoch\\Documents\\linkschool\\build\\app\\intermediates\\cxx\\Debug\\573h4n21\\obj\\x86"
+			"value" : "C:\\Users\\ewoch\\Documents\\linkschool\\build\\app\\intermediates\\cxx\\Debug\\573h4n21\\obj\\arm64-v8a"
 		},
 		{
 			"name" : "CMAKE_SHARED_LINKER_FLAGS",
@@ -1331,7 +1331,7 @@
 				}
 			],
 			"type" : "STATIC",
-			"value" : "C:/Users/ewoch/Documents/linkschool/android/app/.cxx/Debug/573h4n21/x86"
+			"value" : "C:/Users/ewoch/Documents/linkschool/android/app/.cxx/Debug/573h4n21/arm64-v8a"
 		},
 		{
 			"name" : "Project_IS_TOP_LEVEL",
