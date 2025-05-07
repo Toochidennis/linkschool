@@ -116,13 +116,92 @@ class _GradingSettingsScreenState extends State<GradingSettingsScreen> {
         ),
         centerTitle: true,
         backgroundColor: AppColors.backgroundLight,
+        actions:[
+            Padding(
+            padding: const EdgeInsets.only(right: 16.0),
+            child: MouseRegion(
+              onEnter: (_) => setState(() => isHoveringSave = true),
+              onExit: (_) => setState(() => isHoveringSave = false),
+              child: FloatingActionButton(
+                onPressed: () async {
+  // Validate all forms first
+  bool allFormsValid = true;
+  for (var formKey in formKeys.values) {
+    if (formKey.currentState != null && !formKey.currentState!.validate()) {
+      allFormsValid = false;
+      break;
+    }
+  }
+
+  if (!allFormsValid) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Please fix all validation errors')),
+    );
+    return;
+  }
+
+  final gradeProvider = Provider.of<GradeProvider>(context, listen: false);
+
+  // CHECK IF THERE ARE NEW GRADES TO SAVE
+  if (!gradeProvider.hasNewGrades) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: const Text('Nothing to save',style: TextStyle(color: Colors.white),), backgroundColor: Colors.red[400],),
+    );
+    return;
+  }
+
+  try {
+   
+  
+
+    await gradeProvider.saveNewGrades();
+
+    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('All grades added successfully!', style: TextStyle(color: Colors.white)), backgroundColor: Colors.green,),
+    );
+  } catch (e) {
+    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Failed to save grades ${e}', style: TextStyle(color: Colors.white)), backgroundColor: Colors.red,),
+    );
+  }
+},
+
+
+                mini: true,
+                backgroundColor:
+                    isHoveringSave ? Colors.blueGrey : AppColors.primaryLight,
+                shape: const CircleBorder(),
+                child: Container(
+                  decoration: BoxDecoration(
+                    borderRadius: const BorderRadius.all(Radius.circular(100)),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.3),
+                        blurRadius: 5,
+                        spreadRadius: 2,
+                        offset: const Offset(1, 2),
+                      ),
+                    ],
+                  ),
+                  child: const Icon(
+                    Icons.save,
+                    color: AppColors.backgroundLight,
+                    size: 20,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ]
       ),
       body: Consumer<GradeProvider>(
         builder: (context, gradeProvider, child) {
           if (gradeProvider.isLoading) {
             return const Center(child: CircularProgressIndicator());
           } else {
-            // Very important - ensure controllers exist for all grades, including newly added ones
+           
             for (var grade in gradeProvider.grades) {
               if (!editingControllers.containsKey('${grade.id}-Grade')) {
                 createControllersForGrade(grade);
@@ -149,38 +228,7 @@ class _GradingSettingsScreenState extends State<GradingSettingsScreen> {
           }
         },
       ),
-      floatingActionButton: MouseRegion(
-        onEnter: (_) => setState(() => isHoveringSave = true),
-        onExit: (_) => setState(() => isHoveringSave = false),
-        child: FloatingActionButton(
-          onPressed: () async {
-            await context.read<GradeProvider>().saveNewGrades();
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('All grades saved successfully!')),
-            );
-          },
-          backgroundColor:
-              isHoveringSave ? Colors.blueGrey : AppColors.primaryLight,
-          shape: const CircleBorder(),
-          child: Container(
-            decoration: BoxDecoration(
-              borderRadius: const BorderRadius.all(Radius.circular(100)),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.3),
-                  blurRadius: 7,
-                  spreadRadius: 7,
-                  offset: const Offset(3, 5),
-                ),
-              ],
-            ),
-            child: const Icon(
-              Icons.save,
-              color: AppColors.backgroundLight,
-            ),
-          ),
-        ),
-      ),
+    
     );
   }
 
@@ -489,6 +537,10 @@ class _GradingSettingsScreenState extends State<GradingSettingsScreen> {
               focusNode: focusNode,
               onChanged: onChanged,
               validator: validator,
+              keyboardType: label == 'Range' ? TextInputType.number : TextInputType.text,
+              inputFormatters: label == 'Range'
+                  ? [FilteringTextInputFormatter.digitsOnly]
+                  : null,
               decoration: InputDecoration(
                 border: OutlineInputBorder(
                   borderSide: BorderSide(

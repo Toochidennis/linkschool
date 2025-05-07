@@ -2,6 +2,7 @@ import 'package:hive/hive.dart';
 import 'package:linkschool/modules/model/admin/grade _model.dart';
 import 'package:linkschool/modules/services/api/api_service.dart';
 
+
 class GradeService {
   final ApiService _apiService;
 
@@ -45,26 +46,33 @@ class GradeService {
   }
 
   Future<void> addGrades(List<Grade> grades) async {
-    for (var grade in grades) {
-      final requestBody = {
-        'grade_symbol': grade.grade_Symbol!,
-        'start': grade.start!,
-        'remark': grade.remark!,
-        '_db': 'aalmgzmy_linkskoo_practice',
-      };
 
-      final response = await _apiService.post<Map<String, dynamic>>(
+    List<Map<String, dynamic>> gradesList = [];
+    for (var grade in grades) {
+      gradesList.add({
+        'symbol': grade.grade_Symbol!,
+        'range': grade.start!,
+        'remark': grade.remark!
+      });
+    }
+
+    final requestBody = {
+      'grades': gradesList,
+      '_db': 'aalmgzmy_linkskoo_practice',
+    };
+    print('Request Body: $requestBody');
+       final response = await _apiService.post<Map<String, dynamic>>(
         endpoint: 'portal/grades',
         body: requestBody,
+      
       );
 
       if (!response.success) {
-        print('Failed to add grade ${grade.grade_Symbol}: ${response.message}');
+        print('Failed to add grade: ${response.message}');
         throw Exception('Failed to add grade: ${response.message}');
       } else {
-        print('Grade added: ${grade.grade_Symbol}');
+        print('Grade added: ${response.message}');
       }
-    }
   }
 
   Future<void> deleteGrades(String id) async {

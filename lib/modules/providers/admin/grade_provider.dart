@@ -8,6 +8,7 @@ class GradeProvider with ChangeNotifier {
   List<Grade> _newGrades = [];
   bool _isLoading = false;
   String _error = '';
+  bool get hasNewGrades => _newGrades.isNotEmpty;
 
   GradeProvider(this._gradeService);
 
@@ -59,13 +60,16 @@ class GradeProvider with ChangeNotifier {
       
        await _gradeService.addGrades(_newGrades);
     _grades.addAll(_newGrades);
+    print ("new Gradesssssss added: $_grades");
       _newGrades.clear();
         notifyListeners();
          
+       
          
     } catch (e) {
       _error = e.toString();
       notifyListeners();
+      rethrow; 
     } finally {
       _isLoading = false;
       notifyListeners();

@@ -88,36 +88,29 @@ Future<Map<String, dynamic>> getStudentResultTerms(int studentId) async {
     );
 
     if (response.success) {
+      final resultTerms = response.rawData?['result_terms'];
       
-      var resultTerms = response.rawData?['result_terms'];
-      
-      // If resultTerms is null, return an empty map
-      if (resultTerms == null) {
+      if (resultTerms == null || resultTerms.isEmpty) {
         return {};
       }
       
+      // Transform the data to match the expected format
+      Map<String, dynamic> formattedData = {};
       
-      if (resultTerms is List) {
+      for (var yearData in resultTerms) {
+        final year = yearData['year'].toString();
+        final terms = yearData['terms'] as List;
         
-        Map<String, dynamic> formattedTerms = {};
-        
-     
-        if (resultTerms.isNotEmpty && resultTerms[0] is Map) {
-        
-          var firstItem = resultTerms[0] as Map;
-          String year = firstItem.containsKey('year') ? firstItem['year'].toString() : "2024";
-          
-          // Structure the data properly
-          formattedTerms[year] = {
-            "terms": resultTerms,
-          };
-        }
-        
-        return formattedTerms;
+        formattedData[year] = {
+          'terms': terms.map((term) => {
+            'term': term['term_value'],
+            'term_name': term['term_name'],
+            'average_score': term['average_score']
+          }).toList()
+        };
       }
       
-      // If resultTerms is already a Map, return it directly
-      return resultTerms;
+      return formattedData;
     } else {
       throw Exception(response.message);
     }
