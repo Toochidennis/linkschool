@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:linkschool/config/env_config.dart';
 import 'package:linkschool/modules/auth/provider/auth_provider.dart';
 import 'package:linkschool/modules/common/app_themes.dart';
 import 'package:linkschool/modules/providers/admin/assessment_provider.dart';
-import 'package:linkschool/modules/providers/admin/behaviour_provider.dart';
+import 'package:linkschool/modules/providers/admin/attendance_provider.dart';
 import 'package:linkschool/modules/providers/admin/class_provider.dart';
 import 'package:linkschool/modules/providers/admin/course_registration_provider.dart';
 import 'package:linkschool/modules/providers/admin/level_provider.dart';
@@ -41,8 +41,11 @@ Future<void> main() async {
     print('Error initializing Hive: $e');
   }
   
-  // Load environment variables
-  await dotenv.load(fileName: ".env");
+  // // Load environment variables
+  // await dotenv.load(fileName: ".env");
+
+  // Initialize environment variables
+  await EnvConfig.init();
   
   // Set up the service locator
   setupServiceLocator();
@@ -68,8 +71,7 @@ Future<void> main() async {
         ChangeNotifierProvider(create: (_) => ExamProvider()),
         ChangeNotifierProvider(create: (_) => ForYouProvider()),
         
-        // Use the GradeProvider from service locator
-         ChangeNotifierProvider(create: (_) => locator<SkillsProvider>()),
+        // GradeProvider from service locator
         ChangeNotifierProvider(create: (_) => locator<GradeProvider>()),
         
         ChangeNotifierProvider(create: (_) => LevelProvider()),
@@ -78,10 +80,10 @@ Future<void> main() async {
         ChangeNotifierProvider(create: (_) => TermProvider()),
         ChangeNotifierProvider(create: (_) => CourseRegistrationProvider()),
         
-        // Use the StudentProvider from service locator
-       ChangeNotifierProvider(create: (_) => locator<StudentProvider>()),
-     
-   
+        // StudentProvider from service locator
+        ChangeNotifierProvider(create: (_) => locator<StudentProvider>()),
+
+        ChangeNotifierProvider(create: (_) => locator<AttendanceProvider>()),
       ],
       child: const MyApp(),
     ),

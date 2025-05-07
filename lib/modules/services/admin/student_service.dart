@@ -88,29 +88,36 @@ Future<Map<String, dynamic>> getStudentResultTerms(int studentId) async {
     );
 
     if (response.success) {
-      final resultTerms = response.rawData?['result_terms'];
+      // Check if result_terms is a Map, if not, convert it to a Map
+      var resultTerms = response.rawData?['result_terms'];
       
-      if (resultTerms == null || resultTerms.isEmpty) {
+      // If resultTerms is null, return an empty map
+      if (resultTerms == null) {
         return {};
       }
       
-      // Transform the data to match the expected format
-      Map<String, dynamic> formattedData = {};
-      
-      for (var yearData in resultTerms) {
-        final year = yearData['year'].toString();
-        final terms = yearData['terms'] as List;
+      // If resultTerms is a List, convert it to a Map with a default key
+      if (resultTerms is List) {
+        // Create a properly structured map to match the expected format
+        Map<String, dynamic> formattedTerms = {};
         
-        formattedData[year] = {
-          'terms': terms.map((term) => {
-            'term': term['term_value'],
-            'term_name': term['term_name'],
-            'average_score': term['average_score']
-          }).toList()
-        };
+        // If we have data, use the first year from the first item
+        if (resultTerms.isNotEmpty && resultTerms[0] is Map) {
+          // Extract the year from the first item if available
+          var firstItem = resultTerms[0] as Map;
+          String year = firstItem.containsKey('year') ? firstItem['year'].toString() : "2024";
+          
+          // Structure the data properly
+          formattedTerms[year] = {
+            "terms": resultTerms,
+          };
+        }
+        
+        return formattedTerms;
       }
       
-      return formattedData;
+      // If resultTerms is already a Map, return it directly
+      return resultTerms;
     } else {
       throw Exception(response.message);
     }
@@ -352,5 +359,61 @@ Future<List<Map<String, dynamic>>> getCourseAttendance({
     }
   }
 
+Future<bool> updateAttendance({
+  required int attendanceId,
+  required List<int> studentIds,
+  required List<Student> selectedStudents,
+}) async {
+  try {
+    // Fetch locally persisted login data
+    final userDataBox = Hive.box('userData');
+    final userData = userDataBox.get('userData');
+    
+    if (userData == null) {
+      throw Exception('User data not found');
+    }
+    
+    final profile = userData['data']['profile'];
 
+    if (profile == null) {
+      throw Exception('Profile data not found');
+    }
+
+    final staffId = profile['id'];
+    
+    // Build register array with student IDs and names
+    final register = selectedStudents
+        .map((student) => {
+              'id': student.id,
+              'name': student.name,
+            })
+        .toList();
+
+    // Prepare the payload according to API requirements
+    final payload = {
+      '_db': EnvConfig.dbName,
+      'staff_id': staffId,
+      'count': studentIds.length,
+      'register': register,
+    };
+
+    debugPrint('Updating attendance with payload: $payload');
+
+    // Use the existing put method from ApiService
+    final response = await _apiService.put<Map<String, dynamic>>(
+      endpoint: 'portal/attendance/$attendanceId',
+      body: payload,
+      payloadType: PayloadType.JSON,
+    );
+
+    if (!response.success) {
+      debugPrint('API Error: ${response.message}');
+    }
+
+    return response.success;
+  } catch (e) {
+    debugPrint('Error updating attendance: $e');
+    throw Exception('Error updating attendance: $e');
+  }
+}
 }

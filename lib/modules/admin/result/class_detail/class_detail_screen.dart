@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:hive/hive.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
@@ -10,7 +11,6 @@ import 'package:linkschool/modules/admin/result/class_detail/attendance/attendan
 import 'package:linkschool/modules/admin/result/class_detail/registration/registration.dart';
 import 'package:linkschool/modules/common/buttons/custom_elevated_appbar_button.dart';
 import 'package:linkschool/modules/providers/admin/term_provider.dart';
-import 'package:provider/provider.dart';
 
 class ClassDetailScreen extends StatefulWidget {
   final String className;
@@ -43,15 +43,11 @@ class _ClassDetailScreenState extends State<ClassDetailScreen> {
 void _debugHiveContents() {
   final userBox = Hive.box('userData');
   print('Hive box keys: ${userBox.keys.toList()}');
-  userBox.keys.forEach((key) {
+  for (var key in userBox.keys) {
     print('Hive key $key: ${userBox.get(key)}');
-  });
+  }
 }
 
-  // void _loadTerms() async {
-  //   print('Loading terms for classId: ${widget.classId}');
-  //   await _termProvider.fetchTerms(widget.classId);
-  // }
   Future<void> _loadTerms() async {
     print('Loading terms for classId: ${widget.classId}');
     try {
@@ -159,7 +155,7 @@ void _debugHiveContents() {
                                         context,
                                         MaterialPageRoute(
                                             builder: (context) =>
-                                                const RegistrationScreen()));
+                                                RegistrationScreen(classId: widget.classId)));
                                   },
                                 ),
                               ),
@@ -290,11 +286,9 @@ List<Widget> _buildTermRows(List<Map<String, dynamic>> terms) {
             indicatorColor: AppColors.primaryLight,
             onTap: () => showTermOverlay(context),
           );
-        }).toList(),
+        }),
       ],
     );
   }).toList();
 }
-
-
 }

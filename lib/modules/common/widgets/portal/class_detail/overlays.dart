@@ -52,6 +52,7 @@ void showStudentResultOverlay(BuildContext context, {String? className}) {
                         onChanged: (value) {
                           // Filter functionality could be added here
                         },
+                       
                       ),
                     ),
                     Expanded(
@@ -132,6 +133,7 @@ void showStudentResultOverlay(BuildContext context, {String? className}) {
 }
 
 void showTermOverlay(BuildContext context) {
+  // Original implementation remains unchanged
   // Original implementation remains unchanged
   showModalBottomSheet(
     context: context,
@@ -327,6 +329,106 @@ void showTermOverlay(BuildContext context) {
 
 
 
+
+
+// import 'package:flutter/material.dart';
+// import 'package:flutter_svg/flutter_svg.dart';
+// import 'package:linkschool/modules/admin/result/class_detail/student_result/course_result_screen.dart';
+// import 'package:linkschool/modules/admin/result/class_detail/student_result/student_result.dart';
+// import 'package:linkschool/modules/common/app_colors.dart';
+// import 'package:linkschool/modules/providers/admin/student_provider.dart';
+// import 'package:linkschool/modules/staff/e_learning/form_classes/staff_skill_behaviour_screen.dart';
+// import 'package:provider/provider.dart'; // Added missing import for Provider
+
+
+
+// void showStudentResultOverlay(BuildContext context) {
+//   showModalBottomSheet(
+//     context: context,
+//     isScrollControlled: true,
+//     isDismissible: true,
+//     backgroundColor: Colors.transparent,
+//     builder: (BuildContext context) {
+//       return GestureDetector(
+//         onTap: () => Navigator.of(context).pop(),
+//         child: DraggableScrollableSheet(
+//           initialChildSize: 0.4,
+//           minChildSize: 0.2,
+//           maxChildSize: 0.5,
+//           builder: (_, controller) {
+//             return GestureDetector(
+//               onTap: () {},
+//               child: Container(
+//                 decoration: const BoxDecoration(
+//                   color: Colors.white,
+//                   borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+//                 ),
+//                 child: Column(
+//                   children: [
+//                     Padding(
+//                       padding: const EdgeInsets.all(16.0),
+//                       child: TextField(
+//                         decoration: InputDecoration(
+//                           hintText: 'Search...',
+//                           prefixIcon: const Icon(Icons.search),
+//                           border: OutlineInputBorder(
+//                             borderRadius: BorderRadius.circular(10),
+//                           ),
+//                         ),
+//                       ),
+//                     ),
+//                     Expanded(
+//                       child: ListView.separated(
+//                         controller: controller,
+//                         itemCount: 4,
+//                         separatorBuilder: (context, index) => const Divider(),
+//                         itemBuilder: (context, index) {
+//                           final studentNames = [
+//                             'Tochukwu Dennis',
+//                             'Vincent Rapheal',
+//                             'Victor Anya',
+//                             'Joseph Onwe'
+//                           ];
+//                           final studentName = studentNames[index];
+//                           return ListTile(
+//                             leading: CircleAvatar(
+//                               backgroundColor: Colors
+//                                   .primaries[index % Colors.primaries.length],
+//                               child: Text(
+//                                 studentName[0],
+//                                 style: const TextStyle(color: Colors.white),
+//                               ),
+//                             ),
+//                             title: Text(studentName),
+//                             onTap: () {
+//                               Navigator.pop(context);
+//                               Navigator.push(
+//                                 context,
+//                                 MaterialPageRoute(
+//                                   builder: (context) => StudentResultScreen(
+//                                     student: student,
+//                                     className: 'Student Result',
+//                                   ),
+//                                 ),
+//                               );
+//                             },
+//                           );
+//                         },
+//                       ),
+//                     ),
+//                   ],
+//                 ),
+//               ),
+//             );
+//           },
+//         ),
+//       );
+//     },
+//   );
+// }
+
+
+
 // void showTermOverlay(BuildContext context) {
 //   showModalBottomSheet(
 //     context: context,
@@ -408,6 +510,14 @@ void showTermOverlay(BuildContext context) {
 //                               builder: (context) => StaffSkillsBehaviourScreen(),
 //                             ),
 //                           );
+//                         } else if (labels[index] == 'Skills and Behaviour') {
+//                           Navigator.pop(context);
+//                           Navigator.push(
+//                             context,
+//                             MaterialPageRoute(
+//                               builder: (context) => StaffSkillsBehaviourScreen(),
+//                             ),
+//                           );
 //                         }
 //                       },
 //                     );
@@ -421,3 +531,4 @@ void showTermOverlay(BuildContext context) {
 //     },
 //   );
 // }
+

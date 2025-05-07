@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:hive/hive.dart';
 import 'package:linkschool/modules/model/admin/assessment_model.dart';
 import 'package:linkschool/modules/services/admin/assessment_service.dart';
 import 'package:linkschool/modules/services/api/service_locator.dart';
@@ -8,107 +9,122 @@ class AssessmentProvider with ChangeNotifier {
   final List<Assessment> _assessments = [];
   bool _isLoading = false;
   String? _errorMessage;
-  
-  // Getters for state variables
+
   List<Assessment> get assessments => _assessments;
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
-  
-  // Clear error message
-  void clearError() {
-    _errorMessage = null;
+
+  void _setLoading(bool loading) {
+    _isLoading = loading;
     notifyListeners();
   }
 
-  // Add an assessment to the local collection
+  void _setError(String? message) {
+    _errorMessage = message;
+    notifyListeners();
+  }
+
   void addAssessment(Assessment assessment) {
     _assessments.add(assessment);
+    _setError(null);
     notifyListeners();
   }
 
-  // Update an existing assessment
-  void updateAssessment(int index, Assessment updatedAssessment) {
-    if (index >= 0 && index < _assessments.length) {
-      _assessments[index] = updatedAssessment;
-      notifyListeners();
-    }
-  }
-
-  // Remove an assessment from the local collection
   void removeAssessment(Assessment assessment) {
     _assessments.remove(assessment);
     notifyListeners();
   }
-
-  // Save assessments to the API - implemented the previously commented method
-  Future<bool> saveAssessments() async {
-    _isLoading = true;
-    _errorMessage = null;
-    notifyListeners();
-
-    try {
-      final List<Map<String, dynamic>> payload = _assessments.map((assessment) {
-        return assessment.toJson();
-      }).toList();
-
-      await _assessmentService.addAssessments(payload);
-      _isLoading = false;
-      notifyListeners();
-      return true;
-    } catch (e) {
-      _errorMessage = 'Failed to save assessments: ${e.toString()}';
-      _isLoading = false;
-      notifyListeners();
-      return false;
-    }
+  
+Future<void> saveAssessments(BuildContext context) async {  // Added context parameter
+  if (_assessments.isEmpty) {
+    _setError('No assessments to save');
+    _showToast(context, 'No assessments to save', isSuccess: false);
+    return;
   }
 
-  // Fetch assessments from the API with improved error handling
-  Future<void> fetchAssessments() async {
-  _isLoading = true;
-  notifyListeners();
+  _setLoading(true);
+  _setError(null);
 
   try {
-    final response = await _assessmentService.getAssessments();
+    final userBox = Hive.box('userData');
+    final dbName = userBox.get('_db') ?? 'aalmgzmy_linkskoo_practice';
 
-    if (response.success && response.rawData != null) {
+    for (final assessment in _assessments) {
+      final payload = {
+        'assessment_name': assessment.assessmentName,
+        'max_score': assessment.assessmentScore,
+        'level_id': assessment.levelId,
+        'assessment_type': assessment.assessmentType,
+        '_db': dbName,
+      };
+
+      final response = await _assessmentService.createAssessment(payload);
+      
+      if (!response.success) {
+        throw Exception(response.message ?? 'Failed to save assessment');
+      }
+    }
+
+    // Refresh assessments after saving
+    await fetchAssessments();
+    _showToast(context, 'Assessments saved successfully');
+  } catch (e) {
+    _setError('Failed to save assessments: ${e.toString()}');
+    _showToast(context, 'Failed to save assessments: ${e.toString()}', isSuccess: false);
+  } finally {
+    _setLoading(false);
+  }
+}
+
+// Add this helper method to AssessmentProvider
+void _showToast(BuildContext context, String message, {bool isSuccess = true}) {
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(
+      content: Text(message),
+      backgroundColor: isSuccess ? Colors.green : Colors.red,
+    ),
+  );
+}
+
+Future<void> fetchAssessments() async {
+  _setLoading(true);
+  _setError(null);
+
+  try {
+    final userBox = Hive.box('userData');
+    final dbName = userBox.get('_db') ?? 'aalmgzmy_linkskoo_practice';
+    
+    final response = await _assessmentService.getAssessments(dbName);
+
+    if (response.success && response.rawData?['response'] != null) {
       _assessments.clear();
+      final assessmentsData = response.rawData!['response'] as Map<String, dynamic>;
 
-      final raw = response.rawData!;
-
-      raw.forEach((classKey, classData) {
-        if (classData is Map &&
-            classData['assessments'] is List &&
-            classData['level_id'] != null) {
-
-          int levelId = classData['level_id'];
-          String levelName = classData['level_name'] ?? classKey;
-
-          for (var json in classData['assessments']) {
-            _assessments.add(
-              Assessment.fromJson(
-                json, 
-                levelId: levelId,
-                levelName: levelName,
-              ),
-            );
-          }
-        }}
-      );
+      assessmentsData.forEach((levelName, levelData) {
+        final levelAssessments = (levelData['assessments'] as List?) ?? [];
+        for (var assessment in levelAssessments) {
+          _assessments.add(Assessment(
+            id: assessment['id']?.toString(),
+            assessmentName: assessment['assessment_name'],
+            assessmentScore: assessment['max_score'] ?? 0,
+            assessmentType: assessment['type'] ?? 0,
+            levelId: levelData['level_id'],
+          ));
+        }
+      });
     } else {
-      throw Exception(response.message);
+      throw Exception(response.message ?? 'Failed to fetch assessments');
     }
   } catch (e) {
-    print('Failed to fetch assessments: ${e.toString()}');
+    _setError('Failed to fetch assessments: ${e.toString()}');
+    debugPrint('Error fetching assessments: ${e.toString()}');
   } finally {
-    _isLoading = false;
-    notifyListeners();
+    _setLoading(false);
   }
 }
-  
-  // Get assessments for a specific level
-  List<Assessment> getAssessmentsByLevel(String levelId) {
-    return _assessments.where((assessment) => 
-      assessment.levelId.toString() == levelId).toList();
+
+  void clearError() {
+    _setError(null);
   }
 }
+

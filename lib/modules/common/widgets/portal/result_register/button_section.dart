@@ -9,7 +9,8 @@ import 'package:linkschool/modules/common/utils/registration/registration_utils.
 
 
 class ButtonSection extends StatelessWidget {
-  const ButtonSection({super.key});
+  final String classId;
+  const ButtonSection({super.key, required this.classId});
 
   @override
   Widget build(BuildContext context) {
@@ -22,7 +23,7 @@ class ButtonSection extends StatelessWidget {
             onPressed: () => Navigator.push(
                 context,
                 MaterialPageRoute(
-                    builder: (context) => BulkRegistrationScreen())),
+                    builder: (context) => BulkRegistrationScreen(classId:classId,))),
             backgroundColor: AppColors.videoColor4,
             textStyle: AppTextStyles.normal600(
                 fontSize: 16, color: AppColors.backgroundLight),

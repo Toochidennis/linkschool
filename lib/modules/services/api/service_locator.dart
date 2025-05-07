@@ -2,8 +2,11 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:get_it/get_it.dart';
 import 'package:linkschool/modules/auth/provider/auth_provider.dart';
 import 'package:linkschool/modules/auth/service/auth_service.dart';
+import 'package:linkschool/modules/providers/admin/attendance_provider.dart';
 import 'package:linkschool/modules/providers/admin/behaviour_provider.dart';
+
 import 'package:linkschool/modules/providers/admin/grade_provider.dart';
+import 'package:linkschool/modules/services/admin/attendance_service.dart';
 import 'package:linkschool/modules/services/api/api_service.dart';
 import 'package:linkschool/modules/services/admin/class_service.dart';
 import 'package:linkschool/modules/services/admin/grade_service.dart';
@@ -24,8 +27,6 @@ void setupServiceLocator() {
     baseUrl: dotenv.env['API_BASE_URL'],
     apiKey: dotenv.env['API_KEY'],
   ));
-  // // Register API Service as a singleton
-  // locator.registerLazySingleton<ApiService>(() => ApiService());
 
   // Register SkillService with ApiService dependency
   locator.registerLazySingleton<SkillService>(
@@ -80,4 +81,15 @@ void setupServiceLocator() {
     // Register the missing services
   locator.registerLazySingleton<CourseRegistrationService>(() => CourseRegistrationService());
   locator.registerLazySingleton<AssessmentService>(() => AssessmentService());
+
+
+  // Register AttendanceService
+  locator.registerLazySingleton<AttendanceService>(
+    () => AttendanceService(locator<ApiService>())
+  );
+
+  // Register AttendanceProvider
+  locator.registerLazySingleton<AttendanceProvider>(
+    () => AttendanceProvider()
+  );
 }

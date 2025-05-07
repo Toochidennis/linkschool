@@ -104,16 +104,6 @@ class ApiService {
 
       print('Making ${method.toString()} request to: ${uri.toString()}');
       print('Headers: ${headers.keys.join(', ')}');
-      // // Prepare the URI with query parameters
-      // final uri = Uri.parse('$baseUrl/$endpoint').replace(
-      //   queryParameters: queryParams,
-      // );
-
-      // // Prepare headers based on payload type
-      // final headers = Map<String, String>.from(_defaultHeaders);
-      // if (payloadType == PayloadType.FORM_DATA) {
-      //   headers.remove('Content-Type'); // Let http package set the correct boundary
-      // }
 
       // Initialize the request
       http.Response response;
@@ -269,6 +259,7 @@ class ApiService {
     required String endpoint,
     dynamic body,
     Map<String, dynamic>? queryParams,
+    PayloadType payloadType = PayloadType.JSON, //newly added
     T Function(Map<String, dynamic> json)? fromJson,
   }) {
     return request<T>(
@@ -276,6 +267,7 @@ class ApiService {
       method: HttpMethod.PUT,
       body: body,
       queryParams: queryParams,
+      payloadType: payloadType,
       fromJson: fromJson,
     );
   }

@@ -1,6 +1,9 @@
 import 'package:hive/hive.dart';
+import 'package:linkschool/config/env_config.dart';
 import 'package:linkschool/modules/services/api/api_service.dart';
 import 'package:linkschool/modules/services/api/service_locator.dart';
+
+// https://linkskool.net/api/v3/portal/courses/registrations/terms?year=2025&class_id=69&_db={{DB}}
 
 class TermService {
   late ApiService _apiService;
@@ -39,7 +42,7 @@ class TermService {
 
       // Make API request
       final response = await _apiService.get(
-        endpoint: 'portal/courses/registrations/terms',
+        endpoint: 'portal/course-registrations/terms',
         queryParams: {
           'year': year,
           'class_id': classId,
