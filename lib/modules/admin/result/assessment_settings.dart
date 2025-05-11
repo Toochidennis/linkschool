@@ -8,6 +8,8 @@ import 'package:linkschool/modules/common/buttons/custom_floating_save_button.da
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 
+import '../../model/admin/level_model.dart';
+
 class AssessmentSettingScreen extends StatefulWidget {
   const AssessmentSettingScreen({super.key});
 
@@ -21,6 +23,10 @@ class _AssessmentSettingScreenState extends State<AssessmentSettingScreen> {
   final _assessmentScoreController = TextEditingController();
   bool _isEditingCard = false;
   int? _editingIndex;
+late final LevelProvider levelProvider;
+  String? _selectedLevelId;
+  String? _selectedAssessmentType = '0';
+  
 
   @override
   void initState() {
@@ -50,7 +56,7 @@ class _AssessmentSettingScreenState extends State<AssessmentSettingScreen> {
 
 Future<void> _loadInitialData() async {
   final assessmentProvider = Provider.of<AssessmentProvider>(context, listen: false);
-  final levelProvider = Provider.of<LevelProvider>(context, listen: false);
+  levelProvider = Provider.of<LevelProvider>(context, listen: false);
   
   try {
     // Verify we have a token
@@ -72,6 +78,8 @@ Future<void> _loadInitialData() async {
     debugPrint('Initialization error: ${e.toString()}');
   }
 }
+
+
   @override
   Widget build(BuildContext context) {
     final assessmentProvider = Provider.of<AssessmentProvider>(context);
@@ -239,7 +247,7 @@ Future<void> _loadInitialData() async {
                       borderRadius: BorderRadius.circular(4),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.grey.withOpacity(0.2),
+                          color: Colors.grey.withAlpha(20),
                           spreadRadius: 1,
                           blurRadius: 2,
                           offset: const Offset(0, 1),
@@ -366,7 +374,7 @@ Future<void> _loadInitialData() async {
         assessmentName: _assessmentNameController.text,
         assessmentScore: int.parse(_assessmentScoreController.text),
         assessmentType: int.parse(_selectedAssessmentType!),
-        levelId: int.parse(_selectedLevelId!),
+        levelId: int.parse(_selectedLevelId!), levelName: '',
       ),
     );
 
@@ -488,6 +496,7 @@ Future<void> _loadInitialData() async {
           assessmentScore: provider.assessments[index].assessmentScore,
           assessmentType: provider.assessments[index].assessmentType,
           levelId: provider.assessments[index].levelId,
+           levelName:provider.assessments[index].levelName,
         );
         _isEditingCard = false;
         _editingIndex = null;

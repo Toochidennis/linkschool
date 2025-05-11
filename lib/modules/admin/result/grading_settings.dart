@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/constants.dart';
@@ -260,10 +261,38 @@ class _GradingSettingsScreenState extends State<GradingSettingsScreen> {
                     onEnter: (_) => setState(() => isHoveringEdit = true),
                     onExit: (_) => setState(() => isHoveringEdit = false),
                     child: GestureDetector(
-                      onTap: () {
+                      onTap: () async {
                         if (isEditing) {
+                         
                           if (formKeys[itemId]!.currentState!.validate()) {
                             // Save changes if validation passes
+                            try {
+                                final gradeSymbol = editingControllers['$itemId-Grade']!.text;
+                                final start = editingControllers['$itemId-Range']!.text;
+                                final remark = editingControllers['$itemId-Remark']!.text;
+
+                                await gradeProvider.updateGrade(
+                                  grade.id,
+                                  gradeSymbol,
+                                  start,
+                                  remark,
+                                );
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text('Grade ${grade.grade_Symbol} updated successfully'),
+                                  ),
+                                );
+                          
+                              setState(() {
+                                editingStates[itemId] = false;
+                              });
+                            } catch (error) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text('Failed to update grade: ${error.toString()}'),
+                                ),
+                              );
+                            }
                             setState(() {
                               editingStates[itemId] = false;
                             });
@@ -286,10 +315,17 @@ class _GradingSettingsScreenState extends State<GradingSettingsScreen> {
                     onExit: (_) => setState(() => isHoveringDelete = false),
                     child: GestureDetector(
                       onTap: () async {
-                        await gradeProvider.deleteGrade(grade.id);
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('Grade ${grade.grade_Symbol} deleted')),
-                        );
+
+                        try {
+                          await gradeProvider.deleteGrade(grade.id);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('Grade ${gradeProvider.error} deleted successfully')),
+                          );
+                        } catch (error) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('Failed to delete grade: ${error.toString()}')),
+                          );
+                        }
                       },
                       child: SvgPicture.asset(
                         'assets/icons/result/delete.svg',

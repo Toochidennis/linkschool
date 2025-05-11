@@ -81,12 +81,13 @@ class GradeProvider with ChangeNotifier {
     _error = '';
     notifyListeners();
    
-    _grades.removeWhere((grade) => grade.id == id);
+ 
+    try {
+      await _gradeService.deleteGrades(id);
+         _grades.removeWhere((grade) => grade.id == id);
     _newGrades.removeWhere((grade) => grade.id == id);
     notifyListeners();
   await fetchGrades();
-    try {
-      await _gradeService.deleteGrades(id);
       await fetchGrades();
     } catch (e) {
       _error = e.toString();
@@ -98,6 +99,45 @@ class GradeProvider with ChangeNotifier {
       notifyListeners();
     }
   }
+
+ Future<void> updateGrade(String id, String gradeSymbol, String start, String remark) async {
+  _isLoading = true;
+  _error = '';
+  notifyListeners();
+
+  try {
+    
+    final updatedGrade = Grade(
+      id: id,
+      grade_Symbol: gradeSymbol,
+      start: start,
+      remark: remark,
+    );
+
+  
+    final index = _grades.indexWhere((grade) => grade.id == id);
+    if (index != -1) {
+      _grades[index] = updatedGrade;
+    } else {
+      final newIndex = _newGrades.indexWhere((grade) => grade.id == id);
+      if (newIndex != -1) {
+        _newGrades[newIndex] = updatedGrade;
+      }
+    }
+    notifyListeners();
+
+    await _gradeService.updateGrades(updatedGrade);
+    
+  } catch (e) {
+    _error = e.toString();
+    print("Update Error: $_error");
+    await fetchGrades();
+    rethrow;
+  } finally {
+    _isLoading = false;
+    notifyListeners();
+  }
+}
 }
 
 

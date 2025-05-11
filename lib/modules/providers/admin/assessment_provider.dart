@@ -109,6 +109,7 @@ Future<void> fetchAssessments() async {
             assessmentScore: assessment['max_score'] ?? 0,
             assessmentType: assessment['type'] ?? 0,
             levelId: levelData['level_id'],
+             levelName: levelName, // Assuming levelName is in the response
           ));
         }
       });

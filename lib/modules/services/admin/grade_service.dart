@@ -76,13 +76,22 @@ class GradeService {
   }
 
   Future<void> deleteGrades(String id) async {
+
+        final requestBody = {
+      '_db': 'aalmgzmy_linkskoo_practice',
+    };
+    
     final response = await _apiService.delete<Map<String, dynamic>>(
-      endpoint: 'portal/grades',
-      body: {
-        'id': id,
-        '_db': 'aalmgzmy_linkskoo_practice',
-      },
+      endpoint: 'portal/grades/$id',
+      body: requestBody,
     );
+
+
+    
+     
+
+   print('gradessssssssssssssssssssssss Id: $id');
+    print('Delete Response: $response');
 
     if (!response.success) {
       print('Failed to delete grade with ID  ${response.message}');
@@ -91,8 +100,29 @@ class GradeService {
       print('Grade with ID $id deleted successfully');
     }
   }
-}
 
+  Future<void> updateGrades(Grade grade) async {
+    final requestBody = {
+      'symbol': grade.grade_Symbol!,
+      'range': grade.start!,
+      'remark': grade.remark!,
+      '_db': 'aalmgzmy_linkskoo_practice',
+    };
+print('Request Body: $requestBody');
+    final response = await _apiService.put<Map<String, dynamic>>(
+      endpoint: 'portal/grades/${grade.id}',
+      body: requestBody,
+    );
+    print(response);
+
+    if (!response.success) {
+      print('Failed to update grade: ${response.message}');
+      throw Exception('Failed to update grade: ${response.message}');
+    } else {
+      print('Grade updated successfully: ${response.message}');
+    }
+  }
+}
 
 
 

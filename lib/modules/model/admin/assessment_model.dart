@@ -11,7 +11,8 @@ class Assessment {
     required this.assessmentName,
     required this.assessmentType,
     required this.levelId,
-    required this.levelName,
+    required this.levelName, 
+    required this.assessmentScore,
   });
 
   factory Assessment.fromJson(Map<String, dynamic> json) {
@@ -20,7 +21,7 @@ class Assessment {
       assessmentName: json['assessment_name'] ?? '',
       assessmentScore: json['max_score'] ?? json['assessment_score'] ?? 0,
       assessmentType: json['assessment_type'] ?? json['type'] ?? 0,
-      levelId: json['level_id'] ?? 0,
+      levelId: json['level_id'] ?? 0, levelName: '',
     );
   }
 
