@@ -279,7 +279,8 @@ class _GradingSettingsScreenState extends State<GradingSettingsScreen> {
                                 );
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   SnackBar(
-                                    content: Text('Grade ${grade.grade_Symbol} updated successfully'),
+                                    content: Text('Grade ${grade.grade_Symbol} updated successfully',style:TextStyle(color: Colors.white)),
+                                    backgroundColor: Colors.green,
                                   ),
                                 );
                           
@@ -289,7 +290,8 @@ class _GradingSettingsScreenState extends State<GradingSettingsScreen> {
                             } catch (error) {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
-                                  content: Text('Failed to update grade: ${error.toString()}'),
+                                  content: Text('Failed to update grade: ${error.toString()}',style: TextStyle(color: Colors.white),),
+                                  backgroundColor: Colors.red,
                                 ),
                               );
                             }
@@ -319,11 +321,11 @@ class _GradingSettingsScreenState extends State<GradingSettingsScreen> {
                         try {
                           await gradeProvider.deleteGrade(grade.id);
                           ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('Grade ${gradeProvider.error} deleted successfully')),
+                          SnackBar(content: Text('Grade ${gradeProvider.error} deleted successfully',style:TextStyle(color: Colors.white)), backgroundColor: Colors.green,),
                           );
                         } catch (error) {
                           ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('Failed to delete grade: ${error.toString()}')),
+                          SnackBar(content: Text('Failed to delete grade: ${error.toString()}',style: TextStyle(color: Colors.white)), backgroundColor: Colors.red,),
                           );
                         }
                       },

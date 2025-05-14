@@ -141,7 +141,9 @@ void _debugHiveContents() {
                                   iconPath:
                                       'assets/icons/result/assessment_icon.svg',
                                   onTap: () =>
-                                      showStudentResultOverlay(context,className: widget.className),
+                                      showStudentResultOverlay(context,
+                                      className: widget.className,
+                                      classId: widget.classId),
                                 ),
                               ),
                               Expanded(

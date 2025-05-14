@@ -37,57 +37,6 @@ bool _hasExistingAttendance = false;
 int? get currentAttendanceId => _currentAttendanceId;
 bool get hasExistingAttendance => _hasExistingAttendance;
 
-// Future<bool> updateAttendance({
-//   required int attendanceId,
-// }) async {
-//   try {
-//     _isLoading = true;
-//     notifyListeners();
-    
-//     // Get newly selected students with their complete data (not just IDs)
-//     final selectedStudents = _students.where((student) => student.isSelected).toList();
-    
-//     final success = await _studentService.updateAttendance(
-//       attendanceId: attendanceId,
-//       studentIds: selectedStudentIds,
-//       selectedStudents: selectedStudents,
-//     );
-
-//     if (success) {
-//       _errorMessage = '';
-      
-//       // Update the attended students list with newly selected students
-//       final updatedAttendedIds = [..._attendedStudentIds];
-      
-//       // Add any newly selected student IDs that aren't already in the attended list
-//       for (final studentId in selectedStudentIds) {
-//         if (!updatedAttendedIds.contains(studentId)) {
-//           updatedAttendedIds.add(studentId);
-//         }
-//       }
-      
-//       _attendedStudentIds = updatedAttendedIds;
-      
-//       // Update the hasAttended property for all students
-//       for (int i = 0; i < _students.length; i++) {
-//         final isAttended = _attendedStudentIds.contains(_students[i].id);
-//         _students[i] = _students[i].copyWith(hasAttended: isAttended);
-//       }
-//     } else {
-//       _errorMessage = 'Failed to update attendance';
-//     }
-
-//     _isLoading = false;
-//     notifyListeners();
-//     return success;
-//   } catch (e) {
-//     _isLoading = false;
-//     _errorMessage = e.toString();
-//     notifyListeners();
-//     return false;
-//   }
-// }
-
   Future<bool> updateAttendance({required int attendanceId}) async {
     try {
       _isLoading = true;
@@ -132,49 +81,49 @@ bool get hasExistingAttendance => _hasExistingAttendance;
 
 
   // Fetch students for a specific class
-  Future<void> fetchStudents(String? classId) async {
-    if (classId == null) {
-      _errorMessage = 'Class ID is missing';
-      notifyListeners();
-      return;
-    }
-
-    try {
-      _isLoading = true;
-      _errorMessage = '';
-      notifyListeners();
-
-      final fetchedStudents = await _studentService.getStudentsByClass(classId);
-      
-      _students = fetchedStudents;
-      _isLoading = false;
-      
-      notifyListeners();
-    } catch (e) {
-      _isLoading = false;
-      _errorMessage = e.toString();
-      notifyListeners();
-    }
+Future<void> fetchStudents(String? classId) async {
+  if (classId == null) {
+    _setError('Class ID is missing');
+    return;
   }
 
- Future<void> fetchAllStudents() async {
-    try {
-      _isLoading = true;
-      _errorMessage = '';
-      notifyListeners();
+  _setLoading(true);
+  _students = []; // Clear existing students
+  notifyListeners(); // Notify listeners of the change
 
-      final fetchedStudents = await _studentService.getAllStudents();
-      
-      _allStudents = fetchedStudents;
-      _isLoading = false;
-      
-      notifyListeners();
-    } catch (e) {
-      _isLoading = false;
-      _errorMessage = e.toString();
-      notifyListeners();
-    }
+  try {
+    final fetchedStudents = await _studentService.getStudentsByClass(classId);
+    _students = fetchedStudents;
+  } catch (e) {
+    _setError('Error fetching students: $e');
+  } finally {
+    _setLoading(false);
   }
+}
+Future<void> fetchAllStudents() async {
+  _setLoading(true);
+
+  try {
+    final fetchedStudents = await _studentService.getAllStudents();
+    _allStudents = fetchedStudents;
+  } catch (e) {
+    _setError('Error fetching all students: $e');
+  } finally {
+    _setLoading(false);
+  }
+}
+
+// Reusable helpers
+void _setLoading(bool value) {
+  _isLoading = value;
+  notifyListeners();
+}
+
+void _setError(String message) {
+  _errorMessage = message;
+  notifyListeners();
+}
+
 
   Future<void> fetchStudentResultTerms(int studentId) async {
     try {

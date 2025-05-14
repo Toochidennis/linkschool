@@ -12,33 +12,35 @@ class StudentService {
 
 
   Future<List<Student>> getStudentsByClass(String classId) async {
-    try {
-      // Use the dynamic DB name from environment config
-      final response = await _apiService.get<List<Student>>(
-        endpoint: 'portal/classes/$classId/students',
-        queryParams: {
-          '_db': EnvConfig.dbName,
-        },
-        fromJson: (json) {
-          if (json['students'] is List) {
-            return (json['students'] as List)
-                .map((item) => Student.fromJson(item))
-                .toList();
-          }
-          return [];
-        },
-      );
+  try {
+    debugPrint('Fetching students for class: $classId');
+    final response = await _apiService.get<List<Student>>(
+      endpoint: 'portal/classes/$classId/students',
+      queryParams: {
+        '_db': EnvConfig.dbName,
+      },
+      fromJson: (json) {
+        debugPrint('API Response: $json'); // Add this line
+        if (json['students'] is List) {
+          return (json['students'] as List)
+              .map((item) => Student.fromJson(item))
+              .toList();
+        }
+        return [];
+      },
+    );
 
-      if (response.success) {
-        return response.data ?? [];
-      } else {
-        throw Exception(response.message);
-      }
-    } catch (e) {
-      debugPrint('Error fetching students: $e');
-      throw Exception('Error fetching students: $e');
+    if (response.success) {
+      debugPrint('Fetched ${response.data?.length ?? 0} students');
+      return response.data ?? [];
+    } else {
+      throw Exception(response.message);
     }
+  } catch (e) {
+    debugPrint('Error fetching students: $e');
+    throw Exception('Error fetching students: $e');
   }
+}
 
   // method to fetch all students
   Future<List<Student>> getAllStudents() async {
@@ -88,36 +90,29 @@ Future<Map<String, dynamic>> getStudentResultTerms(int studentId) async {
     );
 
     if (response.success) {
-      // Check if result_terms is a Map, if not, convert it to a Map
-      var resultTerms = response.rawData?['result_terms'];
+      final resultTerms = response.rawData?['result_terms'];
       
-      // If resultTerms is null, return an empty map
-      if (resultTerms == null) {
+      if (resultTerms == null || resultTerms.isEmpty) {
         return {};
       }
       
-      // If resultTerms is a List, convert it to a Map with a default key
-      if (resultTerms is List) {
-        // Create a properly structured map to match the expected format
-        Map<String, dynamic> formattedTerms = {};
+      // Transform the data to match the expected format
+      Map<String, dynamic> formattedData = {};
+      
+      for (var yearData in resultTerms) {
+        final year = yearData['year'].toString();
+        final terms = yearData['terms'] as List;
         
-        // If we have data, use the first year from the first item
-        if (resultTerms.isNotEmpty && resultTerms[0] is Map) {
-          // Extract the year from the first item if available
-          var firstItem = resultTerms[0] as Map;
-          String year = firstItem.containsKey('year') ? firstItem['year'].toString() : "2024";
-          
-          // Structure the data properly
-          formattedTerms[year] = {
-            "terms": resultTerms,
-          };
-        }
-        
-        return formattedTerms;
+        formattedData[year] = {
+          'terms': terms.map((term) => {
+            'term': term['term_value'],
+            'term_name': term['term_name'],
+            'average_score': term['average_score']
+          }).toList()
+        };
       }
       
-      // If resultTerms is already a Map, return it directly
-      return resultTerms;
+      return formattedData;
     } else {
       throw Exception(response.message);
     }

@@ -8,13 +8,14 @@ import 'package:provider/provider.dart';
 import 'package:linkschool/modules/providers/admin/student_provider.dart';
 
 // In overlays.dart
-void showStudentResultOverlay(BuildContext context, {String? className}) {
+void showStudentResultOverlay(BuildContext context, {String? className,  String? classId}) {
   // Get StudentProvider
+  
   final studentProvider = Provider.of<StudentProvider>(context, listen: false);
   
   // Fetch all students if not already loaded
-  if (studentProvider.allStudents.isEmpty) {
-    studentProvider.fetchAllStudents();
+  if (studentProvider.students.isEmpty) {
+    studentProvider.fetchStudents(classId);
   }
 
   showModalBottomSheet(
@@ -73,7 +74,7 @@ void showStudentResultOverlay(BuildContext context, {String? className}) {
                             );
                           }
                           
-                          if (provider.allStudents.isEmpty) {
+                          if (provider.students.isEmpty) {
                             return const Center(
                               child: Text('No students available'),
                             );
@@ -81,12 +82,13 @@ void showStudentResultOverlay(BuildContext context, {String? className}) {
                           
                           return ListView.separated(
                             controller: controller,
-                            itemCount: provider.allStudents.length,
+                            itemCount: provider.students.length,
                             separatorBuilder: (context, index) => const Divider(),
                             itemBuilder: (context, index) {
-                              final student = provider.allStudents[index];
-                              final firstLetter = student.fullName.isNotEmpty ? 
-                                  student.fullName[0].toUpperCase() : 'S';
+                              final student = provider.students[index];
+                              final firstLetter = student.name.isNotEmpty ? 
+                                  student.name[0].toUpperCase() : 'S';
+                                  print('student name: ${student.name}');
                               
                               return ListTile(
                                 leading: CircleAvatar(
@@ -96,7 +98,7 @@ void showStudentResultOverlay(BuildContext context, {String? className}) {
                                     style: const TextStyle(color: Colors.white),
                                   ),
                                 ),
-                                title: Text(student.fullName),
+                                title: Text(student.name,style: TextStyle(color: Colors.black),),
                                 onTap: () {
                                   // Fetch student result terms
                                   provider.fetchStudentResultTerms(student.id);
@@ -109,8 +111,10 @@ void showStudentResultOverlay(BuildContext context, {String? className}) {
                                     context,
                                     MaterialPageRoute(
                                       builder: (context) => StudentResultScreen(
-                                        studentName: student.fullName,
+                                        studentName: student.name,
                                         className: displayClassName,
+                                        studentId: student.id,
+                                        
                                       ),
                                     ),
                                   );
@@ -134,7 +138,7 @@ void showStudentResultOverlay(BuildContext context, {String? className}) {
 
 void showTermOverlay(BuildContext context) {
   // Original implementation remains unchanged
-  // Original implementation remains unchanged
+
   showModalBottomSheet(
     context: context,
     isScrollControlled: true,
