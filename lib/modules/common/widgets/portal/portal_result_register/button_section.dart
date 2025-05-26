@@ -51,7 +51,7 @@ class ButtonSection extends StatelessWidget {
                 child: OutlinedButton(
                   style: OutlinedButton.styleFrom(
                     backgroundColor: AppColors.regBtnColor2,
-                    side: const BorderSide(color: AppColors.videoColor4),
+                    side: const BorderSide(color: Color.fromRGBO(251, 146, 60, 1)),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(4),
                     ),

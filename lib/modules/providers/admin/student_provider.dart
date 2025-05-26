@@ -37,57 +37,6 @@ bool _hasExistingAttendance = false;
 int? get currentAttendanceId => _currentAttendanceId;
 bool get hasExistingAttendance => _hasExistingAttendance;
 
-// Future<bool> updateAttendance({
-//   required int attendanceId,
-// }) async {
-//   try {
-//     _isLoading = true;
-//     notifyListeners();
-    
-//     // Get newly selected students with their complete data (not just IDs)
-//     final selectedStudents = _students.where((student) => student.isSelected).toList();
-    
-//     final success = await _studentService.updateAttendance(
-//       attendanceId: attendanceId,
-//       studentIds: selectedStudentIds,
-//       selectedStudents: selectedStudents,
-//     );
-
-//     if (success) {
-//       _errorMessage = '';
-      
-//       // Update the attended students list with newly selected students
-//       final updatedAttendedIds = [..._attendedStudentIds];
-      
-//       // Add any newly selected student IDs that aren't already in the attended list
-//       for (final studentId in selectedStudentIds) {
-//         if (!updatedAttendedIds.contains(studentId)) {
-//           updatedAttendedIds.add(studentId);
-//         }
-//       }
-      
-//       _attendedStudentIds = updatedAttendedIds;
-      
-//       // Update the hasAttended property for all students
-//       for (int i = 0; i < _students.length; i++) {
-//         final isAttended = _attendedStudentIds.contains(_students[i].id);
-//         _students[i] = _students[i].copyWith(hasAttended: isAttended);
-//       }
-//     } else {
-//       _errorMessage = 'Failed to update attendance';
-//     }
-
-//     _isLoading = false;
-//     notifyListeners();
-//     return success;
-//   } catch (e) {
-//     _isLoading = false;
-//     _errorMessage = e.toString();
-//     notifyListeners();
-//     return false;
-//   }
-// }
-
   Future<bool> updateAttendance({required int attendanceId}) async {
     try {
       _isLoading = true;
@@ -656,17 +605,6 @@ Future<bool> saveCourseAttendance({
     
     notifyListeners();
   }
-
-  // void toggleSelectAll() {
-  //   _selectAll = !_selectAll;
-    
-  //   // Update all students
-  //   for (int i = 0; i < _students.length; i++) {
-  //     _students[i] = _students[i].copyWith(isSelected: _selectAll);
-  //   }
-    
-  //   notifyListeners();
-  // }
 
   // Check if all students are selected and update _selectAll accordingly
   void _updateSelectAllStatus() {

@@ -131,33 +131,3 @@ class SchoolSettings {
     };
   }
 }
-
-
-
-// class User {
-//   final String id;
-//   final String name;
-//   final String accessLevel;
-
-//   User({
-//     required this.id,
-//     required this.name,
-//     required this.accessLevel,
-//   });
-
-//   factory User.fromJson(Map<String, dynamic> json) {
-//     return User(
-//       id: json['id'] ?? '', 
-//       name: json['name'] ?? '', 
-//       accessLevel: json['access_level'] ?? '', 
-//     );
-//   }
-
-//   Map<String, dynamic> toJson() {
-//     return {
-//       'id': id,
-//       'name': name,
-//       'access_level': accessLevel,
-//     };
-//   }
-// }

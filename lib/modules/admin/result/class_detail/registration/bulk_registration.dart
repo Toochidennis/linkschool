@@ -315,18 +315,6 @@ void initState() {
                       ),
                     ),
                     ElevatedButton(
-                      // onPressed: () {
-                      //   Navigator.of(context).push(
-                      //     MaterialPageRoute(
-                      //       builder: (context) => CourseRegistrationScreen(
-                      //         studentName: student.studentName,
-                      //         // studentId: student.studentId,
-                      //         coursesRegistered: student.courseCount,
-                      //         classId: widget.classId,
-                      //       ),
-                      //     ),
-                      //   );
-                      // },
                         onPressed: () {
     Navigator.of(context).push(
       MaterialPageRoute(

@@ -33,6 +33,38 @@ class CourseRegistrationProvider with ChangeNotifier {
     }
   }
 
+  // New method to fetch registered courses for a single student
+  Future<List<int>> fetchStudentRegisteredCourses({
+    required int studentId,
+    required String classId,
+    required String year,
+    required String term,
+    required String dbName,
+  }) async {
+    try {
+      final response = await _courseRegistrationService.fetchStudentRegisteredCourses(
+        studentId: studentId,
+        classId: classId,
+        year: year,
+        term: term,
+        dbName: dbName,
+      );
+
+      if (response.success && response.rawData != null) {
+        // Extract course IDs from the response
+        final List<dynamic> coursesJson = response.rawData!['registered_courses'] ?? [];
+        return coursesJson
+            .map<int>((json) => json['id'] as int)
+            .toList();
+      }
+      
+      return [];
+    } catch (e) {
+      debugPrint('Error fetching student registered courses: ${e.toString()}');
+      return [];
+    }
+  }
+
   // Updated to accept custom payload
   Future<bool> registerCourse(CourseRegistrationModel course, {Map<String, dynamic>? payload}) async {
     _isLoading = true;
@@ -89,7 +121,6 @@ class CourseRegistrationProvider with ChangeNotifier {
 //   List<CourseRegistrationModel> get registeredCourses => _registeredCourses;
 //   bool get isLoading => _isLoading;
 
-//   // Fetch registered students (using the registered-students API)
 //   Future<void> fetchRegisteredCourses(String classId, String term, String year) async {
 //     _isLoading = true;
 //     notifyListeners();
@@ -100,7 +131,6 @@ class CourseRegistrationProvider with ChangeNotifier {
 //       if (response.success && response.data != null) {
 //         _registeredCourses = response.data!;
 //       } else {
-//         // If the API call was successful but returned no data
 //         _registeredCourses = [];
 //         debugPrint('No registered students found or ${response.message}');
 //       }
@@ -113,22 +143,25 @@ class CourseRegistrationProvider with ChangeNotifier {
 //     }
 //   }
 
-//   // Register a new course
-//   Future<void> registerCourse(CourseRegistrationModel course) async {
+//   // Updated to accept custom payload
+//   Future<bool> registerCourse(CourseRegistrationModel course, {Map<String, dynamic>? payload}) async {
 //     _isLoading = true;
 //     notifyListeners();
 
 //     try {
-//       final response = await _courseRegistrationService.registerCourse(course);
+//       final response = await _courseRegistrationService.registerCourse(
+//         course,
+//         payload: payload,
+//       );
 
-//       if (response.success && response.data == true) {
+//       if (response.success) {
 //         // Update the course count for the student
 //         int index = _registeredCourses.indexWhere((s) => s.studentId == course.studentId);
 //         if (index != -1) {
 //           var updatedStudent = CourseRegistrationModel(
 //             studentId: course.studentId,
 //             studentName: course.studentName,
-//             courseCount: _registeredCourses[index].courseCount + 1,
+//             courseCount: course.courseCount,
 //             classId: course.classId,
 //             term: course.term,
 //             year: course.year,
@@ -136,30 +169,16 @@ class CourseRegistrationProvider with ChangeNotifier {
 //           _registeredCourses[index] = updatedStudent;
 //         }
 //         debugPrint('Course registered successfully');
+//         return true;
 //       } else {
 //         debugPrint('Failed to register course: ${response.message}');
+//         return false;
 //       }
 //     } catch (e) {
 //       debugPrint('Error registering course: ${e.toString()}');
+//       return false;
 //     } finally {
 //       _isLoading = false;
-//       notifyListeners();
-//     }
-//   }
-
-//   // Update an existing course registration
-//   Future<void> updateCourseRegistration(int studentId, int newCourseCount) async {
-//     int index = _registeredCourses.indexWhere((s) => s.studentId == studentId);
-//     if (index != -1) {
-//       var updatedStudent = CourseRegistrationModel(
-//         studentId: _registeredCourses[index].studentId,
-//         studentName: _registeredCourses[index].studentName,
-//         courseCount: newCourseCount,
-//         classId: _registeredCourses[index].classId,
-//         term: _registeredCourses[index].term,
-//         year: _registeredCourses[index].year,
-//       );
-//       _registeredCourses[index] = updatedStudent;
 //       notifyListeners();
 //     }
 //   }

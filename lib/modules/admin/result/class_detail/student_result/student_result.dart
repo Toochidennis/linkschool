@@ -13,12 +13,9 @@ import 'package:linkschool/modules/providers/admin/student_provider.dart';
 class StudentResultScreen extends StatelessWidget {
   final String studentName;
   final String className;
-  
-  const StudentResultScreen({
-    super.key, 
-    required this.studentName, 
-    required this.className
-  });
+
+  const StudentResultScreen(
+      {super.key, required this.studentName, required this.className});
 
   @override
   Widget build(BuildContext context) {
@@ -51,7 +48,8 @@ class StudentResultScreen extends StatelessWidget {
                       MaterialPageRoute(builder: (context) => StudentList()));
                 },
                 backgroundColor: AppColors.videoColor4,
-                textStyle: AppTextStyles.normal700(fontSize: 14, color: AppColors.backgroundLight),
+                textStyle: AppTextStyles.normal700(
+                    fontSize: 14, color: AppColors.backgroundLight),
                 padding: const EdgeInsets.symmetric(horizontal: 8.0),
               ),
             ),
@@ -65,7 +63,7 @@ class StudentResultScreen extends StatelessWidget {
           if (studentProvider.isLoading) {
             return const Center(child: CircularProgressIndicator());
           }
-          
+
           if (studentProvider.errorMessage.isNotEmpty) {
             return Center(
               child: Text(
@@ -74,48 +72,40 @@ class StudentResultScreen extends StatelessWidget {
               ),
             );
           }
-          
+
           final student = studentProvider.student;
           final terms = studentProvider.studentTerms;
-          
+
           if (student == null) {
             return const Center(
               child: Text('Student information not available'),
             );
           }
-          
+
           // Process the result terms
           final Map<String, List<Map<String, dynamic>>> processedTerms = {};
           List<Map<String, dynamic>> chartData = [];
-          
+
           if (terms != null && terms.isNotEmpty) {
             terms.forEach((year, yearData) {
               if (yearData is Map && yearData.containsKey('terms')) {
                 processedTerms[year] = [];
                 final termsList = yearData['terms'] as List;
-                
+
                 for (var termData in termsList) {
-                  final term = termData['term'];
-                  final averageScore = double.tryParse(termData['average_score'].toString()) ?? 0.0;
+                  final term = termData['term'] ?? termData['term_value'];
+                  final termName = termData['term_name'] ?? '';
+                  final averageScore =
+                      double.tryParse(termData['average_score'].toString()) ??
+                          0.0;
                   final percent = averageScore / 100.0;
-                  
-                  String termName = '';
-                  if (term == 1) {
-                    termName = 'First Term';
-                  } else if (term == 2) {
-                    termName = 'Second Term';
-                  } else if (term == 3) {
-                    termName = 'Third Term';
-                  } else {
-                    termName = 'Term is not available for this session';
-                  }
-                  
+
                   processedTerms[year]!.add({
                     'termName': termName,
                     'percent': percent,
                     'averageScore': averageScore,
                   });
-                  
+
                   chartData.add({
                     'term': term,
                     'termName': termName,
@@ -125,7 +115,7 @@ class StudentResultScreen extends StatelessWidget {
               }
             });
           }
-          
+
           // Determine if there's a "profile picture" or use icon
           Widget profileImage;
           if (student.pictureUrl != null && student.pictureUrl!.isNotEmpty) {
@@ -157,16 +147,16 @@ class StudentResultScreen extends StatelessWidget {
               ),
             );
           }
-          
+
           // Get the current year's data for display
           String currentYear = '';
           List<Map<String, dynamic>> currentYearTerms = [];
-          
+
           if (processedTerms.isNotEmpty) {
             currentYear = processedTerms.keys.first;
             currentYearTerms = processedTerms[currentYear]!;
           }
-          
+
           return SingleChildScrollView(
             child: ConstrainedBox(
               constraints: BoxConstraints(
@@ -197,28 +187,27 @@ class StudentResultScreen extends StatelessWidget {
                       ),
                       const SizedBox(height: 20),
                       _buildInfoRow('Student ID:', student.registrationNo),
-                      _buildInfoRow('Class:', 'JSS2 A'), // Class info not in student data
-                      _buildInfoRow('Gender:', 'Female'), // Gender info not in student data
-                      
+                      _buildInfoRow(
+                          'Class:', 'JSS2 A'), // Class info not in student data
+                      _buildInfoRow('Gender:',
+                          'Female'), // Gender info not in student data
+
                       // Calculate average if terms data is available
                       _buildInfoRow(
-                        'Student Average:', 
-                        chartData.isEmpty 
-                            ? 'N/A' 
-                            : '${(chartData.map((e) => e['averageScore']).reduce((a, b) => a + b) / chartData.length).toStringAsFixed(2)}%'
-                      ),
-                      
+                          'Student Average:',
+                          chartData.isEmpty
+                              ? 'N/A'
+                              : '${(chartData.map((e) => e['averageScore']).reduce((a, b) => a + b) / chartData.length).toStringAsFixed(2)}%'),
+
                       const SizedBox(height: 30),
                       if (currentYear.isNotEmpty)
                         Text(
                           '$currentYear/${int.parse(currentYear) + 1} Session',
                           style: AppTextStyles.normal700(
-                            fontSize: 18, 
-                            color: AppColors.primaryLight
-                          ),
+                              fontSize: 18, color: AppColors.primaryLight),
                         ),
                       const SizedBox(height: 10),
-                      
+
                       // Display terms for current session
                       ...currentYearTerms.map((termData) {
                         Color indicatorColor;
@@ -229,21 +218,19 @@ class StudentResultScreen extends StatelessWidget {
                         } else {
                           indicatorColor = AppColors.exploreButton3Light;
                         }
-                        
-                        return _buildTermRow(
-                          termData['termName'], 
-                          termData['percent'], 
-                          indicatorColor
-                        );
+
+                        return _buildTermRow(termData['termName'],
+                            termData['percent'], indicatorColor);
                       }),
-                      
+
                       const SizedBox(height: 30),
                       CustomOutlineButton2(
                         onPressed: () {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => const StudentAnnualResultScreen(),
+                              builder: (context) =>
+                                  const StudentAnnualResultScreen(),
                             ),
                           );
                         },
@@ -254,7 +241,7 @@ class StudentResultScreen extends StatelessWidget {
                         borderRadius: 10.0,
                         buttonHeight: 48,
                       ),
-                      
+
                       const SizedBox(height: 60),
                       Text(
                         'Session average chart',
@@ -264,7 +251,7 @@ class StudentResultScreen extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(height: 40.0),
-                      
+
                       // Chart display
                       if (chartData.isNotEmpty)
                         SizedBox(
@@ -313,20 +300,33 @@ class StudentResultScreen extends StatelessWidget {
                               ),
                               borderData: FlBorderData(show: false),
                               barGroups: chartData.map((data) {
-                                final termIndex = data['term'] as int;
-                                final averageScore = data['averageScore'] as double;
+                                final termIndex = (data['term'] as int) -
+                                    1; // Convert to 0-based index
+                                final averageScore =
+                                    data['averageScore'] as double;
                                 Color barColor = AppColors.primaryLight;
-                                
-                                if (termIndex == 2) {
+
+                                if (termIndex == 1) {
+                                  // Second term
                                   barColor = AppColors.videoColor4;
-                                } else if (termIndex == 3) {
+                                } else if (termIndex == 2) {
+                                  // Third term
                                   barColor = AppColors.exploreButton3Light;
                                 }
-                                
-                                return _buildBarGroup(
-                                  termIndex - 1, // 0-based index
-                                  averageScore,
-                                  barColor
+
+                                return BarChartGroupData(
+                                  x: termIndex,
+                                  barRods: [
+                                    BarChartRodData(
+                                      toY: averageScore,
+                                      color: barColor,
+                                      width: 60,
+                                      borderRadius: const BorderRadius.only(
+                                        topLeft: Radius.circular(4),
+                                        topRight: Radius.circular(4),
+                                      ),
+                                    ),
+                                  ],
                                 );
                               }).toList(),
                               groupsSpace: 0,

@@ -8,6 +8,7 @@ import 'package:linkschool/modules/providers/admin/assessment_provider.dart';
 import 'package:linkschool/modules/providers/admin/attendance_provider.dart';
 import 'package:linkschool/modules/providers/admin/class_provider.dart';
 import 'package:linkschool/modules/providers/admin/course_registration_provider.dart';
+import 'package:linkschool/modules/providers/admin/course_result_provider.dart';
 import 'package:linkschool/modules/providers/admin/level_provider.dart';
 import 'package:linkschool/modules/providers/admin/student_provider.dart';
 import 'package:linkschool/modules/providers/admin/term_provider.dart';
@@ -20,6 +21,7 @@ import 'package:linkschool/modules/services/explore/cbt_service.dart';
 import 'package:linkschool/routes/onboardingScreen.dart';
 import 'package:provider/provider.dart';
 import 'package:linkschool/modules/services/api/service_locator.dart';
+import 'modules/providers/admin/registered_terms_provider.dart';
 import 'modules/providers/explore/game/game_provider.dart';
 import 'modules/providers/admin/grade_provider.dart';
 
@@ -78,12 +80,14 @@ Future<void> main() async {
         ChangeNotifierProvider(create: (_) => ClassProvider()),
         ChangeNotifierProvider(create: (_) => AssessmentProvider()),
         ChangeNotifierProvider(create: (_) => TermProvider()),
+        ChangeNotifierProvider(create: (_) => RegisteredTermsProvider()),
         ChangeNotifierProvider(create: (_) => CourseRegistrationProvider()),
         
         // StudentProvider from service locator
         ChangeNotifierProvider(create: (_) => locator<StudentProvider>()),
 
         ChangeNotifierProvider(create: (_) => locator<AttendanceProvider>()),
+        ChangeNotifierProvider(create: (_) => CourseResultProvider()),
       ],
       child: const MyApp(),
     ),

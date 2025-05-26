@@ -7,13 +7,11 @@ import 'package:linkschool/modules/staff/e_learning/form_classes/staff_skill_beh
 import 'package:provider/provider.dart';
 import 'package:linkschool/modules/providers/admin/student_provider.dart';
 
-void showStudentResultOverlay(BuildContext context) {
-  // Get StudentProvider
+void showStudentResultOverlay(BuildContext context, {String? classId}) {
   final studentProvider = Provider.of<StudentProvider>(context, listen: false);
   
-  // Fetch all students if not already loaded
-  if (studentProvider.allStudents.isEmpty) {
-    studentProvider.fetchAllStudents();
+  if (classId != null) {
+    studentProvider.fetchStudents(classId);
   }
 
   showModalBottomSheet(
@@ -71,18 +69,18 @@ void showStudentResultOverlay(BuildContext context) {
                             );
                           }
                           
-                          if (provider.allStudents.isEmpty) {
+                          if (provider.students.isEmpty) {
                             return const Center(
-                              child: Text('No students available'),
+                              child: Text('No students available in this class'),
                             );
                           }
                           
                           return ListView.separated(
                             controller: controller,
-                            itemCount: provider.allStudents.length,
+                            itemCount: provider.students.length,
                             separatorBuilder: (context, index) => const Divider(),
                             itemBuilder: (context, index) {
-                              final student = provider.allStudents[index];
+                              final student = provider.students[index];
                               final firstLetter = student.fullName.isNotEmpty ? 
                                   student.fullName[0].toUpperCase() : 'S';
                               
@@ -94,9 +92,8 @@ void showStudentResultOverlay(BuildContext context) {
                                     style: const TextStyle(color: Colors.white),
                                   ),
                                 ),
-                                title: Text(student.fullName),
+                                title: Text(student.name),
                                 onTap: () {
-                                  // Fetch student result terms and navigate
                                   provider.fetchStudentResultTerms(student.id);
                                   Navigator.pop(context);
                                   Navigator.push(
@@ -126,8 +123,7 @@ void showStudentResultOverlay(BuildContext context) {
   );
 }
 
-void showTermOverlay(BuildContext context) {
-  // Original implementation remains unchanged
+void showTermOverlay(BuildContext context, {required String classId, required String year, required int termId, required String termName}) {
   showModalBottomSheet(
     context: context,
     isScrollControlled: true,
@@ -197,7 +193,12 @@ void showTermOverlay(BuildContext context) {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => CourseResultScreen(),
+                              builder: (context) => CourseResultScreen(
+                                classId: classId,
+                                year: year,
+                                term: termId,
+                                termName: termName,
+                              ),
                             ),
                           );
                         } else if (labels[index] == 'Skills and Behaviour') {
@@ -224,18 +225,25 @@ void showTermOverlay(BuildContext context) {
 
 
 
+
 // import 'package:flutter/material.dart';
 // import 'package:flutter_svg/flutter_svg.dart';
 // import 'package:linkschool/modules/admin/result/class_detail/student_result/course_result_screen.dart';
 // import 'package:linkschool/modules/admin/result/class_detail/student_result/student_result.dart';
 // import 'package:linkschool/modules/common/app_colors.dart';
-// import 'package:linkschool/modules/providers/admin/student_provider.dart';
 // import 'package:linkschool/modules/staff/e_learning/form_classes/staff_skill_behaviour_screen.dart';
-// import 'package:provider/provider.dart'; // Added missing import for Provider
+// import 'package:provider/provider.dart';
+// import 'package:linkschool/modules/providers/admin/student_provider.dart';
 
+// void showStudentResultOverlay(BuildContext context, {String? classId}) {
+//   // Get StudentProvider
+//   final studentProvider = Provider.of<StudentProvider>(context, listen: false);
+  
+//   // Fetch students for the specific class
+//   if (classId != null) {
+//     studentProvider.fetchStudents(classId);
+//   }
 
-
-// void showStudentResultOverlay(BuildContext context) {
 //   showModalBottomSheet(
 //     context: context,
 //     isScrollControlled: true,
@@ -268,41 +276,67 @@ void showTermOverlay(BuildContext context) {
 //                             borderRadius: BorderRadius.circular(10),
 //                           ),
 //                         ),
+//                         onChanged: (value) {
+//                           // Filter functionality could be added here
+//                         },
 //                       ),
 //                     ),
 //                     Expanded(
-//                       child: ListView.separated(
-//                         controller: controller,
-//                         itemCount: 4,
-//                         separatorBuilder: (context, index) => const Divider(),
-//                         itemBuilder: (context, index) {
-//                           final studentNames = [
-//                             'Tochukwu Dennis',
-//                             'Vincent Rapheal',
-//                             'Victor Anya',
-//                             'Joseph Onwe'
-//                           ];
-//                           final studentName = studentNames[index];
-//                           return ListTile(
-//                             leading: CircleAvatar(
-//                               backgroundColor: Colors
-//                                   .primaries[index % Colors.primaries.length],
+//                       child: Consumer<StudentProvider>(
+//                         builder: (context, provider, child) {
+//                           if (provider.isLoading) {
+//                             return const Center(
+//                               child: CircularProgressIndicator(),
+//                             );
+//                           }
+                          
+//                           if (provider.errorMessage.isNotEmpty) {
+//                             return Center(
 //                               child: Text(
-//                                 studentName[0],
-//                                 style: const TextStyle(color: Colors.white),
+//                                 'Error: ${provider.errorMessage}',
+//                                 style: const TextStyle(color: Colors.red),
 //                               ),
-//                             ),
-//                             title: Text(studentName),
-//                             onTap: () {
-//                               Navigator.pop(context);
-//                               Navigator.push(
-//                                 context,
-//                                 MaterialPageRoute(
-//                                   builder: (context) => StudentResultScreen(
-//                                     student: student,
-//                                     className: 'Student Result',
+//                             );
+//                           }
+                          
+//                           if (provider.students.isEmpty) {
+//                             return const Center(
+//                               child: Text('No students available in this class'),
+//                             );
+//                           }
+                          
+//                           return ListView.separated(
+//                             controller: controller,
+//                             itemCount: provider.students.length,
+//                             separatorBuilder: (context, index) => const Divider(),
+//                             itemBuilder: (context, index) {
+//                               final student = provider.students[index];
+//                               final firstLetter = student.fullName.isNotEmpty ? 
+//                                   student.fullName[0].toUpperCase() : 'S';
+                              
+//                               return ListTile(
+//                                 leading: CircleAvatar(
+//                                   backgroundColor: Colors.primaries[index % Colors.primaries.length],
+//                                   child: Text(
+//                                     firstLetter,
+//                                     style: const TextStyle(color: Colors.white),
 //                                   ),
 //                                 ),
+//                                 title: Text(student.name),
+//                                 onTap: () {
+//                                   // Fetch student result terms and navigate
+//                                   provider.fetchStudentResultTerms(student.id);
+//                                   Navigator.pop(context);
+//                                   Navigator.push(
+//                                     context,
+//                                     MaterialPageRoute(
+//                                       builder: (context) => StudentResultScreen(
+//                                         studentName: student.fullName,
+//                                         className: 'Student Result',
+//                                       ),
+//                                     ),
+//                                   );
+//                                 },
 //                               );
 //                             },
 //                           );
@@ -320,9 +354,8 @@ void showTermOverlay(BuildContext context) {
 //   );
 // }
 
-
-
 // void showTermOverlay(BuildContext context) {
+//   // Original implementation remains unchanged
 //   showModalBottomSheet(
 //     context: context,
 //     isScrollControlled: true,
@@ -416,4 +449,3 @@ void showTermOverlay(BuildContext context) {
 //     },
 //   );
 // }
-
