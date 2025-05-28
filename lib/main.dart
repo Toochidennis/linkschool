@@ -8,6 +8,7 @@ import 'package:linkschool/modules/providers/admin/assessment_provider.dart';
 import 'package:linkschool/modules/providers/admin/attendance_provider.dart';
 import 'package:linkschool/modules/providers/admin/class_provider.dart';
 import 'package:linkschool/modules/providers/admin/course_registration_provider.dart';
+import 'package:linkschool/modules/providers/admin/e_learning/syllabus_provider.dart';
 import 'package:linkschool/modules/providers/admin/level_provider.dart';
 import 'package:linkschool/modules/providers/admin/student_provider.dart';
 import 'package:linkschool/modules/providers/admin/term_provider.dart';
@@ -16,6 +17,8 @@ import 'package:linkschool/modules/providers/explore/exam_provider.dart';
 import 'package:linkschool/modules/providers/explore/for_you_provider.dart';
 import 'package:linkschool/modules/providers/explore/home/news_provider.dart';
 import 'package:linkschool/modules/providers/explore/subject_provider.dart';
+import 'package:linkschool/modules/services/admin/e_learning/syllabus_service.dart';
+import 'package:linkschool/modules/services/api/api_service.dart';
 import 'package:linkschool/modules/services/explore/cbt_service.dart';
 import 'package:linkschool/routes/onboardingScreen.dart';
 import 'package:provider/provider.dart';
@@ -63,13 +66,16 @@ Future<void> main() async {
   runApp(
     MultiProvider(
       providers: [
+
         ChangeNotifierProvider(create: (_) => locator<AuthProvider>()),
+         ChangeNotifierProvider(create: (_) => SyllabusProvider( SyllabusService())),
         ChangeNotifierProvider(create: (_) => NewsProvider()),
         ChangeNotifierProvider(create: (_) => SubjectProvider()),
         ChangeNotifierProvider(create: (_) => CBTProvider(CBTService())),
         ChangeNotifierProvider(create: (_) => GameProvider()),
         ChangeNotifierProvider(create: (_) => ExamProvider()),
         ChangeNotifierProvider(create: (_) => ForYouProvider()),
+        ChangeNotifierProvider<SyllabusProvider>(create: (_) => locator<SyllabusProvider>()),
         
         // GradeProvider from service locator
         ChangeNotifierProvider(create: (_) => locator<GradeProvider>()),

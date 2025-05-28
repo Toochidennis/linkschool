@@ -4,9 +4,11 @@ import 'package:linkschool/modules/auth/provider/auth_provider.dart';
 import 'package:linkschool/modules/auth/service/auth_service.dart';
 import 'package:linkschool/modules/providers/admin/attendance_provider.dart';
 import 'package:linkschool/modules/providers/admin/behaviour_provider.dart';
+import 'package:linkschool/modules/providers/admin/e_learning/syllabus_provider.dart';
 
 import 'package:linkschool/modules/providers/admin/grade_provider.dart';
 import 'package:linkschool/modules/services/admin/attendance_service.dart';
+import 'package:linkschool/modules/services/admin/e_learning/syllabus_service.dart';
 import 'package:linkschool/modules/services/api/api_service.dart';
 import 'package:linkschool/modules/services/admin/class_service.dart';
 import 'package:linkschool/modules/services/admin/grade_service.dart';
@@ -57,6 +59,15 @@ void setupServiceLocator() {
   locator.registerLazySingleton<GradeProvider>(
     () => GradeProvider(locator<GradeService>())
   );
+
+  locator.registerLazySingleton<SyllabusService>(
+    () => SyllabusService()
+  );
+  locator.registerLazySingleton<SyllabusProvider>(
+    () => SyllabusProvider(locator<SyllabusService>())
+  );
+
+
 
   // Register other services as lazySingletons
   locator.registerLazySingleton<ClassService>(() => ClassService());
