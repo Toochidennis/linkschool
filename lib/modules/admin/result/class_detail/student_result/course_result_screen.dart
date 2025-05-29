@@ -7,6 +7,9 @@ import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:provider/provider.dart';
 import 'package:linkschool/modules/providers/admin/course_result_provider.dart';
+import './view/view_course_result_screen.dart';
+import './view/monthly_assessment_screen.dart';
+
 
 class CourseResultScreen extends StatefulWidget {
   final String classId;
@@ -274,13 +277,13 @@ class _CourseResultScreenState extends State<CourseResultScreen> {
       final subject = score['course_name'].toString();
       final averageScore = score['average_score'];
       final scoreValue = averageScore is String ? double.parse(averageScore) : (averageScore as num).toDouble();
-      return _buildSubjectRow(subject, scoreValue / 100);
+      return _buildSubjectRow(subject, scoreValue / 100, score);
     }).toList();
   }
 
-  Widget _buildSubjectRow(String subject, double score) {
+  Widget _buildSubjectRow(String subject, double score, Map<String, dynamic> courseData) {
     return GestureDetector(
-      onTap: () => _showOverlayDialog(subject),
+      onTap: () => _showOverlayDialog(subject, courseData),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16.0),
         decoration: BoxDecoration(
@@ -306,7 +309,7 @@ class _CourseResultScreenState extends State<CourseResultScreen> {
     );
   }
 
-  void _showOverlayDialog(String subject) {
+  void _showOverlayDialog(String subject, Map<String, dynamic> courseData) {
     showModalBottomSheet(
       context: context,
       builder: (BuildContext context) {
@@ -320,10 +323,18 @@ class _CourseResultScreenState extends State<CourseResultScreen> {
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
                   Expanded(
-                      child: _buildDialogButton('View result', 'assets/icons/result/eye.svg')),
+                      child: _buildDialogButton(
+                        'View result', 
+                        'assets/icons/result/eye.svg',
+                        () => _navigateToViewResult(subject, courseData),
+                      )),
                   const SizedBox(width: 8.0),
                   Expanded(
-                      child: _buildDialogButton('Edit result', 'assets/icons/result/edit.svg')),
+                      child: _buildDialogButton(
+                        'Monthly Assessment', 
+                        'assets/icons/result/edit.svg',
+                        () => _navigateToMonthlyAssessment(subject, courseData),
+                      )),
                 ],
               ),
             ],
@@ -333,14 +344,14 @@ class _CourseResultScreenState extends State<CourseResultScreen> {
     );
   }
 
-  Widget _buildDialogButton(String text, String iconPath) {
+  Widget _buildDialogButton(String text, String iconPath, VoidCallback onPressed) {
     return Container(
       decoration: BoxDecoration(
         border: Border.all(color: Colors.grey),
         borderRadius: BorderRadius.circular(8),
       ),
       child: TextButton.icon(
-        onPressed: () {},
+        onPressed: onPressed,
         icon: SvgPicture.asset(
           iconPath,
           color: Colors.grey,
@@ -348,6 +359,44 @@ class _CourseResultScreenState extends State<CourseResultScreen> {
         label: Text(
           text,
           style: AppTextStyles.normal600(fontSize: 14, color: AppColors.backgroundDark),
+        ),
+      ),
+    );
+  }
+
+  void _navigateToViewResult(String subject, Map<String, dynamic> courseData) {
+    Navigator.pop(context); // Close the bottom sheet first
+    
+    // Navigate to ViewCourseResultScreen
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ViewCourseResultScreen(
+          classId: widget.classId,
+          year: widget.year,
+          term: widget.term,
+          termName: widget.termName,
+          subject: subject,
+          courseData: courseData,
+        ),
+      ),
+    );
+  }
+
+  void _navigateToMonthlyAssessment(String subject, Map<String, dynamic> courseData) {
+    Navigator.pop(context); // Close the bottom sheet first
+    
+    // Navigate to MonthlyAssessmentScreen
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => MonthlyAssessmentScreen(
+          classId: widget.classId,
+          year: widget.year,
+          term: widget.term,
+          termName: widget.termName,
+          subject: subject,
+          courseData: courseData,
         ),
       ),
     );
@@ -399,7 +448,6 @@ class _CourseResultScreenState extends State<CourseResultScreen> {
 
 
 
-
 // // ignore_for_file: deprecated_member_use
 
 // import 'package:fl_chart/fl_chart.dart';
@@ -407,9 +455,22 @@ class _CourseResultScreenState extends State<CourseResultScreen> {
 // import 'package:flutter_svg/svg.dart';
 // import 'package:linkschool/modules/common/app_colors.dart';
 // import 'package:linkschool/modules/common/text_styles.dart';
+// import 'package:provider/provider.dart';
+// import 'package:linkschool/modules/providers/admin/course_result_provider.dart';
 
 // class CourseResultScreen extends StatefulWidget {
-//   const CourseResultScreen({super.key});
+//   final String classId;
+//   final String year;
+//   final int term;
+//   final String termName;
+
+//   const CourseResultScreen({
+//     super.key,
+//     required this.classId,
+//     required this.year,
+//     required this.term,
+//     required this.termName,
+//   });
 
 //   @override
 //   State<CourseResultScreen> createState() => _CourseResultScreenState();
@@ -417,12 +478,25 @@ class _CourseResultScreenState extends State<CourseResultScreen> {
 
 // class _CourseResultScreenState extends State<CourseResultScreen> {
 //   @override
+//   void initState() {
+//     super.initState();
+//     WidgetsBinding.instance.addPostFrameCallback((_) {
+//       Provider.of<CourseResultProvider>(context, listen: false)
+//           .fetchAverageScores(widget.classId, widget.year, widget.term);
+//     });
+//   }
+
+//   @override
 //   Widget build(BuildContext context) {
+//     final courseResultProvider = Provider.of<CourseResultProvider>(context);
+//     final nextYear = (int.parse(widget.year) + 1).toString();
+//     final sessionTitle = '${widget.year}/$nextYear ${widget.termName}';
+
 //     return Scaffold(
 //       appBar: AppBar(
 //         backgroundColor: AppColors.backgroundLight,
 //         title: Text(
-//           'Course Result 2023/2024',
+//           'Course Result $sessionTitle',
 //           style: AppTextStyles.normal500(
 //               fontSize: 18.0, color: AppColors.primaryLight),
 //         ),
@@ -454,67 +528,77 @@ class _CourseResultScreenState extends State<CourseResultScreen> {
 //                 SliverToBoxAdapter(
 //                   child: Container(
 //                     height: 250,
-//                     width: 196,
 //                     color: AppColors.bgColor1,
 //                     child: AspectRatio(
 //                       aspectRatio: 2.0,
 //                       child: Padding(
-//                         padding: const EdgeInsets.symmetric(
-//                           horizontal: 16.0,
-//                         ),
-//                         child: BarChart(
-//                           BarChartData(
-//                             maxY: 100,
-//                             titlesData: FlTitlesData(
-//                               rightTitles: const AxisTitles(
-//                                 sideTitles: SideTitles(showTitles: false)
+//                         padding: const EdgeInsets.symmetric(horizontal: 16.0),
+//                         child: Consumer<CourseResultProvider>(
+//                           builder: (context, provider, child) {
+//                             if (provider.isLoading) {
+//                               return const Center(
+//                                 child: CircularProgressIndicator(),
+//                               );
+//                             }
+//                             if (provider.error != null) {
+//                               return Center(
+//                                 child: Text(
+//                                   provider.error!,
+//                                   style: const TextStyle(color: Colors.red),
+//                                 ),
+//                               );
+//                             }
+//                             if (provider.averageScores.isEmpty) {
+//                               return const Center(
+//                                 child: Text('No course results available'),
+//                               );
+//                             }
+//                             return BarChart(
+//                               BarChartData(
+//                                 maxY: 100,
+//                                 titlesData: FlTitlesData(
+//                                   rightTitles: const AxisTitles(
+//                                       sideTitles: SideTitles(showTitles: false)),
+//                                   topTitles: const AxisTitles(
+//                                       sideTitles: SideTitles(showTitles: false)),
+//                                   bottomTitles: AxisTitles(
+//                                     sideTitles: SideTitles(
+//                                       showTitles: true,
+//                                       reservedSize: 42,
+//                                       getTitlesWidget: (value, meta) =>
+//                                           _getTitles(value, meta, provider.averageScores),
+//                                     ),
+//                                   ),
+//                                   leftTitles: AxisTitles(
+//                                     sideTitles: SideTitles(
+//                                       showTitles: true,
+//                                       reservedSize: 30,
+//                                       interval: 20,
+//                                       getTitlesWidget: _leftTitles,
+//                                     ),
+//                                   ),
+//                                 ),
+//                                 borderData: FlBorderData(show: false),
+//                                 gridData: FlGridData(
+//                                   show: true,
+//                                   drawVerticalLine: false,
+//                                   horizontalInterval: 20,
+//                                   getDrawingHorizontalLine: (value) {
+//                                     return FlLine(
+//                                       color: Colors.black.withOpacity(0.3),
+//                                       strokeWidth: 1,
+//                                       dashArray: [5, 5],
+//                                     );
+//                                   },
+//                                   checkToShowHorizontalLine: (value) => value % 20 == 0,
+//                                 ),
+//                                 barGroups: _buildBarGroups(provider.averageScores),
+//                                 groupsSpace: 22.44,
 //                               ),
-//                               topTitles: const AxisTitles(
-//                                 sideTitles: SideTitles(showTitles: false)
-//                               ),
-//                               bottomTitles: AxisTitles(
-//                                 sideTitles: SideTitles(
-//                                   showTitles: true,
-//                                   reservedSize: 42,
-//                                   getTitlesWidget: _getTitles,
-//                                 )
-//                               ),
-//                               leftTitles: AxisTitles(
-//                                 sideTitles: SideTitles(
-//                                   showTitles: true,
-//                                   reservedSize: 30,
-//                                   interval: 1,
-//                                   getTitlesWidget: _leftTitles
-//                                 )
-//                               )
-//                             ),
-//                             borderData: FlBorderData(show: false),
-//                             gridData: FlGridData(
-//                               show: true,
-//                               drawVerticalLine: false,
-//                               horizontalInterval: 20,
-//                               getDrawingHorizontalLine: (value) {
-//                                 return FlLine(
-//                                   color: Colors.black.withOpacity(0.3),
-//                                   strokeWidth: 1,
-//                                   dashArray: [5, 5]
-//                                 );
-//                               },
-//                               checkToShowHorizontalLine: (value) => value % 20 == 0,
-//                             ),
-//                             barGroups: [
-//                               _buildBarGroup(0, 60, AppColors.primaryLight),
-//                               _buildBarGroup(1, 25, AppColors.videoColor4),
-//                               _buildBarGroup(2, 75, AppColors.primaryLight),
-//                               _buildBarGroup(3, 60, AppColors.primaryLight),
-//                               _buildBarGroup(4, 25, AppColors.videoColor4),
-//                               _buildBarGroup(5, 75, AppColors.primaryLight),
-//                               _buildBarGroup(6, 75, AppColors.primaryLight),
-//                             ],
-//                             groupsSpace: 22.44
-//                           ),
-//                           swapAnimationCurve: Curves.linear,
-//                           swapAnimationDuration: const Duration(microseconds: 500),
+//                               swapAnimationCurve: Curves.linear,
+//                               swapAnimationDuration: const Duration(milliseconds: 500),
+//                             );
+//                           },
 //                         ),
 //                       ),
 //                     ),
@@ -534,45 +618,67 @@ class _CourseResultScreenState extends State<CourseResultScreen> {
 //                         ),
 //                       ],
 //                     ),
-//                     child: Column(
-//                       children: _buildSubjectRows(),
+//                     child: Consumer<CourseResultProvider>(
+//                       builder: (context, provider, child) {
+//                         if (provider.isLoading) {
+//                           return const Center(child: CircularProgressIndicator());
+//                         }
+//                         if (provider.error != null) {
+//                           return Center(
+//                             child: Text(
+//                               provider.error!,
+//                               style: const TextStyle(color: Colors.red),
+//                             ),
+//                           );
+//                         }
+//                         return Column(
+//                           children: _buildSubjectRows(provider.averageScores),
+//                         );
+//                       },
 //                     ),
 //                   ),
 //                 ),
 //               ],
 //             ),
-//           )
+//           ),
 //         ],
 //       ),
 //     );
 //   }
 
-//   BarChartGroupData _buildBarGroup(int x, double y, Color color) {
-//     return BarChartGroupData(
-//       x: x,
-//       barRods: [
-//         BarChartRodData(
-//           toY: y,
-//           color: color,
-//           width: 20.46,
-//           borderRadius: const BorderRadius.only(
-//             topLeft: Radius.circular(4),
-//             topRight: Radius.circular(4),
+//   List<BarChartGroupData> _buildBarGroups(List<Map<String, dynamic>> scores) {
+//     return scores.asMap().entries.map((entry) {
+//       final index = entry.key;
+//       final scoreValue = entry.value['average_score'];
+//       final score = scoreValue is String ? double.parse(scoreValue) : (scoreValue as num).toDouble();
+//       final color = index % 2 == 0 ? AppColors.primaryLight : AppColors.videoColor4;
+//       return BarChartGroupData(
+//         x: index,
+//         barRods: [
+//           BarChartRodData(
+//             toY: score,
+//             color: color,
+//             width: 20.46,
+//             borderRadius: const BorderRadius.only(
+//               topLeft: Radius.circular(4),
+//               topRight: Radius.circular(4),
+//             ),
 //           ),
-//         )
-//       ],
-//     );
+//         ],
+//       );
+//     }).toList();
 //   }
 
-//   Widget _getTitles(double value, TitleMeta meta) {
-//     const subjects = ['Math', 'Eng', 'Chem', 'Bio', 'Phy', 'CRS', 'Civic'];
+//   Widget _getTitles(double value, TitleMeta meta, List<Map<String, dynamic>> scores) {
 //     final index = value.toInt();
-//     if (index >= 0 && index < subjects.length) {
+//     if (index >= 0 && index < scores.length) {
+//       final courseName = scores[index]['course_name'].toString();
+//       final shortName = courseName.length > 5 ? courseName.substring(0, 5) : courseName;
 //       return SideTitleWidget(
 //         meta: meta,
 //         space: 4.0,
 //         child: Text(
-//           subjects[index],
+//           shortName,
 //           style: AppTextStyles.normal400(fontSize: 12, color: Colors.black),
 //         ),
 //       );
@@ -585,7 +691,7 @@ class _CourseResultScreenState extends State<CourseResultScreen> {
 //     String text;
 //     switch (value.toInt()) {
 //       case 0:
-//         text = '00';
+//         text = '0';
 //         break;
 //       case 20:
 //         text = '20';
@@ -613,13 +719,16 @@ class _CourseResultScreenState extends State<CourseResultScreen> {
 //     );
 //   }
 
-//   List<Widget> _buildSubjectRows() {
-//     final subjects = ['Mathematics', 'English', 'Chemistry', 'Biology', 'Physics', 'CRS', 'Civic Education', 'Literature', 'Government', 'Economics'];
-    
-//     return subjects.map((subject) => _buildSubjectRow(subject)).toList();
+//   List<Widget> _buildSubjectRows(List<Map<String, dynamic>> scores) {
+//     return scores.map((score) {
+//       final subject = score['course_name'].toString();
+//       final averageScore = score['average_score'];
+//       final scoreValue = averageScore is String ? double.parse(averageScore) : (averageScore as num).toDouble();
+//       return _buildSubjectRow(subject, scoreValue / 100);
+//     }).toList();
 //   }
 
-//   Widget _buildSubjectRow(String subject) {
+//   Widget _buildSubjectRow(String subject, double score) {
 //     return GestureDetector(
 //       onTap: () => _showOverlayDialog(subject),
 //       child: Container(
@@ -640,7 +749,7 @@ class _CourseResultScreenState extends State<CourseResultScreen> {
 //                 ),
 //               ),
 //             ),
-//             _buildCircularProgressBar(),
+//             _buildCircularProgressBar(score),
 //           ],
 //         ),
 //       ),
@@ -653,16 +762,18 @@ class _CourseResultScreenState extends State<CourseResultScreen> {
 //       builder: (BuildContext context) {
 //         return Container(
 //           color: Colors.white,
-//           padding: EdgeInsets.symmetric(horizontal: 16, vertical: 18),
+//           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
 //           child: Column(
 //             mainAxisSize: MainAxisSize.min,
 //             children: [
 //               Row(
 //                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
 //                 children: [
-//                   Expanded(child: _buildDialogButton('View result', 'assets/icons/result/eye.svg')),
-//                   SizedBox(width: 8.0,),
-//                   Expanded(child: _buildDialogButton('Edit result', 'assets/icons/result/edit.svg')),
+//                   Expanded(
+//                       child: _buildDialogButton('View result', 'assets/icons/result/eye.svg')),
+//                   const SizedBox(width: 8.0),
+//                   Expanded(
+//                       child: _buildDialogButton('Monthly Accessment', 'assets/icons/result/edit.svg')),
 //                 ],
 //               ),
 //             ],
@@ -679,9 +790,7 @@ class _CourseResultScreenState extends State<CourseResultScreen> {
 //         borderRadius: BorderRadius.circular(8),
 //       ),
 //       child: TextButton.icon(
-//         onPressed: () {
-//           // Add functionality here
-//         },
+//         onPressed: () {},
 //         icon: SvgPicture.asset(
 //           iconPath,
 //           color: Colors.grey,
@@ -711,32 +820,28 @@ class _CourseResultScreenState extends State<CourseResultScreen> {
 //     );
 //   }
 
-// Widget _buildCircularProgressBar() {
-//   return SizedBox(
-//     // Increased dimensions from 70x70 to 85x85
-//     width: 85,
-//     height: 85,
-//     child: Stack(
-//       alignment: Alignment.center,
-//       children: [
-//         Transform.rotate(
-//           angle: -3.14159 / 2, // Rotate 90 degrees counterclockwise
-//           child: CircularProgressIndicator(
-//             value: 0.75,
-//             // Maintained strokeWidth at 5
-//             strokeWidth: 5,
-//             backgroundColor: Colors.grey[300],
-//             valueColor: const AlwaysStoppedAnimation<Color>(AppColors.progressBarColor1),
+//   Widget _buildCircularProgressBar(double score) {
+//     return SizedBox(
+//       width: 85,
+//       height: 85,
+//       child: Stack(
+//         alignment: Alignment.center,
+//         children: [
+//           Transform.rotate(
+//             angle: -3.14159 / 2,
+//             child: CircularProgressIndicator(
+//               value: score,
+//               strokeWidth: 5,
+//               backgroundColor: Colors.grey[300],
+//               valueColor: const AlwaysStoppedAnimation<Color>(AppColors.progressBarColor1),
+//             ),
 //           ),
-//         ),
-//         Text(
-//           '75%',
-//           // Slightly increased font size to match larger container
-//           style: AppTextStyles.normal600(fontSize: 10, color: AppColors.backgroundDark),
-//         ),
-//       ],
-//     ),
-//   );
-// }
-
+//           Text(
+//             '${(score * 100).toInt()}%',
+//             style: AppTextStyles.normal600(fontSize: 10, color: AppColors.backgroundDark),
+//           ),
+//         ],
+//       ),
+//     );
+//   }
 // }

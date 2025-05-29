@@ -291,19 +291,35 @@ class _LevelSelectionState extends State<LevelSelection> {
     );
   }
 
-  void _navigateToClassDetail(String classId, String className) async {
-    final userBox = Hive.box('userData');
-    await userBox.put('selectedClassId', classId); // Persist selected class ID
+void _navigateToClassDetail(String classId, String className) async {
+  final userBox = Hive.box('userData');
+  await userBox.put('selectedClassId', classId); // Persist selected class ID
+  await userBox.put('selectedLevelId', _selectedLevelId); // Persist selected level ID
 
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (context) => ClassDetailScreen(
-          classId: classId,
-          className: className,
-        ),
+  Navigator.of(context).push(
+    MaterialPageRoute(
+      builder: (context) => ClassDetailScreen(
+        classId: classId,
+        className: className,
+        levelId: _selectedLevelId, // Pass the level ID
       ),
-    );
-  }
+    ),
+  );
+}
+
+  // void _navigateToClassDetail(String classId, String className) async {
+  //   final userBox = Hive.box('userData');
+  //   await userBox.put('selectedClassId', classId); // Persist selected class ID
+
+  //   Navigator.of(context).push(
+  //     MaterialPageRoute(
+  //       builder: (context) => ClassDetailScreen(
+  //         classId: classId,
+  //         className: className,
+  //       ),
+  //     ),
+  //   );
+  // }
 }
 
 

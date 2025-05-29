@@ -15,11 +15,13 @@ import 'package:linkschool/modules/providers/admin/term_provider.dart';
 class ClassDetailScreen extends StatefulWidget {
   final String className;
   final String classId;
+  final String levelId;
 
   const ClassDetailScreen({
     super.key,
     required this.className,
     required this.classId,
+    required this.levelId, 
   });
 
   @override
@@ -37,18 +39,28 @@ class _ClassDetailScreenState extends State<ClassDetailScreen> {
       _loadTerms();
     });
     _debugHiveContents();
+
+    // Store the level ID
+    _storeLevelId();
+  }
+
+  void _storeLevelId() async {
+    final userBox = Hive.box('userData');
+    await userBox.put('currentLevelId', widget.levelId);
+    print('Stored level ID: ${widget.levelId}');
   }
 
   void _debugHiveContents() {
     final userBox = Hive.box('userData');
     print('Hive box keys: ${userBox.keys.toList()}');
+    print('Current Level ID: ${widget.levelId}');
     for (var key in userBox.keys) {
       print('Hive key $key: ${userBox.get(key)}');
     }
   }
 
   Future<void> _loadTerms() async {
-    print('Loading terms for classId: ${widget.classId}');
+    print('Loading terms for classId: ${widget.classId}, levelId: ${widget.levelId}');
     try {
       await _termProvider.fetchTerms(widget.classId);
     } catch (e) {
@@ -258,6 +270,7 @@ class _ClassDetailScreenState extends State<ClassDetailScreen> {
               onTap: () => showTermOverlay(
                 context,
                 classId: widget.classId,
+                
                 year: term['year'],
                 termId: term['termId'],
                 termName: formattedTerm,

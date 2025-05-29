@@ -12,6 +12,7 @@ import 'package:linkschool/modules/providers/admin/course_result_provider.dart';
 import 'package:linkschool/modules/providers/admin/level_provider.dart';
 import 'package:linkschool/modules/providers/admin/student_provider.dart';
 import 'package:linkschool/modules/providers/admin/term_provider.dart';
+import 'package:linkschool/modules/providers/admin/view_course_result_provider.dart';
 import 'package:linkschool/modules/providers/explore/cbt_provider.dart';
 import 'package:linkschool/modules/providers/explore/exam_provider.dart';
 import 'package:linkschool/modules/providers/explore/for_you_provider.dart';
@@ -88,6 +89,7 @@ Future<void> main() async {
 
         ChangeNotifierProvider(create: (_) => locator<AttendanceProvider>()),
         ChangeNotifierProvider(create: (_) => CourseResultProvider()),
+        ChangeNotifierProvider(create: (_) => ViewCourseResultProvider()),
       ],
       child: const MyApp(),
     ),
