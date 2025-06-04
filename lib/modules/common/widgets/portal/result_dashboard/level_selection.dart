@@ -277,12 +277,14 @@ void _showCourseSelectionDialog() {
                                       classId: widget.classId, // This might be null, handle it
                                       levelId: _selectedLevelId, // Pass actual selected level ID
                                       selectedSubject: course[1],
+                                      course_name: widget.courseNames?[index][1] ?? '', // Pass course name
                                     ),
                                   ),
                                   
                                 );
-                                print("selected Class ID: ${widget.classId}");
+                               
                                 print("selected Level ID: $_selectedLevelId");
+                               
                               },
                             ),
                           );

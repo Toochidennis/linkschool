@@ -11,42 +11,142 @@ import 'package:linkschool/modules/common/text_styles.dart';
 
 class EmptySyllabusScreen extends StatefulWidget {
   final String selectedSubject;
-  final String? courseId; // Course ID for course selection
-  final String? classId; // Class ID for class selection
-  final String? levelId; // Level ID for course selection
+  final String? courseId;
+  final String? classId;
+  final String? levelId;
+  final String? course_name;
 
-  const EmptySyllabusScreen({super.key, required this.selectedSubject, this.courseId, this.classId, this.levelId});
+  const EmptySyllabusScreen({
+    super.key,
+    required this.selectedSubject,
+    this.courseId,
+    this.classId,
+    this.levelId,
+    this.course_name
+  });
 
   @override
   State<EmptySyllabusScreen> createState() => _EmptySyllabusScreenState();
 }
 
-class _EmptySyllabusScreenState extends State<EmptySyllabusScreen> {
+class _EmptySyllabusScreenState extends State<EmptySyllabusScreen> with WidgetsBindingObserver {
   final List<Map<String, dynamic>> _syllabusList = [];
   late double opacity;
+  bool isLoading = true;
+  // List of 5 background image paths to cycle through
+  final List<String> _imagePaths = [
+    'assets/images/result/bg_box1.svg',
+    'assets/images/result/bg_box2.svg',
+    'assets/images/result/bg_box3.svg',
+    'assets/images/result/bg_box4.svg',
+    'assets/images/result/bg_box5.svg',
+  ];
 
   @override
   void initState() {
     super.initState();
-    _loadSyllabuses();
+    WidgetsBinding.instance.addObserver(this);
+    // _loadSyllabuses();
   }
 
-  // Load existing syllabuses - replace with actual data loading logic
-  void _loadSyllabuses() {
-    // TODO: Replace with actual data loading from database/API
-    // For now, you can add some sample data to test:
-    /*
-    setState(() {
-      _syllabusList.addAll([
-        {
-          'title': 'Sample Syllabus 1',
-          'selectedClass': 'Grade 10',
-          'selectedTeacher': 'John Doe',
-          'backgroundImagePath': 'assets/images/sample_bg.svg',
-        },
-      ]);
-    });
-    */
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      // _loadSyllabuses(); // Refresh data when returning to the screen
+    }
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  Future<void> _loadSyllabuses() async {
+    setState(() => isLoading = true);
+    try {
+      // Replace with your actual service/provider call
+      final List<dynamic> data = await _fetchSyllabusesFromService();
+
+      setState(() {
+        _syllabusList.clear();
+        _syllabusList.addAll(data.asMap().entries.map((entry) {
+          final index = entry.key;
+          final syllabus = entry.value as Map<String, dynamic>;
+          // Derive selectedClass from class_ids
+          final classIds = (syllabus['class_ids'] as List<dynamic>?) ?? [];
+          final classNames = classIds
+              .map((cls) => cls['class_name']?.toString() ?? 'Unknown')
+              .join(', ');
+          final selectedClass = classNames.isEmpty ? 'No classes selected' : classNames;
+
+          return {
+            'title': syllabus['title']?.toString() ?? '',
+            'description': syllabus['description']?.toString() ?? '',
+            'image': syllabus['image']?.toString() ?? '',
+            'image_name': syllabus['image_name']?.toString() ?? '',
+            'course_id': syllabus['course_id']?.toString() ?? '',
+            'level_id': syllabus['level_id']?.toString() ?? '',
+            'class_ids': classIds,
+            'creator_role': syllabus['creator_role']?.toString() ?? '',
+            'term': syllabus['term']?.toString() ?? '',
+            'year': syllabus['year']?.toString() ?? '',
+            'creator_id': syllabus['creator_id'] ?? 0,
+            'selectedClass': selectedClass,
+            'selectedTeacher': 'Not assigned', // Placeholder
+            'backgroundImagePath': _imagePaths[index % _imagePaths.length], // Cycle through 5 images
+          };
+        }).toList());
+      });
+    } catch (e) {
+      print('Error loading syllabuses: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error loading syllabuses: $e')),
+        );
+      }
+    } finally {
+      setState(() => isLoading = false);
+    }
+  }
+
+  // Placeholder for your service method
+  Future<List<dynamic>> _fetchSyllabusesFromService() async {
+    // Simulate API response (replace with your actual service call)
+    await Future.delayed(const Duration(seconds: 1));
+    return [
+      {
+        'title': 'Chikhggg',
+        'description': 'bvbbbhhhhh',
+        'image': '',
+        'image_name': '',
+        'course_id': '62',
+        'level_id': '66',
+        'class_ids': [
+          {'id': '69', 'class_name': 'JSS1A'},
+          {'id': '64', 'class_name': 'JSS1B'},
+        ],
+        'creator_role': 'admin',
+        'term': '3',
+        'year': '2025',
+        'creator_id': 15,
+      },
+      {
+        'title': 'Math Basics',
+        'description': 'Introduction to algebra',
+        'image': '',
+        'image_name': '',
+        'course_id': '63',
+        'level_id': '67',
+        'class_ids': [
+          {'id': '70', 'class_name': 'JSS2A'},
+        ],
+        'creator_role': 'teacher',
+        'term': '1',
+        'year': '2025',
+        'creator_id': 16,
+      },
+    ];
   }
 
   @override
@@ -90,11 +190,55 @@ class _EmptySyllabusScreenState extends State<EmptySyllabusScreen> {
       ),
       body: Container(
         decoration: Constants.customBoxDecoration(context),
-        child:
-            _syllabusList.isEmpty ? _buildEmptyState() : _buildSyllabusList(),
+        child: FutureBuilder<List<dynamic>>(
+          future: _fetchSyllabusesFromService(),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(child: CircularProgressIndicator());
+            } else if (snapshot.hasError) {
+              return Center(child: Text('Error: ${snapshot.error}'));
+            } else {
+              _syllabusList.clear();
+              _syllabusList.addAll(snapshot.data!.asMap().entries.map((entry) {
+                final index = entry.key;
+                final syllabus = entry.value as Map<String, dynamic>;
+                // Derive selectedClass from class_ids
+                final classIds = (syllabus['class_ids'] as List<dynamic>?) ?? [];
+                final classNames = classIds
+                    .map((cls) => cls['class_name']?.toString() ?? 'Unknown')
+                    .join(', ');
+                final selectedClass = classNames.isEmpty ? 'No classes selected' : classNames;
+
+                return {
+                  'title': syllabus['title']?.toString() ?? '',
+                  'description': syllabus['description']?.toString() ?? '',
+                  'image': syllabus['image']?.toString() ?? '',
+                  'image_name': syllabus['image_name']?.toString() ?? '',
+                  'course_id': syllabus['course_id']?.toString() ?? '',
+                  'level_id': syllabus['level_id']?.toString() ?? '',
+                  'class_ids': classIds,
+                  'creator_role': syllabus['creator_role']?.toString() ?? '',
+                  'term': syllabus['term']?.toString() ?? '',
+                  'year': syllabus['year']?.toString() ?? '',
+                  'creator_id': syllabus['creator_id'] ?? 0,
+                  'selectedClass': selectedClass,
+                  'selectedTeacher': 'Not assigned', // Placeholder
+                  'backgroundImagePath': _imagePaths[index % _imagePaths.length], // Cycle through 5 images
+                };
+              }).toList());
+
+              return _syllabusList.isEmpty ? _buildEmptyState() : _buildSyllabusList();
+            }
+          },
+        ),
+        // isLoading
+        //     ? const Center(child: CircularProgressIndicator())
+        //     : _syllabusList.isEmpty
+        //         ? _buildEmptyState()
+        //         : _buildSyllabusList(),
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: _addNewSyllabus,
+        onPressed: _addNewSyllabus(),
         backgroundColor: AppColors.videoColor4,
         child: SvgPicture.asset(
           'assets/icons/e_learning/plus.svg',
@@ -117,7 +261,7 @@ class _EmptySyllabusScreenState extends State<EmptySyllabusScreen> {
           children: [
             CustomMediumElevatedButton(
               text: 'Create new syllabus',
-              onPressed: _addNewSyllabus,
+              onPressed: _addNewSyllabus(),
               backgroundColor: AppColors.eLearningBtnColor1,
               textStyle: AppTextStyles.normal600(
                 fontSize: 16,
@@ -140,47 +284,56 @@ class _EmptySyllabusScreenState extends State<EmptySyllabusScreen> {
             context,
             MaterialPageRoute(
               builder: (context) => EmptySubjectScreen(
+                 classId: widget.classId,
+            courseId: widget.courseId,
+            levelId: widget.levelId,
+            courseName: widget.course_name,
                 courseTitle: _syllabusList[index]['title']?.toString() ?? '',
               ),
             ),
           ),
           child: _buildOutlineContainers(_syllabusList[index], index),
         );
+        
       },
     );
   }
 
-  void _addNewSyllabus() async {
-    final result = await Navigator.of(context).push(
+  VoidCallback _addNewSyllabus() {
+    print("SSSSSSSSSSSSSSSSSSSSSSSSSSSS ${widget.levelId} ");
+     print("SSSSSSSSSSSSSSSSSSSSSSSSSSSS ${widget.course_name} ");
+    return () async {
+      await Navigator.of(context).push(
+        MaterialPageRoute(
+          fullscreenDialog: true,
+          builder: (BuildContext context) => CreateSyllabusScreen(
+            classId: widget.classId,
+            courseId: widget.courseId,
+            levelId: widget.levelId,
+          ),
+          
+        ),
+         
+      );
+     
+      // No need to add result since CreateSyllabusScreen doesn't pass data
+      // _loadSyllabuses will handle updates via API
+    };
+  }
+
+  void _editSyllabus(int index) async {
+    await Navigator.of(context).push(
       MaterialPageRoute(
-        fullscreenDialog: true,
         builder: (BuildContext context) => CreateSyllabusScreen(
-          classId:widget.classId,
+          syllabusData: _syllabusList[index],
+          classId: widget.classId,
           courseId: widget.courseId,
           levelId: widget.levelId,
         ),
       ),
     );
-    if (result != null && mounted) {
-      setState(() {
-        _syllabusList.add(result as Map<String, dynamic>);
-      });
-    }
-  }
-
-  void _editSyllabus(int index) async {
-    final result = await Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (BuildContext context) => CreateSyllabusScreen(
-          syllabusData: _syllabusList[index],
-        ),
-      ),
-    );
-    if (result != null && mounted) {
-      setState(() {
-        _syllabusList[index] = result as Map<String, dynamic>;
-      });
-    }
+    // No need to update _syllabusList since CreateSyllabusScreen doesn't pass data
+    // _loadSyllabuses will handle updates via API
   }
 
   void _deleteSyllabus(int index) {

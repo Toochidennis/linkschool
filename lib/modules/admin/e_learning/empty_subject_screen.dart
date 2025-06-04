@@ -18,8 +18,12 @@ import 'package:linkschool/modules/staff/e_learning/view/staff_material_details_
 
 class EmptySubjectScreen extends StatefulWidget {
   final String courseTitle;
+  final String? courseId;
+  final String? levelId;
+  final String? classId;
+  final String? courseName;
 
-  const EmptySubjectScreen({super.key, required this.courseTitle});
+  const EmptySubjectScreen({super.key, required this.courseTitle, this.courseId, this.levelId, this.classId, this.courseName});
 
   @override
   State<EmptySubjectScreen> createState() => _EmptySubjectScreenState();
@@ -183,6 +187,10 @@ class _EmptySubjectScreenState extends State<EmptySubjectScreen> {
               context,
               MaterialPageRoute(
                 builder: (context) => AdminAssignmentScreen(
+                    classId: widget.classId,
+            courseId: widget.courseId,
+            levelId: widget.levelId,
+                    courseName: widget.courseName,
                   onSave: (assignment) {
                     setState(() {
                       _showCourseworkScreen = true;

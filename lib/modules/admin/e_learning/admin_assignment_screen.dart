@@ -1,5 +1,8 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:hive/hive.dart';
 import 'package:intl/intl.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:file_picker/file_picker.dart';
@@ -13,9 +16,13 @@ import 'package:linkschool/modules/common/widgets/portal/e_learning/select_class
 
 
 class AdminAssignmentScreen extends StatefulWidget {
-  final Function(Assignment) onSave;
+  final Function (Map<String,dynamic>) onSave;
+  final String? classId;
+  final String? courseId;
+  final String? courseName;
+  final String? levelId;
 
-  const AdminAssignmentScreen({super.key, required this.onSave});
+  const AdminAssignmentScreen({super.key, required this.onSave,this.classId,this.courseId,this.courseName,this.levelId});
 
   @override
   State<AdminAssignmentScreen> createState() => _AdminAssignmentScreenState();
@@ -32,6 +39,43 @@ class _AdminAssignmentScreenState extends State<AdminAssignmentScreen> {
   String _selectedTopic = 'No Topic';
   String _marks = '200 marks';
   late double opacity;
+
+
+   int? creatorId;
+  String? creatorName;
+  String? academicYear;
+  int? academicTerm;
+
+   void initState() {
+    super.initState();
+    _loadUserData();
+    }
+
+   Future<void> _loadUserData() async {
+    try {
+      final userBox = Hive.box('userData');
+      final storedUserData = userBox.get('userData') ?? userBox.get('loginResponse');
+      if (storedUserData != null) {
+        final processedData = storedUserData is String
+            ? json.decode(storedUserData)
+            : storedUserData as Map<String, dynamic>;
+        final response = processedData['response'] ?? processedData;
+        final data = response['data'] ?? response;
+        final profile = data['profile'] ?? {};
+        final settings = data['settings'] ?? {};
+
+        setState(() {
+          creatorId = profile['staff_id'] as int?;
+          creatorName = profile['name']?.toString();
+          academicYear = settings['year']?.toString();
+          academicTerm = settings['term'] as int?;
+        });
+      }
+    } catch (e) {
+      print('Error loading user data: $e');
+    }
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -143,6 +187,7 @@ class _AdminAssignmentScreenState extends State<AdminAssignmentScreen> {
                               _selectedClass = selectedClass;
                             });
                           },
+                          levelId: widget.levelId,
                         ),
                       ),
                     );
@@ -622,20 +667,96 @@ class _AdminAssignmentScreenState extends State<AdminAssignmentScreen> {
     }
   }
 
-  void _saveAssignment() {
-    final assignment = Assignment(
-      title: _titleController.text,
-      description: _descriptionController.text,
-      selectedClass: _selectedClass,
-      attachments: _attachments,
-      dueDate: _selectedDateTime,
-      topic: _selectedTopic,
-      marks: _marks,
-    );
+void _saveAssignment() async {
+  try {
+    final userBox = Hive.box('userData');
+    final storedUserData = userBox.get('userData') ?? userBox.get('loginResponse');
+    final processedData = storedUserData is String
+        ? json.decode(storedUserData)
+        : storedUserData;
+    final response = processedData['response'] ?? processedData;
+    final data = response['data'] ?? response;
+    final classes = data['classes'] ?? [];
+    final selectedClassIds = userBox.get('selectedClassIds') ?? [];
+
+    // Map selected class IDs to their class names
+    final classIdList = selectedClassIds.map<Map<String, String>>((classId) {
+      final classIdStr = classId.toString();
+      final classData = classes.firstWhere(
+        (cls) => cls['id'].toString() == classIdStr,
+        orElse: () => {'id': classIdStr, 'class_name': 'Unknown'},
+      );
+      return {
+        'id': classIdStr,
+        'class_name': (classData['class_name']?.toString() ?? 'Unknown'),
+      };
+    }).toList();
+
+    // Use widget.classId as fallback if no classes selected
+    if (classIdList.isEmpty && widget.classId != null) {
+      final classIdStr = widget.classId!;
+      final classData = classes.firstWhere(
+        (cls) => cls['id'].toString() == classIdStr,
+        orElse: () => {'id': classIdStr, 'class_name': _selectedClass},
+      );
+      classIdList.add({
+        'id': classIdStr,
+        'class_name': (classData['class_name']?.toString() ?? _selectedClass),
+      });
+    }
+
+    final assignment = {
+      'id': (DateTime.now().millisecondsSinceEpoch % 100),
+      'title': _titleController.text,
+      'description': _descriptionController.text,
+      'topic': _selectedTopic,
+      "topic_id":"",
+      'grade': _marks, 
+       'files': _attachments.map((attachment) => {
+            'content': attachment.content,
+            'type': _getAttachmentType(attachment.iconPath),
+          }).toList(),
+      'classids': classIdList.isNotEmpty
+          ? classIdList
+          : [
+              {
+                'id': '',
+                'class_name': '',
+              }
+            ],
+      'Level_id': widget.levelId,
+      'course_id': widget.courseId,
+      'course_name': widget.courseName,
+      'Start_date':"",
+      'End_date':"",
+      'creator_id': creatorId, // Need to get the current user's ID
+      'Creator_name': creatorName, // Need to get the current user's name
+      'year':  academicYear,
+      'term': academicTerm?.toInt(), // Need to get current term
+     
+    };
+
+    print('Complete Assignment Data:');
+    print(const JsonEncoder.withIndent('  ').convert(assignment));
+    print(assignment);
 
     widget.onSave(assignment);
     Navigator.of(context).pop();
+  } catch (e) {
+    print('Error saving assignment: $e');
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Error: ${e.toString()}')),
+    );
   }
+}
+
+String _getAttachmentType(String iconPath) {
+  if (iconPath.contains('link')) return 'link';
+  if (iconPath.contains('upload')) return 'file';
+  if (iconPath.contains('camera')) return 'photo';
+  if (iconPath.contains('video')) return 'video';
+  return 'other';
+}
 }
 
 class AttachmentItem {
