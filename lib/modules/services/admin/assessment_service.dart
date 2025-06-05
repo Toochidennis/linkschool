@@ -109,9 +109,6 @@ class AssessmentService {
 
 
 
-
-
-
 // import 'package:hive/hive.dart';
 // import 'package:linkschool/modules/services/api/api_service.dart';
 // import 'package:linkschool/modules/services/api/service_locator.dart';
@@ -134,6 +131,63 @@ class AssessmentService {
 
 //       return await _apiService.post(
 //         endpoint: 'portal/assessments',
+//         body: payload,
+//       );
+//     } catch (e) {
+//       rethrow;
+//     }
+//   }
+
+//   // method for editing assessment
+//   Future<ApiResponse<Map<String, dynamic>>> editAssessment(String assessmentId, Map<String, dynamic> payload) async {
+//     try {
+//       // Get token from local storage
+//       final userBox = Hive.box('userData');
+//       final token = userBox.get('token');
+      
+//       if (token == null) {
+//         throw Exception('Authentication token not found');
+//       }
+
+//       // Set the auth token before making the request
+//       _apiService.setAuthToken(token);
+
+//       // Get database name from payload or use default
+//       final dbName = payload['_db'] ?? 'aalmgzmy_linkskoo_practice';
+
+//       return await _apiService.put(
+//         endpoint: 'portal/assessments/$assessmentId',
+//         body: payload,
+//         queryParams: {'_db': dbName},
+//       );
+//     } catch (e) {
+//       rethrow;
+//     }
+//   }
+
+//   // method for deleting assessment
+//   Future<ApiResponse<Map<String, dynamic>>> deleteAssessment(String assessmentId) async {
+//     try {
+//       // Get token from local storage
+//       final userBox = Hive.box('userData');
+//       final token = userBox.get('token');
+//       final dbName = userBox.get('_db') ?? 'aalmgzmy_linkskoo_practice';
+      
+//       if (token == null) {
+//         throw Exception('Authentication token not found');
+//       }
+
+//       // Set the auth token before making the request
+//       _apiService.setAuthToken(token);
+
+//       final payload = {
+//       '_db': dbName,
+//     };
+
+//       return await _apiService.request(
+//         endpoint: 'portal/assessments/$assessmentId',
+//         method: HttpMethod.DELETE,
+//         queryParams: {'_db': dbName},
 //         body: payload,
 //       );
 //     } catch (e) {

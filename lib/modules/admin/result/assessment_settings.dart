@@ -629,17 +629,22 @@ class _AssessmentSettingScreenState extends State<AssessmentSettingScreen> {
 
 
 
+
+
+
+
+
 // import 'package:flutter/material.dart';
 // import 'package:hive/hive.dart';
-// import 'package:linkschool/modules/common/custom_toaster.dart';
 // import 'package:linkschool/modules/model/admin/assessment_model.dart';
-// import 'package:linkschool/modules/model/admin/level_model.dart';
 // import 'package:linkschool/modules/providers/admin/assessment_provider.dart';
 // import 'package:linkschool/modules/providers/admin/level_provider.dart';
 // import 'package:provider/provider.dart';
 // import 'package:linkschool/modules/common/buttons/custom_floating_save_button.dart';
 // import 'package:linkschool/modules/common/app_colors.dart';
 // import 'package:linkschool/modules/common/text_styles.dart';
+
+// import '../../model/admin/level_model.dart';
 
 // class AssessmentSettingScreen extends StatefulWidget {
 //   const AssessmentSettingScreen({super.key});
@@ -650,52 +655,82 @@ class _AssessmentSettingScreenState extends State<AssessmentSettingScreen> {
 // }
 
 // class _AssessmentSettingScreenState extends State<AssessmentSettingScreen> {
-//   // Default level ID is 0 for "General"
-//   String _selectedLevelId = "0";
-//   String? _selectedAssessmentType;
 //   final _assessmentNameController = TextEditingController();
 //   final _assessmentScoreController = TextEditingController();
 //   bool _isEditingCard = false;
 //   int? _editingIndex;
+// late final LevelProvider levelProvider;
+//   String? _selectedLevelId;
+//   String? _selectedAssessmentType = '0';
+  
 
 //   @override
 //   void initState() {
 //     super.initState();
-//     WidgetsBinding.instance.addPostFrameCallback((_) {
-//       _loadInitialData();
-//     });
+//   WidgetsBinding.instance.addPostFrameCallback((_) {
+//     _loadInitialData();
+//   });
+//     // _loadInitialData();
 //   }
 
-//   Future<void> _loadInitialData() async {
-//     final assessmentProvider = Provider.of<AssessmentProvider>(context, listen: false);
-//     final levelProvider = Provider.of<LevelProvider>(context, listen: false);
+//   // Future<void> _loadInitialData() async {
+//   //   final assessmentProvider =
+//   //       Provider.of<AssessmentProvider>(context, listen: false);
+//   //   await assessmentProvider.fetchAssessments();
+
+//   //   // Load levels from local storage
+//   //   final userBox = Hive.box('userData');
+//   //   final levels = userBox.get('levels');
+//   //   if (levels != null && levels is List) {
+//   //     final levelProvider = Provider.of<LevelProvider>(context, listen: false);
+//   //     levelProvider
+//   //         .updateLevels(levels.map((level) => Level.fromJson(level)).toList());
+//   //     // levelProvider.levels = levels.map((level) => Level.fromJson(level)).toList();
+//   //   }
+//   // }
+
+
+// Future<void> _loadInitialData() async {
+//   final assessmentProvider = Provider.of<AssessmentProvider>(context, listen: false);
+//   levelProvider = Provider.of<LevelProvider>(context, listen: false);
+  
+//   try {
+//     // Verify we have a token
+//     final userBox = Hive.box('userData');
+//     final token = userBox.get('token');
     
-//     try {
-//       // Verify we have a token
-//       final userBox = Hive.box('userData');
-//       final token = userBox.get('token');
-      
-//       if (token == null) {
-//         throw Exception('User not authenticated');
-//       }
-
-//       await assessmentProvider.fetchAssessments();
-      
-//       // Load levels from local storage
-//       final levels = userBox.get('levels');
-//       if (levels != null && levels is List) {
-//         levelProvider.updateLevels(levels.map((level) => Level.fromJson(level)).toList());
-//       }
-//     } catch (e) {
-//       debugPrint('Initialization error: ${e.toString()}');
-//       // Error loading initial data, but removing toast as per requirement
+//     if (token == null) {
+//       throw Exception('User not authenticated');
 //     }
+
+//     await assessmentProvider.fetchAssessments();
+    
+//     // Load levels from local storage
+//     final levels = userBox.get('levels');
+//     if (levels != null && levels is List) {
+//       levelProvider.updateLevels(levels.map((level) => Level.fromJson(level)).toList());
+//     }
+//   } catch (e) {
+//     debugPrint('Initialization error: ${e.toString()}');
 //   }
+// }
+
 
 //   @override
 //   Widget build(BuildContext context) {
 //     final assessmentProvider = Provider.of<AssessmentProvider>(context);
-//     final levelProvider = Provider.of<LevelProvider>(context);
+
+//     // Group assessments by level
+//     Map<int, List<Assessment>> groupedAssessments = {};
+//     Map<int, String> levelNames = {};
+    
+//     for (var assessment in assessmentProvider.assessments) {
+//       if (!groupedAssessments.containsKey(assessment.levelId)) {
+//         groupedAssessments[assessment.levelId] = [];
+//         levelNames[assessment.levelId] = assessment.levelName;
+//       }
+//       groupedAssessments[assessment.levelId]!.add(assessment);
+//     }
 
 //     return Scaffold(
 //       appBar: AppBar(
@@ -739,7 +774,7 @@ class _AssessmentSettingScreenState extends State<AssessmentSettingScreen> {
 //                     ),
 //                   ),
 
-//                 // Level selector - changed to use a button that opens a bottom sheet
+//                 // Level dropdown
 //                 Text(
 //                   'Level',
 //                   style: AppTextStyles.normal600(
@@ -749,7 +784,7 @@ class _AssessmentSettingScreenState extends State<AssessmentSettingScreen> {
 //                 ),
 //                 const SizedBox(height: 8.0),
 //                 GestureDetector(
-//                   onTap: () => _showLevelSelectionBottomSheet(levelProvider),
+//                   onTap: () => _showLevelSelectionDialog(levelProvider),
 //                   child: Container(
 //                     padding: const EdgeInsets.symmetric(
 //                         horizontal: 16, vertical: 12),
@@ -768,7 +803,14 @@ class _AssessmentSettingScreenState extends State<AssessmentSettingScreen> {
 //                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
 //                       children: [
 //                         Text(
-//                           _getLevelName(levelProvider),
+//                           levelProvider.levels
+//                                   .firstWhere(
+//                                     (level) => level.id == _selectedLevelId,
+//                                     orElse: () => Level(
+//                                         id: '', levelName: 'Select Level'),
+//                                   )
+//                                   .levelName ??
+//                               'Select Level',
 //                         ),
 //                         const Icon(Icons.arrow_drop_down,
 //                             color: AppColors.primaryLight),
@@ -785,15 +827,13 @@ class _AssessmentSettingScreenState extends State<AssessmentSettingScreen> {
 //                     child: ListView(
 //                       children: [
 //                         ...assessmentProvider.assessments
-//                             .where((assessment) => assessment.levelId.toString() == _selectedLevelId)
-//                             .toList()
 //                             .asMap()
 //                             .entries
 //                             .map(
 //                               (entry) => buildAssessmentCard(
 //                                   entry.value, entry.key, assessmentProvider),
 //                             )
-//                             .toList(),
+//                             .toList(), // Added closing parenthesis and .toList()
 //                         const SizedBox(height: 24.0),
 //                         if (!_isEditingCard) buildInputCard(assessmentProvider),
 //                       ],
@@ -815,100 +855,57 @@ class _AssessmentSettingScreenState extends State<AssessmentSettingScreen> {
 //         ],
 //       ),
 //       floatingActionButton: CustomFloatingSaveButton(
-//         onPressed: () async {
-//           try {
-//             await assessmentProvider.saveAssessments(context, _selectedLevelId);
-//             // Show toast only for the floating save button action
-//             CustomToaster.toastSuccess(context, 'Success', 'Assessments saved successfully');
-//           } catch (e) {
-//             CustomToaster.toastError(context, 'Error', 'Failed to save assessments');
-//           }
-//         },
-//       ),
+//   onPressed: () async {
+//     await assessmentProvider.saveAssessments(context);  // Pass context here
+//   },
+// ),
 //     );
 //   }
 
-//   String _getLevelName(LevelProvider levelProvider) {
-//     if (_selectedLevelId == "0") {
-//       return "General (All Levels)";
-//     }
-    
-//     final selectedLevel = levelProvider.levels.firstWhere(
-//       (level) => level.id == _selectedLevelId,
-//       orElse: () => Level(id: '', levelName: 'Select Level'),
-//     );
-    
-//     return selectedLevel.levelName ?? 'Select Level';
-//   }
-
-//   void _showLevelSelectionBottomSheet(LevelProvider levelProvider) {
-//     showModalBottomSheet(
+//   void _showLevelSelectionDialog(LevelProvider levelProvider) {
+//     showDialog(
 //       context: context,
-//       shape: const RoundedRectangleBorder(
-//         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-//       ),
 //       builder: (BuildContext context) {
-//         return Container(
-//           padding: const EdgeInsets.symmetric(vertical: 16),
-//           child: Column(
-//             mainAxisSize: MainAxisSize.min,
-//             children: [
-//               Padding(
-//                 padding: const EdgeInsets.only(bottom: 16),
-//                 child: Text(
-//                   'Select Level',
-//                   style: AppTextStyles.normal600(
-//                     fontSize: 18.0,
-//                     color: AppColors.primaryLight,
-//                   ),
-//                 ),
-//               ),
-//               Divider(thickness: 1, color: Colors.grey[300]),
-//               // Add "General" option as first item
-//               ListTile(
-//                 title: Text(
-//                   'General (All Levels)',
-//                   style: AppTextStyles.normal600(
-//                     fontSize: 16.0,
-//                     color: AppColors.textGray,
-//                   ),
-//                 ),
-//                 tileColor: _selectedLevelId == "0" ? Colors.grey[100] : null,
-//                 onTap: () {
-//                   setState(() => _selectedLevelId = "0");
-//                   Navigator.pop(context);
-//                 },
-//               ),
-//               Divider(thickness: 1, color: Colors.grey[300]),
-//               Expanded(
-//                 child: ListView.separated(
-//                   shrinkWrap: true,
-//                   itemCount: levelProvider.levels.length,
-//                   separatorBuilder: (context, index) => Divider(
-//                     thickness: 1,
-//                     color: Colors.grey[300],
-//                   ),
-//                   itemBuilder: (context, index) {
-//                     final level = levelProvider.levels[index];
-//                     return ListTile(
-//                       title: Text(
-//                         level.levelName ?? 'N/A',
-//                         style: AppTextStyles.normal600(
-//                           fontSize: 16.0,
-//                           color: AppColors.textGray,
+//         return AlertDialog(
+//           title: const Text('Select Level'),
+//           content: SizedBox(
+//             width: double.maxFinite,
+//             child: ListView.builder(
+//               shrinkWrap: true,
+//               itemCount: levelProvider.levels.length,
+//               itemBuilder: (context, index) {
+//                 final level = levelProvider.levels[index];
+//                 return Padding(
+//                   padding: const EdgeInsets.symmetric(vertical: 4),
+//                   child: Container(
+//                     decoration: BoxDecoration(
+//                       color: Colors.white,
+//                       borderRadius: BorderRadius.circular(4),
+//                       boxShadow: [
+//                         BoxShadow(
+//                           color: Colors.grey.withAlpha(20),
+//                           spreadRadius: 1,
+//                           blurRadius: 2,
+//                           offset: const Offset(0, 1),
 //                         ),
-//                       ),
-//                       tileColor: _selectedLevelId == level.id ? Colors.grey[100] : null,
+//                       ],
+//                     ),
+//                     child: ListTile(
+//                       title: Center(child: Text(level.levelName ?? 'N/A')),
 //                       onTap: () {
 //                         setState(() => _selectedLevelId = level.id);
 //                         Navigator.pop(context);
 //                       },
-//                     );
-//                   },
-//                 ),
-//               ),
-//             ],
+//                     ),
+//                   ),
+//                 );
+//               },
+//             ),
 //           ),
+//           shape: RoundedRectangleBorder(
+//             borderRadius: BorderRadius.circular(10),
+//           ),
+//           elevation: 24,
 //         );
 //       },
 //     );
@@ -997,35 +994,30 @@ class _AssessmentSettingScreenState extends State<AssessmentSettingScreen> {
 //   }
 
 //   void _handleAddAssessment(AssessmentProvider assessmentProvider) {
+//     if (_selectedLevelId == null) {
+//       showToast('Please select a level');
+//       return;
+//     }
 //     if (_assessmentNameController.text.isEmpty ||
 //         _assessmentScoreController.text.isEmpty ||
 //         _selectedAssessmentType == null) {
-//       // Removed toast as per requirement - Let the UI indication be enough
+//       showToast('Please fill all fields');
 //       return;
 //     }
 
-//     // Parse the level ID (default to 0 if General is selected)
-//     final levelId = int.parse(_selectedLevelId);
+//     assessmentProvider.addAssessment(
+//       Assessment(
+//         assessmentName: _assessmentNameController.text,
+//         assessmentScore: int.parse(_assessmentScoreController.text),
+//         assessmentType: int.parse(_selectedAssessmentType!),
+//         levelId: int.parse(_selectedLevelId!), levelName: '',
+//       ),
+//     );
 
-//     try {
-//       assessmentProvider.addAssessment(
-//         Assessment(
-//           assessmentName: _assessmentNameController.text,
-//           assessmentScore: int.parse(_assessmentScoreController.text),
-//           assessmentType: int.parse(_selectedAssessmentType!),
-//           levelId: levelId,
-//         ),
-//       );
-
-//       // Clear inputs
-//       _assessmentNameController.clear();
-//       _assessmentScoreController.clear();
-//       _selectedAssessmentType = null;
-      
-//       // Removed toast as per requirement
-//     } catch (e) {
-//       // Removed toast as per requirement
-//     }
+//     // Clear inputs
+//     _assessmentNameController.clear();
+//     _assessmentScoreController.clear();
+//     _selectedAssessmentType = null;
 //   }
 
 //   Widget buildAssessmentCard(
@@ -1034,7 +1026,6 @@ class _AssessmentSettingScreenState extends State<AssessmentSettingScreen> {
 //         TextEditingController(text: assessment.assessmentName);
 //     final scoreController =
 //         TextEditingController(text: assessment.assessmentScore.toString());
-//     String selectedType = assessment.assessmentType.toString();
 
 //     return Card(
 //       shape: RoundedRectangleBorder(
@@ -1042,24 +1033,22 @@ class _AssessmentSettingScreenState extends State<AssessmentSettingScreen> {
 //       ),
 //       elevation: 3,
 //       color: Colors.white,
+//       margin: const EdgeInsets.symmetric(vertical: 4.0),
 //       child: Container(
 //         padding: const EdgeInsets.all(16.0),
 //         child: Column(
 //           mainAxisSize: MainAxisSize.min,
 //           children: [
 //             Row(
-//               mainAxisAlignment: MainAxisAlignment.end,
+//               mainAxisAlignment: MainAxisAlignment.spaceBetween,
 //               children: [
 //                 IconButton(
-//                   icon: Icon(
-//                     _isEditingCard && _editingIndex == index ? Icons.save : Icons.edit,
-//                     color: AppColors.primaryDark,
-//                   ),
-//                   onPressed: () => _handleEditAssessment(index, provider, assessment, nameController, scoreController, selectedType),
+//                   icon: const Icon(Icons.edit, color: AppColors.primaryDark),
+//                   onPressed: () => _handleEditAssessment(index, provider),
 //                 ),
 //                 IconButton(
 //                   icon: const Icon(Icons.delete, color: AppColors.primaryDark),
-//                   onPressed: () => _handleDeleteAssessment(assessment, provider),
+//                   onPressed: () => provider.removeAssessment(assessment),
 //                 ),
 //               ],
 //             ),
@@ -1088,25 +1077,6 @@ class _AssessmentSettingScreenState extends State<AssessmentSettingScreen> {
 //                       EdgeInsets.symmetric(vertical: 10.0, horizontal: 10.0),
 //                 ),
 //                 keyboardType: TextInputType.number,
-//               ),
-//               const SizedBox(height: 16.0),
-//               DropdownButtonFormField<String>(
-//                 value: selectedType,
-//                 decoration: const InputDecoration(
-//                   hintText: 'Assessment type',
-//                   border: UnderlineInputBorder(
-//                     borderSide: BorderSide(color: AppColors.assessmentColor1),
-//                   ),
-//                 ),
-//                 items: const [
-//                   DropdownMenuItem(value: '0', child: Text('Assessment')),
-//                   DropdownMenuItem(value: '1', child: Text('Sub Assessment')),
-//                 ],
-//                 onChanged: (value) {
-//                   if (value != null) {
-//                     selectedType = value;
-//                   }
-//                 },
 //               ),
 //             ] else ...[
 //               _buildAssessmentDetail(
@@ -1152,101 +1122,34 @@ class _AssessmentSettingScreenState extends State<AssessmentSettingScreen> {
 //     );
 //   }
 
-//   void _handleEditAssessment(int index, AssessmentProvider provider, Assessment assessment, 
-//       TextEditingController nameController, TextEditingController scoreController, String selectedType) async {
-//     if (_isEditingCard && _editingIndex == index) {
-//       // Save changes - check if this is a newly added assessment or an existing one
-//       final isNewlyAdded = provider.newlyAddedAssessments.contains(assessment);
-//       bool success = false;
-      
-//       if (isNewlyAdded) {
-//         // Update locally for newly added assessment
-//         success = await provider.editAssessment(assessment, nameController.text, 
-//             int.tryParse(scoreController.text) ?? assessment.assessmentScore, 
-//             int.tryParse(selectedType) ?? assessment.assessmentType);
-        
-//         if (success) {
-//           CustomToaster.toastSuccess(context, 'Success', 'Assessment updated successfully');
-//         } else {
-//           CustomToaster.toastError(context, 'Error', 'Failed to update assessment');
-//         }
-//       } else {
-//         // Update using API for existing assessment
-//         success = await provider.editAssessment(assessment, nameController.text, 
-//             int.tryParse(scoreController.text) ?? assessment.assessmentScore, 
-//             int.tryParse(selectedType) ?? assessment.assessmentType);
-        
-//         if (success) {
-//           CustomToaster.toastSuccess(context, 'Success', 'Assessment updated successfully');
-//         } else {
-//           CustomToaster.toastError(context, 'Error', provider.errorMessage ?? 'Failed to update assessment');
-//         }
-//       }
-      
-//       setState(() {
+//   void _handleEditAssessment(int index, AssessmentProvider provider) {
+//     setState(() {
+//       if (_isEditingCard && _editingIndex == index) {
+//         // Save changes
+//         provider.assessments[index] = Assessment(
+//           id: provider.assessments[index].id,
+//           assessmentName: provider.assessments[index].assessmentName,
+//           assessmentScore: provider.assessments[index].assessmentScore,
+//           assessmentType: provider.assessments[index].assessmentType,
+//           levelId: provider.assessments[index].levelId,
+//            levelName:provider.assessments[index].levelName,
+//         );
 //         _isEditingCard = false;
 //         _editingIndex = null;
-//       });
-//     } else {
-//       // Start editing
-//       setState(() {
+//       } else {
+//         // Start editing
 //         _isEditingCard = true;
 //         _editingIndex = index;
-//       });
-//     }
-//   }
-
-//   void _updateLocalAssessment(AssessmentProvider provider, Assessment assessment, 
-//       TextEditingController nameController, TextEditingController scoreController, String selectedType) {
-//     final filteredAssessments = provider.assessments
-//         .where((a) => a.levelId.toString() == _selectedLevelId)
-//         .toList();
-    
-//     final originalIndex = provider.assessments.indexOf(assessment);
-    
-//     if (originalIndex != -1) {
-//       // Update the assessment in both lists
-//       final updatedAssessment = Assessment(
-//         id: assessment.id,
-//         assessmentName: nameController.text,
-//         assessmentScore: int.tryParse(scoreController.text) ?? assessment.assessmentScore,
-//         assessmentType: int.tryParse(selectedType) ?? assessment.assessmentType,
-//         levelId: assessment.levelId,
-//       );
-      
-//       provider.assessments[originalIndex] = updatedAssessment;
-      
-//       // Update in newly added list as well
-//       final newlyAddedIndex = provider.newlyAddedAssessments.indexOf(assessment);
-//       if (newlyAddedIndex != -1) {
-//         provider.newlyAddedAssessments[newlyAddedIndex] = updatedAssessment;
 //       }
-      
-//       provider.notifyListeners();
-//     }
+//     });
 //   }
 
-//   void _updateExistingAssessment(AssessmentProvider provider, Assessment assessment, 
-//       TextEditingController nameController, TextEditingController scoreController, String selectedType) {
-//     // Call the edit API for existing assessments
-//     provider.editAssessment(
-//       assessment,
-//       nameController.text,
-//       int.tryParse(scoreController.text) ?? assessment.assessmentScore,
-//       int.tryParse(selectedType) ?? assessment.assessmentType,
+//   void showToast(String message, {bool isSuccess = true}) {
+//     ScaffoldMessenger.of(context).showSnackBar(
+//       SnackBar(
+//         content: Text(message),
+//         backgroundColor: isSuccess ? Colors.green : Colors.red,
+//       ),
 //     );
-//   }
-
-//   void _handleDeleteAssessment(Assessment assessment, AssessmentProvider provider) {
-//     // Check if this is a newly added assessment or an existing one
-//     final isNewlyAdded = provider.newlyAddedAssessments.contains(assessment);
-    
-//     if (isNewlyAdded) {
-//       // Delete locally for newly added assessment
-//       provider.removeAssessment(assessment);
-//     } else {
-//       // Delete using API for existing assessment
-//       provider.deleteAssessment(assessment);
-//     }
 //   }
 // }

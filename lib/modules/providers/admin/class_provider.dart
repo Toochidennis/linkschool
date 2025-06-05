@@ -30,7 +30,6 @@ class ClassProvider with ChangeNotifier {
   }
 }
 
-
 // import 'package:flutter/material.dart';
 // import 'package:linkschool/modules/model/admin/class_model.dart';
 // import 'package:linkschool/modules/services/admin/class_service.dart';

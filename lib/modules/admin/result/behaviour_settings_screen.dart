@@ -1,102 +1,248 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
-import 'package:linkschool/modules/common/constants.dart'; // Import the constants file
+import 'package:animated_custom_dropdown/custom_dropdown.dart';
+import 'package:provider/provider.dart';
+import '../../common/text_styles.dart';
+import 'package:linkschool/modules/providers/admin/behaviour_provider.dart';
+import 'package:linkschool/modules/model/admin/behaviour_model.dart';
 
 class BehaviourSettingScreen extends StatefulWidget {
   const BehaviourSettingScreen({super.key});
+
   @override
   State<BehaviourSettingScreen> createState() => _BehaviourSettingScreenState();
 }
 
 class _BehaviourSettingScreenState extends State<BehaviourSettingScreen> {
-  List<String> skills = [];
+  // Map display names to API values
+  final Map<String, String> levelMap = {
+    'Class 1': '0',
+    'Class 2': '1',
+    'Class 3': '2',
+    'Class 4': '3',
+    'Class 5': '4',
+  };
+
+  // Track the selected level for display
+  String selectedLevelDisplay = 'Select Level';
+  // Store the API value
+  String selectedLevelValue = '';
+
+  @override
+  void initState() {
+    super.initState();
+    // Fetch skills when the screen loads
+    Provider.of<SkillsProvider>(context, listen: false).fetchSkills();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: Constants.customAppBar(
-        context: context,
-        title: 'Skills and Behaviour',
-        centerTitle: true
+      appBar: AppBar(
+        leading: IconButton(
+          onPressed: () {
+            Navigator.of(context).pop();
+          },
+          icon: Image.asset(
+            'assets/icons/arrow_back.png',
+            color: AppColors.primaryLight,
+            width: 34.0,
+            height: 34.0,
+          ),
+        ),
+        title: Text(
+          'Skills and Behaviour',
+          style: AppTextStyles.normal600(
+            fontSize: 18.0,
+            color: AppColors.primaryLight,
+          ),
+        ),
+        centerTitle: true,
+        backgroundColor: AppColors.backgroundLight,
       ),
       body: Container(
-        decoration: Constants.customBoxDecoration(context),
+        decoration: const BoxDecoration(color: Colors.white),
         child: Padding(
           padding: const EdgeInsets.all(16.0),
           child: Column(
             children: [
-              SkillsList(
-                  skills: skills, onEdit: _editSkill, onDelete: _deleteSkill),
-              const SizedBox(
-                height: 10,
+              // Level Selection Button
+              GestureDetector(
+                onTap: () {
+                  _showLevelSelectionDialog(context);
+                },
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  decoration: BoxDecoration(
+                    color: AppColors.backgroundLight,
+                    borderRadius: BorderRadius.circular(4.0),
+                    boxShadow: const [
+                      BoxShadow(
+                        color: AppColors.shadowColor,
+                        offset: Offset(0, 1),
+                        blurRadius: 0,
+                      ),
+                    ],
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(selectedLevelDisplay),
+                      const Icon(Icons.arrow_drop_down, color: AppColors.primaryLight),
+                    ],
+                  ),
+                ),
               ),
-              CustomInputField(
-                hintText: 'Add new skill or behaviour',
-                onSubmitted: _addSkill,
+              const SizedBox(height: 16),
+              // Skills List
+              Expanded(
+                child: Consumer<SkillsProvider>(
+                  builder: (context, provider, child) {
+                    if (provider.isLoading) {
+                      return const Center(child: CircularProgressIndicator());
+                    }
+                    if (provider.error.isNotEmpty) {
+                      WidgetsBinding.instance.addPostFrameCallback((_) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('Error: ${provider.error}')),
+                        );
+                      });
+                    }
+                    return SkillsList(
+                      skills: provider.skills,
+                      onEdit: (index, newSkill) {
+                        final skill = provider.skills[index];
+                        provider.editSkillLocally(
+                          skill.id,
+                          newSkill,
+                          skill.type == "0" ? "Skills" : "Behaviour",
+                          skill.level ?? '',
+                        );
+                      },
+                      onDelete: (index) async {
+                        final skill = provider.skills[index];
+                        await provider.deleteSkill(skill.id);
+                        if (provider.error.isEmpty) {
+                          WidgetsBinding.instance.addPostFrameCallback((_) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Skill deleted successfully')),
+                            );
+                          });
+                        }
+                      },
+                    );
+                  },
+                ),
               ),
             ],
           ),
         ),
       ),
+      // Floating Action Button to Add Skill
       floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-                content: Text('Assessment settings saved successfully')),
-          );
-        },
+        onPressed: () => _showAddSkills(context),
         shape: const CircleBorder(),
         backgroundColor: AppColors.primaryLight,
-        child: Container(
-          decoration: BoxDecoration(
-              borderRadius: const BorderRadius.all(Radius.circular(100)),
-              boxShadow: [
-                BoxShadow(
-                    color: Colors.black.withOpacity(0.3),
-                    blurRadius: 7,
-                    spreadRadius: 7,
-                    offset: const Offset(3, 5))
-              ]),
-          child: const Icon(
-            Icons.save,
-            color: AppColors.backgroundLight,
-          ),
+        child: const Icon(
+          Icons.add,
+          color: AppColors.backgroundLight,
         ),
       ),
     );
   }
 
-  void _addSkill(String skill) {
-    setState(() {
-      skills.add(skill);
-    });
+  // Show Level Selection Dialog
+  void _showLevelSelectionDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Select Level'),
+          content: SizedBox(
+            width: double.maxFinite,
+            child: ListView.builder(
+              shrinkWrap: true,
+              itemCount: levelMap.length,
+              itemBuilder: (context, index) {
+                final levelEntry = levelMap.entries.elementAt(index);
+                return Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 4),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(4),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.grey.withOpacity(0.2),
+                          spreadRadius: 1,
+                          blurRadius: 2,
+                          offset: const Offset(0, 1),
+                        ),
+                      ],
+                    ),
+                    child: GestureDetector(
+                      onTap: () {
+                        setState(() {
+                          selectedLevelDisplay = levelEntry.key;
+                          selectedLevelValue = levelEntry.value;
+                        });
+                        Navigator.pop(context);
+                      },
+                      child: ListTile(
+                        title: Center(child: Text(levelEntry.key)),
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+          elevation: 24,
+        );
+      },
+    );
   }
 
-  void _editSkill(int index, String newSkill) {
-    setState(() {
-      skills[index] = newSkill;
-    });
-  }
-
-  void _deleteSkill(int index) {
-    setState(() {
-      skills.removeAt(index);
-    });
+  // Show Add Skills Bottom Sheet
+  void _showAddSkills(BuildContext context) {
+    if (selectedLevelValue.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please select a level first')),
+      );
+      return;
+    }
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (BuildContext context) {
+        return AddSkillBottomSheet(
+          onAddSkill: (skillName, type, level) {
+            Provider.of<SkillsProvider>(context, listen: false)
+                .addSkill(skillName, type, level);
+          },
+          selectedLevelValue: selectedLevelValue,
+        );
+      },
+    );
   }
 }
 
+// Skills List Widget
 class SkillsList extends StatelessWidget {
-  final List<String> skills;
+  final List<Skills> skills;
   final Function(int, String) onEdit;
   final Function(int) onDelete;
 
   const SkillsList({
-    super.key,
+    Key? key,
     required this.skills,
     required this.onEdit,
     required this.onDelete,
-  });
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -104,8 +250,11 @@ class SkillsList extends StatelessWidget {
       shrinkWrap: true,
       itemCount: skills.length,
       itemBuilder: (context, index) {
+        final skill = skills[index];
+        final typeDisplay = skill.type == "0" ? "Skills" : "Behaviour";
         return SkillItem(
-          skill: skills[index],
+          skill: skill.skillName ?? '',
+          type: typeDisplay,
           onEdit: (newSkill) => onEdit(index, newSkill),
           onDelete: () => onDelete(index),
         );
@@ -114,14 +263,17 @@ class SkillsList extends StatelessWidget {
   }
 }
 
+// Skill Item Widget
 class SkillItem extends StatefulWidget {
   final String skill;
+  final String type;
   final Function(String) onEdit;
   final VoidCallback onDelete;
 
   const SkillItem({
     super.key,
     required this.skill,
+    required this.type,
     required this.onEdit,
     required this.onDelete,
   });
@@ -151,8 +303,7 @@ class _SkillItemState extends State<SkillItem> {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: Container(
-        // width: 351,
-        padding: EdgeInsets.only(bottom: 10), // Match the width of the input field
+        padding: const EdgeInsets.only(bottom: 10),
         decoration: BoxDecoration(
           border: Border(
             bottom: BorderSide(
@@ -163,6 +314,7 @@ class _SkillItemState extends State<SkillItem> {
         ),
         child: Row(
           children: [
+            // Skill Icon
             Container(
               width: 32,
               height: 32,
@@ -174,7 +326,6 @@ class _SkillItemState extends State<SkillItem> {
               child: Center(
                 child: SvgPicture.asset(
                   'assets/icons/result/skill.svg',
-                  // ignore: deprecated_member_use
                   color: AppColors.bgBorder,
                   width: 20,
                   height: 20,
@@ -182,19 +333,37 @@ class _SkillItemState extends State<SkillItem> {
               ),
             ),
             const SizedBox(width: 18),
+            // Skill Name and Type
             Expanded(
-              child: _isEditing
-                  ? TextField(
-                      controller: _controller,
-                      onSubmitted: (value) {
-                        widget.onEdit(value);
-                        setState(() {
-                          _isEditing = false;
-                        });
-                      },
-                    )
-                  : Text(widget.skill),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _isEditing
+                      ? TextField(
+                          controller: _controller,
+                          onSubmitted: (value) {
+                            widget.onEdit(value);
+                            setState(() {
+                              _isEditing = false;
+                            });
+                          },
+                        )
+                      : Text(
+                          widget.skill,
+                          style: AppTextStyles.normal400(fontSize: 16, color: AppColors.primaryDark),
+                        ),
+                  const SizedBox(height: 4),
+                  Text(
+                    widget.type,
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.grey[600],
+                    ),
+                  ),
+                ],
+              ),
             ),
+            // Edit Button
             GestureDetector(
               onTap: () {
                 if (_isEditing) {
@@ -210,9 +379,10 @@ class _SkillItemState extends State<SkillItem> {
                     : 'assets/icons/result/edit.svg',
                 width: 24,
                 height: 24,
-              ),
+              ),  
             ),
             const SizedBox(width: 8),
+            // Delete Button
             GestureDetector(
               onTap: widget.onDelete,
               child: SvgPicture.asset(
@@ -228,101 +398,151 @@ class _SkillItemState extends State<SkillItem> {
   }
 }
 
-class CustomInputField extends StatefulWidget {
-  final String hintText;
-  final Function(String) onSubmitted;
+// Add Skill Bottom Sheet
+class AddSkillBottomSheet extends StatefulWidget {
+  final Function(String, String, String) onAddSkill;
+  final String selectedLevelValue;
 
-  const CustomInputField({
-    super.key,
-    required this.hintText,
-    required this.onSubmitted,
-  });
+  const AddSkillBottomSheet({
+    Key? key,
+    required this.onAddSkill,
+    required this.selectedLevelValue,
+  }) : super(key: key);
 
   @override
-  _CustomInputFieldState createState() => _CustomInputFieldState();
+  _AddSkillBottomSheetState createState() => _AddSkillBottomSheetState();
 }
 
-class _CustomInputFieldState extends State<CustomInputField> {
-  final FocusNode _focusNode = FocusNode();
-  final TextEditingController _controller = TextEditingController();
-  bool _isFocused = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _focusNode.addListener(() {
-      setState(() {
-        _isFocused = _focusNode.hasFocus;
-      });
-    });
-  }
+class _AddSkillBottomSheetState extends State<AddSkillBottomSheet> {
+  final TextEditingController _skillController = TextEditingController();
+  final Map<String, String> typeMap = {
+    'Skills': '0',
+    'Behaviour': '1',
+  };
+  String? selectedTypeDisplay;
+  String? _skillNameError;
+  String? _typeError;
 
   @override
   void dispose() {
-    _focusNode.dispose();
-    _controller.dispose();
+    _skillController.dispose();
     super.dispose();
   }
 
   void _submitSkill() {
-    if (_controller.text.isNotEmpty) {
-      widget.onSubmitted(_controller.text);
-      _controller.clear();
+    // Reset errors
+    setState(() {
+      _skillNameError = null;
+      _typeError = null;
+    });
+
+    // Validation checks
+    if (_skillController.text.isEmpty) {
+      setState(() {
+        _skillNameError = 'Please enter a skill name';
+      });
+    }
+    if (selectedTypeDisplay == null) {
+      setState(() {
+        _typeError = 'Please select a type';
+      });
+    }
+
+    // If all fields are valid, proceed
+    if (_skillController.text.isNotEmpty && selectedTypeDisplay != null) {
+      final typeValue = typeMap[selectedTypeDisplay!] ?? '0';
+      widget.onAddSkill(_skillController.text, typeValue, widget.selectedLevelValue);
+      Navigator.pop(context);
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: 351,
-      height: 48,
-      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
-      decoration: BoxDecoration(
-        border: Border(
-          bottom: BorderSide(
-            color:
-                _isFocused ? AppColors.primaryLight : const Color(0xFFB2B2B2),
-            width: _isFocused ? 2 : 1,
-          ),
-        ),
+    return Padding(
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.of(context).viewInsets.bottom,
+        left: 16,
+        right: 16,
+        top: 16,
       ),
-      child: Row(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          GestureDetector(
-            onTap: _submitSkill,
-            child: Container(
-              width: 32,
-              height: 32,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: Colors.white,
-                border: Border.all(
-                  color: AppColors.bgGray,
-                  width: 2,
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Add Skill',
+                style: AppTextStyles.normal600(
+                  fontSize: 20,
+                  color: const Color.fromRGBO(47, 85, 221, 1),
                 ),
               ),
-              child: const Icon(
-                Icons.add,
+              IconButton(
+                icon: SvgPicture.asset('assets/icons/profile/cancel_receipt.svg'),
                 color: AppColors.bgGray,
-                size: 24,
+                onPressed: () => Navigator.pop(context),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          // Skill Name Input
+          TextField(
+            controller: _skillController,
+            decoration: InputDecoration(
+              hintText: 'Enter a skill',
+              border: const OutlineInputBorder(),
+              errorText: _skillNameError,
+            ),
+          ),
+          const SizedBox(height: 16),
+          // Type Selection Error
+          if (_typeError != null)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Text(
+                _typeError!,
+                style: TextStyle(
+                  color: Colors.red,
+                  fontSize: 12,
+                ),
+              ),
+            ),
+          // Type Dropdown
+          CustomDropdown<String>(
+            hintText: 'Select Type',
+            items: typeMap.keys.toList(),
+            onChanged: (value) {
+              setState(() {
+                selectedTypeDisplay = value;
+                _typeError = null; // Clear error when a type is selected
+              });
+            },
+          ),
+          const SizedBox(height: 24),
+          // Submit Button
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: _submitSkill,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color.fromRGBO(47, 85, 221, 1),
+                minimumSize: const Size(double.infinity, 50),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10.0),
+                ),
+              ),
+              child: Text(
+                'Add Skill',
+                style: AppTextStyles.normal500(
+                  fontSize: 18,
+                  color: AppColors.backgroundLight,
+                ),
               ),
             ),
           ),
-          const SizedBox(width: 18),
-          Expanded(
-            child: TextField(
-              controller: _controller,
-              focusNode: _focusNode,
-              decoration: InputDecoration(
-                hintText: widget.hintText,
-                hintStyle: const TextStyle(color: AppColors.bgGrayLight),
-                border: InputBorder.none,
-              ),
-              onSubmitted: (value) {
-                _submitSkill();
-              },
-            ),
-          ),
+          const SizedBox(height: 16),
         ],
       ),
     );

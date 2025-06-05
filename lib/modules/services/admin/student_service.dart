@@ -9,6 +9,8 @@ class StudentService {
 
   StudentService(this._apiService);
 
+
+
   Future<List<Student>> getStudentsByClass(String classId) async {
     try {
       final response = await _apiService.get<List<Student>>(
@@ -26,16 +28,17 @@ class StudentService {
         },
       );
 
-      if (response.success) {
-        return response.data ?? [];
-      } else {
-        throw Exception(response.message);
-      }
-    } catch (e) {
-      debugPrint('Error fetching students: $e');
-      throw Exception('Error fetching students: $e');
+    if (response.success) {
+      debugPrint('Fetched ${response.data?.length ?? 0} students');
+      return response.data ?? [];
+    } else {
+      throw Exception(response.message);
     }
+  } catch (e) {
+    debugPrint('Error fetching students: $e');
+    throw Exception('Error fetching students: $e');
   }
+}
 
   Future<List<Student>> getAllStudents() async {
     try {

@@ -150,7 +150,9 @@ class _ClassDetailScreenState extends State<ClassDetailScreen> {
                                   iconPath:
                                       'assets/icons/result/assessment_icon.svg',
                                   onTap: () =>
-                                      showStudentResultOverlay(context, classId: widget.classId),
+                                      showStudentResultOverlay(context, classId: widget.classId,
+                                      className: widget.className,
+                                      ),
                                 ),
                               ),
                               Expanded(
@@ -185,6 +187,13 @@ class _ClassDetailScreenState extends State<ClassDetailScreen> {
                                       ),
                                     );
                                   },
+                                  // onTap: () {
+                                  //   Navigator.push(
+                                  //       context,
+                                  //       MaterialPageRoute(
+                                  //           builder: (contex) =>
+                                  //               AttendanceScreen()));
+                                  // },
                                 ),
                               ),
                             ],

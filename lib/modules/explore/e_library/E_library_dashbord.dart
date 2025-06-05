@@ -45,11 +45,36 @@ class _ElibraryDashboardState extends State<ElibraryDashboard> {
                     indicatorColor: AppColors.text2Light,
                     labelColor: AppColors.text2Light,
                     tabs: [
-                      Tab(child: FittedBox(child: Text('For you', style: AppTextStyles.normal600(fontSize: 14, color: AppColors.text2Light)))),
-                      Tab(child: FittedBox(child: Text('CBT', style: AppTextStyles.normal600(fontSize: 14, color: AppColors.text2Light)))),
-                      Tab(child: FittedBox(child: Text('E-books', style: AppTextStyles.normal600(fontSize: 14, color: AppColors.text2Light)))),
-                      Tab(child: FittedBox(child: Text('Games', style: AppTextStyles.normal600(fontSize: 14, color: AppColors.text2Light)))),
-                      Tab(child: Flexible(child: Text('Videos', style: AppTextStyles.normal600(fontSize: 14, color: AppColors.text2Light)))),
+                      Tab(
+                          child: FittedBox(
+                              child: Text('For you',
+                                  style: AppTextStyles.normal600(
+                                      fontSize: 14,
+                                      color: AppColors.text2Light)))),
+                      Tab(
+                          child: FittedBox(
+                              child: Text('CBT',
+                                  style: AppTextStyles.normal600(
+                                      fontSize: 14,
+                                      color: AppColors.text2Light)))),
+                      Tab(
+                          child: FittedBox(
+                              child: Text('E-books',
+                                  style: AppTextStyles.normal600(
+                                      fontSize: 14,
+                                      color: AppColors.text2Light)))),
+                      Tab(
+                          child: FittedBox(
+                              child: Text('Games',
+                                  style: AppTextStyles.normal600(
+                                      fontSize: 14,
+                                      color: AppColors.text2Light)))),
+                      Tab(
+                          child: Flexible(
+                              child: Text('Videos',
+                                  style: AppTextStyles.normal600(
+                                      fontSize: 14,
+                                      color: AppColors.text2Light)))),
                     ],
                   ),
                   Expanded(
@@ -63,28 +88,46 @@ class _ElibraryDashboardState extends State<ElibraryDashboard> {
                                 child: Column(
                                   children: [
                                     // Continue watching section
-                                    headingWithAdvert(tag: 'Video', title: 'Continue watching'),
+                                    headingWithAdvert(
+                                        tag: 'Video',
+                                        title: 'Continue watching'),
                                     SizedBox(height: 8),
                                     SizedBox(
                                       height: 180,
                                       child: ListView.builder(
                                         scrollDirection: Axis.horizontal,
-                                        itemCount: forYouProvider.videos.isEmpty ? 3 : forYouProvider.videos.length,
-                                        itemBuilder: (context, index) => _ContinueWatching(video: forYouProvider.videos.isEmpty ? Video.empty() : forYouProvider.videos[index], context: context,),
+                                        itemCount: forYouProvider.videos.isEmpty
+                                            ? 3
+                                            : forYouProvider.videos.length,
+                                        itemBuilder: (context, index) =>
+                                            _ContinueWatching(
+                                          video: forYouProvider.videos.isEmpty
+                                              ? Video.empty()
+                                              : forYouProvider.videos[index],
+                                          context: context,
+                                        ),
                                       ),
                                     ),
                                     SizedBox(height: 25),
                                     // Games section
-                                    headingWithAdvert(tag: "Game", title: 'Game Everyone is playing'),
+                                    headingWithAdvert(
+                                        tag: "Game",
+                                        title: 'Game Everyone is playing'),
                                     SizedBox(height: 8),
                                     SizedBox(
                                       height: 200,
                                       child: ListView.builder(
-                                        padding: const EdgeInsets.only(right: 16.0),
-                                        itemCount: forYouProvider.games.isEmpty ? 3 : forYouProvider.games.length,
+                                        padding:
+                                            const EdgeInsets.only(right: 16.0),
+                                        itemCount: forYouProvider.games.isEmpty
+                                            ? 3
+                                            : forYouProvider.games.length,
                                         scrollDirection: Axis.horizontal,
                                         itemBuilder: (context, index) {
-                                          final game = forYouProvider.games.isEmpty ? Game.empty() : forYouProvider.games[index];
+                                          final game =
+                                              forYouProvider.games.isEmpty
+                                                  ? Game.empty()
+                                                  : forYouProvider.games[index];
                                           return GameCard(
                                             game: game,
                                             beginColor: AppColors.gamesColor1,
@@ -95,26 +138,38 @@ class _ElibraryDashboardState extends State<ElibraryDashboard> {
                                     ),
                                     SizedBox(height: 5),
                                     // Books section
-                                    blueHeading(tag: 'E-book', title: 'Suggested for you'),
+                                    blueHeading(
+                                        tag: 'E-book',
+                                        title: 'Suggested for you'),
                                     Padding(
-                                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 16),
                                       child: SizedBox(
                                         height: 250,
                                         width: double.infinity,
                                         child: ListView.builder(
                                           scrollDirection: Axis.horizontal,
-                                          itemCount: forYouProvider.books.isEmpty ? 3 : forYouProvider.books.length,
+                                          itemCount:
+                                              forYouProvider.books.isEmpty
+                                                  ? 3
+                                                  : forYouProvider.books.length,
                                           itemBuilder: (context, index) {
-                                            final book = forYouProvider.books.isEmpty ? Book.empty() : forYouProvider.books[index];
+                                            final book = forYouProvider
+                                                    .books.isEmpty
+                                                ? Book.empty()
+                                                : forYouProvider.books[index];
                                             return _books(
-                                              book: book, // Pass the book object
+                                              book:
+                                                  book, // Pass the book object
                                             );
                                           },
                                         ),
                                       ),
                                     ),
                                     // CBT section
-                                    blueHeading(tag: 'CBT', title: 'Continue taking tests'),
+                                    blueHeading(
+                                        tag: 'CBT',
+                                        title: 'Continue taking tests'),
                                     Divider(height: 20),
                                     Column(
                                       children: [
@@ -384,7 +439,8 @@ class blueHeading extends StatelessWidget {
   }
 }
 
-Widget _ContinueWatching({required Video video, required BuildContext context}) {
+Widget _ContinueWatching(
+    {required Video video, required BuildContext context}) {
   return GestureDetector(
     onTap: () {
       if (video.title.isNotEmpty) {

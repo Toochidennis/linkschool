@@ -2,12 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:linkschool/modules/admin/result/class_detail/student_result/course_result_screen.dart';
 import 'package:linkschool/modules/admin/result/class_detail/student_result/student_result.dart';
+import 'package:linkschool/modules/admin/result/class_detail/student_result/comment_result_screen.dart';
+import 'package:linkschool/modules/admin/result/class_detail/student_result/composite_result_screen.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/staff/e_learning/form_classes/staff_skill_behaviour_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:linkschool/modules/providers/admin/student_provider.dart';
 
-void showStudentResultOverlay(BuildContext context, {String? classId}) {
+void showStudentResultOverlay(BuildContext context, {String? classId, String ? className}) {
   final studentProvider = Provider.of<StudentProvider>(context, listen: false);
   
   if (classId != null) {
@@ -101,7 +103,7 @@ void showStudentResultOverlay(BuildContext context, {String? classId}) {
                                     MaterialPageRoute(
                                       builder: (context) => StudentResultScreen(
                                         studentName: student.fullName,
-                                        className: 'Student Result',
+                                        className: className,
                                       ),
                                     ),
                                   );
@@ -188,8 +190,21 @@ void showTermOverlay(BuildContext context, {required String classId, required St
                       ),
                       title: Text(labels[index]),
                       onTap: () {
-                        if (labels[index] == 'Course result') {
-                          Navigator.pop(context);
+                        Navigator.pop(context); // Close the overlay first
+                        
+                        if (labels[index] == 'Comment on results') {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => CommentResultScreen(
+                                classId: classId,
+                                year: year,
+                                termId: termId,
+                                termName: termName,
+                              ),
+                            ),
+                          );
+                        } else if (labels[index] == 'Course result') {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
@@ -202,11 +217,22 @@ void showTermOverlay(BuildContext context, {required String classId, required St
                             ),
                           );
                         } else if (labels[index] == 'Skills and Behaviour') {
-                          Navigator.pop(context);
                           Navigator.push(
                             context,
                             MaterialPageRoute(
                               builder: (context) => StaffSkillsBehaviourScreen(),
+                            ),
+                          );
+                        } else if (labels[index] == 'Composite result') {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => CompositeResultScreen(
+                                classId: classId,
+                                year: year,
+                                termId: termId,
+                                termName: termName,
+                              ),
                             ),
                           );
                         }
@@ -235,11 +261,9 @@ void showTermOverlay(BuildContext context, {required String classId, required St
 // import 'package:provider/provider.dart';
 // import 'package:linkschool/modules/providers/admin/student_provider.dart';
 
-// void showStudentResultOverlay(BuildContext context, {String? classId}) {
-//   // Get StudentProvider
+// void showStudentResultOverlay(BuildContext context, {String? classId, String ? className}) {
 //   final studentProvider = Provider.of<StudentProvider>(context, listen: false);
   
-//   // Fetch students for the specific class
 //   if (classId != null) {
 //     studentProvider.fetchStudents(classId);
 //   }
@@ -324,7 +348,6 @@ void showTermOverlay(BuildContext context, {required String classId, required St
 //                                 ),
 //                                 title: Text(student.name),
 //                                 onTap: () {
-//                                   // Fetch student result terms and navigate
 //                                   provider.fetchStudentResultTerms(student.id);
 //                                   Navigator.pop(context);
 //                                   Navigator.push(
@@ -332,7 +355,7 @@ void showTermOverlay(BuildContext context, {required String classId, required St
 //                                     MaterialPageRoute(
 //                                       builder: (context) => StudentResultScreen(
 //                                         studentName: student.fullName,
-//                                         className: 'Student Result',
+//                                         className: className,
 //                                       ),
 //                                     ),
 //                                   );
@@ -354,8 +377,7 @@ void showTermOverlay(BuildContext context, {required String classId, required St
 //   );
 // }
 
-// void showTermOverlay(BuildContext context) {
-//   // Original implementation remains unchanged
+// void showTermOverlay(BuildContext context, {required String classId, required String year, required int termId, required String termName}) {
 //   showModalBottomSheet(
 //     context: context,
 //     isScrollControlled: true,
@@ -425,7 +447,12 @@ void showTermOverlay(BuildContext context, {required String classId, required St
 //                           Navigator.push(
 //                             context,
 //                             MaterialPageRoute(
-//                               builder: (context) => CourseResultScreen(),
+//                               builder: (context) => CourseResultScreen(
+//                                 classId: classId,
+//                                 year: year,
+//                                 term: termId,
+//                                 termName: termName,
+//                               ),
 //                             ),
 //                           );
 //                         } else if (labels[index] == 'Skills and Behaviour') {

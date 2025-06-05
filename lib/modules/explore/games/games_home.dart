@@ -6,9 +6,11 @@ import 'package:linkschool/modules/model/explore/home/game_model.dart';
 import 'package:linkschool/modules/providers/explore/game/game_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:skeletonizer/skeletonizer.dart';
+import 'package:skeletonizer/skeletonizer.dart';
 import '../../common/constants.dart';
 import '../../common/text_styles.dart';
 import '../../common/app_colors.dart';
+import '../../model/explore/home/game_model.dart';
 
 class GamesDashboard extends StatefulWidget {
   const GamesDashboard({super.key});
@@ -83,12 +85,16 @@ class _GamesDashboardState extends State<GamesDashboard> {
                       scrollDirection: Axis.horizontal,
                       itemCount: gameCategories.length,
                       itemBuilder: (context, index) {
-                        return _buildGameCard(
-                          context,
-                          gameCategories[index],
-                          colorPairs[index][0],
-                          colorPairs[index][1],
-                        );
+                        // Ensure we only build cards for non-empty categories
+                        if (gameCategories[index].games.isNotEmpty) {
+                          return _buildGameCard(
+                            context,
+                            gameCategories[index],
+                            colorPairs[index][0],
+                            colorPairs[index][1],
+                          );
+                        }
+                        return const SizedBox.shrink(); // Avoid duplication
                       },
                     ),
                   ),
@@ -180,7 +186,6 @@ class _GamesDashboardState extends State<GamesDashboard> {
                     ),
                   ),
                 ),
-
                 SliverToBoxAdapter(
                   child: Constants.heading600(
                     title: 'Action Game',
@@ -572,7 +577,7 @@ Widget _buildGameCard(BuildContext context, BoardGamesClass category,
             color: AppColors.text5Light,
           ),
         ),
-      const SizedBox(height: 2.0),
+        const SizedBox(height: 2.0),
         RatingBar.builder(
           initialRating: double.tryParse(game.rating) ?? 0.0,
           minRating: 1,

@@ -1,4 +1,4 @@
-import 'package:hive/hive.dart';
+import 'package:hive/hive.dart';import 'package:hive/hive.dart';
 import 'package:linkschool/modules/model/admin/grade _model.dart';
 import 'package:linkschool/modules/services/api/api_service.dart';
 
@@ -123,6 +123,20 @@ print('Request Body: $requestBody');
     }
   }
 }
+
+
+
+// Future<void> deleteGrades(String id) async {
+//     final response = await _apiService.delete<Map<String, dynamic>>(
+//       endpoint: 'portal/grades',
+//       body: {'id': id},
+//     );
+
+
+//     if (!response.success) {
+//       throw Exception('Failed to delete grades: ${response.message}');
+//     }
+//   }
 
 
 

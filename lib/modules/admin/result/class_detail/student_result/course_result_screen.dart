@@ -7,9 +7,9 @@ import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:provider/provider.dart';
 import 'package:linkschool/modules/providers/admin/course_result_provider.dart';
-import './view/view_course_result_screen.dart';
+import 'view/add_view_course_result_screen.dart';
+import 'view/view_course_result_screen.dart';
 import './view/monthly_assessment_screen.dart';
-
 
 class CourseResultScreen extends StatefulWidget {
   final String classId;
@@ -111,15 +111,18 @@ class _CourseResultScreenState extends State<CourseResultScreen> {
                                 maxY: 100,
                                 titlesData: FlTitlesData(
                                   rightTitles: const AxisTitles(
-                                      sideTitles: SideTitles(showTitles: false)),
+                                      sideTitles:
+                                          SideTitles(showTitles: false)),
                                   topTitles: const AxisTitles(
-                                      sideTitles: SideTitles(showTitles: false)),
+                                      sideTitles:
+                                          SideTitles(showTitles: false)),
                                   bottomTitles: AxisTitles(
                                     sideTitles: SideTitles(
                                       showTitles: true,
                                       reservedSize: 42,
                                       getTitlesWidget: (value, meta) =>
-                                          _getTitles(value, meta, provider.averageScores),
+                                          _getTitles(value, meta,
+                                              provider.averageScores),
                                     ),
                                   ),
                                   leftTitles: AxisTitles(
@@ -143,13 +146,16 @@ class _CourseResultScreenState extends State<CourseResultScreen> {
                                       dashArray: [5, 5],
                                     );
                                   },
-                                  checkToShowHorizontalLine: (value) => value % 20 == 0,
+                                  checkToShowHorizontalLine: (value) =>
+                                      value % 20 == 0,
                                 ),
-                                barGroups: _buildBarGroups(provider.averageScores),
+                                barGroups:
+                                    _buildBarGroups(provider.averageScores),
                                 groupsSpace: 22.44,
                               ),
                               swapAnimationCurve: Curves.linear,
-                              swapAnimationDuration: const Duration(milliseconds: 500),
+                              swapAnimationDuration:
+                                  const Duration(milliseconds: 500),
                             );
                           },
                         ),
@@ -174,7 +180,8 @@ class _CourseResultScreenState extends State<CourseResultScreen> {
                     child: Consumer<CourseResultProvider>(
                       builder: (context, provider, child) {
                         if (provider.isLoading) {
-                          return const Center(child: CircularProgressIndicator());
+                          return const Center(
+                              child: CircularProgressIndicator());
                         }
                         if (provider.error != null) {
                           return Center(
@@ -203,8 +210,11 @@ class _CourseResultScreenState extends State<CourseResultScreen> {
     return scores.asMap().entries.map((entry) {
       final index = entry.key;
       final scoreValue = entry.value['average_score'];
-      final score = scoreValue is String ? double.parse(scoreValue) : (scoreValue as num).toDouble();
-      final color = index % 2 == 0 ? AppColors.primaryLight : AppColors.videoColor4;
+      final score = scoreValue is String
+          ? double.parse(scoreValue)
+          : (scoreValue as num).toDouble();
+      final color =
+          index % 2 == 0 ? AppColors.primaryLight : AppColors.videoColor4;
       return BarChartGroupData(
         x: index,
         barRods: [
@@ -222,11 +232,13 @@ class _CourseResultScreenState extends State<CourseResultScreen> {
     }).toList();
   }
 
-  Widget _getTitles(double value, TitleMeta meta, List<Map<String, dynamic>> scores) {
+  Widget _getTitles(
+      double value, TitleMeta meta, List<Map<String, dynamic>> scores) {
     final index = value.toInt();
     if (index >= 0 && index < scores.length) {
       final courseName = scores[index]['course_name'].toString();
-      final shortName = courseName.length > 5 ? courseName.substring(0, 5) : courseName;
+      final shortName =
+          courseName.length > 5 ? courseName.substring(0, 5) : courseName;
       return SideTitleWidget(
         meta: meta,
         space: 4.0,
@@ -276,18 +288,22 @@ class _CourseResultScreenState extends State<CourseResultScreen> {
     return scores.map((score) {
       final subject = score['course_name'].toString();
       final averageScore = score['average_score'];
-      final scoreValue = averageScore is String ? double.parse(averageScore) : (averageScore as num).toDouble();
+      final scoreValue = averageScore is String
+          ? double.parse(averageScore)
+          : (averageScore as num).toDouble();
       return _buildSubjectRow(subject, scoreValue / 100, score);
     }).toList();
   }
 
-  Widget _buildSubjectRow(String subject, double score, Map<String, dynamic> courseData) {
+  Widget _buildSubjectRow(
+      String subject, double score, Map<String, dynamic> courseData) {
     return GestureDetector(
       onTap: () => _showOverlayDialog(subject, courseData),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16.0),
         decoration: BoxDecoration(
-          border: Border(bottom: BorderSide(color: Colors.grey[300]!, width: 1)),
+          border:
+              Border(bottom: BorderSide(color: Colors.grey[300]!, width: 1)),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -298,7 +314,8 @@ class _CourseResultScreenState extends State<CourseResultScreen> {
                 padding: const EdgeInsets.symmetric(horizontal: 16.0),
                 child: Text(
                   subject,
-                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+                  style: const TextStyle(
+                      fontSize: 16, fontWeight: FontWeight.w500),
                 ),
               ),
             ),
@@ -319,22 +336,80 @@ class _CourseResultScreenState extends State<CourseResultScreen> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              // Top Section - Result
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Expanded(
-                      child: _buildDialogButton(
-                        'View result', 
-                        'assets/icons/result/eye.svg',
-                        () => _navigateToViewResult(subject, courseData),
-                      )),
-                  const SizedBox(width: 8.0),
-                  Expanded(
-                      child: _buildDialogButton(
-                        'Monthly Assessment', 
-                        'assets/icons/result/edit.svg',
-                        () => _navigateToMonthlyAssessment(subject, courseData),
-                      )),
+                  // Header Row
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 8.0),
+                    child: Text(
+                      'Result',
+                      style: AppTextStyles.normal600(
+                          fontSize: 16, color: AppColors.backgroundDark),
+                    ),
+                  ),
+                  // Body Row
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _buildDialogButton(
+                          'Add',
+                          'assets/icons/result/edit.svg',
+                          () => _navigateToAddResult(subject, courseData),
+                        ),
+                      ),
+                      const SizedBox(width: 8.0),
+                      Expanded(
+                        child: _buildDialogButton(
+                          'View',
+                          'assets/icons/result/eye.svg',
+                          () => _navigateToViewResult(subject, courseData),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: 16.0),
+
+              // Bottom Section - Monthly Assessment
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Header Row
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 8.0),
+                    child: Text(
+                      'Monthly assessment',
+                      style: AppTextStyles.normal600(
+                          fontSize: 16, color: AppColors.backgroundDark),
+                    ),
+                  ),
+                  // Body Row
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _buildDialogButton(
+                          'Add',
+                          'assets/icons/result/edit.svg',
+                          () {
+                            Navigator.pop(context);
+                          },
+                        ),
+                      ),
+                      const SizedBox(width: 8.0),
+                      Expanded(
+                        child: _buildDialogButton(
+                          'View',
+                          'assets/icons/result/eye.svg',
+                          () =>
+                              _navigateToMonthlyAssessment(subject, courseData),
+                        ),
+                      ),
+                    ],
+                  ),
                 ],
               ),
             ],
@@ -344,7 +419,8 @@ class _CourseResultScreenState extends State<CourseResultScreen> {
     );
   }
 
-  Widget _buildDialogButton(String text, String iconPath, VoidCallback onPressed) {
+  Widget _buildDialogButton(
+      String text, String iconPath, VoidCallback onPressed) {
     return Container(
       decoration: BoxDecoration(
         border: Border.all(color: Colors.grey),
@@ -358,16 +434,38 @@ class _CourseResultScreenState extends State<CourseResultScreen> {
         ),
         label: Text(
           text,
-          style: AppTextStyles.normal600(fontSize: 14, color: AppColors.backgroundDark),
+          style: AppTextStyles.normal600(
+              fontSize: 14, color: AppColors.backgroundDark),
         ),
       ),
     );
   }
 
+  // Updated method for Add Result - navigates to AddViewCourseResultScreen
+  void _navigateToAddResult(String subject, Map<String, dynamic> courseData) {
+    Navigator.pop(context); // Close the bottom sheet first
+
+    // Navigate to AddViewCourseResultScreen for editing/adding results
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => AddViewCourseResultScreen(
+          classId: widget.classId,
+          year: widget.year,
+          term: widget.term,
+          termName: widget.termName,
+          subject: subject,
+          courseData: courseData,
+        ),
+      ),
+    );
+  }
+
+  // New method for View Result - navigates to ViewCourseResultScreen
   void _navigateToViewResult(String subject, Map<String, dynamic> courseData) {
     Navigator.pop(context); // Close the bottom sheet first
-    
-    // Navigate to ViewCourseResultScreen
+
+    // Navigate to ViewCourseResultScreen for read-only viewing
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -383,9 +481,10 @@ class _CourseResultScreenState extends State<CourseResultScreen> {
     );
   }
 
-  void _navigateToMonthlyAssessment(String subject, Map<String, dynamic> courseData) {
+  void _navigateToMonthlyAssessment(
+      String subject, Map<String, dynamic> courseData) {
     Navigator.pop(context); // Close the bottom sheet first
-    
+
     // Navigate to MonthlyAssessmentScreen
     Navigator.push(
       context,
@@ -413,7 +512,8 @@ class _CourseResultScreenState extends State<CourseResultScreen> {
       child: Center(
         child: Text(
           letter,
-          style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+          style: const TextStyle(
+              color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
         ),
       ),
     );
@@ -432,12 +532,14 @@ class _CourseResultScreenState extends State<CourseResultScreen> {
               value: score,
               strokeWidth: 5,
               backgroundColor: Colors.grey[300],
-              valueColor: const AlwaysStoppedAnimation<Color>(AppColors.progressBarColor1),
+              valueColor: const AlwaysStoppedAnimation<Color>(
+                  AppColors.progressBarColor1),
             ),
           ),
           Text(
             '${(score * 100).toInt()}%',
-            style: AppTextStyles.normal600(fontSize: 10, color: AppColors.backgroundDark),
+            style: AppTextStyles.normal600(
+                fontSize: 10, color: AppColors.backgroundDark),
           ),
         ],
       ),

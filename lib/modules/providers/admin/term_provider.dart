@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:linkschool/modules/services/admin/term_service.dart';
 import 'package:linkschool/modules/services/api/service_locator.dart';
 
-
 class TermProvider with ChangeNotifier {
   final TermService _termService = locator<TermService>();
 

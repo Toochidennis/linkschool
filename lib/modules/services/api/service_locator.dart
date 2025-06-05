@@ -3,9 +3,12 @@ import 'package:get_it/get_it.dart';
 import 'package:linkschool/modules/auth/provider/auth_provider.dart';
 import 'package:linkschool/modules/auth/service/auth_service.dart';
 import 'package:linkschool/modules/providers/admin/attendance_provider.dart';
-import 'package:linkschool/modules/providers/admin/behavour_provider.dart';
+import 'package:linkschool/modules/providers/admin/behaviour_provider.dart';
+import 'package:linkschool/modules/providers/admin/e_learning/syllabus_provider.dart';
+
 import 'package:linkschool/modules/providers/admin/grade_provider.dart';
 import 'package:linkschool/modules/services/admin/attendance_service.dart';
+import 'package:linkschool/modules/services/admin/e_learning/syllabus_service.dart';
 import 'package:linkschool/modules/services/api/api_service.dart';
 import 'package:linkschool/modules/services/admin/class_service.dart';
 import 'package:linkschool/modules/services/admin/grade_service.dart';
@@ -32,7 +35,7 @@ void setupServiceLocator() {
     () => SkillService(locator<ApiService>())
   );
 
-  // Register SkillsProvider with SkillService dependency
+  // Register SkillsProvider with SkillService dependen
   locator.registerLazySingleton<SkillsProvider>(
     () => SkillsProvider(locator<SkillService>())
   );
@@ -56,6 +59,15 @@ void setupServiceLocator() {
   locator.registerLazySingleton<GradeProvider>(
     () => GradeProvider(locator<GradeService>())
   );
+
+  locator.registerLazySingleton<SyllabusService>(
+    () => SyllabusService()
+  );
+  locator.registerLazySingleton<SyllabusProvider>(
+    () => SyllabusProvider(locator<SyllabusService>())
+  );
+
+
 
   // Register other services as lazySingletons
   locator.registerLazySingleton<ClassService>(() => ClassService());
