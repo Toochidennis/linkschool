@@ -35,18 +35,31 @@ class _CommentCourseResultScreenState extends State<CommentCourseResultScreen> {
   final TextEditingController _commentController = TextEditingController();
   int _currentStudentIndex = 0;
   final SwiperController _swiperController = SwiperController();
+  String? userRole;
+  
+  // Comment modal state
+  bool _isCommentModalOpen = false;
+  final TextEditingController _modalCommentController = TextEditingController();
+  bool _isSubmittingComment = false;
 
   @override
   void initState() {
     super.initState();
+    _initializeUserRole();
     fetchStudentResults();
   }
 
   @override
   void dispose() {
     _commentController.dispose();
+    _modalCommentController.dispose();
     _swiperController.dispose();
     super.dispose();
+  }
+
+  void _initializeUserRole() {
+    final userBox = Hive.box('userData');
+    userRole = userBox.get('role')?.toString() ?? 'admin';
   }
 
   Future<void> fetchStudentResults() async {
@@ -113,7 +126,7 @@ class _CommentCourseResultScreenState extends State<CommentCourseResultScreen> {
     }
   }
 
-  Future<void> submitComment(int studentId) async {
+  Future<void> submitComment(int studentId, String comment) async {
     try {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
       final apiService = locator<ApiService>();
@@ -128,7 +141,7 @@ class _CommentCourseResultScreenState extends State<CommentCourseResultScreen> {
       final endpoint = 'portal/students/result/comment';
       final payload = {
         'student_id': studentId,
-        'comment': _commentController.text,
+        'comment': comment,
         'role': role,
         'year': int.parse(widget.year),
         'term': widget.term,
@@ -143,22 +156,387 @@ class _CommentCourseResultScreenState extends State<CommentCourseResultScreen> {
       );
 
       if (response.success) {
+        // Update the comment in the current student's data
         setState(() {
-          studentResults[_currentStudentIndex]['comment'] = _commentController.text;
+          if (studentResults[_currentStudentIndex]['comments'] == null) {
+            studentResults[_currentStudentIndex]['comments'] = {};
+          }
+          
+          // Update the appropriate comment based on user role
+          if (role == 'admin') {
+            studentResults[_currentStudentIndex]['comments']['principal_comment'] = comment;
+          } else {
+            studentResults[_currentStudentIndex]['comments']['teacher_comment'] = comment;
+          }
         });
+        
         print('Comment submitted successfully for student $studentId');
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Comment submitted successfully!'),
+            backgroundColor: Colors.green,
+          ),
+        );
       } else {
         setState(() {
           error = response.message;
         });
         print('Failed to submit comment: ${response.message}');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to submit comment: ${response.message}'),
+            backgroundColor: Colors.red,
+          ),
+        );
       }
     } catch (e) {
       setState(() {
         error = 'Failed to submit comment: $e';
       });
       print('Error submitting comment: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error submitting comment: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
+  }
+
+  void _openCommentModal() {
+    if (studentResults.isEmpty) return;
+    
+    final currentStudent = studentResults[_currentStudentIndex];
+    final comments = currentStudent['comments'] as Map<String, dynamic>?;
+    
+    // Load existing comment based on user role
+    String existingComment = '';
+    if (userRole == 'admin') {
+      existingComment = comments?['principal_comment'] ?? '';
+    } else {
+      existingComment = comments?['teacher_comment'] ?? '';
+    }
+    
+    _modalCommentController.text = existingComment;
+    
+    setState(() {
+      _isCommentModalOpen = true;
+    });
+    
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => _buildCommentBottomSheet(),
+    ).then((_) {
+      setState(() {
+        _isCommentModalOpen = false;
+      });
+    });
+  }
+
+  Widget _buildCommentBottomSheet() {
+    final currentStudent = studentResults[_currentStudentIndex];
+    final comments = currentStudent['comments'] as Map<String, dynamic>?;
+    
+    return StatefulBuilder(
+      builder: (context, setModalState) {
+        return Container(
+          height: MediaQuery.of(context).size.height * 0.8,
+          padding: EdgeInsets.only(
+            left: 20,
+            right: 20,
+            top: 20,
+            bottom: MediaQuery.of(context).viewInsets.bottom + 20,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Handle bar
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.grey[300],
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+              
+              // Header
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Student Comments',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.eLearningBtnColor1,
+                    ),
+                  ),
+                  IconButton(
+                    onPressed: () => Navigator.pop(context),
+                    icon: const Icon(Icons.close),
+                  ),
+                ],
+              ),
+              
+              // Student info
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.grey[100],
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  children: [
+                    CircleAvatar(
+                      radius: 20,
+                      backgroundColor: Colors.primaries[_currentStudentIndex % Colors.primaries.length],
+                      child: Text(
+                        currentStudent['student_name']?.isNotEmpty == true
+                            ? currentStudent['student_name'][0].toUpperCase()
+                            : 'S',
+                        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            currentStudent['student_name'] ?? 'N/A',
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          Text(
+                            'Reg No: ${currentStudent['reg_no'] ?? 'N/A'}',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.grey[600],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              
+              const SizedBox(height: 20),
+              
+              // Existing comments display
+              Expanded(
+                child: SingleChildScrollView(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      if (comments != null) ...[
+                        // Principal comment
+                        if (comments['principal_comment'] != null && comments['principal_comment'].toString().isNotEmpty)
+                          _buildCommentCard(
+                            'Principal Comment',
+                            comments['principal_comment'].toString(),
+                            Colors.blue,
+                            canEdit: userRole == 'admin',
+                            onEdit: () {
+                              _modalCommentController.text = comments['principal_comment'].toString();
+                            },
+                          ),
+                        
+                        const SizedBox(height: 12),
+                        
+                        // Teacher comment
+                        if (comments['teacher_comment'] != null && comments['teacher_comment'].toString().isNotEmpty)
+                          _buildCommentCard(
+                            'Teacher Comment',
+                            comments['teacher_comment'].toString(),
+                            Colors.green,
+                            canEdit: userRole == 'teacher',
+                            onEdit: () {
+                              _modalCommentController.text = comments['teacher_comment'].toString();
+                            },
+                          ),
+                        
+                        const SizedBox(height: 20),
+                      ],
+                      
+                      // Add/Edit comment section
+                      Text(
+                        _hasExistingComment() ? 'Edit Your Comment' : 'Add Comment',
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      
+                      const SizedBox(height: 12),
+                      
+                      Container(
+                        decoration: BoxDecoration(
+                          border: Border.all(color: Colors.grey[300]!),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: TextField(
+                          controller: _modalCommentController,
+                          maxLines: 4,
+                          decoration: const InputDecoration(
+                            hintText: 'Enter your comment here...',
+                            border: InputBorder.none,
+                            contentPadding: EdgeInsets.all(12),
+                          ),
+                          style: const TextStyle(fontSize: 14),
+                        ),
+                      ),
+                      
+                      const SizedBox(height: 20),
+                      
+                      // Submit button
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          onPressed: _isSubmittingComment ? null : () async {
+                            if (_modalCommentController.text.trim().isEmpty) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Please enter a comment'),
+                                  backgroundColor: Colors.orange,
+                                ),
+                              );
+                              return;
+                            }
+                            
+                            setModalState(() {
+                              _isSubmittingComment = true;
+                            });
+                            
+                            await submitComment(
+                              currentStudent['student_id'],
+                              _modalCommentController.text.trim(),
+                            );
+                            
+                            setModalState(() {
+                              _isSubmittingComment = false;
+                            });
+                            
+                            Navigator.pop(context);
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.eLearningBtnColor1,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                          child: _isSubmittingComment
+                              ? const SizedBox(
+                                  height: 20,
+                                  width: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                  ),
+                                )
+                              : Text(
+                                  _hasExistingComment() ? 'Update Comment' : 'Submit Comment',
+                                  style: const TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildCommentCard(String title, String comment, Color color, {bool canEdit = false, VoidCallback? onEdit}) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: color.withOpacity(0.3)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                title,
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.grey[700],
+                ),
+              ),
+              if (canEdit && onEdit != null)
+                TextButton(
+                  onPressed: onEdit,
+                  child: Text(
+                    'Edit',
+                    style: TextStyle(
+                      color: Colors.grey[700],
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Text(
+            comment,
+            style: TextStyle(
+              fontSize: 14,
+              color: Colors.grey[800],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  bool _hasExistingComment() {
+    if (studentResults.isEmpty) return false;
+    
+    final currentStudent = studentResults[_currentStudentIndex];
+    final comments = currentStudent['comments'] as Map<String, dynamic>?;
+    
+    if (comments == null) return false;
+    
+    if (userRole == 'admin') {
+      return comments['principal_comment'] != null && comments['principal_comment'].toString().isNotEmpty;
+    } else {
+      return comments['teacher_comment'] != null && comments['teacher_comment'].toString().isNotEmpty;
+    }
+  }
+
+  void _onSwiperIndexChanged(int index) {
+    setState(() {
+      _currentStudentIndex = index;
+      // Update comment controller if needed
+      final student = studentResults[index];
+      _commentController.text = student['comment'] ?? '';
+    });
   }
 
   @override
@@ -215,12 +593,8 @@ class _CommentCourseResultScreenState extends State<CommentCourseResultScreen> {
                           controller: _swiperController,
                           itemCount: studentResults.length,
                           index: _currentStudentIndex,
-                          onIndexChanged: (index) {
-                            setState(() {
-                              _currentStudentIndex = index;
-                              _commentController.text = studentResults[index]['comment'] ?? '';
-                            });
-                          },
+                          onIndexChanged: _onSwiperIndexChanged,
+                          loop: false, // Disable infinite loop
                           itemBuilder: (context, index) {
                             final student = studentResults[index];
                             return Column(
@@ -232,7 +606,7 @@ class _CommentCourseResultScreenState extends State<CommentCourseResultScreen> {
                                       children: [
                                         _buildTermSection(),
                                         _buildSubjectsTable(student),
-                                        _buildCommentDisplay(student),
+                                        const SizedBox(height: 80), // Space for FAB
                                       ],
                                     ),
                                   ),
@@ -241,11 +615,19 @@ class _CommentCourseResultScreenState extends State<CommentCourseResultScreen> {
                             );
                           },
                         ),
+                        
+                        // Floating comment button
                         Positioned(
-                          bottom: 0,
-                          left: 0,
-                          right: 0,
-                          child: _buildCommentInput(),
+                          bottom: 20,
+                          right: 20,
+                          child: FloatingActionButton(
+                            onPressed: _openCommentModal,
+                            backgroundColor: AppColors.eLearningBtnColor1,
+                            child: const Icon(
+                              Icons.comment,
+                              color: Colors.white,
+                            ),
+                          ),
                         ),
                       ],
                     ),
@@ -463,114 +845,6 @@ class _CommentCourseResultScreenState extends State<CommentCourseResultScreen> {
       ),
     );
   }
-
-  Widget _buildCommentDisplay(Map<String, dynamic> student) {
-    final comment = student['comment']?.toString() ?? '';
-    if (comment.isEmpty) {
-      return const SizedBox.shrink();
-    }
-
-    return Padding(
-      padding: const EdgeInsets.all(16.0),
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.all(12.0),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(8),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.1),
-              blurRadius: 4,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Previous Comment',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: AppColors.primaryLight,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              comment,
-              style: const TextStyle(
-                fontSize: 14,
-                color: Colors.black87,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildCommentInput() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 4,
-            offset: const Offset(0, -2),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: TextField(
-              controller: _commentController,
-              maxLines: 2,
-              decoration: InputDecoration(
-                hintText: 'Enter comment...',
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                  borderSide: BorderSide(color: Colors.grey[300]!),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                  borderSide: const BorderSide(color: AppColors.eLearningBtnColor1),
-                ),
-                filled: true,
-                fillColor: Colors.white,
-                contentPadding: const EdgeInsets.all(8.0),
-              ),
-              style: const TextStyle(fontSize: 14),
-            ),
-          ),
-          const SizedBox(width: 8),
-          ElevatedButton(
-            onPressed: () {
-              if (_commentController.text.isNotEmpty && _currentStudentIndex < studentResults.length) {
-                submitComment(studentResults[_currentStudentIndex]['student_id']);
-              }
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.eLearningBtnColor1,
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-            child: const Text(
-              'Submit',
-              style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 }
 
 
@@ -614,6 +888,7 @@ class _CommentCourseResultScreenState extends State<CommentCourseResultScreen> {
 //   String? error;
 //   final TextEditingController _commentController = TextEditingController();
 //   int _currentStudentIndex = 0;
+//   final SwiperController _swiperController = SwiperController();
 
 //   @override
 //   void initState() {
@@ -624,6 +899,7 @@ class _CommentCourseResultScreenState extends State<CommentCourseResultScreen> {
 //   @override
 //   void dispose() {
 //     _commentController.dispose();
+//     _swiperController.dispose();
 //     super.dispose();
 //   }
 
@@ -671,6 +947,7 @@ class _CommentCourseResultScreenState extends State<CommentCourseResultScreen> {
 //         setState(() {
 //           studentResults = List<Map<String, dynamic>>.from(results);
 //           assessmentNames = uniqueAssessments.toList();
+//           _commentController.text = studentResults.isNotEmpty ? studentResults[0]['comment'] ?? '' : '';
 //           isLoading = false;
 //         });
 //         print('Fetched ${studentResults.length} student results, ${assessmentNames.length} assessments');
@@ -687,6 +964,54 @@ class _CommentCourseResultScreenState extends State<CommentCourseResultScreen> {
 //         isLoading = false;
 //       });
 //       print('Error fetching results: $e');
+//     }
+//   }
+
+//   Future<void> submitComment(int studentId) async {
+//     try {
+//       final authProvider = Provider.of<AuthProvider>(context, listen: false);
+//       final apiService = locator<ApiService>();
+//       final userBox = Hive.box('userData');
+//       final role = userBox.get('role')?.toString() ?? 'admin';
+
+//       if (authProvider.token != null) {
+//         apiService.setAuthToken(authProvider.token!);
+//       }
+
+//       final dbName = EnvConfig.dbName;
+//       final endpoint = 'portal/students/result/comment';
+//       final payload = {
+//         'student_id': studentId,
+//         'comment': _commentController.text,
+//         'role': role,
+//         'year': int.parse(widget.year),
+//         'term': widget.term,
+//         '_db': dbName,
+//       };
+
+//       print('Submitting comment to: $endpoint with payload: $payload');
+
+//       final response = await apiService.post(
+//         endpoint: endpoint,
+//         body: payload,
+//       );
+
+//       if (response.success) {
+//         setState(() {
+//           studentResults[_currentStudentIndex]['comment'] = _commentController.text;
+//         });
+//         print('Comment submitted successfully for student $studentId');
+//       } else {
+//         setState(() {
+//           error = response.message;
+//         });
+//         print('Failed to submit comment: ${response.message}');
+//       }
+//     } catch (e) {
+//       setState(() {
+//         error = 'Failed to submit comment: $e';
+//       });
+//       print('Error submitting comment: $e');
 //     }
 //   }
 
@@ -738,76 +1063,127 @@ class _CommentCourseResultScreenState extends State<CommentCourseResultScreen> {
 //               ? const Center(child: CircularProgressIndicator())
 //               : error != null
 //                   ? Center(child: Text(error!, style: const TextStyle(color: Colors.red)))
-//                   : Swiper(
-//                       itemCount: studentResults.length,
-//                       index: _currentStudentIndex,
-//                       onIndexChanged: (index) {
-//                         setState(() {
-//                           _currentStudentIndex = index;
-//                           _commentController.text = studentResults[index]['comment'] ?? '';
-//                         });
-//                       },
-//                       itemBuilder: (context, index) {
-//                         final student = studentResults[index];
-//                         return SingleChildScrollView(
-//                           child: Column(
-//                             children: [
-//                               _buildTermSection(student),
-//                               _buildSubjectsTable(student),
-//                               _buildCommentInput(student),
-//                             ],
-//                           ),
-//                         );
-//                       },
-//                       pagination: const SwiperPagination(
-//                         alignment: Alignment.topCenter,
-//                         builder: DotSwiperPaginationBuilder(
-//                           activeColor: AppColors.eLearningBtnColor1,
-//                           color: Colors.grey,
+//                   : Stack(
+//                       children: [
+//                         Swiper(
+//                           controller: _swiperController,
+//                           itemCount: studentResults.length,
+//                           index: _currentStudentIndex,
+//                           onIndexChanged: (index) {
+//                             setState(() {
+//                               _currentStudentIndex = index;
+//                               _commentController.text = studentResults[index]['comment'] ?? '';
+//                             });
+//                           },
+//                           itemBuilder: (context, index) {
+//                             final student = studentResults[index];
+//                             return Column(
+//                               children: [
+//                                 _buildStudentHeader(student),
+//                                 Expanded(
+//                                   child: SingleChildScrollView(
+//                                     child: Column(
+//                                       children: [
+//                                         _buildTermSection(),
+//                                         _buildSubjectsTable(student),
+//                                         _buildCommentDisplay(student),
+//                                       ],
+//                                     ),
+//                                   ),
+//                                 ),
+//                               ],
+//                             );
+//                           },
 //                         ),
-//                       ),
+//                         Positioned(
+//                           bottom: 0,
+//                           left: 0,
+//                           right: 0,
+//                           child: _buildCommentInput(),
+//                         ),
+//                       ],
 //                     ),
 //         ),
 //       ),
 //     );
 //   }
 
-//   Widget _buildTermSection(Map<String, dynamic> student) {
+//   Widget _buildStudentHeader(Map<String, dynamic> student) {
 //     return Padding(
-//       padding: const EdgeInsets.all(16.0),
-//       child: Column(
-//         crossAxisAlignment: CrossAxisAlignment.start,
+//       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+//       child: Row(
+//         mainAxisAlignment: MainAxisAlignment.spaceBetween,
 //         children: [
-//           Text(
-//             'Student: ${student['student_name']}',
-//             style: const TextStyle(
-//               fontSize: 16,
-//               fontWeight: FontWeight.w600,
-//               color: AppColors.primaryLight,
+//           IconButton(
+//             onPressed: _currentStudentIndex > 0
+//                 ? () => _swiperController.previous(animation: true)
+//                 : null,
+//             icon: Icon(
+//               Icons.arrow_back_ios,
+//               color: _currentStudentIndex > 0 ? AppColors.eLearningBtnColor1 : Colors.grey,
 //             ),
 //           ),
-//           const SizedBox(height: 8),
-//           Container(
-//             width: double.infinity,
-//             padding: const EdgeInsets.all(16.0),
-//             decoration: const BoxDecoration(
-//               border: Border(
-//                 top: BorderSide(color: Colors.orange, width: 2),
-//                 bottom: BorderSide(color: Colors.orange, width: 2),
-//               ),
-//             ),
-//             child: Center(
-//               child: Text(
-//                 '${widget.year}/${int.parse(widget.year) + 1} ${widget.termName}',
-//                 style: const TextStyle(
-//                   fontSize: 16,
-//                   fontWeight: FontWeight.w500,
-//                   color: Colors.orange,
+//           Row(
+//             children: [
+//               CircleAvatar(
+//                 radius: 16,
+//                 backgroundColor: Colors.primaries[_currentStudentIndex % Colors.primaries.length],
+//                 child: Text(
+//                   student['student_name']?.isNotEmpty == true
+//                       ? student['student_name'][0].toUpperCase()
+//                       : 'S',
+//                   style: const TextStyle(color: Colors.white),
 //                 ),
 //               ),
+//               const SizedBox(width: 8),
+//               Text(
+//                 student['student_name'] ?? 'N/A',
+//                 style: const TextStyle(
+//                   fontSize: 16,
+//                   fontWeight: FontWeight.w600,
+//                   color: AppColors.primaryLight,
+//                 ),
+//               ),
+//             ],
+//           ),
+//           IconButton(
+//             onPressed: _currentStudentIndex < studentResults.length - 1
+//                 ? () => _swiperController.next(animation: true)
+//                 : null,
+//             icon: Icon(
+//               Icons.arrow_forward_ios,
+//               color: _currentStudentIndex < studentResults.length - 1
+//                   ? AppColors.eLearningBtnColor1
+//                   : Colors.grey,
 //             ),
 //           ),
 //         ],
+//       ),
+//     );
+//   }
+
+//   Widget _buildTermSection() {
+//     return Padding(
+//       padding: const EdgeInsets.all(16.0),
+//       child: Container(
+//         width: double.infinity,
+//         padding: const EdgeInsets.all(16.0),
+//         decoration: const BoxDecoration(
+//           border: Border(
+//             top: BorderSide(color: Colors.orange, width: 2),
+//             bottom: BorderSide(color: Colors.orange, width: 2),
+//           ),
+//         ),
+//         child: Center(
+//           child: Text(
+//             '${widget.year}/${int.parse(widget.year) + 1} ${widget.termName}',
+//             style: const TextStyle(
+//               fontSize: 16,
+//               fontWeight: FontWeight.w500,
+//               color: Colors.orange,
+//             ),
+//           ),
+//         ),
 //       ),
 //     );
 //   }
@@ -942,60 +1318,107 @@ class _CommentCourseResultScreenState extends State<CommentCourseResultScreen> {
 //     );
 //   }
 
-//   Widget _buildCommentInput(Map<String, dynamic> student) {
+//   Widget _buildCommentDisplay(Map<String, dynamic> student) {
+//     final comment = student['comment']?.toString() ?? '';
+//     if (comment.isEmpty) {
+//       return const SizedBox.shrink();
+//     }
+
 //     return Padding(
 //       padding: const EdgeInsets.all(16.0),
-//       child: Column(
-//         crossAxisAlignment: CrossAxisAlignment.start,
+//       child: Container(
+//         width: double.infinity,
+//         padding: const EdgeInsets.all(12.0),
+//         decoration: BoxDecoration(
+//           color: Colors.white,
+//           borderRadius: BorderRadius.circular(8),
+//           boxShadow: [
+//             BoxShadow(
+//               color: Colors.black.withOpacity(0.1),
+//               blurRadius: 4,
+//               offset: const Offset(0, 2),
+//             ),
+//           ],
+//         ),
+//         child: Column(
+//           crossAxisAlignment: CrossAxisAlignment.start,
+//           children: [
+//             const Text(
+//               'Previous Comment',
+//               style: TextStyle(
+//                 fontSize: 16,
+//                 fontWeight: FontWeight.w600,
+//                 color: AppColors.primaryLight,
+//               ),
+//             ),
+//             const SizedBox(height: 8),
+//             Text(
+//               comment,
+//               style: const TextStyle(
+//                 fontSize: 14,
+//                 color: Colors.black87,
+//               ),
+//             ),
+//           ],
+//         ),
+//       ),
+//     );
+//   }
+
+//   Widget _buildCommentInput() {
+//     return Container(
+//       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+//       decoration: BoxDecoration(
+//         color: Colors.white,
+//         boxShadow: [
+//           BoxShadow(
+//             color: Colors.black.withOpacity(0.1),
+//             blurRadius: 4,
+//             offset: const Offset(0, -2),
+//           ),
+//         ],
+//       ),
+//       child: Row(
 //         children: [
-//           const Text(
-//             'Comment',
-//             style: TextStyle(
-//               fontSize: 16,
-//               fontWeight: FontWeight.w600,
-//               color: AppColors.primaryLight,
+//           Expanded(
+//             child: TextField(
+//               controller: _commentController,
+//               maxLines: 2,
+//               decoration: InputDecoration(
+//                 hintText: 'Enter comment...',
+//                 border: OutlineInputBorder(
+//                   borderRadius: BorderRadius.circular(8),
+//                   borderSide: BorderSide(color: Colors.grey[300]!),
+//                 ),
+//                 focusedBorder: OutlineInputBorder(
+//                   borderRadius: BorderRadius.circular(8),
+//                   borderSide: const BorderSide(color: AppColors.eLearningBtnColor1),
+//                 ),
+//                 filled: true,
+//                 fillColor: Colors.white,
+//                 contentPadding: const EdgeInsets.all(8.0),
+//               ),
+//               style: const TextStyle(fontSize: 14),
 //             ),
 //           ),
-//           const SizedBox(height: 8),
-//           TextField(
-//             controller: _commentController,
-//             maxLines: 4,
-//             decoration: InputDecoration(
-//               hintText: 'Enter your comment here...',
-//               border: OutlineInputBorder(
-//                 borderRadius: BorderRadius.circular(8),
-//                 borderSide: BorderSide(color: Colors.grey[300]!),
-//               ),
-//               focusedBorder: OutlineInputBorder(
-//                 borderRadius: BorderRadius.circular(8),
-//                 borderSide: const BorderSide(color: AppColors.eLearningBtnColor1),
-//               ),
-//               filled: true,
-//               fillColor: Colors.white,
-//               contentPadding: const EdgeInsets.all(12.0),
-//             ),
-//             style: const TextStyle(fontSize: 14),
-//             onChanged: (value) {
-//               // You can add logic to save the comment here if needed
-//             },
-//           ),
-//           const SizedBox(height: 16),
+//           const SizedBox(width: 8),
 //           ElevatedButton(
 //             onPressed: () {
-//               // Implement comment submission logic here
-//               print('Comment submitted for student ${student['student_id']}: ${_commentController.text}');
+//               if (_commentController.text.isNotEmpty && _currentStudentIndex < studentResults.length) {
+//                 submitComment(studentResults[_currentStudentIndex]['student_id']);
+//               }
 //             },
 //             style: ElevatedButton.styleFrom(
 //               backgroundColor: AppColors.eLearningBtnColor1,
 //               foregroundColor: Colors.white,
-//               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+//               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
 //               shape: RoundedRectangleBorder(
 //                 borderRadius: BorderRadius.circular(8),
 //               ),
 //             ),
 //             child: const Text(
-//               'Submit Comment',
-//               style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+//               'Submit',
+//               style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
 //             ),
 //           ),
 //         ],
