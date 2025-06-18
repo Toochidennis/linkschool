@@ -16,7 +16,7 @@ dependencies:
   flutter_svg: ^2.0.10+1
   curved_nav_bar: ^0.0.2
   flutter_rating_bar: ^4.0.1
-  carousel_slider: ^5.0.0
+  carousel_slider: ^5.1.1
   flip_card: ^0.7.0
   percent_indicator: ^4.0.1
   fl_chart: ^0.70.1

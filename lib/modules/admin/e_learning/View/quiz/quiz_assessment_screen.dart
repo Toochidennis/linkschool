@@ -78,17 +78,19 @@ class _QuizAssessmentScreenState extends State<QuizAssessmentScreen> {
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            // const SizedBox(height: 16),
-            _buildTimerRow(),
-            const SizedBox(height: 16),
-            _buildProgressSection(),
-            const SizedBox(height: 16),
-            _buildQuestionCard(),
-            const SizedBox(height: 16),
-            _buildNavigationButtons(),
-          ],
+        child: SingleChildScrollView(
+          child: Column(
+            children: [
+              // const SizedBox(height: 16),
+              _buildTimerRow(),
+              const SizedBox(height: 16),
+              _buildProgressSection(),
+              const SizedBox(height: 16),
+              _buildQuestionCard(),
+              const SizedBox(height: 16),
+              _buildNavigationButtons(),
+            ],
+          ),
         ),
       ),
     );
@@ -114,26 +116,26 @@ class _QuizAssessmentScreenState extends State<QuizAssessmentScreen> {
             // const Spacer(),
           ],
         ),
-        // TextButton(
-        //   onPressed: () {
-        //     // Show the stop timer confirmation dialog
-        //     _showStopTimerDialog();
-        //   },
-        //   child: Container(
-        //     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        //     decoration: BoxDecoration(
-        //       color: _isTimerStopped ? Colors.grey : Colors.red,
-        //       borderRadius: BorderRadius.circular(4),
-        //     ),
-        //     child: const Text(
-        //       'Stop Timer',
-        //       style: TextStyle(
-        //         color: Colors.white,
-        //         fontWeight: FontWeight.bold,
-        //       ),
-        //     ),
-        //   ),
-        // ),
+        TextButton(
+          onPressed: () {
+            // Show the stop timer confirmation dialog
+            _showStopTimerDialog();
+          },
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: _isTimerStopped ? Colors.grey : Colors.red,
+              borderRadius: BorderRadius.circular(4),
+            ),
+            child: const Text(
+              'Stop Timer',
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ),
       ],
     );
   }

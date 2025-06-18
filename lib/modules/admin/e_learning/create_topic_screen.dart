@@ -1,5 +1,8 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:hive/hive.dart';
 
 // Assuming these are custom files in your project
 import 'package:linkschool/modules/common/app_colors.dart';
@@ -10,7 +13,10 @@ import 'package:linkschool/modules/common/widgets/portal/e_learning/select_class
 import 'package:linkschool/modules/model/e-learning/objective_item.dart';
 
 class CreateTopicScreen extends StatefulWidget {
-  const CreateTopicScreen({super.key});
+  final String? classId;
+  final String? levelId; 
+  final  String? courseId;
+  const CreateTopicScreen({super.key, this.classId, this.levelId, this.courseId});
 
   @override
   State<CreateTopicScreen> createState() => _CreateTopicScreenState();
@@ -25,10 +31,15 @@ class _CreateTopicScreenState extends State<CreateTopicScreen> {
   final List<ObjectiveItem> _objectives = [];
   final FocusNode _titleFocusNode = FocusNode();
   late double opacity;
+  int? creatorId;
+  String? creatorName;
+  String? academicYear;
+  int? academicTerm;
 
   @override
   void initState() {
     super.initState();
+    _loadUserData();
     _titleFocusNode.addListener(_onTitleFocusChange);
   }
 
@@ -48,6 +59,98 @@ void _onTitleFocusChange() {
     });
   }
 }
+
+  Future<void> _loadUserData() async {
+    try {
+      final userBox = Hive.box('userData');
+      final storedUserData = userBox.get('userData') ?? userBox.get('loginResponse');
+      if (storedUserData != null) {
+        final processedData = storedUserData is String
+            ? json.decode(storedUserData)
+            : storedUserData as Map<String, dynamic>;
+        final response = processedData['response'] ?? processedData;
+        final data = response['data'] ?? response;
+        final profile = data['profile'] ?? {};
+        final settings = data['settings'] ?? {};
+
+        setState(() {
+          creatorId = profile['staff_id'] as int?;
+          creatorName = profile['name']?.toString();
+          academicYear = settings['year']?.toString();
+          academicTerm = settings['term'] as int?;
+        });
+      }
+    } catch (e) {
+      print('Error loading user data: $e');
+    }
+  }
+
+  void _addTopic() async {
+    try {
+      final userBox = Hive.box('userData');
+      final storedUserData = userBox.get('userData') ?? userBox.get('loginResponse');
+      final processedData = storedUserData is String
+          ? json.decode(storedUserData)
+          : storedUserData;
+      final response = processedData['response'] ?? processedData;
+      final data = response['data'] ?? response;
+      final classes = data['classes'] ?? [];
+      final selectedClassIds = userBox.get('selectedClassIds') ?? [];
+
+      final classIdList = selectedClassIds.map<Map<String, String>>((classId) {
+        final classIdStr = classId.toString();
+        final classData = classes.firstWhere(
+          (cls) => cls['id'].toString() == classIdStr,
+          orElse: () => {'id': classIdStr, 'class_name': 'Unknown'},
+        );
+        return {
+          'id': classIdStr,
+          'class_name': (classData['class_name']?.toString() ?? 'Unknown'),
+        };
+      }).toList();
+
+      if (classIdList.isEmpty && widget.classId != null) {
+        final classIdStr = widget.classId!;
+        final classData = classes.firstWhere(
+          (cls) => cls['id'].toString() == classIdStr,
+          orElse: () => {'id': classIdStr, 'class_name': _selectedClass},
+        );
+        classIdList.add({
+          'id': classIdStr,
+          'class_name': (classData['class_name']?.toString() ?? _selectedClass),
+        });
+      }
+
+      final material = {
+        'title': _titleController.text,
+        "objectives": _objectiveController.text,
+        'topic_id': '', 
+        'classids': classIdList.isNotEmpty
+            ? classIdList
+            : [
+                {'id': '', 'class_name': ''},
+              ],
+        'level_id': widget.levelId,
+        'course_id': widget.courseId,
+        'creator_id': creatorId,
+        'creator_name': creatorName,
+        'term': academicTerm?.toInt(),
+      };
+
+      print('Complete Material Data:');
+      print(const JsonEncoder.withIndent('  ').convert(material));
+
+      // widget.onSave(material);
+      Navigator.of(context).pop();
+    } catch (e) {
+      print('Error saving material: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error: ${e.toString()}')),
+      );
+    }
+  }
+
+
 
   @override
   Widget build(BuildContext context) {
@@ -89,9 +192,7 @@ void _onTitleFocusChange() {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 8.0),
             child: CustomSaveElevatedButton(
-              onPressed: () {
-                // Implement save functionality
-              },
+              onPressed:_addTopic,
               text: 'Save',
             ),
           ),
@@ -147,7 +248,9 @@ body: Container(
                         setState(() {
                           _selectedClass = selectedClass;
                         });
+                      
                       },
+                      levelId:widget.levelId,
                     ),
                   ),
                 );

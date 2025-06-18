@@ -273,9 +273,14 @@ class _EmptySyllabusScreenState extends State<EmptySyllabusScreen> with WidgetsB
         )
       ],
     );
+    
   }
 
   Widget _buildSyllabusList() {
+    print(widget.classId);
+    print(widget.levelId);
+    print(widget.courseId);
+    print(widget.course_name);  
     return ListView.builder(
       itemCount: _syllabusList.length,
       itemBuilder: (context, index) {
@@ -284,22 +289,25 @@ class _EmptySyllabusScreenState extends State<EmptySyllabusScreen> with WidgetsB
             context,
             MaterialPageRoute(
               builder: (context) => EmptySubjectScreen(
-                 classId: widget.classId,
+                classId: widget.classId,
             courseId: widget.courseId,
             levelId: widget.levelId,
             courseName: widget.course_name,
                 courseTitle: _syllabusList[index]['title']?.toString() ?? '',
               ),
             ),
+            
           ),
           child: _buildOutlineContainers(_syllabusList[index], index),
         );
         
       },
     );
+   
   }
 
   VoidCallback _addNewSyllabus() {
+
     print("SSSSSSSSSSSSSSSSSSSSSSSSSSSS ${widget.levelId} ");
      print("SSSSSSSSSSSSSSSSSSSSSSSSSSSS ${widget.course_name} ");
     return () async {

@@ -1,28 +1,35 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:hive/hive.dart';
 import 'package:linkschool/modules/admin/e_learning/View/question/view_question_screen.dart';
 import 'package:linkschool/modules/admin/e_learning/select_topic_screen.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/buttons/custom_outline_button..dart';
+
 import 'package:linkschool/modules/common/buttons/custom_save_elevated_button.dart';
 import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/common/utils/duration_picker_dialog.dart';
 import 'package:linkschool/modules/common/widgets/portal/e_learning/select_classes_dialog.dart';
 import 'package:linkschool/modules/model/e-learning/question_model.dart';
-// import 'package:linkschool/modules/admin_portal/e_learning/View/question/view_question_screen.dart';
-// import 'package:linkschool/modules/admin_portal/e_learning/select_topic_screen.dart';
-
-
 
 class QuestionScreen extends StatefulWidget {
   final Function(Question) onSave;
   final bool isEditing;
   final Question? question;
+  final String? classId;
+  final String? courseId;
+  final  String? levelId;
+  final  String? courseName;
 
+  const QuestionScreen({
+    super.key,
+    required this.onSave,
+    this.question,
+    this.isEditing = false, this.classId, this.courseId, this.levelId, this.courseName,
+  });
 
-
-  const QuestionScreen({super.key, required this.onSave, this.question, this.isEditing = false,});
   @override
   State<QuestionScreen> createState() => _QuestionScreenState();
 }
@@ -38,6 +45,189 @@ class _QuestionScreenState extends State<QuestionScreen> {
   Duration _selectedDuration = const Duration(hours: 1);
   String _marks = '200 marks';
   late double opacity;
+  bool isLoading = false;
+  int? creatorId;
+  String? creatorRole;
+  String? academicYear;
+  int? academicTerm;
+  final _formKey = GlobalKey<FormState>();
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserData();
+    if (widget.question != null) {
+      _titleController.text = widget.question!.title;
+      _descriptionController.text = widget.question!.description;
+      _selectedClass = widget.question!.selectedClass;
+      _startDate = widget.question!.startDate;
+      _endDate = widget.question!.endDate;
+      _selectedTopic = widget.question!.topic;
+      _selectedDuration = widget.question!.duration;
+      _marks = widget.question!.marks;
+    }
+  }
+
+  Future<void> _loadUserData() async {
+    try {
+      final userBox = Hive.box('userData');
+      final storedUserData = userBox.get('userData') ?? userBox.get('loginResponse');
+      if (storedUserData != null) {
+        final processedData = storedUserData is String
+            ? json.decode(storedUserData)
+            : storedUserData as Map<String, dynamic>;
+        final response = processedData['response'] ?? processedData;
+        final data = response['data'] ?? response;
+        final profile = data['profile'] ?? {};
+        final settings = data['settings'] ?? {};
+
+        setState(() {
+        creatorId = profile['staff_id'] as int?;
+          creatorRole = profile['role']?.toString();
+          academicYear = settings['year']?.toString();
+          academicTerm = settings['term'] as int?;
+        });
+      }
+    } catch (e) {
+      print('Error loading user data: $e');
+    }
+  }
+
+  Future<void> _saveQuestionAndNavigate() async {
+  print('SSSSSSSSSSSSSSSSSSSSSSSSSSS${widget.levelId}');
+  if (_formKey.currentState!.validate()) {
+    if (isLoading) return;
+
+    setState(() => isLoading = true);
+
+    try {
+      final userBox = Hive.box('userData');
+      final storedCourseId = userBox.get('selectedCourseId');
+      final storedLevelId = userBox.get('selectedLevelId');
+      final selectedClassIds = userBox.get('selectedClassIds') ?? [];
+      print('Selected Class IDs: $selectedClassIds');
+
+      final courseId = widget.courseId ?? storedCourseId?.toString() ?? 'course_not_selected';
+      final levelId = widget.levelId ?? storedLevelId?.toString() ?? 'level_not_selected';
+
+      final storedUserData = userBox.get('userData') ?? userBox.get('loginResponse');
+      if (storedUserData == null) {
+        print('Error: No user data found in Hive');
+        return;
+      }
+      final processedData = storedUserData is String
+          ? json.decode(storedUserData)
+          : storedUserData;
+      final response = processedData['response'] ?? processedData;
+      final data = response['data'] ?? response;
+      final classes = data['classes'] ?? [];
+      print('Classes Data: ${const JsonEncoder.withIndent('  ').convert(classes)}');
+
+      final classIdList = selectedClassIds.map<Map<String, String>>((classId) {
+        final classIdStr = classId.toString();
+        final classData = classes.firstWhere(
+          (cls) {
+            print('Comparing: ${cls['id'].toString()} == $classIdStr');
+            return cls['id'].toString() == classIdStr;
+          },
+          orElse: () => {'id': classIdStr, 'class_name': 'Unknown'},
+        );
+        return {
+          'id': classIdStr,
+          'class_name': (classData['class_name']?.toString() ?? 'Unknown'),
+        };
+      }).toList();
+
+      if (classIdList.isEmpty && widget.classId != null) {
+        final classIdStr = widget.classId!;
+        print('Using fallback classId: $classIdStr');
+        final classData = classes.firstWhere(
+          (cls) => cls['id'].toString() == classIdStr,
+          orElse: () => {'id': classIdStr, 'class_name': _selectedClass},
+        );
+        classIdList.add({
+          'id': classIdStr,
+          'class_name': (classData['class_name']?.toString() ?? _selectedClass),
+        });
+      }
+      print('Class ID List: ${const JsonEncoder.withIndent('  ').convert(classIdList)}');
+
+      final question = Question(
+        title: _titleController.text,
+        description: _descriptionController.text,
+        selectedClass: _selectedClass,
+        
+        startDate: _startDate,
+        endDate: _endDate,
+        topic: _selectedTopic,
+        duration: _selectedDuration,
+        marks: _marks,
+      );
+
+      final questionData = {
+        'title': _titleController.text,
+        'description': _descriptionController.text,
+        'selected_class': _selectedClass,
+        'start_date': _startDate.toIso8601String(),
+        'end_date': _endDate.toIso8601String(),
+        'topic': _selectedTopic,
+        'duration': _selectedDuration.inMinutes.toString(),
+        'marks': _marks,
+        'course_id': courseId,
+        'level_id': levelId,
+        'class_ids': classIdList.isNotEmpty ? classIdList : [{'id': '', 'class_name': 'Select classes'}],
+        'creator_role': creatorRole ?? 'unknown',
+        'term': academicTerm?.toString() ?? '1',
+        'creator_id': creatorId ?? 0,
+      };
+
+      print('Complete Question Data: ${const JsonEncoder.withIndent('  ').convert(questionData)}');
+
+      await Future.delayed(const Duration(seconds: 1));
+
+      if (mounted) {
+        widget.onSave(question);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Question saved successfully',
+              style: TextStyle(color: Colors.white),
+            ),
+            backgroundColor: Colors.green,
+          ),
+        );
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (context) => ViewQuestionScreen(
+              class_ids:classIdList.isNotEmpty ? classIdList : [{'id': '', 'class_name': 'Select classes'}],
+              question: question),
+          ),
+        );
+      }
+    } catch (e) {
+      print('Error saving question: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: ${e.toString()}')),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => isLoading = false);
+      }
+    }
+  } else {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text(
+          'Please fill all required fields',
+          style: TextStyle(color: Colors.white),
+        ),
+        backgroundColor: Colors.red,
+      ),
+    );
+  }
+}
 
   @override
   Widget build(BuildContext context) {
@@ -94,101 +284,118 @@ class _QuestionScreenState extends State<QuestionScreen> {
         child: Padding(
           padding: const EdgeInsets.all(16.0),
           child: SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Title :',
-                  style: AppTextStyles.normal600(
-                      fontSize: 16.0, color: Colors.black),
-                ),
-                const SizedBox(height: 8.0),
-                TextField(
-                  controller: _titleController,
-                  decoration: InputDecoration(
-                    hintText: 'Why is egg white?',
-                    hintStyle: const TextStyle(color: Colors.grey),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8.0),
-                    ),
-                    contentPadding: const EdgeInsets.all(12.0),
+            child: Form(
+              key: _formKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Title :',
+                    style: AppTextStyles.normal600(
+                        fontSize: 16.0, color: Colors.black),
                   ),
-                ),
-                const SizedBox(height: 16.0),
-                Text(
-                  'Instruction :',
-                  style: AppTextStyles.normal600(
-                      fontSize: 16.0, color: Colors.black),
-                ),
-                const SizedBox(height: 8.0),
-                TextField(
-                  controller: _descriptionController,
-                  maxLines: 5,
-                  decoration: InputDecoration(
-                    hintText: 'List out the characteristics of an egg',
-                    hintStyle: const TextStyle(color: Colors.grey),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8.0),
-                    ),
-                    contentPadding: const EdgeInsets.all(12.0),
-                  ),
-                ),
-                const SizedBox(height: 32.0),
-                Text(
-                  'Select the learners : *',
-                  style: AppTextStyles.normal600(
-                      fontSize: 16.0, color: Colors.black),
-                ),
-                const SizedBox(height: 16.0),
-                _buildGroupRow(
-                  context,
-                  iconPath: 'assets/icons/e_learning/people.svg',
-                  text: _selectedClass,
-                  onTap: () async {
-                    await Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (context) => SelectClassesDialog(
-                          onSave: (selectedClass) {
-                            setState(() {
-                              _selectedClass = selectedClass;
-                            });
-                          },
-                        ),
+                  const SizedBox(height: 8.0),
+                  TextFormField(
+                    controller: _titleController,
+                    decoration: InputDecoration(
+                      hintText: 'Why is egg white?',
+                      hintStyle: const TextStyle(color: Colors.grey),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8.0),
                       ),
-                    );
-                  },
-                ),
-                _buildGroupRow(
-                  context,
-                  iconPath: 'assets/icons/e_learning/mark.svg',
-                  text: _marks,
-                  showEditButton: true,
-                  onTap: _showMarksDialog,
-                ),
-                _buildGroupRow(
-                  context,
-                  iconPath: 'assets/icons/e_learning/calender.svg',
-                  text: 'Start: ${_formatDate(_startDate)}\nDue: ${_formatDate(_endDate)}',
-                  showEditButton: true,
-                  isSelected: true,
-                  onTap: _showDateRangePicker,
-                ),
-                _buildGroupRow(
-                  context,
-                  iconPath: 'assets/icons/e_learning/clock.svg',
-                  text: _formatDuration(_selectedDuration),
-                  showEditButton: true,
-                  onTap: _showDurationPicker,
-                ),
-                _buildGroupRow(
-                  context,
-                  iconPath: 'assets/icons/e_learning/clipboard.svg',
-                  text: _selectedTopic,
-                  showEditButton: true,
-                  isSelected: true,
-                  onTap: () => _selectTopic(),
-                ),
-              ],
+                      contentPadding: const EdgeInsets.all(12.0),
+                    ),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please enter a title';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 16.0),
+                  Text(
+                    'Instruction :',
+                    style: AppTextStyles.normal600(
+                        fontSize: 16.0, color: Colors.black),
+                  ),
+                  const SizedBox(height: 8.0),
+                  TextFormField(
+                    controller: _descriptionController,
+                    maxLines: 5,
+                    decoration: InputDecoration(
+                      hintText: 'List out the characteristics of an egg',
+                      hintStyle: const TextStyle(color: Colors.grey),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8.0),
+                      ),
+                      contentPadding: const EdgeInsets.all(12.0),
+                    ),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please enter an instruction';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 32.0),
+                  Text(
+                    'Select the learners : *',
+                    style: AppTextStyles.normal600(
+                        fontSize: 16.0, color: Colors.black),
+                  ),
+                  const SizedBox(height: 16.0),
+                  _buildGroupRow(
+                    context,
+                    iconPath: 'assets/icons/e_learning/people.svg',
+                    text: _selectedClass,
+                    onTap: () async {
+                      await Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (context) => SelectClassesDialog(
+                            onSave: (selectedClass) {
+                              setState(() {
+                                _selectedClass = selectedClass;
+                              });
+
+                            },
+                            levelId: widget.levelId,
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                  _buildGroupRow(
+                    context,
+                    iconPath: 'assets/icons/e_learning/mark.svg',
+                    text: _marks,
+                    showEditButton: true,
+                    onTap: _showMarksDialog,
+                  ),
+                  _buildGroupRow(
+                    context,
+                    iconPath: 'assets/icons/e_learning/calender.svg',
+                    text: 'Start: ${_formatDate(_startDate)}\nDue: ${_formatDate(_endDate)}',
+                    showEditButton: true,
+                    isSelected: true,
+                    onTap: _showDateRangePicker,
+                  ),
+                  _buildGroupRow(
+                    context,
+                    iconPath: 'assets/icons/e_learning/clock.svg',
+                    text: _formatDuration(_selectedDuration),
+                    showEditButton: true,
+                    onTap: _showDurationPicker,
+                  ),
+                  _buildGroupRow(
+                    context,
+                    iconPath: 'assets/icons/e_learning/clipboard.svg',
+                    text: _selectedTopic,
+                    showEditButton: true,
+                    isSelected: true,
+                    onTap: () => _selectTopic(),
+                  ),
+                ],
+              ),
             ),
           ),
         ),
@@ -363,8 +570,6 @@ class _QuestionScreenState extends State<QuestionScreen> {
     );
   }
 
-
-
   String _formatDate(DateTime date) {
     return '${_getDayOfWeek(date.weekday)}, ${date.day} ${_getMonth(date.month)}';
   }
@@ -389,8 +594,6 @@ class _QuestionScreenState extends State<QuestionScreen> {
         return '';
     }
   }
-
-
 
   String _getMonth(int month) {
     switch (month) {
@@ -467,27 +670,7 @@ class _QuestionScreenState extends State<QuestionScreen> {
       });
     }
   }
-
-  void _saveQuestionAndNavigate() {
-    final question = Question(
-      title: _titleController.text,
-      description: _descriptionController.text,
-      selectedClass: _selectedClass,
-      startDate: _startDate,
-      endDate: _endDate,
-      topic: _selectedTopic,
-      duration: _selectedDuration,
-      marks: _marks,
-    );
-    widget.onSave(question);
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (context) => ViewQuestionScreen(question: question),
-      ),
-    );
-  }
 }
-
 
 class DateRangePickerDialog extends StatefulWidget {
   final DateTime initialStartDate;
@@ -662,29 +845,3 @@ class _DateRangePickerDialogState extends State<DateRangePickerDialog> {
     return months[month - 1];
   }
 }
-
-  // void _showDateRangePicker() async {
-  //   final DateTimeRange? picked = await showDateRangePicker(
-  //     context: context,
-  //     firstDate: DateTime.now(),
-  //     lastDate: DateTime.now().add(const Duration(days: 365)),
-  //     initialDateRange: DateTimeRange(start: _startDate, end: _endDate),
-  //     builder: (BuildContext context, Widget? child) {
-  //       return Theme(
-  //         data: ThemeData.light().copyWith(
-  //           primaryColor: AppColors.eLearningBtnColor1,
-  //           colorScheme: ColorScheme.light(primary: AppColors.eLearningBtnColor1),
-  //           buttonTheme: ButtonThemeData(textTheme: ButtonTextTheme.primary),
-  //         ),
-  //         child: child!,
-  //       );
-  //     },
-  //   );
-
-  //   if (picked != null) {
-  //     setState(() {
-  //       _startDate = picked.start;
-  //       _endDate = picked.end;
-  //     });
-  //   }
-  // }

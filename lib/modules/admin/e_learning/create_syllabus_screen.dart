@@ -43,6 +43,7 @@ class _CreateSyllabusScreenState extends State<CreateSyllabusScreen> {
   @override
   void initState() {
     super.initState();
+    
     _selectedClass = widget.syllabusData?['selectedClass'] ?? 'Select classes';
     _selectedTeacher = widget.syllabusData?['selectedTeacher'] ?? 'Select teachers';
     _titleController = TextEditingController(text: widget.syllabusData?['title'] ?? '');

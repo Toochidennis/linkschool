@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:intl/intl.dart';
+import 'package:linkschool/modules/admin/e_learning/add_material_screen.dart';
 import 'package:linkschool/modules/admin/e_learning/admin_assignment_screen.dart';
+import 'package:linkschool/modules/admin/e_learning/create_topic_screen.dart';
+import 'package:linkschool/modules/admin/e_learning/question_screen.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/buttons/custom_medium_elevated_button.dart';
 import 'package:linkschool/modules/common/constants.dart';
@@ -181,6 +184,7 @@ class _EmptySubjectScreenState extends State<EmptySubjectScreen> {
     return InkWell(
       onTap: () {
         Navigator.pop(context);
+        
         switch (text) {
           case 'Assignment':
             Navigator.push(
@@ -204,7 +208,11 @@ class _EmptySubjectScreenState extends State<EmptySubjectScreen> {
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (context) => StaffQuestionScreen(
+                builder: (context) => QuestionScreen(
+                      classId: widget.classId,
+            courseId: widget.courseId,
+            levelId: widget.levelId,
+                    courseName: widget.courseName,
                   onSave: (question) {
                     setState(() {
                       _showCourseworkScreen = true;
@@ -220,23 +228,44 @@ class _EmptySubjectScreenState extends State<EmptySubjectScreen> {
               MaterialPageRoute(
                 fullscreenDialog: true,
                 builder: (BuildContext context) =>
-                    const StaffCreateSyllabusScreen(),
+                    CreateTopicScreen(
+                       courseId: widget.courseId,
+                  levelId: widget.levelId,
+                  classId: widget.classId,
+                    ),
               ),
             );
             break;
           case 'Material':
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => StaffAddMaterialScreen(
-                  onSave: (material) {
+
+          Navigator.push(context, MaterialPageRoute(builder: (_)=>AddMaterialScreen(
+                 courseId: widget.courseId,
+                  levelId: widget.levelId,
+                  classId: widget.classId,
+                  courseName: widget.courseName,
+                 onSave: (material) {
                     setState(() {
                       _showCourseworkScreen = true;
-                    });
-                  },
-                ),
-              ),
-            );
+                     });}
+          )));
+            //Navigator.push(
+              //context,
+             // MaterialPageRoute(builder: 
+              // MaterialPageRoute(
+              //   builder: (context) => StaffAddMaterialScreen(
+              //     courseId: widget.courseId,
+              //     levelId: widget.levelId,
+              //     classId: widget.classId,
+              //     courseName: widget.courseName,
+                  
+              //     onSave: (material) {
+              //       setState(() {
+              //         _showCourseworkScreen = true;
+              //       });
+              //     },
+              //   ),
+              // ),
+           // );
             break;
         }
       },
