@@ -779,7 +779,6 @@ class _CommentCourseResultScreenState extends State<CommentCourseResultScreen> {
                 hintText: 'Post a comment',
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
-//                  borderSide: BorderSide(color: Colors.grey[300]!),
                   borderSide: BorderSide(color: Colors.grey),
                 ),
                 contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -812,7 +811,7 @@ class _CommentCourseResultScreenState extends State<CommentCourseResultScreen> {
     );
   }
 
-  // Build subjects table with black text color
+  // Build subjects table with layout matching StaffSkillsBehaviourScreen
   Widget _buildSubjectsTable(Map<String, dynamic> student) {
     final subjects = student['subjects'] as List;
     if (subjects.isEmpty) {
@@ -829,118 +828,154 @@ class _CommentCourseResultScreenState extends State<CommentCourseResultScreen> {
           border: Border.all(color: Colors.grey[300]!),
           borderRadius: BorderRadius.circular(8),
         ),
-        child: SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: DataTable(
-            columnSpacing: 10,
-            headingRowHeight: 48,
-            dataRowHeight: 50,
-            headingRowColor: MaterialStateProperty.all(AppColors.eLearningBtnColor1),
-            dividerThickness: 1,
-            columns: [
-              const DataColumn(
-                label: Text(
-                  'Subjects',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                    color: Colors.white,
-                  ),
+        child: Row(
+          children: [
+            _buildSubjectColumn(subjects),
+            Expanded(
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: [
+                    ...assessmentNames
+                        .asMap()
+                        .entries
+                        .map((entry) => _buildScrollableColumn(
+                              entry.value,
+                              100,
+                              subjects,
+                              entry.key,
+                              isAssessment: true,
+                            ))
+                        .toList(),
+                    _buildScrollableColumn('Total', 100, subjects, -1, isTotal: true),
+                    _buildScrollableColumn('Grade', 100, subjects, -2, isGrade: true),
+                    _buildScrollableColumn('Remark', 100, subjects, -3, isRemark: true),
+                  ],
                 ),
               ),
-              ...assessmentNames.map((name) => DataColumn(
-                    label: Text(
-                      name,
-                      style: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
-                        color: Colors.white,
-                      ),
-                    ),
-                  )),
-              const DataColumn(
-                label: Text(
-                  'Total',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                    color: Colors.white,
-                  ),
-                ),
-              ),
-              const DataColumn(
-                label: Text(
-                  'Grade',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                    color: Colors.white,
-                  ),
-                ),
-              ),
-              const DataColumn(
-                label: Text(
-                  'Remark',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                    color: Colors.white,
-                  ),
-                ),
-              ),
-            ],
-            rows: subjects.asMap().entries.map((entry) {
-              final subject = entry.value;
-              return DataRow(
-                cells: [
-                  DataCell(
-                    Text(
-                      subject['course_name']?.toString() ?? 'N/A',
-                      style: const TextStyle(fontSize: 14, color: Colors.black),
-
-
-                    ),
-                  ),
-                  ...assessmentNames.map((assessmentName) {
-                    final assessmentData = (subject['assessments'] as List).firstWhere(
-                      (a) => a['assessment_name'] == assessmentName,
-                      orElse: () => {'score': ''},
-                    );
-                    final currentScore = assessmentData['score']?.toString() ?? '';
-                    return DataCell(
-                      Container(
-                        alignment: Alignment.center,
-                        child: Text(
-                          currentScore,
-                          style: const TextStyle(fontSize: 14, color: Colors.black),
-                          textAlign: TextAlign.center,
-                        ),
-                      ),
-                    );
-                  }),
-                  DataCell(
-                    Text(
-                      subject['total_score']?.toString() ?? 'N/A',
-                      style: const TextStyle(fontSize: 14, color: Colors.black),
-                    ),
-                  ),
-                  DataCell(
-                    Text(
-                      subject['grade']?.toString() ?? 'N/A',
-                      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Colors.black),
-                    ),
-                  ),
-                  DataCell(
-                    Text(
-                      subject['remark']?.toString() ?? 'N/A',
-                      style: const TextStyle(fontSize: 14, color: Colors.black),
-                    ),
-                  ),
-                ],
-              );
-            }).toList(),
-          ),
+            ),
+          ],
         ),
+      ),
+    );
+  }
+
+  // Build fixed subject column
+  Widget _buildSubjectColumn(List subjects) {
+    return Container(
+      width: 120,
+      decoration: BoxDecoration(
+        color: Colors.blue[700],
+        borderRadius: const BorderRadius.only(topLeft: Radius.circular(8)),
+      ),
+      child: Column(
+        children: [
+          Container(
+            height: 48,
+            alignment: Alignment.center,
+            child: const Text(
+              'Subjects',
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+          ...subjects.asMap().entries.map((entry) {
+            final subject = entry.value;
+            return Container(
+              height: 50,
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              decoration: BoxDecoration(
+                color: Colors.grey[100],
+                border: Border(
+                  top: BorderSide(color: Colors.grey[300]!),
+                  right: BorderSide(color: Colors.grey[300]!),
+                ),
+              ),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  subject['course_name']?.toString() ?? 'N/A',
+                  style: const TextStyle(
+                    fontSize: 14,
+                    color: Colors.black,
+                  ),
+                ),
+              ),
+            );
+          }),
+        ],
+      ),
+    );
+  }
+
+  // Build scrollable column for assessments, total, grade, or remark
+  Widget _buildScrollableColumn(String title, double width, List subjects, int index,
+      {bool isAssessment = false, bool isTotal = false, bool isGrade = false, bool isRemark = false}) {
+    return Container(
+      width: width,
+      decoration: BoxDecoration(
+        border: Border(left: BorderSide(color: Colors.grey[300]!)),
+      ),
+      child: Column(
+        children: [
+          Container(
+            height: 48,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: AppColors.eLearningBtnColor1,
+              border: Border(
+                left: const BorderSide(color: Colors.white),
+                bottom: BorderSide(color: Colors.grey[300]!),
+              ),
+            ),
+            child: Text(
+              title,
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w500,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ),
+          ...subjects.asMap().entries.map((entry) {
+            final subject = entry.value;
+            String value = '-';
+            if (isAssessment) {
+              final assessmentData = (subject['assessments'] as List).firstWhere(
+                (a) => a['assessment_name'] == title,
+                orElse: () => {'score': ''},
+              );
+              value = assessmentData['score']?.toString() ?? '-';
+            } else if (isTotal) {
+              value = subject['total_score']?.toString() ?? '-';
+            } else if (isGrade) {
+              value = subject['grade']?.toString() ?? '-';
+            } else if (isRemark) {
+              value = subject['remark']?.toString() ?? '-';
+            }
+            return Container(
+              height: 50,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: Colors.grey[100],
+                border: Border(
+                  top: BorderSide(color: Colors.grey[300]!),
+                  right: BorderSide(color: Colors.grey[300]!),
+                ),
+              ),
+              child: Text(
+                value,
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Colors.black,
+                  fontWeight: isGrade ? FontWeight.w600 : FontWeight.normal,
+                ),
+              ),
+            );
+          }),
+        ],
       ),
     );
   }
@@ -960,6 +995,7 @@ class _CommentCourseResultScreenState extends State<CommentCourseResultScreen> {
 // import 'package:linkschool/modules/services/api/service_locator.dart';
 // import 'package:provider/provider.dart';
 
+// // Screen for commenting on course results
 // class CommentCourseResultScreen extends StatefulWidget {
 //   final String classId;
 //   final String year;
@@ -1008,11 +1044,13 @@ class _CommentCourseResultScreenState extends State<CommentCourseResultScreen> {
 //     super.dispose();
 //   }
 
+//   // Initialize user role from Hive storage
 //   void _initializeUserRole() {
 //     final userBox = Hive.box('userData');
 //     userRole = userBox.get('role')?.toString() ?? 'admin';
 //   }
 
+//   // Fetch student results from API
 //   Future<void> fetchStudentResults() async {
 //     try {
 //       final authProvider = Provider.of<AuthProvider>(context, listen: false);
@@ -1035,8 +1073,6 @@ class _CommentCourseResultScreenState extends State<CommentCourseResultScreen> {
 //         'role': role,
 //       };
 
-//       print('Fetching student results from: $endpoint with params: $queryParams');
-
 //       final response = await apiService.get(
 //         endpoint: endpoint,
 //         queryParams: queryParams,
@@ -1052,6 +1088,10 @@ class _CommentCourseResultScreenState extends State<CommentCourseResultScreen> {
 //               uniqueAssessments.add(assessment['assessment_name'] as String);
 //             }
 //           }
+//           // Ensure comments field is a Map or null
+//           if (student['comments'] != null && student['comments'] is! Map) {
+//             student['comments'] = {'legacy_comment': student['comments']};
+//           }
 //         }
 
 //         setState(() {
@@ -1060,23 +1100,21 @@ class _CommentCourseResultScreenState extends State<CommentCourseResultScreen> {
 //           _commentController.text = studentResults.isNotEmpty ? studentResults[0]['comment'] ?? '' : '';
 //           isLoading = false;
 //         });
-//         print('Fetched ${studentResults.length} student results, ${assessmentNames.length} assessments');
 //       } else {
 //         setState(() {
 //           error = response.message;
 //           isLoading = false;
 //         });
-//         print('Failed to fetch results: ${response.message}');
 //       }
 //     } catch (e) {
 //       setState(() {
 //         error = 'Failed to load results: $e';
 //         isLoading = false;
 //       });
-//       print('Error fetching results: $e');
 //     }
 //   }
 
+//   // Submit comment to API
 //   Future<void> submitComment(int studentId, String comment) async {
 //     try {
 //       final authProvider = Provider.of<AuthProvider>(context, listen: false);
@@ -1099,21 +1137,17 @@ class _CommentCourseResultScreenState extends State<CommentCourseResultScreen> {
 //         '_db': dbName,
 //       };
 
-//       print('Submitting comment to: $endpoint with payload: $payload');
-
 //       final response = await apiService.post(
 //         endpoint: endpoint,
 //         body: payload,
 //       );
 
 //       if (response.success) {
-//         // Update the comment in the current student's data
 //         setState(() {
 //           if (studentResults[_currentStudentIndex]['comments'] == null) {
 //             studentResults[_currentStudentIndex]['comments'] = {};
 //           }
           
-//           // Update the appropriate comment based on user role
 //           if (role == 'admin') {
 //             studentResults[_currentStudentIndex]['comments']['principal_comment'] = comment;
 //           } else {
@@ -1121,7 +1155,6 @@ class _CommentCourseResultScreenState extends State<CommentCourseResultScreen> {
 //           }
 //         });
         
-//         print('Comment submitted successfully for student $studentId');
 //         ScaffoldMessenger.of(context).showSnackBar(
 //           const SnackBar(
 //             content: Text('Comment submitted successfully!'),
@@ -1132,7 +1165,6 @@ class _CommentCourseResultScreenState extends State<CommentCourseResultScreen> {
 //         setState(() {
 //           error = response.message;
 //         });
-//         print('Failed to submit comment: ${response.message}');
 //         ScaffoldMessenger.of(context).showSnackBar(
 //           SnackBar(
 //             content: Text('Failed to submit comment: ${response.message}'),
@@ -1144,7 +1176,6 @@ class _CommentCourseResultScreenState extends State<CommentCourseResultScreen> {
 //       setState(() {
 //         error = 'Failed to submit comment: $e';
 //       });
-//       print('Error submitting comment: $e');
 //       ScaffoldMessenger.of(context).showSnackBar(
 //         SnackBar(
 //           content: Text('Error submitting comment: $e'),
@@ -1154,18 +1185,22 @@ class _CommentCourseResultScreenState extends State<CommentCourseResultScreen> {
 //     }
 //   }
 
+//   // Open comment modal bottom sheet
 //   void _openCommentModal() {
 //     if (studentResults.isEmpty) return;
     
 //     final currentStudent = studentResults[_currentStudentIndex];
-//     final comments = currentStudent['comments'] as Map<String, dynamic>?;
+//     final comments = currentStudent['comments'];
     
-//     // Load existing comment based on user role
 //     String existingComment = '';
-//     if (userRole == 'admin') {
-//       existingComment = comments?['principal_comment'] ?? '';
-//     } else {
-//       existingComment = comments?['teacher_comment'] ?? '';
+//     if (comments is Map<String, dynamic>) {
+//       if (userRole == 'admin') {
+//         existingComment = comments['principal_comment'] ?? '';
+//       } else {
+//         existingComment = comments['teacher_comment'] ?? '';
+//       }
+//     } else if (comments is String && comments.isNotEmpty) {
+//       existingComment = comments;
 //     }
     
 //     _modalCommentController.text = existingComment;
@@ -1188,9 +1223,10 @@ class _CommentCourseResultScreenState extends State<CommentCourseResultScreen> {
 //     });
 //   }
 
+//   // Build comment bottom sheet
 //   Widget _buildCommentBottomSheet() {
 //     final currentStudent = studentResults[_currentStudentIndex];
-//     final comments = currentStudent['comments'] as Map<String, dynamic>?;
+//     final comments = currentStudent['comments'];
     
 //     return StatefulBuilder(
 //       builder: (context, setModalState) {
@@ -1205,7 +1241,6 @@ class _CommentCourseResultScreenState extends State<CommentCourseResultScreen> {
 //           child: Column(
 //             crossAxisAlignment: CrossAxisAlignment.start,
 //             children: [
-//               // Handle bar
 //               Center(
 //                 child: Container(
 //                   width: 40,
@@ -1218,7 +1253,6 @@ class _CommentCourseResultScreenState extends State<CommentCourseResultScreen> {
 //               ),
 //               const SizedBox(height: 20),
               
-//               // Header
 //               Row(
 //                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
 //                 children: [
@@ -1237,7 +1271,6 @@ class _CommentCourseResultScreenState extends State<CommentCourseResultScreen> {
 //                 ],
 //               ),
               
-//               // Student info
 //               Container(
 //                 padding: const EdgeInsets.all(12),
 //                 decoration: BoxDecoration(
@@ -1284,43 +1317,47 @@ class _CommentCourseResultScreenState extends State<CommentCourseResultScreen> {
               
 //               const SizedBox(height: 20),
               
-//               // Existing comments display
 //               Expanded(
 //                 child: SingleChildScrollView(
 //                   child: Column(
 //                     crossAxisAlignment: CrossAxisAlignment.start,
 //                     children: [
 //                       if (comments != null) ...[
-//                         // Principal comment
-//                         if (comments['principal_comment'] != null && comments['principal_comment'].toString().isNotEmpty)
+//                         if (comments is Map<String, dynamic>) ...[
+//                           if (comments['principal_comment'] != null && comments['principal_comment'].toString().isNotEmpty)
+//                             _buildCommentCard(
+//                               'Principal Comment',
+//                               comments['principal_comment'].toString(),
+//                               Colors.blue,
+//                               canEdit: userRole == 'admin',
+//                               onEdit: () {
+//                                 _modalCommentController.text = comments['principal_comment'].toString();
+//                               },
+//                             ),
+                          
+//                           const SizedBox(height: 12),
+                          
+//                           if (comments['teacher_comment'] != null && comments['teacher_comment'].toString().isNotEmpty)
+//                             _buildCommentCard(
+//                               'Teacher Comment',
+//                               comments['teacher_comment'].toString(),
+//                               Colors.green,
+//                               canEdit: userRole == 'teacher',
+//                               onEdit: () {
+//                                 _modalCommentController.text = comments['teacher_comment'].toString();
+//                               },
+//                             ),
+//                         ] else if (comments is String && comments.isNotEmpty) ...[
 //                           _buildCommentCard(
-//                             'Principal Comment',
-//                             comments['principal_comment'].toString(),
-//                             Colors.blue,
-//                             canEdit: userRole == 'admin',
-//                             onEdit: () {
-//                               _modalCommentController.text = comments['principal_comment'].toString();
-//                             },
+//                             'Legacy Comment',
+//                             comments,
+//                             Colors.grey,
+//                             canEdit: false,
 //                           ),
-                        
-//                         const SizedBox(height: 12),
-                        
-//                         // Teacher comment
-//                         if (comments['teacher_comment'] != null && comments['teacher_comment'].toString().isNotEmpty)
-//                           _buildCommentCard(
-//                             'Teacher Comment',
-//                             comments['teacher_comment'].toString(),
-//                             Colors.green,
-//                             canEdit: userRole == 'teacher',
-//                             onEdit: () {
-//                               _modalCommentController.text = comments['teacher_comment'].toString();
-//                             },
-//                           ),
-                        
+//                         ],
 //                         const SizedBox(height: 20),
 //                       ],
                       
-//                       // Add/Edit comment section
 //                       Text(
 //                         _hasExistingComment() ? 'Edit Your Comment' : 'Add Comment',
 //                         style: const TextStyle(
@@ -1350,7 +1387,6 @@ class _CommentCourseResultScreenState extends State<CommentCourseResultScreen> {
                       
 //                       const SizedBox(height: 20),
                       
-//                       // Submit button
 //                       SizedBox(
 //                         width: double.infinity,
 //                         child: ElevatedButton(
@@ -1417,6 +1453,7 @@ class _CommentCourseResultScreenState extends State<CommentCourseResultScreen> {
 //     );
 //   }
 
+//   // Build comment card for displaying existing comments
 //   Widget _buildCommentCard(String title, String comment, Color color, {bool canEdit = false, VoidCallback? onEdit}) {
 //     return Container(
 //       width: double.infinity,
@@ -1466,25 +1503,32 @@ class _CommentCourseResultScreenState extends State<CommentCourseResultScreen> {
 //     );
 //   }
 
+//   // Check if there is an existing comment for the current user role
 //   bool _hasExistingComment() {
 //     if (studentResults.isEmpty) return false;
     
 //     final currentStudent = studentResults[_currentStudentIndex];
-//     final comments = currentStudent['comments'] as Map<String, dynamic>?;
+//     final comments = currentStudent['comments'];
     
 //     if (comments == null) return false;
     
-//     if (userRole == 'admin') {
-//       return comments['principal_comment'] != null && comments['principal_comment'].toString().isNotEmpty;
-//     } else {
-//       return comments['teacher_comment'] != null && comments['teacher_comment'].toString().isNotEmpty;
+//     if (comments is Map<String, dynamic>) {
+//       if (userRole == 'admin') {
+//         return comments['principal_comment'] != null && comments['principal_comment'].toString().isNotEmpty;
+//       } else {
+//         return comments['teacher_comment'] != null && comments['teacher_comment'].toString().isNotEmpty;
+//       }
+//     } else if (comments is String) {
+//       return comments.isNotEmpty;
 //     }
+    
+//     return false;
 //   }
 
+//   // Handle swiper index change
 //   void _onSwiperIndexChanged(int index) {
 //     setState(() {
 //       _currentStudentIndex = index;
-//       // Update comment controller if needed
 //       final student = studentResults[index];
 //       _commentController.text = student['comment'] ?? '';
 //     });
@@ -1531,148 +1575,236 @@ class _CommentCourseResultScreenState extends State<CommentCourseResultScreen> {
 //           ),
 //         ),
 //       ),
-//       body: SizedBox.expand(
-//         child: Container(
-//           decoration: Constants.customBoxDecoration(context),
-//           child: isLoading
-//               ? const Center(child: CircularProgressIndicator())
-//               : error != null
-//                   ? Center(child: Text(error!, style: const TextStyle(color: Colors.red)))
-//                   : Stack(
-//                       children: [
-//                         Swiper(
-//                           controller: _swiperController,
-//                           itemCount: studentResults.length,
-//                           index: _currentStudentIndex,
-//                           onIndexChanged: _onSwiperIndexChanged,
-//                           loop: false, // Disable infinite loop
-//                           itemBuilder: (context, index) {
-//                             final student = studentResults[index];
-//                             return Column(
-//                               children: [
-//                                 _buildStudentHeader(student),
-//                                 Expanded(
-//                                   child: SingleChildScrollView(
-//                                     child: Column(
-//                                       children: [
-//                                         _buildTermSection(),
-//                                         _buildSubjectsTable(student),
-//                                         const SizedBox(height: 80), // Space for FAB
-//                                       ],
-//                                     ),
-//                                   ),
+//       body: SafeArea(
+//         child: Column(
+//           children: [
+//             Expanded(
+//               child: Container(
+//                 decoration: Constants.customBoxDecoration(context),
+//                 child: isLoading
+//                     ? const Center(child: CircularProgressIndicator())
+//                     : error != null
+//                         ? Center(child: Text(error!, style: const TextStyle(color: Colors.red)))
+//                         : Column(
+//                             children: [
+//                               // Student and term card
+//                               _buildStudentTermCard(),
+//                               Expanded(
+//                                 child: Swiper(
+//                                   controller: _swiperController,
+//                                   itemCount: studentResults.length,
+//                                   index: _currentStudentIndex,
+//                                   onIndexChanged: _onSwiperIndexChanged,
+//                                   loop: false,
+//                                   itemBuilder: (context, index) {
+//                                     final student = studentResults[index];
+//                                     return SingleChildScrollView(
+//                                       child: Column(
+//                                         children: [
+//                                           _buildSubjectsTable(student),
+//                                           const SizedBox(height: 100), // Space for FAB and comment input
+//                                         ],
+//                                       ),
+//                                     );
+//                                   },
 //                                 ),
-//                               ],
-//                             );
-//                           },
-//                         ),
-                        
-//                         // Floating comment button
-//                         Positioned(
-//                           bottom: 20,
-//                           right: 20,
-//                           child: FloatingActionButton(
-//                             onPressed: _openCommentModal,
-//                             backgroundColor: AppColors.eLearningBtnColor1,
-//                             child: const Icon(
-//                               Icons.comment,
-//                               color: Colors.white,
-//                             ),
+//                               ),
+//                             ],
 //                           ),
-//                         ),
-//                       ],
+//               ),
+//             ),
+//             // Comment input and FAB
+//             if (!_hasExistingComment()) ...[
+//               Stack(
+//                 alignment: Alignment.bottomRight,
+//                 children: [
+//                   // Comment input field pinned at the bottom
+//                   _buildCommentInputField(),
+//                   // Floating comment button positioned above the comment input
+//                   Padding(
+//                     padding: const EdgeInsets.only(right: 20, bottom: 80), // Adjusted to be above comment input
+//                     child: FloatingActionButton(
+//                       onPressed: _openCommentModal,
+//                       backgroundColor: AppColors.eLearningBtnColor1,
+//                       child: const Icon(
+//                         Icons.comment,
+//                         color: Colors.white,
+//                       ),
 //                     ),
+//                   ),
+//                 ],
+//               ),
+//             ] else ...[
+//               // Only show FAB if there is an existing comment
+//               Padding(
+//                 padding: const EdgeInsets.only(right: 20, bottom: 20),
+//                 child: Align(
+//                   alignment: Alignment.bottomRight,
+//                   child: FloatingActionButton(
+//                     onPressed: _openCommentModal,
+//                     backgroundColor: AppColors.eLearningBtnColor1,
+//                     child: const Icon(
+//                       Icons.comment,
+//                       color: Colors.white,
+//                     ),
+//                   ),
+//                 ),
+//               ),
+//             ],
+//           ],
 //         ),
 //       ),
 //     );
 //   }
 
-//   Widget _buildStudentHeader(Map<String, dynamic> student) {
+//   // Build card containing student and term information
+//   Widget _buildStudentTermCard() {
+//     if (studentResults.isEmpty) {
+//       return const SizedBox.shrink();
+//     }
+//     final student = studentResults[_currentStudentIndex];
 //     return Padding(
-//       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-//       child: Row(
-//         mainAxisAlignment: MainAxisAlignment.spaceBetween,
-//         children: [
-//           IconButton(
-//             onPressed: _currentStudentIndex > 0
-//                 ? () => _swiperController.previous(animation: true)
-//                 : null,
-//             icon: Icon(
-//               Icons.arrow_back_ios,
-//               color: _currentStudentIndex > 0 ? AppColors.eLearningBtnColor1 : Colors.grey,
-//             ),
-//           ),
-//           Row(
+//       padding: const EdgeInsets.all(16.0),
+//       child: Card(
+//         elevation: 2,
+//         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+//         child: Padding(
+//           padding: const EdgeInsets.all(16.0),
+//           child: Column(
 //             children: [
-//               CircleAvatar(
-//                 radius: 16,
-//                 backgroundColor: Colors.primaries[_currentStudentIndex % Colors.primaries.length],
-//                 child: Text(
-//                   student['student_name']?.isNotEmpty == true
-//                       ? student['student_name'][0].toUpperCase()
-//                       : 'S',
-//                   style: const TextStyle(color: Colors.white),
-//                 ),
+//               Row(
+//                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
+//                 children: [
+//                   IconButton(
+//                     onPressed: _currentStudentIndex > 0
+//                         ? () => _swiperController.previous(animation: true)
+//                         : null,
+//                     icon: Icon(
+//                       Icons.arrow_back_ios,
+//                       color: _currentStudentIndex > 0 ? AppColors.eLearningBtnColor1 : Colors.grey,
+//                     ),
+//                   ),
+//                   Row(
+//                     children: [
+//                       CircleAvatar(
+//                         radius: 16,
+//                         backgroundColor: Colors.primaries[_currentStudentIndex % Colors.primaries.length],
+//                         child: Text(
+//                           student['student_name']?.isNotEmpty == true
+//                               ? student['student_name'][0].toUpperCase()
+//                               : 'S',
+//                           style: const TextStyle(color: Colors.white),
+//                         ),
+//                       ),
+//                       const SizedBox(width: 8),
+//                       Text(
+//                         student['student_name'] ?? 'N/A',
+//                         style: const TextStyle(
+//                           fontSize: 16,
+//                           fontWeight: FontWeight.w600,
+//                           color: Colors.black,
+//                         ),
+//                       ),
+//                     ],
+//                   ),
+//                   IconButton(
+//                     onPressed: _currentStudentIndex < studentResults.length - 1
+//                         ? () => _swiperController.next(animation: true)
+//                         : null,
+//                     icon: Icon(
+//                       Icons.arrow_forward_ios,
+//                       color: _currentStudentIndex < studentResults.length - 1
+//                           ? AppColors.eLearningBtnColor1
+//                           : Colors.grey,
+//                     ),
+//                   ),
+//                 ],
 //               ),
-//               const SizedBox(width: 8),
-//               Text(
-//                 student['student_name'] ?? 'N/A',
-//                 style: const TextStyle(
-//                   fontSize: 16,
-//                   fontWeight: FontWeight.w600,
-//                   color: AppColors.primaryLight,
+//               const SizedBox(height: 8),
+//               Container(
+//                 width: double.infinity,
+//                 padding: const EdgeInsets.all(12.0),
+//                 decoration: const BoxDecoration(
+//                   border: Border(
+//                     top: BorderSide(color: Colors.orange, width: 2),
+//                     bottom: BorderSide(color: Colors.orange, width: 2),
+//                   ),
+//                 ),
+//                 child: Center(
+//                   child: Text(
+//                     '${widget.year}/${int.parse(widget.year) + 1} ${widget.termName}',
+//                     style: const TextStyle(
+//                       fontSize: 16,
+//                       fontWeight: FontWeight.w500,
+//                       color: Colors.orange,
+//                     ),
+//                   ),
 //                 ),
 //               ),
 //             ],
 //           ),
-//           IconButton(
-//             onPressed: _currentStudentIndex < studentResults.length - 1
-//                 ? () => _swiperController.next(animation: true)
-//                 : null,
-//             icon: Icon(
-//               Icons.arrow_forward_ios,
-//               color: _currentStudentIndex < studentResults.length - 1
-//                   ? AppColors.eLearningBtnColor1
-//                   : Colors.grey,
+//         ),
+//       ),
+//     );
+//   }
+
+//   // Build comment input field with send icon
+//   Widget _buildCommentInputField() {
+//     return Container(
+//       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+//       decoration: BoxDecoration(
+//         color: Colors.white,
+//         border: Border(top: BorderSide(color: Colors.grey[300]!)),
+//       ),
+//       child: Row(
+//         children: [
+//           Expanded(
+//             child: TextField(
+//               controller: _commentController,
+//               decoration: InputDecoration(
+//                 hintText: 'Post a comment',
+//                 border: OutlineInputBorder(
+//                   borderRadius: BorderRadius.circular(8),
+// //                  borderSide: BorderSide(color: Colors.grey[300]!),
+//                   borderSide: BorderSide(color: Colors.grey),
+//                 ),
+//                 contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+//               ),
+//               style: const TextStyle(fontSize: 14, color: Colors.black),
 //             ),
+//           ),
+//           const SizedBox(width: 8),
+//           IconButton(
+//             icon: const Icon(Icons.send, color: AppColors.eLearningBtnColor1),
+//             onPressed: () async {
+//               if (_commentController.text.trim().isEmpty) {
+//                 ScaffoldMessenger.of(context).showSnackBar(
+//                   const SnackBar(
+//                     content: Text('Please enter a comment'),
+//                     backgroundColor: Colors.orange,
+//                   ),
+//                 );
+//                 return;
+//               }
+//               await submitComment(
+//                 studentResults[_currentStudentIndex]['student_id'],
+//                 _commentController.text.trim(),
+//               );
+//               _commentController.clear();
+//             },
 //           ),
 //         ],
 //       ),
 //     );
 //   }
 
-//   Widget _buildTermSection() {
-//     return Padding(
-//       padding: const EdgeInsets.all(16.0),
-//       child: Container(
-//         width: double.infinity,
-//         padding: const EdgeInsets.all(16.0),
-//         decoration: const BoxDecoration(
-//           border: Border(
-//             top: BorderSide(color: Colors.orange, width: 2),
-//             bottom: BorderSide(color: Colors.orange, width: 2),
-//           ),
-//         ),
-//         child: Center(
-//           child: Text(
-//             '${widget.year}/${int.parse(widget.year) + 1} ${widget.termName}',
-//             style: const TextStyle(
-//               fontSize: 16,
-//               fontWeight: FontWeight.w500,
-//               color: Colors.orange,
-//             ),
-//           ),
-//         ),
-//       ),
-//     );
-//   }
-
+//   // Build subjects table with black text color
 //   Widget _buildSubjectsTable(Map<String, dynamic> student) {
 //     final subjects = student['subjects'] as List;
 //     if (subjects.isEmpty) {
 //       return const Padding(
 //         padding: EdgeInsets.all(16.0),
-//         child: Text('No subjects available'),
+//         child: Text('No subjects available', style: TextStyle(color: Colors.black)),
 //       );
 //     }
 
@@ -1750,7 +1882,9 @@ class _CommentCourseResultScreenState extends State<CommentCourseResultScreen> {
 //                   DataCell(
 //                     Text(
 //                       subject['course_name']?.toString() ?? 'N/A',
-//                       style: const TextStyle(fontSize: 14),
+//                       style: const TextStyle(fontSize: 14, color: Colors.black),
+
+
 //                     ),
 //                   ),
 //                   ...assessmentNames.map((assessmentName) {
@@ -1764,7 +1898,7 @@ class _CommentCourseResultScreenState extends State<CommentCourseResultScreen> {
 //                         alignment: Alignment.center,
 //                         child: Text(
 //                           currentScore,
-//                           style: const TextStyle(fontSize: 14),
+//                           style: const TextStyle(fontSize: 14, color: Colors.black),
 //                           textAlign: TextAlign.center,
 //                         ),
 //                       ),
@@ -1773,19 +1907,19 @@ class _CommentCourseResultScreenState extends State<CommentCourseResultScreen> {
 //                   DataCell(
 //                     Text(
 //                       subject['total_score']?.toString() ?? 'N/A',
-//                       style: const TextStyle(fontSize: 14),
+//                       style: const TextStyle(fontSize: 14, color: Colors.black),
 //                     ),
 //                   ),
 //                   DataCell(
 //                     Text(
 //                       subject['grade']?.toString() ?? 'N/A',
-//                       style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+//                       style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Colors.black),
 //                     ),
 //                   ),
 //                   DataCell(
 //                     Text(
 //                       subject['remark']?.toString() ?? 'N/A',
-//                       style: const TextStyle(fontSize: 14),
+//                       style: const TextStyle(fontSize: 14, color: Colors.black),
 //                     ),
 //                   ),
 //                 ],
