@@ -7,6 +7,7 @@ import 'package:linkschool/modules/providers/admin/behaviour_provider.dart';
 import 'package:linkschool/modules/providers/admin/e_learning/syllabus_provider.dart';
 
 import 'package:linkschool/modules/providers/admin/grade_provider.dart';
+import 'package:linkschool/modules/providers/admin/skills_behavior_table_provider.dart';
 import 'package:linkschool/modules/services/admin/attendance_service.dart';
 import 'package:linkschool/modules/services/admin/e_learning/syllabus_service.dart';
 import 'package:linkschool/modules/services/api/api_service.dart';
@@ -39,6 +40,8 @@ void setupServiceLocator() {
   locator.registerLazySingleton<SkillsProvider>(
     () => SkillsProvider(locator<SkillService>())
   );
+
+  locator.registerFactory(() => SkillsBehaviorTableProvider(locator<ApiService>()));
 
   // Register StudentService with ApiService dependency
   locator.registerLazySingleton<StudentService>(

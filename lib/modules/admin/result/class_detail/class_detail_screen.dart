@@ -187,13 +187,6 @@ class _ClassDetailScreenState extends State<ClassDetailScreen> {
                                       ),
                                     );
                                   },
-                                  // onTap: () {
-                                  //   Navigator.push(
-                                  //       context,
-                                  //       MaterialPageRoute(
-                                  //           builder: (contex) =>
-                                  //               AttendanceScreen()));
-                                  // },
                                 ),
                               ),
                             ],
@@ -279,7 +272,7 @@ class _ClassDetailScreenState extends State<ClassDetailScreen> {
               onTap: () => showTermOverlay(
                 context,
                 classId: widget.classId,
-                
+                levelId: widget.levelId, // Pass levelId
                 year: term['year'],
                 termId: term['termId'],
                 termName: formattedTerm,
@@ -292,6 +285,7 @@ class _ClassDetailScreenState extends State<ClassDetailScreen> {
     }).toList();
   }
 }
+
 
 
 
@@ -313,11 +307,13 @@ class _ClassDetailScreenState extends State<ClassDetailScreen> {
 // class ClassDetailScreen extends StatefulWidget {
 //   final String className;
 //   final String classId;
+//   final String levelId;
 
 //   const ClassDetailScreen({
 //     super.key,
 //     required this.className,
 //     required this.classId,
+//     required this.levelId, 
 //   });
 
 //   @override
@@ -335,29 +331,39 @@ class _ClassDetailScreenState extends State<ClassDetailScreen> {
 //       _loadTerms();
 //     });
 //     _debugHiveContents();
+
+//     // Store the level ID
+//     _storeLevelId();
+//   }
+
+//   void _storeLevelId() async {
+//     final userBox = Hive.box('userData');
+//     await userBox.put('currentLevelId', widget.levelId);
+//     print('Stored level ID: ${widget.levelId}');
 //   }
 
 //   void _debugHiveContents() {
 //     final userBox = Hive.box('userData');
 //     print('Hive box keys: ${userBox.keys.toList()}');
+//     print('Current Level ID: ${widget.levelId}');
 //     for (var key in userBox.keys) {
 //       print('Hive key $key: ${userBox.get(key)}');
 //     }
 //   }
 
 //   Future<void> _loadTerms() async {
-//     print('Loading terms for classId: ${widget.classId}');
+//     print('Loading terms for classId: ${widget.classId}, levelId: ${widget.levelId}');
 //     try {
 //       await _termProvider.fetchTerms(widget.classId);
 //     } catch (e) {
 //       print('Error loading terms: $e');
 //     }
 //   }
+
 //   @override
 //   Widget build(BuildContext context) {
 //     final termProvider = Provider.of<TermProvider>(context);
 
-//     // Debugging: Print the current state of terms
 //     print('Current Terms: ${termProvider.terms}');
 
 //     return Scaffold(
@@ -381,9 +387,7 @@ class _ClassDetailScreenState extends State<ClassDetailScreen> {
 //         actions: [
 //           CustomElevatedAppbarButton(
 //             text: 'See class list',
-//             onPressed: () {
-//               // Add your button action here
-//             },
+//             onPressed: () {},
 //             backgroundColor: AppColors.videoColor4,
 //             textColor: Colors.white,
 //             fontSize: 14,
@@ -438,7 +442,9 @@ class _ClassDetailScreenState extends State<ClassDetailScreen> {
 //                                   iconPath:
 //                                       'assets/icons/result/assessment_icon.svg',
 //                                   onTap: () =>
-//                                       showStudentResultOverlay(context, classId: widget.classId),
+//                                       showStudentResultOverlay(context, classId: widget.classId,
+//                                       className: widget.className,
+//                                       ),
 //                                 ),
 //                               ),
 //                               Expanded(
@@ -473,6 +479,13 @@ class _ClassDetailScreenState extends State<ClassDetailScreen> {
 //                                       ),
 //                                     );
 //                                   },
+//                                   // onTap: () {
+//                                   //   Navigator.push(
+//                                   //       context,
+//                                   //       MaterialPageRoute(
+//                                   //           builder: (contex) =>
+//                                   //               AttendanceScreen()));
+//                                   // },
 //                                 ),
 //                               ),
 //                             ],
@@ -480,19 +493,12 @@ class _ClassDetailScreenState extends State<ClassDetailScreen> {
 //                           const SizedBox(height: 30),
 //                           Row(
 //                             mainAxisAlignment: MainAxisAlignment.start,
-//                             children: [
-//                               // Text(
-//                               //   'Terms',
-//                               //   style: AppTextStyles.normal700(
-//                               //       fontSize: 18,
-//                               //       color: AppColors.primaryLight),
-//                               // ),
-//                             ],
+//                             children: [],
 //                           ),
 //                           const SizedBox(height: 10),
 //                           if (termProvider.terms.isEmpty)
 //                             Padding(
-//                               padding: const EdgeInsets.all(16.0),
+//                               padding: const EdgeInsets.all(634),
 //                               child: Text(
 //                                 'No terms available for this class.',
 //                                 style: AppTextStyles.normal600(
@@ -501,8 +507,7 @@ class _ClassDetailScreenState extends State<ClassDetailScreen> {
 //                               ),
 //                             ),
 //                           if (termProvider.terms.isNotEmpty)
-//                             ..._buildTermRows(termProvider
-//                                 .terms), // Build term rows dynamically
+//                             ..._buildTermRows(termProvider.terms),
 //                         ],
 //                       ),
 //                     ),
@@ -513,9 +518,9 @@ class _ClassDetailScreenState extends State<ClassDetailScreen> {
 //           ),
 //           if (termProvider.isLoading)
 //             const Center(
-//               child: CircularProgressIndicator(), // Show loading indicator
+//               child: CircularProgressIndicator(),
 //             ),
-//            if (termProvider.error != null && !termProvider.isLoading)
+//           if (termProvider.error != null && !termProvider.isLoading)
 //             Center(
 //               child: Text(
 //                 termProvider.error!,
@@ -528,7 +533,6 @@ class _ClassDetailScreenState extends State<ClassDetailScreen> {
 //   }
 
 //   List<Widget> _buildTermRows(List<Map<String, dynamic>> terms) {
-//     // Group terms by year
 //     final groupedTerms = <String, List<Map<String, dynamic>>>{};
     
 //     for (final term in terms) {
@@ -559,14 +563,19 @@ class _ClassDetailScreenState extends State<ClassDetailScreen> {
 //             ),
 //           ),
 //           ...yearTerms.map((term) {
-//             // Use the termName directly from the API
 //             String formattedTerm = term['termName'] ?? 'Unknown Term';
-            
 //             return TermRow(
 //               term: formattedTerm,
 //               percent: 0.75,
 //               indicatorColor: AppColors.primaryLight,
-//               onTap: () => showTermOverlay(context),
+//               onTap: () => showTermOverlay(
+//                 context,
+//                 classId: widget.classId,
+                
+//                 year: term['year'],
+//                 termId: term['termId'],
+//                 termName: formattedTerm,
+//               ),
 //             );
 //           }).toList(),
 //           const SizedBox(height: 10),

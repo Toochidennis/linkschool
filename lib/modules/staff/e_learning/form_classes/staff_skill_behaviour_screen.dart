@@ -2,9 +2,24 @@ import 'package:flutter/material.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
+import 'package:linkschool/modules/providers/admin/skills_behavior_table_provider.dart';
+import 'package:provider/provider.dart';
 
 class StaffSkillsBehaviourScreen extends StatefulWidget {
-  const StaffSkillsBehaviourScreen({super.key});
+  final String classId;
+  final String levelId;
+  final String term;
+  final String year;
+  final String db;
+
+  const StaffSkillsBehaviourScreen({
+    super.key,
+    required this.classId,
+    required this.levelId,
+    this.term = '1',
+    this.year = '2023',
+    this.db = 'aalmgzmy_linkskoo_practice',
+  });
 
   @override
   State<StaffSkillsBehaviourScreen> createState() => _StaffSkillsBehaviourScreenState();
@@ -12,6 +27,19 @@ class StaffSkillsBehaviourScreen extends StatefulWidget {
 
 class _StaffSkillsBehaviourScreenState extends State<StaffSkillsBehaviourScreen> {
   late double opacity;
+
+  @override
+  void initState() {
+    super.initState();
+    final skillsProvider = Provider.of<SkillsBehaviorTableProvider>(context, listen: false);
+    skillsProvider.fetchSkillsAndBehaviours(
+      classId: widget.classId,
+      levelId: widget.levelId,
+      term: widget.term,
+      year: widget.year,
+      db: widget.db,
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -59,8 +87,7 @@ class _StaffSkillsBehaviourScreenState extends State<StaffSkillsBehaviourScreen>
             onPressed: () {
               // Implement download functionality
             },
-            icon:
-                const Icon(Icons.download, color: AppColors.eLearningBtnColor1),
+            icon: const Icon(Icons.download, color: AppColors.eLearningBtnColor1),
             label: const Text(
               'Save',
               style: TextStyle(color: AppColors.eLearningBtnColor1),
@@ -71,61 +98,39 @@ class _StaffSkillsBehaviourScreenState extends State<StaffSkillsBehaviourScreen>
       body: SizedBox.expand(
         child: Container(
           decoration: Constants.customBoxDecoration(context),
-          child: SingleChildScrollView(
-            child: Column(
-              children: [
-                _buildSubjectsTable(),
-              ],
-            ),
+          child: Consumer<SkillsBehaviorTableProvider>(
+            builder: (context, provider, child) {
+              if (provider.isLoading) {
+                return const Center(child: CircularProgressIndicator());
+              }
+              if (provider.errorMessage.isNotEmpty) {
+                return Center(
+                  child: Text(
+                    'Error: ${provider.errorMessage}',
+                    style: const TextStyle(color: Colors.red),
+                  ),
+                );
+              }
+              if (provider.students.isEmpty || provider.skills.isEmpty) {
+                return const Center(
+                  child: Text('No data available'),
+                );
+              }
+              return SingleChildScrollView(
+                child: Column(
+                  children: [
+                    _buildSubjectsTable(provider.skills, provider.students),
+                  ],
+                ),
+              );
+            },
           ),
         ),
       ),
     );
   }
 
-  Widget _buildTermSection(String title) {
-    return Padding(
-      padding: const EdgeInsets.all(16.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(16.0),
-            decoration: const BoxDecoration(
-              border: Border(
-                top: BorderSide(color: Colors.orange, width: 2),
-                bottom: BorderSide(color: Colors.orange, width: 2),
-              ),
-            ),
-            child: Center(
-              child: Text(
-                title,
-                style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w500,
-                    color: Colors.orange),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSubjectsTable() {
-    final List<String> subjects = [
-      'Toochi Dennis',
-      'Toochi Joe',
-      'Ifeanyi Dennis',
-      'Johnson Kenny',
-      'Toochi Dennis',
-      'Toochi Dennis',
-      'Toochi Dennis',
-      'Toochi Dennis',
-      'Toochi Dennis',
-    ];
-
+  Widget _buildSubjectsTable(List<SkillsBehaviorTable> skills, List<StudentSkillBehaviorTable> students) {
     return Padding(
       padding: const EdgeInsets.all(16.0),
       child: Container(
@@ -135,19 +140,14 @@ class _StaffSkillsBehaviourScreenState extends State<StaffSkillsBehaviourScreen>
         ),
         child: Row(
           children: [
-            _buildSubjectColumn(subjects),
+            _buildSubjectColumn(students),
             Expanded(
               child: SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
                 child: Row(
-                  children: [
-                    _buildScrollableColumn('Punctuality', 100, subjects),
-                    _buildScrollableColumn('Neatness', 100, subjects),
-                    _buildScrollableColumn('Neatness', 100, subjects),
-                    _buildScrollableColumn('Humility', 100, subjects),
-                    _buildScrollableColumn('Kindness', 100, subjects),
-                    // _buildScrollableColumn('Grade', 80, subjects),
-                  ],
+                  children: skills
+                      .map((skill) => _buildScrollableColumn(skill.name, 100, students, skill.id))
+                      .toList(),
                 ),
               ),
             ),
@@ -157,7 +157,7 @@ class _StaffSkillsBehaviourScreenState extends State<StaffSkillsBehaviourScreen>
     );
   }
 
-  Widget _buildSubjectColumn(List<String> subjects) {
+  Widget _buildSubjectColumn(List<StudentSkillBehaviorTable> students) {
     return Container(
       width: 120,
       decoration: BoxDecoration(
@@ -177,7 +177,7 @@ class _StaffSkillsBehaviourScreenState extends State<StaffSkillsBehaviourScreen>
               ),
             ),
           ),
-          ...subjects.map((subject) {
+          ...students.map((student) {
             return Container(
               height: 50,
               padding: const EdgeInsets.symmetric(horizontal: 8),
@@ -191,8 +191,11 @@ class _StaffSkillsBehaviourScreenState extends State<StaffSkillsBehaviourScreen>
               child: Align(
                 alignment: Alignment.centerLeft,
                 child: Text(
-                  subject,
-                  style: const TextStyle(fontSize: 14),
+                  student.name,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    color: Colors.black, // Changed to black
+                  ),
                 ),
               ),
             );
@@ -202,8 +205,7 @@ class _StaffSkillsBehaviourScreenState extends State<StaffSkillsBehaviourScreen>
     );
   }
 
-  Widget _buildScrollableColumn(
-      String title, double width, List<String> subjects) {
+  Widget _buildScrollableColumn(String title, double width, List<StudentSkillBehaviorTable> students, int skillId) {
     return Container(
       width: width,
       decoration: BoxDecoration(
@@ -224,13 +226,13 @@ class _StaffSkillsBehaviourScreenState extends State<StaffSkillsBehaviourScreen>
             child: Text(
               title,
               style: const TextStyle(
-                color: Colors.white,
+                color: Colors.white, // Keep header text white for contrast
                 fontWeight: FontWeight.w500,
               ),
               textAlign: TextAlign.center,
             ),
           ),
-          ...subjects.map((_) {
+          ...students.map((student) {
             return Container(
               height: 50,
               alignment: Alignment.center,
@@ -241,9 +243,12 @@ class _StaffSkillsBehaviourScreenState extends State<StaffSkillsBehaviourScreen>
                   right: BorderSide(color: Colors.grey[300]!),
                 ),
               ),
-              child: const Text(
-                '80', // Sample Data
-                style: TextStyle(fontSize: 14),
+              child: Text(
+                student.skills[skillId] ?? '-',
+                style: const TextStyle(
+                  fontSize: 14,
+                  color: Colors.black, // Changed to black
+                ),
               ),
             );
           }),
@@ -252,3 +257,260 @@ class _StaffSkillsBehaviourScreenState extends State<StaffSkillsBehaviourScreen>
     );
   }
 }
+
+
+
+// import 'package:flutter/material.dart';
+// import 'package:linkschool/modules/common/app_colors.dart';
+// import 'package:linkschool/modules/common/constants.dart';
+// import 'package:linkschool/modules/common/text_styles.dart';
+// import 'package:linkschool/modules/providers/admin/skills_behavior_table_provider.dart';
+// // import 'package:linkschool/modules/providers/admin/skills_provider.dart';
+// import 'package:provider/provider.dart';
+
+// class StaffSkillsBehaviourScreen extends StatefulWidget {
+//   final String classId;
+//   final String levelId;
+//   final String term;
+//   final String year;
+//   final String db;
+
+//   const StaffSkillsBehaviourScreen({
+//     super.key,
+//     required this.classId,
+//     required this.levelId,
+//     this.term = '1',
+//     this.year = '2023',
+//     this.db = 'aalmgzmy_linkskoo_practice',
+//   });
+
+//   @override
+//   State<StaffSkillsBehaviourScreen> createState() => _StaffSkillsBehaviourScreenState();
+// }
+
+// class _StaffSkillsBehaviourScreenState extends State<StaffSkillsBehaviourScreen> {
+//   late double opacity;
+
+//   @override
+//   void initState() {
+//     super.initState();
+//     final skillsProvider = Provider.of<SkillsBehaviorTableProvider>(context, listen: false);
+//     skillsProvider.fetchSkillsAndBehaviours(
+//       classId: widget.classId,
+//       levelId: widget.levelId,
+//       term: widget.term,
+//       year: widget.year,
+//       db: widget.db,
+//     );
+//   }
+
+//   @override
+//   Widget build(BuildContext context) {
+//     final Brightness brightness = Theme.of(context).brightness;
+//     opacity = brightness == Brightness.light ? 0.1 : 0.15;
+
+//     return Scaffold(
+//       appBar: AppBar(
+//         title: Text(
+//           'Skill and Behaviour',
+//           style: AppTextStyles.normal600(
+//             fontSize: 18.0,
+//             color: AppColors.eLearningBtnColor1,
+//           ),
+//         ),
+//         leading: IconButton(
+//           onPressed: () {
+//             Navigator.of(context).pop();
+//           },
+//           icon: Image.asset(
+//             'assets/icons/arrow_back.png',
+//             color: AppColors.eLearningBtnColor1,
+//             width: 34.0,
+//             height: 34.0,
+//           ),
+//         ),
+//         backgroundColor: AppColors.backgroundLight,
+//         flexibleSpace: FlexibleSpaceBar(
+//           background: Stack(
+//             children: [
+//               Positioned.fill(
+//                 child: Opacity(
+//                   opacity: opacity,
+//                   child: Image.asset(
+//                     'assets/images/background.png',
+//                     fit: BoxFit.cover,
+//                   ),
+//                 ),
+//               )
+//             ],
+//           ),
+//         ),
+//         actions: [
+//           TextButton.icon(
+//             onPressed: () {
+//               // Implement download functionality
+//             },
+//             icon: const Icon(Icons.download, color: AppColors.eLearningBtnColor1),
+//             label: const Text(
+//               'Save',
+//               style: TextStyle(color: AppColors.eLearningBtnColor1),
+//             ),
+//           ),
+//         ],
+//       ),
+//       body: SizedBox.expand(
+//         child: Container(
+//           decoration: Constants.customBoxDecoration(context),
+//           child: Consumer<SkillsBehaviorTableProvider>(
+//             builder: (context, provider, child) {
+//               if (provider.isLoading) {
+//                 return const Center(child: CircularProgressIndicator());
+//               }
+//               if (provider.errorMessage.isNotEmpty) {
+//                 return Center(
+//                   child: Text(
+//                     'Error: ${provider.errorMessage}',
+//                     style: const TextStyle(color: Colors.red),
+//                   ),
+//                 );
+//               }
+//               if (provider.students.isEmpty || provider.skills.isEmpty) {
+//                 return const Center(
+//                   child: Text('No data available'),
+//                 );
+//               }
+//               return SingleChildScrollView(
+//                 child: Column(
+//                   children: [
+//                     _buildSubjectsTable(provider.skills, provider.students),
+//                   ],
+//                 ),
+//               );
+//             },
+//           ),
+//         ),
+//       ),
+//     );
+//   }
+
+//   Widget _buildSubjectsTable(List<SkillsBehaviorTable> skills, List<StudentSkillBehaviorTable> students) {
+//     return Padding(
+//       padding: const EdgeInsets.all(16.0),
+//       child: Container(
+//         decoration: BoxDecoration(
+//           border: Border.all(color: Colors.grey[300]!),
+//           borderRadius: BorderRadius.circular(8),
+//         ),
+//         child: Row(
+//           children: [
+//             _buildSubjectColumn(students),
+//             Expanded(
+//               child: SingleChildScrollView(
+//                 scrollDirection: Axis.horizontal,
+//                 child: Row(
+//                   children: skills
+//                       .map((skill) => _buildScrollableColumn(skill.name, 100, students, skill.id))
+//                       .toList(),
+//                 ),
+//               ),
+//             ),
+//           ],
+//         ),
+//       ),
+//     );
+//   }
+
+//   Widget _buildSubjectColumn(List<StudentSkillBehaviorTable> students) {
+//     return Container(
+//       width: 120,
+//       decoration: BoxDecoration(
+//         color: Colors.blue[700],
+//         borderRadius: const BorderRadius.only(topLeft: Radius.circular(8)),
+//       ),
+//       child: Column(
+//         children: [
+//           Container(
+//             height: 48,
+//             alignment: Alignment.center,
+//             child: const Text(
+//               'Student Name',
+//               style: TextStyle(
+//                 color: Colors.white,
+//                 fontWeight: FontWeight.w500,
+//               ),
+//             ),
+//           ),
+//           ...students.map((student) {
+//             return Container(
+//               height: 50,
+//               padding: const EdgeInsets.symmetric(horizontal: 8),
+//               decoration: BoxDecoration(
+//                 color: Colors.grey[100],
+//                 border: Border(
+//                   top: BorderSide(color: Colors.grey[300]!),
+//                   right: BorderSide(color: Colors.grey[300]!),
+//                 ),
+//               ),
+//               child: Align(
+//                 alignment: Alignment.centerLeft,
+//                 child: Text(
+//                   student.name,
+//                   style: const TextStyle(fontSize: 14),
+//                 ),
+//               ),
+//             );
+//           }),
+//         ],
+//       ),
+//     );
+//   }
+
+//   Widget _buildScrollableColumn(String title, double width, List<StudentSkillBehaviorTable> students, int skillId) {
+//     return Container(
+//       width: width,
+//       decoration: BoxDecoration(
+//         border: Border(left: BorderSide(color: Colors.grey[300]!)),
+//       ),
+//       child: Column(
+//         children: [
+//           Container(
+//             height: 48,
+//             alignment: Alignment.center,
+//             decoration: BoxDecoration(
+//               color: AppColors.eLearningBtnColor1,
+//               border: Border(
+//                 left: const BorderSide(color: Colors.white),
+//                 bottom: BorderSide(color: Colors.grey[300]!),
+//               ),
+//             ),
+//             child: Text(
+//               title,
+//               style: const TextStyle(
+//                 color: Colors.white,
+//                 fontWeight: FontWeight.w500,
+//               ),
+//               textAlign: TextAlign.center,
+//             ),
+//           ),
+//           ...students.map((student) {
+//             return Container(
+//               height: 50,
+//               alignment: Alignment.center,
+//               decoration: BoxDecoration(
+//                 color: Colors.grey[100],
+//                 border: Border(
+//                   top: BorderSide(color: Colors.grey[300]!),
+//                   right: BorderSide(color: Colors.grey[300]!),
+//                 ),
+//               ),
+//               child: Text(
+//                 student.skills[skillId] ?? '-',
+//                 style: const TextStyle(fontSize: 14),
+//               ),
+//             );
+//           }),
+//         ],
+//       ),
+//     );
+//   }
+// }

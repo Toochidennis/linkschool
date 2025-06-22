@@ -125,7 +125,7 @@ void showStudentResultOverlay(BuildContext context, {String? classId, String? cl
   );
 }
 
-void showTermOverlay(BuildContext context, {required String classId, required String year, required int termId, required String termName}) {
+void showTermOverlay(BuildContext context, {required String classId, required String levelId, required String year, required int termId, required String termName}) {
   showModalBottomSheet(
     context: context,
     isScrollControlled: true,
@@ -220,7 +220,13 @@ void showTermOverlay(BuildContext context, {required String classId, required St
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => StaffSkillsBehaviourScreen(),
+                              builder: (context) => StaffSkillsBehaviourScreen(
+                                classId: classId,
+                                levelId: levelId,
+                                term: termId.toString(),
+                                year: year,
+                                db: 'aalmgzmy_linkskoo_practice',
+                              ),
                             ),
                           );
                         } else if (labels[index] == 'Composite result') {
@@ -253,7 +259,7 @@ void showTermOverlay(BuildContext context, {required String classId, required St
 
 // import 'package:flutter/material.dart';
 // import 'package:flutter_svg/flutter_svg.dart';
-// import 'package:linkschool/modules/admin/result/class_detail/student_result/comment_course_result._screendart';
+// import 'package:linkschool/modules/admin/result/class_detail/student_result/comment_course_result_screen.dart';
 // import 'package:linkschool/modules/admin/result/class_detail/student_result/course_result_screen.dart';
 // import 'package:linkschool/modules/admin/result/class_detail/student_result/student_result.dart';
 // import 'package:linkschool/modules/admin/result/class_detail/student_result/composite_result_screen.dart';
@@ -262,7 +268,7 @@ void showTermOverlay(BuildContext context, {required String classId, required St
 // import 'package:provider/provider.dart';
 // import 'package:linkschool/modules/providers/admin/student_provider.dart';
 
-// void showStudentResultOverlay(BuildContext context, {String? classId, String ? className}) {
+// void showStudentResultOverlay(BuildContext context, {String? classId, String? className}) {
 //   final studentProvider = Provider.of<StudentProvider>(context, listen: false);
   
 //   if (classId != null) {
@@ -452,6 +458,7 @@ void showTermOverlay(BuildContext context, {required String classId, required St
 //                               builder: (context) => CommentCourseResultScreen(
 //                                 classId: classId,
 //                                 year: year,
+//                                 term: termId,
 //                                 termName: termName,
 //                               ),
 //                             ),
@@ -472,7 +479,13 @@ void showTermOverlay(BuildContext context, {required String classId, required St
 //                           Navigator.push(
 //                             context,
 //                             MaterialPageRoute(
-//                               builder: (context) => StaffSkillsBehaviourScreen(),
+//                               builder: (context) => StaffSkillsBehaviourScreen(
+//                                 classId: classId,
+//                                 levelId: '1', // Replace with actual levelId
+//                                 term: termId.toString(),
+//                                 year: year,
+//                                 db: 'aalmgzmy_linkskoo_practice',
+//                               ),
 //                             ),
 //                           );
 //                         } else if (labels[index] == 'Composite result') {
