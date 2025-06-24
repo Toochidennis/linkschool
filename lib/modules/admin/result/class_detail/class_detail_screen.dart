@@ -60,11 +60,11 @@ class _ClassDetailScreenState extends State<ClassDetailScreen> {
   }
 
   Future<void> _loadTerms() async {
-    print('Loading terms for classId: ${widget.classId}, levelId: ${widget.levelId}');
+    print('Loading terms and chart data for classId: ${widget.classId}, levelId: ${widget.levelId}');
     try {
-      await _termProvider.fetchTerms(widget.classId);
+      await _termProvider.fetchTermsAndChartData(widget.classId);
     } catch (e) {
-      print('Error loading terms: $e');
+      print('Error loading terms and chart data: $e');
     }
   }
 
@@ -73,6 +73,7 @@ class _ClassDetailScreenState extends State<ClassDetailScreen> {
     final termProvider = Provider.of<TermProvider>(context);
 
     print('Current Terms: ${termProvider.terms}');
+    print('Current Chart Data: ${termProvider.chartData}');
 
     return Scaffold(
       appBar: AppBar(
@@ -115,7 +116,9 @@ class _ClassDetailScreenState extends State<ClassDetailScreen> {
               physics: const BouncingScrollPhysics(),
               slivers: [
                 const SliverToBoxAdapter(child: SizedBox(height: 15.0)),
-                const SliverToBoxAdapter(child: ClassDetailBarChart()),
+                SliverToBoxAdapter(
+                  child: ClassDetailBarChart(chartData: termProvider.chartData),
+                ),
                 SliverToBoxAdapter(
                   child: Container(
                     width: 360,
@@ -150,8 +153,10 @@ class _ClassDetailScreenState extends State<ClassDetailScreen> {
                                   iconPath:
                                       'assets/icons/result/assessment_icon.svg',
                                   onTap: () =>
-                                      showStudentResultOverlay(context, classId: widget.classId,
-                                      className: widget.className,
+                                      showStudentResultOverlay(
+                                        context,
+                                        classId: widget.classId,
+                                        className: widget.className,
                                       ),
                                 ),
                               ),
@@ -199,7 +204,7 @@ class _ClassDetailScreenState extends State<ClassDetailScreen> {
                           const SizedBox(height: 10),
                           if (termProvider.terms.isEmpty)
                             Padding(
-                              padding: const EdgeInsets.all(634),
+                              padding: const EdgeInsets.all(16.0),
                               child: Text(
                                 'No terms available for this class.',
                                 style: AppTextStyles.normal600(
@@ -284,9 +289,60 @@ class _ClassDetailScreenState extends State<ClassDetailScreen> {
       );
     }).toList();
   }
+
+
+  // List<Widget> _buildTermRows(List<Map<String, dynamic>> terms) {
+  //   final groupedTerms = <String, List<Map<String>>dynamic>{};
+    
+  //   for (final term in terms) {
+  //     final year = term['year'].toString();
+  //     if (!groupedTerms.containsKey(year)) {
+  //       groupedTerms[year] = [];
+  //     }
+  //     groupedTerms[year]!.toList(term);
+  //   }
+
+  //   return List.generate(groupedTerms.entries.length, (entry) {
+  //     final year = entry.key;
+  //     final yearTerms = entry.value;
+  //     final nextYear = (int.parse(year) + 1).toString();
+  //     final header = '$year/$nextYear Session';
+
+  //     return Column(
+  //       crossAxisAlignment: CrossAxisAlignment.start,
+  //       children: [
+  //         Padding(
+  //           padding: const EdgeInsets.symmetric(vertical: 8.0),
+  //           child: Text(
+  //             header,
+  //             style: AppTextStyles.normal700(
+  //               fontSize: 18,
+  //               color: AppColors.primaryLight,
+  //             ),
+  //           ),
+  //         ),
+  //         ...yearTerms.map((term) {
+  //           String formattedTerm = term['termName'] ?? 'Unknown Term';
+  //           return TermRow(
+  //             term: formattedTerm,
+  //             percent: 0.75,
+  //             indicatorColor: AppColors.primaryLight,
+  //             onTap: () => showTermOverlay(
+  //               context,
+  //               classId: widget.classId,
+  //               levelId: widget.levelId,
+  //               year: term['year'],
+  //               termId: term['termId'],
+  //               termName: formattedTerm,
+  //             ),
+  //           );
+  //         }).toList(),
+  //         const SizedBox(height: 10),
+  //       ],
+  //     );
+  //   }).toList();
+  // }
 }
-
-
 
 
 
@@ -479,13 +535,6 @@ class _ClassDetailScreenState extends State<ClassDetailScreen> {
 //                                       ),
 //                                     );
 //                                   },
-//                                   // onTap: () {
-//                                   //   Navigator.push(
-//                                   //       context,
-//                                   //       MaterialPageRoute(
-//                                   //           builder: (contex) =>
-//                                   //               AttendanceScreen()));
-//                                   // },
 //                                 ),
 //                               ),
 //                             ],
@@ -571,7 +620,7 @@ class _ClassDetailScreenState extends State<ClassDetailScreen> {
 //               onTap: () => showTermOverlay(
 //                 context,
 //                 classId: widget.classId,
-                
+//                 levelId: widget.levelId, // Pass levelId
 //                 year: term['year'],
 //                 termId: term['termId'],
 //                 termName: formattedTerm,
