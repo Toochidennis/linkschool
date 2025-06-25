@@ -1,3 +1,4 @@
+
 import 'package:flutter/material.dart';
 import 'package:linkschool/modules/services/api/api_service.dart';
 
@@ -18,16 +19,18 @@ class SkillsBehaviorTable {
 class StudentSkillBehaviorTable {
   final int id;
   final String name;
-  final Map<int, String> skills; // Maps skill ID to value
+  final Map<int, String> skills;
 
   StudentSkillBehaviorTable({required this.id, required this.name, required this.skills});
 
   factory StudentSkillBehaviorTable.fromJson(Map<String, dynamic> json) {
     final skills = <int, String>{};
-    if (json['student_skills'] != null && json['student_skills'] is Map) {
-      json['student_skills'].forEach((key, value) {
-        skills[int.parse(key)] = value['value']?.toString() ?? '-';
-      });
+    if (json['student_skills'] != null && json['student_skills'] is List) {
+      for (var skill in json['student_skills']) {
+        // Parse skill_id as String and convert to int
+        final skillId = int.tryParse(skill['skill_id'].toString()) ?? 0;
+        skills[skillId] = skill['value']?.toString() ?? '-';
+      }
     }
     return StudentSkillBehaviorTable(
       id: json['id'],
@@ -97,7 +100,51 @@ class SkillsBehaviorTableProvider with ChangeNotifier {
       notifyListeners();
     }
   }
+
+  Future<bool> createSkillsAndBehaviours({
+    required Map<String, dynamic> skillsPayload,
+    required String classId,
+    required String levelId,
+    required String term,
+    required String year,
+    required String db,
+  }) async {
+    _isLoading = true;
+    _errorMessage = '';
+    notifyListeners();
+
+    try {
+      final response = await _apiService.post(
+        endpoint: 'portal/students/skill-behavior',
+        body: skillsPayload,
+        fromJson: (json) => json,
+      );
+
+      if (response.success) {
+        // Defer fetch to avoid setState during build
+        await Future.microtask(() => fetchSkillsAndBehaviours(
+              classId: classId,
+              levelId: levelId,
+              term: term,
+              year: year,
+              db: db,
+            ));
+        return true;
+      } else {
+        _errorMessage = response.message;
+        return false;
+      }
+    } catch (e) {
+      _errorMessage = 'Failed to save data: $e';
+      return false;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
 }
+
+
 
 
 
@@ -121,18 +168,20 @@ class SkillsBehaviorTableProvider with ChangeNotifier {
 // class StudentSkillBehaviorTable {
 //   final int id;
 //   final String name;
-//   final Map<int, String> skills; // Maps skill ID to value
+//   final Map<int, String> skills;
 
 //   StudentSkillBehaviorTable({required this.id, required this.name, required this.skills});
 
 //   factory StudentSkillBehaviorTable.fromJson(Map<String, dynamic> json) {
 //     final skills = <int, String>{};
-//     json['student_skills'].forEach((key, value) {
-//       skills[int.parse(key)] = value['value'];
-//     });
+//     if (json['student_skills'] != null && json['student_skills'] is List) {
+//       for (var skill in json['student_skills']) {
+//         skills[skill['skill_id']] = skill['value']?.toString() ?? '-';
+//       }
+//     }
 //     return StudentSkillBehaviorTable(
 //       id: json['id'],
-//       name: json['student_name'],
+//       name: json['student_name']?.toString() ?? 'Unknown',
 //       skills: skills,
 //     );
 //   }
@@ -174,10 +223,10 @@ class SkillsBehaviorTableProvider with ChangeNotifier {
 //         },
 //         fromJson: (json) {
 //           final responseData = json['response'];
-//           final skills = (responseData['skills'] as List)
+//           final skills = (responseData['skills'] as List? ?? [])
 //               .map((skill) => SkillsBehaviorTable.fromJson(skill))
 //               .toList();
-//           final students = (responseData['students'] as List)
+//           final students = (responseData['students'] as List? ?? [])
 //               .map((student) => StudentSkillBehaviorTable.fromJson(student))
 //               .toList();
 //           return {'skills': skills, 'students': students};
@@ -193,6 +242,48 @@ class SkillsBehaviorTableProvider with ChangeNotifier {
 //       }
 //     } catch (e) {
 //       _errorMessage = 'Failed to fetch data: $e';
+//     } finally {
+//       _isLoading = false;
+//       notifyListeners();
+//     }
+//   }
+
+//   Future<bool> createSkillsAndBehaviours({
+//     required Map<String, dynamic> skillsPayload,
+//     required String classId,
+//     required String levelId,
+//     required String term,
+//     required String year,
+//     required String db,
+//   }) async {
+//     _isLoading = true;
+//     _errorMessage = '';
+//     notifyListeners();
+
+//     try {
+//       final response = await _apiService.post(
+//         endpoint: 'portal/students/skill-behavior',
+//         body: skillsPayload,
+//         fromJson: (json) => json,
+//       );
+
+//       if (response.success) {
+//         // Refresh data after successful creation
+//         await fetchSkillsAndBehaviours(
+//           classId: classId,
+//           levelId: levelId,
+//           term: term,
+//           year: year,
+//           db: db,
+//         );
+//         return true;
+//       } else {
+//         _errorMessage = response.message;
+//         return false;
+//       }
+//     } catch (e) {
+//       _errorMessage = 'Failed to save data: $e';
+//       return false;
 //     } finally {
 //       _isLoading = false;
 //       notifyListeners();
