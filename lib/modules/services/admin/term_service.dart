@@ -34,7 +34,7 @@ class TermService {
 
       print('Fetching terms for class $classId (year: $year, term: $term, db: $db)');
 
-      final response = await _apiService.get(
+      final  response = await _apiService.get(
         endpoint: 'portal/course-registrations/terms',
         queryParams: {
           'year': year,
@@ -51,11 +51,11 @@ class TermService {
       }
 
       final resData = response.rawData;
-      if (resData == null || resData['sessions'] == null) {
+      if (resData == null || resData['response'] == null || resData['response']['sessions'] == null) {
         return [];
       }
 
-      final sessions = resData['sessions'] as List;
+      final sessions = resData['response']['sessions'] as List;
       final terms = <Map<String, dynamic>>[];
 
       for (var session in sessions) {
@@ -119,11 +119,11 @@ class TermService {
       }
 
       final resData = response.rawData;
-      if (resData == null || resData['sessions'] == null) {
+      if (resData == null || resData['response'] == null || resData['response']['sessions'] == null) {
         return {'terms': [], 'chart_data': []};
       }
 
-      final sessions = resData['sessions'] as List;
+      final sessions = resData['response']['sessions'] as List;
       final terms = <Map<String, dynamic>>[];
 
       for (var session in sessions) {
@@ -139,7 +139,7 @@ class TermService {
         }
       }
 
-      final chartData = (resData['chart_data'] as List?)?.cast<Map<String, dynamic>>() ?? [];
+      final chartData = (resData['response']['chart_data'] as List?)?.cast<Map<String, dynamic>>() ?? [];
 
       print('Successfully fetched ${terms.length} terms and ${chartData.length} chart data entries');
       return {'terms': terms, 'chart_data': chartData};
@@ -204,6 +204,9 @@ class TermService {
 }
 
 
+
+
+
 // import 'package:hive/hive.dart';
 // import 'package:linkschool/modules/services/api/api_service.dart';
 // import 'package:linkschool/modules/services/api/service_locator.dart';
@@ -215,7 +218,6 @@ class TermService {
 //     _apiService = apiService ?? locator<ApiService>();
 //   }
 
-//   // set apiService(Api TertiaryDataType service) => _apiService = service;
 //   set apiService(ApiService service) => _apiService = service;
 
 //   Future<List<Map<String, dynamic>>> fetchTerms(String classId) async {
@@ -231,14 +233,15 @@ class TermService {
 //       final data = responseData['data'] ?? {};
 //       final settings = data['settings'] ?? {};
 //       final db = loginData['_db'] ?? 'aalmgzmy_linkskoo_practice';
-//       final year = settings['year']?.toString() ?? '2025';
+//       final year = settings['year']?.toString() ?? '2023';
+//       final term = settings['term']?.toString() ?? '1';
 //       final token = loginData['token'] ?? userBox.get('token');
 
 //       if (token != null) {
 //         _apiService.setAuthToken(token);
 //       }
 
-//       print('Fetching terms for class $classId (year: $year, db: $db)');
+//       print('Fetching terms for class $classId (year: $year, term: $term, db: $db)');
 
 //       final response = await _apiService.get(
 //         endpoint: 'portal/course-registrations/terms',
@@ -246,8 +249,11 @@ class TermService {
 //           'year': year,
 //           'class_id': classId,
 //           '_db': db,
+//           'term': term,
 //         },
 //       );
+
+//       print('API Response: ${response.rawData}, Success: ${response.success}, Message: ${response.message}');
 
 //       if (!response.success) {
 //         throw Exception(response.message ?? 'Failed to fetch terms');
@@ -282,6 +288,76 @@ class TermService {
 //     }
 //   }
 
+//   Future<Map<String, dynamic>> fetchTermsAndChartData(String classId) async {
+//     try {
+//       final userBox = Hive.box('userData');
+//       final loginData = userBox.get('userData') ?? userBox.get('loginResponse');
+      
+//       if (loginData == null) {
+//         throw Exception('No login data available');
+//       }
+
+//       final responseData = loginData['response'] ?? loginData;
+//       final data = responseData['data'] ?? {};
+//       final settings = data['settings'] ?? {};
+//       final db = loginData['_db'] ?? 'aalmgzmy_linkskoo_practice';
+//       final year = settings['year']?.toString() ?? '2023';
+//       final term = settings['term']?.toString() ?? '1';
+//       final token = loginData['token'] ?? userBox.get('token');
+
+//       if (token != null) {
+//         _apiService.setAuthToken(token);
+//       }
+
+//       print('Fetching terms and chart data for class $classId (year: $year, term: $term, db: $db)');
+
+//       final response = await _apiService.get(
+//         endpoint: 'portal/course-registrations/terms',
+//         queryParams: {
+//           'year': year,
+//           'class_id': classId,
+//           '_db': db,
+//           'term': term,
+//         },
+//       );
+
+//       print('API Response: ${response.rawData}, Success: ${response.success}, Message: ${response.message}');
+
+//       if (!response.success) {
+//         throw Exception(response.message ?? 'Failed to fetch terms');
+//       }
+
+//       final resData = response.rawData;
+//       if (resData == null || resData['sessions'] == null) {
+//         return {'terms': [], 'chart_data': []};
+//       }
+
+//       final sessions = resData['sessions'] as List;
+//       final terms = <Map<String, dynamic>>[];
+
+//       for (var session in sessions) {
+//         final sessionYear = session['year'].toString();
+//         final sessionTerms = session['terms'] as List;
+        
+//         for (var term in sessionTerms) {
+//           terms.add({
+//             'year': sessionYear,
+//             'termId': term['term_value'],
+//             'termName': term['term_name'],
+//           });
+//         }
+//       }
+
+//       final chartData = (resData['chart_data'] as List?)?.cast<Map<String, dynamic>>() ?? [];
+
+//       print('Successfully fetched ${terms.length} terms and ${chartData.length} chart data entries');
+//       return {'terms': terms, 'chart_data': chartData};
+//     } catch (e) {
+//       print('Error fetching terms and chart data: $e');
+//       throw Exception('Failed to load terms: ${e.toString()}');
+//     }
+//   }
+
 //   Future<List<Map<String, dynamic>>> fetchAverageScores(String classId, String year, int term) async {
 //     try {
 //       final userBox = Hive.box('userData');
@@ -308,6 +384,8 @@ class TermService {
 //           '_db': db,
 //         },
 //       );
+
+//       print('API Response: ${response.rawData}, Success: ${response.success}, Message: ${response.message}');
 
 //       if (!response.success) {
 //         throw Exception(response.message ?? 'Failed to fetch average scores');

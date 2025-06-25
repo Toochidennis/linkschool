@@ -5,7 +5,10 @@ import 'package:linkschool/modules/admin/result/class_detail/student_result/cour
 import 'package:linkschool/modules/admin/result/class_detail/student_result/student_result.dart';
 import 'package:linkschool/modules/admin/result/class_detail/student_result/composite_result_screen.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
+import 'package:linkschool/modules/common/text_styles.dart';
+import 'package:linkschool/modules/staff/e_learning/form_classes/edit_staff_skill_behaviour_screen.dart';
 import 'package:linkschool/modules/staff/e_learning/form_classes/staff_skill_behaviour_screen.dart';
+// import 'package:linkschool/modules/staff/e_learning/form_classes/edit_skills_behaviour_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:linkschool/modules/providers/admin/student_provider.dart';
 
@@ -217,18 +220,7 @@ void showTermOverlay(BuildContext context, {required String classId, required St
                             ),
                           );
                         } else if (labels[index] == 'Skills and Behaviour') {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => StaffSkillsBehaviourScreen(
-                                classId: classId,
-                                levelId: levelId,
-                                term: termId.toString(),
-                                year: year,
-                                db: 'aalmgzmy_linkskoo_practice',
-                              ),
-                            ),
-                          );
+                          _showSkillsBehaviourOverlay(context, classId: classId, levelId: levelId, year: year, termId: termId, termName: termName);
                         } else if (labels[index] == 'Composite result') {
                           Navigator.push(
                             context,
@@ -252,6 +244,104 @@ void showTermOverlay(BuildContext context, {required String classId, required St
         ),
       );
     },
+  );
+}
+
+void _showSkillsBehaviourOverlay(BuildContext context, {required String classId, required String levelId, required String year, required int termId, required String termName}) {
+  showModalBottomSheet(
+    context: context,
+    builder: (BuildContext context) {
+      return Container(
+        color: Colors.white,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 8.0),
+                  child: Text(
+                    'Skills and Behaviour',
+                    style: AppTextStyles.normal600(
+                        fontSize: 16, color: AppColors.backgroundDark),
+                  ),
+                ),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _buildDialogButton(
+                        'Add',
+                        'assets/icons/result/edit.svg',
+                        () {
+                          Navigator.pop(context);
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => EditSkillsBehaviourScreen(
+                                classId: classId,
+                                levelId: levelId,
+                                term: termId.toString(),
+                                year: year,
+                                db: 'aalmgzmy_linkskoo_practice',
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                    const SizedBox(width: 8.0),
+                    Expanded(
+                      child: _buildDialogButton(
+                        'View',
+                        'assets/icons/result/eye.svg',
+                        () {
+                          Navigator.pop(context);
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => StaffSkillsBehaviourScreen(
+                                classId: classId,
+                                levelId: levelId,
+                                term: termId.toString(),
+                                year: year,
+                                db: 'aalmgzmy_linkskoo_practice',
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ],
+        ),
+      );
+    },
+  );
+}
+
+Widget _buildDialogButton(String text, String iconPath, VoidCallback onPressed) {
+  return Container(
+    decoration: BoxDecoration(
+      border: Border.all(color: Colors.grey),
+      borderRadius: BorderRadius.circular(8),
+    ),
+    child: TextButton.icon(
+      onPressed: onPressed,
+      icon: SvgPicture.asset(
+        iconPath,
+        color: Colors.grey,
+      ),
+      label: Text(
+        text,
+        style: AppTextStyles.normal600(
+            fontSize: 14, color: AppColors.backgroundDark),
+      ),
+    ),
   );
 }
 
@@ -384,7 +474,7 @@ void showTermOverlay(BuildContext context, {required String classId, required St
 //   );
 // }
 
-// void showTermOverlay(BuildContext context, {required String classId, required String year, required int termId, required String termName}) {
+// void showTermOverlay(BuildContext context, {required String classId, required String levelId, required String year, required int termId, required String termName}) {
 //   showModalBottomSheet(
 //     context: context,
 //     isScrollControlled: true,
@@ -481,7 +571,7 @@ void showTermOverlay(BuildContext context, {required String classId, required St
 //                             MaterialPageRoute(
 //                               builder: (context) => StaffSkillsBehaviourScreen(
 //                                 classId: classId,
-//                                 levelId: '1', // Replace with actual levelId
+//                                 levelId: levelId,
 //                                 term: termId.toString(),
 //                                 year: year,
 //                                 db: 'aalmgzmy_linkskoo_practice',
