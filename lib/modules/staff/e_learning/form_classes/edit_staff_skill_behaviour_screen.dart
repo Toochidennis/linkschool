@@ -4,6 +4,7 @@ import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/providers/admin/skills_behavior_table_provider.dart';
+import 'package:motion_toast/motion_toast.dart';
 import 'package:provider/provider.dart';
 
 class EditSkillsBehaviourScreen extends StatefulWidget {
@@ -18,7 +19,7 @@ class EditSkillsBehaviourScreen extends StatefulWidget {
     required this.classId,
     required this.levelId,
     this.term = '1',
-    this.year = '2023', // Updated to match API call
+    this.year = '2023',
     this.db = 'aalmgzmy_linkskoo_practice',
   });
 
@@ -157,7 +158,7 @@ class _EditSkillsBehaviourScreenState extends State<EditSkillsBehaviourScreen> {
         if (controller.text.isNotEmpty) {
           final skill = provider.skills.firstWhere((s) => s.id == skillId);
           studentSkills.add({
-            'skill_id': skillId.toString(), // Convert to String to match API
+            'skill_id': skillId.toString(),
             'value': int.tryParse(controller.text) ?? 0,
             'label': skill.name,
           });
@@ -183,12 +184,16 @@ class _EditSkillsBehaviourScreenState extends State<EditSkillsBehaviourScreen> {
       );
 
       if (success && mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Skills and behaviors saved successfully')),
+        CustomToaster.toastSuccess(
+          context,
+          'Success',
+          'Skills and behaviors saved successfully',
         );
       } else if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to save: ${provider.errorMessage}')),
+        CustomToaster.toastError(
+          context,
+          'Error',
+          'Failed to save: ${provider.errorMessage}',
         );
       }
     }
@@ -342,6 +347,28 @@ class _EditSkillsBehaviourScreenState extends State<EditSkillsBehaviourScreen> {
         ],
       ),
     );
+  }
+}
+
+class CustomToaster {
+  static void toastSuccess(BuildContext context, String title, String message) {
+    MotionToast.success(
+      title: Text(title, style: const TextStyle(color: Colors.white)),
+      description: Text(message, style: const TextStyle(color: Colors.white)),
+      position: MotionToastPosition.top,
+      animationType: AnimationType.slideInFromTop,
+      contentPadding: const EdgeInsets.all(10),
+    ).show(context);
+  }
+
+  static void toastError(BuildContext context, String title, String message) {
+    MotionToast.error(
+      title: Text(title, style: const TextStyle(color: Colors.white)),
+      description: Text(message, style: const TextStyle(color: Colors.white)),
+      position: MotionToastPosition.top,
+      animationType: AnimationType.slideInFromTop,
+      contentPadding: const EdgeInsets.all(10),
+    ).show(context);
   }
 }
 

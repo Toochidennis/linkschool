@@ -34,7 +34,7 @@ class TermService {
 
       print('Fetching terms for class $classId (year: $year, term: $term, db: $db)');
 
-      final  response = await _apiService.get(
+      final response = await _apiService.get(
         endpoint: 'portal/course-registrations/terms',
         queryParams: {
           'year': year,
@@ -67,6 +67,7 @@ class TermService {
             'year': sessionYear,
             'termId': term['term_value'],
             'termName': term['term_name'],
+            'averageScore': term['average_score']?.toDouble() ?? 0.0,
           });
         }
       }
@@ -135,6 +136,7 @@ class TermService {
             'year': sessionYear,
             'termId': term['term_value'],
             'termName': term['term_name'],
+            'averageScore': term['average_score']?.toDouble() ?? 0.0,
           });
         }
       }
@@ -205,8 +207,6 @@ class TermService {
 
 
 
-
-
 // import 'package:hive/hive.dart';
 // import 'package:linkschool/modules/services/api/api_service.dart';
 // import 'package:linkschool/modules/services/api/service_locator.dart';
@@ -243,7 +243,7 @@ class TermService {
 
 //       print('Fetching terms for class $classId (year: $year, term: $term, db: $db)');
 
-//       final response = await _apiService.get(
+//       final  response = await _apiService.get(
 //         endpoint: 'portal/course-registrations/terms',
 //         queryParams: {
 //           'year': year,
@@ -260,11 +260,11 @@ class TermService {
 //       }
 
 //       final resData = response.rawData;
-//       if (resData == null || resData['sessions'] == null) {
+//       if (resData == null || resData['response'] == null || resData['response']['sessions'] == null) {
 //         return [];
 //       }
 
-//       final sessions = resData['sessions'] as List;
+//       final sessions = resData['response']['sessions'] as List;
 //       final terms = <Map<String, dynamic>>[];
 
 //       for (var session in sessions) {
@@ -328,11 +328,11 @@ class TermService {
 //       }
 
 //       final resData = response.rawData;
-//       if (resData == null || resData['sessions'] == null) {
+//       if (resData == null || resData['response'] == null || resData['response']['sessions'] == null) {
 //         return {'terms': [], 'chart_data': []};
 //       }
 
-//       final sessions = resData['sessions'] as List;
+//       final sessions = resData['response']['sessions'] as List;
 //       final terms = <Map<String, dynamic>>[];
 
 //       for (var session in sessions) {
@@ -348,7 +348,7 @@ class TermService {
 //         }
 //       }
 
-//       final chartData = (resData['chart_data'] as List?)?.cast<Map<String, dynamic>>() ?? [];
+//       final chartData = (resData['response']['chart_data'] as List?)?.cast<Map<String, dynamic>>() ?? [];
 
 //       print('Successfully fetched ${terms.length} terms and ${chartData.length} chart data entries');
 //       return {'terms': terms, 'chart_data': chartData};
