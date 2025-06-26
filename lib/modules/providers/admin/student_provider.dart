@@ -20,6 +20,7 @@ class StudentProvider extends ChangeNotifier {
   List<int> _attendedStudentIds = [];
   int? _currentAttendanceId;
   bool _hasExistingAttendance = false;
+  Map<String, dynamic>? _studentTermResult;
 
   List<Student> get students => _students;
   List<Student> get allStudents => _allStudents; 
@@ -35,6 +36,7 @@ class StudentProvider extends ChangeNotifier {
   Map<String, dynamic>? get studentTerms => _studentTerms;
   int? get currentAttendanceId => _currentAttendanceId;
   bool get hasExistingAttendance => _hasExistingAttendance;
+   Map<String, dynamic>? get studentTermResult => _studentTermResult;
 
   Future<bool> updateAttendance({required int attendanceId}) async {
     try {
@@ -77,36 +79,6 @@ class StudentProvider extends ChangeNotifier {
       return false;
     }
   }
-
-// Future<void> fetchStudents(String? classId, {String? courseId}) async {
-//   if (classId == null) {
-//     _setError('Class ID is missing');
-//     return;
-//   }
-
-//   _setLoading(true);
-//   _students = []; // Clear existing students
-//   notifyListeners(); // Notify listeners of the change
-
-//     try {
-//       _isLoading = true;
-//       _errorMessage = '';
-//       notifyListeners();
-
-//       final fetchedStudents = courseId != null
-//           ? await _studentService.getStudentsByCourse(courseId, classId)
-//           : await _studentService.getStudentsByClass(classId);
-      
-//       _students = fetchedStudents;
-//       _isLoading = false;
-      
-//       notifyListeners();
-//     } catch (e) {
-//       _isLoading = false;
-//       _errorMessage = e.toString();
-//       notifyListeners();
-//     }
-//   } 
 
 Future<void> fetchStudents(String? classId, {String? courseId}) async {
   if (classId == null) {
@@ -600,5 +572,35 @@ Future<void> fetchStudents(String? classId, {String? courseId}) async {
   void _updateSelectAllStatus() {
     _selectAll = _students.isNotEmpty && 
                  _students.every((student) => student.isSelected);
+  }
+
+  Future<void> fetchStudentTermResults({
+    required int studentId,
+    required int termId,
+    required String classId,
+    required String year,
+    required String levelId,
+  }) async {
+    try {
+      _isLoading = true;
+      _errorMessage = '';
+      notifyListeners();
+
+      final result = await _studentService.getStudentTermResults(
+        studentId: studentId,
+        termId: termId,
+        classId: classId,
+        year: year,
+        levelId: levelId,
+      );
+
+      _studentTermResult = result;
+      _isLoading = false;
+      notifyListeners();
+    } catch (e) {
+      _isLoading = false;
+      _errorMessage = e.toString();
+      notifyListeners();
+    }
   }
 }

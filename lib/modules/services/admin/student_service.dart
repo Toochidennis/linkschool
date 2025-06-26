@@ -422,6 +422,37 @@ class StudentService {
       throw Exception('Error updating attendance: $e');
     }
   }
+
+  Future<Map<String, dynamic>> getStudentTermResults({
+    required int studentId,
+    required int termId,
+    required String classId,
+    required String year,
+    required String levelId,
+  }) async {
+    try {
+      final response = await _apiService.get<Map<String, dynamic>>(
+        endpoint: 'portal/students/$studentId/result/$termId',
+        queryParams: {
+          '_db': EnvConfig.dbName,
+          'class_id': classId,
+          'year': year,
+          'level_id': levelId,
+        },
+        fromJson: (json) => json['response'] as Map<String, dynamic>,
+      );
+
+      if (response.success) {
+        debugPrint('Fetched term results: ${response.data}');
+        return response.data ?? {};
+      } else {
+        throw Exception(response.message);
+      }
+    } catch (e) {
+      debugPrint('Error fetching student term results: $e');
+      throw Exception('Error fetching student term results: $e');
+    }
+  }
 }
 
 
