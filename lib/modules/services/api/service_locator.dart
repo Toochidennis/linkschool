@@ -5,10 +5,12 @@ import 'package:linkschool/modules/auth/service/auth_service.dart';
 import 'package:linkschool/modules/providers/admin/attendance_provider.dart';
 import 'package:linkschool/modules/providers/admin/behaviour_provider.dart';
 import 'package:linkschool/modules/providers/admin/e_learning/syllabus_provider.dart';
+import 'package:linkschool/modules/providers/admin/e_learning/topic_provider.dart';
 
 import 'package:linkschool/modules/providers/admin/grade_provider.dart';
 import 'package:linkschool/modules/services/admin/attendance_service.dart';
 import 'package:linkschool/modules/services/admin/e_learning/syllabus_service.dart';
+import 'package:linkschool/modules/services/admin/e_learning/topic_service.dart';
 import 'package:linkschool/modules/services/api/api_service.dart';
 import 'package:linkschool/modules/services/admin/class_service.dart';
 import 'package:linkschool/modules/services/admin/grade_service.dart';
@@ -40,6 +42,17 @@ void setupServiceLocator() {
     () => SkillsProvider(locator<SkillService>())
   );
 
+  // Register SkillService with ApiService dependency
+  locator.registerLazySingleton<TopicService>(
+    () => TopicService(locator<ApiService>())
+  );
+
+
+  // Register TopicProvider with SkillService dependen
+  locator.registerLazySingleton<TopicProvider>(
+    () => TopicProvider(locator<TopicService>())
+  );
+
   // Register StudentService with ApiService dependency
   locator.registerLazySingleton<StudentService>(
     () => StudentService(locator<ApiService>())
@@ -61,7 +74,7 @@ void setupServiceLocator() {
   );
 
   locator.registerLazySingleton<SyllabusService>(
-    () => SyllabusService()
+    () => SyllabusService(locator<ApiService>())
   );
   locator.registerLazySingleton<SyllabusProvider>(
     () => SyllabusProvider(locator<SyllabusService>())
@@ -69,7 +82,7 @@ void setupServiceLocator() {
 
 
 
-  // Register other services as lazySingletons
+
   locator.registerLazySingleton<ClassService>(() => ClassService());
   locator.registerLazySingleton<LevelService>(() => LevelService());
   // locator.registerLazySingleton<TermService>(() => TermService());

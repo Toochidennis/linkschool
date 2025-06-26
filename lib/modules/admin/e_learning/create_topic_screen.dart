@@ -3,20 +3,22 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:hive/hive.dart';
-
-// Assuming these are custom files in your project
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/buttons/custom_save_elevated_button.dart';
 import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/common/widgets/portal/e_learning/select_classes_dialog.dart';
 import 'package:linkschool/modules/model/e-learning/objective_item.dart';
+import 'package:linkschool/modules/model/e-learning/topic_model.dart';
+import 'package:linkschool/modules/providers/admin/e_learning/topic_provider.dart';
+import 'package:provider/provider.dart';
 
 class CreateTopicScreen extends StatefulWidget {
   final String? classId;
   final String? levelId; 
   final  String? courseId;
-  const CreateTopicScreen({super.key, this.classId, this.levelId, this.courseId});
+   final int? syllabusId;
+  const CreateTopicScreen({super.key, this.classId, this.levelId, this.courseId, this.syllabusId});
 
   @override
   State<CreateTopicScreen> createState() => _CreateTopicScreenState();
@@ -85,71 +87,91 @@ void _onTitleFocusChange() {
     }
   }
 
-  void _addTopic() async {
-    try {
-      final userBox = Hive.box('userData');
-      final storedUserData = userBox.get('userData') ?? userBox.get('loginResponse');
-      final processedData = storedUserData is String
-          ? json.decode(storedUserData)
-          : storedUserData;
-      final response = processedData['response'] ?? processedData;
-      final data = response['data'] ?? response;
-      final classes = data['classes'] ?? [];
-      final selectedClassIds = userBox.get('selectedClassIds') ?? [];
-
-      final classIdList = selectedClassIds.map<Map<String, String>>((classId) {
-        final classIdStr = classId.toString();
-        final classData = classes.firstWhere(
-          (cls) => cls['id'].toString() == classIdStr,
-          orElse: () => {'id': classIdStr, 'class_name': 'Unknown'},
-        );
-        return {
-          'id': classIdStr,
-          'class_name': (classData['class_name']?.toString() ?? 'Unknown'),
-        };
-      }).toList();
-
-      if (classIdList.isEmpty && widget.classId != null) {
-        final classIdStr = widget.classId!;
-        final classData = classes.firstWhere(
-          (cls) => cls['id'].toString() == classIdStr,
-          orElse: () => {'id': classIdStr, 'class_name': _selectedClass},
-        );
-        classIdList.add({
-          'id': classIdStr,
-          'class_name': (classData['class_name']?.toString() ?? _selectedClass),
-        });
-      }
-
-      final material = {
-        'title': _titleController.text,
-        "objectives": _objectiveController.text,
-        'topic_id': '', 
-        'classids': classIdList.isNotEmpty
-            ? classIdList
-            : [
-                {'id': '', 'class_name': ''},
-              ],
-        'level_id': widget.levelId,
-        'course_id': widget.courseId,
-        'creator_id': creatorId,
-        'creator_name': creatorName,
-        'term': academicTerm?.toInt(),
-      };
-
-      print('Complete Material Data:');
-      print(const JsonEncoder.withIndent('  ').convert(material));
-
-      // widget.onSave(material);
-      Navigator.of(context).pop();
-    } catch (e) {
-      print('Error saving material: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: ${e.toString()}')),
-      );
-    }
+void _addTopic() async {
+  // Validation
+  if (_titleController.text.trim().isEmpty) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Please enter a topic title.')),
+    );
+    return;
+  }
+  if (_objectives.isEmpty) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        backgroundColor: Colors.red,
+        content: Text('Please add at least one objective.')),
+    );
+    return;
+  }
+  if (_selectedClass == 'Select classes' || _selectedClass.trim().isEmpty) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        backgroundColor: Colors.red,
+        content: Text('Please select at least one class.')),
+    );
+    return;
   }
 
+  try {
+    final userBox = Hive.box('userData');
+    final storedUserData = userBox.get('userData') ?? userBox.get('loginResponse');
+    final processedData = storedUserData is String
+        ? json.decode(storedUserData)
+        : storedUserData;
+    final response = processedData['response'] ?? processedData;
+    final data = response['data'] ?? response;
+    final classes = data['classes'] ?? [];
+    final selectedClassIds = userBox.get('selectedClassIds') ?? [];
+
+    // Build the class list as List<ClassModel>
+    final classModelList = selectedClassIds.map<ClassModel>((classId) {
+      final classIdStr = classId.toString();
+      final classData = classes.firstWhere(
+        (cls) => cls['id'].toString() == classIdStr,
+        orElse: () => {'id': classIdStr, 'class_name': 'Unknown'},
+      );
+      return ClassModel(
+        id: int.parse(classIdStr),
+        name: classData['class_name']?.toString() ?? 'Unknown',
+      );
+    }).toList();
+
+    // Get the topicProvider from Provider
+    final topicProvider = Provider.of<TopicProvider>(context, listen: false);
+
+
+         final objectivesText = _objectives.map((obj) => obj.text).join(', ');
+    // Only the required fields
+    final topicData = {
+      'syllabus_id': widget.syllabusId ?? 0, // Use the syllabusId from widget or default to 0
+      'topic': _titleController.text,
+      'creator_name': creatorName ?? 'Unknown',
+      'objective': objectivesText,
+      'creator_id': creatorId ?? 0,
+      'classes': classModelList,
+    };
+
+    await topicProvider.addTopic(
+      syllabusId: 0,
+      topic: _titleController.text,
+      creatorName: creatorName ?? 'Unknown',
+      objective: objectivesText,
+      creatorId: creatorId ?? 0,
+      classes: classModelList, // <-- Now correct type
+    );
+
+    print('Topic Data to POST: $topicData');
+
+    Navigator.of(context).pop();
+  } catch (e) {
+    print('Error packaging topic data: $e');
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        backgroundColor: Colors.red,
+        content: Text('Error: ${e.toString()}')),
+    );
+  }
+}
 
 
   @override
@@ -198,7 +220,8 @@ void _onTitleFocusChange() {
           ),
         ],
       ),
-body: Container(
+body:
+Container(
   height: MediaQuery.of(context).size.height, // Ensures the container covers the full screen height
   decoration: Constants.customBoxDecoration(context),
   child: Padding(
@@ -275,6 +298,8 @@ body: Container(
     ),
   ),
 ),
+
+
 
     );
   }

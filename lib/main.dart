@@ -10,6 +10,7 @@ import 'package:linkschool/modules/providers/admin/behaviour_provider.dart';
 import 'package:linkschool/modules/providers/admin/class_provider.dart';
 import 'package:linkschool/modules/providers/admin/course_registration_provider.dart';
 import 'package:linkschool/modules/providers/admin/e_learning/syllabus_provider.dart';
+import 'package:linkschool/modules/providers/admin/e_learning/topic_provider.dart';
 import 'package:linkschool/modules/providers/admin/level_provider.dart';
 import 'package:linkschool/modules/providers/admin/student_provider.dart';
 import 'package:linkschool/modules/providers/admin/term_provider.dart';
@@ -69,7 +70,6 @@ Future<void> main() async {
       providers: [
 
         ChangeNotifierProvider(create: (_) => locator<AuthProvider>()),
-         ChangeNotifierProvider(create: (_) => SyllabusProvider( SyllabusService())),
         ChangeNotifierProvider(create: (_) => NewsProvider()),
         ChangeNotifierProvider(create: (_) => SubjectProvider()),
         ChangeNotifierProvider(create: (_) => CBTProvider(CBTService())),
@@ -77,7 +77,6 @@ Future<void> main() async {
         ChangeNotifierProvider(create: (_) => ExamProvider()),
         ChangeNotifierProvider(create: (_) => ForYouProvider()),
         ChangeNotifierProvider<SyllabusProvider>(create: (_) => locator<SyllabusProvider>()),
-        
         // GradeProvider from service locator
         ChangeNotifierProvider(create: (_) => locator<GradeProvider>()),
         // SkillProvider from service locator
@@ -87,7 +86,7 @@ Future<void> main() async {
         ChangeNotifierProvider(create: (_) => AssessmentProvider()),
         ChangeNotifierProvider(create: (_) => TermProvider()),
         ChangeNotifierProvider(create: (_) => CourseRegistrationProvider()),
-        
+        ChangeNotifierProvider(create: (_) => locator<TopicProvider>()),
         // StudentProvider from service locator
         ChangeNotifierProvider(create: (_) => locator<StudentProvider>()),
 

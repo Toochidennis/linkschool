@@ -20,13 +20,23 @@ import 'package:linkschool/modules/staff/e_learning/view/staff_assignment_detail
 import 'package:linkschool/modules/staff/e_learning/view/staff_material_details_screen.dart';
 
 class EmptySubjectScreen extends StatefulWidget {
-  final String courseTitle;
+  final String? courseTitle;
   final String? courseId;
   final String? levelId;
   final String? classId;
   final String? courseName;
-
-  const EmptySubjectScreen({super.key, required this.courseTitle, this.courseId, this.levelId, this.classId, this.courseName});
+  final  String? term;
+  final int? syllabusId;
+  const EmptySubjectScreen({
+    super.key,
+    this.syllabusId,
+    this.courseTitle,
+    this.courseId,
+    this.levelId,
+    this.classId,
+    this.courseName,
+    this.term,
+});
 
   @override
   State<EmptySubjectScreen> createState() => _EmptySubjectScreenState();
@@ -229,7 +239,8 @@ class _EmptySubjectScreenState extends State<EmptySubjectScreen> {
                 fullscreenDialog: true,
                 builder: (BuildContext context) =>
                     CreateTopicScreen(
-                       courseId: widget.courseId,
+                      syllabusId: widget.syllabusId ?? 0,
+                      courseId: widget.courseId,
                   levelId: widget.levelId,
                   classId: widget.classId,
                     ),
@@ -291,11 +302,14 @@ class _EmptySubjectScreenState extends State<EmptySubjectScreen> {
     );
   }
 
+
+
+
   @override
   Widget build(BuildContext context) {
     final Brightness brightness = Theme.of(context).brightness;
     opacity = brightness == Brightness.light ? 0.1 : 0.15;
-
+  
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
@@ -310,7 +324,7 @@ class _EmptySubjectScreenState extends State<EmptySubjectScreen> {
           ),
         ),
         title: Text(
-          widget.courseTitle,
+          widget.courseTitle ?? '',
           style: const TextStyle(
             fontSize: 22,
             fontWeight: FontWeight.bold,
@@ -412,7 +426,7 @@ class _EmptySubjectScreenState extends State<EmptySubjectScreen> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Text(
-                            widget.courseTitle,
+                            widget.courseTitle ?? '',
                             style: AppTextStyles.normal700(
                               fontSize: 18,
                               color: AppColors.backgroundLight,

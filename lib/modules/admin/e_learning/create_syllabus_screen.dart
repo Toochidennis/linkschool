@@ -7,19 +7,24 @@ import 'package:linkschool/modules/common/buttons/custom_save_elevated_button.da
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/common/widgets/portal/e_learning/select_classes_dialog.dart';
 import 'package:linkschool/modules/common/widgets/portal/e_learning/select_teachers_dialog.dart';
+import 'package:linkschool/modules/model/e-learning/syllabus_model.dart';
+import 'package:linkschool/modules/providers/admin/e_learning/syllabus_provider.dart';
+import 'package:linkschool/modules/services/admin/e_learning/syllabus_service.dart';
+import 'package:linkschool/modules/services/api/api_service.dart';
 
 class CreateSyllabusScreen extends StatefulWidget {
   final Map<String, dynamic>? syllabusData;
   final String? courseId;
   final String? classId;
   final String? levelId;
-
+final String? courseName;
   const CreateSyllabusScreen({
     super.key,
     this.syllabusData,
     this.courseId,
     this.classId,
-    this.levelId,
+    this.levelId, 
+     this.courseName,
   });
 
   @override
@@ -37,20 +42,33 @@ class _CreateSyllabusScreenState extends State<CreateSyllabusScreen> {
   int? creatorId;
   String? creatorRole;
   String? academicYear;
+   String? creatorName ;
   int? academicTerm;
+  final SyllabusProvider syllabusProvider = SyllabusProvider(SyllabusService(ApiService()));
   final _formKey = GlobalKey<FormState>();
 
-  @override
-  void initState() {
-    super.initState();
-    
-    _selectedClass = widget.syllabusData?['selectedClass'] ?? 'Select classes';
-    _selectedTeacher = widget.syllabusData?['selectedTeacher'] ?? 'Select teachers';
-    _titleController = TextEditingController(text: widget.syllabusData?['title'] ?? '');
-    _descriptionController = TextEditingController(text: widget.syllabusData?['description'] ?? '');
-    _backgroundImagePath = widget.syllabusData?['backgroundImagePath'] ?? 'assets/images/result/bg_box3.svg';
-    _loadUserData();
+@override
+void initState() {
+  super.initState();
+  _selectedClass = widget.syllabusData?['selectedClass'] ?? 'Select classes';
+  _selectedTeacher = widget.syllabusData?['selectedTeacher'] ?? 'Select teachers';
+  _titleController = TextEditingController(text: widget.syllabusData?['title'] ?? '');
+  _descriptionController = TextEditingController(text: widget.syllabusData?['description'] ?? '');
+  _backgroundImagePath = widget.syllabusData?['backgroundImagePath'] ?? 'assets/images/result/bg_box3.svg';
+
+  // Only load preselected class IDs when editing (i.e., syllabusData is not null)
+  if (widget.syllabusData != null && widget.syllabusData!['classes'] != null) {
+    final classIds = (widget.syllabusData!['classes'] as List<ClassModel>)
+        .map((cls) => cls.id)
+        .toList();
+    Hive.box('userData').put('selectedClassIds', classIds);
+  } else {
+    // When creating, ensure no class is pre-selected
+    Hive.box('userData').put('selectedClassIds', []);
   }
+
+  _loadUserData();
+}
 
   Future<void> _loadUserData() async {
     try {
@@ -67,6 +85,7 @@ class _CreateSyllabusScreenState extends State<CreateSyllabusScreen> {
 
         setState(() {
           creatorId = profile['staff_id'] as int?;
+          creatorName = profile['name']?.toString() ?? 'Unknown';
           creatorRole = profile['role']?.toString();
           academicYear = settings['year']?.toString();
           academicTerm = settings['term'] as int?;
@@ -77,87 +96,104 @@ class _CreateSyllabusScreenState extends State<CreateSyllabusScreen> {
     }
   }
 
-  Future<void> _handleSave() async {
-    if (_formKey.currentState!.validate()) {
-      if (isLoading) return;
+Future<void> _handleSave() async {
+  final userBox = Hive.box('userData');
+  final selectedClassIds = userBox.get('selectedClassIds') ?? [];
 
-      setState(() => isLoading = true);
+  // Validation for class selection
+  if ((selectedClassIds.isEmpty || selectedClassIds.length == 0) &&
+      (widget.classId == null || widget.classId!.isEmpty)) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Please select at least one class.'),
+        backgroundColor: Colors.red,
+      ),
+    );
+    return;
+  }
 
-      try {
-        final userBox = Hive.box('userData');
-        final storedCourseId = userBox.get('selectedCourseId');
-        final storedLevelId = userBox.get('selectedLevelId');
-        final selectedClassIds = userBox.get('selectedClassIds') ?? [];
+  if (_formKey.currentState!.validate()) {
+    if (isLoading) return;
 
-        final courseId = widget.courseId ?? storedCourseId?.toString() ?? 'course_not_selected';
-        final levelId = widget.levelId ?? storedLevelId?.toString() ?? 'level_not_selected';
+    setState(() => isLoading = true);
 
-        // Retrieve class data from JSON to map IDs to names
-        final storedUserData = userBox.get('userData') ?? userBox.get('loginResponse');
-        final processedData = storedUserData is String
-            ? json.decode(storedUserData)
-            : storedUserData;
-        final response = processedData['response'] ?? processedData;
-        final data = response['data'] ?? response;
-        final classes = data['classes'] ?? [];
+    try {
+      final userBox = Hive.box('userData');
+      final storedCourseId = userBox.get('selectedCourseId');
+      final storedLevelId = userBox.get('selectedLevelId');
+      final selectedClassIds = userBox.get('selectedClassIds') ?? [];
 
-        // Create class_id list with explicit string conversion
-        final classIdList = selectedClassIds.map<Map<String, String>>((classId) {
-          final classIdStr = classId.toString();
-          final classData = classes.firstWhere(
-            (cls) => cls['id'].toString() == classIdStr,
-            orElse: () => {'id': classIdStr, 'class_name': 'Unknown'},
-          );
-          return {
-            'id': classIdStr,
-            'class_name': (classData['class_name']?.toString() ?? 'Unknown'),
-          };
-        }).toList();
+      final courseId = widget.courseId ?? storedCourseId?.toString() ?? 'course_not_selected';
+      final levelId = widget.levelId ?? storedLevelId?.toString() ?? 'level_not_selected';
 
-        // Use widget.classId as fallback if no classes selected
-        if (classIdList.isEmpty && widget.classId != null) {
-          final classIdStr = widget.classId!;
-          final classData = classes.firstWhere(
-            (cls) => cls['id'].toString() == classIdStr,
-            orElse: () => {'id': classIdStr, 'class_name': _selectedClass},
-          );
-          classIdList.add({
-            'id': classIdStr,
-            'class_name': (classData['class_name']?.toString() ?? _selectedClass),
-          });
-        }
+      // Retrieve class data from JSON to create ClassModel objects
+      final storedUserData = userBox.get('userData') ?? userBox.get('loginResponse');
+      final processedData = storedUserData is String
+          ? json.decode(storedUserData)
+          : storedUserData;
+      final response = processedData['response'] ?? processedData;
+      final data = response['data'] ?? response;
+      final classes = data['classes'] ?? [];
 
-        final syllabusData = {
-          'title': _titleController.text,
-          'description': _descriptionController.text,
-          'image': '',
-          'image_name': '',
-          'course_id': courseId,
-          'level_id': levelId,
-          'class_ids': classIdList.isNotEmpty ? classIdList : [{'id': '', 'class_name': 'Select classes'}],
-          'creator_role': creatorRole ?? 'unknown',
-          'term': academicTerm?.toString() ?? '1',
-          'year': academicYear ?? DateTime.now().year.toString(),
-          'creator_id': creatorId ?? 0,
-        };
+      // Create List<ClassModel> instead of List<Map>
+      final classModels = selectedClassIds.map<ClassModel>((classId) {
+        final classIdStr = classId.toString();
+        final classData = classes.firstWhere(
+          (cls) => cls['id'].toString() == classIdStr,
+          orElse: () => {'id': classIdStr, 'name': 'Unknown'},
+        );
+        return ClassModel(
+          id: classIdStr,
+          name: classData['name']?.toString() ?? 
+               classData['class_name']?.toString() ?? 
+               'Unknown',
+        );
+      }).toList();
+
+      // Use widget.classId as fallback if no classes selected
+      if (classModels.isEmpty && widget.classId != null) {
+        final classIdStr = widget.classId!;
+        final classData = classes.firstWhere(
+          (cls) => cls['id'].toString() == classIdStr,
+          orElse: () => {'id': classIdStr, 'name': _selectedClass},
+        );
+        classModels.add(ClassModel(
+          id: classIdStr,
+          name: classData['name']?.toString() ?? 
+               classData['class_name']?.toString() ?? 
+               _selectedClass,
+        ));
+      }
+
+      await syllabusProvider.addSyllabus(
+        title: _titleController.text,
+        description: _descriptionController.text,
+        authorName: creatorName ?? 'Unknown',
+        term: academicTerm?.toString() ?? '1', 
+        courseId: courseId,
+        courseName: widget.courseName ?? 'Unknown Course',
+        classes: classModels, // Now passing List<ClassModel>
+        levelId: levelId,
+         creatorId: creatorId.toString()
+      );
 
         print('Complete Syllabus Data:');
-        print(const JsonEncoder.withIndent('  ').convert(syllabusData));
+       
 
         await Future.delayed(const Duration(seconds: 1));
 
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text(
-                'Syllabus saved successfully',
-                style: TextStyle(color: Colors.white),
-              ),
-              backgroundColor: Colors.green,
-            ),
-          );
-          Navigator.of(context).pop(); // Navigate back without passing data
-        }
+  ScaffoldMessenger.of(context).showSnackBar(
+    const SnackBar(
+      content: Text(
+        'Syllabus saved successfully',
+        style: TextStyle(color: Colors.white),
+      ),
+      backgroundColor: Colors.green,
+    ),
+  );
+  Navigator.of(context).pop(academicTerm?.toString() ?? ''); // <-- Return the term
+}
       } catch (e) {
         print('Error saving syllabus: $e');
         if (mounted) {
@@ -222,7 +258,9 @@ class _CreateSyllabusScreenState extends State<CreateSyllabusScreen> {
           ),
         ],
       ),
-      body: Container(
+      body:isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : Container(
         height: MediaQuery.of(context).size.height,
         decoration: BoxDecoration(
           image: DecorationImage(
@@ -305,6 +343,8 @@ class _CreateSyllabusScreenState extends State<CreateSyllabusScreen> {
                               });
                             },
                             levelId: widget.levelId,
+                       
+                        // <-- Add this
                           ),
                         ),
                       );
@@ -331,11 +371,6 @@ class _CreateSyllabusScreenState extends State<CreateSyllabusScreen> {
                           ),
                         ),
                       );
-                      if (result != null) {
-                        setState(() {
-                          _selectedTeacher = result;
-                        });
-                      }
                     },
                   ),
                 ],

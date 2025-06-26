@@ -6,6 +6,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:linkschool/modules/admin/e_learning/View/question/assessment_screen.dart';
 import 'package:linkschool/modules/admin/e_learning/View/quiz/quiz_screen.dart';
+import 'package:linkschool/modules/admin/e_learning/empty_subject_screen.dart';
 import 'package:linkschool/modules/admin/e_learning/question_screen.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/buttons/custom_save_elevated_button.dart';
@@ -99,7 +100,9 @@ class _ViewQuestionScreenState extends State<ViewQuestionScreen> {
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
-          onPressed: () => Navigator.of(context).pop(),
+            onPressed: () {
+             Navigator.of(context).popUntil(ModalRoute.withName('/empty_subject'));
+            },
           icon: Image.asset(
             'assets/icons/arrow_back.png',
             color: AppColors.primaryLight,
@@ -215,9 +218,10 @@ class _ViewQuestionScreenState extends State<ViewQuestionScreen> {
         'start_date': currentQuestion.startDate.toIso8601String(),
         'end_date': currentQuestion.endDate.toIso8601String(),
         'topic': currentQuestion.topic,
-        'duration': currentQuestion.duration.inMinutes.toString(),
+        'duration': currentQuestion.duration.inSeconds.toString(),
         'marks': currentQuestion.marks,
       },
+    
       'questions': createdQuestions.map((q) {
         return {
           'type': q['type'],
@@ -493,7 +497,9 @@ class _ViewQuestionScreenState extends State<ViewQuestionScreen> {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                      builder: (context) => const AssessmentScreen()),
+                      builder: (context) => AssessmentScreen(
+                        timer: currentQuestion.duration
+                      )),
                 );
               },
             ),

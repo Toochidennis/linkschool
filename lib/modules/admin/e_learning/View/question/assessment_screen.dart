@@ -4,6 +4,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:linkschool/modules/admin/e_learning/View/question/timer_widget.dart';
 import 'package:linkschool/modules/admin/e_learning/View/quiz/preview_quiz_assessment_screen.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/buttons/custom_long_elevated_button.dart';
@@ -17,15 +18,17 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 
 class AssessmentScreen extends StatefulWidget {
-  const AssessmentScreen({super.key});
+  final Duration? timer;
+  const AssessmentScreen({super.key, this.timer});
+  
 
   @override
   _AssessmentScreenState createState() => _AssessmentScreenState();
 }
 
 class _AssessmentScreenState extends State<AssessmentScreen> {
-    Timer? _timer;
-  int _remainingTimeInSeconds = 3600; 
+
+
   bool _isTimerStopped = false;
   int _currentQuestionIndex = 0;
   late int _totalQuestions;
@@ -41,45 +44,25 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
   @override
   void initState() {
     super.initState();
+  
     _loadQuestions();
-     _startTimer();
+   
   }
 
-    @override
-  void dispose() {
-    _timer?.cancel(); // Cancel timer when screen is disposed
-    super.dispose();
-  }
-
-void _startTimer() {
-  _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
-    if (_remainingTimeInSeconds > 0 && !_isTimerStopped) {
-      setState(() {
-        _remainingTimeInSeconds--;
-      });
-    } else {
-      timer.cancel();
-      if (_remainingTimeInSeconds <= 0) {
-        // Time's up - auto submit
-        _submitQuiz();
-      }
-    }
-  });
+  String _formatTime(int seconds) {
+  int hours = seconds ~/ 3600;
+  int minutes = (seconds % 3600) ~/ 60;
+  int remainingSeconds = seconds % 60;
+  return '${hours.toString().padLeft(2, '0')}:${minutes.toString().padLeft(2, '0')}:${remainingSeconds.toString().padLeft(2, '0')}';
 }
 
-void _stopTimer() {
-  _timer?.cancel();
-  setState(() {
-    _isTimerStopped = true;
-  });
-}
+   
 
-
- String _formatTime(int seconds) {
-    int minutes = seconds ~/ 60;
-    int remainingSeconds = seconds % 60;
-    return '${minutes.toString().padLeft(2, '0')}:${remainingSeconds.toString().padLeft(2, '0')}';
-  }
+//  String _formatTime(int seconds) {
+//     int minutes = seconds ~/ 60;
+//     int remainingSeconds = seconds % 60;
+//     return '${minutes.toString().padLeft(2, '0')}:${remainingSeconds.toString().padLeft(2, '0')}';
+//   }
 
   Future<void> _loadQuestions() async {
     try {
@@ -206,37 +189,32 @@ void _stopTimer() {
       children: [
         Row(
           children: [
-            SvgPicture.asset(
-              'assets/icons/e_learning/stopwatch_icon.svg',
-              width: 24,
-              height: 24,
-              color: Colors.white,
-            ),
+            
             const SizedBox(width: 8),
-            Text(
-             _formatTime(_remainingTimeInSeconds),
-              style: const TextStyle(color: Colors.white, fontSize: 18),
-            ),
+           TimerWidget(
+          initialSeconds: widget.timer?.inSeconds ?? 3600, // Default to 1 hour
+          onTimeUp: _submitQuiz,
+        ),
           ],
         ),
-        TextButton(
-         onPressed: _isTimerStopped ? null : () {
-            _showStopTimerDialog();},
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            decoration: BoxDecoration(
-              color: _isTimerStopped ? Colors.grey : Colors.red,
-              borderRadius: BorderRadius.circular(4),
-            ),
-            child: const Text(
-              'Stop Timer',
-              style: TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ),
-        ),
+        // TextButton(
+        //  onPressed: _isTimerStopped ? null : () {
+        //     _showStopTimerDialog();},
+        //   child: Container(
+        //     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        //     decoration: BoxDecoration(
+        //       color: _isTimerStopped ? Colors.grey : Colors.red,
+        //       borderRadius: BorderRadius.circular(4),
+        //     ),
+        //     child: const Text(
+        //       'Stop Timer',
+        //       style: TextStyle(
+        //         color: Colors.white,
+        //         fontWeight: FontWeight.bold,
+        //       ),
+        //     ),
+        //   ),
+        // ),
       ],
     );
   }
@@ -252,9 +230,10 @@ void _stopTimer() {
             children: [
               CustomOutlineButton(
                 onPressed: (){
-                  _stopTimer();
+                   Navigator.of(context).pop();
+                
                   _submitQuiz();
-                  Navigator.of(context).pop();
+                 
                 } ,
                 text: 'End and Submit',
                 borderColor: AppColors.eLearningBtnColor3,
@@ -329,14 +308,13 @@ void _stopTimer() {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Topic: ${question.topic}',
-              style: const TextStyle(fontWeight: FontWeight.bold)),
+  
           const SizedBox(height: 8),
           if (question.imageUrl != null)
             Image.memory(
               base64Decode(question.imageUrl ?? ''),
               height: 100,
-              width: 100,
+              width:double.infinity,
               fit: BoxFit.cover,
               errorBuilder: (context, error, stackTrace) => Image.asset(
                 'assets/images/e-learning/placeholder.png',
@@ -641,3 +619,6 @@ class TypedAnswerQuestion extends QuizQuestion {
     this.correctAnswer,
   });
 }
+
+
+

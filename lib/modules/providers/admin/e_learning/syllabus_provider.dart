@@ -1,74 +1,77 @@
 import 'package:flutter/material.dart';
+import 'package:linkschool/modules/model/e-learning/syllabus_model.dart';
 import 'package:linkschool/modules/services/admin/e_learning/syllabus_service.dart';
-import 'package:linkschool/modules/model/admin/e_learning/syllabus_model.dart';
 
-class SyllabusProvider extends ChangeNotifier {
+class SyllabusProvider with ChangeNotifier {
   final SyllabusService _syllabusService;
+  List<SyllabusModel> _syllabusList = [];
+  bool _isLoading = false;
+  String _error = '';
 
   SyllabusProvider(this._syllabusService);
 
-  SyllabusService get syllabusService => _syllabusService; // <-- Add this line
+  List<SyllabusModel> get syllabusList => _syllabusList;
+  bool get isLoading => _isLoading;
+  String get error => _error;
 
-  String title = '';
-  String description = '';
-  String selectedClass = 'Select classes';
-  String selectedTeacher = 'Select teachers';
-  String backgroundImagePath = 'assets/images/result/bg_box3.svg';
+ Future<void> fetchSyllabus(String levelId, String term) async {
+    _isLoading = true;
+    _error = '';
+    notifyListeners();
 
-  Future<Map<String, dynamic>> saveSyllabus() async {
     try {
-      // Create a syllabus model from the current state
-      final syllabus = Syllabus(
-        title: title,
-        description: description,
-        image: backgroundImagePath,
-        imageName: backgroundImagePath.split('/').last,
-        courseId: 'course_1', // You'll need to get this from somewhere
-        levelId: 'level_1', // You'll need to get this from somewhere
-        classes: [
-          Class(id: 'class_1', className: selectedClass),
-        ],
-        creatorRole: 'teacher', // Or get this from user data
-        term: 'First Term', // You'll need to get this
-        year: '2023', // You'll need to get this
-      );
-      print('Syllabus to be saved: ${syllabus.toJson()}');
-
-      // Call the service to save
-      final response = await syllabusService.saveSyllabus(syllabus);
-      
-      print('Server response: $response');
-      
-      return response;
+      _syllabusList = await _syllabusService.getSyllabus(levelId, term);
+      _error = '';
     } catch (e) {
-      print('Error saving syllabus: $e');
-        print('Syllabus to be saved: $e');
+      _error = e.toString();
+      print("Fetch Error: $_error");
+      // Re-throw to let the UI handle it if needed
       rethrow;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
     }
   }
 
-  void setTitle(String value) {
-    title = value;
+  Future<void> addSyllabus({
+    required String title,
+    required String description,
+    required String authorName,
+    required String term,
+    required String courseId,
+    required String courseName,
+  required List<ClassModel> classes,
+    required String levelId,
+    required String creatorId,
+  }) async {
+    _isLoading = true;
+    _error = '';
     notifyListeners();
-  }
 
-  void setDescription(String value) {
-    description = value;
-    notifyListeners();
-  }
+    try {
+      final newSyllabus = SyllabusModel(
+        id: DateTime.now().millisecondsSinceEpoch,
+        title: title,
+        description: description,
+        authorName: authorName,
+        term: term,
+        levelId:levelId,
+        creatorId:creatorId,
+        classes:classes,
+        courseId: courseId,
+         courseName:courseName, uploadDate: '',
+      );
 
-  void setSelectedClass(String value) {
-    selectedClass = value;
-    notifyListeners();
-  }
-
-  void setSelectedTeacher(String value) {
-    selectedTeacher = value;
-    notifyListeners();
-  }
-
-  void setBackgroundImagePath(String path) {
-    backgroundImagePath = path;
-    notifyListeners();
+      await _syllabusService.addSyllabus(newSyllabus);
+      await fetchSyllabus(levelId,term); // Refresh the list from the server
+      print("Syllabus added and list refreshed");
+    } catch (e) {
+      _error = e.toString();
+      print("Adddddddddddddddddddddddddd Error: $_error");
+      rethrow;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
   }
 }
