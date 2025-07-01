@@ -15,6 +15,7 @@ class CommentCourseResultScreen extends StatefulWidget {
   final String year;
   final String termName;
   final int term;
+  final bool isCurrentTerm;
 
   const CommentCourseResultScreen({
     super.key,
@@ -22,6 +23,7 @@ class CommentCourseResultScreen extends StatefulWidget {
     required this.year,
     required this.termName,
     required this.term,
+    required this.isCurrentTerm,
   });
 
   @override
@@ -42,6 +44,7 @@ class _CommentCourseResultScreenState extends State<CommentCourseResultScreen> {
   bool _isCommentModalOpen = false;
   final TextEditingController _modalCommentController = TextEditingController();
   bool _isSubmittingComment = false;
+  bool _isEditing = false;
 
   @override
   void initState() {
@@ -179,6 +182,7 @@ class _CommentCourseResultScreenState extends State<CommentCourseResultScreen> {
           } else {
             studentResults[_currentStudentIndex]['comments']['teacher_comment'] = comment;
           }
+          _isEditing = false; // Reset editing state after submission
         });
         
         ScaffoldMessenger.of(context).showSnackBar(
@@ -227,7 +231,9 @@ class _CommentCourseResultScreenState extends State<CommentCourseResultScreen> {
       existingComment = comments;
     }
     
-    _modalCommentController.text = existingComment;
+    if (!_isEditing) {
+      _modalCommentController.text = '';
+    }
 
     return StatefulBuilder(
       builder: (context, setModalState) {
@@ -270,7 +276,13 @@ class _CommentCourseResultScreenState extends State<CommentCourseResultScreen> {
                     ),
                   ),
                   IconButton(
-                    onPressed: () => Navigator.pop(context),
+                    onPressed: () {
+                      setModalState(() {
+                        _isEditing = false;
+                        _modalCommentController.text = '';
+                      });
+                      Navigator.pop(context);
+                    },
                     icon: const Icon(Icons.close),
                   ),
                 ],
@@ -322,8 +334,8 @@ class _CommentCourseResultScreenState extends State<CommentCourseResultScreen> {
               
               const SizedBox(height: 20),
               
-              // Show Post a comment input field only if no comments exist
-              if (!_hasExistingComment()) ...[
+              // Show Post a comment input field only if no comments exist and it's the current term
+              if (!_hasExistingComment() && widget.isCurrentTerm) ...[
                 Text(
                   'Post a Comment',
                   style: const TextStyle(
@@ -375,8 +387,6 @@ class _CommentCourseResultScreenState extends State<CommentCourseResultScreen> {
                       setModalState(() {
                         _isSubmittingComment = false;
                       });
-                      
-                      // Do not pop the bottom sheet as it is persistent
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.eLearningBtnColor1,
@@ -407,7 +417,7 @@ class _CommentCourseResultScreenState extends State<CommentCourseResultScreen> {
                 const SizedBox(height: 20),
               ],
               
-              // Show existing comments and edit comment field if comments exist
+              // Show existing comments
               if (comments != null) ...[
                 if (comments is Map<String, dynamic>) ...[
                   if (comments['principal_comment'] != null && comments['principal_comment'].toString().isNotEmpty)
@@ -415,9 +425,12 @@ class _CommentCourseResultScreenState extends State<CommentCourseResultScreen> {
                       'Principal Comment',
                       comments['principal_comment'].toString(),
                       Colors.blue,
-                      canEdit: userRole == 'admin',
+                      canEdit: userRole == 'admin' && widget.isCurrentTerm,
                       onEdit: () {
-                        _modalCommentController.text = comments['principal_comment'].toString();
+                        setModalState(() {
+                          _isEditing = true;
+                          _modalCommentController.text = comments['principal_comment'].toString();
+                        });
                       },
                     ),
                   
@@ -428,9 +441,12 @@ class _CommentCourseResultScreenState extends State<CommentCourseResultScreen> {
                       'Teacher Comment',
                       comments['teacher_comment'].toString(),
                       Colors.green,
-                      canEdit: userRole == 'teacher',
+                      canEdit: userRole == 'teacher' && widget.isCurrentTerm,
                       onEdit: () {
-                        _modalCommentController.text = comments['teacher_comment'].toString();
+                        setModalState(() {
+                          _isEditing = true;
+                          _modalCommentController.text = comments['teacher_comment'].toString();
+                        });
                       },
                     ),
                 ] else if (comments is String && comments.isNotEmpty) ...[
@@ -443,7 +459,8 @@ class _CommentCourseResultScreenState extends State<CommentCourseResultScreen> {
                 ],
                 const SizedBox(height: 20),
                 
-                if (_hasExistingComment()) ...[
+                // Show edit comment field only if there is an existing comment and it's the current term
+                if (_hasExistingComment() && widget.isCurrentTerm) ...[
                   Text(
                     'Edit Your Comment',
                     style: const TextStyle(
@@ -472,7 +489,7 @@ class _CommentCourseResultScreenState extends State<CommentCourseResultScreen> {
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
-                      onPressed: _isSubmittingComment ? null : () async {
+                      onPressed: _isSubmittingComment || !_isEditing ? null : () async {
                         if (_modalCommentController.text.trim().isEmpty) {
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(
@@ -495,8 +512,6 @@ class _CommentCourseResultScreenState extends State<CommentCourseResultScreen> {
                         setModalState(() {
                           _isSubmittingComment = false;
                         });
-                        
-                        // Do not pop the bottom sheet as it is persistent
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.eLearningBtnColor1,
@@ -525,6 +540,18 @@ class _CommentCourseResultScreenState extends State<CommentCourseResultScreen> {
                     ),
                   ),
                 ],
+              ],
+              
+              // Show message if not current term
+              if (!widget.isCurrentTerm && _hasExistingComment()) ...[
+                Text(
+                  'Viewing comments only: This is not the current term.',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.grey[600],
+                    fontStyle: FontStyle.italic,
+                  ),
+                ),
               ],
             ],
           ),
@@ -609,6 +636,8 @@ class _CommentCourseResultScreenState extends State<CommentCourseResultScreen> {
   void _onSwiperIndexChanged(int index) {
     setState(() {
       _currentStudentIndex = index;
+      _isEditing = false; // Reset editing state when switching students
+      _modalCommentController.text = ''; // Clear comment field
       final student = studentResults[index];
       _commentController.text = student['comment'] ?? '';
     });
@@ -994,6 +1023,7 @@ class _CommentCourseResultScreenState extends State<CommentCourseResultScreen> {
 
 
 
+
 // import 'package:flutter/material.dart';
 // import 'package:flutter_swiper_view/flutter_swiper_view.dart';
 // import 'package:hive/hive.dart';
@@ -1088,14 +1118,21 @@ class _CommentCourseResultScreenState extends State<CommentCourseResultScreen> {
 //         queryParams: queryParams,
 //       );
 
+//       print('Raw API Response: ${response.rawData}');
+
 //       if (response.success && response.rawData != null) {
-//         final results = response.rawData!['response'] as List;
+//         final jsonResponse = response.rawData as Map<String, dynamic>;
+//         print('Extracted jsonResponse: $jsonResponse');
+//         final results = jsonResponse['response'] as List<dynamic>? ?? [];
+//         print('Extracted results: $results');
 //         final uniqueAssessments = <String>{};
 
 //         for (var student in results) {
-//           for (var subject in student['subjects'] as List) {
-//             for (var assessment in subject['assessments'] as List) {
-//               uniqueAssessments.add(assessment['assessment_name'] as String);
+//           final subjects = student['subjects'] as List<dynamic>? ?? [];
+//           for (var subject in subjects) {
+//             final assessments = subject['assessments'] as List<dynamic>? ?? [];
+//             for (var assessment in assessments) {
+//               uniqueAssessments.add(assessment['assessment_name'] as String? ?? '');
 //             }
 //           }
 //           // Ensure comments field is a Map or null
@@ -1107,7 +1144,11 @@ class _CommentCourseResultScreenState extends State<CommentCourseResultScreen> {
 //         setState(() {
 //           studentResults = List<Map<String, dynamic>>.from(results);
 //           assessmentNames = uniqueAssessments.toList();
-//           _commentController.text = studentResults.isNotEmpty ? studentResults[0]['comment'] ?? '' : '';
+//           _commentController.text = studentResults.isNotEmpty
+//               ? (studentResults[0]['comments']?['principal_comment'] ??
+//                   studentResults[0]['comments']?['teacher_comment'] ??
+//                   '')
+//               : '';
 //           isLoading = false;
 //         });
 //       } else {
@@ -1117,6 +1158,7 @@ class _CommentCourseResultScreenState extends State<CommentCourseResultScreen> {
 //         });
 //       }
 //     } catch (e) {
+//       print('Error in fetchStudentResults: $e');
 //       setState(() {
 //         error = 'Failed to load results: $e';
 //         isLoading = false;
@@ -1650,7 +1692,21 @@ class _CommentCourseResultScreenState extends State<CommentCourseResultScreen> {
 //                     child: isLoading
 //                         ? const Center(child: CircularProgressIndicator())
 //                         : error != null
-//                             ? Center(child: Text(error!, style: const TextStyle(color: Colors.red)))
+//                             ? Center(
+//                                 child: Column(
+//                                   mainAxisAlignment: MainAxisAlignment.center,
+//                                   children: [
+//                                     Text(
+//                                       error!,
+//                                       style: const TextStyle(color: Colors.red, fontSize: 16),
+//                                     ),
+//                                     ElevatedButton(
+//                                       onPressed: fetchStudentResults,
+//                                       child: const Text('Retry'),
+//                                     ),
+//                                   ],
+//                                 ),
+//                               )
 //                             : Column(
 //                                 children: [
 //                                   // Student and term card
@@ -1684,7 +1740,7 @@ class _CommentCourseResultScreenState extends State<CommentCourseResultScreen> {
 //             // Persistent bottom sheet drawer
 //             if (studentResults.isNotEmpty)
 //               DraggableScrollableSheet(
-//                 initialChildSize: _hasExistingComment() ? 0.2 : 0.4, // Smaller if comments exist, larger to show input
+//                 initialChildSize: _hasExistingComment() ? 0.2 : 0.4,
 //                 minChildSize: _hasExistingComment() ? 0.2 : 0.4,
 //                 maxChildSize: 0.8,
 //                 builder: (context, scrollController) {
@@ -1793,7 +1849,7 @@ class _CommentCourseResultScreenState extends State<CommentCourseResultScreen> {
 
 //   // Build subjects table with layout matching StaffSkillsBehaviourScreen
 //   Widget _buildSubjectsTable(Map<String, dynamic> student) {
-//     final subjects = student['subjects'] as List;
+//     final subjects = student['subjects'] as List? ?? [];
 //     if (subjects.isEmpty) {
 //       return const Padding(
 //         padding: EdgeInsets.all(16.0),
@@ -1840,7 +1896,6 @@ class _CommentCourseResultScreenState extends State<CommentCourseResultScreen> {
 //     );
 //   }
 
-//   // Build fixed subject column
 //   // Build fixed subject column
 //   Widget _buildSubjectColumn(List subjects) {
 //     return Container(
@@ -1924,7 +1979,7 @@ class _CommentCourseResultScreenState extends State<CommentCourseResultScreen> {
 //             final subject = entry.value;
 //             String value = '-';
 //             if (isAssessment) {
-//               final assessmentData = (subject['assessments'] as List).firstWhere(
+//               final assessmentData = (subject['assessments'] as List? ?? []).firstWhere(
 //                 (a) => a['assessment_name'] == title,
 //                 orElse: () => {'score': ''},
 //               );

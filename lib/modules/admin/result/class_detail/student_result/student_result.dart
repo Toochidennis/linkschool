@@ -160,7 +160,7 @@ class StudentResultScreen extends StatelessWidget {
                           profileImage,
                           const SizedBox(height: 10),
                           Text(
-                            student.fullName,
+                            student.name,
                             style: AppTextStyles.normal700(
                               fontSize: 20,
                               color: AppColors.primaryLight,
@@ -172,7 +172,7 @@ class StudentResultScreen extends StatelessWidget {
                     const SizedBox(height: 20),
                     _buildInfoRow('Student ID:', studentId.toString()),
                     _buildInfoRow('Class:', className ?? 'Unknown Class'),
-                    _buildInfoRow('Gender:', 'Not specified'),
+                    // _buildInfoRow('Gender:', 'Not specified'),
                     _buildInfoRow(
                       'Student Average:',
                       chartData.isEmpty

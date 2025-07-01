@@ -17,9 +17,9 @@ class RegistrationScreen extends StatefulWidget {
 }
 
 class _RegistrationScreenState extends State<RegistrationScreen> {
-  String _selectedTerm = 'First term';
   final ApiService _apiService = locator<ApiService>();
   final AuthProvider _authProvider = locator<AuthProvider>();
+  String _selectedTerm = 'First term';
 
   @override
   void initState() {
@@ -27,6 +27,28 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
     // Ensure the auth token is set
     if (_authProvider.token != null) {
       _apiService.setAuthToken(_authProvider.token!);
+    }
+    
+    // Set initial term based on server data
+    _setInitialTerm();
+  }
+
+  void _setInitialTerm() {
+    final settings = _authProvider.getSettings();
+    final termNumber = settings['term'] ?? 1;
+    
+    switch (termNumber) {
+      case 1:
+        _selectedTerm = 'First term';
+        break;
+      case 2:
+        _selectedTerm = 'Second term';
+        break;
+      case 3:
+        _selectedTerm = 'Third term';
+        break;
+      default:
+        _selectedTerm = 'First term';
     }
   }
 
@@ -79,19 +101,15 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
 }
 
 
-
 // import 'package:flutter/material.dart';
 // import 'package:linkschool/modules/common/app_colors.dart';
 // import 'package:linkschool/modules/common/text_styles.dart';
 // import 'package:linkschool/modules/common/widgets/portal/result_register/button_section.dart';
 // import 'package:linkschool/modules/common/widgets/portal/result_register/history_section.dart';
 // import 'package:linkschool/modules/common/widgets/portal/result_register/top_container.dart';
-// import 'package:linkschool/modules/model/admin/course_registration_history.dart';
 // import 'package:linkschool/modules/services/api/api_service.dart';
-// import 'package:linkschool/modules/auth/service/auth_service.dart';
-// import 'package:linkschool/modules/services/api/service_locator.dart';
 // import 'package:linkschool/modules/auth/provider/auth_provider.dart';
-// // import 'course_registration_history.dart';
+// import 'package:linkschool/modules/services/api/service_locator.dart';
 
 // class RegistrationScreen extends StatefulWidget {
 //   final String classId;
@@ -105,20 +123,6 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
 //   String _selectedTerm = 'First term';
 //   final ApiService _apiService = locator<ApiService>();
 //   final AuthProvider _authProvider = locator<AuthProvider>();
-
-//   Future<CourseRegistrationHistory> _fetchRegistrationHistory() async {
-//     final response = await _apiService.get<CourseRegistrationHistory>(
-//       endpoint: 'portal/classes/${widget.classId}/course-registrations/history',
-//       queryParams: {'_db': 'aalmgzmy_linkskoo_practice'},
-//       fromJson: (json) => CourseRegistrationHistory.fromJson(json['data']),
-//     );
-
-//     if (response.success && response.data != null) {
-//       return response.data!;
-//     } else {
-//       throw Exception(response.message);
-//     }
-//   }
 
 //   @override
 //   void initState() {
@@ -153,36 +157,25 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
 //         backgroundColor: AppColors.backgroundLight,
 //         elevation: 0.0,
 //       ),
-//       body: FutureBuilder<CourseRegistrationHistory>(
-//         future: _fetchRegistrationHistory(),
-//         builder: (context, snapshot) {
-//           if (snapshot.connectionState == ConnectionState.waiting) {
-//             return const Center(child: CircularProgressIndicator());
-//           } else if (snapshot.hasError) {
-//             return Center(child: Text('Error: ${snapshot.error}'));
-//           } else if (snapshot.hasData) {
-//             return SingleChildScrollView(
-//               child: Column(
-//                 children: [
-//                   TopContainer(
-//                     selectedTerm: _selectedTerm,
-//                     onTermChanged: (newValue) {
-//                       setState(() {
-//                         _selectedTerm = newValue!;
-//                       });
-//                     },
-//                     totalStudents: snapshot.data!.totalStudents,
-//                   ),
-//                   ButtonSection(classId: widget.classId),
-//                   const SizedBox(height: 25),
-//                   HistorySection(classId: widget.classId),
-//                 ],
-//               ),
-//             );
-//           } else {
-//             return const Center(child: Text('No data available'));
-//           }
-//         },
+//       body: SingleChildScrollView(
+//         child: Column(
+//           children: [
+//             TopContainer(
+//               selectedTerm: _selectedTerm,
+//               onTermChanged: (newValue) {
+//                 setState(() {
+//                   _selectedTerm = newValue!;
+//                 });
+//               },
+//               classId: widget.classId,
+//               apiService: _apiService,
+//               authProvider: _authProvider,
+//             ),
+//             ButtonSection(classId: widget.classId),
+//             const SizedBox(height: 25),
+//             HistorySection(classId: widget.classId),
+//           ],
+//         ),
 //       ),
 //     );
 //   }

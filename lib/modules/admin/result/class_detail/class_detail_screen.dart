@@ -236,6 +236,7 @@ class _ClassDetailScreenState extends State<ClassDetailScreen> {
   List<Widget> _buildTermRows(List<Map<String, dynamic>> terms) {
     final groupedTerms = <String, List<Map<String, dynamic>>>{};
     
+    // Group terms by year
     for (final term in terms) {
       final year = term['year'].toString();
       if (!groupedTerms.containsKey(year)) {
@@ -243,6 +244,13 @@ class _ClassDetailScreenState extends State<ClassDetailScreen> {
       }
       groupedTerms[year]!.add(term);
     }
+
+    // Determine the current year and term
+    final currentYear = groupedTerms.keys.map(int.parse).reduce((a, b) => a > b ? a : b).toString();
+    final currentTerms = groupedTerms[currentYear] ?? [];
+    final currentTermId = currentTerms.isNotEmpty
+        ? currentTerms.reduce((a, b) => (a['termId'] > b['termId']) ? a : b)['termId']
+        : 0;
 
     return groupedTerms.entries.map((entry) {
       final year = entry.key;
@@ -266,6 +274,8 @@ class _ClassDetailScreenState extends State<ClassDetailScreen> {
           ...yearTerms.map((term) {
             String formattedTerm = term['termName'] ?? 'Unknown Term';
             double percent = (term['averageScore'] ?? 0.0) / 100.0; // Normalize to 0.0-1.0
+            // Check if this is the current term
+            bool isCurrentTerm = year == currentYear && term['termId'] == currentTermId;
             return TermRow(
               term: formattedTerm,
               percent: percent.clamp(0.0, 1.0), // Ensure percent is between 0 and 1
@@ -277,6 +287,7 @@ class _ClassDetailScreenState extends State<ClassDetailScreen> {
                 year: term['year'],
                 termId: term['termId'],
                 termName: formattedTerm,
+                isCurrentTerm: isCurrentTerm,
               ),
             );
           }).toList(),
@@ -286,7 +297,6 @@ class _ClassDetailScreenState extends State<ClassDetailScreen> {
     }).toList();
   }
 }
-
 
 
 
@@ -558,14 +568,15 @@ class _ClassDetailScreenState extends State<ClassDetailScreen> {
 //           ),
 //           ...yearTerms.map((term) {
 //             String formattedTerm = term['termName'] ?? 'Unknown Term';
+//             double percent = (term['averageScore'] ?? 0.0) / 100.0; // Normalize to 0.0-1.0
 //             return TermRow(
 //               term: formattedTerm,
-//               percent: 0.75,
+//               percent: percent.clamp(0.0, 1.0), // Ensure percent is between 0 and 1
 //               indicatorColor: AppColors.primaryLight,
 //               onTap: () => showTermOverlay(
 //                 context,
 //                 classId: widget.classId,
-//                 levelId: widget.levelId, // Pass levelId
+//                 levelId: widget.levelId,
 //                 year: term['year'],
 //                 termId: term['termId'],
 //                 termName: formattedTerm,
@@ -578,60 +589,3 @@ class _ClassDetailScreenState extends State<ClassDetailScreen> {
 //     }).toList();
 //   }
 // }
-
-
-
-
-
-
-  // List<Widget> _buildTermRows(List<Map<String, dynamic>> terms) {
-  //   final groupedTerms = <String, List<Map<String>>dynamic>{};
-    
-  //   for (final term in terms) {
-  //     final year = term['year'].toString();
-  //     if (!groupedTerms.containsKey(year)) {
-  //       groupedTerms[year] = [];
-  //     }
-  //     groupedTerms[year]!.toList(term);
-  //   }
-
-  //   return List.generate(groupedTerms.entries.length, (entry) {
-  //     final year = entry.key;
-  //     final yearTerms = entry.value;
-  //     final nextYear = (int.parse(year) + 1).toString();
-  //     final header = '$year/$nextYear Session';
-
-  //     return Column(
-  //       crossAxisAlignment: CrossAxisAlignment.start,
-  //       children: [
-  //         Padding(
-  //           padding: const EdgeInsets.symmetric(vertical: 8.0),
-  //           child: Text(
-  //             header,
-  //             style: AppTextStyles.normal700(
-  //               fontSize: 18,
-  //               color: AppColors.primaryLight,
-  //             ),
-  //           ),
-  //         ),
-  //         ...yearTerms.map((term) {
-  //           String formattedTerm = term['termName'] ?? 'Unknown Term';
-  //           return TermRow(
-  //             term: formattedTerm,
-  //             percent: 0.75,
-  //             indicatorColor: AppColors.primaryLight,
-  //             onTap: () => showTermOverlay(
-  //               context,
-  //               classId: widget.classId,
-  //               levelId: widget.levelId,
-  //               year: term['year'],
-  //               termId: term['termId'],
-  //               termName: formattedTerm,
-  //             ),
-  //           );
-  //         }).toList(),
-  //         const SizedBox(height: 10),
-  //       ],
-  //     );
-  //   }).toList();
-  // }
