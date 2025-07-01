@@ -3,21 +3,33 @@ import 'package:linkschool/modules/auth/provider/auth_provider.dart';
 import 'package:linkschool/modules/model/admin/behaviour_model.dart';
 import 'package:linkschool/modules/services/admin/behaviour_service.dart';
 import 'package:linkschool/modules/services/api/api_service.dart';
-import 'package:linkschool/modules/common/custom_toaster.dart';
 import 'package:linkschool/modules/services/api/service_locator.dart';
-// import 'package:linkschool/modules/providers/auth/auth_provider.dart';
+import 'package:linkschool/modules/common/custom_toaster.dart';
 
 class SkillsProvider with ChangeNotifier {
   final SkillService _skillService;
   List<Skills> _skills = [];
   bool _isLoading = false;
   String _error = '';
+  String _selectedLevel = '0'; // Default to '0' for all levels
 
   SkillsProvider(this._skillService);
 
-  List<Skills> get skills => _skills;
+  List<Skills> get skills {
+    // Filter skills based on selected level
+    if (_selectedLevel == '0') {
+      return _skills; // Return all skills for 'General (All level)'
+    }
+    return _skills.where((skill) => skill.level == _selectedLevel).toList();
+  }
   bool get isLoading => _isLoading;
   String get error => _error;
+  String get selectedLevel => _selectedLevel;
+
+  void setSelectedLevel(String level) {
+    _selectedLevel = level;
+    notifyListeners();
+  }
 
   Future<void> fetchSkills() async {
     _isLoading = true;
@@ -25,7 +37,6 @@ class SkillsProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      // Ensure token is set before making API call
       final authProvider = locator<AuthProvider>();
       if (authProvider.token != null) {
         locator<ApiService>().setAuthToken(authProvider.token!);
@@ -148,11 +159,14 @@ class SkillsProvider with ChangeNotifier {
 }
 
 
-
 // import 'package:flutter/material.dart';
+// import 'package:linkschool/modules/auth/provider/auth_provider.dart';
 // import 'package:linkschool/modules/model/admin/behaviour_model.dart';
 // import 'package:linkschool/modules/services/admin/behaviour_service.dart';
+// import 'package:linkschool/modules/services/api/api_service.dart';
 // import 'package:linkschool/modules/common/custom_toaster.dart';
+// import 'package:linkschool/modules/services/api/service_locator.dart';
+// // import 'package:linkschool/modules/providers/auth/auth_provider.dart';
 
 // class SkillsProvider with ChangeNotifier {
 //   final SkillService _skillService;
@@ -172,6 +186,14 @@ class SkillsProvider with ChangeNotifier {
 //     notifyListeners();
 
 //     try {
+//       // Ensure token is set before making API call
+//       final authProvider = locator<AuthProvider>();
+//       if (authProvider.token != null) {
+//         locator<ApiService>().setAuthToken(authProvider.token!);
+//       } else {
+//         throw Exception('Authentication token is missing');
+//       }
+      
 //       _skills = await _skillService.getSkills();
 //       _error = '';
 //     } catch (e) {
@@ -188,6 +210,13 @@ class SkillsProvider with ChangeNotifier {
 //     notifyListeners();
 
 //     try {
+//       final authProvider = locator<AuthProvider>();
+//       if (authProvider.token != null) {
+//         locator<ApiService>().setAuthToken(authProvider.token!);
+//       } else {
+//         throw Exception('Authentication token is missing');
+//       }
+
 //       final response = await _skillService.addSkill(
 //         skillName: skillName,
 //         type: type,
@@ -219,6 +248,13 @@ class SkillsProvider with ChangeNotifier {
 //     notifyListeners();
 
 //     try {
+//       final authProvider = locator<AuthProvider>();
+//       if (authProvider.token != null) {
+//         locator<ApiService>().setAuthToken(authProvider.token!);
+//       } else {
+//         throw Exception('Authentication token is missing');
+//       }
+
 //       final response = await _skillService.updateSkill(
 //         id: id,
 //         skillName: skillName,
@@ -251,6 +287,13 @@ class SkillsProvider with ChangeNotifier {
 //     notifyListeners();
 
 //     try {
+//       final authProvider = locator<AuthProvider>();
+//       if (authProvider.token != null) {
+//         locator<ApiService>().setAuthToken(authProvider.token!);
+//       } else {
+//         throw Exception('Authentication token is missing');
+//       }
+
 //       await _skillService.deleteSkill(id);
 //       await fetchSkills();
 //     } catch (e) {

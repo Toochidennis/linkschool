@@ -9,7 +9,6 @@ import '../../common/text_styles.dart';
 import 'package:linkschool/modules/providers/admin/behaviour_provider.dart';
 import 'package:linkschool/modules/model/admin/behaviour_model.dart';
 import 'package:linkschool/modules/common/custom_toaster.dart';
-// import 'package:linkschool/modules/providers/auth/auth_provider.dart';
 
 class BehaviourSettingScreen extends StatefulWidget {
   const BehaviourSettingScreen({super.key});
@@ -25,7 +24,6 @@ class _BehaviourSettingScreenState extends State<BehaviourSettingScreen> {
   @override
   void initState() {
     super.initState();
-    // Fetch skills after ensuring the token is set
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
       if (authProvider.isLoggedIn && authProvider.token != null) {
@@ -99,7 +97,6 @@ class _BehaviourSettingScreenState extends State<BehaviourSettingScreen> {
                     if (provider.isLoading) {
                       return const Center(child: CircularProgressIndicator());
                     }
-                    // Sort skills in descending order by id
                     final sortedSkills = List<Skills>.from(provider.skills)
                       ..sort(
                           (a, b) => int.parse(b.id).compareTo(int.parse(a.id)));
@@ -195,6 +192,8 @@ class _BehaviourSettingScreenState extends State<BehaviourSettingScreen> {
                               selectedLevelDisplay = 'General (All level)';
                               selectedLevelValue = '0';
                             });
+                            Provider.of<SkillsProvider>(context, listen: false)
+                                .setSelectedLevel('0');
                             Navigator.pop(context);
                           },
                         ),
@@ -209,6 +208,8 @@ class _BehaviourSettingScreenState extends State<BehaviourSettingScreen> {
                                   selectedLevelDisplay = level['level_name'];
                                   selectedLevelValue = level['id'].toString();
                                 });
+                                Provider.of<SkillsProvider>(context, listen: false)
+                                    .setSelectedLevel(level['id'].toString());
                                 Navigator.pop(context);
                               },
                             ),
@@ -360,99 +361,100 @@ class _SkillItemState extends State<SkillItem> {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: Container(
-        padding: const EdgeInsets.only(bottom: 10),
-        decoration: BoxDecoration(
-          border: Border(
-            bottom: BorderSide(
-              color: Colors.grey[300]!,
-              width: 1,
+      child:
+        Container(
+          padding: const EdgeInsets.only(bottom: 10),
+          decoration: BoxDecoration(
+            border: Border(
+              bottom: BorderSide(
+                color: Colors.grey[300]!,
+                width: 1,
+              ),
             ),
           ),
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 32,
-              height: 32,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: AppColors.bgGrayLight2,
-                border: Border.all(color: AppColors.bgBorder, width: 1),
-              ),
-              child: Center(
-                child: SvgPicture.asset(
-                  'assets/icons/result/skill.svg',
-                  color: AppColors.bgBorder,
-                  width: 20,
-                  height: 20,
+          child: Row(
+            children: [
+              Container(
+                width: 32,
+                height: 32,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: AppColors.bgGrayLight2,
+                  border: Border.all(color: AppColors.bgBorder, width: 1),
+                ),
+                child: Center(
+                  child: SvgPicture.asset(
+                    'assets/icons/result/skill.svg',
+                    color: AppColors.bgBorder,
+                    width: 20,
+                    height: 20,
+                  ),
                 ),
               ),
-            ),
-            const SizedBox(width: 18),
-            Expanded(
-                child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _isEditing
-                    ? TextField(
-                        controller: _controller,
-                        onSubmitted: (value) {
-                          widget.onEdit(value);
-                          setState(() => _isEditing = false);
-                        },
-                      )
-                    : Text(
-                        widget.skill,
-                        style: AppTextStyles.normal400(
-                          fontSize: 16,
-                          color: AppColors.primaryDark,
+              const SizedBox(width: 18),
+              Expanded(
+                  child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _isEditing
+                      ? TextField(
+                          controller: _controller,
+                          onSubmitted: (value) {
+                            widget.onEdit(value);
+                            setState(() => _isEditing = false);
+                          },
+                        )
+                      : Text(
+                          widget.skill,
+                          style: AppTextStyles.normal400(
+                            fontSize: 16,
+                            color: AppColors.primaryDark,
+                          ),
                         ),
-                      ),
-                const SizedBox(height: 4),
-                Text(
-                  widget.type,
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.grey[600],
+                  const SizedBox(height: 4),
+                  Text(
+                    widget.type,
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.grey[600],
+                    ),
                   ),
-                ),
-                Text(
-                  widget.level,
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.grey[600],
+                  Text(
+                    widget.level,
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.grey[600],
+                    ),
                   ),
+                ],
+              )),
+              GestureDetector(
+                onTap: () {
+                  if (_isEditing) {
+                    widget.onEdit(_controller.text);
+                  }
+                  setState(() => _isEditing = !_isEditing);
+                },
+                child: SvgPicture.asset(
+                  _isEditing
+                      ? 'assets/icons/result/check.svg'
+                      : 'assets/icons/result/edit.svg',
+                  width: 24,
+                  height: 24,
                 ),
-              ],
-            )),
-            GestureDetector(
-              onTap: () {
-                if (_isEditing) {
-                  widget.onEdit(_controller.text);
-                }
-                setState(() => _isEditing = !_isEditing);
-              },
-              child: SvgPicture.asset(
-                _isEditing
-                    ? 'assets/icons/result/check.svg'
-                    : 'assets/icons/result/edit.svg',
-                width: 24,
-                height: 24,
               ),
-            ),
-            const SizedBox(width: 8),
-            GestureDetector(
-              onTap: widget.onDelete,
-              child: SvgPicture.asset(
-                'assets/icons/result/delete.svg',
-                width: 24,
-                height: 24,
+              const SizedBox(width: 8),
+              GestureDetector(
+                onTap: widget.onDelete,
+                child: SvgPicture.asset(
+                  'assets/icons/result/delete.svg',
+                  width: 24,
+                  height: 24,
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
-      ),
     );
   }
 }
@@ -603,9 +605,9 @@ class _AddSkillBottomSheetState extends State<AddSkillBottomSheet> {
 
 
 
-
 // import 'package:flutter/material.dart';
 // import 'package:flutter_svg/flutter_svg.dart';
+// import 'package:linkschool/modules/auth/provider/auth_provider.dart';
 // import 'package:linkschool/modules/common/app_colors.dart';
 // import 'package:animated_custom_dropdown/custom_dropdown.dart';
 // import 'package:provider/provider.dart';
@@ -614,6 +616,7 @@ class _AddSkillBottomSheetState extends State<AddSkillBottomSheet> {
 // import 'package:linkschool/modules/providers/admin/behaviour_provider.dart';
 // import 'package:linkschool/modules/model/admin/behaviour_model.dart';
 // import 'package:linkschool/modules/common/custom_toaster.dart';
+// // import 'package:linkschool/modules/providers/auth/auth_provider.dart';
 
 // class BehaviourSettingScreen extends StatefulWidget {
 //   const BehaviourSettingScreen({super.key});
@@ -629,7 +632,16 @@ class _AddSkillBottomSheetState extends State<AddSkillBottomSheet> {
 //   @override
 //   void initState() {
 //     super.initState();
-//     Provider.of<SkillsProvider>(context, listen: false).fetchSkills();
+//     // Fetch skills after ensuring the token is set
+//     WidgetsBinding.instance.addPostFrameCallback((_) {
+//       final authProvider = Provider.of<AuthProvider>(context, listen: false);
+//       if (authProvider.isLoggedIn && authProvider.token != null) {
+//         Provider.of<SkillsProvider>(context, listen: false).fetchSkills();
+//       } else {
+//         CustomToaster.toastError(
+//             context, 'Error', 'Please log in to view skills');
+//       }
+//     });
 //   }
 
 //   @override
@@ -664,7 +676,8 @@ class _AddSkillBottomSheetState extends State<AddSkillBottomSheet> {
 //               GestureDetector(
 //                 onTap: () => _showLevelSelectionBottomSheet(context),
 //                 child: Container(
-//                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+//                   padding:
+//                       const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
 //                   decoration: BoxDecoration(
 //                     color: AppColors.backgroundLight,
 //                     borderRadius: BorderRadius.circular(4.0),
@@ -680,7 +693,8 @@ class _AddSkillBottomSheetState extends State<AddSkillBottomSheet> {
 //                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
 //                     children: [
 //                       Text(selectedLevelDisplay),
-//                       const Icon(Icons.arrow_drop_down, color: AppColors.primaryLight),
+//                       const Icon(Icons.arrow_drop_down,
+//                           color: AppColors.primaryLight),
 //                     ],
 //                   ),
 //                 ),
@@ -692,36 +706,38 @@ class _AddSkillBottomSheetState extends State<AddSkillBottomSheet> {
 //                     if (provider.isLoading) {
 //                       return const Center(child: CircularProgressIndicator());
 //                     }
-//                     if (provider.error.isNotEmpty) {
-//                       WidgetsBinding.instance.addPostFrameCallback((_) {
-//                         CustomToaster.toastError(context, 'Error', provider.error);
-//                       });
-//                     }
-//                     return SkillsList(
-//                       skills: provider.skills,
-//                       onEdit: (index, newSkill) {
-//                         final skill = provider.skills[index];
-//                         provider.editSkill(
-//                           skill.id,
-//                           newSkill,
-//                           skill.type ?? '0', // Provide default value for nullable type
-//                           skill.level ?? '0',
-//                         );
-//                       },
-//                       onDelete: (index) async {
-//                         final skill = provider.skills[index];
-//                         await provider.deleteSkill(skill.id);
-//                         if (provider.error.isEmpty) {
-//                           WidgetsBinding.instance.addPostFrameCallback((_) {
-//                             CustomToaster.toastSuccess(
-//                               context,
-//                               'Success',
-//                               'Skill deleted successfully',
-//                             );
-//                           });
-//                         }
-//                       },
-//                     );
+//                     // Sort skills in descending order by id
+//                     final sortedSkills = List<Skills>.from(provider.skills)
+//                       ..sort(
+//                           (a, b) => int.parse(b.id).compareTo(int.parse(a.id)));
+//                     return sortedSkills.isEmpty
+//                         ? const Center(
+//                             child: Text(
+//                               'No skills or behaviors available',
+//                               style: TextStyle(
+//                                 fontSize: 16,
+//                                 color: Colors.grey,
+//                               ),
+//                             ),
+//                           )
+//                         : SkillsList(
+//                             skills: sortedSkills,
+//                             onEdit: (index, newSkill) {
+//                               final skill = provider.skills[index];
+//                               provider.editSkill(
+//                                 skill.id,
+//                                 newSkill,
+//                                 skill.type ?? '0',
+//                                 skill.level ?? '0',
+//                                 context: context,
+//                               );
+//                             },
+//                             onDelete: (index) async {
+//                               final skill = provider.skills[index];
+//                               await provider.deleteSkill(skill.id,
+//                                   context: context);
+//                             },
+//                           );
 //                   },
 //                 ),
 //               ),
@@ -744,56 +760,114 @@ class _AddSkillBottomSheetState extends State<AddSkillBottomSheet> {
 //   void _showLevelSelectionBottomSheet(BuildContext context) {
 //     final userBox = Hive.box('userData');
 //     final levels = List<Map<String, dynamic>>.from(userBox.get('levels') ?? []);
-    
+
 //     showModalBottomSheet(
 //       context: context,
+//       isScrollControlled: true,
 //       shape: const RoundedRectangleBorder(
-//         borderRadius: BorderRadius.vertical(top: Radius.circular(10)),
+//         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
 //       ),
 //       builder: (BuildContext context) {
-//         return Column(
-//           mainAxisSize: MainAxisSize.min,
-//           children: [
-//             Padding(
-//               padding: const EdgeInsets.all(16.0),
+//         return Padding(
+//           padding: EdgeInsets.only(
+//             bottom: MediaQuery.of(context).viewInsets.bottom,
+//           ),
+//           child: ConstrainedBox(
+//             constraints: BoxConstraints(
+//               maxHeight: MediaQuery.of(context).size.height * 0.6,
+//             ),
+//             child: Column(
+//               mainAxisSize: MainAxisSize.min,
+//               children: [
+//                 const SizedBox(height: 24),
+//                 Text(
+//                   'Select Level',
+//                   style: AppTextStyles.normal600(
+//                     fontSize: 24,
+//                     color: Colors.black,
+//                   ),
+//                 ),
+//                 const SizedBox(height: 24),
+//                 Flexible(
+//                   child: ListView(
+//                     shrinkWrap: true,
+//                     children: [
+//                       Padding(
+//                         padding: const EdgeInsets.symmetric(
+//                             horizontal: 16, vertical: 8),
+//                         child: _buildSelectionButton(
+//                           'General (All level)',
+//                           () {
+//                             setState(() {
+//                               selectedLevelDisplay = 'General (All level)';
+//                               selectedLevelValue = '0';
+//                             });
+//                             Navigator.pop(context);
+//                           },
+//                         ),
+//                       ),
+//                       ...levels.map((level) => Padding(
+//                             padding: const EdgeInsets.symmetric(
+//                                 horizontal: 16, vertical: 8),
+//                             child: _buildSelectionButton(
+//                               level['level_name'],
+//                               () {
+//                                 setState(() {
+//                                   selectedLevelDisplay = level['level_name'];
+//                                   selectedLevelValue = level['id'].toString();
+//                                 });
+//                                 Navigator.pop(context);
+//                               },
+//                             ),
+//                           )),
+//                     ],
+//                   ),
+//                 ),
+//               ],
+//             ),
+//           ),
+//         );
+//       },
+//     );
+//   }
+
+//   Widget _buildSelectionButton(String text, VoidCallback onPressed) {
+//     return Container(
+//       decoration: BoxDecoration(
+//         boxShadow: [
+//           BoxShadow(
+//             color: Colors.grey.withOpacity(0.3),
+//             spreadRadius: 1,
+//             blurRadius: 3,
+//             offset: const Offset(0, 2),
+//           ),
+//         ],
+//       ),
+//       child: Material(
+//         color: AppColors.dialogBtnColor,
+//         child: InkWell(
+//           onTap: onPressed,
+//           borderRadius: BorderRadius.circular(4),
+//           child: Ink(
+//             decoration: BoxDecoration(
+//               color: Colors.white,
+//               borderRadius: BorderRadius.circular(4),
+//             ),
+//             child: Container(
+//               width: double.infinity,
+//               height: 50,
+//               alignment: Alignment.center,
 //               child: Text(
-//                 'Select Level',
+//                 text,
 //                 style: AppTextStyles.normal600(
-//                   fontSize: 20,
-//                   color: AppColors.primaryLight,
+//                   fontSize: 16,
+//                   color: AppColors.backgroundDark,
 //                 ),
 //               ),
 //             ),
-//             Flexible(
-//               child: ListView(
-//                 shrinkWrap: true,
-//                 children: [
-//                   ListTile(
-//                     title: const Center(child: Text('General (All level)')),
-//                     onTap: () {
-//                       setState(() {
-//                         selectedLevelDisplay = 'General (All level)';
-//                         selectedLevelValue = '0';
-//                       });
-//                       Navigator.pop(context);
-//                     },
-//                   ),
-//                   ...levels.map((level) => ListTile(
-//                         title: Center(child: Text(level['level_name'])),
-//                         onTap: () {
-//                           setState(() {
-//                             selectedLevelDisplay = level['level_name'];
-//                             selectedLevelValue = level['id'].toString();
-//                           });
-//                           Navigator.pop(context);
-//                         },
-//                       )),
-//                 ],
-//               ),
-//             ),
-//           ],
-//         );
-//       },
+//           ),
+//         ),
+//       ),
 //     );
 //   }
 
@@ -804,8 +878,12 @@ class _AddSkillBottomSheetState extends State<AddSkillBottomSheet> {
 //       builder: (BuildContext context) {
 //         return AddSkillBottomSheet(
 //           onAddSkill: (skillName, type, level) {
-//             Provider.of<SkillsProvider>(context, listen: false)
-//                 .addSkill(skillName, type, level);
+//             Provider.of<SkillsProvider>(context, listen: false).addSkill(
+//               skillName,
+//               type,
+//               level,
+//               context: context,
+//             );
 //           },
 //           selectedLevelValue: selectedLevelValue,
 //         );
@@ -834,8 +912,8 @@ class _AddSkillBottomSheetState extends State<AddSkillBottomSheet> {
 //       itemBuilder: (context, index) {
 //         final skill = skills[index];
 //         final typeDisplay = skill.type == "0" ? "Skills" : "Behaviour";
-//         final levelDisplay = skill.level == null || skill.level == '0' 
-//             ? 'General (All level)' 
+//         final levelDisplay = skill.level == null || skill.level == '0'
+//             ? 'General (All level)'
 //             : skill.levelName ?? 'Unknown';
 //         return SkillItem(
 //           skill: skill.skillName ?? '',
@@ -920,42 +998,41 @@ class _AddSkillBottomSheetState extends State<AddSkillBottomSheet> {
 //             ),
 //             const SizedBox(width: 18),
 //             Expanded(
-//               child: Column(
-//                 crossAxisAlignment: CrossAxisAlignment.start,
-//                 children: [
-//                   _isEditing
-//                       ? TextField(
-//                           controller: _controller,
-//                           onSubmitted: (value) {
-//                             widget.onEdit(value);
-//                             setState(() => _isEditing = false);
-//                           },
-//                         )
-//                       : Text(
-//                           widget.skill,
-//                           style: AppTextStyles.normal400(
-//                             fontSize: 16,
-//                             color: AppColors.primaryDark,
-//                           ),
+//                 child: Column(
+//               crossAxisAlignment: CrossAxisAlignment.start,
+//               children: [
+//                 _isEditing
+//                     ? TextField(
+//                         controller: _controller,
+//                         onSubmitted: (value) {
+//                           widget.onEdit(value);
+//                           setState(() => _isEditing = false);
+//                         },
+//                       )
+//                     : Text(
+//                         widget.skill,
+//                         style: AppTextStyles.normal400(
+//                           fontSize: 16,
+//                           color: AppColors.primaryDark,
 //                         ),
-//                   const SizedBox(height: 4),
-//                   Text(
-//                     widget.type,
-//                     style: TextStyle(
-//                       fontSize: 14,
-//                       color: Colors.grey[600],
-//                     ),
+//                       ),
+//                 const SizedBox(height: 4),
+//                 Text(
+//                   widget.type,
+//                   style: TextStyle(
+//                     fontSize: 14,
+//                     color: Colors.grey[600],
 //                   ),
-//                   Text(
-//                     widget.level,
-//                     style: TextStyle(
-//                       fontSize: 14,
-//                       color: Colors.grey[600],
-//                     ),
+//                 ),
+//                 Text(
+//                   widget.level,
+//                   style: TextStyle(
+//                     fontSize: 14,
+//                     color: Colors.grey[600],
 //                   ),
-//                 ],
-//               ),
-//             ),
+//                 ),
+//               ],
+//             )),
 //             GestureDetector(
 //               onTap: () {
 //                 if (_isEditing) {
@@ -1065,7 +1142,8 @@ class _AddSkillBottomSheetState extends State<AddSkillBottomSheet> {
 //                 ),
 //               ),
 //               IconButton(
-//                 icon: SvgPicture.asset('assets/icons/profile/cancel_receipt.svg'),
+//                 icon:
+//                     SvgPicture.asset('assets/icons/profile/cancel_receipt.svg'),
 //                 color: AppColors.bgGray,
 //                 onPressed: () => Navigator.pop(context),
 //               ),
