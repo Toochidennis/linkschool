@@ -14,6 +14,8 @@ import 'package:linkschool/modules/common/buttons/custom_save_elevated_button.da
 import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/common/widgets/portal/e_learning/select_classes_dialog.dart';
+import 'package:linkschool/modules/providers/admin/e_learning/material_provider.dart';
+import 'package:provider/provider.dart';
 
 class AddMaterialScreen extends StatefulWidget {
   final Function(Map<String, dynamic>) onSave;
@@ -21,6 +23,8 @@ class AddMaterialScreen extends StatefulWidget {
   final String? courseId;
   final String? courseName;
   final String? levelId;
+  final int? syllabusId;
+
 
   const AddMaterialScreen({
     super.key,
@@ -28,7 +32,9 @@ class AddMaterialScreen extends StatefulWidget {
     this.classId,
     this.courseId,
     this.courseName,
-    this.levelId,
+    this.levelId, 
+     this.syllabusId,
+   
   });
 
   @override
@@ -40,6 +46,7 @@ class _AddMaterialScreenState extends State<AddMaterialScreen> {
   final TextEditingController _descriptionController = TextEditingController();
   String _selectedClass = 'Select classes';
   String _selectedTopic = 'No Topic';
+  int? _selectedTopicId;
   final List<AttachmentItem> _attachments = [];
   late double opacity;
   int? creatorId;
@@ -77,11 +84,13 @@ class _AddMaterialScreenState extends State<AddMaterialScreen> {
       print('Error loading user data: $e');
     }
   }
+  
 
   @override
   Widget build(BuildContext context) {
     final Brightness brightness = Theme.of(context).brightness;
     opacity = brightness == Brightness.light ? 0.1 : 0.15;
+    
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
@@ -124,7 +133,7 @@ class _AddMaterialScreenState extends State<AddMaterialScreen> {
           ),
         ],
       ),
-      body: Container(
+      body:  Container(
         height: MediaQuery.of(context).size.height,
         decoration: Constants.customBoxDecoration(context),
         child: Padding(
@@ -461,92 +470,96 @@ class _AddMaterialScreenState extends State<AddMaterialScreen> {
     );
   }
 
-  void _showInsertLinkDialog() {
-    TextEditingController linkController = TextEditingController();
+void _showInsertLinkDialog() {
+  TextEditingController linkController = TextEditingController();
 
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return StatefulBuilder(
-          builder: (context, setState) {
-            bool isValidUrl(String url) {
-              try {
-                final uri = Uri.parse(url);
-                return uri.isAbsolute &&
-                    (uri.scheme == 'http' || uri.scheme == 'https');
-              } catch (e) {
-                return false;
-              }
+  showDialog(
+    context: context,
+    builder: (BuildContext context) {
+      return StatefulBuilder(
+        builder: (context, setState) {
+          bool isValidUrl(String url) {
+            try {
+              final uri = Uri.parse(url);
+              return uri.isAbsolute &&
+                  (uri.scheme == 'http://' || uri.scheme == 'https://');
+            } catch (e) {
+              return false;
             }
+          }
 
-            final isValid = isValidUrl(linkController.text);
+          final isValid = isValidUrl(linkController.text);
 
-            return AlertDialog(
-              title: Text(
-                'Insert Link',
-                style: AppTextStyles.normal600(
-                  fontSize: 20,
-                  color: AppColors.backgroundDark,
-                ),
-                textAlign: TextAlign.center,
+          return AlertDialog(
+            title: Text(
+              'Insert Link',
+              style: AppTextStyles.normal600(
+                fontSize: 20,
+                color: AppColors.backgroundDark,
               ),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  TextField(
-                    controller: linkController,
-                    onChanged: (_) => setState(() {}),
-                    decoration: InputDecoration(
-                      fillColor: Colors.grey[100],
-                      filled: true,
-                      hintText: 'Enter link here (https://...)',
-                      errorText: linkController.text.isNotEmpty && !isValid
-                          ? 'Please enter a valid URL'
-                          : null,
-                      prefixIcon: Padding(
-                        padding: const EdgeInsets.all(10),
-                        child: SvgPicture.asset(
-                          'assets/icons/e_learning/link3.svg',
-                          width: 24,
-                          height: 24,
-                          fit: BoxFit.scaleDown,
-                        ),
-                      ),
-                      border: const UnderlineInputBorder(),
-                      focusedBorder: const UnderlineInputBorder(
-                        borderSide: BorderSide(color: AppColors.primaryLight),
+              textAlign: TextAlign.center,
+            ),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: linkController,
+                  onChanged: (_) => setState(() {}),
+                  decoration: InputDecoration(
+                    fillColor: Colors.grey[100],
+                    filled: true,
+                    hintText: 'Enter link here (https://...)',
+                    errorText: linkController.text.isNotEmpty && !isValid
+                        ? 'Please enter a valid URL'
+                        : null,
+                    prefixIcon: Padding(
+                      padding: const EdgeInsets.all(10),
+                      child: SvgPicture.asset(
+                        'assets/icons/e_learning/link3.svg',
+                        width: 24,
+                        height: 24,
+                        fit: BoxFit.scaleDown,
                       ),
                     ),
+                    border: const UnderlineInputBorder(),
+                    focusedBorder: const UnderlineInputBorder(
+                      borderSide: BorderSide(color: AppColors.primaryLight),
+                    ),
                   ),
-                ],
-              ),
-              actions: [
-                CustomOutlineButton(
-                  onPressed: () => Navigator.of(context).pop(),
-                  text: 'Cancel',
-                  borderColor: AppColors.eLearningBtnColor3.withOpacity(0.4),
-                  textColor: AppColors.eLearningBtnColor3,
-                ),
-                CustomSaveElevatedButton(
-                  onPressed: isValid && linkController.text.isNotEmpty
-                      ? () {
-                          _addAttachment(
-                            linkController.text,
-                            'assets/icons/e_learning/link3.svg',
-                          );
-                          Navigator.of(context).pop();
-                          Navigator.of(context).pop(); // Close both dialog and bottom sheet
-                        }
-                      : () {},
-                  text: 'Save',
                 ),
               ],
-            );
-          },
-        );
-      },
-    );
-  }
+            ),
+            actions: [
+              CustomOutlineButton(
+                onPressed: () => Navigator.of(context).pop(),
+                text: 'Cancel',
+                borderColor: AppColors.eLearningBtnColor3.withOpacity(0.4),
+                textColor: AppColors.eLearningBtnColor3,
+              ),
+              CustomSaveElevatedButton(
+                onPressed: isValid && linkController.text.isNotEmpty
+                    ? () {
+                        String fullUrl = linkController.text.trim();
+
+                        _addAttachment(
+                          fullUrl, // Use full URL as the display name
+                          'assets/icons/e_learning/link3.svg',
+                          fullUrl, // Use full URL as the content
+                        );
+
+                        Navigator.of(context).pop();
+                        Navigator.of(context).pop(); // Close both dialog and bottom sheet
+                      }
+                    : () {},
+                text: 'Save',
+              ),
+            ],
+          );
+        },
+      );
+    },
+  );
+}
 
   Future<void> _uploadFile() async {
     try {
@@ -632,98 +645,132 @@ class _AddMaterialScreenState extends State<AddMaterialScreen> {
     });
   }
 
-  void _selectTopic() async {
+ void _selectTopic() async {
     final result = await Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => const SelectTopicScreen(
+        builder: (context) => SelectTopicScreen(
+          levelId: widget.levelId!,
+          syllabusId: widget.syllabusId,
           callingScreen: '',
         ),
       ),
     );
-    if (result != null && result is String) {
+    if (result != null && result is Map) {
       setState(() {
-        _selectedTopic = result;
+        _selectedTopic = result['topicName'] ?? 'No Topic'; // Update topic name
+        _selectedTopicId = result['topicId']; // Store topic ID
       });
     }
   }
+void _addMaterial() async {
+  try {
+    final materialProvider = Provider.of<MaterialProvider>(context, listen: false);
+    final userBox = Hive.box('userData');
+    final storedUserData = userBox.get('userData') ?? userBox.get('loginResponse');
+    final processedData = storedUserData is String
+        ? json.decode(storedUserData)
+        : storedUserData;
+    final response = processedData['response'] ?? processedData;
+    final data = response['data'] ?? response;
+    final classes = data['classes'] ?? [];
+    final selectedClassIds = userBox.get('selectedClassIds') ?? [];
 
-  void _addMaterial() async {
-    try {
-      final userBox = Hive.box('userData');
-      final storedUserData = userBox.get('userData') ?? userBox.get('loginResponse');
-      final processedData = storedUserData is String
-          ? json.decode(storedUserData)
-          : storedUserData;
-      final response = processedData['response'] ?? processedData;
-      final data = response['data'] ?? response;
-      final classes = data['classes'] ?? [];
-      final selectedClassIds = userBox.get('selectedClassIds') ?? [];
-
-      final classIdList = selectedClassIds.map<Map<String, String>>((classId) {
-        final classIdStr = classId.toString();
-        final classData = classes.firstWhere(
-          (cls) => cls['id'].toString() == classIdStr,
-          orElse: () => {'id': classIdStr, 'class_name': 'Unknown'},
-        );
-        return {
-          'id': classIdStr,
-          'class_name': (classData['class_name']?.toString() ?? 'Unknown'),
-        };
-      }).toList();
-
-      if (classIdList.isEmpty && widget.classId != null) {
-        final classIdStr = widget.classId!;
-        final classData = classes.firstWhere(
-          (cls) => cls['id'].toString() == classIdStr,
-          orElse: () => {'id': classIdStr, 'class_name': _selectedClass},
-        );
-        classIdList.add({
-          'id': classIdStr,
-          'class_name': (classData['class_name']?.toString() ?? _selectedClass),
-        });
-      }
-
-      final material = {
-        'title': _titleController.text,
-        'description': _descriptionController.text,
-        'topic': _selectedTopic,
-        'topic_id': '',
-        'files': _attachments.map((attachment) => {
-              'old_file': '',
-              'type': _getAttachmentType(attachment.iconPath, attachment.content),
-              'file_name': attachment.content,
-              'file': attachment.base64Content,
-            }).toList(),
-        'classids': classIdList.isNotEmpty
-            ? classIdList
-            : [
-                {'id': '', 'class_name': ''},
-              ],
-        'Level_id': widget.levelId,
-        'course_id': widget.courseId,
-        'course_name': widget.courseName,
-        'creator_id': creatorId,
-        'Creator_name': creatorName,
-     
-        'term': academicTerm?.toInt(),
-      };
-
-      print('Complete Material Data:');
-      print(const JsonEncoder.withIndent('  ').convert(material));
-
-      widget.onSave(material);
-      Navigator.of(context).pop();
-    } catch (e) {
-      print('Error saving material: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: ${e.toString()}')),
+    final classIdList = selectedClassIds.map<Map<String, String>>((classId) {
+      final classIdStr = classId.toString();
+      final classData = classes.firstWhere(
+        (cls) => cls['id'].toString() == classIdStr,
+        orElse: () => {'id': classIdStr, 'class_name': 'Unknown'},
       );
+     return {
+  'id': classIdStr,
+  'name': (classData['class_name']?.toString() ?? 'Unknown'),
+};
+
+    }).toList();
+
+    if (classIdList.isEmpty && widget.classId != null) {
+      final classIdStr = widget.classId!;
+      final classData = classes.firstWhere(
+        (cls) => cls['id'].toString() == classIdStr,
+        orElse: () => {'id': classIdStr, 'class_name': _selectedClass},
+      );
+      classIdList.add({
+        'id': classIdStr,
+        'name': (classData['class_name']?.toString() ?? _selectedClass),
+      });
     }
+
+    final material = {
+      'title': _titleController.text,
+      'description': _descriptionController.text,
+      'topic': _selectedTopic,
+      'topic_id': _selectedTopicId,
+      'syllabus_id': widget.syllabusId,
+      'creator_id': creatorId,
+      'creator_name': creatorName,
+      'classes': classIdList.isNotEmpty
+          ? classIdList
+          : [
+              {'id': '', 'name': ''},
+            ],
+      'files': _attachments.map((attachment) {
+        final attachmentType = _getAttachmentType(attachment.iconPath, attachment.content);
+        String fileName;
+        
+        if (attachmentType == 'url') {
+   
+          fileName =attachment.content;
+        } else {
+          fileName = attachment.content;
+        }
+        
+        return {
+          'file_name': fileName,
+          'old_file_name': '',
+          'type': attachmentType,
+          'file': attachmentType == 'url'
+              ? attachment.content
+              : attachment.base64Content,
+        };
+      }).toList(),
+       
+    };
+
+    await materialProvider.addMaterial(material);
+    print('Final Payload to API:\n${jsonEncode(material)}');
+    widget.onSave(material);
+    Navigator.of(context).pop();
+  } catch (e) {
+    print('Error saving material: $e');
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Error: ${e.toString()}')),
+    );
   }
+}
+
+// Helper method to extract filename from URL
+String _extractFileNameFromUrl(String url) {
+  try {
+    final uri = Uri.parse(url);
+    final pathSegments = uri.pathSegments;
+    
+    if (pathSegments.isNotEmpty) {
+      final lastSegment = pathSegments.last;
+      return lastSegment.isNotEmpty
+          ? lastSegment
+          : uri.host;
+    }
+    
+    return uri.host.isNotEmpty ? uri.host : 'link';
+  } catch (e) {
+    return 'link';
+  }
+}
+
 
   String _getAttachmentType(String iconPath, String content) {
-    if (iconPath.contains('link')) return 'link';
+    if (iconPath.contains('link')) return 'url';
     if (iconPath.contains('upload')) {
       final extension = content.split('.').last.toLowerCase();
       if (['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'].contains(extension)) {

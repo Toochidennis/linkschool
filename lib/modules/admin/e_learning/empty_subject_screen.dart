@@ -139,7 +139,7 @@ class _EmptySubjectScreenState extends State<EmptySubjectScreen> {
             marks: '10',
           ),
         ],
-        description: '',
+        
       ),
     ];
   }
@@ -204,6 +204,7 @@ class _EmptySubjectScreenState extends State<EmptySubjectScreen> {
                     classId: widget.classId,
             courseId: widget.courseId,
             levelId: widget.levelId,
+            syllabusId: widget.syllabusId!,
                     courseName: widget.courseName,
                   onSave: (assignment) {
                     setState(() {
@@ -214,23 +215,34 @@ class _EmptySubjectScreenState extends State<EmptySubjectScreen> {
               ),
             );
             break;
-          case 'Question':
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => QuestionScreen(
-                      classId: widget.classId,
-            courseId: widget.courseId,
-            levelId: widget.levelId,
-                    courseName: widget.courseName,
-                  onSave: (question) {
-                    setState(() {
-                      _showCourseworkScreen = true;
-                    });
-                  },
-                ),
-              ),
-            );
+         case 'Question':
+  if (widget.syllabusId == null) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Error: Syllabus ID is missing'),
+        backgroundColor: Colors.red,
+      ),
+    );
+    return;
+  }
+  Navigator.push(
+    context,
+    MaterialPageRoute(
+      builder: (context) => QuestionScreen(
+        classId: widget.classId,
+        syllabusId: widget.syllabusId!, // Use non-null assertion since we checked above
+        courseId: widget.courseId,
+        levelId: widget.levelId,
+        courseName: widget.courseName,
+        onSave: (question) {
+          print('Question saved: ${ widget.syllabusId!}');
+          setState(() {
+            _showCourseworkScreen = true;
+          });
+        },
+      ),
+    ),
+  );
             break;
           case 'Topic':
             Navigator.push(
@@ -239,7 +251,7 @@ class _EmptySubjectScreenState extends State<EmptySubjectScreen> {
                 fullscreenDialog: true,
                 builder: (BuildContext context) =>
                     CreateTopicScreen(
-                      syllabusId: widget.syllabusId ?? 0,
+                      syllabusId: widget.syllabusId,
                       courseId: widget.courseId,
                   levelId: widget.levelId,
                   classId: widget.classId,
@@ -253,6 +265,7 @@ class _EmptySubjectScreenState extends State<EmptySubjectScreen> {
                  courseId: widget.courseId,
                   levelId: widget.levelId,
                   classId: widget.classId,
+                  syllabusId: widget.syllabusId,
                   courseName: widget.courseName,
                  onSave: (material) {
                     setState(() {

@@ -165,59 +165,92 @@ Future<void> _handleSave() async {
         ));
       }
 
-      await syllabusProvider.addSyllabus(
-        title: _titleController.text,
-        description: _descriptionController.text,
-        authorName: creatorName ?? 'Unknown',
-        term: academicTerm?.toString() ?? '1', 
-        courseId: courseId,
-        courseName: widget.courseName ?? 'Unknown Course',
-        classes: classModels, // Now passing List<ClassModel>
-        levelId: levelId,
-         creatorId: creatorId.toString()
-      );
+      // **FIX: Check if we're editing (syllabusData exists) or creating new**
+      if (widget.syllabusData != null) {
+        // We're editing - call UpdateSyllabus
+        final syllabusId = widget.syllabusData!['id'] as int;
+        
+        await syllabusProvider.UpdateSyllabus(
+          title: _titleController.text,
+          description: _descriptionController.text,
+          term: academicTerm?.toString() ?? '1',
+          levelId: levelId,
+          syllabusId: syllabusId,
+          classes: classModels,
+        );
 
-        print('Complete Syllabus Data:');
-       
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                'Syllabus updated successfully',
+                style: TextStyle(color: Colors.white),
+              ),
+              backgroundColor: Colors.green,
+            ),
+          );
+          
+          // Return the updated data so the parent screen can refresh
+          Navigator.of(context).pop({
+            'title': _titleController.text,
+            'description': _descriptionController.text,
+            'classes': classModels,
+          });
+        }
+      } else {
+        // We're creating new - call addSyllabus
+        await syllabusProvider.addSyllabus(
+          title: _titleController.text,
+          description: _descriptionController.text,
+          authorName: creatorName ?? 'Unknown',
+          term: academicTerm?.toString() ?? '1', 
+          courseId: courseId,
+          courseName: widget.courseName ?? 'Unknown Course',
+          classes: classModels,
+          levelId: levelId,
+          creatorId: creatorId.toString()
+        );
 
         await Future.delayed(const Duration(seconds: 1));
 
         if (mounted) {
-  ScaffoldMessenger.of(context).showSnackBar(
-    const SnackBar(
-      content: Text(
-        'Syllabus saved successfully',
-        style: TextStyle(color: Colors.white),
-      ),
-      backgroundColor: Colors.green,
-    ),
-  );
-  Navigator.of(context).pop(academicTerm?.toString() ?? ''); // <-- Return the term
-}
-      } catch (e) {
-        print('Error saving syllabus: $e');
-        if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Error: ${e.toString()}')),
+            const SnackBar(
+              content: Text(
+                'Syllabus created successfully',
+                style: TextStyle(color: Colors.white),
+              ),
+              backgroundColor: Colors.green,
+            ),
           );
-        }
-      } finally {
-        if (mounted) {
-          setState(() => isLoading = false);
+          Navigator.of(context).pop(academicTerm?.toString() ?? '');
         }
       }
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Please fill all required fields',
-            style: TextStyle(color: Colors.white),
-          ),
-          backgroundColor: Colors.red,
-        ),
-      );
+
+    } catch (e) {
+      print('Error saving syllabus: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: ${e.toString()}'),backgroundColor: Colors.red),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => isLoading = false);
+      }
     }
+  } else {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text(
+          'Please fill all required fields',
+          style: TextStyle(color: Colors.white),
+        ),
+        backgroundColor: Colors.red,
+      ),
+    );
   }
+}
 
   @override
   Widget build(BuildContext context) {

@@ -74,4 +74,57 @@ class SyllabusProvider with ChangeNotifier {
       notifyListeners();
     }
   }
+  Future<void> UpdateSyllabus({
+    required String title,
+    required String description,
+    required String term,
+    required String levelId,
+    required int syllabusId,
+  required List<ClassModel> classes,
+  
+  }) async {
+    _isLoading = true;
+    _error = '';
+    notifyListeners();
+
+    try {
+      final newSyllabus = SyllabusModel(
+        title: title,
+        description: description,
+        classes:classes,
+        term: term,
+        levelId:levelId,
+      );
+
+      await _syllabusService.UpdateSyllabus(newSyllabus,syllabusId);
+      // await fetchSyllabus(levelId,term); // Refresh the list from the server
+      print("Syllabus added and list refreshed");
+    } catch (e) {
+      _error = e.toString();
+      print("Adddddddddddddddddddddddddd Error: $_error");
+      rethrow;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> deletesyllabus(int syllabusId,String levelId, String term) async {
+    _isLoading = true;
+    _error = '';
+    notifyListeners();
+
+    try {
+      await _syllabusService.deletesyllabus(syllabusId);
+      await fetchSyllabus(levelId,term); 
+      print("Syllabus deleted successfully");
+    } catch (e) {
+      _error = e.toString();
+      print("Delete Error: $_error");
+      rethrow;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
 }

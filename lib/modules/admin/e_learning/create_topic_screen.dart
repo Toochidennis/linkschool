@@ -8,17 +8,23 @@ import 'package:linkschool/modules/common/buttons/custom_save_elevated_button.da
 import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/common/widgets/portal/e_learning/select_classes_dialog.dart';
-import 'package:linkschool/modules/model/e-learning/objective_item.dart';
 import 'package:linkschool/modules/model/e-learning/topic_model.dart';
 import 'package:linkschool/modules/providers/admin/e_learning/topic_provider.dart';
 import 'package:provider/provider.dart';
 
 class CreateTopicScreen extends StatefulWidget {
   final String? classId;
-  final String? levelId; 
-  final  String? courseId;
-   final int? syllabusId;
-  const CreateTopicScreen({super.key, this.classId, this.levelId, this.courseId, this.syllabusId});
+  final String? levelId;
+  final String? courseId;
+  final int? syllabusId;
+
+  const CreateTopicScreen({
+    super.key,
+    this.classId,
+    this.levelId,
+    this.courseId,
+    this.syllabusId,
+  });
 
   @override
   State<CreateTopicScreen> createState() => _CreateTopicScreenState();
@@ -28,10 +34,6 @@ class _CreateTopicScreenState extends State<CreateTopicScreen> {
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _objectiveController = TextEditingController();
   String _selectedClass = 'Select classes';
-  final bool _isTitleFocused = false;
-  bool _showObjectives = false;
-  final List<ObjectiveItem> _objectives = [];
-  final FocusNode _titleFocusNode = FocusNode();
   late double opacity;
   int? creatorId;
   String? creatorName;
@@ -42,30 +44,20 @@ class _CreateTopicScreenState extends State<CreateTopicScreen> {
   void initState() {
     super.initState();
     _loadUserData();
-    _titleFocusNode.addListener(_onTitleFocusChange);
   }
 
   @override
   void dispose() {
-    _titleFocusNode.removeListener(_onTitleFocusChange);
-    _titleFocusNode.dispose();
     _titleController.dispose();
     _objectiveController.dispose();
     super.dispose();
   }
 
-void _onTitleFocusChange() {
-  if (_titleFocusNode.hasFocus && !_showObjectives) {
-    setState(() {
-      _showObjectives = true;
-    });
-  }
-}
-
   Future<void> _loadUserData() async {
     try {
       final userBox = Hive.box('userData');
-      final storedUserData = userBox.get('userData') ?? userBox.get('loginResponse');
+      final storedUserData =
+          userBox.get('userData') ?? userBox.get('loginResponse');
       if (storedUserData != null) {
         final processedData = storedUserData is String
             ? json.decode(storedUserData)
@@ -87,92 +79,128 @@ void _onTitleFocusChange() {
     }
   }
 
-void _addTopic() async {
-  // Validation
-  if (_titleController.text.trim().isEmpty) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Please enter a topic title.')),
-    );
-    return;
-  }
-  if (_objectives.isEmpty) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        backgroundColor: Colors.red,
-        content: Text('Please add at least one objective.')),
-    );
-    return;
-  }
-  if (_selectedClass == 'Select classes' || _selectedClass.trim().isEmpty) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        backgroundColor: Colors.red,
-        content: Text('Please select at least one class.')),
-    );
-    return;
-  }
-
-  try {
-    final userBox = Hive.box('userData');
-    final storedUserData = userBox.get('userData') ?? userBox.get('loginResponse');
-    final processedData = storedUserData is String
-        ? json.decode(storedUserData)
-        : storedUserData;
-    final response = processedData['response'] ?? processedData;
-    final data = response['data'] ?? response;
-    final classes = data['classes'] ?? [];
-    final selectedClassIds = userBox.get('selectedClassIds') ?? [];
-
-    // Build the class list as List<ClassModel>
-    final classModelList = selectedClassIds.map<ClassModel>((classId) {
-      final classIdStr = classId.toString();
-      final classData = classes.firstWhere(
-        (cls) => cls['id'].toString() == classIdStr,
-        orElse: () => {'id': classIdStr, 'class_name': 'Unknown'},
+  void _addTopic() async {
+    // Validation
+    if (_titleController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter a topic title.')),
       );
-      return ClassModel(
-        id: int.parse(classIdStr),
-        name: classData['class_name']?.toString() ?? 'Unknown',
+      return;
+    }
+    if (_objectiveController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          backgroundColor: Colors.red,
+          content: Text('Please enter an objective.'),
+        ),
       );
-    }).toList();
+      return;
+    }
+    if (_selectedClass == 'Select classes' || _selectedClass.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          backgroundColor: Colors.red,
+          content: Text('Please select at least one class.'),
+        ),
+      );
+      return;
+    }
 
-    // Get the topicProvider from Provider
-    final topicProvider = Provider.of<TopicProvider>(context, listen: false);
+    try {
+      final userBox = Hive.box('userData');
+      final storedUserData =
+          userBox.get('userData') ?? userBox.get('loginResponse');
+      final processedData = storedUserData is String
+          ? json.decode(storedUserData)
+          : storedUserData;
+      final response = processedData['response'] ?? processedData;
+      final data = response['data'] ?? response;
+      final classes = data['classes'] ?? [];
+      final selectedClassIds = userBox.get('selectedClassIds') ?? [];
 
+      // Build the class list as List<ClassModel>
+      final classModelList = selectedClassIds.map<ClassModel>((classId) {
+        final classIdStr = classId.toString();
+        final classData = classes.firstWhere(
+          (cls) => cls['id'].toString() == classIdStr,
+          orElse: () => {'id': classIdStr, 'class_name': 'Unknown'},
+        );
+        return ClassModel(
+          id: int.parse(classIdStr),
+          name: classData['class_name']?.toString() ?? 'Unknown',
+        );
+      }).toList();
 
-         final objectivesText = _objectives.map((obj) => obj.text).join(', ');
-    // Only the required fields
-    final topicData = {
-      'syllabus_id': widget.syllabusId ?? 0, // Use the syllabusId from widget or default to 0
-      'topic': _titleController.text,
-      'creator_name': creatorName ?? 'Unknown',
-      'objective': objectivesText,
-      'creator_id': creatorId ?? 0,
-      'classes': classModelList,
-    };
+      // Get the topicProvider from Provider
+      final topicProvider = Provider.of<TopicProvider>(context, listen: false);
 
-    await topicProvider.addTopic(
-      syllabusId: 0,
-      topic: _titleController.text,
-      creatorName: creatorName ?? 'Unknown',
-      objective: objectivesText,
-      creatorId: creatorId ?? 0,
-      classes: classModelList, // <-- Now correct type
-    );
+      // Only the required fields
+      final topicData = {
+        'syllabus_id': widget.syllabusId ?? 0,
+        'topic': _titleController.text,
+        'creator_name': creatorName ?? 'Unknown',
+        'objective': _objectiveController.text,
+        'creator_id': creatorId ?? 0,
+        'classes': classModelList,
+      };
 
-    print('Topic Data to POST: $topicData');
+      await topicProvider.addTopic(
+        syllabusId: widget.syllabusId ?? 0,
+        topic: _titleController.text,
+        creatorName: creatorName ?? 'Unknown',
+        objective: _objectiveController.text,
+        creatorId: creatorId ?? 0,
+        classes: classModelList,
+      );
 
-    Navigator.of(context).pop();
-  } catch (e) {
-    print('Error packaging topic data: $e');
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        backgroundColor: Colors.red,
-        content: Text('Error: ${e.toString()}')),
+      print('Topic Data to POST: $topicData');
+
+      Navigator.of(context).pop();
+    } catch (e) {
+      print('Error packaging topic data: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: Colors.red,
+          content: Text('Error: ${e.toString()}'),
+        ),
+      );
+    }
+  }
+
+  void _editObjective() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        final TextEditingController editController =
+            TextEditingController(text: _objectiveController.text);
+        return AlertDialog(
+          title: const Text('Edit Objective'),
+          content: TextField(
+            controller: editController,
+            decoration: const InputDecoration(hintText: "Enter objective"),
+            maxLines: 3,
+          ),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('Cancel'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+            TextButton(
+              child: const Text('Save'),
+              onPressed: () {
+                setState(() {
+                  _objectiveController.text = editController.text;
+                });
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
     );
   }
-}
-
 
   @override
   Widget build(BuildContext context) {
@@ -192,7 +220,9 @@ void _addTopic() async {
         title: Text(
           'Create topic',
           style: AppTextStyles.normal600(
-              fontSize: 24.0, color: AppColors.primaryLight),
+            fontSize: 24.0,
+            color: AppColors.primaryLight,
+          ),
         ),
         backgroundColor: AppColors.backgroundLight,
         flexibleSpace: FlexibleSpaceBar(
@@ -206,7 +236,7 @@ void _addTopic() async {
                     fit: BoxFit.cover,
                   ),
                 ),
-              )
+              ),
             ],
           ),
         ),
@@ -214,93 +244,96 @@ void _addTopic() async {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 8.0),
             child: CustomSaveElevatedButton(
-              onPressed:_addTopic,
+              onPressed: _addTopic,
               text: 'Save',
             ),
           ),
         ],
       ),
-body:
-Container(
-  height: MediaQuery.of(context).size.height, // Ensures the container covers the full screen height
-  decoration: Constants.customBoxDecoration(context),
-  child: Padding(
-    padding: const EdgeInsets.all(16.0),
-    child: SingleChildScrollView(
-      physics: const AlwaysScrollableScrollPhysics(), // Allows scroll even if the content doesn't fill the screen
-      child: ConstrainedBox(
-        constraints: BoxConstraints(
-          minHeight: MediaQuery.of(context).size.height - kToolbarHeight - 32, // Ensures content covers the remaining screen height
+      body: Container(
+       height: MediaQuery.of(context).size.height,
+        decoration: BoxDecoration(
+          image: DecorationImage(
+            image: const AssetImage('assets/images/background.png'),
+            fit: BoxFit.cover,
+            opacity: opacity,
+          ),
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Topic',
-              style: AppTextStyles.normal600(fontSize: 16.0, color: Colors.black),
-            ),
-            const SizedBox(height: 8.0),
-            TextField(
-              controller: _titleController,
-              focusNode: _titleFocusNode,
-              decoration: InputDecoration(
-                hintText: 'e.g Dying and Bleaching',
-                hintStyle: const TextStyle(color: Colors.grey),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8.0),
-                ),
-                contentPadding: const EdgeInsets.all(12.0),
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                minHeight: MediaQuery.of(context).size.height - kToolbarHeight - 32,
               ),
-            ),
-            const SizedBox(height: 32.0),
-            Text(
-              'Select the learners for this outline*:',
-              style: AppTextStyles.normal600(
-                  fontSize: 16.0, color: Colors.black),
-            ),
-            const SizedBox(height: 16.0),
-            _buildGroupRow(
-              context,
-              iconPath: 'assets/icons/e_learning/people.svg',
-              text: _selectedClass,
-              onTap: () async {
-                await Navigator.of(context).push<String>(
-                  MaterialPageRoute(
-                    builder: (context) => SelectClassesDialog(
-                      onSave: (selectedClass) {
-                        setState(() {
-                          _selectedClass = selectedClass;
-                        });
-                      
-                      },
-                      levelId:widget.levelId,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Topic',
+                    style: AppTextStyles.normal600(
+                      fontSize: 16.0,
+                      color: Colors.black,
                     ),
                   ),
-                );
-              },
-            ),
-            if (_showObjectives) ...[
-              const SizedBox(height: 32.0),
-              Text(
-                'Topic Objectives:',
-                style: AppTextStyles.normal600(
-                    fontSize: 16.0, color: Colors.black),
+                  const SizedBox(height: 8.0),
+                  TextField(
+                    controller: _titleController,
+                    decoration: InputDecoration(
+                      hintText: 'e.g Dying and Bleaching',
+                      hintStyle: const TextStyle(color: Colors.grey),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8.0),
+                      ),
+                      contentPadding: const EdgeInsets.all(12.0),
+                    ),
+                  ),
+                  const SizedBox(height: 32.0),
+                  Text(
+                    'Select the learners for this outline*:',
+                    style: AppTextStyles.normal600(
+                      fontSize: 16.0,
+                      color: Colors.black,
+                    ),
+                  ),
+                  const SizedBox(height: 16.0),
+                  _buildGroupRow(
+                    context,
+                    iconPath: 'assets/icons/e_learning/people.svg',
+                    text: _selectedClass,
+                    onTap: () async {
+                      await Navigator.of(context).push<String>(
+                        MaterialPageRoute(
+                          builder: (context) => SelectClassesDialog(
+                            onSave: (selectedClass) {
+                              setState(() {
+                                _selectedClass = selectedClass;
+                              });
+                            },
+                            levelId: widget.levelId,
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                  const SizedBox(height: 32.0),
+                  Text(
+                    'Objective:',
+                    style: AppTextStyles.normal600(
+                      fontSize: 16.0,
+                      color: Colors.black,
+                    ),
+                  ),
+                  const SizedBox(height: 8.0),
+                  _buildObjectiveInput(),
+                  const SizedBox(height: 16.0),
+                ],
               ),
-              const SizedBox(height: 16.0),
-              ..._objectives.map((objective) => _buildObjectiveListItem(objective)),
-              _buildObjectiveInput(),
-            ],
-            // Add a spacer to push content to the bottom
-            const SizedBox(height: 16.0),
-          ],
+            ),
+          ),
         ),
       ),
-    ),
-  ),
-),
-
-
-
     );
   }
 
@@ -334,7 +367,8 @@ Container(
               const SizedBox(width: 8.0),
               IntrinsicWidth(
                 child: Container(
-                  padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 14.0),
+                  padding:
+                      const EdgeInsets.symmetric(vertical: 8.0, horizontal: 14.0),
                   decoration: BoxDecoration(
                     color: isSelected
                         ? Colors.transparent
@@ -355,7 +389,9 @@ Container(
                   onPressed: onTap,
                   style: OutlinedButton.styleFrom(
                     textStyle: AppTextStyles.normal600(
-                        fontSize: 14.0, color: AppColors.backgroundLight),
+                      fontSize: 14.0,
+                      color: AppColors.backgroundLight,
+                    ),
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                     side: const BorderSide(color: AppColors.eLearningBtnColor1),
                     shape: RoundedRectangleBorder(
@@ -375,149 +411,46 @@ Container(
   }
 
   Widget _buildObjectiveInput() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 4.0, vertical: 8.0),
-      decoration: BoxDecoration(
-        border: Border(
-          bottom: BorderSide(
-            color: _isTitleFocused ? AppColors.primaryLight : const Color(0xFFB2B2B2),
-            width: _isTitleFocused ? 2 : 1,
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Expanded(
+          child: TextField(
+            controller: _objectiveController,
+            decoration: InputDecoration(
+              hintText: 'Enter the objective for this topic',
+              hintStyle: const TextStyle(color: Colors.grey),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8.0),
+              ),
+              contentPadding: const EdgeInsets.all(12.0),
+            ),
+            maxLines: 2,
           ),
         ),
-      ),
-      child: Row(
-        children: [
-          GestureDetector(
-            onTap: _addObjective,
-            child: Container(
-              width: 32,
-              height: 32,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: Colors.white,
-                border: Border.all(
-                  color: AppColors.bgGray,
-                  width: 2,
-                ),
-              ),
-              child: const Icon(
-                Icons.add,
-                color: AppColors.bgGray,
-                size: 24,
-              ),
-            ),
-          ),
-          const SizedBox(width: 18),
-          Expanded(
-            child: TextField(
-              controller: _objectiveController,
-              decoration: const InputDecoration(
-                hintText: 'Add new Objective',
-                border: InputBorder.none,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildObjectiveListItem(ObjectiveItem objective) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8.0),
-      child: Row(
-        children: [
-          GestureDetector(
-            onTap: () {
+        PopupMenuButton<String>(
+          icon: const Icon(Icons.more_vert, color: Colors.grey),
+          onSelected: (value) {
+            if (value == 'edit') {
+              _editObjective();
+            } else if (value == 'delete') {
               setState(() {
-                objective.isSelected = !objective.isSelected;
+                _objectiveController.clear();
               });
-            },
-            child: Container(
-              width: 24,
-              height: 24,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(color: Colors.grey),
-              ),
-              child: Icon(
-                Icons.check,
-                size: 18,
-                color: objective.isSelected ? Colors.black : Colors.transparent,
-              ),
+            }
+          },
+          itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
+            const PopupMenuItem<String>(
+              value: 'edit',
+              child: Text('Edit'),
             ),
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(objective.text),
-          ),
-          PopupMenuButton<String>(
-            icon: const Icon(Icons.more_vert),
-            onSelected: (value) {
-              if (value == 'edit') {
-                // Handle edit
-                _editObjective(objective);
-              } else if (value == 'delete') {
-                setState(() {
-                  _objectives.remove(objective);
-                });
-              }
-            },
-            itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
-              const PopupMenuItem<String>(
-                value: 'edit',
-                child: Text('Edit'),
-              ),
-              const PopupMenuItem<String>(
-                value: 'delete',
-                child: Text('Delete'),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _addObjective() {
-    if (_objectiveController.text.isNotEmpty) {
-      setState(() {
-        _objectives.add(ObjectiveItem(_objectiveController.text));
-        _objectiveController.clear();
-      });
-    }
-  }
-
-  void _editObjective(ObjectiveItem objective) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        final TextEditingController editController = TextEditingController(text: objective.text);
-        return AlertDialog(
-          title: const Text('Edit Objective'),
-          content: TextField(
-            controller: editController,
-            decoration: const InputDecoration(hintText: "Enter new objective"),
-          ),
-          actions: <Widget>[
-            TextButton(
-              child: const Text('Cancel'),
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-            ),
-            TextButton(
-              child: const Text('Save'),
-              onPressed: () {
-                setState(() {
-                  objective.text = editController.text;
-                });
-                Navigator.of(context).pop();
-              },
+            const PopupMenuItem<String>(
+              value: 'delete',
+              child: Text('Delete'),
             ),
           ],
-        );
-      },
+        ),
+      ],
     );
   }
 }

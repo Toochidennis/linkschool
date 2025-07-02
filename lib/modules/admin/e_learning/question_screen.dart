@@ -22,6 +22,7 @@ class QuestionScreen extends StatefulWidget {
   final String? courseId;
   final String? levelId;
   final String? courseName;
+  final int? syllabusId;
 
   const QuestionScreen({
     super.key,
@@ -32,6 +33,7 @@ class QuestionScreen extends StatefulWidget {
     this.courseId,
     this.levelId,
     this.courseName,
+    this.syllabusId,
   });
 
   @override
@@ -750,26 +752,40 @@ class _QuestionScreenState extends State<QuestionScreen> {
   }
 
   void _selectTopic() async {
-    final result = await Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => SelectTopicScreen(
-          onTopicCreated: () {
-            setState(() {
-              _selectedTopic = 'No Topic';
-            });
-          },
-          callingScreen: '',
-        ),
+  if (widget.syllabusId == null) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Error: Syllabus ID is missing'),
+        backgroundColor: Colors.red,
       ),
     );
-    if (result != null && result is String) {
-      setState(() {
-        _selectedTopic = result;
-      });
-    }
+    return;
   }
-}
+  final result = await Navigator.push(
+    context,
+    MaterialPageRoute(
+      builder: (context) => SelectTopicScreen(
+        levelId: widget.levelId ?? '',
+        syllabusId: widget.syllabusId,
+      
+        // Use non-null assertion
+        onTopicCreated: () {
+          setState(() {
+            _selectedTopic = 'No Topic';
+          });
+        },
+      
+        callingScreen: '',
+      ),
+    ),
+  );
+  print("Selected ${ widget.syllabusId! } Class: ${widget.levelId}, Syllabus ID: ${widget.syllabusId}");
+  if (result != null && result is String) {
+    setState(() {
+      _selectedTopic = result;
+    });
+  }
+}}
 
 class DateRangePickerDialog extends StatefulWidget {
   final DateTime initialStartDate;

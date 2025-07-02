@@ -8,6 +8,23 @@ class TopicProvider extends ChangeNotifier {
 
   bool isLoading = false;
   String error = '';
+ List<Topic> _topics = [];
+   List<Topic> get topics => _topics;
+
+  Future<void>fetchTopic({required int syllabusId})async{
+      isLoading = true;
+    error = '';
+    notifyListeners();
+
+    try{
+      _topics = await topicService.FetchTopic(syllabusId: syllabusId);
+    }catch(e){
+      error = e.toString();
+    }
+    isLoading = false;
+    notifyListeners();
+  }
+
 
   Future<void> addTopic({
     required int syllabusId,

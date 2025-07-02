@@ -11,6 +11,7 @@ import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/buttons/custom_medium_elevated_button.dart';
 import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
+import 'package:linkschool/modules/model/e-learning/syllabus_model.dart';
 import 'package:linkschool/modules/providers/admin/e_learning/syllabus_provider.dart';
 import 'package:linkschool/modules/services/admin/e_learning/syllabus_service.dart';
 import 'package:linkschool/modules/services/api/api_service.dart';
@@ -111,35 +112,41 @@ class _EmptySyllabusScreenState extends State<EmptySyllabusScreen> with WidgetsB
       
       setState(() {
         _syllabusList.clear();
-        _syllabusList.addAll(syllabusModels.asMap().entries.map((entry) {
-          final index = entry.key;
-          final syllabus = entry.value;
-          
-          final classNames = syllabus.classes
-              .map((classInfo) => classInfo.name)
-              .join(', ');
-          final selectedClass = classNames.isEmpty ? 'No classes selected' : classNames;
+    _syllabusList.addAll(
+      syllabusModels.asMap().entries.map((entry) {
+        final index = entry.key;
+        final syllabus = entry.value;
+        if (syllabus.id == null) {
+          print('Warning: Syllabus at index $index has null ID');
+          return null; // Skip invalid syllabuses
+        }
 
-          return {
-            'id': syllabus.id,
-            'title': syllabus.title,
-            'description': syllabus.description,
-            'author_name': syllabus.authorName,
-            'term': syllabus.term,
-            'upload_date': syllabus.uploadDate,
-            'classes': syllabus.classes,
-            'selectedClass': selectedClass,
-            'selectedTeacher': "select a teacher",
-            'backgroundImagePath': _imagePaths.isNotEmpty 
-                ? _imagePaths[index % _imagePaths.length] 
-                : '',
-            // Add the missing fields with defaults
-            'course_id': syllabus.courseId ?? widget.courseId ?? '',
-            'course_name': syllabus.courseName ?? widget.course_name ?? '',
-            'level_id': syllabus.levelId ?? widget.levelId ?? '',
-            'creator_id': syllabus.creatorId ?? '',
-          };
-        }).toList());
+        final classNames = syllabus.classes
+            .map((classInfo) => classInfo.name)
+            .join(', ');
+        final selectedClass = classNames.isEmpty ? 'No classes selected' : classNames;
+
+        return {
+          'id': syllabus.id,
+          'title': syllabus.title,
+          'description': syllabus.description,
+          'author_name': syllabus.authorName,
+          'term': syllabus.term,
+          'upload_date': syllabus.uploadDate,
+          'classes': syllabus.classes,
+          'selectedClass': selectedClass,
+          'selectedTeacher': "select a teacher",
+          'backgroundImagePath': _imagePaths.isNotEmpty
+              ? _imagePaths[index % _imagePaths.length]
+              : '',
+          // Add the missing fields with defaults
+          'course_id': syllabus.courseId ?? widget.courseId ?? '',
+          'course_name': syllabus.courseName ?? widget.course_name ?? '',
+          'level_id': syllabus.levelId ?? widget.levelId ?? '',
+          'creator_id': syllabus.creatorId ?? '',
+        };
+      }).whereType<Map<String, dynamic>>()
+    );
       });
       
       print('Handler: Successfully processed ${_syllabusList.length} syllabuses for UI');
@@ -160,6 +167,33 @@ class _EmptySyllabusScreenState extends State<EmptySyllabusScreen> with WidgetsB
         setState(() => isLoading = false);
       }
     }
+  }
+
+  void updateSyllabus(int index, String newTitle,String newDescription,List<ClassModel> newClasses) async{
+    final int syllabusId = _syllabusList[index]['id'];
+    final String term = _syllabusList[index]["term"] ;
+    final String levelId = widget.levelId ?? "" ;
+    SyllabusProvider syllabusProvider = Provider.of<SyllabusProvider>(context, listen: false);
+     try{
+       await syllabusProvider.UpdateSyllabus(
+         title: newTitle,
+         description: newDescription,
+         term: term,
+         levelId: levelId,
+         syllabusId: syllabusId,
+         classes: newClasses,
+       );
+        ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Syllabus updated successfully'), backgroundColor: Colors.green),
+    );
+       _loadSyllabuses();
+     }catch(e){
+      ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        
+        content: Text('Failed to update syllabus: $e'), backgroundColor: Colors.red),
+    );
+     };
   }
 
   @override
@@ -270,14 +304,18 @@ class _EmptySyllabusScreenState extends State<EmptySyllabusScreen> with WidgetsB
               ),
               settings: const RouteSettings(name: '/empty_subject'),
             ),
+            
           ),
+
           child: _buildOutlineContainers(_syllabusList[index], index),
         );
       },
     );
+    
   }
 
   VoidCallback _addNewSyllabus() {
+             
     print("Adding new syllabus with  ${widget.term} levelId: ${widget.levelId}, course_name: ${widget.course_name}");
     
     return () async {
@@ -297,7 +335,7 @@ class _EmptySyllabusScreenState extends State<EmptySyllabusScreen> with WidgetsB
   }
 
  void _editSyllabus(int index) async {
-  await Navigator.of(context).push(
+  final result = await Navigator.of(context).push(
     MaterialPageRoute(
       builder: (BuildContext context) => CreateSyllabusScreen(
         syllabusData: _syllabusList[index],
@@ -308,13 +346,23 @@ class _EmptySyllabusScreenState extends State<EmptySyllabusScreen> with WidgetsB
       ),
     ),
   );
-  _loadSyllabuses();
-}
 
-  void _deleteSyllabus(int index) {
-    setState(() {
-      _syllabusList.removeAt(index);
-    });
+    // If the user saved changes, result should contain the new values
+  if (result != null && result is Map<String, dynamic>) {
+    final String newTitle = result['title'];
+    final String newDescription = result['description'];
+    final List<ClassModel> newClasses = result['classes'];
+    updateSyllabus(index, newTitle, newDescription, newClasses);
+  }
+
+}
+  void _deleteSyllabus(int index) async{
+    final int syllabusId = _syllabusList[index]['id'];
+    final String term = _syllabusList[index]["term"] ;
+    final String levelId = widget.levelId ?? "" ;
+    SyllabusProvider syllabusProvider = Provider.of<SyllabusProvider>(context, listen: false);
+  await  syllabusProvider.deletesyllabus(syllabusId, levelId, term);
+     _loadSyllabuses();
   }
 
   void _confirmDeleteSyllabus(int index) {
@@ -349,8 +397,9 @@ class _EmptySyllabusScreenState extends State<EmptySyllabusScreen> with WidgetsB
             ),
             TextButton(
               onPressed: () {
-                _deleteSyllabus(index);
                 Navigator.of(context).pop();
+                _deleteSyllabus(index);
+                
               },
               child: Text(
                 'Yes',

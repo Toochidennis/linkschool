@@ -23,14 +23,15 @@ class AdminAssignmentScreen extends StatefulWidget {
   final String? courseId;
   final String? courseName;
   final String? levelId;
-
+  final int? syllabusId;
   const AdminAssignmentScreen({
     super.key,
     required this.onSave,
     this.classId,
     this.courseId,
     this.courseName,
-    this.levelId,
+    this.levelId, 
+    this.syllabusId,
   });
 
   @override
@@ -776,8 +777,10 @@ class _AdminAssignmentScreenState extends State<AdminAssignmentScreen> {
     final result = await Navigator.push(
       context,
       MaterialPageRoute(
-          builder: (context) => const SelectTopicScreen(
+          builder: (context) =>  SelectTopicScreen(
                 callingScreen: '',
+                syllabusId: widget.syllabusId,
+                levelId: widget.levelId!, // Pass the appropriate levelId here
               )),
     );
 
