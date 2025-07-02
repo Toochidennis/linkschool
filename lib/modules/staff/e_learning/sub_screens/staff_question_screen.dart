@@ -21,7 +21,7 @@ class StaffQuestionScreen extends StatefulWidget {
     super.key,
     required this.onSave,
     this.question,
-    this.isEditing = false,
+    this.isEditing = false, String? classId,
   });
 
   @override

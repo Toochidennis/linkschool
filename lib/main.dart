@@ -7,10 +7,13 @@ import 'package:linkschool/modules/common/app_themes.dart';
 import 'package:linkschool/modules/providers/admin/assessment_provider.dart';
 import 'package:linkschool/modules/providers/admin/attendance_provider.dart';
 import 'package:linkschool/modules/providers/admin/behaviour_provider.dart';
+import 'package:linkschool/modules/providers/admin/behaviour_provider.dart';
 import 'package:linkschool/modules/providers/admin/class_provider.dart';
 import 'package:linkschool/modules/providers/admin/course_registration_provider.dart';
+import 'package:linkschool/modules/providers/admin/e_learning/material_provider.dart';
 import 'package:linkschool/modules/providers/admin/e_learning/syllabus_provider.dart';
 import 'package:linkschool/modules/providers/admin/course_result_provider.dart';
+import 'package:linkschool/modules/providers/admin/e_learning/topic_provider.dart';
 import 'package:linkschool/modules/providers/admin/level_provider.dart';
 import 'package:linkschool/modules/providers/admin/skills_behavior_table_provider.dart';
 import 'package:linkschool/modules/providers/admin/student_provider.dart';
@@ -58,23 +61,27 @@ Future<void> main() async {
     MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => locator<AuthProvider>()),
-        ChangeNotifierProvider(create: (_) => SyllabusProvider(SyllabusService())),
+        //  ChangeNotifierProvider(create: (_) => SyllabusProvider( SyllabusService())),
         ChangeNotifierProvider(create: (_) => NewsProvider()),
         ChangeNotifierProvider(create: (_) => SubjectProvider()),
         ChangeNotifierProvider(create: (_) => CBTProvider(CBTService())),
         ChangeNotifierProvider(create: (_) => GameProvider()),
         ChangeNotifierProvider(create: (_) => ExamProvider()),
         ChangeNotifierProvider(create: (_) => ForYouProvider()),
-        ChangeNotifierProvider(create: (_) => locator<SyllabusProvider>()),
+        ChangeNotifierProvider<SyllabusProvider>(create: (_) => locator<SyllabusProvider>()),
+        // GradeProvider from service locator
         ChangeNotifierProvider(create: (_) => locator<GradeProvider>()),
-        ChangeNotifierProvider(create: (_) => locator<SkillsProvider>()), 
-         ChangeNotifierProvider(create: (_) => locator<SkillsBehaviorTableProvider>()), 
+        // SkillProvider from service locator
+        ChangeNotifierProvider(create: (_) => locator<SkillsProvider>()),
         ChangeNotifierProvider(create: (_) => LevelProvider()),
         ChangeNotifierProvider(create: (_) => ClassProvider()),
         ChangeNotifierProvider(create: (_) => AssessmentProvider()),
         ChangeNotifierProvider(create: (_) => TermProvider()),
         ChangeNotifierProvider(create: (_) => RegisteredTermsProvider()),
         ChangeNotifierProvider(create: (_) => CourseRegistrationProvider()),
+        ChangeNotifierProvider(create: (_) => locator<TopicProvider>()),
+        ChangeNotifierProvider(create: (_) => locator<MaterialProvider>()),
+        // StudentProvider from service locator
         ChangeNotifierProvider(create: (_) => locator<StudentProvider>()),
         ChangeNotifierProvider(create: (_) => locator<AttendanceProvider>()),
         ChangeNotifierProvider(create: (_) => CourseResultProvider()),

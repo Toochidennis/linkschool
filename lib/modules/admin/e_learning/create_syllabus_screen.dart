@@ -7,19 +7,24 @@ import 'package:linkschool/modules/common/buttons/custom_save_elevated_button.da
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/common/widgets/portal/e_learning/select_classes_dialog.dart';
 import 'package:linkschool/modules/common/widgets/portal/e_learning/select_teachers_dialog.dart';
+import 'package:linkschool/modules/model/e-learning/syllabus_model.dart';
+import 'package:linkschool/modules/providers/admin/e_learning/syllabus_provider.dart';
+import 'package:linkschool/modules/services/admin/e_learning/syllabus_service.dart';
+import 'package:linkschool/modules/services/api/api_service.dart';
 
 class CreateSyllabusScreen extends StatefulWidget {
   final Map<String, dynamic>? syllabusData;
   final String? courseId;
   final String? classId;
   final String? levelId;
-
+final String? courseName;
   const CreateSyllabusScreen({
     super.key,
     this.syllabusData,
     this.courseId,
     this.classId,
-    this.levelId,
+    this.levelId, 
+     this.courseName,
   });
 
   @override
@@ -37,18 +42,33 @@ class _CreateSyllabusScreenState extends State<CreateSyllabusScreen> {
   int? creatorId;
   String? creatorRole;
   String? academicYear;
+   String? creatorName ;
   int? academicTerm;
+  final SyllabusProvider syllabusProvider = SyllabusProvider(SyllabusService(ApiService()));
+  final _formKey = GlobalKey<FormState>();
 
-  @override
-  void initState() {
-    super.initState();
-    _selectedClass = widget.syllabusData?['selectedClass'] ?? 'Select classes';
-    _selectedTeacher = widget.syllabusData?['selectedTeacher'] ?? 'Select teachers';
-    _titleController = TextEditingController(text: widget.syllabusData?['title'] ?? '');
-    _descriptionController = TextEditingController(text: widget.syllabusData?['description'] ?? '');
-    _backgroundImagePath = widget.syllabusData?['backgroundImagePath'] ?? 'assets/images/result/bg_box3.svg';
-    _loadUserData();
+@override
+void initState() {
+  super.initState();
+  _selectedClass = widget.syllabusData?['selectedClass'] ?? 'Select classes';
+  _selectedTeacher = widget.syllabusData?['selectedTeacher'] ?? 'Select teachers';
+  _titleController = TextEditingController(text: widget.syllabusData?['title'] ?? '');
+  _descriptionController = TextEditingController(text: widget.syllabusData?['description'] ?? '');
+  _backgroundImagePath = widget.syllabusData?['backgroundImagePath'] ?? 'assets/images/result/bg_box3.svg';
+
+  // Only load preselected class IDs when editing (i.e., syllabusData is not null)
+  if (widget.syllabusData != null && widget.syllabusData!['classes'] != null) {
+    final classIds = (widget.syllabusData!['classes'] as List<ClassModel>)
+        .map((cls) => cls.id)
+        .toList();
+    Hive.box('userData').put('selectedClassIds', classIds);
+  } else {
+    // When creating, ensure no class is pre-selected
+    Hive.box('userData').put('selectedClassIds', []);
   }
+
+  _loadUserData();
+}
 
   Future<void> _loadUserData() async {
     try {
@@ -65,6 +85,7 @@ class _CreateSyllabusScreenState extends State<CreateSyllabusScreen> {
 
         setState(() {
           creatorId = profile['staff_id'] as int?;
+          creatorName = profile['name']?.toString() ?? 'Unknown';
           creatorRole = profile['role']?.toString();
           academicYear = settings['year']?.toString();
           academicTerm = settings['term'] as int?;
@@ -75,7 +96,23 @@ class _CreateSyllabusScreenState extends State<CreateSyllabusScreen> {
     }
   }
 
-  Future<void> _handleSave() async {
+Future<void> _handleSave() async {
+  final userBox = Hive.box('userData');
+  final selectedClassIds = userBox.get('selectedClassIds') ?? [];
+
+  // Validation for class selection
+  if ((selectedClassIds.isEmpty || selectedClassIds.length == 0) &&
+      (widget.classId == null || widget.classId!.isEmpty)) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Please select at least one class.'),
+        backgroundColor: Colors.red,
+      ),
+    );
+    return;
+  }
+
+  if (_formKey.currentState!.validate()) {
     if (isLoading) return;
 
     setState(() => isLoading = true);
@@ -89,7 +126,7 @@ class _CreateSyllabusScreenState extends State<CreateSyllabusScreen> {
       final courseId = widget.courseId ?? storedCourseId?.toString() ?? 'course_not_selected';
       final levelId = widget.levelId ?? storedLevelId?.toString() ?? 'level_not_selected';
 
-      // Retrieve class data from JSON to map IDs to names
+      // Retrieve class data from JSON to create ClassModel objects
       final storedUserData = userBox.get('userData') ?? userBox.get('loginResponse');
       final processedData = storedUserData is String
           ? json.decode(storedUserData)
@@ -98,62 +135,103 @@ class _CreateSyllabusScreenState extends State<CreateSyllabusScreen> {
       final data = response['data'] ?? response;
       final classes = data['classes'] ?? [];
 
-      // Create class_id list with explicit string conversion
-      final classIdList = selectedClassIds.map<Map<String, String>>((classId) {
+      // Create List<ClassModel> instead of List<Map>
+      final classModels = selectedClassIds.map<ClassModel>((classId) {
         final classIdStr = classId.toString();
         final classData = classes.firstWhere(
           (cls) => cls['id'].toString() == classIdStr,
-          orElse: () => {'id': classIdStr, 'class_name': 'Unknown'},
+          orElse: () => {'id': classIdStr, 'name': 'Unknown'},
         );
-        return {
-          'id': classIdStr,
-          'class_name': (classData['class_name']?.toString() ?? 'Unknown'),
-        };
+        return ClassModel(
+          id: classIdStr,
+          name: classData['name']?.toString() ?? 
+               classData['class_name']?.toString() ?? 
+               'Unknown',
+        );
       }).toList();
 
       // Use widget.classId as fallback if no classes selected
-      if (classIdList.isEmpty && widget.classId != null) {
+      if (classModels.isEmpty && widget.classId != null) {
         final classIdStr = widget.classId!;
         final classData = classes.firstWhere(
           (cls) => cls['id'].toString() == classIdStr,
-          orElse: () => {'id': classIdStr, 'class_name': _selectedClass},
+          orElse: () => {'id': classIdStr, 'name': _selectedClass},
         );
-        classIdList.add({
-          'id': classIdStr,
-          'class_name': (classData['class_name']?.toString() ?? _selectedClass),
-        });
+        classModels.add(ClassModel(
+          id: classIdStr,
+          name: classData['name']?.toString() ?? 
+               classData['class_name']?.toString() ?? 
+               _selectedClass,
+        ));
       }
 
-      final syllabusData = {
-        'title': _titleController.text,
-        'description': _descriptionController.text,
-        'backgroundImagePath': _backgroundImagePath,
-        'selectedClass': _selectedClass,
-        'selectedTeacher': _selectedTeacher,
-        'image': '',
-        'image_name': '',
-        'course_id': courseId,
-        'level_id': levelId,
-        'class_ids': classIdList.isNotEmpty ? classIdList : [{'id': '', 'class_name': 'Select classes'}],
-        'creator_role': creatorRole ?? 'unknown',
-        'term': academicTerm?.toString() ?? '1',
-        'year': academicYear ?? DateTime.now().year.toString(),
-        'creator_id': creatorId ?? 0,
-      };
+      // **FIX: Check if we're editing (syllabusData exists) or creating new**
+      if (widget.syllabusData != null) {
+        // We're editing - call UpdateSyllabus
+        final syllabusId = widget.syllabusData!['id'] as int;
+        
+        await syllabusProvider.UpdateSyllabus(
+          title: _titleController.text,
+          description: _descriptionController.text,
+          term: academicTerm?.toString() ?? '1',
+          levelId: levelId,
+          syllabusId: syllabusId,
+          classes: classModels,
+        );
 
-      print('Complete Syllabus Data:');
-      print(const JsonEncoder.withIndent('  ').convert(syllabusData));
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                'Syllabus updated successfully',
+                style: TextStyle(color: Colors.white),
+              ),
+              backgroundColor: Colors.green,
+            ),
+          );
+          
+          // Return the updated data so the parent screen can refresh
+          Navigator.of(context).pop({
+            'title': _titleController.text,
+            'description': _descriptionController.text,
+            'classes': classModels,
+          });
+        }
+      } else {
+        // We're creating new - call addSyllabus
+        await syllabusProvider.addSyllabus(
+          title: _titleController.text,
+          description: _descriptionController.text,
+          authorName: creatorName ?? 'Unknown',
+          term: academicTerm?.toString() ?? '1', 
+          courseId: courseId,
+          courseName: widget.courseName ?? 'Unknown Course',
+          classes: classModels,
+          levelId: levelId,
+          creatorId: creatorId.toString()
+        );
 
-      await Future.delayed(const Duration(seconds: 1));
+        await Future.delayed(const Duration(seconds: 1));
 
-      if (mounted) {
-        Navigator.of(context).pop(syllabusData);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                'Syllabus created successfully',
+                style: TextStyle(color: Colors.white),
+              ),
+              backgroundColor: Colors.green,
+            ),
+          );
+          Navigator.of(context).pop(academicTerm?.toString() ?? '');
+        }
       }
+
     } catch (e) {
       print('Error saving syllabus: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: ${e.toString()}')),
+          SnackBar(content: Text('Error: ${e.toString()}'),backgroundColor: Colors.red),
         );
       }
     } finally {
@@ -161,7 +239,18 @@ class _CreateSyllabusScreenState extends State<CreateSyllabusScreen> {
         setState(() => isLoading = false);
       }
     }
+  } else {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text(
+          'Please fill all required fields',
+          style: TextStyle(color: Colors.white),
+        ),
+        backgroundColor: Colors.red,
+      ),
+    );
   }
+}
 
   @override
   Widget build(BuildContext context) {
@@ -202,7 +291,9 @@ class _CreateSyllabusScreenState extends State<CreateSyllabusScreen> {
           ),
         ],
       ),
-      body: Container(
+      body:isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : Container(
         height: MediaQuery.of(context).size.height,
         decoration: BoxDecoration(
           image: DecorationImage(
@@ -214,97 +305,109 @@ class _CreateSyllabusScreenState extends State<CreateSyllabusScreen> {
         child: Padding(
           padding: const EdgeInsets.all(16.0),
           child: SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Title:',
-                  style: AppTextStyles.normal600(fontSize: 16.0, color: Colors.black),
-                ),
-                const SizedBox(height: 8.0),
-                TextField(
-                  controller: _titleController,
-                  decoration: InputDecoration(
-                    hintText: 'e.g. Dying and bleaching',
-                    hintStyle: const TextStyle(color: Colors.grey),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8.0),
-                    ),
-                    contentPadding: const EdgeInsets.all(12.0),
+            child: Form(
+              key: _formKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Title:',
+                    style: AppTextStyles.normal600(fontSize: 16.0, color: Colors.black),
                   ),
-                ),
-                const SizedBox(height: 16.0),
-                Text(
-                  'Description:',
-                  style: AppTextStyles.normal600(fontSize: 16.0, color: Colors.black),
-                ),
-                const SizedBox(height: 8.0),
-                TextField(
-                  controller: _descriptionController,
-                  maxLines: 5,
-                  decoration: InputDecoration(
-                    hintText: 'Type here...',
-                    hintStyle: const TextStyle(color: Colors.grey),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8.0),
-                    ),
-                    contentPadding: const EdgeInsets.all(12.0),
-                  ),
-                ),
-                const SizedBox(height: 32.0),
-                Text(
-                  'Select the learning group for this syllabus: *',
-                  style: AppTextStyles.normal600(fontSize: 16.0, color: Colors.black),
-                ),
-                const SizedBox(height: 16.0),
-                _buildGroupRow(
-                  context,
-                  iconPath: 'assets/icons/e_learning/people.svg',
-                  text: _selectedClass,
-                  // In your _buildGroupRow where you call SelectClassesDialog:
-onTap: () async {
-  final result = await Navigator.of(context).push<String>(
-    MaterialPageRoute(
-      builder: (context) => SelectClassesDialog(
-        onSave: (selectedClass) {
-          setState(() {
-            _selectedClass = selectedClass;
-          });
-        },
-        levelId: widget.levelId, // Pass the levelId to filter classes
-      ),
-    ),
-  );
-  if (result != null) {
-    setState(() {
-      _selectedClass = result;
-    });
-  }
-},),
-                _buildGroupRow(
-                  context,
-                  iconPath: 'assets/icons/e_learning/profile.svg',
-                  text: _selectedTeacher,
-                  onTap: () async {
-                    final result = await Navigator.of(context).push<String>(
-                      MaterialPageRoute(
-                        builder: (context) => SelectTeachersDialog(
-                          onSave: (selectedTeacher) {
-                            setState(() {
-                              _selectedTeacher = selectedTeacher;
-                            });
-                          },
-                        ),
+                  const SizedBox(height: 8.0),
+                  TextFormField(
+                    controller: _titleController,
+                    decoration: InputDecoration(
+                      hintText: 'e.g. Dying and bleaching',
+                      hintStyle: const TextStyle(color: Colors.grey),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8.0),
                       ),
-                    );
-                    if (result != null) {
-                      setState(() {
-                        _selectedTeacher = result;
-                      });
-                    }
-                  },
-                ),
-              ],
+                      contentPadding: const EdgeInsets.all(12.0),
+                    ),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please enter a title';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 16.0),
+                  Text(
+                    'Description:',
+                    style: AppTextStyles.normal600(fontSize: 16.0, color: Colors.black),
+                  ),
+                  const SizedBox(height: 8.0),
+                  TextFormField(
+                    controller: _descriptionController,
+                    maxLines: 5,
+                    decoration: InputDecoration(
+                      hintText: 'Type here...',
+                      hintStyle: const TextStyle(color: Colors.grey),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8.0),
+                      ),
+                      contentPadding: const EdgeInsets.all(12.0),
+                    ),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please enter a description';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 32.0),
+                  Text(
+                    'Select the learning group for this syllabus: *',
+                    style: AppTextStyles.normal600(fontSize: 16.0, color: Colors.black),
+                  ),
+                  const SizedBox(height: 16.0),
+                  _buildGroupRow(
+                    context,
+                    iconPath: 'assets/icons/e_learning/people.svg',
+                    text: _selectedClass,
+                    onTap: () async {
+                      final result = await Navigator.of(context).push<String>(
+                        MaterialPageRoute(
+                          builder: (context) => SelectClassesDialog(
+                            onSave: (selectedClass) {
+                              setState(() {
+                                _selectedClass = selectedClass;
+                              });
+                            },
+                            levelId: widget.levelId,
+                       
+                        // <-- Add this
+                          ),
+                        ),
+                      );
+                      if (result != null) {
+                        setState(() {
+                          _selectedClass = result;
+                        });
+                      }
+                    },
+                  ),
+                  _buildGroupRow(
+                    context,
+                    iconPath: 'assets/icons/e_learning/profile.svg',
+                    text: _selectedTeacher,
+                    onTap: () async {
+                      final result = await Navigator.of(context).push<String>(
+                        MaterialPageRoute(
+                          builder: (context) => SelectTeachersDialog(
+                            onSave: (selectedTeacher) {
+                              setState(() {
+                                _selectedTeacher = selectedTeacher;
+                              });
+                            },
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ],
+              ),
             ),
           ),
         ),

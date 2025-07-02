@@ -352,7 +352,7 @@ class _StaffCourseDetailScreenState extends State<StaffCourseDetailScreen> {
                       if (topics.isEmpty) {
                         topics.add(Topic(name: "Default Topic", assignments: [], questions: [], materials: []));
                       }
-                      topics.first.materials.add(material);
+                      topics.first.materials.add(material as custom.Material);
                     });
                   },
                 ),

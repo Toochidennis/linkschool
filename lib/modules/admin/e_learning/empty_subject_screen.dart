@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:intl/intl.dart';
+import 'package:linkschool/modules/admin/e_learning/add_material_screen.dart';
 import 'package:linkschool/modules/admin/e_learning/admin_assignment_screen.dart';
+import 'package:linkschool/modules/admin/e_learning/create_topic_screen.dart';
+import 'package:linkschool/modules/admin/e_learning/question_screen.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/buttons/custom_medium_elevated_button.dart';
 import 'package:linkschool/modules/common/constants.dart';
@@ -17,9 +20,23 @@ import 'package:linkschool/modules/staff/e_learning/view/staff_assignment_detail
 import 'package:linkschool/modules/staff/e_learning/view/staff_material_details_screen.dart';
 
 class EmptySubjectScreen extends StatefulWidget {
-  final String courseTitle;
-
-  const EmptySubjectScreen({super.key, required this.courseTitle});
+  final String? courseTitle;
+  final String? courseId;
+  final String? levelId;
+  final String? classId;
+  final String? courseName;
+  final  String? term;
+  final int? syllabusId;
+  const EmptySubjectScreen({
+    super.key,
+    this.syllabusId,
+    this.courseTitle,
+    this.courseId,
+    this.levelId,
+    this.classId,
+    this.courseName,
+    this.term,
+});
 
   @override
   State<EmptySubjectScreen> createState() => _EmptySubjectScreenState();
@@ -122,7 +139,7 @@ class _EmptySubjectScreenState extends State<EmptySubjectScreen> {
             marks: '10',
           ),
         ],
-        description: '',
+        
       ),
     ];
   }
@@ -177,12 +194,18 @@ class _EmptySubjectScreenState extends State<EmptySubjectScreen> {
     return InkWell(
       onTap: () {
         Navigator.pop(context);
+        
         switch (text) {
           case 'Assignment':
             Navigator.push(
               context,
               MaterialPageRoute(
                 builder: (context) => AdminAssignmentScreen(
+                    classId: widget.classId,
+            courseId: widget.courseId,
+            levelId: widget.levelId,
+            syllabusId: widget.syllabusId!,
+                    courseName: widget.courseName,
                   onSave: (assignment) {
                     setState(() {
                       _showCourseworkScreen = true;
@@ -192,19 +215,34 @@ class _EmptySubjectScreenState extends State<EmptySubjectScreen> {
               ),
             );
             break;
-          case 'Question':
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => StaffQuestionScreen(
-                  onSave: (question) {
-                    setState(() {
-                      _showCourseworkScreen = true;
-                    });
-                  },
-                ),
-              ),
-            );
+         case 'Question':
+  if (widget.syllabusId == null) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Error: Syllabus ID is missing'),
+        backgroundColor: Colors.red,
+      ),
+    );
+    return;
+  }
+  Navigator.push(
+    context,
+    MaterialPageRoute(
+      builder: (context) => QuestionScreen(
+        classId: widget.classId,
+        syllabusId: widget.syllabusId!, // Use non-null assertion since we checked above
+        courseId: widget.courseId,
+        levelId: widget.levelId,
+        courseName: widget.courseName,
+        onSave: (question) {
+          print('Question saved: ${ widget.syllabusId!}');
+          setState(() {
+            _showCourseworkScreen = true;
+          });
+        },
+      ),
+    ),
+  );
             break;
           case 'Topic':
             Navigator.push(
@@ -212,23 +250,46 @@ class _EmptySubjectScreenState extends State<EmptySubjectScreen> {
               MaterialPageRoute(
                 fullscreenDialog: true,
                 builder: (BuildContext context) =>
-                    const StaffCreateSyllabusScreen(),
+                    CreateTopicScreen(
+                      syllabusId: widget.syllabusId,
+                      courseId: widget.courseId,
+                  levelId: widget.levelId,
+                  classId: widget.classId,
+                    ),
               ),
             );
             break;
           case 'Material':
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => StaffAddMaterialScreen(
-                  onSave: (material) {
+
+          Navigator.push(context, MaterialPageRoute(builder: (_)=>AddMaterialScreen(
+                 courseId: widget.courseId,
+                  levelId: widget.levelId,
+                  classId: widget.classId,
+                  syllabusId: widget.syllabusId,
+                  courseName: widget.courseName,
+                 onSave: (material) {
                     setState(() {
                       _showCourseworkScreen = true;
-                    });
-                  },
-                ),
-              ),
-            );
+                     });}
+          )));
+            //Navigator.push(
+              //context,
+             // MaterialPageRoute(builder: 
+              // MaterialPageRoute(
+              //   builder: (context) => StaffAddMaterialScreen(
+              //     courseId: widget.courseId,
+              //     levelId: widget.levelId,
+              //     classId: widget.classId,
+              //     courseName: widget.courseName,
+                  
+              //     onSave: (material) {
+              //       setState(() {
+              //         _showCourseworkScreen = true;
+              //       });
+              //     },
+              //   ),
+              // ),
+           // );
             break;
         }
       },
@@ -254,11 +315,14 @@ class _EmptySubjectScreenState extends State<EmptySubjectScreen> {
     );
   }
 
+
+
+
   @override
   Widget build(BuildContext context) {
     final Brightness brightness = Theme.of(context).brightness;
     opacity = brightness == Brightness.light ? 0.1 : 0.15;
-
+  
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
@@ -273,7 +337,7 @@ class _EmptySubjectScreenState extends State<EmptySubjectScreen> {
           ),
         ),
         title: Text(
-          widget.courseTitle,
+          widget.courseTitle ?? '',
           style: const TextStyle(
             fontSize: 22,
             fontWeight: FontWeight.bold,
@@ -375,7 +439,7 @@ class _EmptySubjectScreenState extends State<EmptySubjectScreen> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Text(
-                            widget.courseTitle,
+                            widget.courseTitle ?? '',
                             style: AppTextStyles.normal700(
                               fontSize: 18,
                               color: AppColors.backgroundLight,
