@@ -56,21 +56,6 @@ void setupServiceLocator() {
     () => SkillsProvider(locator<SkillService>())
   );
 
-<<<<<<< HEAD
-  locator.registerFactory(() => SkillsBehaviorTableProvider(locator<ApiService>()));
-=======
-  // Register SkillService with ApiService dependency
-  locator.registerLazySingleton<TopicService>(
-    () => TopicService(locator<ApiService>())
-  );
-
-
-  // Register TopicProvider with SkillService dependen
-  locator.registerLazySingleton<TopicProvider>(
-    () => TopicProvider(locator<TopicService>())
-  );
->>>>>>> 442d4f3f3fe1e4ddae9f778a17a510b79e64688d
-
   // Register StudentService with ApiService dependency
   locator.registerLazySingleton<StudentService>(
     () => StudentService(locator<ApiService>())
