@@ -6,7 +6,6 @@ import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/buttons/custom_floating_save_button.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/common/custom_toaster.dart';
-// import 'package:hive/hive.dart';
 
 class TakeCourseAttendance extends StatefulWidget {
   final String? courseId;
@@ -33,79 +32,103 @@ class _TakeCourseAttendanceState extends State<TakeCourseAttendance> {
     Colors.lime,
   ];
 
-
   String _currentDate = '';
+  String _formattedDateForDisplay = '';
 
   @override
   void initState() {
     super.initState();
     _setCurrentDate();
-
-    // Initialize provider with needed data
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final provider = context.read<StudentProvider>();
-      provider.fetchStudents(widget.classId).then((_) {
-        // Fetch attendance data after students are loaded
-        provider.fetchAttendance(
-          classId: widget.classId!,
-          date: _currentDate,
-          courseId: widget.courseId!,
-        );
-
-        // Fetch local attendance data
-        provider.fetchLocalAttendance(
-          classId: widget.classId!,
-          date: _currentDate,
-          courseId: widget.courseId!,
-        );
-      });
-    });
+    WidgetsBinding.instance.addPostFrameCallback((_) => _initializeData());
   }
 
-  @override
-  void dispose() {
-    // Reset provider state when navigating away
-    context.read<StudentProvider>().reset();
-    super.dispose();
+  void _initializeData() async {
+    final provider = context.read<StudentProvider>();
+    await provider.fetchStudents(widget.classId, courseId: widget.courseId);
+    
+    if (widget.classId != null && widget.courseId != null) {
+      final dateForApi = "${_currentDate.split(' ')[0]} 00:00:00";
+      await provider.loadAttendedStudents(
+        classId: widget.classId!,
+        date: _currentDate,
+      );
+      await provider.fetchCourseAttendance(
+        classId: widget.classId!,
+        date: dateForApi,
+        courseId: widget.courseId!,
+      );
+      await provider.fetchLocalAttendance(
+        classId: widget.classId!,
+        date: _currentDate,
+        courseId: widget.courseId!,
+      );
+    }
   }
 
   void _setCurrentDate() {
     final now = DateTime.now();
-    final formatter = DateFormat('yyyy-MM-dd HH:mm:ss'); // Format for API
-    _currentDate = formatter.format(now);
+    _currentDate = DateFormat('yyyy-MM-dd HH:mm:ss').format(now);
+    _formattedDateForDisplay = DateFormat('MMM dd, yyyy').format(now);
   }
 
-  void _onSavePressed() {
+  Future<void> _onSavePressed() async {
     final provider = context.read<StudentProvider>();
-    provider.saveAttendance(
-      classId: widget.classId,
-      courseId: widget.courseId,
-      date: _currentDate,
-    ).then((success) async {
-      if (success) {
-        // Save attendance data locally
-        await provider.saveLocalAttendance(
-          classId: widget.classId!,
-          date: _currentDate,
-          courseId: widget.courseId!,
-          studentIds: provider.selectedStudentIds,
-        );
+    final now = DateTime.now();
+    final formatter = DateFormat('yyyy-MM-dd HH:mm:ss');
+    final formattedDate = formatter.format(now);
+    final dateForApi = "${formattedDate.split(' ')[0]} 00:00:00";
 
+    bool success;
+    
+    if (provider.hasExistingAttendance && provider.currentAttendanceId != null) {
+      success = await provider.updateAttendance(
+        attendanceId: provider.currentAttendanceId!,
+      );
+      
+      if (success) {
         CustomToaster.toastSuccess(
           context,
           'Success',
-          'Attendance saved successfully',
+          'Course attendance updated successfully',
         );
-      } else {
-        CustomToaster.toastError(
-          context,
-          'Error',
-          provider.errorMessage.isNotEmpty
-              ? provider.errorMessage
-              : 'Failed to save attendance',
+        await provider.fetchCourseAttendance(
+          classId: widget.classId!,
+          date: dateForApi,
+          courseId: widget.courseId!,
         );
       }
-    });
+    } else {
+      success = await provider.saveCourseAttendance(
+        classId: widget.classId,
+        courseId: widget.courseId,
+        date: formattedDate,
+      );
+      
+      if (success) {
+        await provider.saveLocalAttendance(
+          classId: widget.classId!,
+          date: formattedDate,
+          courseId: widget.courseId!,
+          studentIds: provider.selectedStudentIds,
+        );
+        
+        CustomToaster.toastSuccess(
+          context,
+          'Success',
+          'Course attendance saved successfully',
+        );
+      }
+    }
+    
+    if (!success) {
+      CustomToaster.toastError(
+        context,
+        'Error',
+        provider.errorMessage.isNotEmpty
+            ? provider.errorMessage
+            : 'Failed to save course attendance',
+      );
+    }
   }
 
   @override
@@ -114,14 +137,12 @@ class _TakeCourseAttendanceState extends State<TakeCourseAttendance> {
       appBar: AppBar(
         backgroundColor: AppColors.backgroundLight,
         title: Text(
-          _currentDate,
+          _formattedDateForDisplay,
           style: AppTextStyles.normal500(
               fontSize: 18, color: AppColors.backgroundDark),
         ),
         leading: IconButton(
-          onPressed: () {
-            Navigator.of(context).pop();
-          },
+          onPressed: () => Navigator.of(context).pop(),
           icon: Image.asset(
             'assets/icons/arrow_back.png',
             color: AppColors.primaryLight,
@@ -132,26 +153,28 @@ class _TakeCourseAttendanceState extends State<TakeCourseAttendance> {
       ),
       body: Consumer<StudentProvider>(
         builder: (context, provider, child) {
-          if (provider.isLoading) {
-            return const Center(child: CircularProgressIndicator());
-          }
-
-          if (provider.errorMessage.isNotEmpty) {
-            return Center(child: Text(provider.errorMessage));
-          }
-
-          if (provider.students.isEmpty) {
-            return const Center(child: Text('No students found'));
-          }
+          if (provider.isLoading) return const Center(child: CircularProgressIndicator());
+          if (provider.errorMessage.isNotEmpty) return Center(child: Text(provider.errorMessage));
+          if (provider.students.isEmpty) return const Center(child: Text('No students found for this course'));
 
           return Column(
             children: [
-              // Select All Header
+              if (provider.hasExistingAttendance)
+                Container(
+                  padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
+                  color: Colors.green.withOpacity(0.1),
+                  child: const Row(
+                    children: [
+                      Icon(Icons.info_outline, color: Colors.green),
+                      SizedBox(width: 8),
+                    ],
+                  ),
+                ),
+
               GestureDetector(
                 onTap: () => provider.toggleSelectAll(),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 16.0, vertical: 12.0),
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
                   decoration: BoxDecoration(
                       color: provider.selectAll
                           ? const Color.fromRGBO(239, 227, 255, 1)
@@ -186,7 +209,6 @@ class _TakeCourseAttendanceState extends State<TakeCourseAttendance> {
                 ),
               ),
 
-              // Student List
               Expanded(
                 child: ListView.separated(
                   itemCount: provider.students.length,
@@ -210,10 +232,12 @@ class _TakeCourseAttendanceState extends State<TakeCourseAttendance> {
                         ),
                       ),
                       title: Text(student.name),
-                      trailing: student.isSelected
-                          ? const Icon(Icons.check_circle,
-                              color: AppColors.attCheckColor2)
-                          : null,
+                      trailing: Icon(
+                        Icons.check_circle,
+                        color: student.isMarkedPresent 
+                            ? AppColors.attCheckColor2 
+                            : Colors.grey.withOpacity(0.5),
+                      ),
                       onTap: () => provider.toggleStudentSelection(index),
                     );
                   },
@@ -225,10 +249,11 @@ class _TakeCourseAttendanceState extends State<TakeCourseAttendance> {
       ),
       floatingActionButton: Consumer<StudentProvider>(
         builder: (context, provider, child) {
-          // Show the floating button only if at least one student is selected
-          return provider.selectedStudentIds.isNotEmpty
+          return provider.students.any((s) => s.isSelected)
               ? CustomFloatingSaveButton(
                   onPressed: _onSavePressed,
+                  icon: provider.hasExistingAttendance ? Icons.update : Icons.save,
+                  tooltip: provider.hasExistingAttendance ? 'Update Attendance' : 'Save Attendance',
                 )
               : Container();
         },
@@ -238,7 +263,9 @@ class _TakeCourseAttendanceState extends State<TakeCourseAttendance> {
 }
 
 
-// ``import 'package:flutter/material.dart';
+
+
+// import 'package:flutter/material.dart';
 // import 'package:linkschool/modules/providers/admin/student_provider.dart';
 // import 'package:provider/provider.dart';
 // import 'package:intl/intl.dart';
@@ -273,62 +300,102 @@ class _TakeCourseAttendanceState extends State<TakeCourseAttendance> {
 //   ];
 
 //   String _currentDate = '';
+//   String _formattedDateForDisplay = '';
 
 //   @override
 //   void initState() {
 //     super.initState();
 //     _setCurrentDate();
-
-//     // Initialize provider with needed data
-//     WidgetsBinding.instance.addPostFrameCallback((_) {
-//       final provider = context.read<StudentProvider>();
-//       provider.fetchStudents(widget.classId).then((_) {
-//         // Fetch attendance data after students are loaded
-//         provider.fetchAttendance(
-//           classId: widget.classId!,
-//           date: _currentDate,
-//           courseId: widget.courseId!,
-//         );
-//       });
-//     });
+//     WidgetsBinding.instance.addPostFrameCallback((_) => _initializeData());
 //   }
 
-//   @override
-//   void dispose() {
-//     // Reset provider state when navigating away
-//     context.read<StudentProvider>().reset();
-//     super.dispose();
+//   void _initializeData() async {
+//     final provider = context.read<StudentProvider>();
+//     await provider.fetchStudents(widget.classId);
+    
+//     if (widget.classId != null && widget.courseId != null) {
+//       final dateForApi = "${_currentDate.split(' ')[0]} 00:00:00";
+//       await provider.loadAttendedStudents(
+//         classId: widget.classId!,
+//         date: _currentDate,
+//       );
+//       await provider.fetchCourseAttendance(
+//         classId: widget.classId!,
+//         date: dateForApi,
+//         courseId: widget.courseId!,
+//       );
+//       await provider.fetchLocalAttendance(
+//         classId: widget.classId!,
+//         date: _currentDate,
+//         courseId: widget.courseId!,
+//       );
+//     }
 //   }
 
 //   void _setCurrentDate() {
 //     final now = DateTime.now();
-//     final formatter = DateFormat('yyyy-MM-dd HH:mm:ss'); // Format for API
-//     _currentDate = formatter.format(now);
+//     _currentDate = DateFormat('yyyy-MM-dd HH:mm:ss').format(now);
+//     _formattedDateForDisplay = DateFormat('MMM dd, yyyy').format(now);
 //   }
 
-//   void _onSavePressed() {
+//   Future<void> _onSavePressed() async {
 //     final provider = context.read<StudentProvider>();
-//     provider.saveAttendance(
-//       classId: widget.classId,
-//       courseId: widget.courseId,
-//       date: _currentDate,
-//     ).then((success) {
+//     final now = DateTime.now();
+//     final formatter = DateFormat('yyyy-MM-dd HH:mm:ss');
+//     final formattedDate = formatter.format(now);
+//     final dateForApi = "${formattedDate.split(' ')[0]} 00:00:00";
+
+//     bool success;
+    
+//     if (provider.hasExistingAttendance && provider.currentAttendanceId != null) {
+//       success = await provider.updateAttendance(
+//         attendanceId: provider.currentAttendanceId!,
+//       );
+      
 //       if (success) {
 //         CustomToaster.toastSuccess(
 //           context,
 //           'Success',
-//           'Attendance saved successfully',
+//           'Course attendance updated successfully',
 //         );
-//       } else {
-//         CustomToaster.toastError(
-//           context,
-//           'Error',
-//           provider.errorMessage.isNotEmpty
-//               ? provider.errorMessage
-//               : 'Failed to save attendance',
+//         await provider.fetchCourseAttendance(
+//           classId: widget.classId!,
+//           date: dateForApi,
+//           courseId: widget.courseId!,
 //         );
 //       }
-//     });
+//     } else {
+//       success = await provider.saveCourseAttendance(
+//         classId: widget.classId,
+//         courseId: widget.courseId,
+//         date: formattedDate,
+//       );
+      
+//       if (success) {
+//         await provider.saveLocalAttendance(
+//           classId: widget.classId!,
+//           date: formattedDate,
+//           courseId: widget.courseId!,
+//           studentIds: provider.selectedStudentIds,
+//         );
+        
+//         CustomToaster.toastSuccess(
+//           context,
+//           'Success',
+//           'Course attendance saved successfully',
+//         );
+//       }
+//     }
+    
+//     if (!success) {
+//       CustomToaster.toastError(
+//         context,
+//         'Error',
+//         provider.errorMessage.isNotEmpty
+//             ? provider.errorMessage
+//             : 'Failed to save course attendance',
+//       );
+//     }
 //   }
 
 //   @override
@@ -337,14 +404,12 @@ class _TakeCourseAttendanceState extends State<TakeCourseAttendance> {
 //       appBar: AppBar(
 //         backgroundColor: AppColors.backgroundLight,
 //         title: Text(
-//           _currentDate,
+//           _formattedDateForDisplay,
 //           style: AppTextStyles.normal500(
 //               fontSize: 18, color: AppColors.backgroundDark),
 //         ),
 //         leading: IconButton(
-//           onPressed: () {
-//             Navigator.of(context).pop();
-//           },
+//           onPressed: () => Navigator.of(context).pop(),
 //           icon: Image.asset(
 //             'assets/icons/arrow_back.png',
 //             color: AppColors.primaryLight,
@@ -355,26 +420,28 @@ class _TakeCourseAttendanceState extends State<TakeCourseAttendance> {
 //       ),
 //       body: Consumer<StudentProvider>(
 //         builder: (context, provider, child) {
-//           if (provider.isLoading) {
-//             return const Center(child: CircularProgressIndicator());
-//           }
-
-//           if (provider.errorMessage.isNotEmpty) {
-//             return Center(child: Text(provider.errorMessage));
-//           }
-
-//           if (provider.students.isEmpty) {
-//             return const Center(child: Text('No students found'));
-//           }
+//           if (provider.isLoading) return const Center(child: CircularProgressIndicator());
+//           if (provider.errorMessage.isNotEmpty) return Center(child: Text(provider.errorMessage));
+//           if (provider.students.isEmpty) return const Center(child: Text('No students found'));
 
 //           return Column(
 //             children: [
-//               // Select All Header
+//               if (provider.hasExistingAttendance)
+//                 Container(
+//                   padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
+//                   color: Colors.green.withOpacity(0.1),
+//                   child: const Row(
+//                     children: [
+//                       Icon(Icons.info_outline, color: Colors.green),
+//                       SizedBox(width: 8),
+//                     ],
+//                   ),
+//                 ),
+
 //               GestureDetector(
 //                 onTap: () => provider.toggleSelectAll(),
 //                 child: Container(
-//                   padding: const EdgeInsets.symmetric(
-//                       horizontal: 16.0, vertical: 12.0),
+//                   padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
 //                   decoration: BoxDecoration(
 //                       color: provider.selectAll
 //                           ? const Color.fromRGBO(239, 227, 255, 1)
@@ -409,7 +476,6 @@ class _TakeCourseAttendanceState extends State<TakeCourseAttendance> {
 //                 ),
 //               ),
 
-//               // Student List
 //               Expanded(
 //                 child: ListView.separated(
 //                   itemCount: provider.students.length,
@@ -433,10 +499,12 @@ class _TakeCourseAttendanceState extends State<TakeCourseAttendance> {
 //                         ),
 //                       ),
 //                       title: Text(student.name),
-//                       trailing: student.isSelected
-//                           ? const Icon(Icons.check_circle,
-//                               color: AppColors.attCheckColor2)
-//                           : null,
+//                       trailing: Icon(
+//                         Icons.check_circle,
+//                         color: student.isMarkedPresent 
+//                             ? AppColors.attCheckColor2 
+//                             : Colors.grey.withOpacity(0.5),
+//                       ),
 //                       onTap: () => provider.toggleStudentSelection(index),
 //                     );
 //                   },
@@ -448,14 +516,15 @@ class _TakeCourseAttendanceState extends State<TakeCourseAttendance> {
 //       ),
 //       floatingActionButton: Consumer<StudentProvider>(
 //         builder: (context, provider, child) {
-//           // Show the floating button only if at least one student is selected
-//           return provider.selectedStudentIds.isNotEmpty
+//           return provider.students.any((s) => s.isSelected)
 //               ? CustomFloatingSaveButton(
 //                   onPressed: _onSavePressed,
+//                   icon: provider.hasExistingAttendance ? Icons.update : Icons.save,
+//                   tooltip: provider.hasExistingAttendance ? 'Update Attendance' : 'Save Attendance',
 //                 )
 //               : Container();
 //         },
 //       ),
 //     );
 //   }
-// }``
+// }

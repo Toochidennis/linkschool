@@ -11,7 +11,8 @@ import 'package:linkschool/modules/staff/home/staff_take_attandance_screen.dart'
 
 
 class StaffAttandanceScreen extends StatelessWidget {
-  const StaffAttandanceScreen({super.key});
+  final String? classId;
+  const StaffAttandanceScreen({super.key, this.classId});
 
 
 
@@ -75,7 +76,7 @@ class StaffAttandanceScreen extends StatelessWidget {
                     const SizedBox(height: 44),
                     AttendanceHistoryHeader(),
                     const SizedBox(height: 16),
-                    AttendanceHistoryList(),
+                    AttendanceHistoryList(classId: "classId",),
                   ],
                 ),
               ),

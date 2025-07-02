@@ -56,34 +56,3 @@ class ApiResponse<T> {
     this.rawData,
   });
 }
-
-
-
-// import 'package:linkschool/modules/auth/model/user.dart';
-// import 'package:linkschool/modules/services/api/api_service.dart';
-// import 'package:linkschool/modules/services/api/service_locator.dart';
-// class AuthService {
-//   final ApiService _apiService = locator<ApiService>();
-
-//   Future<ApiResponse<Map<String, dynamic>>> login(String username, String password, String schoolCode) async {
-//     return await _apiService.get(
-//       endpoint: 'login.php',
-//       queryParams: {
-//         'username': username,
-//         'password': password,
-//         'token': schoolCode,
-//       },
-//     );
-//   }
-  
-//   // Additional auth methods can be added here
-//   Future<ApiResponse<User>> getUserProfile(String userId) async {
-//     return await _apiService.get(
-//       endpoint: 'user_profile.php',
-//       queryParams: {
-//         'user_id': userId,
-//       },
-//       fromJson: (json) => User.fromJson(json),
-//     );
-//   }
-// }

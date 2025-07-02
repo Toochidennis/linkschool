@@ -23,7 +23,7 @@ class _ResultDashboardScreenState extends State<ResultDashboardScreen> {
   Map<String, dynamic>? userData;
   List<dynamic> levelNames = [];
   List<dynamic> classNames = [];
-  List<dynamic> levelsWithClasses = []; // New list to store only levels with classes
+  List<dynamic> levelsWithClasses = [];
 
   @override
   void initState() {
@@ -148,7 +148,7 @@ class _ResultDashboardScreenState extends State<ResultDashboardScreen> {
             ),
             SliverToBoxAdapter(
               child: LevelSelection(
-                levelNames: levelsWithClasses, // Use the filtered levels list
+                levelNames: levelsWithClasses, // Use filtered levels list
                 classNames: classNames, 
                 isSecondScreen: false,
                 subjects: [

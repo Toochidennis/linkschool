@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:linkschool/modules/explore/e_library/E_lib_vids.dart';
 import 'package:linkschool/modules/explore/videos/see_all_screen.dart';
-// import 'package:linkschool/modules/explore/videos/see_all_screen.dart';
-
 import 'package:provider/provider.dart';
 import '../../common/app_colors.dart';
 import '../../common/constants.dart';
@@ -61,7 +59,7 @@ class _VideoDisplayState extends State<VideoDisplay> {
     'chemistry',
     'biology',
   ];
-_navigateToSeeall() {
+  _navigateToSeeall() {
     Navigator.push(
         context,
         MaterialPageRoute(
@@ -92,7 +90,6 @@ _navigateToSeeall() {
                               title: 'Watch history',
                               titleSize: 14.0,
                               titleColor: AppColors.primaryLight,
-
                             ),
                           ),
                           SliverToBoxAdapter(
@@ -336,7 +333,6 @@ _navigateToSeeall() {
                         ),
                         SliverList(
                           delegate: SliverChildBuilderDelegate(
-                          
                             (context, index) {
                               if (index < recommendationVideos.length) {
                                 return GestureDetector(
@@ -358,10 +354,11 @@ _navigateToSeeall() {
                             },
                             childCount: recommendationVideos.length,
                           ),
-                        
                         ),
                         SliverToBoxAdapter(
-                          child: SizedBox(height: 100,),
+                          child: SizedBox(
+                            height: 100,
+                          ),
                         )
                       ],
                     ),
@@ -402,7 +399,6 @@ _navigateToSeeall() {
             ),
           ),
           const SizedBox(height: 4.0),
-          
         ],
       ),
     );

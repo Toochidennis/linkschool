@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:linkschool/modules/model/admin/student_model.dart';
 import 'package:linkschool/modules/services/admin/student_service.dart';
 import 'package:hive/hive.dart';
+import 'dart:convert';
 
 class StudentProvider extends ChangeNotifier {
   final StudentService _studentService;
@@ -9,41 +10,113 @@ class StudentProvider extends ChangeNotifier {
   StudentProvider(this._studentService);
   
   List<Student> _students = [];
+  List<Student> _allStudents = [];
   bool _isLoading = false;
   String _errorMessage = '';
   bool _selectAll = false;
   Student? _student;
   Map<String, dynamic>? _studentTerms;
   List<int> _localAttendance = [];
+  List<int> _attendedStudentIds = [];
+  int? _currentAttendanceId;
+  bool _hasExistingAttendance = false;
+  Map<String, dynamic>? _studentTermResult;
 
-  // Getters
   List<Student> get students => _students;
+  List<Student> get allStudents => _allStudents; 
   bool get isLoading => _isLoading;
   String get errorMessage => _errorMessage;
   bool get selectAll => _selectAll;
   List<int> get selectedStudentIds => _students
-    .where((student) => student.isSelected)
-    .map((student) => student.id)
-    .toList();
+      .where((student) => student.isSelected)
+      .map((student) => student.id)
+      .toList();
+  List<int> get attendedStudentIds => _attendedStudentIds;
   Student? get student => _student;
   Map<String, dynamic>? get studentTerms => _studentTerms;
+  int? get currentAttendanceId => _currentAttendanceId;
+  bool get hasExistingAttendance => _hasExistingAttendance;
+   Map<String, dynamic>? get studentTermResult => _studentTermResult;
 
-  // Fetch students for a specific class
-  Future<void> fetchStudents(String? classId) async {
-    if (classId == null) {
-      _errorMessage = 'Class ID is missing';
+  Future<bool> updateAttendance({required int attendanceId}) async {
+    try {
+      _isLoading = true;
       notifyListeners();
-      return;
-    }
+      
+      final studentsToMark = _students.where((s) => s.isMarkedPresent).toList();
+      final studentIdsToMark = studentsToMark.map((s) => s.id).toList();
+      
+      final success = await _studentService.updateAttendance(
+        attendanceId: attendanceId,
+        studentIds: studentIdsToMark,
+        selectedStudents: studentsToMark,
+      );
 
+      if (success) {
+        _errorMessage = '';
+        _attendedStudentIds = studentIdsToMark;
+        
+        for (int i = 0; i < _students.length; i++) {
+          final isAttended = _attendedStudentIds.contains(_students[i].id);
+          _students[i] = _students[i].copyWith(
+            hasAttended: isAttended,
+            isSelected: false
+          );
+        }
+        
+        _selectAll = false;
+      } else {
+        _errorMessage = 'Failed to update attendance';
+      }
+
+      _isLoading = false;
+      notifyListeners();
+      return success;
+    } catch (e) {
+      _isLoading = false;
+      _errorMessage = e.toString();
+      notifyListeners();
+      return false;
+    }
+  }
+
+Future<void> fetchStudents(String? classId, {String? courseId}) async {
+  if (classId == null) {
+    _errorMessage = 'Class ID is missing';
+    notifyListeners();
+    return;
+  }
+
+  try {
+    _isLoading = true;
+    _errorMessage = '';
+    _students = []; // Clear existing students
+    notifyListeners();
+
+    final fetchedStudents = courseId != null
+        ? await _studentService.getStudentsByCourse(courseId, classId)
+        : await _studentService.getStudentsByClass(classId);
+    
+    _students = fetchedStudents;
+    _isLoading = false;
+    
+    notifyListeners();
+  } catch (e) {
+    _isLoading = false;
+    _errorMessage = e.toString();
+    notifyListeners();
+  }
+}
+
+  Future<void> fetchAllStudents() async {
     try {
       _isLoading = true;
       _errorMessage = '';
       notifyListeners();
 
-      final fetchedStudents = await _studentService.getStudentsByClass(classId);
+      final fetchedStudents = await _studentService.getAllStudents();
       
-      _students = fetchedStudents;
+      _allStudents = fetchedStudents;
       _isLoading = false;
       
       notifyListeners();
@@ -54,17 +127,298 @@ class StudentProvider extends ChangeNotifier {
     }
   }
 
-  // Fetch attendance data
+  Future<void> fetchStudentResultTerms(int studentId) async {
+    try {
+      _isLoading = true;
+      _errorMessage = '';
+      notifyListeners();
+
+      final fetchedTerms = await _studentService.getStudentResultTerms(studentId);
+      
+      _studentTerms = fetchedTerms;
+      
+      _student = _allStudents.firstWhere(
+        (student) => student.id == studentId,
+        orElse: () => _students.firstWhere(
+          (student) => student.id == studentId,
+          orElse: () => throw Exception('Student not found'),
+        ),
+      );
+      
+      _isLoading = false;
+      notifyListeners();
+    } catch (e) {
+      _isLoading = false;
+      _errorMessage = e.toString();
+      notifyListeners();
+    }
+  }
+
   Future<void> fetchAttendance({
     required String classId, 
     required String date, 
     required String courseId,
   }) async {
-    // Implement attendance fetching logic if needed
-    notifyListeners();
+    try {
+      _isLoading = true;
+      notifyListeners();
+      
+      final attendanceRecords = await _studentService.getClassAttendance(
+        classId: classId,
+        date: date,
+      );
+      
+      _attendedStudentIds = [];
+      _currentAttendanceId = null;
+      _hasExistingAttendance = false;
+      
+      if (attendanceRecords.isNotEmpty) {
+        final firstRecord = attendanceRecords[0];
+        
+        if (firstRecord.containsKey('id')) {
+          _currentAttendanceId = firstRecord['id'] is int 
+              ? firstRecord['id'] 
+              : int.tryParse(firstRecord['id'].toString());
+          _hasExistingAttendance = _currentAttendanceId != null;
+        }
+        
+        if (firstRecord['register'] != null) {
+          dynamic registerData = firstRecord['register'];
+          
+          if (registerData is String) {
+            try {
+              registerData = jsonDecode(registerData);
+            } catch (e) {
+              debugPrint('Error parsing register JSON: $e');
+              registerData = null;
+            }
+          }
+          
+          if (registerData is List) {
+            for (var student in registerData) {
+              if (student is Map && student.containsKey('id')) {
+                final idString = student['id'].toString();
+                final studentId = int.tryParse(idString) ?? -1;
+                
+                if (studentId != -1 && !_attendedStudentIds.contains(studentId)) {
+                  _attendedStudentIds.add(studentId);
+                }
+              }
+            }
+          }
+        }
+      }
+      
+      for (int i = 0; i < _students.length; i++) {
+        final isAttended = _attendedStudentIds.contains(_students[i].id);
+        _students[i] = _students[i].copyWith(hasAttended: isAttended);
+      }
+      
+      await saveAttendedStudents(
+        classId: classId,
+        date: date.split(' ')[0],
+        studentIds: _attendedStudentIds,
+      );
+      
+      _isLoading = false;
+      notifyListeners();
+    } catch (e) {
+      _isLoading = false;
+      _errorMessage = e.toString();
+      notifyListeners();
+    }
   }
 
-  // Fetch local attendance data
+  Future<void> fetchCourseAttendance({
+    required String classId, 
+    required String date, 
+    required String courseId,
+  }) async {
+    try {
+      _isLoading = true;
+      notifyListeners();
+      
+      final attendanceRecords = await _studentService.getCourseAttendance(
+        classId: classId,
+        date: date,
+        courseId: courseId,
+      );
+      
+      _attendedStudentIds = [];
+      _currentAttendanceId = null;
+      _hasExistingAttendance = false;
+      
+      if (attendanceRecords.isNotEmpty) {
+        final firstRecord = attendanceRecords[0];
+        
+        if (firstRecord.containsKey('id')) {
+          _currentAttendanceId = firstRecord['id'] is int 
+              ? firstRecord['id'] 
+              : int.tryParse(firstRecord['id'].toString());
+          _hasExistingAttendance = _currentAttendanceId != null;
+        }
+        
+        if (firstRecord['register'] != null) {
+          String registerStr = firstRecord['register'].toString();
+          if (registerStr.startsWith(' ')) {
+            registerStr = registerStr.substring(1);
+          }
+          
+          try {
+            List<dynamic> registerList = jsonDecode(registerStr);
+            
+            for (var student in registerList) {
+              if (student is Map && student.containsKey('id')) {
+                final idString = student['id'].toString();
+                final studentId = int.tryParse(idString) ?? -1;
+                
+                if (studentId != -1 && !_attendedStudentIds.contains(studentId)) {
+                  _attendedStudentIds.add(studentId);
+                }
+              }
+            }
+          } catch (e) {
+            debugPrint('Error parsing register JSON: $e');
+          }
+        }
+      }
+      
+      for (int i = 0; i < _students.length; i++) {
+        final student = _students[i];
+        final isAttended = _attendedStudentIds.contains(student.id);
+        _students[i] = student.copyWith(hasAttended: isAttended);
+      }
+      
+      await saveAttendedStudents(
+        classId: classId,
+        date: date.split(' ')[0],
+        studentIds: _attendedStudentIds,
+      );
+      
+      _isLoading = false;
+      notifyListeners();
+    } catch (e) {
+      _isLoading = false;
+      _errorMessage = e.toString();
+      notifyListeners();
+    }
+  }
+
+  Future<bool> saveCourseAttendance({
+    required String? classId, 
+    required String? courseId, 
+    required String date,
+  }) async {
+    if (classId == null || courseId == null) {
+      _errorMessage = 'Class or Course ID is missing';
+      notifyListeners();
+      return false;
+    }
+
+    try {
+      _isLoading = true;
+      notifyListeners();
+      
+      final selectedStudents = _students.where((student) => student.isSelected).toList();
+      
+      final success = await _studentService.saveCourseAttendance(
+        classId: classId,
+        courseId: courseId,
+        studentIds: selectedStudentIds,
+        date: date,
+        selectedStudents: selectedStudents,
+      );
+
+      if (success) {
+        _errorMessage = '';
+        
+        final updatedAttendedIds = [..._attendedStudentIds];
+        
+        for (final studentId in selectedStudentIds) {
+          if (!updatedAttendedIds.contains(studentId)) {
+            updatedAttendedIds.add(studentId);
+          }
+        }
+        
+        final dateOnly = date.split(' ')[0];
+        await saveAttendedStudents(
+          classId: classId,
+          date: dateOnly,
+          studentIds: updatedAttendedIds,
+        );
+      } else {
+        _errorMessage = 'Failed to save attendance';
+      }
+
+      _isLoading = false;
+      notifyListeners();
+      return success;
+    } catch (e) {
+      _isLoading = false;
+      _errorMessage = e.toString();
+      notifyListeners();
+      return false;
+    }
+  }
+
+  Future<void> saveAttendedStudents({
+    required String classId,
+    required String date,
+    required List<int> studentIds,
+  }) async {
+    try {
+      final attendanceBox = await Hive.openBox('attendance');
+      final dateOnly = date.split(' ')[0];
+      final key = 'attended_${classId}_$dateOnly';
+      
+      await attendanceBox.put(key, studentIds);
+      _attendedStudentIds = studentIds;
+      
+      debugPrint('Saved attended students with key: $key');
+      debugPrint('Attended students: $_attendedStudentIds');
+      
+      for (int i = 0; i < _students.length; i++) {
+        final isAttended = _attendedStudentIds.contains(_students[i].id);
+        _students[i] = _students[i].copyWith(hasAttended: isAttended);
+      }
+      
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Error saving attended students: $e');
+    }
+  }
+
+  Future<void> loadAttendedStudents({
+    required String classId,
+    required String date,
+  }) async {
+    try {
+      final attendanceBox = await Hive.openBox('attendance');
+      final dateOnly = date.split(' ')[0];
+      final key = 'attended_${classId}_$dateOnly';
+      
+      debugPrint("Loading attended students with key: $key");
+      final localData = attendanceBox.get(key);
+
+      if (localData is List<dynamic>) {
+        _attendedStudentIds = localData.cast<int>();
+        debugPrint("Loaded attended students: $_attendedStudentIds");
+        
+        for (int i = 0; i < _students.length; i++) {
+          final isAttended = _attendedStudentIds.contains(_students[i].id);
+          debugPrint("Student ${_students[i].id}: ${_students[i].name} - isAttended: $isAttended");
+          _students[i] = _students[i].copyWith(hasAttended: isAttended);
+        }
+        
+        notifyListeners();
+      } else {
+        debugPrint("No attended students data found for key: $key");
+      }
+    } catch (e) {
+      debugPrint("Error loading attended students: $e");
+    }
+  }
+
   Future<void> fetchLocalAttendance({
     required String classId, 
     required String date, 
@@ -72,25 +426,32 @@ class StudentProvider extends ChangeNotifier {
   }) async {
     try {
       final attendanceBox = await Hive.openBox('attendance');
-      final key = '${classId}_${date}_$courseId';
+      final dateOnly = date.split(' ')[0];
+      final key = '${classId}_${dateOnly}_$courseId';
       
+      debugPrint("Fetching local attendance with key: $key");
       final localData = attendanceBox.get(key);
-      if (localData is List<int>) {
-        _localAttendance = localData;
+      
+      if (localData is List<dynamic>) {
+        _localAttendance = localData.cast<int>();
+        debugPrint("Loaded local attendance: $_localAttendance");
         
-        // Mark students as selected based on local attendance
-        for (var student in _students) {
-          student.isSelected = _localAttendance.contains(student.id);
+        for (var i = 0; i < _students.length; i++) {
+          final isSelected = _localAttendance.contains(_students[i].id);
+          _students[i] = _students[i].copyWith(isSelected: isSelected);
         }
         
+        _updateSelectAllStatus();
+        
         notifyListeners();
+      } else {
+        debugPrint("No local attendance data found for key: $key");
       }
     } catch (e) {
       debugPrint('Error fetching local attendance: $e');
     }
   }
 
-  // Save attendance
   Future<bool> saveAttendance({
     required String? classId, 
     required String? courseId, 
@@ -103,29 +464,51 @@ class StudentProvider extends ChangeNotifier {
     }
 
     try {
+      _isLoading = true;
+      notifyListeners();
+      
+      final selectedStudents = _students.where((student) => student.isSelected).toList();
+      
       final success = await _studentService.saveAttendance(
         classId: classId,
         courseId: courseId,
         studentIds: selectedStudentIds,
         date: date,
+        selectedStudents: selectedStudents,
       );
 
       if (success) {
         _errorMessage = '';
+        
+        final updatedAttendedIds = [..._attendedStudentIds];
+        
+        for (final studentId in selectedStudentIds) {
+          if (!updatedAttendedIds.contains(studentId)) {
+            updatedAttendedIds.add(studentId);
+          }
+        }
+        
+        final dateOnly = date.split(' ')[0];
+        await saveAttendedStudents(
+          classId: classId,
+          date: dateOnly,
+          studentIds: updatedAttendedIds,
+        );
       } else {
         _errorMessage = 'Failed to save attendance';
       }
 
+      _isLoading = false;
       notifyListeners();
       return success;
     } catch (e) {
+      _isLoading = false;
       _errorMessage = e.toString();
       notifyListeners();
       return false;
     }
   }
 
-  // Save local attendance
   Future<void> saveLocalAttendance({
     required String classId, 
     required String date, 
@@ -134,28 +517,33 @@ class StudentProvider extends ChangeNotifier {
   }) async {
     try {
       final attendanceBox = await Hive.openBox('attendance');
-      final key = '${classId}_${date}_$courseId';
+      final dateOnly = date.split(' ')[0];
+      final key = '${classId}_${dateOnly}_$courseId';
       
       await attendanceBox.put(key, studentIds);
       
       _localAttendance = studentIds;
+      debugPrint('Saved local attendance with key: $key');
+      debugPrint('Local attendance: $_localAttendance');
+      
       notifyListeners();
     } catch (e) {
       debugPrint('Error saving local attendance: $e');
     }
   }
 
-  // Reset provider state
   void reset() {
     _students = [];
     _isLoading = false;
     _errorMessage = '';
     _selectAll = false;
     _localAttendance = [];
+    _attendedStudentIds = [];
+    _currentAttendanceId = null;
+    _hasExistingAttendance = false;
     notifyListeners();
   }
 
-  // Toggle selection for a single student
   void toggleStudentSelection(int index) {
     if (index < 0 || index >= _students.length) return;
     
@@ -163,242 +551,56 @@ class StudentProvider extends ChangeNotifier {
       isSelected: !_students[index].isSelected
     );
     
-    // Update selectAll status
     _updateSelectAllStatus();
     
     notifyListeners();
   }
 
-  // Toggle selection for all students
   void toggleSelectAll() {
     _selectAll = !_selectAll;
     
-    // Update all students
     for (int i = 0; i < _students.length; i++) {
-      _students[i] = _students[i].copyWith(isSelected: _selectAll);
+      _students[i] = _students[i].copyWith(
+        isSelected: _selectAll,
+        hasAttended: _selectAll ? _students[i].hasAttended : false
+      );
     }
     
     notifyListeners();
   }
 
-  // Check if all students are selected and update _selectAll accordingly
   void _updateSelectAllStatus() {
     _selectAll = _students.isNotEmpty && 
                  _students.every((student) => student.isSelected);
   }
 
-  Future<void> fetchStudentTerms(int studentId) async {
-    _isLoading = true;
-    notifyListeners();
-
+  Future<void> fetchStudentTermResults({
+    required int studentId,
+    required int termId,
+    required String classId,
+    required String year,
+    required String levelId,
+  }) async {
     try {
-      final response = await _studentService.fetchStudentTerms(studentId);
+      _isLoading = true;
+      _errorMessage = '';
+      notifyListeners();
 
-      // Check if the response contains the expected data
-      if (response.containsKey('terms') && response['terms'] != null) {
-        _studentTerms = response;
-      } else {
-        _studentTerms = null;
-        throw Exception('No terms data found in the API response');
-      }
-    } catch (e) {
-      _studentTerms = null;
-      debugPrint('Error fetching student terms: $e');
-    } finally {
+      final result = await _studentService.getStudentTermResults(
+        studentId: studentId,
+        termId: termId,
+        classId: classId,
+        year: year,
+        levelId: levelId,
+      );
+
+      _studentTermResult = result;
       _isLoading = false;
+      notifyListeners();
+    } catch (e) {
+      _isLoading = false;
+      _errorMessage = e.toString();
       notifyListeners();
     }
   }
 }
-
-
-
-
-// // lib/providers/attendance_provider.dart
-// import 'package:flutter/material.dart';
-// import 'package:hive/hive.dart';
-// import 'package:linkschool/modules/model/admin/student_model.dart';
-// import 'package:linkschool/modules/services/admin/student_service.dart';
-
-
-// class StudentProvider extends ChangeNotifier {
-//   final StudentService _studentService = StudentService();
-
-//   List<Student> _students = [];
-//   bool _isLoading = false;
-//   String _errorMessage = '';
-//   bool _selectAll = false;
-
-//   // Getters
-//   List<Student> get students => _students;
-//   bool get isLoading => _isLoading;
-//   String get errorMessage => _errorMessage;
-//   bool get selectAll => _selectAll;
-//   List<int> get selectedStudentIds => _students
-//       .where((student) => student.isSelected)
-//       .map((student) => student.id)
-//       .toList();
-
-//   // Fetch students for a specific class
-//   Future<void> fetchStudents(String? classId) async {
-//     if (classId == null) {
-//       _errorMessage = 'Class ID is missing';
-//       notifyListeners();
-//       return;
-//     }
-
-//     try {
-//       _isLoading = true;
-//       _errorMessage = '';
-//       notifyListeners();
-
-//       final fetchedStudents = await _studentService.getStudentsByClass(classId);
-
-//       _students = fetchedStudents;
-//       _isLoading = false;
-
-//       notifyListeners();
-//     } catch (e) {
-//       _isLoading = false;
-//       _errorMessage = e.toString();
-//       notifyListeners();
-//     }
-//   }
-
-//   // Fetch attendance data and update student selection status
-//   Future<void> fetchAttendance({
-//     required String classId,
-//     required String date,
-//     required String courseId,
-//   }) async {
-//     try {
-//       _isLoading = true;
-//       _errorMessage = '';
-//       notifyListeners();
-
-//       // Fetch the list of student IDs whose attendance has already been taken
-//       final attendedStudentIds = await _studentService.getAttendance(
-//         classId: classId,
-//         date: date,
-//         courseId: courseId,
-//       );
-
-//       // Update the selection status of students
-//       for (var student in _students) {
-//         student.isSelected = attendedStudentIds.contains(student.id);
-//       }
-
-//       _isLoading = false;
-//       notifyListeners();
-//     } catch (e) {
-//       _isLoading = false;
-//       _errorMessage = e.toString();
-//       notifyListeners();
-//     }
-//   }
-
-//   // Fetch local attendance data
-//   Future<void> fetchLocalAttendance({
-//     required String classId,
-//     required String date,
-//     required String courseId,
-//   }) async {
-//     try {
-//       final attendanceBox = Hive.box('attendance');
-//       final key = '$classId-$date-$courseId';
-//       final attendedStudentIds = attendanceBox.get(key, defaultValue: <int>[]);
-
-//       // Update the selection status of students
-//       for (var student in _students) {
-//         student.isSelected = attendedStudentIds.contains(student.id);
-//       }
-
-//       notifyListeners();
-//     } catch (e) {
-//       debugPrint('Error fetching local attendance: $e');
-//     }
-//   }
-
-//   // Save attendance locally
-//   Future<void> saveLocalAttendance({
-//     required String classId,
-//     required String date,
-//     required String courseId,
-//     required List<int> studentIds,
-//   }) async {
-//     try {
-//       final attendanceBox = Hive.box('attendance');
-//       final key = '$classId-$date-$courseId';
-//       await attendanceBox.put(key, studentIds);
-//     } catch (e) {
-//       debugPrint('Error saving local attendance: $e');
-//     }
-//   }
-
-//   // Toggle selection for a single student
-//   void toggleStudentSelection(int index) {
-//     if (index < 0 || index >= _students.length) return;
-
-//     _students[index] = _students[index].copyWith(
-//       isSelected: !_students[index].isSelected,
-//     );
-
-//     // Update selectAll status
-//     _updateSelectAllStatus();
-
-//     notifyListeners();
-//   }
-
-//   // Toggle selection for all students
-//   void toggleSelectAll() {
-//     _selectAll = !_selectAll;
-
-//     // Update all students
-//     for (int i = 0; i < _students.length; i++) {
-//       _students[i] = _students[i].copyWith(isSelected: _selectAll);
-//     }
-
-//     notifyListeners();
-//   }
-
-//   // Check if all students are selected and update _selectAll accordingly
-//   void _updateSelectAllStatus() {
-//     _selectAll = _students.isNotEmpty &&
-//         _students.every((student) => student.isSelected);
-//   }
-
-//   // Save attendance
-//   Future<bool> saveAttendance({
-//     required String? classId,
-//     required String? courseId,
-//     required String date,
-//   }) async {
-//     if (classId == null || courseId == null) {
-//       _errorMessage = 'Missing class or course ID';
-//       notifyListeners();
-//       return false;
-//     }
-
-//     try {
-//       return await _studentService.saveAttendance(
-//         classId: classId,
-//         courseId: courseId,
-//         studentIds: selectedStudentIds,
-//         date: date,
-//       );
-//     } catch (e) {
-//       _errorMessage = 'Failed to save attendance: $e';
-//       notifyListeners();
-//       return false;
-//     }
-//   }
-
-//   // Reset state when navigating away
-//   void reset() {
-//     _students = [];
-//     _isLoading = false;
-//     _errorMessage = '';
-//     _selectAll = false;
-//     notifyListeners();
-//   }
-// }

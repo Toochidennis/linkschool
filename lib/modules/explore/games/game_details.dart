@@ -34,7 +34,7 @@ class _GameDetailsState extends State<GameDetails> {
 
     // Prepare recommended games list
     final recommendedGames = gameProvider.games?.puzzleGames.games ?? [];
-    
+
     // Prepare games you might like list
     final gamesYouMightLike = gameProvider.games?.cardGames.games ?? [];
 
@@ -96,7 +96,7 @@ class _GameDetailsState extends State<GameDetails> {
                       ),
                     ],
                   ),
-                  
+
                   const SizedBox(height: 20),
                   
                   // Play now button
@@ -111,7 +111,7 @@ class _GameDetailsState extends State<GameDetails> {
                   ),
                   
                   const SizedBox(height: 30),
-                  
+
                   // About this game section
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -129,9 +129,9 @@ class _GameDetailsState extends State<GameDetails> {
                       ),
                     ],
                   ),
-                  
+
                   const SizedBox(height: 30),
-                  
+
                   // Recommended games section
                   Text(
                     'Recommended',
@@ -144,7 +144,8 @@ class _GameDetailsState extends State<GameDetails> {
                   SizedBox(
                     height: 150,
                     child: recommendedGames.isEmpty
-                        ? const Center(child: Text('No recommended games available'))
+                        ? const Center(
+                            child: Text('No recommended games available'))
                         : ListView.builder(
                             scrollDirection: Axis.horizontal,
                             itemCount: recommendedGames.length,
@@ -153,9 +154,9 @@ class _GameDetailsState extends State<GameDetails> {
                             ),
                           ),
                   ),
-                  
+
                   const SizedBox(height: 20),
-                  
+
                   // Games you may like section
                   Text(
                     'Games you may like',
@@ -165,31 +166,29 @@ class _GameDetailsState extends State<GameDetails> {
                     ),
                   ),
                   const SizedBox(height: 10),
-                  gamesYouMightLike.isEmpty
-                      ? const Center(child: Text('No suggested games available'))
-                      : ListView.builder(
-                          shrinkWrap: true,
-                          physics: const NeverScrollableScrollPhysics(),
-                          itemCount: gamesYouMightLike.length,
-                          itemBuilder: (context, index) => GameCard(
-                            game: gamesYouMightLike[index],
-                            startColor: AppColors.gamesColor5,
-                            endColor: AppColors.gamesColor6,
-                            onPlay: () {
-                              // Navigate to the game page, but not to itself again
-                              if (widget.game.id != gamesYouMightLike[index].id) {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => GameDetails(
-                                      game: gamesYouMightLike[index],
-                                    ),
-                                  ),
-                                );
-                              }
-                            },
-                          ),
-                        ),
+                  ListView.builder(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    itemCount: gamesYouMightLike.length,
+                    itemBuilder: (context, index) => GameCard(
+                      game: gamesYouMightLike[index],
+                      startColor: AppColors.gamesColor5,
+                      endColor: AppColors.gamesColor6,
+                      onPlay: () {
+                        // Navigate to the game page, but not to itself again
+                        if (widget.game.id != gamesYouMightLike[index].id) {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => GameDetails(
+                                game: gamesYouMightLike[index],
+                              ),
+                            ),
+                          );
+                        }
+                      },
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -203,7 +202,7 @@ class _GameDetailsState extends State<GameDetails> {
 // Widget for recommended card - renamed to follow PascalCase convention
 class RecommendedCard extends StatelessWidget {
   final Game game;
-  
+
   const RecommendedCard({
     super.key,
     required this.game,
@@ -259,7 +258,8 @@ class ReviewWidget extends StatelessWidget {
             if (reviews != null)
               Text(
                 reviews!,
-                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                style:
+                    const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
               ),
             const SizedBox(width: 4),
             Image.asset(

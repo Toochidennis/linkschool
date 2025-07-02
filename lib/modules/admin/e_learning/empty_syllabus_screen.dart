@@ -8,13 +8,14 @@ import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/buttons/custom_medium_elevated_button.dart';
 import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
-// import 'package:linkschool/modules/admin_portal/e_learning/create_syllabus_screen.dart';
-// import 'package:linkschool/modules/admin_portal/e_learning/empty_subject_screen.dart';
 
 class EmptySyllabusScreen extends StatefulWidget {
   final String selectedSubject;
+  final String? courseId; // Course ID for course selection
+  final String? classId; // Class ID for class selection
+  final String? levelId; // Level ID for course selection
 
-  const EmptySyllabusScreen({super.key, required this.selectedSubject});
+  const EmptySyllabusScreen({super.key, required this.selectedSubject, this.courseId, this.classId, this.levelId});
 
   @override
   State<EmptySyllabusScreen> createState() => _EmptySyllabusScreenState();
@@ -23,6 +24,30 @@ class EmptySyllabusScreen extends StatefulWidget {
 class _EmptySyllabusScreenState extends State<EmptySyllabusScreen> {
   final List<Map<String, dynamic>> _syllabusList = [];
   late double opacity;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSyllabuses();
+  }
+
+  // Load existing syllabuses - replace with actual data loading logic
+  void _loadSyllabuses() {
+    // TODO: Replace with actual data loading from database/API
+    // For now, you can add some sample data to test:
+    /*
+    setState(() {
+      _syllabusList.addAll([
+        {
+          'title': 'Sample Syllabus 1',
+          'selectedClass': 'Grade 10',
+          'selectedTeacher': 'John Doe',
+          'backgroundImagePath': 'assets/images/sample_bg.svg',
+        },
+      ]);
+    });
+    */
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -115,9 +140,7 @@ class _EmptySyllabusScreenState extends State<EmptySyllabusScreen> {
             context,
             MaterialPageRoute(
               builder: (context) => EmptySubjectScreen(
-                // title: _syllabusList[index]['title'],
-                // selectedSubject: widget.selectedSubject, 
-                courseTitle: '',
+                courseTitle: _syllabusList[index]['title']?.toString() ?? '',
               ),
             ),
           ),
@@ -131,12 +154,16 @@ class _EmptySyllabusScreenState extends State<EmptySyllabusScreen> {
     final result = await Navigator.of(context).push(
       MaterialPageRoute(
         fullscreenDialog: true,
-        builder: (BuildContext context) => const CreateSyllabusScreen(),
+        builder: (BuildContext context) => CreateSyllabusScreen(
+          classId:widget.classId,
+          courseId: widget.courseId,
+          levelId: widget.levelId,
+        ),
       ),
     );
-    if (result != null) {
+    if (result != null && mounted) {
       setState(() {
-        _syllabusList.add(result);
+        _syllabusList.add(result as Map<String, dynamic>);
       });
     }
   }
@@ -149,9 +176,9 @@ class _EmptySyllabusScreenState extends State<EmptySyllabusScreen> {
         ),
       ),
     );
-    if (result != null) {
+    if (result != null && mounted) {
       setState(() {
-        _syllabusList[index] = result;
+        _syllabusList[index] = result as Map<String, dynamic>;
       });
     }
   }
@@ -223,12 +250,13 @@ class _EmptySyllabusScreenState extends State<EmptySyllabusScreen> {
         clipBehavior: Clip.antiAlias,
         child: Stack(
           children: [
-            SvgPicture.asset(
-              syllabus['backgroundImagePath'],
-              width: double.infinity,
-              height: double.infinity,
-              fit: BoxFit.cover,
-            ),
+            if (syllabus['backgroundImagePath'] != null)
+              SvgPicture.asset(
+                syllabus['backgroundImagePath'] as String,
+                width: double.infinity,
+                height: double.infinity,
+                fit: BoxFit.cover,
+              ),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 12.0),
               child: Column(
@@ -239,7 +267,7 @@ class _EmptySyllabusScreenState extends State<EmptySyllabusScreen> {
                     children: [
                       Expanded(
                         child: Text(
-                          syllabus['title'],
+                          syllabus['title']?.toString() ?? '',
                           style: AppTextStyles.normal700(
                             fontSize: 18,
                             color: AppColors.backgroundLight,
@@ -269,7 +297,7 @@ class _EmptySyllabusScreenState extends State<EmptySyllabusScreen> {
                   ),
                   const SizedBox(height: 20),
                   Text(
-                    syllabus['selectedClass'],
+                    syllabus['selectedClass']?.toString() ?? '',
                     style: AppTextStyles.normal500(
                       fontSize: 18,
                       color: AppColors.backgroundLight,
@@ -277,7 +305,7 @@ class _EmptySyllabusScreenState extends State<EmptySyllabusScreen> {
                   ),
                   const SizedBox(height: 30),
                   Text(
-                    syllabus['selectedTeacher'],
+                    syllabus['selectedTeacher']?.toString() ?? '',
                     style: AppTextStyles.normal600(
                       fontSize: 14,
                       color: AppColors.backgroundLight,

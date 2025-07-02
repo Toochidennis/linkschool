@@ -28,6 +28,14 @@ class ExploreDashboard extends StatefulWidget {
 
 class _ExploreDashboardState extends State<ExploreDashboard> {
   bool _showSearchIcon = true; // Default to true
+  
+  late List<Widget> _bodyItems;
+
+  //   @override
+  // void initState() {
+  //   super.initState();
+  //   _initializeBodyItems();
+  // }
 
   void _onSearchIconVisibilityChanged(bool isVisible) {
     setState(() {
@@ -38,7 +46,7 @@ class _ExploreDashboardState extends State<ExploreDashboard> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _initializeBodyItems();
+     _initializeBodyItems();
     
     // Explicitly set search icon visibility based on selected index
     _updateSearchIconVisibility();
@@ -68,8 +76,6 @@ class _ExploreDashboardState extends State<ExploreDashboard> {
       ),
     ];
   }
-
-  late List<Widget> _bodyItems;
 
   List<FABBottomAppBarItem> _buildAppBarItems() {
     return [

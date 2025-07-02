@@ -10,6 +10,7 @@ import 'package:skeletonizer/skeletonizer.dart';
 import '../../../common/app_colors.dart';
 import '../../../common/constants.dart';
 import '../../../common/text_styles.dart';
+import '../../../model/explore/home/game_model.dart';
 
 class GamesTab extends StatefulWidget {
   const GamesTab({super.key});
@@ -19,12 +20,9 @@ class GamesTab extends StatefulWidget {
 }
 
 class _GamesTabState extends State<GamesTab> {
-
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-     
       body: Consumer<GameProvider>(
         builder: (context, gameProvider, child) {
           final games = gameProvider.games;
@@ -175,7 +173,6 @@ class _GamesTabState extends State<GamesTab> {
                     ),
                   ),
                 ),
-
                 SliverToBoxAdapter(
                   child: Constants.heading600(
                     title: 'Action Game',
@@ -563,7 +560,7 @@ Widget _buildGameCard(BuildContext context, BoardGamesClass category,
             color: AppColors.text5Light,
           ),
         ),
-      const SizedBox(height: 2.0),
+        const SizedBox(height: 2.0),
         RatingBar.builder(
           initialRating: double.tryParse(game.rating) ?? 0.0,
           minRating: 1,

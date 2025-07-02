@@ -50,13 +50,14 @@ class _SeeallScreenState extends State<SeeallScreen> {
                   child: ListView.builder(
                     physics:
                         const BouncingScrollPhysics(), // Optional: for better scrolling
-                    itemCount:
-                        10, // Show all videos 
-                    itemBuilder: (context, index) =>
-                         GestureDetector(
-                          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context)=>E_lib_vids(
-                                                video: allVideos[index]))),
-                          child: _watchHistory(allVideos[index])),
+                    itemCount: 10, // Show all videos
+                    itemBuilder: (context, index) => GestureDetector(
+                        onTap: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) =>
+                                    E_lib_vids(video: allVideos[index]))),
+                        child: _watchHistory(allVideos[index])),
                   ),
                 ),
               ],

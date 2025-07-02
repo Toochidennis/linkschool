@@ -1,28 +1,30 @@
 import 'package:flutter/material.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
+import 'package:provider/provider.dart';
+
+import '../../../../common/widgets/portal/class_detail/overlays.dart';
+import '../../../../providers/admin/student_provider.dart';
 
 class StudentList extends StatefulWidget {
-  const StudentList({super.key});
+  
+
+  const StudentList({super.key, required });
 
   @override
-  State<StudentList> createState() => _StudentListState();
+  State createState() => _StudentListState();
 }
 
 class _StudentListState extends State<StudentList> {
-  final List<Map<String, dynamic>> students = [
-    {'name': 'Toochi', 'color': Colors.red},
-    {'name': 'Dennis', 'color': Colors.blue},
-    {'name': 'Ifeanyi', 'color': Colors.green},
-    {'name': 'Joseph', 'color': Colors.orange},
-    {'name': 'Amaka', 'color': Colors.purple},
-    {'name': 'Vincent', 'color': Colors.teal},
-    {'name': 'Mitchel', 'color': Colors.pink},
-    {'name': 'Victor', 'color': Colors.amber},
-    {'name': 'Miriam', 'color': Colors.indigo},
-    {'name': 'Raphael', 'color': Colors.cyan},
-    {'name': 'Gloria', 'color': Colors.brown},
-  ];
+  @override
+  void initState() {
+    super.initState();
+
+    // WidgetsBinding.instance.addPostFrameCallback((_) {
+    //   Provider.of<StudentProvider>(context, listen: false)
+    //       .fetchStudents(widget.classId);
+    // });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -60,38 +62,59 @@ class _StudentListState extends State<StudentList> {
                 filled: true,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(20.0),
-                  borderSide: const BorderSide(color: AppColors.textFieldBorderLight),
+                  borderSide:
+                      const BorderSide(color: AppColors.textFieldBorderLight),
                 ),
                 prefixIcon: const Icon(Icons.search),
                 hintText: 'Search...',
                 contentPadding: const EdgeInsets.symmetric(vertical: 10.0),
               ),
+              onChanged: (value) {
+                // Implement search functionality here if needed
+              },
             ),
           ),
           Expanded(
-            child: ListView.separated(
-              itemCount: students.length,
-              separatorBuilder: (context, index) => const Divider(
-                color: AppColors.textFieldBorderLight,
-                height: 1,
-              ),
-              itemBuilder: (context, index) {
-                final student = students[index];
-                return Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-                  child: Row(
-                    children: [
-                      CircleAvatar(
-                        backgroundColor: student['color'],
+            child: Consumer<StudentProvider>(
+              builder: (context, studentProvider, child) {
+                if (studentProvider.isLoading) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+                if (studentProvider.errorMessage.isNotEmpty) {
+                  return Center(
+                    child: Text('Error: ${studentProvider.errorMessage}'),
+                  );
+                }
+
+                return ListView.separated(
+                  itemCount: studentProvider.students.length,
+                  separatorBuilder: (context, index) => const Divider(
+                    color: AppColors.textFieldBorderLight,
+                    height: 1,
+                  ),
+                  itemBuilder: (context, index) {
+                    final student = studentProvider.students[index];
+                    return ListTile(
+                      contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16.0, vertical: 8.0),
+                      leading: CircleAvatar(
+                        backgroundColor:
+                            Colors.primaries[index % Colors.primaries.length],
                         child: Text(
-                          student['name'][0],
+                          student.name[0],
                           style: const TextStyle(color: Colors.white),
                         ),
                       ),
-                      const SizedBox(width: 16.0),
-                      Text(student['name'], style: AppTextStyles.normal500(fontSize: 18, color: AppColors.textLight),),
-                    ],
-                  ),
+                      title: Text(
+                        student.name,
+                        style: AppTextStyles.normal500(
+                            fontSize: 18, color: AppColors.textLight),
+                      ),
+                      onTap: () =>
+                          showStudentResultOverlay(context, 
+                             ),
+                    );
+                  },
                 );
               },
             ),

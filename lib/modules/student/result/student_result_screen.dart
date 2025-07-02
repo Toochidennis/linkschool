@@ -14,8 +14,12 @@ import 'package:fl_chart/fl_chart.dart';
 class StudentResultScreen extends StatefulWidget {
   final String studentName;
   final String className;
-  const StudentResultScreen(
-      {super.key, required this.studentName, required this.className});
+  const StudentResultScreen({
+    super.key,
+    required this.studentName,
+    required this.className,
+
+  });
 
   @override
   State<StudentResultScreen> createState() => _StudentResultScreenState();
@@ -87,30 +91,6 @@ class _StudentResultScreenState extends State<StudentResultScreen> {
                       buttonHeight: 48,
                     ),
 
-                    // OutlinedButton(
-                    //   onPressed: () {
-                    //     Navigator.push(
-                    //       context,
-                    //       MaterialPageRoute(
-                    //         builder: (context) =>
-                    //             const StudentAnnualResultScreen(),
-                    //       ),
-                    //     );
-                    //   },
-                    //   style: OutlinedButton.styleFrom(
-                    //       side: const BorderSide(
-                    //           color: AppColors.paymentTxtColor1),
-                    //       minimumSize: const Size(double.infinity, 48),
-                    //       shape: RoundedRectangleBorder(
-                    //           borderRadius: BorderRadius.circular(10.0))),
-                    //   child: Text(
-                    //     'See annual result',
-                    //     style: AppTextStyles.normal600(
-                    //       fontSize: 18,
-                    //       color: AppColors.paymentTxtColor1,
-                    //     ),
-                    //   ),
-                    // ),
                     SizedBox(
                       height: 60,
                     ),
@@ -157,31 +137,6 @@ class _StudentResultScreenState extends State<StudentResultScreen> {
                             rightTitles: const AxisTitles(
                                 sideTitles: SideTitles(showTitles: false)),
                           ),
-                          // titlesData: FlTitlesData(
-                          //   show: true,
-                          //   bottomTitles: AxisTitles(
-                          //     sideTitles: SideTitles(
-                          //       showTitles: true,
-                          //       getTitlesWidget: getTitles,
-                          //       reservedSize: 38,
-                          //     ),
-                          //   ),
-                          //   leftTitles: AxisTitles(
-                          //     sideTitles: SideTitles(
-                          //       showTitles: true,
-                          //       reservedSize: 40,
-                          //       getTitlesWidget: (value, meta) => Text(
-                          //         value.toInt().toString(),
-                          //         style: AppTextStyles.normal400(
-                          //             color: Colors.black, fontSize: 12),
-                          //       ),
-                          //     ),
-                          //   ),
-                          //   topTitles: const AxisTitles(
-                          //       sideTitles: SideTitles(showTitles: false)),
-                          //   rightTitles: const AxisTitles(
-                          //       sideTitles: SideTitles(showTitles: false)),
-                          // ),
                           gridData: FlGridData(
                             show: true,
                             drawVerticalLine: false,
@@ -332,3 +287,57 @@ class _StudentResultScreenState extends State<StudentResultScreen> {
     );
   }
 }
+
+
+
+                          // titlesData: FlTitlesData(
+                          //   show: true,
+                          //   bottomTitles: AxisTitles(
+                          //     sideTitles: SideTitles(
+                          //       showTitles: true,
+                          //       getTitlesWidget: getTitles,
+                          //       reservedSize: 38,
+                          //     ),
+                          //   ),
+                          //   leftTitles: AxisTitles(
+                          //     sideTitles: SideTitles(
+                          //       showTitles: true,
+                          //       reservedSize: 40,
+                          //       getTitlesWidget: (value, meta) => Text(
+                          //         value.toInt().toString(),
+                          //         style: AppTextStyles.normal400(
+                          //             color: Colors.black, fontSize: 12),
+                          //       ),
+                          //     ),
+                          //   ),
+                          //   topTitles: const AxisTitles(
+                          //       sideTitles: SideTitles(showTitles: false)),
+                          //   rightTitles: const AxisTitles(
+                          //       sideTitles: SideTitles(showTitles: false)),
+                          // ),
+
+
+                                              // OutlinedButton(
+                    //   onPressed: () {
+                    //     Navigator.push(
+                    //       context,
+                    //       MaterialPageRoute(
+                    //         builder: (context) =>
+                    //             const StudentAnnualResultScreen(),
+                    //       ),
+                    //     );
+                    //   },
+                    //   style: OutlinedButton.styleFrom(
+                    //       side: const BorderSide(
+                    //           color: AppColors.paymentTxtColor1),
+                    //       minimumSize: const Size(double.infinity, 48),
+                    //       shape: RoundedRectangleBorder(
+                    //           borderRadius: BorderRadius.circular(10.0))),
+                    //   child: Text(
+                    //     'See annual result',
+                    //     style: AppTextStyles.normal600(
+                    //       fontSize: 18,
+                    //       color: AppColors.paymentTxtColor1,
+                    //     ),
+                    //   ),
+                    // ),

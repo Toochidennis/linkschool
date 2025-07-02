@@ -209,7 +209,7 @@ void _showTermOverlay(BuildContext context) {
                     // Define navigation destinations for each index
                     final screens = [
                       const StaffCommentResultScreen(),
-                      const StaffSkillsBehaviourScreen(),
+                      const StaffSkillsBehaviourScreen(classId: '', levelId: '',),
                       StaffAttandanceScreen(),
                       StaffCoursesScreen(),
                     ];

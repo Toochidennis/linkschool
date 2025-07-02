@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:linkschool/modules/model/admin/student_model.dart';
 import 'package:linkschool/modules/services/api/api_service.dart';
+import 'package:linkschool/config/env_config.dart';
 import 'package:hive/hive.dart';
 
 class StudentService {
@@ -8,17 +9,51 @@ class StudentService {
 
   StudentService(this._apiService);
 
+
+
   Future<List<Student>> getStudentsByClass(String classId) async {
     try {
       final response = await _apiService.get<List<Student>>(
-        endpoint: 'getStudents.php',
+        endpoint: 'portal/classes/$classId/students',
         queryParams: {
-          'class_id': classId,
-          '_db': 'linkskoo_practice',
+          '_db': EnvConfig.dbName,
         },
         fromJson: (json) {
-          if (json['data'] is List) {
-            return (json['data'] as List)
+          if (json['students'] is List) {
+            return (json['students'] as List)
+                .map((item) => Student.fromJson(item))
+                .toList();
+          }
+          return [];
+        },
+      );
+
+    if (response.success) {
+      debugPrint('Fetched ${response.data?.length ?? 0} students');
+      return response.data ?? [];
+    } else {
+      throw Exception(response.message);
+    }
+  } catch (e) {
+    debugPrint('Error fetching students: $e');
+    throw Exception('Error fetching students: $e');
+  }
+}
+
+  Future<List<Student>> getAllStudents() async {
+    try {
+      final userBox = Hive.box('userData');
+      final loginData = userBox.get('userData') ?? userBox.get('loginResponse');
+      final db = loginData?['_db'] ?? EnvConfig.dbName;
+      
+      final response = await _apiService.get<List<Student>>(
+        endpoint: 'portal/students',
+        queryParams: {
+          '_db': db,
+        },
+        fromJson: (json) {
+          if (json['students'] is List) {
+            return (json['students'] as List)
                 .map((item) => Student.fromJson(item))
                 .toList();
           }
@@ -32,8 +67,91 @@ class StudentService {
         throw Exception(response.message);
       }
     } catch (e) {
-      debugPrint('Error fetching students: $e');
-      throw Exception('Error fetching students: $e');
+      debugPrint('Error fetching all students: $e');
+      throw Exception('Error fetching all students: $e');
+    }
+  }
+
+  Future<List<Student>> getStudentsByCourse(String courseId, String classId) async {
+    try {
+      final userBox = Hive.box('userData');
+      final loginData = userBox.get('userData') ?? userBox.get('loginResponse');
+      final db = loginData?['_db'] ?? EnvConfig.dbName;
+
+      final response = await _apiService.get<List<Student>>(
+        endpoint: 'portal/courses/$courseId/students',
+        queryParams: {
+          '_db': db,
+          'year': '2024',
+          'term': '1',
+          'class_id': classId,
+        },
+        fromJson: (json) {
+          if (json['data'] is List) {
+            return (json['data'] as List)
+                .map((item) => Student.fromJson({
+                      'id': item['id'],
+                      'name': item['student_name'],
+                    }))
+                .toList();
+          }
+          return [];
+        },
+      );
+
+      if (response.success) {
+        return response.data ?? [];
+      } else {
+        throw Exception(response.message);
+      }
+    } catch (e) {
+      debugPrint('Error fetching students by course: $e');
+      throw Exception('Error fetching students by course: $e');
+    }
+  }
+
+  Future<Map<String, dynamic>> getStudentResultTerms(int studentId) async {
+    try {
+      final userBox = Hive.box('userData');
+      final loginData = userBox.get('userData') ?? userBox.get('loginResponse');
+      final db = loginData?['_db'] ?? EnvConfig.dbName;
+      
+      final response = await _apiService.get(
+        endpoint: 'portal/students/$studentId/result-terms',
+        queryParams: {
+          '_db': db,
+        },
+      );
+
+      if (response.success) {
+        final resultTerms = response.rawData?['result_terms'];
+        
+        if (resultTerms == null || resultTerms.isEmpty) {
+          return {};
+        }
+        
+        Map<String, dynamic> formattedData = {};
+        
+        for (var yearData in resultTerms) {
+          final year = yearData['year'].toString();
+          final terms = yearData['terms'] as List;
+          
+          formattedData[year] = {
+            'terms': terms.map((term) => {
+              'term': term['term_value'],
+              'term_name': term['term_name'],
+              'average_score': term['average_score']
+            }).toList()
+          };
+        }
+        
+        return formattedData;
+      } else {
+        throw Exception(response.message);
+      }
+    } catch (e) {
+      debugPrint('Error fetching student result terms: $e');
+      throw Exception('Error fetching student result terms: $e');
     }
   }
 
@@ -42,44 +160,59 @@ class StudentService {
     required String courseId,
     required List<int> studentIds,
     required String date,
+    required List<Student> selectedStudents,
   }) async {
     try {
-      // Fetch locally persisted login data
       final userDataBox = Hive.box('userData');
-      final profile = userDataBox.get('userData')?['profile'];
-      final schoolProfile = userDataBox.get('userData')?['schoolProfile'];
+      final userData = userDataBox.get('userData');
+      
+      if (userData == null) {
+        throw Exception('User data not found');
+      }
+      
+      final profile = userData['data']['profile'];
+      final settings = userData['data']['settings'];
 
-      if (profile == null || schoolProfile == null) {
-        throw Exception('Profile or school profile data not found');
+      if (profile == null || settings == null) {
+        throw Exception('Profile or settings data not found');
       }
 
-      final staffId = profile['id'];
-      final year = schoolProfile['year'];
-      final term = schoolProfile['term'];
+      final staffId = profile['staff_id'];
+      final year = settings['year'];
+      final term = settings['term'];
+      
+      final dateParts = date.split(' ');
+      final dateOnly = dateParts[0];
+      final formattedDate = "$dateOnly 00:00:00";
+      
+      final register = selectedStudents
+          .map((student) => {
+                'id': student.id,
+                'name': student.name,
+              })
+          .toList();
 
-      // Prepare the payload
       final payload = {
-        'staff': staffId.toString(),
-        'course': courseId,
-        'date': date,
-        'count': studentIds.length.toString(),
-        'class': classId,
-        'year': year.toString(),
-        'term': term.toString(),
+        '_db': EnvConfig.dbName,
+        'year': year,
+        'term': term,
+        'date': formattedDate,
+        'staff_id': staffId,
+        'count': studentIds.length,
+        'register': register,
       };
 
-      // Add student IDs and names to the register array
-      for (int i = 0; i < studentIds.length; i++) {
-        final studentId = studentIds[i];
-        payload['register[$i][id]'] = studentId.toString();
-        payload['register[$i][name]'] = 'Student $studentId';
-      }
+      debugPrint('Saving attendance with payload: $payload');
 
       final response = await _apiService.post<Map<String, dynamic>>(
-        endpoint: 'setAttendance.php',
+        endpoint: 'portal/classes/$classId/attendance',
         body: payload,
-        payloadType: PayloadType.FORM_DATA,
+        payloadType: PayloadType.JSON,
       );
+
+      if (!response.success) {
+        debugPrint('API Error: ${response.message}');
+      }
 
       return response.success;
     } catch (e) {
@@ -88,53 +221,276 @@ class StudentService {
     }
   }
 
-  Future<Map<String, dynamic>> fetchStudentTerms(int studentId) async {
+  Future<bool> saveCourseAttendance({
+    required String classId,
+    required String courseId,
+    required List<int> studentIds,
+    required String date,
+    required List<Student> selectedStudents,
+  }) async {
     try {
+      final userDataBox = Hive.box('userData');
+      final userData = userDataBox.get('userData');
+      
+      if (userData == null) {
+        throw Exception('User data not found');
+      }
+      
+      final profile = userData['data']['profile'];
+      final settings = userData['data']['settings'];
+
+      if (profile == null || settings == null) {
+        throw Exception('Profile or settings data not found');
+      }
+
+      final staffId = profile['staff_id'];
+      final year = settings['year'];
+      final term = settings['term'];
+      
+      final dateOnly = date.split(' ')[0];
+      final formattedDate = "$dateOnly 00:00:00";
+      
+      final register = selectedStudents
+          .map((student) => {
+                'id': student.id,
+                'name': student.name,
+              })
+          .toList();
+
+      final payload = {
+        '_db': EnvConfig.dbName,
+        'year': year,
+        'term': term,
+        'date': formattedDate,
+        'staff_id': staffId,
+        'count': studentIds.length,
+        'class': classId,
+        'register': register,
+      };
+
+      debugPrint('Saving course attendance with payload: $payload');
+
       final response = await _apiService.post<Map<String, dynamic>>(
-        endpoint: 'studentTerms.php',
-        body: {
-          'id': studentId.toString(),
-          '_db': 'linkskoo_practice',
+        endpoint: 'portal/courses/$courseId/attendance',
+        body: payload,
+        payloadType: PayloadType.JSON,
+      );
+
+      if (!response.success) {
+        debugPrint('API Error: ${response.message}');
+      }
+
+      return response.success;
+    } catch (e) {
+      debugPrint('Error saving course attendance: $e');
+      throw Exception('Error saving course attendance: $e');
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> getCourseAttendance({
+    required String classId,
+    required String date,
+    required String courseId,
+  }) async {
+    try {
+      debugPrint('Fetching course attendance with date: $date');
+      
+      final response = await _apiService.get<List<Map<String, dynamic>>>(
+        endpoint: 'portal/courses/$courseId/attendance',
+        queryParams: {
+          '_db': EnvConfig.dbName,
+          'date': date,
+          'class_id': classId,
         },
-        payloadType: PayloadType.FORM_DATA,
+        fromJson: (json) {
+          debugPrint('Course Attendance API response: $json');
+          if (json.containsKey('attendance_records')) {
+            var records = json['attendance_records'];
+            
+            if (records is List) {
+              return records.map((item) => item as Map<String, dynamic>).toList();
+            } else if (records is Map<String, dynamic>) {
+              return [records];
+            }
+          }
+          return [];
+        },
       );
 
       if (response.success) {
-        return response.rawData ?? {};
+        return response.data ?? [];
+      } else {
+        debugPrint('API Error: ${response.message}');
+        throw Exception(response.message);
+      }
+    } catch (e) {
+      debugPrint('Error fetching course attendance records: $e');
+      throw Exception('Error fetching course attendance records: $e');
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> getClassAttendance({
+    required String classId,
+    required String date,
+  }) async {
+    try {
+      debugPrint('Fetching attendance with date: $date');
+      
+      final response = await _apiService.get<List<Map<String, dynamic>>>(
+        endpoint: 'portal/classes/$classId/attendance',
+        queryParams: {
+          '_db': EnvConfig.dbName,
+          'date': date,
+        },
+        fromJson: (json) {
+          debugPrint('Attendance API response: $json');
+          if (json.containsKey('attendance_records')) {
+            var records = json['attendance_records'];
+            
+            if (records is List) {
+              return records.map((item) => item as Map<String, dynamic>).toList();
+            } else if (records is Map<String, dynamic>) {
+              return [records];
+            }
+          }
+          return [];
+        },
+      );
+
+      if (response.success) {
+        return response.data ?? [];
+      } else {
+        debugPrint('API Error: ${response.message}');
+        throw Exception(response.message);
+      }
+    } catch (e) {
+      debugPrint('Error fetching attendance records: $e');
+      throw Exception('Error fetching attendance records: $e');
+    }
+  }
+
+  Future<bool> updateAttendance({
+    required int attendanceId,
+    required List<int> studentIds,
+    required List<Student> selectedStudents,
+  }) async {
+    try {
+      final userDataBox = Hive.box('userData');
+      final userData = userDataBox.get('userData');
+      
+      if (userData == null) {
+        throw Exception('User data not found');
+      }
+      
+      final profile = userData['data']['profile'];
+
+      if (profile == null) {
+        throw Exception('Profile data not found');
+      }
+
+      final staffId = profile['staff_id'];
+      
+      final register = selectedStudents
+          .map((student) => {
+                'id': student.id,
+                'name': student.name,
+              })
+          .toList();
+
+      final payload = {
+        '_db': EnvConfig.dbName,
+        'staff_id': staffId,
+        'count': studentIds.length,
+        'register': register,
+      };
+
+      debugPrint('Updating attendance with payload: $payload');
+
+      final response = await _apiService.put<Map<String, dynamic>>(
+        endpoint: 'portal/attendance/$attendanceId',
+        body: payload,
+        payloadType: PayloadType.JSON,
+      );
+
+      if (!response.success) {
+        debugPrint('API Error: ${response.message}');
+      }
+
+      return response.success;
+    } catch (e) {
+      debugPrint('Error updating attendance: $e');
+      throw Exception('Error updating attendance: $e');
+    }
+  }
+
+  Future<Map<String, dynamic>> getStudentTermResults({
+    required int studentId,
+    required int termId,
+    required String classId,
+    required String year,
+    required String levelId,
+  }) async {
+    try {
+      final response = await _apiService.get<Map<String, dynamic>>(
+        endpoint: 'portal/students/$studentId/result/$termId',
+        queryParams: {
+          '_db': EnvConfig.dbName,
+          'class_id': classId,
+          'year': year,
+          'level_id': levelId,
+        },
+        fromJson: (json) => json['response'] as Map<String, dynamic>,
+      );
+
+      if (response.success) {
+        debugPrint('Fetched term results: ${response.data}');
+        return response.data ?? {};
       } else {
         throw Exception(response.message);
       }
     } catch (e) {
-      debugPrint('Error fetching student terms: $e');
-      throw Exception('Error fetching student terms: $e');
+      debugPrint('Error fetching student term results: $e');
+      throw Exception('Error fetching student term results: $e');
     }
   }
 }
 
 
 
-// import 'dart:convert';
-// import 'package:http/http.dart' as http;
+
 // import 'package:flutter/foundation.dart';
 // import 'package:linkschool/modules/model/admin/student_model.dart';
+// import 'package:linkschool/modules/services/api/api_service.dart';
+// import 'package:linkschool/config/env_config.dart';
 // import 'package:hive/hive.dart';
 
-
 // class StudentService {
-//   static const String _baseUrl = 'http://linkskool.com/developmentportal/api';
-//   static const String _dbParam = 'linkskoo_practice';
+//   final ApiService _apiService;
+
+//   StudentService(this._apiService);
 
 //   Future<List<Student>> getStudentsByClass(String classId) async {
 //     try {
-//       final response = await http.get(
-//         Uri.parse('$_baseUrl/getStudents.php?class_id=$classId&_db=$_dbParam'),
+//       // Use the dynamic DB name from environment config
+//       final response = await _apiService.get<List<Student>>(
+//         endpoint: 'portal/classes/$classId/students',
+//         queryParams: {
+//           '_db': EnvConfig.dbName,
+//         },
+//         fromJson: (json) {
+//           if (json['students'] is List) {
+//             return (json['students'] as List)
+//                 .map((item) => Student.fromJson(item))
+//                 .toList();
+//           }
+//           return [];
+//         },
 //       );
 
-//       if (response.statusCode == 200) {
-//         final List<dynamic> data = json.decode(response.body);
-//         return data.map((item) => Student.fromJson(item)).toList();
+//       if (response.success) {
+//         return response.data ?? [];
 //       } else {
-//         throw Exception('Failed to load students: ${response.statusCode}');
+//         throw Exception(response.message);
 //       }
 //     } catch (e) {
 //       debugPrint('Error fetching students: $e');
@@ -142,94 +498,371 @@ class StudentService {
 //     }
 //   }
 
-//   // Fetch attendance data for a specific class, date, and course
-//   Future<List<int>> getAttendance({
-//     required String classId,
-//     required String date,
-//     required String courseId,
-//   }) async {
+//   // method to fetch all students
+//   Future<List<Student>> getAllStudents() async {
 //     try {
-//       final response = await http.get(
-//         Uri.parse(
-//           '$_baseUrl/getAttendance.php?_db=$_dbParam&class=$classId&date=$date&course=$courseId',
-//         ),
+//       final userBox = Hive.box('userData');
+//       final loginData = userBox.get('userData') ?? userBox.get('loginResponse');
+//       final db = loginData?['_db'] ?? EnvConfig.dbName;
+      
+//       final response = await _apiService.get<List<Student>>(
+//         endpoint: 'portal/students',
+//         queryParams: {
+//           '_db': db,
+//         },
+//         fromJson: (json) {
+//           if (json['students'] is List) {
+//             return (json['students'] as List)
+//                 .map((item) => Student.fromJson(item))
+//                 .toList();
+//           }
+//           return [];
+//         },
 //       );
 
-//       if (response.statusCode == 200) {
-//         final List<dynamic> data = json.decode(response.body);
-//         // Extract student IDs from the response
-//         return data.map<int>((item) => item['id'] as int).toList();
+//       if (response.success) {
+//         return response.data ?? [];
 //       } else {
-//         throw Exception('Failed to fetch attendance: ${response.statusCode}');
+//         throw Exception(response.message);
 //       }
 //     } catch (e) {
-//       debugPrint('Error fetching attendance: $e');
-//       throw Exception('Error fetching attendance: $e');
+//       debugPrint('Error fetching all students: $e');
+//       throw Exception('Error fetching all students: $e');
 //     }
 //   }
 
-//   // Save attendance using the setAttendance API
+// Future<Map<String, dynamic>> getStudentResultTerms(int studentId) async {
+//   try {
+//     final userBox = Hive.box('userData');
+//     final loginData = userBox.get('userData') ?? userBox.get('loginResponse');
+//     final db = loginData?['_db'] ?? EnvConfig.dbName;
+    
+//     final response = await _apiService.get(
+//       endpoint: 'portal/students/$studentId/result-terms',
+//       queryParams: {
+//         '_db': db,
+//       },
+//     );
+
+//     if (response.success) {
+//       final resultTerms = response.rawData?['result_terms'];
+      
+//       if (resultTerms == null || resultTerms.isEmpty) {
+//         return {};
+//       }
+      
+//       // Transform the data to match the expected format
+//       Map<String, dynamic> formattedData = {};
+      
+//       for (var yearData in resultTerms) {
+//         final year = yearData['year'].toString();
+//         final terms = yearData['terms'] as List;
+        
+//         formattedData[year] = {
+//           'terms': terms.map((term) => {
+//             'term': term['term_value'],
+//             'term_name': term['term_name'],
+//             'average_score': term['average_score']
+//           }).toList()
+//         };
+//       }
+      
+//       return formattedData;
+//     } else {
+//       throw Exception(response.message);
+//     }
+//   } catch (e) {
+//     debugPrint('Error fetching student result terms: $e');
+//     throw Exception('Error fetching student result terms: $e');
+//   }
+// }
+
 //   Future<bool> saveAttendance({
 //     required String classId,
 //     required String courseId,
 //     required List<int> studentIds,
 //     required String date,
+//     required List<Student> selectedStudents,
 //   }) async {
 //     try {
 //       // Fetch locally persisted login data
 //       final userDataBox = Hive.box('userData');
-//       final profile = userDataBox.get('userData')?['profile'];
-//       final schoolProfile = userDataBox.get('userData')?['schoolProfile'];
+//       final userData = userDataBox.get('userData');
+      
+//       if (userData == null) {
+//         throw Exception('User data not found');
+//       }
+      
+//       final profile = userData['data']['profile'];
+//       final settings = userData['data']['settings'];
 
-//       if (profile == null || schoolProfile == null) {
-//         throw Exception('Profile or school profile data not found');
+//       if (profile == null || settings == null) {
+//         throw Exception('Profile or settings data not found');
 //       }
 
-//       final staffId = profile['id'];
-//       final year = schoolProfile['year'];
-//       final term = schoolProfile['term'];
+//       final staffId = profile['staff_id'];
+//       final year = settings['year'];
+//       final term = settings['term'];
+      
+//       // Format date for API: YYYY-MM-DD 00:00:00
+//     final dateParts = date.split(' ');
+//     final dateOnly = dateParts[0]; // Get just the date part
+//     final formattedDate = "$dateOnly 00:00:00";
 
-//       // Prepare the form-data payload
-//       final request = http.MultipartRequest(
-//         'POST',
-//         Uri.parse('$_baseUrl/setAttendance.php'),
+      
+//       // Build register array with student IDs and names
+//       final register = selectedStudents
+//           .map((student) => {
+//                 'id': student.id,
+//                 'name': student.name,
+//               })
+//           .toList();
+
+//       // Prepare the payload according to API requirements
+//       final payload = {
+//         '_db': EnvConfig.dbName,
+//         'year': year,
+//         'term': term,
+//         'date': formattedDate, // properly formatted date
+//         'staff_id': staffId,
+//         'count': studentIds.length,
+//         'register': register,
+//       };
+
+//       debugPrint('Saving attendance with payload: $payload');
+
+//       final response = await _apiService.post<Map<String, dynamic>>(
+//         endpoint: 'portal/classes/$classId/attendance',
+//         body: payload,
+//         payloadType: PayloadType.JSON,
 //       );
 
-//       request.fields.addAll({
-//         'staff': staffId.toString(),
-//         'course': courseId,
-//         'date': date,
-//         'count': studentIds.length.toString(),
-//         'class': classId,
-//         'year': year.toString(),
-//         'term': term.toString(),
-//       });
-
-//       // Add student IDs and names to the register array
-//       for (int i = 0; i < studentIds.length; i++) {
-//         final studentId = studentIds[i];
-//         request.fields['register[$i][id]'] = studentId.toString();
-//         request.fields['register[$i][name]'] = 'Student $studentId'; // Replace with actual student name if available
+//       if (!response.success) {
+//         debugPrint('API Error: ${response.message}');
 //       }
 
-//       // Send the request
-//       final response = await request.send();
-
-//       if (response.statusCode == 200) {
-//         final responseData = await response.stream.bytesToString();
-//         final jsonResponse = json.decode(responseData);
-
-//         if (jsonResponse['status'] == 'success') {
-//           return true;
-//         } else {
-//           throw Exception(jsonResponse['message'] ?? 'Failed to save attendance');
-//         }
-//       } else {
-//         throw Exception('Failed to save attendance: ${response.statusCode}');
-//       }
+//       return response.success;
 //     } catch (e) {
 //       debugPrint('Error saving attendance: $e');
 //       throw Exception('Error saving attendance: $e');
 //     }
 //   }
+
+
+// Future<bool> saveCourseAttendance({
+//   required String classId,
+//   required String courseId,
+//   required List<int> studentIds,
+//   required String date,
+//   required List<Student> selectedStudents,
+// }) async {
+//   try {
+//     // Fetch locally persisted login data
+//     final userDataBox = Hive.box('userData');
+//     final userData = userDataBox.get('userData');
+    
+//     if (userData == null) {
+//       throw Exception('User data not found');
+//     }
+    
+//     final profile = userData['data']['profile'];
+//     final settings = userData['data']['settings'];
+
+//     if (profile == null || settings == null) {
+//       throw Exception('Profile or settings data not found');
+//     }
+
+//     final staffId = profile['staff_id'];
+//     final year = settings['year'];
+//     final term = settings['term'];
+    
+//     // Format date for API: YYYY-MM-DD 00:00:00
+//     final dateOnly = date.split(' ')[0];
+//     final formattedDate = "$dateOnly 00:00:00";
+    
+//     // Build register array with student IDs and names
+//     final register = selectedStudents
+//         .map((student) => {
+//               'id': student.id,
+//               'name': student.name,
+//             })
+//         .toList();
+
+//     // Prepare the payload according to API requirements
+//     final payload = {
+//       '_db': EnvConfig.dbName,
+//       'year': year,
+//       'term': term,
+//       'date': formattedDate,
+//       'staff_id': staffId,
+//       'count': studentIds.length,
+//       'class': classId,
+//       'register': register,
+//     };
+
+//     debugPrint('Saving course attendance with payload: $payload');
+
+//     final response = await _apiService.post<Map<String, dynamic>>(
+//       endpoint: 'portal/courses/$courseId/attendance',
+//       body: payload,
+//       payloadType: PayloadType.JSON,
+//     );
+
+//     if (!response.success) {
+//       debugPrint('API Error: ${response.message}');
+//     }
+
+//     return response.success;
+//   } catch (e) {
+//     debugPrint('Error saving course attendance: $e');
+//     throw Exception('Error saving course attendance: $e');
+//   }
+// }
+
+// Future<List<Map<String, dynamic>>> getCourseAttendance({
+//   required String classId,
+//   required String date,
+//   required String courseId,
+// }) async {
+//   try {
+//     debugPrint('Fetching course attendance with date: $date');
+    
+//     final response = await _apiService.get<List<Map<String, dynamic>>>(
+//       endpoint: 'portal/courses/$courseId/attendance',
+//       queryParams: {
+//         '_db': EnvConfig.dbName,
+//         'date': date,
+//         'class_id': classId,
+//       },
+//       fromJson: (json) {
+//         debugPrint('Course Attendance API response: $json');
+//         if (json.containsKey('attendance_records')) {
+//           var records = json['attendance_records'];
+          
+//           // Handle both array and object responses
+//           if (records is List) {
+//             return records.map((item) => item as Map<String, dynamic>).toList();
+//           } else if (records is Map<String, dynamic>) {
+//             // If it's a single object, wrap it in a list
+//             return [records];
+//           }
+//         }
+//         return [];
+//       },
+//     );
+
+//     if (response.success) {
+//       return response.data ?? [];
+//     } else {
+//       debugPrint('API Error: ${response.message}');
+//       throw Exception(response.message);
+//     }
+//   } catch (e) {
+//     debugPrint('Error fetching course attendance records: $e');
+//     throw Exception('Error fetching course attendance records: $e');
+//   }
+// }
+
+//   Future<List<Map<String, dynamic>>> getClassAttendance({
+//     required String classId,
+//     required String date,
+//   }) async {
+//     try {
+//       // // Ensure date is in the right format - the API expects YYYY-MM-DD 00:00:00
+//       // final dateForApi = date; // Already formatted correctly in the provider
+      
+//       debugPrint('Fetching attendance with date: $date');
+      
+//       final response = await _apiService.get<List<Map<String, dynamic>>>(
+//         endpoint: 'portal/classes/$classId/attendance',
+//         queryParams: {
+//           '_db': EnvConfig.dbName,
+//           'date': date,
+//         },
+//         fromJson: (json) {
+//           debugPrint('Attendance API response: $json');
+//           if (json.containsKey('attendance_records')) {
+//             var records = json['attendance_records'];
+            
+//             // Handle both array and object responses
+//             if (records is List) {
+//               return records.map((item) => item as Map<String, dynamic>).toList();
+//             } else if (records is Map<String, dynamic>) {
+//               // If it's a single object, wrap it in a list
+//               return [records];
+//             }
+//           }
+//           return [];
+//         },
+//       );
+
+//       if (response.success) {
+//         return response.data ?? [];
+//       } else {
+//         debugPrint('API Error: ${response.message}');
+//         throw Exception(response.message);
+//       }
+//     } catch (e) {
+//       debugPrint('Error fetching attendance records: $e');
+//       throw Exception('Error fetching attendance records: $e');
+//     }
+//   }
+
+// Future<bool> updateAttendance({
+//   required int attendanceId,
+//   required List<int> studentIds,
+//   required List<Student> selectedStudents,
+// }) async {
+//   try {
+//     // Fetch locally persisted login data
+//     final userDataBox = Hive.box('userData');
+//     final userData = userDataBox.get('userData');
+    
+//     if (userData == null) {
+//       throw Exception('User data not found');
+//     }
+    
+//     final profile = userData['data']['profile'];
+
+//     if (profile == null) {
+//       throw Exception('Profile data not found');
+//     }
+
+//     final staffId = profile['staff_id'];
+    
+//     // Build register array with student IDs and names
+//     final register = selectedStudents
+//         .map((student) => {
+//               'id': student.id,
+//               'name': student.name,
+//             })
+//         .toList();
+
+//     // Prepare the payload according to API requirements
+//     final payload = {
+//       '_db': EnvConfig.dbName,
+//       'staff_id': staffId,
+//       'count': studentIds.length,
+//       'register': register,
+//     };
+
+//     debugPrint('Updating attendance with payload: $payload');
+
+//     // Use the existing put method from ApiService
+//     final response = await _apiService.put<Map<String, dynamic>>(
+//       endpoint: 'portal/attendance/$attendanceId',
+//       body: payload,
+//       payloadType: PayloadType.JSON,
+//     );
+
+//     if (!response.success) {
+//       debugPrint('API Error: ${response.message}');
+//     }
+
+//     return response.success;
+//   } catch (e) {
+//     debugPrint('Error updating attendance: $e');
+//     throw Exception('Error updating attendance: $e');
+//   }
+// }
 // }

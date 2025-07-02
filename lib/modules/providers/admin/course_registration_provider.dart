@@ -11,7 +11,6 @@ class CourseRegistrationProvider with ChangeNotifier {
   List<CourseRegistrationModel> get registeredCourses => _registeredCourses;
   bool get isLoading => _isLoading;
 
-  // Fetch registered courses
   Future<void> fetchRegisteredCourses(String classId, String term, String year) async {
     _isLoading = true;
     notifyListeners();
@@ -22,64 +21,88 @@ class CourseRegistrationProvider with ChangeNotifier {
       if (response.success && response.data != null) {
         _registeredCourses = response.data!;
       } else {
-        // If the API call was successful but returned no data
         _registeredCourses = [];
-        debugPrint('No courses found or ${response.message}');
+        debugPrint('No registered students found or ${response.message}');
       }
     } catch (e) {
       _registeredCourses = [];
-      debugPrint('Error fetching courses: ${e.toString()}');
+      debugPrint('Error fetching registered students: ${e.toString()}');
     } finally {
       _isLoading = false;
       notifyListeners();
     }
   }
 
-  // Register a new course
-  Future<void> registerCourse(CourseRegistrationModel course) async {
+  // New method to fetch registered courses for a single student
+  Future<List<int>> fetchStudentRegisteredCourses({
+    required int studentId,
+    required String classId,
+    required String year,
+    required String term,
+    required String dbName,
+  }) async {
+    try {
+      final response = await _courseRegistrationService.fetchStudentRegisteredCourses(
+        studentId: studentId,
+        classId: classId,
+        year: year,
+        term: term,
+        dbName: dbName,
+      );
+
+      if (response.success && response.rawData != null) {
+        // Extract course IDs from the response
+        final List<dynamic> coursesJson = response.rawData!['registered_courses'] ?? [];
+        return coursesJson
+            .map<int>((json) => json['id'] as int)
+            .toList();
+      }
+      
+      return [];
+    } catch (e) {
+      debugPrint('Error fetching student registered courses: ${e.toString()}');
+      return [];
+    }
+  }
+
+  // Updated to accept custom payload
+  Future<bool> registerCourse(CourseRegistrationModel course, {Map<String, dynamic>? payload}) async {
     _isLoading = true;
     notifyListeners();
 
     try {
-      final response = await _courseRegistrationService.registerCourse(course);
+      final response = await _courseRegistrationService.registerCourse(
+        course,
+        payload: payload,
+      );
 
-      if (response.success && response.data == true) {
-        // Add the newly registered course to the list
-        _registeredCourses.add(course);
+      if (response.success) {
+        // Update the course count for the student
+        int index = _registeredCourses.indexWhere((s) => s.studentId == course.studentId);
+        if (index != -1) {
+          var updatedStudent = CourseRegistrationModel(
+            studentId: course.studentId,
+            studentName: course.studentName,
+            courseCount: course.courseCount,
+            classId: course.classId,
+            term: course.term,
+            year: course.year,
+          );
+          _registeredCourses[index] = updatedStudent;
+        }
         debugPrint('Course registered successfully');
+        return true;
       } else {
         debugPrint('Failed to register course: ${response.message}');
+        return false;
       }
     } catch (e) {
       debugPrint('Error registering course: ${e.toString()}');
+      return false;
     } finally {
       _isLoading = false;
       notifyListeners();
     }
-  }
-
-  // Update an existing course
-  Future<void> updateCourse(CourseRegistrationModel course) async {
-    _isLoading = true;
-    notifyListeners();
-
-    // Implementation would use the ApiService to update the course
-    // This is just a placeholder for the method signature
-
-    _isLoading = false;
-    notifyListeners();
-  }
-
-  // Delete a course
-  Future<void> deleteCourse(String courseId) async {
-    _isLoading = true;
-    notifyListeners();
-
-    // Implementation would use the ApiService to delete the course
-    // This is just a placeholder for the method signature
-
-    _isLoading = false;
-    notifyListeners();
   }
 }
 
@@ -88,43 +111,75 @@ class CourseRegistrationProvider with ChangeNotifier {
 // import 'package:flutter/material.dart';
 // import 'package:linkschool/modules/model/admin/course_registration_model.dart';
 // import 'package:linkschool/modules/services/admin/course_registration_service.dart';
-
+// import 'package:linkschool/modules/services/api/service_locator.dart';
 
 // class CourseRegistrationProvider with ChangeNotifier {
-//   final CourseRegistrationService _courseRegistrationService =
-//       CourseRegistrationService();
-
+//   final CourseRegistrationService _courseRegistrationService = locator<CourseRegistrationService>();
 //   List<CourseRegistrationModel> _registeredCourses = [];
 //   bool _isLoading = false;
 
 //   List<CourseRegistrationModel> get registeredCourses => _registeredCourses;
 //   bool get isLoading => _isLoading;
 
-//   //  Fetch registered courses (Fixed)
-//   Future<void> fetchRegisteredCourses(
-//       String classId, String term, String year) async {
+//   Future<void> fetchRegisteredCourses(String classId, String term, String year) async {
 //     _isLoading = true;
 //     notifyListeners();
 
-//     _registeredCourses = await _courseRegistrationService
-//         .fetchRegisteredCourses(classId, term, year);
-//     print("$_registeredCourses");
-//     _isLoading = false; 
-//     notifyListeners();
+//     try {
+//       final response = await _courseRegistrationService.fetchRegisteredCourses(classId, term, year);
+
+//       if (response.success && response.data != null) {
+//         _registeredCourses = response.data!;
+//       } else {
+//         _registeredCourses = [];
+//         debugPrint('No registered students found or ${response.message}');
+//       }
+//     } catch (e) {
+//       _registeredCourses = [];
+//       debugPrint('Error fetching registered students: ${e.toString()}');
+//     } finally {
+//       _isLoading = false;
+//       notifyListeners();
+//     }
 //   }
 
-//   //  Register a new course
-//   Future<void> registerCourse(CourseRegistrationModel course) async {
+//   // Updated to accept custom payload
+//   Future<bool> registerCourse(CourseRegistrationModel course, {Map<String, dynamic>? payload}) async {
 //     _isLoading = true;
 //     notifyListeners();
 
-//     bool success = await _courseRegistrationService.registerCourse(course);
+//     try {
+//       final response = await _courseRegistrationService.registerCourse(
+//         course,
+//         payload: payload,
+//       );
 
-//     if (success) {
-//       _registeredCourses.add(course);
+//       if (response.success) {
+//         // Update the course count for the student
+//         int index = _registeredCourses.indexWhere((s) => s.studentId == course.studentId);
+//         if (index != -1) {
+//           var updatedStudent = CourseRegistrationModel(
+//             studentId: course.studentId,
+//             studentName: course.studentName,
+//             courseCount: course.courseCount,
+//             classId: course.classId,
+//             term: course.term,
+//             year: course.year,
+//           );
+//           _registeredCourses[index] = updatedStudent;
+//         }
+//         debugPrint('Course registered successfully');
+//         return true;
+//       } else {
+//         debugPrint('Failed to register course: ${response.message}');
+//         return false;
+//       }
+//     } catch (e) {
+//       debugPrint('Error registering course: ${e.toString()}');
+//       return false;
+//     } finally {
+//       _isLoading = false;
+//       notifyListeners();
 //     }
-
-//     _isLoading = false;
-//     notifyListeners();
 //   }
 // }
