@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:linkschool/modules/admin/result/class_detail/attendance/attendance_history.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
+import 'package:linkschool/modules/model/admin/attendance_record_model.dart';
 import 'package:linkschool/modules/providers/admin/attendance_provider.dart';
 import 'package:linkschool/modules/auth/provider/auth_provider.dart';
 import 'package:linkschool/modules/services/api/service_locator.dart';
@@ -9,48 +10,105 @@ import 'package:hive/hive.dart';
 
 class AttendanceHistoryList extends StatefulWidget {
   final String classId;
-  
+
   const AttendanceHistoryList({
-    Key? key, 
+    super.key,
     required this.classId,
-  }) : super(key: key);
+  });
 
   @override
   State<AttendanceHistoryList> createState() => _AttendanceHistoryListState();
 }
 
 class _AttendanceHistoryListState extends State<AttendanceHistoryList> {
-  final List<String> subjects = ['English Language', 'Mathematics', 'Physics', 'Chemistry', 'Biology', 'History', 'Geography', 'Literature'];
-  
+  final List<String> subjects = [
+    'English Language',
+    'Mathematics',
+    'Physics',
+    'Chemistry',
+    'Biology',
+    'History',
+    'Geography',
+    'Literature'
+  ];
+
   @override
   void initState() {
     super.initState();
-    _fetchAttendanceHistory();
+    // Defer the API call until after the build phase
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _fetchAttendanceHistory();
+    });
   }
 
   Future<void> _fetchAttendanceHistory() async {
-    final attendanceProvider = locator<AttendanceProvider>();
-    final authProvider = locator<AuthProvider>();
-    
-    // Get settings from auth provider
-    final settings = authProvider.settings;
-    final userBox = Hive.box('userData');
-    final userData = userBox.get('userData');
-    
-    // Get database name from the stored login response
-    final dbName = userData?['_db'] ?? 'aalmgzmy_linkskoo_practice';
-    
-    // Get term and year from settings
-    final term = settings?['term']?.toString() ?? '3';
-    final year = settings?['year']?.toString() ?? '2025';
-    
-    // Fetch attendance history
-    await attendanceProvider.fetchAttendanceHistory(
-      classId: widget.classId,
-      term: term,
-      year: year,
-      dbName: dbName,
-    );
+    try {
+      final attendanceProvider = locator<AttendanceProvider>();
+      final authProvider = locator<AuthProvider>();
+
+      // Validate classId first
+      if (widget.classId.isEmpty) {
+        throw Exception('Class ID is required but not provided');
+      }
+
+      // Get userData from Hive with validation
+      final userBox = Hive.box('userData');
+      final userData = userBox.get('userData');
+      
+      if (userData == null) {
+        throw Exception('User data not found. Please login again.');
+      }
+
+      // Extract database name with validation
+      final dbName = userData['_db'];
+      if (dbName == null || dbName.toString().isEmpty) {
+        throw Exception('Database name not found in user data');
+      }
+
+      // Get settings with proper validation
+      final settings = authProvider.settings ?? authProvider.getSettings();
+      if (settings.isEmpty) {
+        throw Exception('Settings not found. Please login again.');
+      }
+
+      // Extract term and year with proper type handling and validation
+      final termValue = settings['term'];
+      final yearValue = settings['year'];
+
+      if (termValue == null || yearValue == null) {
+        throw Exception('Term or year not found in settings');
+      }
+
+      // Convert to string, handling both int and string types
+      final term = termValue.toString();
+      final year = yearValue.toString();
+
+      // Additional validation
+      if (term.isEmpty || year.isEmpty) {
+        throw Exception('Term or year is empty');
+      }
+
+      print('Fetching attendance with params:');
+      print('- classId: ${widget.classId}');
+      print('- term: $term');
+      print('- year: $year');
+      print('- dbName: $dbName');
+
+      // Fetch attendance history with validated parameters
+      await attendanceProvider.fetchAttendanceHistory(
+        classId: widget.classId,
+        term: term,
+        year: year,
+        dbName: dbName.toString(),
+      );
+
+    } catch (e) {
+      print('Error in _fetchAttendanceHistory: $e');
+      // Set error in provider to show in UI
+      final attendanceProvider = locator<AttendanceProvider>();
+      // Since we can't directly set error, we'll let the provider handle it
+      // The error will be caught by the provider's try-catch block
+    }
   }
 
   @override
@@ -60,17 +118,71 @@ class _AttendanceHistoryListState extends State<AttendanceHistoryList> {
         if (attendanceProvider.isLoading) {
           return const Center(child: CircularProgressIndicator());
         }
-        
+
         if (attendanceProvider.error.isNotEmpty) {
-          return Center(child: Text('Error: ${attendanceProvider.error}'));
+          return Container(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.error_outline,
+                  color: Colors.red,
+                  size: 48,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Error loading attendance history',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  attendanceProvider.error,
+                  style: TextStyle(
+                    color: Colors.red,
+                    fontSize: 14,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 12),
+                ElevatedButton(
+                  onPressed: _fetchAttendanceHistory,
+                  child: Text('Retry'),
+                ),
+              ],
+            ),
+          );
         }
-        
+
         final attendanceRecords = attendanceProvider.attendanceRecords;
-        
+
         if (attendanceRecords.isEmpty) {
-          return const Center(child: Text('No attendance records found.'));
+          return Container(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.history,
+                  color: Colors.grey,
+                  size: 48,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'No attendance records found',
+                  style: TextStyle(
+                    color: Colors.grey[600],
+                    fontSize: 16,
+                  ),
+                ),
+              ],
+            ),
+          );
         }
-        
+
         return Container(
           width: double.infinity,
           color: AppColors.backgroundLight,
@@ -91,18 +203,15 @@ class _AttendanceHistoryListState extends State<AttendanceHistoryList> {
   }
 
   Widget _buildAttendanceHistoryItem(
-    BuildContext context, 
-    int index, 
-    List<dynamic> attendanceRecords,
-    AttendanceProvider attendanceProvider
+    BuildContext context,
+    int index,
+    List<AttendanceRecord> attendanceRecords,
+    AttendanceProvider attendanceProvider,
   ) {
     final record = attendanceRecords[index];
-    // Format date to match the original format (e.g., "Thursday, 20 July, 2026")
     final formattedDate = attendanceProvider.formatDate(record.date);
-    
-    // Assign a subject from the subjects list (cycling through if needed)
-    final subject = subjects[index % subjects.length];
-    
+    final subject = record.courseName.isNotEmpty ? record.courseName : subjects[index % subjects.length]; // Fallback to subjects list if courseName is empty
+
     return ListTile(
       leading: Container(
         width: 30,
@@ -111,69 +220,157 @@ class _AttendanceHistoryListState extends State<AttendanceHistoryList> {
         child: const Icon(Icons.check, color: Colors.white, size: 20),
       ),
       title: Text(formattedDate),
-      subtitle: Text('Attendance Count: ${record.count}', style: const TextStyle(color: Colors.grey)),
+      subtitle: Text('Subject: $subject, Count: ${record.count}', style: const TextStyle(color: Colors.grey)),
       onTap: () => Navigator.push(
-        context, 
+        context,
         MaterialPageRoute(
           builder: (context) => AttendanceHistoryScreen(
             date: formattedDate,
             attendanceId: record.id.toString(),
-          )
-        )
+          ),
+        ),
       ),
     );
   }
 }
 
 
+
+
+
 // import 'package:flutter/material.dart';
 // import 'package:linkschool/modules/admin/result/class_detail/attendance/attendance_history.dart';
 // import 'package:linkschool/modules/common/app_colors.dart';
-// // import 'package:linkschool/modules/portal/result/class_detail/attendance/attendance_history.dart';
+// import 'package:linkschool/modules/model/admin/attendance_record_model.dart';
+// import 'package:linkschool/modules/providers/admin/attendance_provider.dart';
+// import 'package:linkschool/modules/auth/provider/auth_provider.dart';
+// import 'package:linkschool/modules/services/api/service_locator.dart';
+// import 'package:provider/provider.dart';
+// import 'package:hive/hive.dart';
 
 // class AttendanceHistoryList extends StatefulWidget {
-//   const AttendanceHistoryList({super.key});
+//   final String classId;
+
+//   const AttendanceHistoryList({
+//     super.key,
+//     required this.classId,
+//   });
 
 //   @override
 //   State<AttendanceHistoryList> createState() => _AttendanceHistoryListState();
 // }
 
 // class _AttendanceHistoryListState extends State<AttendanceHistoryList> {
-//   final List<String> subjects = ['English Language', 'Mathematics', 'Physics', 'Chemistry', 'Biology', 'History', 'Geography', 'Literature'];
+//   final List<String> subjects = [
+//     'English Language',
+//     'Mathematics',
+//     'Physics',
+//     'Chemistry',
+//     'Biology',
+//     'History',
+//     'Geography',
+//     'Literature'
+//   ];
 
-//   final List<String> dates = ['Thursday, 20 July, 2026', 'Friday, 21 July, 2026', 'Monday, 24 July, 2026', 'Tuesday, 25 July, 2026', 'Wednesday, 26 July, 2026', 'Thursday, 27 July, 2026', 'Friday, 28 July, 2026', 'Monday, 31 July, 2026'];
-  
+//   @override
+//   void initState() {
+//     super.initState();
+//     // Defer the API call until after the build phase
+//     WidgetsBinding.instance.addPostFrameCallback((_) {
+//       _fetchAttendanceHistory();
+//     });
+//   }
+
+//   Future<void> _fetchAttendanceHistory() async {
+//     final attendanceProvider = locator<AttendanceProvider>();
+//     final authProvider = locator<AuthProvider>();
+
+//     // Get settings from auth provider
+//     final settings = authProvider.settings;
+//     final userBox = Hive.box('userData');
+//     final userData = userBox.get('userData');
+
+//     // Get database name from the stored login response
+//     final dbName = userData?['_db'] ?? 'aalmgzmy_linkskoo_practice';
+
+//     // Get term and year from settings
+//     final term = settings?['term']?.toString() ?? '3';
+//     final year = settings?['year']?.toString() ?? '2025';
+
+//     // Fetch attendance history
+//     await attendanceProvider.fetchAttendanceHistory(
+//       classId: widget.classId,
+//       term: term,
+//       year: year,
+//       dbName: dbName,
+//     );
+//   }
 
 //   @override
 //   Widget build(BuildContext context) {
-//     return Container(
-//       width: double.infinity,
-//       color: AppColors.backgroundLight,
-//       constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.5),
-//       child: Padding(
-//         padding: const EdgeInsets.symmetric(vertical: 8.0),
-//         child: ListView.separated(
-//           shrinkWrap: true,
-//           physics: const NeverScrollableScrollPhysics(),
-//           itemCount: 8,
-//           separatorBuilder: (context, index) => Divider(height: 1, color: Colors.grey[300], indent: 16, endIndent: 16),
-//           itemBuilder: (context, index) => _buildAttendanceHistoryItem(context, index),
-//         ),
-//       ),
+//     return Consumer<AttendanceProvider>(
+//       builder: (context, attendanceProvider, child) {
+//         if (attendanceProvider.isLoading) {
+//           return const Center(child: CircularProgressIndicator());
+//         }
+
+//         if (attendanceProvider.error.isNotEmpty) {
+//           return Center(child: Text('Error: ${attendanceProvider.error}'));
+//         }
+
+//         final attendanceRecords = attendanceProvider.attendanceRecords;
+
+//         if (attendanceRecords.isEmpty) {
+//           return const Center(child: Text('No attendance records found.'));
+//         }
+
+//         return Container(
+//           width: double.infinity,
+//           color: AppColors.backgroundLight,
+//           constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.5),
+//           child: Padding(
+//             padding: const EdgeInsets.symmetric(vertical: 8.0),
+//             child: ListView.separated(
+//               shrinkWrap: true,
+//               physics: const NeverScrollableScrollPhysics(),
+//               itemCount: attendanceRecords.length > 8 ? 8 : attendanceRecords.length,
+//               separatorBuilder: (context, index) => Divider(height: 1, color: Colors.grey[300], indent: 16, endIndent: 16),
+//               itemBuilder: (context, index) => _buildAttendanceHistoryItem(context, index, attendanceRecords, attendanceProvider),
+//             ),
+//           ),
+//         );
+//       },
 //     );
 //   }
 
-//   Widget _buildAttendanceHistoryItem(BuildContext context, int index) {
-//     return ListTile(
-//       leading: Container(
-//         width: 30,
-//         height: 30,
-//         decoration: const BoxDecoration(color: Colors.green, shape: BoxShape.circle),
-//         child: const Icon(Icons.check, color: Colors.white, size: 20),
+// Widget _buildAttendanceHistoryItem(
+//   BuildContext context,
+//   int index,
+//   List<AttendanceRecord> attendanceRecords,
+//   AttendanceProvider attendanceProvider,
+// ) {
+//   final record = attendanceRecords[index];
+//   final formattedDate = attendanceProvider.formatDate(record.date);
+//   final subject = record.courseName.isNotEmpty ? record.courseName : subjects[index % subjects.length]; // Fallback to subjects list if courseName is empty
+
+//   return ListTile(
+//     leading: Container(
+//       width: 30,
+//       height: 30,
+//       decoration: const BoxDecoration(color: Colors.green, shape: BoxShape.circle),
+//       child: const Icon(Icons.check, color: Colors.white, size: 20),
+//     ),
+//     title: Text(formattedDate),
+//     subtitle: Text('Subject: $subject, Count: ${record.count}', style: const TextStyle(color: Colors.grey)),
+//     onTap: () => Navigator.push(
+//       context,
+//       MaterialPageRoute(
+//         builder: (context) => AttendanceHistoryScreen(
+//           date: formattedDate,
+//           attendanceId: record.id.toString(),
+//         ),
 //       ),
-//       title: Text(dates[index]),
-//       subtitle: Text(subjects[index], style: const TextStyle(color: Colors.grey)),
-//       onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => AttendanceHistoryScreen(date: dates[index]))),
-//     );
-//   }
+//     ),
+//   );
+// }
 // }

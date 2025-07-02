@@ -46,8 +46,9 @@ class _AdminAssignmentScreenState extends State<AdminAssignmentScreen> {
   final List<AttachmentItem> _attachments = [];
   DateTime _startDate = DateTime.now();
   DateTime _endDate = DateTime.now().add(const Duration(days: 1));
-  String _selectedTopic = 'No Topic';
-  String _marks = '200 marks';
+    String _selectedTopic = 'No Topic';
+  int? _selectedTopicId;
+  String _marks = ' 0 marks';
   late double opacity;
   int? creatorId;
   String? creatorName;
@@ -628,16 +629,16 @@ class _AdminAssignmentScreenState extends State<AdminAssignmentScreen> {
     builder: (BuildContext context) {
       return StatefulBuilder(
         builder: (context, setState) {
-          // Function to validate URL format
-          bool isValidUrl(String url) {
-            try {
-              final uri = Uri.parse(url);
-              return uri.isAbsolute &&
-                  (uri.scheme == 'http' || uri.scheme == 'https');
-            } catch (e) {
-              return false;
-            }
-          }
+        bool isValidUrl(String url) {
+  try {
+    
+    final uri = Uri.parse(url);
+
+    return uri.isAbsolute && uri.scheme.isNotEmpty;
+  } catch (e) {
+    return false;
+  }
+}
 
           final isValid = isValidUrl(linkController.text);
 
@@ -688,21 +689,26 @@ class _AdminAssignmentScreenState extends State<AdminAssignmentScreen> {
                 textColor: AppColors.eLearningBtnColor3,
               ),
               CustomSaveElevatedButton(
-              onPressed: (isValid && linkController.text.isNotEmpty)
-                  ? () {
-                      _addAttachment(
-                        linkController.text,
-                        'assets/icons/e_learning/link3.svg',
-                      );
-                      Navigator.of(context).pop();
-                      Navigator.of(context).pop();
-                    }
-                  : () {}, // provide empty callback instead of null
-              text: 'Save',
-            ),
-          ],
-        );
-      });
+                onPressed: isValid && linkController.text.isNotEmpty
+                    ? () {
+                        String fullUrl = linkController.text;
+
+                        _addAttachment(
+                          fullUrl, // Use full URL as the display name
+                          'assets/icons/e_learning/link3.svg',
+                          fullUrl, // Use full URL as the content
+                        );
+
+                        Navigator.of(context).pop();
+                        Navigator.of(context).pop(); // Close both dialog and bottom sheet
+                      }
+                    : () {},
+                text: 'Save',
+              ),
+            ],
+          );
+        },
+      );
     },
   );
 }
@@ -784,9 +790,11 @@ class _AdminAssignmentScreenState extends State<AdminAssignmentScreen> {
               )),
     );
 
-    if (result != null && result is String) {
+    if (result != null && result is Map) {
       setState(() {
-        _selectedTopic = result;
+           _selectedTopic = result['topicName'] ?? 'No Topic'; // Update topic name
+        _selectedTopicId = result['topicId']; // Store topic ID
+
       });
     }
   }
@@ -811,7 +819,7 @@ class _AdminAssignmentScreenState extends State<AdminAssignmentScreen> {
         );
         return {
           'id': classIdStr,
-          'class_name': (classData['class_name']?.toString() ?? 'Unknown'),
+          'name': (classData['class_name']?.toString() ?? 'Unknown'),
         };
       }).toList();
 
@@ -823,7 +831,7 @@ class _AdminAssignmentScreenState extends State<AdminAssignmentScreen> {
         );
         classIdList.add({
           'id': classIdStr,
-          'class_name': (classData['class_name']?.toString() ?? _selectedClass),
+          'name': (classData['class_name']?.toString() ?? _selectedClass),
         });
       }
 
@@ -832,28 +840,33 @@ class _AdminAssignmentScreenState extends State<AdminAssignmentScreen> {
         'title': _titleController.text,
         'description': _descriptionController.text,
         'topic': _selectedTopic,
-        'topic_id': '',
-        'grade': _marks,
+        'topic_id': _selectedTopicId!, // Use 0 if no topic is selected
+        "syllabus_id":widget.syllabusId!,
+         'creator_id': creatorId,
+        'creator_name': creatorName,
+        'start_date': _formatDate(_startDate),
+        'end_date': _formatDate(_endDate),
+         'grade': _marks.replaceAll(RegExp(r'[^0-9]'), ''),
+         'classes': classIdList.isNotEmpty
+            ? classIdList
+            : [
+                {'id': '', 'name': ''},
+              ],
+       
         'files': _attachments.map((attachment) => {
               'old_file': '',
               'type': _getAttachmentType(attachment.iconPath, attachment.content),
               'file_name': attachment.content,
               'file': attachment.base64Content
             }).toList(),
-        'classids': classIdList.isNotEmpty
-            ? classIdList
-            : [
-                {'id': '', 'class_name': ''},
-              ],
-        'Level_id': widget.levelId,
-        'course_id': widget.courseId,
-        'course_name': widget.courseName,
-        'Start_date': _formatDate(_startDate),
-        'End_date': _formatDate(_endDate),
-        'creator_id': creatorId,
-        'Creator_name': creatorName,
-        'year': academicYear,
-        'term': academicTerm?.toInt(),
+       
+       // 'Level_id': widget.levelId,
+       // 'course_id': widget.courseId,
+        //'course_name': widget.courseName,
+        
+       
+       // 'year': academicYear,
+        //'term': academicTerm?.toInt(),
       };
 
       print('Complete Assignment Data:');

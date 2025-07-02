@@ -349,15 +349,17 @@ void _showCourseSelectionDialog() {
     );
   }
 
-  void _navigateToClassDetail(String classId, String className) async {
-    final userBox = Hive.box('userData');
-    await userBox.put('selectedClassId', classId); // Persist selected class ID
+void _navigateToClassDetail(String classId, String className) async {
+  final userBox = Hive.box('userData');
+  await userBox.put('selectedClassId', classId); // Persist selected class ID
+  await userBox.put('selectedLevelId', _selectedLevelId); // Persist selected level ID
 
     Navigator.of(context).push( 
       MaterialPageRoute(
         builder: (context) => ClassDetailScreen(
           classId: classId,
           className: className,
+           levelId: _selectedLevelId, 
         ),
       ),
     );

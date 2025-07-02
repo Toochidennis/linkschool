@@ -315,24 +315,18 @@ void initState() {
                       ),
                     ),
                     ElevatedButton(
-                      onPressed: () {
-                        Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (context) => CourseRegistrationScreen(
-                              studentName: student.studentName,
-                              // studentId: student.studentId,
-                              coursesRegistered: student.courseCount,
-                              classId: widget.classId,
-                              // term: _selectedTerm == 'First term' 
-                              //     ? '1' 
-                              //     : _selectedTerm == 'Second term' 
-                              //         ? '2' 
-                              //         : '3',
-                              // year: _settings['year'] ?? '2023',
-                            ),
-                          ),
-                        );
-                      },
+                        onPressed: () {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => CourseRegistrationScreen(
+          studentName: student.studentName,
+          coursesRegistered: student.courseCount,
+          classId: widget.classId,
+          studentId: student.studentId, // Add this line
+        ),
+      ),
+    );
+  },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.videoColor4,
                         shape: RoundedRectangleBorder(

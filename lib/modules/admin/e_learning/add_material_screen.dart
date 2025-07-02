@@ -478,15 +478,16 @@ void _showInsertLinkDialog() {
     builder: (BuildContext context) {
       return StatefulBuilder(
         builder: (context, setState) {
-          bool isValidUrl(String url) {
-            try {
-              final uri = Uri.parse(url);
-              return uri.isAbsolute &&
-                  (uri.scheme == 'http://' || uri.scheme == 'https://');
-            } catch (e) {
-              return false;
-            }
-          }
+        bool isValidUrl(String url) {
+  try {
+    
+    final uri = Uri.parse(url);
+
+    return uri.isAbsolute && uri.scheme.isNotEmpty;
+  } catch (e) {
+    return false;
+  }
+}
 
           final isValid = isValidUrl(linkController.text);
 
@@ -539,7 +540,7 @@ void _showInsertLinkDialog() {
               CustomSaveElevatedButton(
                 onPressed: isValid && linkController.text.isNotEmpty
                     ? () {
-                        String fullUrl = linkController.text.trim();
+                        String fullUrl = linkController.text;
 
                         _addAttachment(
                           fullUrl, // Use full URL as the display name
@@ -749,24 +750,7 @@ void _addMaterial() async {
   }
 }
 
-// Helper method to extract filename from URL
-String _extractFileNameFromUrl(String url) {
-  try {
-    final uri = Uri.parse(url);
-    final pathSegments = uri.pathSegments;
-    
-    if (pathSegments.isNotEmpty) {
-      final lastSegment = pathSegments.last;
-      return lastSegment.isNotEmpty
-          ? lastSegment
-          : uri.host;
-    }
-    
-    return uri.host.isNotEmpty ? uri.host : 'link';
-  } catch (e) {
-    return 'link';
-  }
-}
+
 
 
   String _getAttachmentType(String iconPath, String content) {
