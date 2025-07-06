@@ -103,6 +103,7 @@ Map<String, dynamic>? userData;
   List<dynamic> levelsWithCourses = []; // New list to store only levels with classes
   String selectedLevelId = '';
   String selectedCourseId = '';
+  String academicTerm= '';
 
 Future<void> _loadUserData() async {
   try {
@@ -124,7 +125,9 @@ Future<void> _loadUserData() async {
 
       final response = processedData['response'] ?? processedData;
       final data = response['data'] ?? response;
-
+ // Extract the term from settings
+  final settings = data['settings'] ?? {};
+  final term = settings['term']?.toString() ?? '';
       // Extract all levels
       final levels = data['levels'] ?? [];
       levelNames = levels.map((level) => [
@@ -153,7 +156,8 @@ Future<void> _loadUserData() async {
 
       setState(() {
         userData = processedData;
-        levelsWithCourses = classNames; // Pass all classes
+        levelsWithCourses = classNames;
+        academicTerm = term; // Pass the actual term
       });
 
       print('All Levels: $levelNames');
@@ -196,6 +200,7 @@ Future<void> _loadUserData() async {
 SliverToBoxAdapter(
   child: LevelSelection(
     isSecondScreen: true,
+    term: academicTerm, // Pass the actual term
     levelNames: levelNames, // Pass all classes directly
     courseNames: courseNames,
     levelId: selectedLevelId,

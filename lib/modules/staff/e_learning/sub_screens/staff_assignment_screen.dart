@@ -403,7 +403,7 @@ class _StaffAssignmentScreenState extends State<StaffAssignmentScreen> {
           const SizedBox(width: 8.0),
           Expanded(
             child: Text(
-              attachment.content,
+              attachment.fileName,
               style: AppTextStyles.normal400(
                   fontSize: 14.0, color: AppColors.primaryLight),
               overflow: TextOverflow.ellipsis,
@@ -579,7 +579,7 @@ class _StaffAssignmentScreenState extends State<StaffAssignmentScreen> {
 
   void _addAttachment(String content, String iconPath) {
     setState(() {
-      _attachments.add(AttachmentItem(content: content, iconPath: iconPath));
+      _attachments.add(AttachmentItem(fileName: content, fileContent: '', iconPath: iconPath));
     });
   }
 

@@ -7,9 +7,10 @@ import 'package:linkschool/modules/common/text_styles.dart';
 
 class SelectClassesDialog extends StatefulWidget {
   final Function(String) onSave;
+  List<Map<String, dynamic>>? syllabusClasses;
   final String? levelId; // Changed from 'leveId' to 'levelId'
 
-  const SelectClassesDialog({super.key, required this.onSave, this.levelId});
+   SelectClassesDialog({super.key, required this.onSave, this.levelId, this.syllabusClasses});
 
   @override
   _SelectClassesDialogState createState() => _SelectClassesDialogState();
@@ -30,6 +31,21 @@ class _SelectClassesDialogState extends State<SelectClassesDialog> {
 
   Future<void> _loadClasses() async {
   try {
+
+    if (widget.syllabusClasses != null && widget.syllabusClasses!.isNotEmpty) {
+      setState(() {
+        _classes = widget.syllabusClasses!
+            .map((cls) => [
+                  cls['id']?.toString() ?? '',
+                  cls['name']?.toString() ?? cls['class_name']?.toString() ?? '',
+                ])
+            .toList();
+        _selectedClasses = List.generate(_classes.length, (_) => true);
+        _selectAll = true;
+        _selectedRowIndices = List.generate(_classes.length, (index) => index);
+      });
+      return;
+    }
     final userBox = Hive.box('userData');
     final storedUserData = userBox.get('userData') ?? userBox.get('loginResponse');
     final selectedClassIds = userBox.get('selectedClassIds') as List? ?? [];

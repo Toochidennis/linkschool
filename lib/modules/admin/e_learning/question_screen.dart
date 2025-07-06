@@ -9,6 +9,7 @@ import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/buttons/custom_outline_button..dart';
 import 'package:linkschool/modules/common/buttons/custom_save_elevated_button.dart';
 import 'package:linkschool/modules/common/constants.dart';
+import 'package:linkschool/modules/common/custom_toaster.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/common/utils/duration_picker_dialog.dart';
 import 'package:linkschool/modules/common/widgets/portal/e_learning/select_classes_dialog.dart';
@@ -247,15 +248,12 @@ class _QuestionScreenState extends State<QuestionScreen> {
 
         if (mounted) {
           widget.onSave(question);
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text(
-                'Question saved successfully',
-                style: TextStyle(color: Colors.white),
-              ),
-              backgroundColor: Colors.green,
-            ),
+          CustomToaster.toastSuccess(
+            context,
+            'Question Saved',
+            'Question saved successfully',
           );
+        
           Navigator.of(context).push(
             MaterialPageRoute(
               builder: (context) => ViewQuestionScreen(
@@ -267,8 +265,10 @@ class _QuestionScreenState extends State<QuestionScreen> {
       } catch (e) {
         print('Error saving question: $e');
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Error: ${e.toString()}')),
+          CustomToaster.toastError(
+            context,
+            'Error',
+            'Failed to save question: ${e.toString()}',
           );
         }
       } finally {
@@ -277,15 +277,12 @@ class _QuestionScreenState extends State<QuestionScreen> {
         }
       }
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Please fill all required fields',
-            style: TextStyle(color: Colors.white),
-          ),
-          backgroundColor: Colors.red,
-        ),
+      CustomToaster.toastError(
+        context,
+        'Validation Error',
+        'Please fill all required fields',
       );
+      
     }
   }
 
@@ -614,15 +611,12 @@ class _QuestionScreenState extends State<QuestionScreen> {
                           });
                           Navigator.of(context).pop();
                         } else {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text(
-                                'Please enter a valid number',
-                                style: TextStyle(color: Colors.white),
-                              ),
-                              backgroundColor: Colors.red,
-                            ),
+                          CustomToaster.toastError(
+                            context,
+                            'Invalid Input',
+                            'Please enter a valid number',
                           );
+                          
                         }
                       },
                       style: ElevatedButton.styleFrom(
@@ -753,11 +747,10 @@ class _QuestionScreenState extends State<QuestionScreen> {
 
   void _selectTopic() async {
   if (widget.syllabusId == null) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Error: Syllabus ID is missing'),
-        backgroundColor: Colors.red,
-      ),
+    CustomToaster.toastError(
+      context,
+      'Error',
+      'Syllabus ID is missing. Please select a syllabus first.',
     );
     return;
   }

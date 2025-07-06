@@ -12,6 +12,7 @@ import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/buttons/custom_outline_button..dart';
 import 'package:linkschool/modules/common/buttons/custom_save_elevated_button.dart';
 import 'package:linkschool/modules/common/constants.dart';
+import 'package:linkschool/modules/common/custom_toaster.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/common/widgets/portal/e_learning/select_classes_dialog.dart';
 import 'package:linkschool/modules/providers/admin/e_learning/material_provider.dart';
@@ -24,7 +25,7 @@ class AddMaterialScreen extends StatefulWidget {
   final String? courseName;
   final String? levelId;
   final int? syllabusId;
-
+ final List<Map<String, dynamic>>? syllabusClasses;
 
   const AddMaterialScreen({
     super.key,
@@ -33,7 +34,8 @@ class AddMaterialScreen extends StatefulWidget {
     this.courseId,
     this.courseName,
     this.levelId, 
-     this.syllabusId,
+     this.syllabusId, 
+     this.syllabusClasses,
    
   });
 
@@ -204,6 +206,7 @@ class _AddMaterialScreenState extends State<AddMaterialScreen> {
                               });
                             },
                             levelId: widget.levelId,
+                          syllabusClasses: widget.syllabusClasses,
                           ),
                         ),
                       );
@@ -584,8 +587,10 @@ void _showInsertLinkDialog() {
       }
     } catch (e) {
       print('Error picking file: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error picking file: $e')),
+      CustomToaster.toastError(
+        context,
+        'Error',
+        'Failed to pick file: ${e.toString()}',
       );
     }
   }
@@ -607,8 +612,10 @@ void _showInsertLinkDialog() {
       }
     } catch (e) {
       print('Error taking photo: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error taking photo: $e')),
+      CustomToaster.toastError(
+        context,
+        'Error',
+        'Failed to take photo: ${e.toString()}',
       );
     }
   }
@@ -630,8 +637,10 @@ void _showInsertLinkDialog() {
       }
     } catch (e) {
       print('Error recording video: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error recording video: $e')),
+      CustomToaster.toastError(
+        context,
+        'Error',
+        'Failed to record video: ${e.toString()}',
       );
     }
   }
@@ -665,6 +674,48 @@ void _showInsertLinkDialog() {
     }
   }
 void _addMaterial() async {
+  // Validation
+  if (_titleController.text.trim().isEmpty) {
+    CustomToaster.toastError(
+      context,
+      'Error',
+      'Please enter a title.',
+    );
+    return;
+  }
+  if (_descriptionController.text.trim().isEmpty) {
+    CustomToaster.toastError(
+      context,
+      'Error',
+      'Please enter a description.',
+    );
+    return;
+  }
+  if (_selectedTopic == 'No Topic' || _selectedTopicId == null) {
+    CustomToaster.toastError(
+      context,
+      'Error',
+      'Please select a topic.',
+    );
+    return;
+  }
+  if (_selectedTopic == 'No Topic' || _selectedTopicId == null) {
+    CustomToaster.toastError(
+      context,
+      'Error',
+      'Please select a topic.',
+    );
+    return;
+  }
+  if (_selectedClass == 'Select classes' || _selectedClass.trim().isEmpty) {
+    CustomToaster.toastError(
+      context,
+      'Error',
+      'Please select at least one class.',
+    );
+    return;
+  }
+
   try {
     final materialProvider = Provider.of<MaterialProvider>(context, listen: false);
     final userBox = Hive.box('userData');
@@ -744,8 +795,10 @@ void _addMaterial() async {
     Navigator.of(context).pop();
   } catch (e) {
     print('Error saving material: $e');
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Error: ${e.toString()}')),
+    CustomToaster.toastError(
+      context,
+      'Error',
+      'Failed to save material: ${e.toString()}',
     );
   }
 }

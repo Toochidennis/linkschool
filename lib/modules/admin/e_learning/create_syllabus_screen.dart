@@ -4,6 +4,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:hive/hive.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/buttons/custom_save_elevated_button.dart';
+import 'package:linkschool/modules/common/custom_toaster.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/common/widgets/portal/e_learning/select_classes_dialog.dart';
 import 'package:linkschool/modules/common/widgets/portal/e_learning/select_teachers_dialog.dart';
@@ -103,12 +104,12 @@ Future<void> _handleSave() async {
   // Validation for class selection
   if ((selectedClassIds.isEmpty || selectedClassIds.length == 0) &&
       (widget.classId == null || widget.classId!.isEmpty)) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Please select at least one class.'),
-        backgroundColor: Colors.red,
-      ),
+    CustomToaster.toastError(
+      context,
+      'Class Selection Error',
+      'Please select at least one class.',
     );
+    
     return;
   }
 
@@ -169,7 +170,7 @@ Future<void> _handleSave() async {
       if (widget.syllabusData != null) {
         // We're editing - call UpdateSyllabus
         final syllabusId = widget.syllabusData!['id'] as int;
-        
+        print('fffffffffffffffffffUpdating syllabus with ID: $syllabusId');
         await syllabusProvider.UpdateSyllabus(
           title: _titleController.text,
           description: _descriptionController.text,
@@ -180,15 +181,12 @@ Future<void> _handleSave() async {
         );
 
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text(
-                'Syllabus updated successfully',
-                style: TextStyle(color: Colors.white),
-              ),
-              backgroundColor: Colors.green,
-            ),
+          CustomToaster.toastSuccess(
+            context,
+            'Syllabus Updated',
+            'Syllabus updated successfully',
           );
+          
           
           // Return the updated data so the parent screen can refresh
           Navigator.of(context).pop({
@@ -214,15 +212,12 @@ Future<void> _handleSave() async {
         await Future.delayed(const Duration(seconds: 1));
 
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text(
-                'Syllabus created successfully',
-                style: TextStyle(color: Colors.white),
-              ),
-              backgroundColor: Colors.green,
-            ),
+          CustomToaster.toastSuccess(
+            context,
+            'Syllabus Created',
+            'Syllabus created successfully',
           );
+        
           Navigator.of(context).pop(academicTerm?.toString() ?? '');
         }
       }
@@ -230,8 +225,10 @@ Future<void> _handleSave() async {
     } catch (e) {
       print('Error saving syllabus: $e');
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: ${e.toString()}'),backgroundColor: Colors.red),
+        CustomToaster.toastError(
+          context,
+          'Error',
+          'Failed to save syllabus: ${e.toString()}',
         );
       }
     } finally {
@@ -240,15 +237,12 @@ Future<void> _handleSave() async {
       }
     }
   } else {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text(
-          'Please fill all required fields',
-          style: TextStyle(color: Colors.white),
-        ),
-        backgroundColor: Colors.red,
-      ),
+    CustomToaster.toastError(
+      context,
+      'Validation Error',
+      'Please fill all required fields',
     );
+   
   }
 }
 
@@ -376,8 +370,8 @@ Future<void> _handleSave() async {
                               });
                             },
                             levelId: widget.levelId,
+                         
                        
-                        // <-- Add this
                           ),
                         ),
                       );

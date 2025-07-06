@@ -411,7 +411,7 @@ Future<void> _takePhoto() async {
 
   void _addAttachment(String content, String iconPath) {
     setState(() {
-      _attachments.add(AttachmentItem(content: content, iconPath: iconPath));
+      _attachments.add(AttachmentItem(fileName: content, fileContent: '', iconPath: iconPath));
     });
   }
 }

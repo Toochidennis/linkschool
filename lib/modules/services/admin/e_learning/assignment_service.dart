@@ -1,4 +1,3 @@
-
 import 'package:hive/hive.dart';
 import 'package:linkschool/modules/services/api/api_service.dart';
 
@@ -20,6 +19,15 @@ Future<void> AddAssignment(Map assignment) async {
 
   assignment['_db'] = dbName;
   print("Request Payload: $assignment");
+
+  // Before sending the assignment, check attachments:
+  if (assignment['attachments'] != null) {
+    for (var file in assignment['attachments']) {
+      if (file['old_file_name'] == null) {
+        throw Exception('Each attachment must have an old_file_name');
+      }
+    }
+  }
 
   try {
     final response = await _apiService.post<Map<String, dynamic>>(

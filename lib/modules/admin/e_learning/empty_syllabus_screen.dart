@@ -10,6 +10,7 @@ import 'package:linkschool/modules/admin/e_learning/empty_subject_screen.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/buttons/custom_medium_elevated_button.dart';
 import 'package:linkschool/modules/common/constants.dart';
+import 'package:linkschool/modules/common/custom_toaster.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/model/e-learning/syllabus_model.dart';
 import 'package:linkschool/modules/providers/admin/e_learning/syllabus_provider.dart';
@@ -79,14 +80,26 @@ class _EmptySyllabusScreenState extends State<EmptySyllabusScreen> with WidgetsB
     setState(() => isLoading = true);
     
     try {
-      // Use actual widget parameters instead of hardcoded values
-      final String levelId = widget.levelId ?? '';
-         String term = widget.term ?? '';
-    if (term.isEmpty) {
-      final userBox = Hive.box('userData');
-      final storedUserData = userBox.get('userData') ?? userBox.get('loginResponse');
-      final processedData = storedUserData is String
-          ? json.decode(storedUserData)
+      // Check for nulls and handle gracefully
+      if (widget.levelId == null || widget.levelId!.isEmpty) {
+        throw Exception('Level ID is required but not provided');
+      }
+      if (widget.term == null || widget.term!.isEmpty) {
+        throw Exception('Term is required but not provided');
+      }
+      if (widget.courseId == null || widget.courseId!.isEmpty) {
+        throw Exception('Course ID is required but not provided');
+      }
+
+      final String levelId = widget.levelId!;
+      String term = widget.term!;
+      String courseId = widget.courseId!;
+
+      if (term.isEmpty) {
+        final userBox = Hive.box('userData');
+        final storedUserData = userBox.get('userData') ?? userBox.get('loginResponse');
+        final processedData = storedUserData is String
+            ? json.decode(storedUserData)
           : storedUserData;
       final response = processedData['response'] ?? processedData;
       final data = response['data'] ?? response;
@@ -101,8 +114,8 @@ class _EmptySyllabusScreenState extends State<EmptySyllabusScreen> with WidgetsB
         throw Exception('Level ID is required but not provided');
       }
       
-      await _syllabusProvider.fetchSyllabus(levelId, term);
-      
+await _syllabusProvider.fetchSyllabus(levelId, term,courseId);
+      print("handler: qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq courses selected $courseId");
       final syllabusModels = _syllabusProvider.syllabusList;
       print('Handler: Received ${syllabusModels.length} syllabus models');
       
@@ -154,13 +167,8 @@ class _EmptySyllabusScreenState extends State<EmptySyllabusScreen> with WidgetsB
     } catch (e) {
       print('Handler Error: $e');
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to load syllabuses: $e'),
-            backgroundColor: Colors.red,
-            duration: const Duration(seconds: 5),
-          ),
-        );
+        CustomToaster.toastError(context, 'Error', 'Failed to load syllabuses: $e');
+        
       }
     } finally {
       if (mounted) {
@@ -183,16 +191,20 @@ class _EmptySyllabusScreenState extends State<EmptySyllabusScreen> with WidgetsB
          syllabusId: syllabusId,
          classes: newClasses,
        );
-        ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Syllabus updated successfully'), backgroundColor: Colors.green),
-    );
+       CustomToaster.toastSuccess(
+         context,
+         'Syllabus Updated',
+         'Syllabus updated successfully',
+        );
+        
        _loadSyllabuses();
      }catch(e){
-      ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        
-        content: Text('Failed to update syllabus: $e'), backgroundColor: Colors.red),
-    );
+      CustomToaster.toastError(
+        context,
+        'Error',
+        'Failed to update syllabus: $e',
+      );
+    
      };
   }
 
@@ -245,7 +257,7 @@ class _EmptySyllabusScreenState extends State<EmptySyllabusScreen> with WidgetsB
                 : _buildSyllabusList(),
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: _addNewSyllabus(),
+        onPressed: _addNewSyllabus(), 
         backgroundColor: AppColors.videoColor4,
         child: SvgPicture.asset(
           'assets/icons/e_learning/plus.svg',
@@ -285,7 +297,7 @@ class _EmptySyllabusScreenState extends State<EmptySyllabusScreen> with WidgetsB
   Widget _buildSyllabusList() {
     print('Building syllabus list with ${_syllabusList.length} items');
     print('Widget parameters - classId: ${widget.classId}, levelId: ${widget.levelId}, courseId: ${widget.courseId}, course_name: ${widget.course_name}');
-    
+
     return ListView.builder(
       itemCount: _syllabusList.length,
       itemBuilder: (context, index) {
@@ -295,6 +307,8 @@ class _EmptySyllabusScreenState extends State<EmptySyllabusScreen> with WidgetsB
             MaterialPageRoute(
               builder: (context) => EmptySubjectScreen(
                  syllabusId: _syllabusList[index]['id'] as int?,
+                 syllabusClasses: (_syllabusList[index]['classes'] as List<ClassModel>?)
+    ?.map((c) => c.toJson()).toList() ?? [],
                 classId: widget.classId,
                 courseId: widget.courseId,
                 levelId: widget.levelId,
@@ -315,9 +329,7 @@ class _EmptySyllabusScreenState extends State<EmptySyllabusScreen> with WidgetsB
   }
 
   VoidCallback _addNewSyllabus() {
-             
-    print("Adding new syllabus with  ${widget.term} levelId: ${widget.levelId}, course_name: ${widget.course_name}");
-    
+    print("Adding new ${widget.courseId} syllabus with  ${widget.term} levelId: ${widget.levelId}, course_name: ${widget.course_name}");
     return () async {
       await Navigator.of(context).push(
         MaterialPageRoute(
@@ -359,9 +371,10 @@ class _EmptySyllabusScreenState extends State<EmptySyllabusScreen> with WidgetsB
   void _deleteSyllabus(int index) async{
     final int syllabusId = _syllabusList[index]['id'];
     final String term = _syllabusList[index]["term"] ;
-    final String levelId = widget.levelId ?? "" ;
+    final String levelId = widget.levelId!;
+    final String courseId = widget.courseId!;
     SyllabusProvider syllabusProvider = Provider.of<SyllabusProvider>(context, listen: false);
-  await  syllabusProvider.deletesyllabus(syllabusId, levelId, term);
+  await  syllabusProvider.deletesyllabus(syllabusId, levelId, term, courseId);
      _loadSyllabuses();
   }
 
