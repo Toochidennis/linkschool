@@ -107,6 +107,7 @@ void showStudentResultOverlay(BuildContext context, {String? classId, String? cl
                                         studentName: student.fullName,
                                         className: className,
                                         studentId: student.id,
+                                        classId: classId,
                                       ),
                                     ),
                                   );

@@ -18,7 +18,6 @@ class StudentResultScreen extends StatefulWidget {
     super.key,
     required this.studentName,
     required this.className,
-
   });
 
   @override
@@ -79,7 +78,11 @@ class _StudentResultScreenState extends State<StudentResultScreen> {
                           context,
                           MaterialPageRoute(
                             builder: (context) =>
-                                const StudentAnnualResultScreen(),
+                                const StudentAnnualResultScreen(
+                              studentId: 292, // Use widget.studentId or fallback to student.id
+                              classId: "66", // Fallback for testing
+                              levelId: "",
+                            ),
                           ),
                         );
                       },

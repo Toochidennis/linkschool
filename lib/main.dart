@@ -7,7 +7,7 @@ import 'package:linkschool/modules/common/app_themes.dart';
 import 'package:linkschool/modules/providers/admin/assessment_provider.dart';
 import 'package:linkschool/modules/providers/admin/attendance_provider.dart';
 import 'package:linkschool/modules/providers/admin/behaviour_provider.dart';
-import 'package:linkschool/modules/providers/admin/behaviour_provider.dart';
+// import 'package:linkschool/modules/providers/admin/behaviour_provider.dart';
 import 'package:linkschool/modules/providers/admin/class_provider.dart';
 import 'package:linkschool/modules/providers/admin/course_registration_provider.dart';
 import 'package:linkschool/modules/providers/admin/e_learning/material_provider.dart';
@@ -73,6 +73,9 @@ Future<void> main() async {
         ChangeNotifierProvider(create: (_) => locator<GradeProvider>()),
         // SkillProvider from service locator
         ChangeNotifierProvider(create: (_) => locator<SkillsProvider>()),
+        // SkillsBehaviorTableProvider from service locator
+        ChangeNotifierProvider(create: (_) => locator<SkillsBehaviorTableProvider>()),
+
         ChangeNotifierProvider(create: (_) => LevelProvider()),
         ChangeNotifierProvider(create: (_) => ClassProvider()),
         ChangeNotifierProvider(create: (_) => AssessmentProvider()),
@@ -111,7 +114,6 @@ class MyApp extends StatelessWidget {
 
 
 
-
 // import 'package:flutter/material.dart';
 // import 'package:flutter/services.dart';
 // import 'package:hive_flutter/hive_flutter.dart';
@@ -121,11 +123,15 @@ class MyApp extends StatelessWidget {
 // import 'package:linkschool/modules/providers/admin/assessment_provider.dart';
 // import 'package:linkschool/modules/providers/admin/attendance_provider.dart';
 // import 'package:linkschool/modules/providers/admin/behaviour_provider.dart';
+// import 'package:linkschool/modules/providers/admin/behaviour_provider.dart';
 // import 'package:linkschool/modules/providers/admin/class_provider.dart';
 // import 'package:linkschool/modules/providers/admin/course_registration_provider.dart';
+// import 'package:linkschool/modules/providers/admin/e_learning/material_provider.dart';
 // import 'package:linkschool/modules/providers/admin/e_learning/syllabus_provider.dart';
 // import 'package:linkschool/modules/providers/admin/course_result_provider.dart';
+// import 'package:linkschool/modules/providers/admin/e_learning/topic_provider.dart';
 // import 'package:linkschool/modules/providers/admin/level_provider.dart';
+// import 'package:linkschool/modules/providers/admin/skills_behavior_table_provider.dart';
 // import 'package:linkschool/modules/providers/admin/student_provider.dart';
 // import 'package:linkschool/modules/providers/admin/term_provider.dart';
 // import 'package:linkschool/modules/providers/admin/view_course_result_provider.dart';
@@ -142,51 +148,36 @@ class MyApp extends StatelessWidget {
 // import 'modules/providers/admin/registered_terms_provider.dart';
 // import 'modules/providers/explore/game/game_provider.dart';
 // import 'modules/providers/admin/grade_provider.dart';
-// // import 'package:linkschool/modules/services/api/api_service.dart';
 
 // Future<void> main() async {
-//   // Ensure Flutter bindings are initialized
 //   WidgetsFlutterBinding.ensureInitialized();
   
-//   // Initialize Hive with more robust error handling
 //   try {
 //     await Hive.initFlutter();
-    
-//     // Open multiple boxes with error handling
 //     await Hive.openBox('userData');
 //     await Hive.openBox('attendance');
 //     await Hive.openBox('loginResponse');
-    
 //     print('Hive initialized successfully');
 //   } catch (e) {
 //     print('Error initializing Hive: $e');
 //   }
   
-//   // // Load environment variables
-//   // await dotenv.load(fileName: ".env");
-
-//   // Initialize environment variables
 //   await EnvConfig.init();
-  
-//   // Set up the service locator
 //   setupServiceLocator();
   
-//   // Configure system UI
 //   SystemChrome.setSystemUIOverlayStyle(
 //     const SystemUiOverlayStyle(
 //       statusBarColor: Colors.transparent,
-//       statusBarIconBrightness: Brightness.light, // For Android (dark icons)
-//       statusBarBrightness: Brightness.dark, // For iOS (dark icons)
+//       statusBarIconBrightness: Brightness.light,
+//       statusBarBrightness: Brightness.dark,
 //     ),
 //   );
   
-//   // Run the app
 //   runApp(
 //     MultiProvider(
 //       providers: [
-
 //         ChangeNotifierProvider(create: (_) => locator<AuthProvider>()),
-//          ChangeNotifierProvider(create: (_) => SyllabusProvider( SyllabusService())),
+//         //  ChangeNotifierProvider(create: (_) => SyllabusProvider( SyllabusService())),
 //         ChangeNotifierProvider(create: (_) => NewsProvider()),
 //         ChangeNotifierProvider(create: (_) => SubjectProvider()),
 //         ChangeNotifierProvider(create: (_) => CBTProvider(CBTService())),
@@ -194,22 +185,21 @@ class MyApp extends StatelessWidget {
 //         ChangeNotifierProvider(create: (_) => ExamProvider()),
 //         ChangeNotifierProvider(create: (_) => ForYouProvider()),
 //         ChangeNotifierProvider<SyllabusProvider>(create: (_) => locator<SyllabusProvider>()),
-        
 //         // GradeProvider from service locator
 //         ChangeNotifierProvider(create: (_) => locator<GradeProvider>()),
-
+//         // SkillProvider from service locator
 //         ChangeNotifierProvider(create: (_) => locator<SkillsProvider>()),
-        
+
 //         ChangeNotifierProvider(create: (_) => LevelProvider()),
 //         ChangeNotifierProvider(create: (_) => ClassProvider()),
 //         ChangeNotifierProvider(create: (_) => AssessmentProvider()),
 //         ChangeNotifierProvider(create: (_) => TermProvider()),
 //         ChangeNotifierProvider(create: (_) => RegisteredTermsProvider()),
 //         ChangeNotifierProvider(create: (_) => CourseRegistrationProvider()),
-        
+//         ChangeNotifierProvider(create: (_) => locator<TopicProvider>()),
+//         ChangeNotifierProvider(create: (_) => locator<MaterialProvider>()),
 //         // StudentProvider from service locator
 //         ChangeNotifierProvider(create: (_) => locator<StudentProvider>()),
-
 //         ChangeNotifierProvider(create: (_) => locator<AttendanceProvider>()),
 //         ChangeNotifierProvider(create: (_) => CourseResultProvider()),
 //         ChangeNotifierProvider(create: (_) => ViewCourseResultProvider()),

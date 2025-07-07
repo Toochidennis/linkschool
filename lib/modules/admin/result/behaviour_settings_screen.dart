@@ -269,10 +269,14 @@ class _BehaviourSettingScreenState extends State<BehaviourSettingScreen> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      builder: (BuildContext context) {
+      builder: (BuildContext modalContext) {
         return AddSkillBottomSheet(
-          onAddSkill: (skillName, type, level) {
-            Provider.of<SkillsProvider>(context, listen: false).addSkill(
+          onAddSkill: (skillName, type, level) async {
+            // Close the bottom sheet first
+            Navigator.pop(modalContext);
+            
+            // Then add the skill using the parent context
+            await Provider.of<SkillsProvider>(context, listen: false).addSkill(
               skillName,
               type,
               level,
@@ -284,6 +288,27 @@ class _BehaviourSettingScreenState extends State<BehaviourSettingScreen> {
       },
     );
   }
+
+
+  // void _showAddSkills(BuildContext context) {
+  //   showModalBottomSheet(
+  //     context: context,
+  //     isScrollControlled: true,
+  //     builder: (BuildContext context) {
+  //       return AddSkillBottomSheet(
+  //         onAddSkill: (skillName, type, level) {
+  //           Provider.of<SkillsProvider>(context, listen: false).addSkill(
+  //             skillName,
+  //             type,
+  //             level,
+  //             context: context,
+  //           );
+  //         },
+  //         selectedLevelValue: selectedLevelValue,
+  //       );
+  //     },
+  //   );
+  // }
 }
 
 class SkillsList extends StatelessWidget {
@@ -489,7 +514,32 @@ class _AddSkillBottomSheetState extends State<AddSkillBottomSheet> {
     super.dispose();
   }
 
-  void _submitSkill() {
+  // void _submitSkill() {
+  //   setState(() {
+  //     _skillNameError = null;
+  //     _typeError = null;
+  //   });
+
+  //   if (_skillController.text.isEmpty) {
+  //     setState(() => _skillNameError = 'Please enter a skill name');
+  //   }
+  //   if (selectedTypeDisplay == null) {
+  //     setState(() => _typeError = 'Please select a type');
+  //   }
+
+  //   if (_skillController.text.isNotEmpty && selectedTypeDisplay != null) {
+  //     final typeValue = typeMap[selectedTypeDisplay!] ?? '0';
+  //     widget.onAddSkill(
+  //       _skillController.text,
+  //       typeValue,
+  //       widget.selectedLevelValue,
+  //     );
+  //     Navigator.pop(context);
+  //   }
+  // }
+
+
+void _submitSkill() {
     setState(() {
       _skillNameError = null;
       _typeError = null;
@@ -504,12 +554,13 @@ class _AddSkillBottomSheetState extends State<AddSkillBottomSheet> {
 
     if (_skillController.text.isNotEmpty && selectedTypeDisplay != null) {
       final typeValue = typeMap[selectedTypeDisplay!] ?? '0';
+      // Call the callback function
       widget.onAddSkill(
         _skillController.text,
         typeValue,
         widget.selectedLevelValue,
       );
-      Navigator.pop(context);
+      // Note: Don't call Navigator.pop here as it's handled in the callback
     }
   }
 
