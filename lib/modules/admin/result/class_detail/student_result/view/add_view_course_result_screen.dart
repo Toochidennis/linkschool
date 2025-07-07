@@ -41,7 +41,6 @@ class _AddViewCourseResultScreenState extends State<AddViewCourseResultScreen> {
   Map<int, Map<String, String>> editedScores = {};
   Map<String, int> maxScores = {};
   Map<String, TextEditingController> _controllers = {};
-  // Add this to track which fields are being edited
   Set<String> _editingFields = {};
 
   @override
@@ -108,10 +107,8 @@ class _AddViewCourseResultScreenState extends State<AddViewCourseResultScreen> {
           grades = List<Map<String, dynamic>>.from(gradesData);
           assessmentNames = uniqueAssessments.toList();
           isLoading = false;
-          // Clear editing state when fresh data is loaded
           editedScores.clear();
           _editingFields.clear();
-          // Dispose and clear controllers to prevent stale data
           _controllers.forEach((_, controller) => controller.dispose());
           _controllers.clear();
         });
@@ -247,7 +244,6 @@ class _AddViewCourseResultScreenState extends State<AddViewCourseResultScreen> {
 
       if (response.success) {
         setState(() {
-          // Update the courseResults with the new data
           final resultIndex = courseResults.indexWhere((r) => r['result_id'] == resultId);
           if (resultIndex != -1) {
             courseResults[resultIndex]['total_score'] = totalScore.toString();
@@ -258,10 +254,8 @@ class _AddViewCourseResultScreenState extends State<AddViewCourseResultScreen> {
                 }).toList();
           }
           
-          // Clear edited scores for this result
           editedScores.remove(resultId);
           
-          // Update controllers with new values and clear editing state
           for (var assessmentName in assessmentNames) {
             final controllerKey = '$resultId-$assessmentName';
             final newScore = assessments.firstWhere(
@@ -450,166 +444,235 @@ class _AddViewCourseResultScreenState extends State<AddViewCourseResultScreen> {
           border: Border.all(color: Colors.grey[300]!),
           borderRadius: BorderRadius.circular(8),
         ),
-        child: SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: DataTable(
-            columnSpacing: 10,
-            headingRowHeight: 48,
-            dataRowHeight: 50,
-            headingRowColor: MaterialStateProperty.all(AppColors.eLearningBtnColor1),
-            dividerThickness: 1, // Add vertical divider between columns
-            columns: [
-              const DataColumn(
-                label: Text(
-                  'Student Name',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                    color: Colors.white,
-                  ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Fixed Student Name Column
+            Container(
+              width: 150, // Fixed width for student name column
+              decoration: BoxDecoration(
+                border: Border(
+                  right: BorderSide(color: Colors.grey[300]!, width: 1),
                 ),
               ),
-              const DataColumn(
-                label: Text(
-                  'Reg Number',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                    color: Colors.white,
-                  ),
-                ),
-              ),
-              ...assessmentNames.map((name) => DataColumn(
-                    label: Text(
-                      name,
-                      style: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
-                        color: Colors.white,
+              child: Column(
+                children: [
+                  // Header
+                  Container(
+                    height: 48,
+                    color: AppColors.eLearningBtnColor1,
+                    child: const Center(
+                      child: Text(
+                        'Student Name',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                          color: Colors.white,
+                        ),
                       ),
                     ),
-                  )),
-              const DataColumn(
-                label: Text(
-                  'Total',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                    color: Colors.white,
                   ),
-                ),
-              ),
-              const DataColumn(
-                label: Text(
-                  'Grade',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                    color: Colors.white,
-                  ),
-                ),
-              ),
-            ],
-            rows: courseResults.asMap().entries.map((entry) {
-              final index = entry.key;
-              final result = entry.value;
-              final resultId = result['result_id'] as int;
-
-              return DataRow(
-                cells: [
-                  DataCell(
-                    Text(
-                      result['student_name']?.toString() ?? 'N/A',
-                      style: const TextStyle(fontSize: 14),
-                    ),
-                  ),
-                  DataCell(
-                    Text(
-                      result['reg_no']?.toString() ?? 'N/A',
-                      style: const TextStyle(fontSize: 14),
-                    ),
-                  ),
-                  ...assessmentNames.map((assessmentName) {
-                    final controllerKey = '$resultId-$assessmentName';
-                    
-                    // Get the current score from either edited scores or original data
-                    String currentScore;
-                    if (editedScores.containsKey(resultId) && editedScores[resultId]!.containsKey(assessmentName)) {
-                      currentScore = editedScores[resultId]![assessmentName]!;
-                    } else {
-                      final assessmentData = (result['assessments'] as List).firstWhere(
-                        (a) => a['assessment_name'] == assessmentName,
-                        orElse: () => {'score': ''},
-                      );
-                      currentScore = assessmentData['score']?.toString() ?? '';
-                    }
-                    
-                    // Initialize controller only if it doesn't exist
-                    if (!_controllers.containsKey(controllerKey)) {
-                      _controllers[controllerKey] = TextEditingController(text: currentScore);
-                    } else if (!_editingFields.contains(controllerKey)) {
-                      // Update controller text if not currently being edited
-                      _controllers[controllerKey]!.text = currentScore;
-                    }
-                    
-                    print('Score for resultId $resultId, $assessmentName: $currentScore');
-                    
-                    return DataCell(
-                      TextField(
-                        controller: _controllers[controllerKey],
-                        textAlign: TextAlign.center,
-                        keyboardType: TextInputType.number,
-                        style: const TextStyle(fontSize: 14),
-                        decoration: const InputDecoration(
-                          border: InputBorder.none,
-                          contentPadding: EdgeInsets.zero,
+                  // Data Rows
+                  ...courseResults.asMap().entries.map((entry) {
+                    final result = entry.value;
+                    return Container(
+                      height: 50,
+                      decoration: BoxDecoration(
+                        border: Border(
+                          bottom: BorderSide(color: Colors.grey[300]!, width: 1),
                         ),
-                        onTap: () {
-                          setState(() {
-                            editedScores[resultId] ??= {};
-                            _editingFields.add(controllerKey);
-                            print('Tapped assessment: $assessmentName for resultId: $resultId - field ready for editing');
-                          });
-                        },
-                        onChanged: (value) {
-                          setState(() {
-                            editedScores[resultId] ??= {};
-                            editedScores[resultId]![assessmentName] = value;
-                            print('Changed $assessmentName for resultId: $resultId to: $value');
-                          });
-                        },
-                        onSubmitted: (value) {
-                          setState(() {
-                            _editingFields.remove(controllerKey);
-                          });
-                        },
-                        onEditingComplete: () {
-                          setState(() {
-                            _editingFields.remove(controllerKey);
-                          });
-                        },
+                      ),
+                      child: Center(
+                        child: Text(
+                          result['student_name']?.toString() ?? 'N/A',
+                          style: const TextStyle(fontSize: 14),
+                          textAlign: TextAlign.center,
+                        ),
                       ),
                     );
-                  }),
-                  DataCell(
-                    Text(
-                      _calculateTotal(result, resultId),
-                      style: const TextStyle(fontSize: 14),
-                    ),
-                  ),
-                  DataCell(
-                    Text(
-                      getGradeForScore(_calculateTotal(result, resultId)),
-                      style: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
+                  }).toList(),
+                ],
+              ),
+            ),
+            // Scrollable Columns
+            Expanded(
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Column(
+                  children: [
+                    // Header Row
+                    Container(
+                      height: 48,
+                      color: AppColors.eLearningBtnColor1,
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 120,
+                            child: const Center(
+                              child: Text(
+                                'Reg Number',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w500,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ),
+                          ),
+                          ...assessmentNames.map((name) => Container(
+                                width: 100,
+                                child: Center(
+                                  child: Text(
+                                    name,
+                                    style: const TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w500,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                ),
+                              )),
+                          Container(
+                            width: 80,
+                            child: const Center(
+                              child: Text(
+                                'Total',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w500,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ),
+                          ),
+                          Container(
+                            width: 80,
+                            child: const Center(
+                              child: Text(
+                                'Grade',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w500,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                  ),
-                ],
-              );
-            }).toList(),
-          ),
+                    // Data Rows
+                    ...courseResults.asMap().entries.map((entry) {
+                      final result = entry.value;
+                      final resultId = result['result_id'] as int;
+                      return Container(
+                        height: 50,
+                        decoration: BoxDecoration(
+                          border: Border(
+                            bottom: BorderSide(color: Colors.grey[300]!, width: 1),
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 120,
+                              child: Center(
+                                child: Text(
+                                  result['reg_no']?.toString() ?? 'N/A',
+                                  style: const TextStyle(fontSize: 14),
+                                ),
+                              ),
+                            ),
+                            ...assessmentNames.map((assessmentName) {
+                              final controllerKey = '$resultId-$assessmentName';
+                              String currentScore;
+                              if (editedScores.containsKey(resultId) &&
+                                  editedScores[resultId]!.containsKey(assessmentName)) {
+                                currentScore = editedScores[resultId]![assessmentName]!;
+                              } else {
+                                final assessmentData = (result['assessments'] as List).firstWhere(
+                                  (a) => a['assessment_name'] == assessmentName,
+                                  orElse: () => {'score': ''},
+                                );
+                                currentScore = assessmentData['score']?.toString() ?? '';
+                              }
+
+                              if (!_controllers.containsKey(controllerKey)) {
+                                _controllers[controllerKey] = TextEditingController(text: currentScore);
+                              } else if (!_editingFields.contains(controllerKey)) {
+                                _controllers[controllerKey]!.text = currentScore;
+                              }
+
+                              print('Score for resultId $resultId, $assessmentName: $currentScore');
+
+                              return Container(
+                                width: 100,
+                                child: TextField(
+                                  controller: _controllers[controllerKey],
+                                  textAlign: TextAlign.center,
+                                  keyboardType: TextInputType.number,
+                                  style: const TextStyle(fontSize: 14),
+                                  decoration: const InputDecoration(
+                                    border: InputBorder.none,
+                                    contentPadding: EdgeInsets.zero,
+                                  ),
+                                  onTap: () {
+                                    setState(() {
+                                      editedScores[resultId] ??= {};
+                                      _editingFields.add(controllerKey);
+                                      print('Tapped assessment: $assessmentName for resultId: $resultId - field ready for editing');
+                                    });
+                                  },
+                                  onChanged: (value) {
+                                    setState(() {
+                                      editedScores[resultId] ??= {};
+                                      editedScores[resultId]![assessmentName] = value;
+                                      print('Changed $assessmentName for resultId: $resultId to: $value');
+                                    });
+                                  },
+                                  onSubmitted: (value) {
+                                    setState(() {
+                                      _editingFields.remove(controllerKey);
+                                    });
+                                  },
+                                  onEditingComplete: () {
+                                    setState(() {
+                                      _editingFields.remove(controllerKey);
+                                    });
+                                  },
+                                ),
+                              );
+                            }),
+                            Container(
+                              width: 80,
+                              child: Center(
+                                child: Text(
+                                  _calculateTotal(result, resultId),
+                                  style: const TextStyle(fontSize: 14),
+                                ),
+                              ),
+                            ),
+                            Container(
+                              width: 80,
+                              child: Center(
+                                child: Text(
+                                  getGradeForScore(_calculateTotal(result, resultId)),
+                                  style: const TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    }).toList(),
+                  ],
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -647,7 +710,7 @@ class _AddViewCourseResultScreenState extends State<AddViewCourseResultScreen> {
 // import 'package:linkschool/modules/services/api/service_locator.dart';
 // import 'package:provider/provider.dart';
 
-// class ViewCourseResultScreen extends StatefulWidget {
+// class AddViewCourseResultScreen extends StatefulWidget {
 //   final String classId;
 //   final String year;
 //   final int term;
@@ -655,7 +718,7 @@ class _AddViewCourseResultScreenState extends State<AddViewCourseResultScreen> {
 //   final String subject;
 //   final Map<String, dynamic> courseData;
 
-//   const ViewCourseResultScreen({
+//   const AddViewCourseResultScreen({
 //     super.key,
 //     required this.classId,
 //     required this.year,
@@ -666,10 +729,10 @@ class _AddViewCourseResultScreenState extends State<AddViewCourseResultScreen> {
 //   });
 
 //   @override
-//   State<ViewCourseResultScreen> createState() => _ViewCourseResultScreenState();
+//   State<AddViewCourseResultScreen> createState() => _AddViewCourseResultScreenState();
 // }
 
-// class _ViewCourseResultScreenState extends State<ViewCourseResultScreen> {
+// class _AddViewCourseResultScreenState extends State<AddViewCourseResultScreen> {
 //   late double opacity;
 //   List<Map<String, dynamic>> courseResults = [];
 //   List<Map<String, dynamic>> grades = [];
@@ -685,7 +748,7 @@ class _AddViewCourseResultScreenState extends State<AddViewCourseResultScreen> {
 //   @override
 //   void initState() {
 //     super.initState();
-//     print('Initializing ViewCourseResultScreen');
+//     print('Initializing AddViewCourseResultScreen');
 //     fetchCourseResults();
 //     fetchAssessments();
 //   }
@@ -987,8 +1050,7 @@ class _AddViewCourseResultScreenState extends State<AddViewCourseResultScreen> {
 //         ),
 //         actions: [
 //           if (isEditing)
-//             IconButton(
-//               icon: const Icon(Icons.save, color: AppColors.eLearningBtnColor1),
+//             TextButton(
 //               onPressed: () async {
 //                 print('Save button pressed, processing ${editedScores.keys.length} edited results');
 //                 final resultIds = editedScores.keys.toList();
@@ -996,6 +1058,14 @@ class _AddViewCourseResultScreenState extends State<AddViewCourseResultScreen> {
 //                   await saveEditedResult(resultId);
 //                 }
 //               },
+//               child: const Text(
+//                 'Save',
+//                 style: TextStyle(
+//                   color: AppColors.eLearningBtnColor1,
+//                   fontSize: 16,
+//                   fontWeight: FontWeight.w600,
+//                 ),
+//               ),
 //             ),
 //         ],
 //         backgroundColor: AppColors.backgroundLight,
@@ -1088,6 +1158,7 @@ class _AddViewCourseResultScreenState extends State<AddViewCourseResultScreen> {
 //             headingRowHeight: 48,
 //             dataRowHeight: 50,
 //             headingRowColor: MaterialStateProperty.all(AppColors.eLearningBtnColor1),
+//             dividerThickness: 1, // Add vertical divider between columns
 //             columns: [
 //               const DataColumn(
 //                 label: Text(
@@ -1174,10 +1245,12 @@ class _AddViewCourseResultScreenState extends State<AddViewCourseResultScreen> {
 //                       currentScore = assessmentData['score']?.toString() ?? '';
 //                     }
                     
-//                     // Initialize controller only if it doesn't exist or if we're not currently editing this field
-//                     if (!_controllers.containsKey(controllerKey) || !_editingFields.contains(controllerKey)) {
-//                       _controllers[controllerKey]?.dispose();
+//                     // Initialize controller only if it doesn't exist
+//                     if (!_controllers.containsKey(controllerKey)) {
 //                       _controllers[controllerKey] = TextEditingController(text: currentScore);
+//                     } else if (!_editingFields.contains(controllerKey)) {
+//                       // Update controller text if not currently being edited
+//                       _controllers[controllerKey]!.text = currentScore;
 //                     }
                     
 //                     print('Score for resultId $resultId, $assessmentName: $currentScore');
@@ -1196,9 +1269,7 @@ class _AddViewCourseResultScreenState extends State<AddViewCourseResultScreen> {
 //                           setState(() {
 //                             editedScores[resultId] ??= {};
 //                             _editingFields.add(controllerKey);
-//                             // Clear the field when user taps to edit
-//                             _controllers[controllerKey]!.clear();
-//                             print('Tapped assessment: $assessmentName for resultId: $resultId - field cleared');
+//                             print('Tapped assessment: $assessmentName for resultId: $resultId - field ready for editing');
 //                           });
 //                         },
 //                         onChanged: (value) {

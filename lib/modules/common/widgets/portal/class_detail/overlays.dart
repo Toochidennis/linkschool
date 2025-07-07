@@ -218,11 +218,27 @@ void showTermOverlay(BuildContext context, {required String classId, required St
                                 year: year,
                                 term: termId,
                                 termName: termName,
+                                isCurrentTerm: isCurrentTerm,
                               ),
                             ),
                           );
                         } else if (labels[index] == 'Skills and Behaviour') {
-                          _showSkillsBehaviourOverlay(context, classId: classId, levelId: levelId, year: year, termId: termId, termName: termName);
+                          if (isCurrentTerm) {
+                            _showSkillsBehaviourOverlay(context, classId: classId, levelId: levelId, year: year, termId: termId, termName: termName, isCurrentTerm: isCurrentTerm);
+                          } else {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => StaffSkillsBehaviourScreen(
+                                  classId: classId,
+                                  levelId: levelId,
+                                  term: termId.toString(),
+                                  year: year,
+                                  db: 'aalmgzmy_linkskoo_practice',
+                                ),
+                              ),
+                            );
+                          }
                         } else if (labels[index] == 'Composite result') {
                           Navigator.push(
                             context,
@@ -249,7 +265,7 @@ void showTermOverlay(BuildContext context, {required String classId, required St
   );
 }
 
-void _showSkillsBehaviourOverlay(BuildContext context, {required String classId, required String levelId, required String year, required int termId, required String termName}) {
+void _showSkillsBehaviourOverlay(BuildContext context, {required String classId, required String levelId, required String year, required int termId, required String termName, required bool isCurrentTerm}) {
   showModalBottomSheet(
     context: context,
     builder: (BuildContext context) {
@@ -359,7 +375,6 @@ Widget _buildDialogButton(String text, String iconPath, VoidCallback onPressed) 
 // import 'package:linkschool/modules/common/text_styles.dart';
 // import 'package:linkschool/modules/staff/e_learning/form_classes/edit_staff_skill_behaviour_screen.dart';
 // import 'package:linkschool/modules/staff/e_learning/form_classes/staff_skill_behaviour_screen.dart';
-// // import 'package:linkschool/modules/staff/e_learning/form_classes/edit_skills_behaviour_screen.dart';
 // import 'package:provider/provider.dart';
 // import 'package:linkschool/modules/providers/admin/student_provider.dart';
 
@@ -458,6 +473,7 @@ Widget _buildDialogButton(String text, String iconPath, VoidCallback onPressed) 
 //                                       builder: (context) => StudentResultScreen(
 //                                         studentName: student.fullName,
 //                                         className: className,
+//                                         studentId: student.id,
 //                                       ),
 //                                     ),
 //                                   );
@@ -479,7 +495,7 @@ Widget _buildDialogButton(String text, String iconPath, VoidCallback onPressed) 
 //   );
 // }
 
-// void showTermOverlay(BuildContext context, {required String classId, required String levelId, required String year, required int termId, required String termName}) {
+// void showTermOverlay(BuildContext context, {required String classId, required String levelId, required String year, required int termId, required String termName, required bool isCurrentTerm}) {
 //   showModalBottomSheet(
 //     context: context,
 //     isScrollControlled: true,
@@ -555,6 +571,7 @@ Widget _buildDialogButton(String text, String iconPath, VoidCallback onPressed) 
 //                                 year: year,
 //                                 term: termId,
 //                                 termName: termName,
+//                                 isCurrentTerm: isCurrentTerm,
 //                               ),
 //                             ),
 //                           );
