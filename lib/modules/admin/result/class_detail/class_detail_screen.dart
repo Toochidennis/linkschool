@@ -32,7 +32,7 @@ class ClassDetailScreen extends StatefulWidget {
 class _ClassDetailScreenState extends State<ClassDetailScreen> {
   late TermProvider _termProvider;
   List<dynamic> classNames = [];
-  List<dynamic> levelNames = [];
+  List<dynamic> levelNames = [];  
 
   @override
   void initState() {

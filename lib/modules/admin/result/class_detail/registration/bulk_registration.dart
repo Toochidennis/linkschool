@@ -44,6 +44,16 @@ void initState() {
   });
 }
 
+@override
+void didChangeDependencies() {
+  super.didChangeDependencies();
+  // This will be called when returning from course registration
+  // Refresh the data to show updated course counts
+  if (widget.classId.isNotEmpty) {
+    _fetchRegisteredStudents();
+  }
+}
+
   void _loadSettingsFromHive() {
     final userBox = Hive.box('userData');
     final userData = userBox.get('userData');
@@ -322,7 +332,7 @@ void initState() {
           studentName: student.studentName,
           coursesRegistered: student.courseCount,
           classId: widget.classId,
-          studentId: student.studentId, // Add this line
+          studentId: student.studentId, 
         ),
       ),
     );

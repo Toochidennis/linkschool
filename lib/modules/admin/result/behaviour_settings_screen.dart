@@ -514,30 +514,6 @@ class _AddSkillBottomSheetState extends State<AddSkillBottomSheet> {
     super.dispose();
   }
 
-  // void _submitSkill() {
-  //   setState(() {
-  //     _skillNameError = null;
-  //     _typeError = null;
-  //   });
-
-  //   if (_skillController.text.isEmpty) {
-  //     setState(() => _skillNameError = 'Please enter a skill name');
-  //   }
-  //   if (selectedTypeDisplay == null) {
-  //     setState(() => _typeError = 'Please select a type');
-  //   }
-
-  //   if (_skillController.text.isNotEmpty && selectedTypeDisplay != null) {
-  //     final typeValue = typeMap[selectedTypeDisplay!] ?? '0';
-  //     widget.onAddSkill(
-  //       _skillController.text,
-  //       typeValue,
-  //       widget.selectedLevelValue,
-  //     );
-  //     Navigator.pop(context);
-  //   }
-  // }
-
 
 void _submitSkill() {
     setState(() {
