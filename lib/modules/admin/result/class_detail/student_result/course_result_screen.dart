@@ -412,6 +412,7 @@ class _CourseResultScreenState extends State<CourseResultScreen> {
                   ),
                 ],
               ),
+             
             ],
           ),
         );

@@ -213,7 +213,7 @@ class _LevelSelectionState extends State<LevelSelection> {
                               ),
                             );
                           },
-                        ),
+                 ),
                 ),
               ],
             ),
@@ -275,10 +275,10 @@ void _showCourseSelectionDialog() {
                                 Navigator.of(context).push(
                                   MaterialPageRoute(
                                     builder: (context) => EmptySyllabusScreen(
-                                      term: widget.term, // Pass actual term
-                                      courseId: course[0], // Pass actual course ID
-                                      classId: widget.classId, // This might be null, handle it
-                                      levelId: _selectedLevelId, // Pass actual selected level ID
+                                      term: widget.term, 
+                                      courseId: course[0], 
+                                      classId: widget.classId,
+                                      levelId: _selectedLevelId, 
                                       selectedSubject: course[1],
                                       course_name: widget.courseNames?[index][1] ?? '', // Pass course name
                                     ),
