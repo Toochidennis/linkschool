@@ -85,8 +85,8 @@ void showStudentResultOverlay(BuildContext context, {String? classId, String? cl
                             separatorBuilder: (context, index) => const Divider(),
                             itemBuilder: (context, index) {
                               final student = provider.students[index];
-                              final firstLetter = student.fullName.isNotEmpty ? 
-                                  student.fullName[0].toUpperCase() : 'S';
+                              final firstLetter = student.fullName.isNotEmpty ?
+                                   student.fullName[0].toUpperCase() : 'S';
                               
                               return ListTile(
                                 leading: CircleAvatar(
@@ -157,24 +157,28 @@ void showTermOverlay(BuildContext context, {required String classId, required St
                       'assets/icons/result/course.svg',
                       'assets/icons/result/composite_result.svg',
                     ];
+
                     final labels = [
                       'Comment on results',
                       'Skills and Behaviour',
                       'Course result',
                       'Composite result',
                     ];
+
                     final colors = [
                       AppColors.bgColor2,
                       AppColors.bgColor3,
                       AppColors.bgColor4,
                       AppColors.bgColor5,
                     ];
+
                     final iconColors = [
                       AppColors.iconColor1,
                       AppColors.iconColor2,
                       AppColors.iconColor3,
                       AppColors.iconColor4,
                     ];
+
                     return ListTile(
                       leading: Container(
                         width: 40,
@@ -223,22 +227,8 @@ void showTermOverlay(BuildContext context, {required String classId, required St
                             ),
                           );
                         } else if (labels[index] == 'Skills and Behaviour') {
-                          if (isCurrentTerm) {
-                            _showSkillsBehaviourOverlay(context, classId: classId, levelId: levelId, year: year, termId: termId, termName: termName, isCurrentTerm: isCurrentTerm);
-                          } else {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => StaffSkillsBehaviourScreen(
-                                  classId: classId,
-                                  levelId: levelId,
-                                  term: termId.toString(),
-                                  year: year,
-                                  db: 'aalmgzmy_linkskoo_practice',
-                                ),
-                              ),
-                            );
-                          }
+                          // Always show skills behaviour overlay regardless of current term
+                          _showSkillsBehaviourOverlay(context, classId: classId, levelId: levelId, year: year, termId: termId, termName: termName, isCurrentTerm: isCurrentTerm);
                         } else if (labels[index] == 'Composite result') {
                           Navigator.push(
                             context,
@@ -286,6 +276,7 @@ void _showSkillsBehaviourOverlay(BuildContext context, {required String classId,
                         fontSize: 16, color: AppColors.backgroundDark),
                   ),
                 ),
+                // Always show both Add and View buttons regardless of current term
                 Row(
                   children: [
                     Expanded(
@@ -362,6 +353,7 @@ Widget _buildDialogButton(String text, String iconPath, VoidCallback onPressed) 
     ),
   );
 }
+
 
 
 
@@ -474,6 +466,7 @@ Widget _buildDialogButton(String text, String iconPath, VoidCallback onPressed) 
 //                                         studentName: student.fullName,
 //                                         className: className,
 //                                         studentId: student.id,
+//                                         classId: classId,
 //                                       ),
 //                                     ),
 //                                   );
@@ -584,11 +577,27 @@ Widget _buildDialogButton(String text, String iconPath, VoidCallback onPressed) 
 //                                 year: year,
 //                                 term: termId,
 //                                 termName: termName,
+//                                 isCurrentTerm: isCurrentTerm,
 //                               ),
 //                             ),
 //                           );
 //                         } else if (labels[index] == 'Skills and Behaviour') {
-//                           _showSkillsBehaviourOverlay(context, classId: classId, levelId: levelId, year: year, termId: termId, termName: termName);
+//                           if (isCurrentTerm) {
+//                             _showSkillsBehaviourOverlay(context, classId: classId, levelId: levelId, year: year, termId: termId, termName: termName, isCurrentTerm: isCurrentTerm);
+//                           } else {
+//                             Navigator.push(
+//                               context,
+//                               MaterialPageRoute(
+//                                 builder: (context) => StaffSkillsBehaviourScreen(
+//                                   classId: classId,
+//                                   levelId: levelId,
+//                                   term: termId.toString(),
+//                                   year: year,
+//                                   db: 'aalmgzmy_linkskoo_practice',
+//                                 ),
+//                               ),
+//                             );
+//                           }
 //                         } else if (labels[index] == 'Composite result') {
 //                           Navigator.push(
 //                             context,
@@ -615,7 +624,7 @@ Widget _buildDialogButton(String text, String iconPath, VoidCallback onPressed) 
 //   );
 // }
 
-// void _showSkillsBehaviourOverlay(BuildContext context, {required String classId, required String levelId, required String year, required int termId, required String termName}) {
+// void _showSkillsBehaviourOverlay(BuildContext context, {required String classId, required String levelId, required String year, required int termId, required String termName, required bool isCurrentTerm}) {
 //   showModalBottomSheet(
 //     context: context,
 //     builder: (BuildContext context) {

@@ -93,6 +93,7 @@ class _CourseResultScreenState extends State<CourseResultScreen> {
                                 child: CircularProgressIndicator(),
                               );
                             }
+
                             if (provider.error != null) {
                               return Center(
                                 child: Text(
@@ -101,11 +102,13 @@ class _CourseResultScreenState extends State<CourseResultScreen> {
                                 ),
                               );
                             }
+
                             if (provider.averageScores.isEmpty) {
                               return const Center(
                                 child: Text('No course results available'),
                               );
                             }
+
                             return BarChart(
                               BarChartData(
                                 maxY: 100,
@@ -183,6 +186,7 @@ class _CourseResultScreenState extends State<CourseResultScreen> {
                           return const Center(
                               child: CircularProgressIndicator());
                         }
+
                         if (provider.error != null) {
                           return Center(
                             child: Text(
@@ -191,6 +195,7 @@ class _CourseResultScreenState extends State<CourseResultScreen> {
                             ),
                           );
                         }
+
                         return Column(
                           children: _buildSubjectRows(provider.averageScores),
                         );
@@ -213,8 +218,10 @@ class _CourseResultScreenState extends State<CourseResultScreen> {
       final score = scoreValue is String
           ? double.parse(scoreValue)
           : (scoreValue as num).toDouble();
+
       final color =
           index % 2 == 0 ? AppColors.primaryLight : AppColors.videoColor4;
+
       return BarChartGroupData(
         x: index,
         barRods: [
@@ -239,6 +246,7 @@ class _CourseResultScreenState extends State<CourseResultScreen> {
       final courseName = scores[index]['course_name'].toString();
       final shortName =
           courseName.length > 5 ? courseName.substring(0, 5) : courseName;
+
       return SideTitleWidget(
         meta: meta,
         space: 4.0,
@@ -254,6 +262,7 @@ class _CourseResultScreenState extends State<CourseResultScreen> {
   Widget _leftTitles(double value, TitleMeta meta) {
     const style = TextStyle(fontSize: 10, color: AppColors.barTextGray);
     String text;
+
     switch (value.toInt()) {
       case 0:
         text = '0';
@@ -291,6 +300,7 @@ class _CourseResultScreenState extends State<CourseResultScreen> {
       final scoreValue = averageScore is String
           ? double.parse(averageScore)
           : (averageScore as num).toDouble();
+
       return _buildSubjectRow(subject, scoreValue / 100, score);
     }).toList();
   }
@@ -299,11 +309,8 @@ class _CourseResultScreenState extends State<CourseResultScreen> {
       String subject, double score, Map<String, dynamic> courseData) {
     return GestureDetector(
       onTap: () {
-        if (widget.isCurrentTerm) {
-          _showOverlayDialog(subject, courseData);
-        } else {
-          _navigateToViewResult(subject, courseData);
-        }
+        // Always show overlay dialog regardless of current term
+        _showOverlayDialog(subject, courseData);
       },
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16.0),
@@ -355,7 +362,7 @@ class _CourseResultScreenState extends State<CourseResultScreen> {
                           fontSize: 16, color: AppColors.backgroundDark),
                     ),
                   ),
-                  // Body Row
+                  // Body Row - Always show both Add and View buttons
                   Row(
                     children: [
                       Expanded(
@@ -377,9 +384,7 @@ class _CourseResultScreenState extends State<CourseResultScreen> {
                   ),
                 ],
               ),
-
               const SizedBox(height: 16.0),
-
               // Bottom Section - Monthly Assessment
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -393,7 +398,7 @@ class _CourseResultScreenState extends State<CourseResultScreen> {
                           fontSize: 16, color: AppColors.backgroundDark),
                     ),
                   ),
-                  // Body Row
+                  // Body Row - Always show both Add and View buttons
                   Row(
                     children: [
                       Expanded(
@@ -418,7 +423,6 @@ class _CourseResultScreenState extends State<CourseResultScreen> {
                   ),
                 ],
               ),
-             
             ],
           ),
         );
@@ -450,7 +454,6 @@ class _CourseResultScreenState extends State<CourseResultScreen> {
 
   void _navigateToAddResult(String subject, Map<String, dynamic> courseData) {
     Navigator.pop(context); // Close the bottom sheet first
-
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -468,7 +471,6 @@ class _CourseResultScreenState extends State<CourseResultScreen> {
 
   void _navigateToViewResult(String subject, Map<String, dynamic> courseData) {
     Navigator.pop(context); // Close the bottom sheet first
-
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -487,7 +489,6 @@ class _CourseResultScreenState extends State<CourseResultScreen> {
   void _navigateToMonthlyAssessment(
       String subject, Map<String, dynamic> courseData) {
     Navigator.pop(context); // Close the bottom sheet first
-
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -552,7 +553,7 @@ class _CourseResultScreenState extends State<CourseResultScreen> {
 
 
 
-// // ignore_for_file: deprecated_member_use
+
 
 // import 'package:fl_chart/fl_chart.dart';
 // import 'package:flutter/material.dart';
@@ -570,6 +571,7 @@ class _CourseResultScreenState extends State<CourseResultScreen> {
 //   final String year;
 //   final int term;
 //   final String termName;
+//   final bool isCurrentTerm;
 
 //   const CourseResultScreen({
 //     super.key,
@@ -577,6 +579,7 @@ class _CourseResultScreenState extends State<CourseResultScreen> {
 //     required this.year,
 //     required this.term,
 //     required this.termName,
+//     required this.isCurrentTerm,
 //   });
 
 //   @override
@@ -852,7 +855,13 @@ class _CourseResultScreenState extends State<CourseResultScreen> {
 //   Widget _buildSubjectRow(
 //       String subject, double score, Map<String, dynamic> courseData) {
 //     return GestureDetector(
-//       onTap: () => _showOverlayDialog(subject, courseData),
+//       onTap: () {
+//         if (widget.isCurrentTerm) {
+//           _showOverlayDialog(subject, courseData);
+//         } else {
+//           _navigateToViewResult(subject, courseData);
+//         }
+//       },
 //       child: Container(
 //         padding: const EdgeInsets.symmetric(horizontal: 16.0),
 //         decoration: BoxDecoration(
@@ -966,6 +975,7 @@ class _CourseResultScreenState extends State<CourseResultScreen> {
 //                   ),
 //                 ],
 //               ),
+             
 //             ],
 //           ),
 //         );
@@ -995,11 +1005,9 @@ class _CourseResultScreenState extends State<CourseResultScreen> {
 //     );
 //   }
 
-//   // Updated method for Add Result - navigates to AddViewCourseResultScreen
 //   void _navigateToAddResult(String subject, Map<String, dynamic> courseData) {
 //     Navigator.pop(context); // Close the bottom sheet first
 
-//     // Navigate to AddViewCourseResultScreen for editing/adding results
 //     Navigator.push(
 //       context,
 //       MaterialPageRoute(
@@ -1015,11 +1023,9 @@ class _CourseResultScreenState extends State<CourseResultScreen> {
 //     );
 //   }
 
-//   // New method for View Result - navigates to ViewCourseResultScreen
 //   void _navigateToViewResult(String subject, Map<String, dynamic> courseData) {
 //     Navigator.pop(context); // Close the bottom sheet first
 
-//     // Navigate to ViewCourseResultScreen for read-only viewing
 //     Navigator.push(
 //       context,
 //       MaterialPageRoute(
@@ -1039,7 +1045,6 @@ class _CourseResultScreenState extends State<CourseResultScreen> {
 //       String subject, Map<String, dynamic> courseData) {
 //     Navigator.pop(context); // Close the bottom sheet first
 
-//     // Navigate to MonthlyAssessmentScreen
 //     Navigator.push(
 //       context,
 //       MaterialPageRoute(
