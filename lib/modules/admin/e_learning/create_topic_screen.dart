@@ -6,6 +6,7 @@ import 'package:hive/hive.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/buttons/custom_save_elevated_button.dart';
 import 'package:linkschool/modules/common/constants.dart';
+import 'package:linkschool/modules/common/custom_toaster.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/common/widgets/portal/e_learning/select_classes_dialog.dart';
 import 'package:linkschool/modules/model/e-learning/topic_model.dart';
@@ -82,29 +83,30 @@ class _CreateTopicScreenState extends State<CreateTopicScreen> {
   void _addTopic() async {
     // Validation
     if (_titleController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter a topic title.')),
+      CustomToaster.toastError(
+        context,
+        'Error',
+        'Please enter a topic title.',
       );
       return;
     }
     if (_objectiveController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          backgroundColor: Colors.red,
-          content: Text('Please enter an objective.'),
-        ),
+      CustomToaster.toastError(
+        context,
+        'Error',
+        'Please enter an objective.',
       );
       return;
     }
     if (_selectedClass == 'Select classes' || _selectedClass.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          backgroundColor: Colors.red,
-          content: Text('Please select at least one class.'),
-        ),
+      CustomToaster.toastError(
+        context,
+        'Error',
+        'Please select at least one class.',
       );
       return;
     }
+
 
     try {
       final userBox = Hive.box('userData');
@@ -158,12 +160,13 @@ class _CreateTopicScreenState extends State<CreateTopicScreen> {
       Navigator.of(context).pop();
     } catch (e) {
       print('Error packaging topic data: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          backgroundColor: Colors.red,
-          content: Text('Error: ${e.toString()}'),
-        ),
+      CustomToaster.toastError(
+        context,
+        'Error',
+        'Failed to create topic: ${e.toString()}',
       );
+
+     
     }
   }
 
@@ -428,28 +431,28 @@ class _CreateTopicScreenState extends State<CreateTopicScreen> {
             maxLines: 2,
           ),
         ),
-        PopupMenuButton<String>(
-          icon: const Icon(Icons.more_vert, color: Colors.grey),
-          onSelected: (value) {
-            if (value == 'edit') {
-              _editObjective();
-            } else if (value == 'delete') {
-              setState(() {
-                _objectiveController.clear();
-              });
-            }
-          },
-          itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
-            const PopupMenuItem<String>(
-              value: 'edit',
-              child: Text('Edit'),
-            ),
-            const PopupMenuItem<String>(
-              value: 'delete',
-              child: Text('Delete'),
-            ),
-          ],
-        ),
+        // PopupMenuButton<String>(
+        //   icon: const Icon(Icons.more_vert, color: Colors.grey),
+        //   onSelected: (value) {
+        //     if (value == 'edit') {
+        //       _editObjective();
+        //     } else if (value == 'delete') {
+        //       setState(() {
+        //         _objectiveController.clear();
+        //       });
+        //     }
+        //   },
+        //   itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
+        //     const PopupMenuItem<String>(
+        //       value: 'edit',
+        //       child: Text('Edit'),
+        //     ),
+        //     const PopupMenuItem<String>(
+        //       value: 'delete',
+        //       child: Text('Delete'),
+        //     ),
+        //   ],
+        // ),
       ],
     );
   }

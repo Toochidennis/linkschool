@@ -78,8 +78,7 @@ class _OnboardingscreenState extends State<Onboardingscreen> {
                 children: [
                   TextButton(
                       onPressed: () {
-                        Navigator.pushReplacement(
-                            context,
+                        Navigator.of(context).pushReplacement(
                             MaterialPageRoute(
                                 builder: (context) => AppNavigationFlow()));
                       },

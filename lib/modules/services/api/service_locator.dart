@@ -4,11 +4,13 @@ import 'package:linkschool/modules/auth/provider/auth_provider.dart';
 import 'package:linkschool/modules/auth/service/auth_service.dart';
 import 'package:linkschool/modules/providers/admin/attendance_provider.dart';
 import 'package:linkschool/modules/providers/admin/behaviour_provider.dart';
+import 'package:linkschool/modules/providers/admin/e_learning/assignment_provider.dart';
 import 'package:linkschool/modules/providers/admin/e_learning/material_provider.dart';
 import 'package:linkschool/modules/providers/admin/e_learning/syllabus_provider.dart';
 import 'package:linkschool/modules/providers/admin/grade_provider.dart';
 import 'package:linkschool/modules/providers/admin/skills_behavior_table_provider.dart'; // Ensure this is imported
 import 'package:linkschool/modules/services/admin/attendance_service.dart';
+import 'package:linkschool/modules/services/admin/e_learning/assignment_service.dart';
 import 'package:linkschool/modules/services/admin/e_learning/material_service.dart';
 import 'package:linkschool/modules/services/admin/e_learning/syllabus_service.dart';
 import 'package:linkschool/modules/services/api/api_service.dart';
@@ -31,12 +33,21 @@ void setupServiceLocator() {
         apiKey: dotenv.env['API_KEY'],
       ));
 
+// Register AssignmentService with ApiService dependency
+  locator.registerLazySingleton<AssignmentService>(
+    () => AssignmentService(locator<ApiService>())
+  );
+
+  locator.registerLazySingleton<AssignmentProvider>(
+    () => AssignmentProvider(locator<AssignmentService>())
+  );
+
   // Register MaterialService with ApiService dependency
   locator.registerLazySingleton<MaterialService>(
     () => MaterialService(locator<ApiService>()),
   );
 
-  // Register MaterialProvider with MaterialService dependency
+
   locator.registerLazySingleton<MaterialProvider>(
     () => MaterialProvider(locator<MaterialService>()),
   );
@@ -60,7 +71,7 @@ void setupServiceLocator() {
     () => StudentService(locator<ApiService>()),
   );
 
-  // Register StudentProvider with StudentService dependency
+
   locator.registerLazySingleton<StudentProvider>(
     () => StudentProvider(locator<StudentService>()),
   );

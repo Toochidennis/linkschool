@@ -7,7 +7,7 @@ class SyllabusService {
 
   SyllabusService(this._apiService);
 
-  Future<List<SyllabusModel>> getSyllabus(String levelId, String term) async {
+  Future<List<SyllabusModel>> getSyllabus(String levelId, String term ,String courseId) async {
     final userBox = Hive.box('userData');
     final loginData = userBox.get('userData') ?? userBox.get('loginResponse');
 
@@ -30,6 +30,7 @@ class SyllabusService {
         '_db': dbName,
         'level_id': levelId,
         'term': term,
+        'course_id': courseId,
       },
       fromJson: (json) {
         if (json['success'] == true && json['response'] is List) {

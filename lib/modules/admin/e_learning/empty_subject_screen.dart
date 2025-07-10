@@ -11,6 +11,7 @@ import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/model/e-learning/question_model.dart';
 import 'package:linkschool/modules/model/e-learning/material_model.dart' as custom;
+import 'package:linkschool/modules/model/e-learning/syllabus_model.dart';
 import 'package:linkschool/modules/model/e-learning/topic_model.dart';
 import 'package:linkschool/modules/staff/e_learning/staff_create_syllabus_screen.dart';
 import 'package:linkschool/modules/staff/e_learning/sub_screens/staff_add_material_screen.dart';
@@ -27,6 +28,8 @@ class EmptySubjectScreen extends StatefulWidget {
   final String? courseName;
   final  String? term;
   final int? syllabusId;
+  final syllabusClasses;
+
   const EmptySubjectScreen({
     super.key,
     this.syllabusId,
@@ -36,6 +39,7 @@ class EmptySubjectScreen extends StatefulWidget {
     this.classId,
     this.courseName,
     this.term,
+     this.syllabusClasses,
 });
 
   @override
@@ -201,6 +205,7 @@ class _EmptySubjectScreenState extends State<EmptySubjectScreen> {
               context,
               MaterialPageRoute(
                 builder: (context) => AdminAssignmentScreen(
+                  syllabusClasses: widget.syllabusClasses,
                     classId: widget.classId,
             courseId: widget.courseId,
             levelId: widget.levelId,
@@ -229,6 +234,7 @@ class _EmptySubjectScreenState extends State<EmptySubjectScreen> {
     context,
     MaterialPageRoute(
       builder: (context) => QuestionScreen(
+        // syllabusClasses: widget.syllabusClasses,
         classId: widget.classId,
         syllabusId: widget.syllabusId!, // Use non-null assertion since we checked above
         courseId: widget.courseId,
@@ -251,6 +257,7 @@ class _EmptySubjectScreenState extends State<EmptySubjectScreen> {
                 fullscreenDialog: true,
                 builder: (BuildContext context) =>
                     CreateTopicScreen(
+                      // syllabusClasses: widget.syllabusClasses,
                       syllabusId: widget.syllabusId,
                       courseId: widget.courseId,
                   levelId: widget.levelId,
@@ -262,6 +269,7 @@ class _EmptySubjectScreenState extends State<EmptySubjectScreen> {
           case 'Material':
 
           Navigator.push(context, MaterialPageRoute(builder: (_)=>AddMaterialScreen(
+                syllabusClasses: widget.syllabusClasses,
                  courseId: widget.courseId,
                   levelId: widget.levelId,
                   classId: widget.classId,

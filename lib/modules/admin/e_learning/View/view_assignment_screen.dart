@@ -247,11 +247,11 @@ class _ViewAssignmentScreenState extends State<ViewAssignmentScreen>
   }
 
   Widget _buildAttachmentItem(AttachmentItem attachment) {
-    if (attachment.content.startsWith('http')) {
+    if (attachment.fileName.startsWith('http')) {
       return Card(
         child: Padding(
           padding: const EdgeInsets.all(8.0),
-          child: Text(attachment.content),
+          child: Text(attachment.fileName),
         ),
       );
     } else {
@@ -264,7 +264,7 @@ class _ViewAssignmentScreenState extends State<ViewAssignmentScreen>
           borderRadius: BorderRadius.circular(8.0),
         ),
         child: Center(
-          child: Text(attachment.content),
+          child: Text(attachment.fileContent),
         ),
       );
     }
