@@ -631,7 +631,7 @@ int _getClassIdFromName(String className, List<Map<String, dynamic>> staffCourse
         builder: (context) => StaffviewcourseResult(
           classId: classId.toString(),
           year: settings['year']?.toString() ?? '',
-          term: settings['term']?.toString() ?? '',
+          term: settings['term'] ?? '',
           termName: 'Term ${settings['term'] ?? ''}',
           subject: subject,
           courseData: courseData,
@@ -651,7 +651,7 @@ int _getClassIdFromName(String className, List<Map<String, dynamic>> staffCourse
         builder: (context) => AddStaffViewCourseResultScreen(
           classId: classId.toString(),
           year: settings['year']?.toString() ?? '',
-          term: settings['term']?.toString() ?? '',
+          term: settings['term'] ?? '',
           termName: 'Term ${settings['term'] ?? ''}',
           subject: subject,
           courseData: courseData,

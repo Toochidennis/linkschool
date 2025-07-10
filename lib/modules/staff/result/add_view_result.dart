@@ -1,25 +1,32 @@
 
 
 import 'package:flutter/material.dart';
+import 'package:hive/hive.dart';
+import 'package:linkschool/config/env_config.dart';
+import 'package:linkschool/modules/auth/provider/auth_provider.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/constants.dart';
+import 'package:linkschool/modules/common/custom_toaster.dart';
+import 'package:linkschool/modules/services/api/api_service.dart';
+import 'package:linkschool/modules/services/api/service_locator.dart';
+import 'package:provider/provider.dart';
 
 class AddStaffViewCourseResultScreen extends StatefulWidget {
-      // final String classId;
-      // final String year;
-      // final int term;
-      // final String termName;
-      // final String subject;
-      // final Map<String, dynamic> courseData;
+      final String classId;
+      final String year;
+      final int term;
+      final String termName;
+      final String subject;
+      final Map<String, dynamic> courseData;
 
   const AddStaffViewCourseResultScreen({
-    super.key, required String classId, required String year, required String term, required String termName, required String subject, required Map<String, dynamic> courseData,
-        // required this.classId,
-        // required this.year,
-        // required this.term,
-        // required this.termName,
-        // required this.subject,
-        // required this.courseData,
+    super.key, 
+        required this.classId,
+        required this.year,
+        required this.term,
+        required this.termName,
+        required this.subject,
+        required this.courseData,
   });
 
   @override
@@ -43,8 +50,8 @@ class _AddStaffViewCourseResultScreenState extends State<AddStaffViewCourseResul
   void initState() {
     super.initState();
     print('Initializing AddViewCourseResultScreen');
-    // fetchCourseResults();
-    // fetchAssessments();
+    fetchCourseResults();
+    fetchAssessments();
   }
 
   @override
@@ -53,247 +60,247 @@ class _AddStaffViewCourseResultScreenState extends State<AddStaffViewCourseResul
     super.dispose();
   }
 
-  // Future<void> fetchCourseResults() async {
-  //   try {
-  //     final authProvider = Provider.of<AuthProvider>(context, listen: false);
-  //     final apiService = locator<ApiService>();
+  Future<void> fetchCourseResults() async {
+    try {
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      final apiService = locator<ApiService>();
 
-  //     if (authProvider.token != null) {
-  //       apiService.setAuthToken(authProvider.token!);
-  //     }
+      if (authProvider.token != null) {
+        apiService.setAuthToken(authProvider.token!);
+      }
 
-  //     final dbName = EnvConfig.dbName;
-  //     final courseId = widget.courseData['course_id'].toString();
-  //     final levelId = widget.courseData['level_id']?.toString() ??
-  //         authProvider.getLevels().firstWhere(
-  //               (level) => level['level_name'] == 'JSS1',
-  //               orElse: () => {'id': '66'},
-  //             )['id'].toString();
+      final dbName = EnvConfig.dbName;
+      final courseId = widget.courseData['course_id'].toString();
+      final levelId = widget.courseData['level_id']?.toString() ??
+          authProvider.getLevels().firstWhere(
+                (level) => level['level_name'] == 'JSS1',
+                orElse: () => {'id': '66'},
+              )['id'].toString();
 
-  //     final endpoint = 'portal/classes/${widget.classId}/courses/$courseId/results';
-  //     final queryParams = {
-  //       'term': widget.term.toString(),
-  //       'year': widget.year,
-  //       '_db': dbName,
-  //       'level_id': levelId,
-  //     };
+      final endpoint = 'portal/classes/${widget.classId}/courses/$courseId/results';
+      final queryParams = {
+        'term': widget.term.toString(),
+        'year': widget.year,
+        '_db': dbName,
+        'level_id': levelId,
+      };
 
-  //     print('Fetching course results from: $endpoint with params: $queryParams');
+      print('Fetching course results from: $endpoint with params: $queryParams');
 
-  //     final response = await apiService.get(
-  //       endpoint: endpoint,
-  //       queryParams: queryParams,
-  //     );
+      final response = await apiService.get(
+        endpoint: endpoint,
+        queryParams: queryParams,
+      );
 
-  //     if (response.success && response.rawData != null) {
-  //       final results = response.rawData!['response']['course_results'] as List;
-  //       final gradesData = response.rawData!['response']['grades'] as List;
+      if (response.success && response.rawData != null) {
+        final results = response.rawData!['response']['course_results'] as List;
+        final gradesData = response.rawData!['response']['grades'] as List;
 
-  //       final uniqueAssessments = <String>{};
-  //       for (var result in results) {
-  //         final assessments = result['assessments'] as List;
-  //         print('Result assessments for result_id ${result['result_id']}: $assessments');
-  //         for (var assessment in assessments) {
-  //           uniqueAssessments.add(assessment['assessment_name'] as String);
-  //         }
-  //       }
+        final uniqueAssessments = <String>{};
+        for (var result in results) {
+          final assessments = result['assessments'] as List;
+          print('Result assessments for result_id ${result['result_id']}: $assessments');
+          for (var assessment in assessments) {
+            uniqueAssessments.add(assessment['assessment_name'] as String);
+          }
+        }
 
-  //       setState(() {
-  //         courseResults = List<Map<String, dynamic>>.from(results);
-  //         grades = List<Map<String, dynamic>>.from(gradesData);
-  //         assessmentNames = uniqueAssessments.toList();
-  //         isLoading = false;
-  //         // Clear editing state when fresh data is loaded
-  //         editedScores.clear();
-  //         _editingFields.clear();
-  //         // Dispose and clear controllers to prevent stale data
-  //         _controllers.forEach((_, controller) => controller.dispose());
-  //         _controllers.clear();
-  //       });
-  //       print('Fetched ${courseResults.length} results, ${grades.length} grades, ${assessmentNames.length} assessments');
-  //     } else {
-  //       setState(() {
-  //         error = response.message;
-  //         isLoading = false;
-  //       });
-  //       print('Failed to fetch results: ${response.message}');
-  //     }
-  //   } catch (e) {
-  //     setState(() {
-  //       error = 'Failed to load results: $e';
-  //       isLoading = false;
-  //     });
-  //     print('Error fetching results: $e');
-  //   }
-  // }
+        setState(() {
+          courseResults = List<Map<String, dynamic>>.from(results);
+          grades = List<Map<String, dynamic>>.from(gradesData);
+          assessmentNames = uniqueAssessments.toList();
+          isLoading = false;
+          // Clear editing state when fresh data is loaded
+          editedScores.clear();
+          _editingFields.clear();
+          // Dispose and clear controllers to prevent stale data
+          _controllers.forEach((_, controller) => controller.dispose());
+          _controllers.clear();
+        });
+        print('Fetched ${courseResults.length} results, ${grades.length} grades, ${assessmentNames.length} assessments');
+      } else {
+        setState(() {
+          error = response.message;
+          isLoading = false;
+        });
+        print('Failed to fetch results: ${response.message}');
+      }
+    } catch (e) {
+      setState(() {
+        error = 'Failed to load results: $e';
+        isLoading = false;
+      });
+      print('Error fetching results: $e');
+    }
+  }
 
-  // Future<void> fetchAssessments() async {
-  //   try {
-  //     final apiService = locator<ApiService>();
-  //     final authProvider = Provider.of<AuthProvider>(context, listen: false);
-  //     if (authProvider.token != null) {
-  //       apiService.setAuthToken(authProvider.token!);
-  //     }
+  Future<void> fetchAssessments() async {
+    try {
+      final apiService = locator<ApiService>();
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      if (authProvider.token != null) {
+        apiService.setAuthToken(authProvider.token!);
+      }
 
-  //     final dbName = EnvConfig.dbName;
-  //     final response = await apiService.get(
-  //       endpoint: 'portal/assessments',
-  //       queryParams: {'_db': dbName},
-  //     );
+      final dbName = EnvConfig.dbName;
+      final response = await apiService.get(
+        endpoint: 'portal/assessments',
+        queryParams: {'_db': dbName},
+      );
 
-  //     print('Fetching assessments with db: $dbName');
+      print('Fetching assessments with db: $dbName');
 
-  //     if (response.success && response.rawData != null) {
-  //       final assessmentsData = response.rawData!['assessments'] as List;
-  //       final tempMaxScores = <String, int>{};
-  //       for (var assessmentData in assessmentsData) {
-  //         final assessments = assessmentData['assessments'] as List;
-  //         for (var assessment in assessments) {
-  //           tempMaxScores[assessment['assessment_name']] = assessment['assessment_score'] ?? 0;
-  //         }
-  //       }
-  //       setState(() {
-  //         maxScores = tempMaxScores;
-  //       });
-  //       print('Fetched max scores: $maxScores}');
-  //     }
-  //   } catch (e) {
-  //     setState(() {
-  //       error = 'Failed to load assessments: $e';
-  //     });
-  //     print('Error fetching assessments: $e');
-  //   }
-  // }
+      if (response.success && response.rawData != null) {
+        final assessmentsData = response.rawData!['assessments'] as List;
+        final tempMaxScores = <String, int>{};
+        for (var assessmentData in assessmentsData) {
+          final assessments = assessmentData['assessments'] as List;
+          for (var assessment in assessments) {
+            tempMaxScores[assessment['assessment_name']] = assessment['assessment_score'] ?? 0;
+          }
+        }
+        setState(() {
+          maxScores = tempMaxScores;
+        });
+        print('Fetched max scores: $maxScores}');
+      }
+    } catch (e) {
+      setState(() {
+        error = 'Failed to load assessments: $e';
+      });
+      print('Error fetching assessments: $e');
+    }
+  }
 
-  // Future<void> saveEditedResult(int resultId) async {
-  //   if (!editedScores.containsKey(resultId)) {
-  //     print('No edits for resultId: $resultId');
-  //     return;
-  //   }
+  Future<void> saveEditedResult(int resultId) async {
+    if (!editedScores.containsKey(resultId)) {
+      print('No edits for resultId: $resultId');
+      return;
+    }
 
-  //   try {
-  //     final apiService = locator<ApiService>();
-  //     final userBox = Hive.box('userData');
-  //     final dbName = userBox.get('_db') ?? 'aalmgzmy_linkskoo_practice';
-  //     final userData = userBox.get('userData');
-  //     final staffId = userData != null && userData['data'] != null
-  //         ? userData['data']['profile']['staff_id'] ?? 0
-  //         : 0;
+    try {
+      final apiService = locator<ApiService>();
+      final userBox = Hive.box('userData');
+      final dbName = userBox.get('_db') ?? 'aalmgzmy_linkskoo_practice';
+      final userData = userBox.get('userData');
+      final staffId = userData != null && userData['data'] != null
+          ? userData['data']['profile']['staff_id'] ?? 0
+          : 0;
 
-  //     if (staffId == 0) {
-  //       CustomToaster.toastError(
-  //         context,
-  //         'Error',
-  //         'Staff ID not found',
-  //       );
-  //       print('Staff ID not found');
-  //       return;
-  //     }
+      if (staffId == 0) {
+        CustomToaster.toastError(
+          context,
+          'Error',
+          'Staff ID not found',
+        );
+        print('Staff ID not found');
+        return;
+      }
 
-  //     final editedResult = editedScores[resultId]!;
-  //     final result = courseResults.firstWhere((r) => r['result_id'] == resultId);
-  //     final assessments = <Map<String, dynamic>>[];
+      final editedResult = editedScores[resultId]!;
+      final result = courseResults.firstWhere((r) => r['result_id'] == resultId);
+      final assessments = <Map<String, dynamic>>[];
 
-  //     double totalScore = 0;
-  //     for (var assessmentName in assessmentNames) {
-  //       final scoreStr = editedResult[assessmentName] ?? result['assessments'].firstWhere(
-  //             (a) => a['assessment_name'] == assessmentName,
-  //             orElse: () => {'score': ''},
-  //           )['score'].toString();
-  //       final score = double.tryParse(scoreStr) ?? 0;
-  //       final maxScore = maxScores[assessmentName] ?? 0;
+      double totalScore = 0;
+      for (var assessmentName in assessmentNames) {
+        final scoreStr = editedResult[assessmentName] ?? result['assessments'].firstWhere(
+              (a) => a['assessment_name'] == assessmentName,
+              orElse: () => {'score': ''},
+            )['score'].toString();
+        final score = double.tryParse(scoreStr) ?? 0;
+        final maxScore = maxScores[assessmentName] ?? 0;
 
-  //       if (score > maxScore) {
-  //         CustomToaster.toastWarning(
-  //           context,
-  //           'Validation Error',
-  //           'Score for $assessmentName exceeds max score of $maxScore',
-  //         );
-  //         print('Validation failed: Score $score for $assessmentName exceeds max $maxScore');
-  //         return;
-  //       }
+        if (score > maxScore) {
+          CustomToaster.toastWarning(
+            context,
+            'Validation Error',
+            'Score for $assessmentName exceeds max score of $maxScore',
+          );
+          print('Validation failed: Score $score for $assessmentName exceeds max $maxScore');
+          return;
+        }
 
-  //       totalScore += score;
-  //       assessments.add({
-  //         'assessment_name': assessmentName,
-  //         'score': score,
-  //         'max_score': maxScore,
-  //       });
-  //     }
+        totalScore += score;
+        assessments.add({
+          'assessment_name': assessmentName,
+          'score': score,
+          'max_score': maxScore,
+        });
+      }
 
-  //     final payload = {
-  //       'course_results': [
-  //         {
-  //           'result_id': resultId,
-  //           'staff_id': staffId,
-  //           'total_score': totalScore,
-  //           'assessments': assessments,
-  //         }
-  //       ],
-  //       '_db': dbName,
-  //     };
+      final payload = {
+        'course_results': [
+          {
+            'result_id': resultId,
+            'staff_id': staffId,
+            'total_score': totalScore,
+            'assessments': assessments,
+          }
+        ],
+        '_db': dbName,
+      };
 
-  //     print('Saving for resultId: $resultId with payload: $payload');
+      print('Saving for resultId: $resultId with payload: $payload');
 
-  //     final response = await apiService.put(
-  //       endpoint: 'portal/result/class-result',
-  //       body: payload,
-  //     );
+      final response = await apiService.put(
+        endpoint: 'portal/result/class-result',
+        body: payload,
+      );
 
-  //     if (response.success) {
-  //       setState(() {
-  //         // Update the courseResults with the new data
-  //         final resultIndex = courseResults.indexWhere((r) => r['result_id'] == resultId);
-  //         if (resultIndex != -1) {
-  //           courseResults[resultIndex]['total_score'] = totalScore.toString();
-  //           courseResults[resultIndex]['assessments'] = assessments.map((a) => {
-  //                 'assessment_name': a['assessment_name'],
-  //                 'score': a['score'].toString(),
-  //                 'max_score': a['max_score'].toString(),
-  //               }).toList();
-  //         }
+      if (response.success) {
+        setState(() {
+          // Update the courseResults with the new data
+          final resultIndex = courseResults.indexWhere((r) => r['result_id'] == resultId);
+          if (resultIndex != -1) {
+            courseResults[resultIndex]['total_score'] = totalScore.toString();
+            courseResults[resultIndex]['assessments'] = assessments.map((a) => {
+                  'assessment_name': a['assessment_name'],
+                  'score': a['score'].toString(),
+                  'max_score': a['max_score'].toString(),
+                }).toList();
+          }
           
-  //         // Clear edited scores for this result
-  //         editedScores.remove(resultId);
+          // Clear edited scores for this result
+          editedScores.remove(resultId);
           
-  //         // Update controllers with new values and clear editing state
-  //         for (var assessmentName in assessmentNames) {
-  //           final controllerKey = '$resultId-$assessmentName';
-  //           final newScore = assessments.firstWhere(
-  //             (a) => a['assessment_name'] == assessmentName,
-  //             orElse: () => {'score': 0},
-  //           )['score'].toString();
+          // Update controllers with new values and clear editing state
+          for (var assessmentName in assessmentNames) {
+            final controllerKey = '$resultId-$assessmentName';
+            final newScore = assessments.firstWhere(
+              (a) => a['assessment_name'] == assessmentName,
+              orElse: () => {'score': 0},
+            )['score'].toString();
             
-  //           if (_controllers.containsKey(controllerKey)) {
-  //             _controllers[controllerKey]!.text = newScore;
-  //           }
-  //           _editingFields.remove(controllerKey);
-  //         }
-  //       });
+            if (_controllers.containsKey(controllerKey)) {
+              _controllers[controllerKey]!.text = newScore;
+            }
+            _editingFields.remove(controllerKey);
+          }
+        });
         
-  //       CustomToaster.toastSuccess(
-  //         context,
-  //         'Success',
-  //         'Result updated successfully',
-  //       );
-  //       print('Result updated successfully for resultId: $resultId');
-  //     } else {
-  //       CustomToaster.toastError(
-  //         context,
-  //         'Update Failed',
-  //         'Failed to update result: ${response.message}',
-  //       );
-  //       print('Failed to update result: ${response.message}');
-  //     }
-  //   } catch (e) {
-  //     CustomToaster.toastError(
-  //       context,
-  //       'Error',
-  //       'Error updating result: $e',
-  //     );
-  //     print('Error updating result: $e');
-  //   }
-  // }
+        CustomToaster.toastSuccess(
+          context,
+          'Success',
+          'Result updated successfully',
+        );
+        print('Result updated successfully for resultId: $resultId');
+      } else {
+        CustomToaster.toastError(
+          context,
+          'Update Failed',
+          'Failed to update result: ${response.message}',
+        );
+        print('Failed to update result: ${response.message}');
+      }
+    } catch (e) {
+      CustomToaster.toastError(
+        context,
+        'Error',
+        'Error updating result: $e',
+      );
+      print('Error updating result: $e');
+    }
+  }
 
   String getGradeForScore(String totalScore) {
     if (totalScore.isEmpty || totalScore == '') return 'N/A';
