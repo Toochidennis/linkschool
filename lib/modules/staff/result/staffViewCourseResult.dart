@@ -17,7 +17,7 @@ class StaffviewcourseResult extends StatefulWidget {
   // final Map<String, dynamic> courseData;
 
   const StaffviewcourseResult({
-    super.key,
+    super.key, required String classId, required String year, required String term, required String termName, required String subject, required Map<String, dynamic> courseData,
     // required this.classId,
     // required this.year,
     // required this.term,
