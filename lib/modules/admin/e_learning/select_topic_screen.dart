@@ -97,18 +97,12 @@ class _SelectTopicScreenState extends State<SelectTopicScreen> {
             padding: const EdgeInsets.symmetric(horizontal: 8.0),
             child: CustomSaveElevatedButton(
               onPressed: () {
-                if (selectedTopic != null) {
-                  Navigator.pop(context, {
-                    'topicName': selectedTopic!.name,
-                    'topicId': selectedTopic!.id,
-                  });
-                } else {
-                  Navigator.pop(context, {
-                    'topicName': 'No Topic',
-                    'topicId': null,
-                  });
-                }
-              },
+                 Navigator.pop(context, {
+          'topicName': selectedTopic?.name ?? 'No Topic',
+          'topicId': selectedTopic?.id,
+        });
+      },
+              
               text: 'Save',
             ),
           ),

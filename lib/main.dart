@@ -12,6 +12,7 @@ import 'package:linkschool/modules/providers/admin/class_provider.dart';
 import 'package:linkschool/modules/providers/admin/course_registration_provider.dart';
 import 'package:linkschool/modules/providers/admin/e_learning/assignment_provider.dart';
 import 'package:linkschool/modules/providers/admin/e_learning/material_provider.dart';
+import 'package:linkschool/modules/providers/admin/e_learning/quiz_provider.dart';
 import 'package:linkschool/modules/providers/admin/e_learning/syllabus_provider.dart';
 import 'package:linkschool/modules/providers/admin/course_result_provider.dart';
 import 'package:linkschool/modules/providers/admin/e_learning/topic_provider.dart';
@@ -82,6 +83,7 @@ Future<void> main() async {
         ChangeNotifierProvider(create: (_) => locator<TopicProvider>()),
         ChangeNotifierProvider(create: (_) => locator<MaterialProvider>()),
         ChangeNotifierProvider(create: (_) => locator<AssignmentProvider>()),
+        ChangeNotifierProvider(create: (_) => locator<QuizProvider>()),
         // StudentProvider from service locator
         ChangeNotifierProvider(create: (_) => locator<StudentProvider>()),
         ChangeNotifierProvider(create: (_) => locator<AttendanceProvider>()),

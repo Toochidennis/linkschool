@@ -1,4 +1,5 @@
 class Question {
+  final int? topicId;
   final String title;
   final String description;
   final String selectedClass;
@@ -10,6 +11,7 @@ class Question {
   final DateTime createdAt;
 
   Question({
+   this.topicId,
     required this.title,
     required this.description,
     required this.selectedClass,

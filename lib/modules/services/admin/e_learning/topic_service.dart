@@ -62,10 +62,6 @@ Future<List<Topic>> FetchTopic({required int syllabusId}) async {
     }
     _apiService.setAuthToken(token);
 
-    if (syllabusId <= 0) {
-      print('Warning: Invalid syllabusId: $syllabusId');
-      throw Exception('Invalid syllabusId: $syllabusId');
-    }
 
     final response = await _apiService.get<List<Topic>>(
       endpoint: 'portal/elearning/topic/$syllabusId',
