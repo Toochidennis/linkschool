@@ -10,8 +10,33 @@ class StudentService {
 
   StudentService(this._apiService);
 
+  // Helper method to set the auth token from Hive
+  Future<void> _setAuthToken() async {
+    try {
+      final userBox = Hive.box('userData');
+      final loginData = userBox.get('userData') ?? userBox.get('loginResponse');
+      if (loginData == null) {
+        debugPrint('Error: No user data found in Hive');
+        throw Exception('No user data found');
+      }
+
+      final token = loginData['token']?.toString();
+      if (token == null || token.isEmpty) {
+        debugPrint('Error: No auth token found in user data');
+        throw Exception('No auth token found');
+      }
+
+      _apiService.setAuthToken(token);
+      debugPrint('Auth token set successfully');
+    } catch (e) {
+      debugPrint('Error setting auth token: $e');
+      throw Exception('Failed to set auth token: $e');
+    }
+  }
+
   Future<List<Student>> getStudentsByClass(String classId) async {
     try {
+      await _setAuthToken();
       final response = await _apiService.get<List<Student>>(
         endpoint: 'portal/classes/$classId/students',
         queryParams: {
@@ -31,6 +56,7 @@ class StudentService {
         debugPrint('Fetched ${response.data?.length ?? 0} students');
         return response.data ?? [];
       } else {
+        debugPrint('API error: ${response.message}');
         throw Exception(response.message);
       }
     } catch (e) {
@@ -41,6 +67,7 @@ class StudentService {
 
   Future<List<Student>> getAllStudents() async {
     try {
+      await _setAuthToken();
       final userBox = Hive.box('userData');
       final loginData = userBox.get('userData') ?? userBox.get('loginResponse');
       final db = loginData?['_db'] ?? EnvConfig.dbName;
@@ -63,6 +90,7 @@ class StudentService {
       if (response.success) {
         return response.data ?? [];
       } else {
+        debugPrint('API error: ${response.message}');
         throw Exception(response.message);
       }
     } catch (e) {
@@ -73,16 +101,20 @@ class StudentService {
 
   Future<List<Student>> getStudentsByCourse(String courseId, String classId) async {
     try {
+      await _setAuthToken();
       final userBox = Hive.box('userData');
       final loginData = userBox.get('userData') ?? userBox.get('loginResponse');
       final db = loginData?['_db'] ?? EnvConfig.dbName;
+      final settings = loginData?['data']['settings'] ?? {};
+      final year = settings['year']?.toString() ?? '2025';
+      final term = settings['term']?.toString() ?? '3';
 
       final response = await _apiService.get<List<Student>>(
         endpoint: 'portal/courses/$courseId/students',
         queryParams: {
           '_db': db,
-          'year': '2024',
-          'term': '1',
+          'year': year,
+          'term': term,
           'class_id': classId,
         },
         fromJson: (json) {
@@ -99,8 +131,10 @@ class StudentService {
       );
 
       if (response.success) {
+        debugPrint('Fetched ${response.data?.length ?? 0} students for course $courseId, year $year, term $term');
         return response.data ?? [];
       } else {
+        debugPrint('API error: ${response.message}');
         throw Exception(response.message);
       }
     } catch (e) {
@@ -111,6 +145,7 @@ class StudentService {
 
   Future<Map<String, dynamic>> getStudentResultTerms(int studentId) async {
     try {
+      await _setAuthToken();
       final userBox = Hive.box('userData');
       final loginData = userBox.get('userData') ?? userBox.get('loginResponse');
       final db = loginData?['_db'] ?? EnvConfig.dbName;
@@ -137,15 +172,16 @@ class StudentService {
 
           formattedData[year] = {
             'terms': terms.map((term) => {
-              'term': term['term_value'],
-              'term_name': term['term_name'],
-              'average_score': term['average_score']
-            }).toList()
+                  'term': term['term_value'],
+                  'term_name': term['term_name'],
+                  'average_score': term['average_score']
+                }).toList()
           };
         }
 
         return formattedData;
       } else {
+        debugPrint('API error: ${response.message}');
         throw Exception(response.message);
       }
     } catch (e) {
@@ -162,6 +198,7 @@ class StudentService {
     required List<Student> selectedStudents,
   }) async {
     try {
+      await _setAuthToken();
       final userDataBox = Hive.box('userData');
       final userData = userDataBox.get('userData');
 
@@ -228,6 +265,7 @@ class StudentService {
     required List<Student> selectedStudents,
   }) async {
     try {
+      await _setAuthToken();
       final userDataBox = Hive.box('userData');
       final userData = userDataBox.get('userData');
 
@@ -292,6 +330,7 @@ class StudentService {
     required String courseId,
   }) async {
     try {
+      await _setAuthToken();
       debugPrint('Fetching course attendance with date: $date');
 
       final response = await _apiService.get<List<Map<String, dynamic>>>(
@@ -333,6 +372,7 @@ class StudentService {
     required String date,
   }) async {
     try {
+      await _setAuthToken();
       debugPrint('Fetching class attendance with date: $date');
 
       final response = await _apiService.get<List<Map<String, dynamic>>>(
@@ -374,6 +414,7 @@ class StudentService {
     required List<Student> selectedStudents,
   }) async {
     try {
+      await _setAuthToken();
       final userDataBox = Hive.box('userData');
       final userData = userDataBox.get('userData');
 
@@ -435,6 +476,7 @@ class StudentService {
     required String levelId,
   }) async {
     try {
+      await _setAuthToken();
       debugPrint('Making API call to: portal/students/$studentId/result/$termId '
           'with queryParams: _db=${EnvConfig.dbName}, class_id=$classId, '
           'year=$year, level_id=$levelId');
@@ -472,6 +514,7 @@ class StudentService {
     required String year,
   }) async {
     try {
+      await _setAuthToken();
       debugPrint('Making API call to: portal/students/$studentId/result/annual '
           'with queryParams: _db=${EnvConfig.dbName}, class_id=$classId, '
           'year=$year, level_id=$levelId');
@@ -512,13 +555,12 @@ class StudentService {
 
 
 
-
 // import 'package:flutter/foundation.dart';
 // import 'package:linkschool/modules/model/admin/student_model.dart';
 // import 'package:linkschool/modules/services/api/api_service.dart';
 // import 'package:linkschool/config/env_config.dart';
 // import 'package:hive/hive.dart';
-// // import 'dart:convert';
+// import 'dart:convert';
 
 // class StudentService {
 //   final ApiService _apiService;
@@ -586,43 +628,49 @@ class StudentService {
 //     }
 //   }
 
-//   Future<List<Student>> getStudentsByCourse(String courseId, String classId) async {
-//     try {
-//       final userBox = Hive.box('userData');
-//       final loginData = userBox.get('userData') ?? userBox.get('loginResponse');
-//       final db = loginData?['_db'] ?? EnvConfig.dbName;
 
-//       final response = await _apiService.get<List<Student>>(
-//         endpoint: 'portal/courses/$courseId/students',
-//         queryParams: {
-//           '_db': db,
-//           'year': '2024',
-//           'term': '1',
-//           'class_id': classId,
-//         },
-//         fromJson: (json) {
-//           if (json['data'] is List) {
-//             return (json['data'] as List)
-//                 .map((item) => Student.fromJson({
-//                       'id': item['id'],
-//                       'name': item['student_name'],
-//                     }))
-//                 .toList();
-//           }
-//           return [];
-//         },
-//       );
+// Future<List<Student>> getStudentsByCourse(String courseId, String classId) async {
+//   try {
+//     final userBox = Hive.box('userData');
+//     final loginData = userBox.get('userData') ?? userBox.get('loginResponse');
+//     final db = loginData?['_db'] ?? EnvConfig.dbName;
+//     final settings = loginData?['data']['settings'] ?? {};
+//     final year = settings['year']?.toString() ?? '2025'; // Use settings year
+//     final term = settings['term']?.toString() ?? '3';   // Use settings term
 
-//       if (response.success) {
-//         return response.data ?? [];
-//       } else {
-//         throw Exception(response.message);
-//       }
-//     } catch (e) {
-//       debugPrint('Error fetching students by course: $e');
-//       throw Exception('Error fetching students by course: $e');
+//     final response = await _apiService.get<List<Student>>(
+//       endpoint: 'portal/courses/$courseId/students',
+//       queryParams: {
+//         '_db': db,
+//         'year': year,
+//         'term': term,
+//         'class_id': classId,
+//       },
+//       fromJson: (json) {
+//         if (json['data'] is List) {
+//           return (json['data'] as List)
+//               .map((item) => Student.fromJson({
+//                     'id': item['id'],
+//                     'name': item['student_name'],
+//                   }))
+//               .toList();
+//         }
+//         return [];
+//       },
+//     );
+
+//     if (response.success) {
+//       debugPrint('Fetched ${response.data?.length ?? 0} students for course $courseId, year $year, term $term');
+//       return response.data ?? [];
+//     } else {
+//       debugPrint('API error: ${response.message}');
+//       throw Exception(response.message);
 //     }
+//   } catch (e) {
+//     debugPrint('Error fetching students by course: $e');
+//     throw Exception('Error fetching students by course: $e');
 //   }
+// }
 
 //   Future<Map<String, dynamic>> getStudentResultTerms(int studentId) async {
 //     try {
@@ -979,4 +1027,48 @@ class StudentService {
 //       throw Exception('Error fetching student term results: $e');
 //     }
 //   }
+
+//   Future<List<Map<String, dynamic>>> getStudentAnnualResults({
+//     required int studentId,
+//     required String classId,
+//     required String levelId,
+//     required String year,
+//   }) async {
+//     try {
+//       debugPrint('Making API call to: portal/students/$studentId/result/annual '
+//           'with queryParams: _db=${EnvConfig.dbName}, class_id=$classId, '
+//           'year=$year, level_id=$levelId');
+//       final response = await _apiService.get<List<Map<String, dynamic>>>(
+//         endpoint: 'portal/students/$studentId/result/annual',
+//         queryParams: {
+//           '_db': EnvConfig.dbName,
+//           'class_id': classId,
+//           'year': year,
+//           'level_id': levelId,
+//         },
+//         fromJson: (json) {
+//           debugPrint('Raw API response: $json');
+//           if (json['response'] is List) {
+//             return (json['response'] as List)
+//                 .map((item) => item as Map<String, dynamic>)
+//                 .toList();
+//           }
+//           return [];
+//         },
+//       );
+
+//       if (response.success) {
+//         debugPrint('Fetched annual results: ${response.data}');
+//         return response.data ?? [];
+//       } else {
+//         debugPrint('API error: ${response.message}');
+//         throw Exception(response.message);
+//       }
+//     } catch (e) {
+//       debugPrint('Error fetching student annual results: $e');
+//       throw Exception('Error fetching student annual results: $e');
+//     }
+//   }
+
+//   void throwException(String s) {}
 // }

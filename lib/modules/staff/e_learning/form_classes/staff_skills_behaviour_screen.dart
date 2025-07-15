@@ -3,22 +3,24 @@ import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/providers/admin/skills_behavior_table_provider.dart';
+import 'package:linkschool/modules/services/staff/settings_service.dart';
+// import 'package:linkschool/services/settings_service.dart'; // Import the settings service
 import 'package:provider/provider.dart';
 
 class StaffSkillsBehaviourScreen extends StatefulWidget {
   final String classId;
   final String levelId;
-  final String term;
-  final String year;
-  final String db;
+  final String? term;
+  final String? year;
+  final String? db;
 
   const StaffSkillsBehaviourScreen({
     super.key,
     required this.classId,
     required this.levelId,
-    this.term = '1',
-    this.year = '2023',
-    this.db = 'aalmgzmy_linkskoo_practice',
+    this.term,
+    this.year,
+    this.db,
   });
 
   @override
@@ -27,17 +29,28 @@ class StaffSkillsBehaviourScreen extends StatefulWidget {
 
 class _StaffSkillsBehaviourScreenState extends State<StaffSkillsBehaviourScreen> {
   late double opacity;
+  late String currentYear;
+  late String currentTerm;
+  late String currentDb;
 
   @override
   void initState() {
     super.initState();
+    
+    // Get current settings from stored data, with fallback to passed parameters
+    currentYear = widget.year ?? SettingsService.getCurrentYear();
+    currentTerm = widget.term ?? SettingsService.getCurrentTerm().toString();
+    currentDb = widget.db ?? SettingsService.getDatabaseName();
+    
+    print('Skills Behaviour Screen - Year: $currentYear, Term: $currentTerm, DB: $currentDb');
+    
     final skillsProvider = Provider.of<SkillsBehaviorTableProvider>(context, listen: false);
     skillsProvider.fetchSkillsAndBehaviours(
       classId: widget.classId,
       levelId: widget.levelId,
-      term: widget.term,
-      year: widget.year,
-      db: widget.db,
+      term: currentTerm,
+      year: currentYear,
+      db: currentDb,
     );
   }
 
@@ -49,7 +62,7 @@ class _StaffSkillsBehaviourScreenState extends State<StaffSkillsBehaviourScreen>
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          'Skill and Behaviour',
+          'Skills and Behaviour',
           style: AppTextStyles.normal600(
             fontSize: 18.0,
             color: AppColors.eLearningBtnColor1,
@@ -83,14 +96,21 @@ class _StaffSkillsBehaviourScreenState extends State<StaffSkillsBehaviourScreen>
           ),
         ),
         actions: [
-          TextButton.icon(
-            onPressed: () {
-              // Implement download functionality
-            },
-            icon: const Icon(Icons.download, color: AppColors.eLearningBtnColor1),
-            label: const Text(
-              'Save',
-              style: TextStyle(color: AppColors.eLearningBtnColor1),
+          // Display current session info in app bar
+          Container(
+            padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            margin: EdgeInsets.only(right: 16),
+            decoration: BoxDecoration(
+              color: AppColors.eLearningBtnColor1.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(4),
+            ),
+            child: Text(
+              '$currentYear - Term $currentTerm',
+              style: TextStyle(
+                color: AppColors.eLearningBtnColor1,
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+              ),
             ),
           ),
         ],
@@ -103,23 +123,108 @@ class _StaffSkillsBehaviourScreenState extends State<StaffSkillsBehaviourScreen>
               if (provider.isLoading) {
                 return const Center(child: CircularProgressIndicator());
               }
+              
               if (provider.errorMessage.isNotEmpty) {
                 return Center(
-                  child: Text(
-                    'Error: ${provider.errorMessage}',
-                    style: const TextStyle(color: Colors.red),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.error_outline,
+                        size: 64,
+                        color: Colors.red,
+                      ),
+                      SizedBox(height: 16),
+                      Text(
+                        'Error loading data',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.red,
+                        ),
+                      ),
+                      SizedBox(height: 8),
+                      Text(
+                        provider.errorMessage,
+                        style: TextStyle(color: Colors.red),
+                        textAlign: TextAlign.center,
+                      ),
+                      SizedBox(height: 16),
+                      ElevatedButton(
+                        onPressed: () {
+                          provider.fetchSkillsAndBehaviours(
+                            classId: widget.classId,
+                            levelId: widget.levelId,
+                            term: currentTerm,
+                            year: currentYear,
+                            db: currentDb,
+                          );
+                        },
+                        child: Text('Retry'),
+                      ),
+                    ],
                   ),
                 );
               }
+
               if (provider.students.isEmpty || provider.skills.isEmpty) {
-                return const Center(
-                  child: Text('No data available'),
+                return Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.assignment_outlined,
+                        size: 64,
+                        color: Colors.grey,
+                      ),
+                      SizedBox(height: 16),
+                      Text(
+                        'No data available',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.grey,
+                        ),
+                      ),
+                      SizedBox(height: 8),
+                      Text(
+                        'No skills and behaviour data found for this class.',
+                        style: TextStyle(color: Colors.grey),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                  ),
                 );
               }
+
               return SingleChildScrollView(
                 child: Column(
                   children: [
+                    // Session info card
+                    Container(
+                      margin: EdgeInsets.all(16),
+                      padding: EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.blue.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: Colors.blue.withOpacity(0.3)),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(Icons.info_outline, color: Colors.blue, size: 20),
+                          SizedBox(width: 8),
+                          Text(
+                            'Academic Year: $currentYear/${int.parse(currentYear) + 1} - ${SettingsService.getTermName(int.parse(currentTerm))}',
+                            style: TextStyle(
+                              color: Colors.blue,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                     _buildSubjectsTable(provider.skills, provider.students),
+                    SizedBox(height: 20),
                   ],
                 ),
               );
@@ -194,7 +299,7 @@ class _StaffSkillsBehaviourScreenState extends State<StaffSkillsBehaviourScreen>
                   student.name,
                   style: const TextStyle(
                     fontSize: 14,
-                    color: Colors.black, // Changed to black
+                    color: Colors.black,
                   ),
                 ),
               ),
@@ -226,7 +331,7 @@ class _StaffSkillsBehaviourScreenState extends State<StaffSkillsBehaviourScreen>
             child: Text(
               title,
               style: const TextStyle(
-                color: Colors.white, // Keep header text white for contrast
+                color: Colors.white,
                 fontWeight: FontWeight.w500,
               ),
               textAlign: TextAlign.center,
@@ -247,7 +352,7 @@ class _StaffSkillsBehaviourScreenState extends State<StaffSkillsBehaviourScreen>
                 student.skills[skillId] ?? '-',
                 style: const TextStyle(
                   fontSize: 14,
-                  color: Colors.black, // Changed to black
+                  color: Colors.black,
                 ),
               ),
             );
@@ -260,12 +365,12 @@ class _StaffSkillsBehaviourScreenState extends State<StaffSkillsBehaviourScreen>
 
 
 
+
 // import 'package:flutter/material.dart';
 // import 'package:linkschool/modules/common/app_colors.dart';
 // import 'package:linkschool/modules/common/constants.dart';
 // import 'package:linkschool/modules/common/text_styles.dart';
 // import 'package:linkschool/modules/providers/admin/skills_behavior_table_provider.dart';
-// // import 'package:linkschool/modules/providers/admin/skills_provider.dart';
 // import 'package:provider/provider.dart';
 
 // class StaffSkillsBehaviourScreen extends StatefulWidget {
@@ -455,7 +560,10 @@ class _StaffSkillsBehaviourScreenState extends State<StaffSkillsBehaviourScreen>
 //                 alignment: Alignment.centerLeft,
 //                 child: Text(
 //                   student.name,
-//                   style: const TextStyle(fontSize: 14),
+//                   style: const TextStyle(
+//                     fontSize: 14,
+//                     color: Colors.black,
+//                   ),
 //                 ),
 //               ),
 //             );
@@ -505,7 +613,10 @@ class _StaffSkillsBehaviourScreenState extends State<StaffSkillsBehaviourScreen>
 //               ),
 //               child: Text(
 //                 student.skills[skillId] ?? '-',
-//                 style: const TextStyle(fontSize: 14),
+//                 style: const TextStyle(
+//                   fontSize: 14,
+//                   color: Colors.black,
+//                 ),
 //               ),
 //             );
 //           }),

@@ -6,8 +6,8 @@ import 'package:linkschool/modules/admin/result/class_detail/student_result/stud
 import 'package:linkschool/modules/admin/result/class_detail/student_result/composite_result_screen.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
-import 'package:linkschool/modules/staff/e_learning/form_classes/edit_staff_skill_behaviour_screen.dart';
-import 'package:linkschool/modules/staff/e_learning/form_classes/staff_skill_behaviour_screen.dart';
+import 'package:linkschool/modules/staff/e_learning/form_classes/admin_edit_staff_skill_behaviour_screen.dart';
+import 'package:linkschool/modules/staff/e_learning/form_classes/admin_skill_behaviour_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:linkschool/modules/providers/admin/student_provider.dart';
 
@@ -310,7 +310,7 @@ void _showSkillsBehaviourOverlay(BuildContext context, {required String classId,
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => StaffSkillsBehaviourScreen(
+                              builder: (context) => AdminSkillsBehaviourScreen(
                                 classId: classId,
                                 levelId: levelId,
                                 term: termId.toString(),
