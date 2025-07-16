@@ -12,6 +12,7 @@ import 'package:linkschool/modules/providers/admin/class_provider.dart';
 import 'package:linkschool/modules/providers/admin/course_registration_provider.dart';
 import 'package:linkschool/modules/providers/admin/e_learning/assignment_provider.dart';
 import 'package:linkschool/modules/providers/admin/e_learning/material_provider.dart';
+import 'package:linkschool/modules/providers/admin/e_learning/quiz_provider.dart';
 import 'package:linkschool/modules/providers/admin/e_learning/syllabus_provider.dart';
 import 'package:linkschool/modules/providers/admin/course_result_provider.dart';
 import 'package:linkschool/modules/providers/admin/e_learning/topic_provider.dart';
@@ -25,11 +26,12 @@ import 'package:linkschool/modules/providers/explore/exam_provider.dart';
 import 'package:linkschool/modules/providers/explore/for_you_provider.dart';
 import 'package:linkschool/modules/providers/explore/home/news_provider.dart';
 import 'package:linkschool/modules/providers/explore/subject_provider.dart';
-import 'package:linkschool/modules/services/admin/e_learning/syllabus_service.dart';
+import 'package:linkschool/modules/services/admin/e_learning/syllabus_content_service.dart';
 import 'package:linkschool/modules/services/explore/cbt_service.dart';
 import 'package:linkschool/routes/onboardingScreen.dart';
 import 'package:provider/provider.dart';
 import 'package:linkschool/modules/services/api/service_locator.dart';
+import 'modules/providers/admin/e_learning/syllabus_content_provider.dart';
 import 'modules/providers/admin/registered_terms_provider.dart';
 import 'modules/providers/explore/game/game_provider.dart';
 import 'modules/providers/admin/grade_provider.dart';
@@ -70,6 +72,7 @@ Future<void> main() async {
         ChangeNotifierProvider(create: (_) => ExamProvider()),
         ChangeNotifierProvider(create: (_) => ForYouProvider()),
         ChangeNotifierProvider(create: (_) => locator<SyllabusProvider>()),
+        ChangeNotifierProvider(create: (_) => locator<SyllabusContentProvider>()),
         ChangeNotifierProvider(create: (_) => locator<GradeProvider>()),
         ChangeNotifierProvider(create: (_) => locator<SkillsProvider>()), 
          ChangeNotifierProvider(create: (_) => locator<SkillsBehaviorTableProvider>()), 
@@ -82,6 +85,7 @@ Future<void> main() async {
         ChangeNotifierProvider(create: (_) => locator<TopicProvider>()),
         ChangeNotifierProvider(create: (_) => locator<MaterialProvider>()),
         ChangeNotifierProvider(create: (_) => locator<AssignmentProvider>()),
+        ChangeNotifierProvider(create: (_) => locator<QuizProvider>()),
         // StudentProvider from service locator
         ChangeNotifierProvider(create: (_) => locator<StudentProvider>()),
         ChangeNotifierProvider(create: (_) => locator<AttendanceProvider>()),

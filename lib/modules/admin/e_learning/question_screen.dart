@@ -24,6 +24,7 @@ class QuestionScreen extends StatefulWidget {
   final String? levelId;
   final String? courseName;
   final int? syllabusId;
+   final syllabusClasses;
 
   const QuestionScreen({
     super.key,
@@ -35,6 +36,7 @@ class QuestionScreen extends StatefulWidget {
     this.levelId,
     this.courseName,
     this.syllabusId,
+      this.syllabusClasses,
   });
 
   @override
@@ -49,13 +51,15 @@ class _QuestionScreenState extends State<QuestionScreen> {
   DateTime _startDate = DateTime.now();
   DateTime _endDate = DateTime.now().add(const Duration(days: 1));
   String _selectedTopic = 'No Topic';
+    int? _selectedTopicId;
   Duration _selectedDuration = const Duration(hours:0 );
-  String _marks = 'marks';
+  String _marks = '0 marks';
   late double opacity;
   bool isLoading = false;
   int? creatorId;
   String? creatorRole;
   String? academicYear;
+  String? creatorName;
   int? academicTerm;
   final _formKey = GlobalKey<FormState>();
 
@@ -70,12 +74,24 @@ class _QuestionScreenState extends State<QuestionScreen> {
     super.initState();
     _loadUserData();
     if (widget.question != null) {
+      print('question: ${widget.question}');
+      print('title: ${widget.question?.title}');
+      // print('levelId: ${widget.question?.levelId}'); // Removed: levelId is not defined on Question
+      print('description: ${widget.question?.description}');
+      print('selectedClass: ${widget.question?.selectedClass}');
+      print('startDate: ${widget.question?.startDate}');
+      print('endDate: ${widget.question?.endDate}');
+      print('topic: ${widget.question?.topic}');
+      print('topicId: ${widget.question?.topicId}');
+      print('duration: ${widget.question?.duration}');
+      print('marks: ${widget.question?.marks}');
       _titleController.text = widget.question!.title;
       _descriptionController.text = widget.question!.description;
       _selectedClass = widget.question!.selectedClass;
       _startDate = widget.question!.startDate;
       _endDate = widget.question!.endDate;
-      _selectedTopic = widget.question!.topic;
+      _selectedTopic = widget.question!.topic ;
+_selectedTopicId = widget.question!.topicId;
       _selectedDuration = widget.question!.duration;
       _marks = widget.question!.marks;
     }
@@ -120,6 +136,7 @@ class _QuestionScreenState extends State<QuestionScreen> {
 
   Future<void> _loadUserData() async {
     print('selected levellllllllllllllllllllllllllId: ${widget.levelId}');
+
     try {
       final userBox = Hive.box('userData');
       final storedUserData = userBox.get('userData') ?? userBox.get('loginResponse');
@@ -135,6 +152,7 @@ class _QuestionScreenState extends State<QuestionScreen> {
         setState(() {
           creatorId = profile['staff_id'] as int?;
           creatorRole = profile['role']?.toString();
+           creatorName = profile['name']?.toString();
           academicYear = settings['year']?.toString();
           academicTerm = settings['term'] as int?;
         });
@@ -163,6 +181,7 @@ class _QuestionScreenState extends State<QuestionScreen> {
       setState(() => isLoading = true);
 
       try {
+        
         final userBox = Hive.box('userData');
         final storedCourseId = userBox.get('selectedCourseId');
         final storedLevelId = userBox.get('selectedLevelId');
@@ -185,36 +204,34 @@ class _QuestionScreenState extends State<QuestionScreen> {
         final classes = data['classes'] ?? [];
         print('Classes Data: ${const JsonEncoder.withIndent('  ').convert(classes)}');
 
-        final classIdList = selectedClassIds.map<Map<String, String>>((classId) {
-          final classIdStr = classId.toString();
-          final classData = classes.firstWhere(
-            (cls) {
-              print('Comparing: ${cls['id'].toString()} == $classIdStr');
-              return cls['id'].toString() == classIdStr;
-            },
-            orElse: () => {'id': classIdStr, 'class_name': 'Unknown'},
-          );
-          return {
-            'id': classIdStr,
-            'class_name': (classData['class_name']?.toString() ?? 'Unknown'),
-          };
-        }).toList();
+           final classIdList = selectedClassIds.map<Map<String, String>>((classId) {
+      final classIdStr = classId.toString();
+      final classData = classes.firstWhere(
+        (cls) => cls['id'].toString() == classIdStr,
+        orElse: () => {'id': classIdStr, 'class_name': 'Unknown'},
+      );
+     return {
+  'id': classIdStr,
+  'name': (classData['class_name']?.toString() ?? 'Unknown'),
+};
 
-        if (classIdList.isEmpty && widget.classId != null) {
-          final classIdStr = widget.classId!;
-          print('Using fallback classId: $classIdStr');
-          final classData = classes.firstWhere(
-            (cls) => cls['id'].toString() == classIdStr,
-            orElse: () => {'id': classIdStr, 'class_name': _selectedClass},
-          );
-          classIdList.add({
-            'id': classIdStr,
-            'class_name': (classData['class_name']?.toString() ?? _selectedClass),
-          });
-        }
+    }).toList();
+
+    if (classIdList.isEmpty && widget.classId != null) {
+      final classIdStr = widget.classId!;
+      final classData = classes.firstWhere(
+        (cls) => cls['id'].toString() == classIdStr,
+        orElse: () => {'id': classIdStr, 'class_name': _selectedClass},
+      );
+      classIdList.add({
+        'id': classIdStr,
+        'name': (classData['class_name']?.toString() ?? _selectedClass),
+      });
+    }
         print('Class ID List: ${const JsonEncoder.withIndent('  ').convert(classIdList)}');
 
         final question = Question(
+          topicId: _selectedTopicId ?? 0,
           title: _titleController.text,
           description: _descriptionController.text,
           selectedClass: _selectedClass,
@@ -232,13 +249,16 @@ class _QuestionScreenState extends State<QuestionScreen> {
           'start_date': _startDate.toIso8601String(),
           'end_date': _endDate.toIso8601String(),
           'topic': _selectedTopic,
-          'duration': _selectedDuration.inHours.toString(),
-          'marks': _marks,
+          "topic_id": _selectedTopicId,
+          'duration': _selectedDuration.inSeconds, // or .inMinutes
+          'marks':int.tryParse(_marks.replaceAll(' marks', '')) != null,
           'course_id': courseId,
+          "course_name": widget.courseName!,
+          'syllabus_id': widget.syllabusId!,
           'level_id': levelId,
-          'class_ids': classIdList.isNotEmpty ? classIdList : [{'id': '', 'class_name': 'Select classes'}],
-          'creator_role': creatorRole ?? 'unknown',
-          'term': academicTerm?.toString() ?? '1',
+          'class_ids': classIdList.isNotEmpty ? classIdList : [{'id': '', 'name': ''}],
+          'creator_name': creatorName!,
+          'term': academicTerm!,
           'creator_id': creatorId ?? 0,
         };
 
@@ -248,16 +268,12 @@ class _QuestionScreenState extends State<QuestionScreen> {
 
         if (mounted) {
           widget.onSave(question);
-          CustomToaster.toastSuccess(
-            context,
-            'Question Saved',
-            'Question saved successfully',
-          );
-        
+       print('SSSSSSSSSSSSSSSSSSSSSSSSSSSSSS $_selectedDuration');
           Navigator.of(context).push(
             MaterialPageRoute(
               builder: (context) => ViewQuestionScreen(
-                class_ids: classIdList.isNotEmpty ? classIdList : [{'id': '', 'class_name': 'Select classes'}],
+                questiondata: questionData,
+                class_ids: classIdList.isNotEmpty ? classIdList : [{'id': '', 'name': ''}],
                 question: question),
             ),
           );
@@ -418,6 +434,7 @@ class _QuestionScreenState extends State<QuestionScreen> {
                               });
                             },
                             levelId: widget.levelId,
+                             syllabusClasses:widget.syllabusClasses,
                           ),
                         ),
                       );
@@ -449,13 +466,13 @@ class _QuestionScreenState extends State<QuestionScreen> {
                     onTap: _showDurationPicker,
                   ),
                   _buildGroupRow(
-                    context,
-                    iconPath: 'assets/icons/e_learning/clipboard.svg',
-                    text: _selectedTopic,
-                    showEditButton: true,
-                    isSelected: true,
-                    onTap: () => _selectTopic(),
-                  ),
+  context,
+  iconPath: 'assets/icons/e_learning/clipboard.svg',
+  text: _selectedTopic,
+  showEditButton: true,
+  isSelected: _selectedTopic != 'No Topic',  // Add this condition
+  onTap: () => _selectTopic(),
+),
                 ],
               ),
             ),
@@ -495,25 +512,25 @@ class _QuestionScreenState extends State<QuestionScreen> {
               ),
               const SizedBox(width: 8.0),
               IntrinsicWidth(
-                child: Container(
-                  padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 14.0),
-                  decoration: BoxDecoration(
-                    color: (isSelected || (iconPath == 'assets/icons/e_learning/clipboard.svg' && text == _selectedTopic))
-                        ? Colors.transparent
-                        : isValid 
-                            ? AppColors.eLearningBtnColor2 
-                            : Colors.red.withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(18),
-                    border: isValid ? null : Border.all(color: Colors.red, width: 1),
-                  ),
-                  child: Text(
-                    text,
-                    style: AppTextStyles.normal600(
-                      fontSize: 16.0,
-                      color: isValid ? AppColors.eLearningBtnColor1 : Colors.red,
-                    ),
-                  ),
-                ),
+                child:Container(
+  padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 14.0),
+  decoration: BoxDecoration(
+    color: isSelected
+        ? Colors.transparent
+        : isValid 
+            ? AppColors.eLearningBtnColor2 
+            : Colors.red.withOpacity(0.2),
+    borderRadius: BorderRadius.circular(18),
+    border: isValid ? null : Border.all(color: Colors.red, width: 1),
+  ),
+  child: Text(
+    text,
+    style: AppTextStyles.normal600(
+      fontSize: 16.0,
+      color: isValid ? AppColors.eLearningBtnColor1 : Colors.red,
+    ),
+  ),
+),
               ),
               const Spacer(),
               if (showEditButton)
@@ -746,38 +763,28 @@ class _QuestionScreenState extends State<QuestionScreen> {
   }
 
   void _selectTopic() async {
-  if (widget.syllabusId == null) {
-    CustomToaster.toastError(
-      context,
-      'Error',
-      'Syllabus ID is missing. Please select a syllabus first.',
-    );
+  if (widget.levelId == null) {
+    CustomToaster.toastError(context, 'Error', 'Level ID is missing');
     return;
   }
   final result = await Navigator.push(
     context,
     MaterialPageRoute(
       builder: (context) => SelectTopicScreen(
-        levelId: widget.levelId ?? '',
-        syllabusId: widget.syllabusId,
-      
-        // Use non-null assertion
-        onTopicCreated: () {
-          setState(() {
-            _selectedTopic = 'No Topic';
-          });
-        },
-      
         callingScreen: '',
+        syllabusId: widget.syllabusId,
+        levelId: widget.levelId, // no '!'
       ),
     ),
   );
   print("Selected ${ widget.syllabusId! } Class: ${widget.levelId}, Syllabus ID: ${widget.syllabusId}");
-  if (result != null && result is String) {
-    setState(() {
-      _selectedTopic = result;
-    });
-  }
+if (result != null && result is Map) {
+      setState(() {
+           _selectedTopic = result['topicName'] ?? 'No Topic'; // Update topic name
+        _selectedTopicId = result['topicId']; // Store topic ID
+
+      });
+    }
 }}
 
 class DateRangePickerDialog extends StatefulWidget {

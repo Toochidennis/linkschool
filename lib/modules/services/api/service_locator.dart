@@ -6,13 +6,19 @@ import 'package:linkschool/modules/providers/admin/attendance_provider.dart';
 import 'package:linkschool/modules/providers/admin/behaviour_provider.dart';
 import 'package:linkschool/modules/providers/admin/e_learning/assignment_provider.dart';
 import 'package:linkschool/modules/providers/admin/e_learning/material_provider.dart';
+import 'package:linkschool/modules/providers/admin/e_learning/quiz_provider.dart';
 import 'package:linkschool/modules/providers/admin/e_learning/syllabus_provider.dart';
+import 'package:linkschool/modules/providers/admin/e_learning/topic_provider.dart';
 import 'package:linkschool/modules/providers/admin/grade_provider.dart';
-import 'package:linkschool/modules/providers/admin/skills_behavior_table_provider.dart'; // Ensure this is imported
+import 'package:linkschool/modules/providers/admin/skills_behavior_table_provider.dart';
 import 'package:linkschool/modules/services/admin/attendance_service.dart';
 import 'package:linkschool/modules/services/admin/e_learning/assignment_service.dart';
 import 'package:linkschool/modules/services/admin/e_learning/material_service.dart';
-import 'package:linkschool/modules/services/admin/e_learning/syllabus_service.dart';
+import 'package:linkschool/modules/services/admin/e_learning/quiz_service.dart';
+// import 'package:linkschool/modules/providers/admin/e_learning/syllabus_provider.dart';
+// import 'package:linkschool/modules/services/admin/e_learning/syllabus_service.dart';
+import 'package:linkschool/modules/services/admin/e_learning/syllabus_content_service.dart';
+import 'package:linkschool/modules/services/admin/e_learning/topic_service.dart';
 import 'package:linkschool/modules/services/api/api_service.dart';
 import 'package:linkschool/modules/services/admin/class_service.dart';
 import 'package:linkschool/modules/services/admin/grade_service.dart';
@@ -24,6 +30,9 @@ import 'package:linkschool/modules/services/admin/assessment_service.dart';
 import 'package:linkschool/modules/providers/admin/student_provider.dart';
 import 'package:linkschool/modules/services/admin/behaviour_service.dart';
 
+import '../../providers/admin/e_learning/syllabus_content_provider.dart';
+import '../admin/e_learning/syllabus_service.dart';
+
 final GetIt locator = GetIt.instance;
 
 void setupServiceLocator() {
@@ -33,21 +42,45 @@ void setupServiceLocator() {
         apiKey: dotenv.env['API_KEY'],
       ));
 
-// Register AssignmentService with ApiService dependency
+  // Register SyllabusContentService with ApiService dependency
+  locator.registerLazySingleton<SyllabusContentService>(
+    () => SyllabusContentService(locator<ApiService>()),
+  );
+
+  // Register SyllabusContentProvider with SyllabusContentService dependency
+  locator.registerLazySingleton<SyllabusContentProvider>(
+    () => SyllabusContentProvider(locator<SyllabusContentService>()),
+  );
+
+  // Register QuizService with ApiService dependency
+  locator.registerLazySingleton<QuizService>(
+    () => QuizService(locator<ApiService>())
+  );
+  locator.registerLazySingleton<QuizProvider>(
+    () => QuizProvider(locator<QuizService>())
+  );
+
+  // Register AssignmentService with ApiService dependency
   locator.registerLazySingleton<AssignmentService>(
     () => AssignmentService(locator<ApiService>())
   );
-
   locator.registerLazySingleton<AssignmentProvider>(
     () => AssignmentProvider(locator<AssignmentService>())
+  );
+
+  // Register TopicService with ApiService dependency
+  locator.registerLazySingleton<TopicService>(
+    () => TopicService(locator<ApiService>()),
+  );
+  // Register TopicProvider with TopicService dependency
+  locator.registerLazySingleton<TopicProvider>(
+    () => TopicProvider(locator<TopicService>()),
   );
 
   // Register MaterialService with ApiService dependency
   locator.registerLazySingleton<MaterialService>(
     () => MaterialService(locator<ApiService>()),
   );
-
-
   locator.registerLazySingleton<MaterialProvider>(
     () => MaterialProvider(locator<MaterialService>()),
   );
@@ -70,8 +103,6 @@ void setupServiceLocator() {
   locator.registerLazySingleton<StudentService>(
     () => StudentService(locator<ApiService>()),
   );
-
-
   locator.registerLazySingleton<StudentProvider>(
     () => StudentProvider(locator<StudentService>()),
   );
@@ -80,18 +111,24 @@ void setupServiceLocator() {
   locator.registerLazySingleton<GradeService>(
     () => GradeService(locator<ApiService>()),
   );
-
   // Register GradeProvider with GradeService dependency
   locator.registerLazySingleton<GradeProvider>(
     () => GradeProvider(locator<GradeService>()),
   );
 
   // Register SyllabusService and SyllabusProvider
+  // locator.registerLazySingleton<SyllabusContentService>(
+  //   () => SyllabusContentService(locator<ApiService>()),
+  // );
+  // locator.registerLazySingleton<SyllabusContentProvider>(
+  //   () => SyllabusContentProvider(locator<SyllabusContentService>()),
+  // );
+
   locator.registerLazySingleton<SyllabusService>(
-    () => SyllabusService(locator<ApiService>()),
+    () => SyllabusService(locator<ApiService>())
   );
   locator.registerLazySingleton<SyllabusProvider>(
-    () => SyllabusProvider(locator<SyllabusService>()),
+    () => SyllabusProvider(locator<SyllabusService>())
   );
 
   // Register ClassService and LevelService
@@ -127,6 +164,10 @@ void setupServiceLocator() {
     () => AttendanceProvider(),
   );
 }
+
+
+
+
 
 
 
