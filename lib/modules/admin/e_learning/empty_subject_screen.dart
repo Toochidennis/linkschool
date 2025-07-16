@@ -7,12 +7,9 @@ import 'package:linkschool/modules/admin/e_learning/admin_assignment_screen.dart
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/buttons/custom_medium_elevated_button.dart';
 import 'package:linkschool/modules/common/constants.dart';
+import 'package:linkschool/modules/common/custom_toaster.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/model/e-learning/syllabus_content_model.dart';
-// import 'package:linkschool/modules/providers/admin/e_learning/syllabus_provider.dart';
-import 'package:linkschool/modules/services/admin/e_learning/syllabus_content_service.dart';
-import 'package:linkschool/modules/services/api/api_service.dart';
-import 'package:linkschool/modules/services/api/service_locator.dart';
 import 'package:linkschool/modules/staff/e_learning/staff_create_syllabus_screen.dart';
 import 'package:linkschool/modules/staff/e_learning/sub_screens/staff_add_material_screen.dart';
 import 'package:linkschool/modules/staff/e_learning/sub_screens/staff_question_screen.dart';
@@ -21,8 +18,9 @@ import 'package:linkschool/modules/staff/e_learning/view/staff_assignment_detail
 import 'package:linkschool/modules/staff/e_learning/view/staff_material_details_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:linkschool/modules/model/e-learning/material_model.dart' as custom;
-
+import 'package:linkschool/modules/services/api/service_locator.dart';
 import '../../providers/admin/e_learning/syllabus_content_provider.dart';
+
 
 class EmptySubjectScreen extends StatefulWidget {
   final String? courseTitle;
@@ -32,7 +30,7 @@ class EmptySubjectScreen extends StatefulWidget {
   final String? courseName;
   final String? term;
   final int? syllabusId;
-  final syllabusClasses;
+  final List<Map<String, dynamic>>? syllabusClasses;
 
   const EmptySubjectScreen({
     super.key,
@@ -52,7 +50,6 @@ class EmptySubjectScreen extends StatefulWidget {
 
 class _EmptySubjectScreenState extends State<EmptySubjectScreen> with WidgetsBindingObserver {
   late double opacity = 0.1;
-  late SyllabusContentProvider _contentProvider;
   List<TopicContent> _topics = [];
   List<SyllabusContentItem> _noTopicItems = [];
 
@@ -60,14 +57,7 @@ class _EmptySubjectScreenState extends State<EmptySubjectScreen> with WidgetsBin
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    _initializeProvider();
     _loadSyllabusContents();
-  }
-
-  void _initializeProvider() {
-    final apiService = Provider.of<ApiService>(context, listen: false);
-    final contentService = SyllabusContentService(apiService);
-    _contentProvider = SyllabusContentProvider(contentService);
   }
 
   @override
@@ -83,55 +73,37 @@ class _EmptySubjectScreenState extends State<EmptySubjectScreen> with WidgetsBin
     super.dispose();
   }
 
-  // Future<void> _loadSyllabusContents() async {
-  //   if (widget.syllabusId == null) return;
-
-  //   try {
-  //     final userBox = Hive.box('userData');
-  //     final storedUserData = userBox.get('userData') ?? userBox.get('loginResponse');
-  //     final processedData = storedUserData is String
-  //         ? json.decode(storedUserData)
-  //         : storedUserData;
-  //     final response = processedData['response'] ?? processedData;
-  //     final data = response['data'] ?? response;
-  //     final settings = data['settings'] ?? {};
-  //     final dbName = settings['db_name']?.toString() ?? 'aalmgzmy_linkskoo_practice';
-
-  //     await _contentProvider.fetchSyllabusContents(widget.syllabusId!, dbName);
-      
-  //     if (_contentProvider.error.isEmpty) {
-  //       _processContents(_contentProvider.contents);
-  //     }
-  //   } catch (e) {
-  //     print('Error loading syllabus contents: $e');
-  //   }
-  // }
-
-Future<void> _loadSyllabusContents() async {
-  if (widget.syllabusId == null) return;
-
-  try {
-    final contentProvider = locator<SyllabusContentProvider>();
-    
-    final userBox = Hive.box('userData');
-    final storedUserData = userBox.get('userData') ?? userBox.get('loginResponse');
-    final processedData = storedUserData is String
-        ? json.decode(storedUserData)
-        : storedUserData;
-    final response = processedData['response'] ?? processedData;
-    final data = response['data'] ?? response;
-    final settings = data['settings'] ?? {};
-    final dbName = settings['db_name']?.toString() ?? 'aalmgzmy_linkskoo_practice';
-
-    await contentProvider.fetchSyllabusContents(widget.syllabusId!, dbName);
-    
-    if (contentProvider.error.isEmpty) {
-      _processContents(contentProvider.contents);
+  Future<void> _loadSyllabusContents() async {
+    if (widget.syllabusId == null) {
+      CustomToaster.toastError(context, 'Error', 'Syllabus ID is missing');
+      return;
     }
-  } catch (e) {
-    print('Error loading syllabus contents: $e');
+
+    try {
+      final contentProvider = locator<SyllabusContentProvider>();
+      
+      final userBox = Hive.box('userData');
+      final storedUserData = userBox.get('userData') ?? userBox.get('loginResponse');
+      final processedData = storedUserData is String
+          ? json.decode(storedUserData)
+          : storedUserData;
+      final response = processedData['response'] ?? processedData;
+      final data = response['data'] ?? response;
+      final settings = data['settings'] ?? {};
+      final dbName = settings['db_name']?.toString() ?? 'aalmgzmy_linkskoo_practice';
+
+      await contentProvider.fetchSyllabusContents(widget.syllabusId!, dbName);
+      
+      if (contentProvider.error.isEmpty) {
+        _processContents(contentProvider.contents);
+      } else {
+        CustomToaster.toastError(context, 'Error', contentProvider.error);
+      }
+    } catch (e) {
+      print('Error loading syllabus contents: $e');
+      CustomToaster.toastError(context, 'Error', 'Failed to load syllabus contents: $e');
+    }
   }
-}
 
   void _processContents(List<Map<String, dynamic>> contents) {
     final topics = <TopicContent>[];
@@ -166,18 +138,16 @@ Future<void> _loadSyllabusContents() async {
               Text(
                 'What do you want to create?',
                 style: AppTextStyles.normal600(
-                    fontSize: 18.0, color: AppColors.backgroundDark),
+                  fontSize: 18.0,
+                  color: AppColors.backgroundDark,
+                ),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 20),
-              _buildOptionRow(context, 'Assignment',
-                  'assets/icons/e_learning/assignment.svg'),
-              _buildOptionRow(context, 'Question',
-                  'assets/icons/e_learning/question_icon.svg'),
-              _buildOptionRow(
-                  context, 'Material', 'assets/icons/e_learning/material.svg'),
-              _buildOptionRow(
-                  context, 'Topic', 'assets/icons/e_learning/topic.svg'),
+              _buildOptionRow(context, 'Assignment', 'assets/icons/e_learning/assignment.svg'),
+              _buildOptionRow(context, 'Question', 'assets/icons/e_learning/question_icon.svg'),
+              _buildOptionRow(context, 'Material', 'assets/icons/e_learning/material.svg'),
+              _buildOptionRow(context, 'Topic', 'assets/icons/e_learning/topic.svg'),
               const Padding(
                 padding: EdgeInsets.symmetric(vertical: 10),
                 child: Row(
@@ -191,8 +161,7 @@ Future<void> _loadSyllabusContents() async {
                   ],
                 ),
               ),
-              _buildOptionRow(context, 'Reuse content',
-                  'assets/icons/e_learning/share.svg'),
+              _buildOptionRow(context, 'Reuse content', 'assets/icons/e_learning/share.svg'),
             ],
           ),
         );
@@ -217,7 +186,7 @@ Future<void> _loadSyllabusContents() async {
                   courseName: widget.courseName,
                   syllabusClasses: widget.syllabusClasses,
                   onSave: (assignment) {
-                    _loadSyllabusContents(); // Refresh content
+                    _loadSyllabusContents();
                   },
                 ),
               ),
@@ -230,7 +199,7 @@ Future<void> _loadSyllabusContents() async {
                 builder: (context) => StaffQuestionScreen(
                   classId: widget.classId,
                   onSave: (question) {
-                    _loadSyllabusContents(); // Refresh content
+                    _loadSyllabusContents();
                   },
                 ),
               ),
@@ -241,8 +210,7 @@ Future<void> _loadSyllabusContents() async {
               context,
               MaterialPageRoute(
                 fullscreenDialog: true,
-                builder: (BuildContext context) =>
-                    const StaffCreateSyllabusScreen(),
+                builder: (context) => const StaffCreateSyllabusScreen(),
               ),
             );
             break;
@@ -256,7 +224,7 @@ Future<void> _loadSyllabusContents() async {
                   levelId: widget.levelId,
                   courseName: widget.courseName,
                   onSave: (material) {
-                    _loadSyllabusContents(); // Refresh content
+                    _loadSyllabusContents();
                   },
                 ),
               ),
@@ -278,7 +246,9 @@ Future<void> _loadSyllabusContents() async {
             Text(
               text,
               style: AppTextStyles.normal500(
-                  fontSize: 16, color: AppColors.backgroundDark),
+                fontSize: 16,
+                color: AppColors.backgroundDark,
+              ),
             ),
           ],
         ),
@@ -288,11 +258,10 @@ Future<void> _loadSyllabusContents() async {
 
   @override
   Widget build(BuildContext context) {
-    final Brightness brightness = Theme.of(context).brightness;
+    final brightness = Theme.of(context).brightness;
     opacity = brightness == Brightness.light ? 0.1 : 0.15;
-    
+
     return ChangeNotifierProvider.value(
-      // value: _contentProvider,
       value: locator<SyllabusContentProvider>(),
       child: Scaffold(
         appBar: AppBar(
@@ -308,7 +277,7 @@ Future<void> _loadSyllabusContents() async {
             ),
           ),
           title: Text(
-            widget.courseTitle ?? "Course",
+            widget.courseTitle ?? 'Course',
             style: const TextStyle(
               fontSize: 22,
               fontWeight: FontWeight.bold,
@@ -327,7 +296,7 @@ Future<void> _loadSyllabusContents() async {
                       fit: BoxFit.cover,
                     ),
                   ),
-                )
+                ),
               ],
             ),
           ),
@@ -391,31 +360,27 @@ Future<void> _loadSyllabusContents() async {
           children: [
             CustomMediumElevatedButton(
               text: 'Create content',
-              onPressed: () {
-                _showCreateOptionsBottomSheet(context);
-              },
+              onPressed: () => _showCreateOptionsBottomSheet(context),
               backgroundColor: AppColors.eLearningBtnColor1,
               textStyle: AppTextStyles.normal600(
                 fontSize: 16,
                 color: AppColors.backgroundLight,
               ),
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 16.0, vertical: 10.0),
-            )
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            ),
           ],
-        )
+        ),
       ],
     );
   }
 
   Widget _buildSyllabusDetails() {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Background image container
             Container(
               height: 95,
               width: MediaQuery.of(context).size.width,
@@ -434,13 +399,13 @@ Future<void> _loadSyllabusContents() async {
                   ),
                   Positioned.fill(
                     child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 12.0),
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Text(
-                            widget.courseTitle ?? "Course",
+                            widget.courseTitle ?? 'Course',
                             style: AppTextStyles.normal700(
                               fontSize: 18,
                               color: AppColors.backgroundLight,
@@ -472,12 +437,8 @@ Future<void> _loadSyllabusContents() async {
               ),
             ),
             const SizedBox(height: 16),
-
-            // No Topic items (displayed at the top)
-            ..._noTopicItems.map((item) => _buildContentItem(item)),
-
-            // Topics with their children
-            ..._topics.map((topic) => _buildTopicSection(topic)),
+            ..._noTopicItems.map(_buildContentItem),
+            ..._topics.map(_buildTopicSection),
           ],
         ),
       ),
@@ -491,7 +452,7 @@ Future<void> _loadSyllabusContents() async {
     if (_topics.isNotEmpty && _topics.first.children.isNotEmpty && _topics.first.children.first.classes.isNotEmpty) {
       return _topics.first.children.first.classes.map((c) => c.name).join(', ');
     }
-    return "N/A";
+    return 'N/A';
   }
 
   Widget _buildTopicSection(TopicContent topic) {
@@ -501,7 +462,7 @@ Future<void> _loadSyllabusContents() async {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: const EdgeInsets.symmetric(vertical: 16.0),
+          padding: const EdgeInsets.symmetric(vertical: 16),
           child: Text(
             topic.name,
             style: AppTextStyles.normal600(
@@ -511,13 +472,13 @@ Future<void> _loadSyllabusContents() async {
           ),
         ),
         ...topic.children.map((item) => _buildTopicItem(
-          item.title,
-          item.datePosted != null 
-              ? _formatDate(DateTime.parse(item.datePosted!))
-              : 'No date',
-          _getIconForType(item.type),
-          item,
-        )),
+              item.title,
+              item.datePosted != null
+                  ? _formatDate(DateTime.parse(item.datePosted!))
+                  : 'No date',
+              _getIconForType(item.type),
+              item,
+            )),
       ],
     );
   }
@@ -526,7 +487,7 @@ Future<void> _loadSyllabusContents() async {
     return InkWell(
       onTap: () => _navigateToDetails(item),
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 12.0),
+        padding: const EdgeInsets.symmetric(vertical: 12),
         decoration: const BoxDecoration(
           border: Border(
             bottom: BorderSide(color: Colors.grey, width: 0.5),
@@ -596,7 +557,7 @@ Future<void> _loadSyllabusContents() async {
     return InkWell(
       onTap: () => _navigateToDetails(item),
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 12.0),
+        padding: const EdgeInsets.symmetric(vertical: 12),
         child: Row(
           children: [
             Container(
@@ -644,12 +605,11 @@ Future<void> _loadSyllabusContents() async {
   void _navigateToDetails(SyllabusContentItem item) {
     switch (item.type.toLowerCase()) {
       case 'assignment':
-        // Create a dummy Assignment object for navigation
         final assignment = Assignment(
           title: item.title,
           description: item.description,
           selectedClass: item.classes.map((c) => c.name).join(', '),
-          attachments: [], // Convert ContentFile to AttachmentItem if needed
+          attachments: [],
           dueDate: item.endDate != null ? DateTime.parse(item.endDate!) : DateTime.now(),
           topic: item.topic ?? 'No Topic',
           marks: item.grade ?? '0',
@@ -674,7 +634,6 @@ Future<void> _loadSyllabusContents() async {
         );
         break;
       case 'material':
-        // Create a dummy Material object for navigation
         final material = custom.Material(
           title: item.title,
           description: item.description,
@@ -740,6 +699,10 @@ Future<void> _loadSyllabusContents() async {
     }
   }
 }
+
+
+
+
 
 // Import the necessary models for navigation
 // import 'package:linkschool/modules/model/e-learning/question_model.dart';

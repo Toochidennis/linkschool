@@ -7,7 +7,7 @@ import 'package:linkschool/modules/common/app_themes.dart';
 import 'package:linkschool/modules/providers/admin/assessment_provider.dart';
 import 'package:linkschool/modules/providers/admin/attendance_provider.dart';
 import 'package:linkschool/modules/providers/admin/behaviour_provider.dart';
-import 'package:linkschool/modules/providers/admin/behaviour_provider.dart';
+// import 'package:linkschool/modules/providers/admin/behaviour_provider.dart';
 import 'package:linkschool/modules/providers/admin/class_provider.dart';
 import 'package:linkschool/modules/providers/admin/course_registration_provider.dart';
 import 'package:linkschool/modules/providers/admin/e_learning/assignment_provider.dart';
