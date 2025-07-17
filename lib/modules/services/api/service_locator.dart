@@ -116,14 +116,6 @@ void setupServiceLocator() {
     () => GradeProvider(locator<GradeService>()),
   );
 
-  // Register SyllabusService and SyllabusProvider
-  // locator.registerLazySingleton<SyllabusContentService>(
-  //   () => SyllabusContentService(locator<ApiService>()),
-  // );
-  // locator.registerLazySingleton<SyllabusContentProvider>(
-  //   () => SyllabusContentProvider(locator<SyllabusContentService>()),
-  // );
-
   locator.registerLazySingleton<SyllabusService>(
     () => SyllabusService(locator<ApiService>())
   );

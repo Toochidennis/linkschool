@@ -57,7 +57,6 @@ class StudentProvider extends ChangeNotifier {
       if (success) {
         _errorMessage = '';
         _attendedStudentIds = studentIdsToMark;
-
         for (int i = 0; i < _students.length; i++) {
           final isAttended = _attendedStudentIds.contains(_students[i].id);
           _students[i] = _students[i].copyWith(
@@ -65,7 +64,6 @@ class StudentProvider extends ChangeNotifier {
             isSelected: false,
           );
         }
-
         _selectAll = false;
       } else {
         _errorMessage = 'Failed to update attendance';
@@ -101,7 +99,6 @@ class StudentProvider extends ChangeNotifier {
 
       _students = fetchedStudents;
       _isLoading = false;
-
       notifyListeners();
     } catch (e) {
       _isLoading = false;
@@ -117,10 +114,8 @@ class StudentProvider extends ChangeNotifier {
       notifyListeners();
 
       final fetchedStudents = await _studentService.getAllStudents();
-
       _allStudents = fetchedStudents;
       _isLoading = false;
-
       notifyListeners();
     } catch (e) {
       _isLoading = false;
@@ -136,9 +131,7 @@ class StudentProvider extends ChangeNotifier {
       notifyListeners();
 
       final fetchedTerms = await _studentService.getStudentResultTerms(studentId);
-
       _studentTerms = fetchedTerms;
-
       _student = _allStudents.firstWhere(
         (student) => student.id == studentId,
         orElse: () => _students.firstWhere(
@@ -163,6 +156,7 @@ class StudentProvider extends ChangeNotifier {
   }) async {
     try {
       _isLoading = true;
+      _errorMessage = ''; // Clear any previous errors
       notifyListeners();
 
       final attendanceRecords = await _studentService.getClassAttendance(
@@ -176,7 +170,6 @@ class StudentProvider extends ChangeNotifier {
 
       if (attendanceRecords.isNotEmpty) {
         final firstRecord = attendanceRecords[0];
-
         if (firstRecord.containsKey('id')) {
           _currentAttendanceId = firstRecord['id'] is int
               ? firstRecord['id']
@@ -184,24 +177,13 @@ class StudentProvider extends ChangeNotifier {
           _hasExistingAttendance = _currentAttendanceId != null;
         }
 
-        if (firstRecord['register'] != null) {
-          dynamic registerData = firstRecord['register'];
-
-          if (registerData is String) {
-            try {
-              registerData = jsonDecode(registerData);
-            } catch (e) {
-              debugPrint('Error parsing register JSON: $e');
-              registerData = null;
-            }
-          }
-
-          if (registerData is List) {
-            for (var student in registerData) {
+        if (firstRecord['students'] != null) {
+          final students = firstRecord['students'];
+          if (students is List) {
+            for (var student in students) {
               if (student is Map && student.containsKey('id')) {
                 final idString = student['id'].toString();
                 final studentId = int.tryParse(idString) ?? -1;
-
                 if (studentId != -1 && !_attendedStudentIds.contains(studentId)) {
                   _attendedStudentIds.add(studentId);
                 }
@@ -209,8 +191,11 @@ class StudentProvider extends ChangeNotifier {
             }
           }
         }
+      } else {
+        debugPrint('No existing attendance records found for class $classId on $date');
       }
 
+      // Update student attendance status
       for (int i = 0; i < _students.length; i++) {
         final isAttended = _attendedStudentIds.contains(_students[i].id);
         _students[i] = _students[i].copyWith(hasAttended: isAttended);
@@ -227,6 +212,7 @@ class StudentProvider extends ChangeNotifier {
     } catch (e) {
       _isLoading = false;
       _errorMessage = e.toString();
+      debugPrint('Error in fetchAttendance: $e');
       notifyListeners();
     }
   }
@@ -238,6 +224,7 @@ class StudentProvider extends ChangeNotifier {
   }) async {
     try {
       _isLoading = true;
+      _errorMessage = ''; // Clear any previous errors
       notifyListeners();
 
       final attendanceRecords = await _studentService.getCourseAttendance(
@@ -252,7 +239,6 @@ class StudentProvider extends ChangeNotifier {
 
       if (attendanceRecords.isNotEmpty) {
         final firstRecord = attendanceRecords[0];
-
         if (firstRecord.containsKey('id')) {
           _currentAttendanceId = firstRecord['id'] is int
               ? firstRecord['id']
@@ -260,31 +246,25 @@ class StudentProvider extends ChangeNotifier {
           _hasExistingAttendance = _currentAttendanceId != null;
         }
 
-        if (firstRecord['register'] != null) {
-          String registerStr = firstRecord['register'].toString();
-          if (registerStr.startsWith(' ')) {
-            registerStr = registerStr.substring(1);
-          }
-
-          try {
-            List<dynamic> registerList = jsonDecode(registerStr);
-
-            for (var student in registerList) {
+        if (firstRecord['students'] != null) {
+          final students = firstRecord['students'];
+          if (students is List) {
+            for (var student in students) {
               if (student is Map && student.containsKey('id')) {
                 final idString = student['id'].toString();
                 final studentId = int.tryParse(idString) ?? -1;
-
                 if (studentId != -1 && !_attendedStudentIds.contains(studentId)) {
                   _attendedStudentIds.add(studentId);
                 }
               }
             }
-          } catch (e) {
-            debugPrint('Error parsing register JSON: $e');
           }
         }
+      } else {
+        debugPrint('No existing attendance records found for course $courseId on $date');
       }
 
+      // Update student attendance status
       for (int i = 0; i < _students.length; i++) {
         final student = _students[i];
         final isAttended = _attendedStudentIds.contains(student.id);
@@ -302,6 +282,7 @@ class StudentProvider extends ChangeNotifier {
     } catch (e) {
       _isLoading = false;
       _errorMessage = e.toString();
+      debugPrint('Error in fetchCourseAttendance: $e');
       notifyListeners();
     }
   }
@@ -333,9 +314,7 @@ class StudentProvider extends ChangeNotifier {
 
       if (success) {
         _errorMessage = '';
-
         final updatedAttendedIds = [..._attendedStudentIds];
-
         for (final studentId in selectedStudentIds) {
           if (!updatedAttendedIds.contains(studentId)) {
             updatedAttendedIds.add(studentId);
@@ -372,10 +351,8 @@ class StudentProvider extends ChangeNotifier {
       final attendanceBox = await Hive.openBox('attendance');
       final dateOnly = date.split(' ')[0];
       final key = 'attended_${classId}_$dateOnly';
-
       await attendanceBox.put(key, studentIds);
       _attendedStudentIds = studentIds;
-
       debugPrint('Saved attended students with key: $key');
       debugPrint('Attended students: $_attendedStudentIds');
 
@@ -383,7 +360,6 @@ class StudentProvider extends ChangeNotifier {
         final isAttended = _attendedStudentIds.contains(_students[i].id);
         _students[i] = _students[i].copyWith(hasAttended: isAttended);
       }
-
       notifyListeners();
     } catch (e) {
       debugPrint('Error saving attended students: $e');
@@ -398,10 +374,9 @@ class StudentProvider extends ChangeNotifier {
       final attendanceBox = await Hive.openBox('attendance');
       final dateOnly = date.split(' ')[0];
       final key = 'attended_${classId}_$dateOnly';
-
       debugPrint("Loading attended students with key: $key");
-      final localData = attendanceBox.get(key);
 
+      final localData = attendanceBox.get(key);
       if (localData is List<dynamic>) {
         _attendedStudentIds = localData.cast<int>();
         debugPrint("Loaded attended students: $_attendedStudentIds");
@@ -411,7 +386,6 @@ class StudentProvider extends ChangeNotifier {
           debugPrint("Student ${_students[i].id}: ${_students[i].name} - isAttended: $isAttended");
           _students[i] = _students[i].copyWith(hasAttended: isAttended);
         }
-
         notifyListeners();
       } else {
         debugPrint("No attended students data found for key: $key");
@@ -430,10 +404,9 @@ class StudentProvider extends ChangeNotifier {
       final attendanceBox = await Hive.openBox('attendance');
       final dateOnly = date.split(' ')[0];
       final key = '${classId}_${dateOnly}_$courseId';
-
       debugPrint("Fetching local attendance with key: $key");
-      final localData = attendanceBox.get(key);
 
+      final localData = attendanceBox.get(key);
       if (localData is List<dynamic>) {
         _localAttendance = localData.cast<int>();
         debugPrint("Loaded local attendance: $_localAttendance");
@@ -442,9 +415,7 @@ class StudentProvider extends ChangeNotifier {
           final isSelected = _localAttendance.contains(_students[i].id);
           _students[i] = _students[i].copyWith(isSelected: isSelected);
         }
-
         _updateSelectAllStatus();
-
         notifyListeners();
       } else {
         debugPrint("No local attendance data found for key: $key");
@@ -481,9 +452,7 @@ class StudentProvider extends ChangeNotifier {
 
       if (success) {
         _errorMessage = '';
-
         final updatedAttendedIds = [..._attendedStudentIds];
-
         for (final studentId in selectedStudentIds) {
           if (!updatedAttendedIds.contains(studentId)) {
             updatedAttendedIds.add(studentId);
@@ -521,13 +490,10 @@ class StudentProvider extends ChangeNotifier {
       final attendanceBox = await Hive.openBox('attendance');
       final dateOnly = date.split(' ')[0];
       final key = '${classId}_${dateOnly}_$courseId';
-
       await attendanceBox.put(key, studentIds);
-
       _localAttendance = studentIds;
       debugPrint('Saved local attendance with key: $key');
       debugPrint('Local attendance: $_localAttendance');
-
       notifyListeners();
     } catch (e) {
       debugPrint('Error saving local attendance: $e');
@@ -585,22 +551,18 @@ class StudentProvider extends ChangeNotifier {
     _students[index] = _students[index].copyWith(
       isSelected: !_students[index].isSelected,
     );
-
     _updateSelectAllStatus();
-
     notifyListeners();
   }
 
   void toggleSelectAll() {
     _selectAll = !_selectAll;
-
     for (int i = 0; i < _students.length; i++) {
       _students[i] = _students[i].copyWith(
         isSelected: _selectAll,
         hasAttended: _selectAll ? _students[i].hasAttended : false,
       );
     }
-
     notifyListeners();
   }
 
@@ -658,8 +620,6 @@ class StudentProvider extends ChangeNotifier {
 
 
 
-
-
 // import 'package:flutter/material.dart';
 // import 'package:linkschool/modules/model/admin/student_model.dart';
 // import 'package:linkschool/modules/services/admin/student_service.dart';
@@ -683,6 +643,7 @@ class StudentProvider extends ChangeNotifier {
 //   int? _currentAttendanceId;
 //   bool _hasExistingAttendance = false;
 //   Map<String, dynamic>? _studentTermResult;
+//   List<Map<String, dynamic>>? _annualResults;
 
 //   List<Student> get students => _students;
 //   List<Student> get allStudents => _allStudents;
@@ -699,6 +660,7 @@ class StudentProvider extends ChangeNotifier {
 //   int? get currentAttendanceId => _currentAttendanceId;
 //   bool get hasExistingAttendance => _hasExistingAttendance;
 //   Map<String, dynamic>? get studentTermResult => _studentTermResult;
+//   List<Map<String, dynamic>>? get annualResults => _annualResults;
 
 //   Future<bool> updateAttendance({required int attendanceId}) async {
 //     try {
@@ -1194,6 +1156,38 @@ class StudentProvider extends ChangeNotifier {
 //     }
 //   }
 
+//   Future<void> fetchAnnualResults({
+//     required int studentId,
+//     required String classId,
+//     required String levelId,
+//     required String year,
+//   }) async {
+//     try {
+//       _isLoading = true;
+//       _errorMessage = '';
+//       debugPrint('Fetching annual results with params: '
+//           'studentId=$studentId, classId=$classId, levelId=$levelId, year=$year');
+//       notifyListeners();
+
+//       final result = await _studentService.getStudentAnnualResults(
+//         studentId: studentId,
+//         classId: classId,
+//         levelId: levelId,
+//         year: year,
+//       );
+
+//       debugPrint('Received annual results: $result');
+//       _annualResults = result;
+//       _isLoading = false;
+//       notifyListeners();
+//     } catch (e) {
+//       _isLoading = false;
+//       _errorMessage = 'Error fetching annual results: $e';
+//       debugPrint(_errorMessage);
+//       notifyListeners();
+//     }
+//   }
+
 //   void reset() {
 //     _students = [];
 //     _isLoading = false;
@@ -1203,6 +1197,7 @@ class StudentProvider extends ChangeNotifier {
 //     _attendedStudentIds = [];
 //     _currentAttendanceId = null;
 //     _hasExistingAttendance = false;
+//     _annualResults = null;
 //     notifyListeners();
 //   }
 
