@@ -40,6 +40,92 @@ class StudentProvider extends ChangeNotifier {
   Map<String, dynamic>? get studentTermResult => _studentTermResult;
   List<Map<String, dynamic>>? get annualResults => _annualResults;
 
+  // Helper method to create student from login data
+  Student? _createStudentFromLoginData(int studentId) {
+    try {
+      final userBox = Hive.box('userData');
+      final loginData = userBox.get('userData') ?? userBox.get('loginResponse');
+      
+      if (loginData != null) {
+        Map<String, dynamic> processedData = loginData is String 
+            ? json.decode(loginData) 
+            : loginData;
+        
+        final response = processedData['response'] ?? processedData;
+        final data = response['data'] ?? response;
+        final profile = data['profile'] ?? {};
+        
+        // Check if this matches the requested student ID
+        final profileId = profile['id'] ?? profile['staff_id'];
+        if (profileId != null && profileId.toString() == studentId.toString()) {
+          return Student(
+            id: int.tryParse(profileId.toString()) ?? studentId,
+            name: profile['name'] ?? 'Unknown Student',
+            surname: profile['name']?.split(' ').first ?? '',
+            firstName: profile['name']?.split(' ').skip(1).join(' ') ?? '',
+            middleName: '',
+            registrationNo: profile['registration_no'] ?? '',
+            pictureUrl: profile['picture_url'],
+          );
+        }
+      }
+    } catch (e) {
+      debugPrint('Error creating student from login data: $e');
+    }
+    return null;
+  }
+
+  Future<void> fetchStudentResultTerms(int studentId) async {
+    try {
+      _isLoading = true;
+      _errorMessage = '';
+      notifyListeners();
+
+      final fetchedTerms = await _studentService.getStudentResultTerms(studentId);
+      _studentTerms = fetchedTerms;
+
+      // Try to find student in existing lists first
+      Student? foundStudent;
+      
+      try {
+        foundStudent = _allStudents.firstWhere(
+          (student) => student.id == studentId,
+        );
+      } catch (e) {
+        try {
+          foundStudent = _students.firstWhere(
+            (student) => student.id == studentId,
+          );
+        } catch (e) {
+          // If not found in lists, try to create from login data
+          foundStudent = _createStudentFromLoginData(studentId);
+        }
+      }
+
+      if (foundStudent != null) {
+        _student = foundStudent;
+      } else {
+        // Create a basic student object if all else fails
+        _student = Student(
+          id: studentId,
+          name: 'Student',
+          surname: 'Student',
+          firstName: '',
+          middleName: '',
+          registrationNo: '',
+        );
+      }
+
+      _isLoading = false;
+      notifyListeners();
+    } catch (e) {
+      _isLoading = false;
+      _errorMessage = e.toString();
+      debugPrint('Error in fetchStudentResultTerms: $e');
+      notifyListeners();
+    }
+  }
+
   Future<bool> updateAttendance({required int attendanceId}) async {
     try {
       _isLoading = true;
@@ -115,31 +201,6 @@ class StudentProvider extends ChangeNotifier {
 
       final fetchedStudents = await _studentService.getAllStudents();
       _allStudents = fetchedStudents;
-      _isLoading = false;
-      notifyListeners();
-    } catch (e) {
-      _isLoading = false;
-      _errorMessage = e.toString();
-      notifyListeners();
-    }
-  }
-
-  Future<void> fetchStudentResultTerms(int studentId) async {
-    try {
-      _isLoading = true;
-      _errorMessage = '';
-      notifyListeners();
-
-      final fetchedTerms = await _studentService.getStudentResultTerms(studentId);
-      _studentTerms = fetchedTerms;
-      _student = _allStudents.firstWhere(
-        (student) => student.id == studentId,
-        orElse: () => _students.firstWhere(
-          (student) => student.id == studentId,
-          orElse: () => throw Exception('Student not found'),
-        ),
-      );
-
       _isLoading = false;
       notifyListeners();
     } catch (e) {
@@ -303,7 +364,6 @@ class StudentProvider extends ChangeNotifier {
       notifyListeners();
 
       final selectedStudents = _students.where((student) => student.isSelected).toList();
-
       final success = await _studentService.saveCourseAttendance(
         classId: classId,
         courseId: courseId,
@@ -375,12 +435,10 @@ class StudentProvider extends ChangeNotifier {
       final dateOnly = date.split(' ')[0];
       final key = 'attended_${classId}_$dateOnly';
       debugPrint("Loading attended students with key: $key");
-
       final localData = attendanceBox.get(key);
       if (localData is List<dynamic>) {
         _attendedStudentIds = localData.cast<int>();
         debugPrint("Loaded attended students: $_attendedStudentIds");
-
         for (int i = 0; i < _students.length; i++) {
           final isAttended = _attendedStudentIds.contains(_students[i].id);
           debugPrint("Student ${_students[i].id}: ${_students[i].name} - isAttended: $isAttended");
@@ -405,12 +463,10 @@ class StudentProvider extends ChangeNotifier {
       final dateOnly = date.split(' ')[0];
       final key = '${classId}_${dateOnly}_$courseId';
       debugPrint("Fetching local attendance with key: $key");
-
       final localData = attendanceBox.get(key);
       if (localData is List<dynamic>) {
         _localAttendance = localData.cast<int>();
         debugPrint("Loaded local attendance: $_localAttendance");
-
         for (var i = 0; i < _students.length; i++) {
           final isSelected = _localAttendance.contains(_students[i].id);
           _students[i] = _students[i].copyWith(isSelected: isSelected);
@@ -441,7 +497,6 @@ class StudentProvider extends ChangeNotifier {
       notifyListeners();
 
       final selectedStudents = _students.where((student) => student.isSelected).toList();
-
       final success = await _studentService.saveAttendance(
         classId: classId,
         courseId: courseId,

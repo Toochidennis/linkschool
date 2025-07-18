@@ -24,12 +24,19 @@ class AuthProvider with ChangeNotifier {
         // Save the entire API response to Hive
         final userBox = Hive.box('userData');
         await userBox.put('userData', response.rawData);
+        await userBox.put('loginResponse', response.rawData); // Also save as loginResponse for compatibility
 
         // Extract user data
         final userData = response.rawData!['data'];
         _user = User.fromJson(userData);
         _token = response.rawData!['token'];
         _isLoggedIn = true;
+
+        // Save database identifier
+        final db = response.rawData!['_db'];
+        if (db != null) {
+          await userBox.put('_db', db);
+        }
 
         // Save settings data
         if (userData.containsKey('settings')) {
@@ -61,6 +68,21 @@ class AuthProvider with ChangeNotifier {
           }
           if (userData.containsKey('courses')) {
             await userBox.put('staff_courses', userData['courses']);
+          }
+        } else if (_user!.role == 'student') {
+          // Save student-specific data
+          final profile = userData['profile'] ?? {};
+          await userBox.put('student_profile', profile);
+          
+          // Store student-specific parameters for API calls
+          await userBox.put('student_id', profile['id']?.toString() ?? profile['staff_id']?.toString());
+          await userBox.put('class_id', profile['class_id']?.toString());
+          await userBox.put('level_id', profile['level_id']?.toString());
+          await userBox.put('registration_no', profile['registration_no']);
+          
+          // Store current year from settings for API calls
+          if (_settings != null && _settings!.containsKey('year')) {
+            await userBox.put('current_year', _settings!['year'].toString());
           }
         }
 
@@ -101,7 +123,6 @@ class AuthProvider with ChangeNotifier {
       _user = User.fromJson(userDataMap);
       _token = userData['token'];
       _isLoggedIn = true;
-
       if (settings != null) {
         _settings = Map<String, dynamic>.from(settings);
       }
@@ -166,6 +187,41 @@ class AuthProvider with ChangeNotifier {
     return [];
   }
 
+  // Student-specific getter methods
+  Map<String, dynamic> getStudentProfile() {
+    final userBox = Hive.box('userData');
+    final studentProfile = userBox.get('student_profile');
+    if (studentProfile != null) {
+      return Map<String, dynamic>.from(studentProfile);
+    }
+    return {};
+  }
+
+  String? getStudentId() {
+    final userBox = Hive.box('userData');
+    return userBox.get('student_id');
+  }
+
+  String? getClassId() {
+    final userBox = Hive.box('userData');
+    return userBox.get('class_id');
+  }
+
+  String? getLevelId() {
+    final userBox = Hive.box('userData');
+    return userBox.get('level_id');
+  }
+
+  String? getCurrentYear() {
+    final userBox = Hive.box('userData');
+    return userBox.get('current_year');
+  }
+
+  String? getRegistrationNo() {
+    final userBox = Hive.box('userData');
+    return userBox.get('registration_no');
+  }
+
   // Helper method to get user profile data
   Map<String, dynamic> getUserProfile() {
     final userBox = Hive.box('userData');
@@ -182,8 +238,6 @@ class AuthProvider with ChangeNotifier {
     return userBox.get('role', defaultValue: '');
   }
 }
-
-
 
 
 
@@ -210,7 +264,6 @@ class AuthProvider with ChangeNotifier {
 //   Future<void> login(String username, String password, String schoolCode) async {
 //     try {
 //       final response = await _authService.login(username, password, schoolCode);
-
 //       if (response.success && response.rawData != null) {
 //         // Save the entire API response to Hive
 //         final userBox = Hive.box('userData');
@@ -221,7 +274,7 @@ class AuthProvider with ChangeNotifier {
 //         _user = User.fromJson(userData);
 //         _token = response.rawData!['token'];
 //         _isLoggedIn = true;
-        
+
 //         // Save settings data
 //         if (userData.containsKey('settings')) {
 //           _settings = Map<String, dynamic>.from(userData['settings']);
@@ -233,18 +286,26 @@ class AuthProvider with ChangeNotifier {
 //         await userBox.put('role', _user!.role);
 //         await userBox.put('token', _token);
 
-//         // Save levels, classes and courses separately for easier access
-//         if (userData.containsKey('levels')) {
-//           await userBox.put('levels', userData['levels']);
-//         }
-        
-//         if (userData.containsKey('classes')) {
-//           await userBox.put('classes', userData['classes']);
-//         }
-        
-//         // New code: Save courses data separately for easier access
-//         if (userData.containsKey('courses')) {
-//           await userBox.put('courses', userData['courses']);
+//         // Save role-specific data
+//         if (_user!.role == 'admin') {
+//           // Save admin-specific data
+//           if (userData.containsKey('levels')) {
+//             await userBox.put('levels', userData['levels']);
+//           }
+//           if (userData.containsKey('classes')) {
+//             await userBox.put('classes', userData['classes']);
+//           }
+//           if (userData.containsKey('courses')) {
+//             await userBox.put('courses', userData['courses']);
+//           }
+//         } else if (_user!.role == 'staff') {
+//           // Save staff-specific data
+//           if (userData.containsKey('form_classes')) {
+//             await userBox.put('form_classes', userData['form_classes']);
+//           }
+//           if (userData.containsKey('courses')) {
+//             await userBox.put('staff_courses', userData['courses']);
+//           }
 //         }
 
 //         // Store in SharedPreferences for cross-session persistence
@@ -264,10 +325,8 @@ class AuthProvider with ChangeNotifier {
 //   Future<void> logout() async {
 //     final userBox = Hive.box('userData');
 //     await userBox.clear();
-
 //     final prefs = await SharedPreferences.getInstance();
 //     await prefs.clear();
-
 //     _user = null;
 //     _token = null;
 //     _isLoggedIn = false;
@@ -286,15 +345,14 @@ class AuthProvider with ChangeNotifier {
 //       _user = User.fromJson(userDataMap);
 //       _token = userData['token'];
 //       _isLoggedIn = true;
-      
+
 //       if (settings != null) {
 //         _settings = Map<String, dynamic>.from(settings);
 //       }
-
 //       notifyListeners();
 //     }
 //   }
-  
+
 //   // Get settings data
 //   Map<String, dynamic> getSettings() {
 //     final userBox = Hive.box('userData');
@@ -304,8 +362,8 @@ class AuthProvider with ChangeNotifier {
 //     }
 //     return {};
 //   }
-  
-//   // New getter methods for easy access to stored data
+
+//   // Admin-specific getter methods
 //   List<Map<String, dynamic>> getLevels() {
 //     final userBox = Hive.box('userData');
 //     final levels = userBox.get('levels');
@@ -323,8 +381,7 @@ class AuthProvider with ChangeNotifier {
 //     }
 //     return [];
 //   }
-  
-//   // New method to access courses data from Hive
+
 //   List<Map<String, dynamic>> getCourses() {
 //     final userBox = Hive.box('userData');
 //     final courses = userBox.get('courses');
@@ -332,5 +389,40 @@ class AuthProvider with ChangeNotifier {
 //       return List<Map<String, dynamic>>.from(courses);
 //     }
 //     return [];
+//   }
+
+//   // Staff-specific getter methods
+//   List<Map<String, dynamic>> getFormClasses() {
+//     final userBox = Hive.box('userData');
+//     final formClasses = userBox.get('form_classes');
+//     if (formClasses != null && formClasses is List) {
+//       return List<Map<String, dynamic>>.from(formClasses);
+//     }
+//     return [];
+//   }
+
+//   List<Map<String, dynamic>> getStaffCourses() {
+//     final userBox = Hive.box('userData');
+//     final staffCourses = userBox.get('staff_courses');
+//     if (staffCourses != null && staffCourses is List) {
+//       return List<Map<String, dynamic>>.from(staffCourses);
+//     }
+//     return [];
+//   }
+
+//   // Helper method to get user profile data
+//   Map<String, dynamic> getUserProfile() {
+//     final userBox = Hive.box('userData');
+//     final userData = userBox.get('userData');
+//     if (userData != null && userData['data'] != null) {
+//       return userData['data']['profile'] ?? {};
+//     }
+//     return {};
+//   }
+
+//   // Helper method to check user role
+//   String getUserRole() {
+//     final userBox = Hive.box('userData');
+//     return userBox.get('role', defaultValue: '');
 //   }
 // }
