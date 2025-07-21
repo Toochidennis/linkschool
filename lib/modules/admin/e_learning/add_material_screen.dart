@@ -15,6 +15,7 @@ import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/custom_toaster.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/common/widgets/portal/e_learning/select_classes_dialog.dart';
+import 'package:linkschool/modules/model/e-learning/material_model.dart' as custom;
 import 'package:linkschool/modules/providers/admin/e_learning/material_provider.dart';
 import 'package:provider/provider.dart';
 
@@ -26,6 +27,8 @@ class AddMaterialScreen extends StatefulWidget {
   final String? levelId;
   final int? syllabusId;
  final List<Map<String, dynamic>>? syllabusClasses;
+ final bool editMode;
+final custom.Material? materialToEdit;
 
   const AddMaterialScreen({
     super.key,
@@ -36,7 +39,8 @@ class AddMaterialScreen extends StatefulWidget {
     this.levelId, 
      this.syllabusId, 
      this.syllabusClasses,
-   
+    this.editMode = false,
+    this.materialToEdit,
   });
 
   @override
@@ -61,6 +65,22 @@ class _AddMaterialScreenState extends State<AddMaterialScreen> {
     super.initState();
     _loadUserData();
   }
+
+
+   void _populateFormForEdit() {
+  if (widget.editMode && widget.materialToEdit != null) {
+    final material = widget.materialToEdit!;
+    _titleController.text = material.title;
+    _descriptionController.text = material.description;
+    // _marksController.text = material.marks;
+    // _endDate = material.endDate;
+    // _startDate = material.startDate;
+    // _selectedDuration =material.duration;
+    _selectedTopic = material.topic;
+     //_attachments = material.;
+     _selectedClass = material.selectedClass;
+  }
+}
 
   Future<void> _loadUserData() async {
     try {
