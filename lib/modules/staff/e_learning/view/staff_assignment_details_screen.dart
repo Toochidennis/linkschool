@@ -6,8 +6,9 @@ import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/model/e-learning/comment_model.dart';
 
 class StaffAssignmentDetailsScreen extends StatefulWidget {
+  final Assignment assignment ;
   const StaffAssignmentDetailsScreen(
-      {super.key, required Assignment assignment});
+      {super.key, required this.assignment});
 
   @override
   _StaffAssignmentDetailsScreenState createState() =>
@@ -45,7 +46,7 @@ class _StaffAssignmentDetailsScreenState
           ),
         ),
         title: Text(
-          'Assignment',
+            widget.assignment.title,
           style: AppTextStyles.normal600(
             fontSize: 24.0,
             color: AppColors.paymentTxtColor1,
@@ -58,7 +59,8 @@ class _StaffAssignmentDetailsScreenState
               color: AppColors.paymentTxtColor1,
             ),
             onSelected: (String result) {
-              // Handle menu item selection
+               final attachments = widget.assignment.attachments; 
+               print('${attachments}');
             },
             itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
               const PopupMenuItem<String>(
@@ -128,7 +130,7 @@ class _StaffAssignmentDetailsScreenState
                 fontSize: 16.0, color: AppColors.eLearningTxtColor1),
           ),
           Text(
-            DateFormat('E, dd MMM yyyy (hh:mm a)').format(dueDate),
+            DateFormat('E, dd MMM yyyy (hh:mm a)').format(widget.assignment.dueDate),
             style: AppTextStyles.normal500(fontSize: 16.0, color: Colors.black),
           ),
         ],
@@ -170,7 +172,7 @@ class _StaffAssignmentDetailsScreenState
                 fontSize: 16.0, color: AppColors.eLearningTxtColor1),
           ),
           Text(
-            marks,
+            widget.assignment.marks,
             style: AppTextStyles.normal500(fontSize: 16.0, color: Colors.black),
           ),
         ],
@@ -191,7 +193,7 @@ class _StaffAssignmentDetailsScreenState
           ),
           Expanded(
             child: Text(
-              description,
+              widget.assignment.description,
               style:
                   AppTextStyles.normal500(fontSize: 16.0, color: Colors.black),
             ),
@@ -201,78 +203,169 @@ class _StaffAssignmentDetailsScreenState
     );
   }
 
+
   Widget _buildAttachments() {
-    const List<Map<String, String>> attachments = [
-      {
-        "type": "image",
-        "url":
-            "https://img.freepik.com/free-vector/gradient-human-rights-day-background_52683-149974.jpg?t=st=1717832829~exp=1717833429~hmac=3e938edcacd7fef2a791b36c7d3decbf64248d9760dd7da0a304acee382b8a86"
-      },
-      {"type": "link", "url": "https://jdidlf.com.ng..."},
-    ];
-    return Padding(
-      padding: const EdgeInsets.all(16.0),
-      child: Row(
+  final attachments = widget.assignment.attachments; // List<AttachmentItem>
+  if (attachments.isEmpty) {
+    print(attachments);
+    return const SizedBox.shrink();
+   
+  }
+  return Padding(
+    padding: const EdgeInsets.all(16.0),
+    child: Row(
+      children: List.generate(attachments.length, (index) {
+        return Expanded(
+          child: Padding(
+            padding: EdgeInsets.only(right: index < attachments.length - 1 ? 16.0 : 0),
+            child: _buildAttachmentItem(attachments[index]),
+          ),
+        );
+      }),
+    ),
+  );
+}
+
+  // Widget _buildAttachments() {
+  //   const List<Map<String, String>> attachments = [
+  //     {
+  //       "type": "image",
+  //       "url":
+  //           "https://img.freepik.com/free-vector/gradient-human-rights-day-background_52683-149974.jpg?t=st=1717832829~exp=1717833429~hmac=3e938edcacd7fef2a791b36c7d3decbf64248d9760dd7da0a304acee382b8a86"
+  //     },
+  //     {"type": "link", "url": "https://jdidlf.com.ng..."},
+  //   ];
+  //   return Padding(
+  //     padding: const EdgeInsets.all(16.0),
+  //     child: Row(
+  //       children: [
+  //         Expanded(
+  //           child: _buildAttachmentItem(attachments[0]),
+  //         ),
+  //         const SizedBox(width: 16),
+  //         Expanded(
+  //           child: _buildAttachmentItem(attachments[1]),
+  //         ),
+  //       ],
+  //     ),
+  //   );
+  // }
+
+  // Widget _buildAttachmentItem(Map<String, String> attachment) {
+  //   if (attachment["type"] == "image") {
+  //     return ClipRRect(
+  //       borderRadius: BorderRadius.circular(8),
+  //       child: Image.network(
+  //         attachment["url"]!,
+  //         fit: BoxFit.cover,
+  //         height: 100,
+  //       ),
+  //     );
+  //   } else {
+  //     return Container(
+  //       height: 100,
+  //       color: Colors.blue.shade100,
+  //       child: Column(
+  //         children: [
+  //           Expanded(
+  //             flex: 2,
+  //             child: Image.network(
+  //               networkImage,
+  //               fit: BoxFit.cover,
+  //               width: double.infinity,
+  //             ),
+  //           ),
+  //           Expanded(
+  //             flex: 2,
+  //             child: Padding(
+  //               padding: const EdgeInsets.symmetric(horizontal: 8.0),
+  //               child: Row(
+  //                 children: [
+  //                   const Icon(Icons.link, color: Colors.blue),
+  //                   const SizedBox(width: 8),
+  //                   Expanded(
+  //                     child: Text(
+  //                       attachment["url"]!,
+  //                       overflow: TextOverflow.ellipsis,
+  //                     ),
+  //                   ),
+  //                 ],
+  //               ),
+  //             ),
+  //           ),
+  //         ],
+  //       ),
+  //     );
+  //   }
+  // }
+
+ Widget _buildAttachmentItem(AttachmentItem attachment) {
+  // Detect image by file extension or type
+  final isImage = attachment.fileName.toLowerCase().endsWith('.jpg') ||
+                  attachment.fileName.toLowerCase().endsWith('.jpeg') ||
+                  attachment.fileName.toLowerCase().endsWith('.png') ||
+                  attachment.fileName.toLowerCase().endsWith('.gif') ||
+                  attachment.iconPath.contains('material.svg') || // your mapping for images
+                  attachment.iconPath.contains('photo');
+
+  if (isImage) {
+    // Build the full URL if needed
+    final imageUrl ="https://linkskool.net/api/v3/portal/${attachment.fileName}";
+
+        print(imageUrl);
+
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(8),
+      child: Image.network(
+        imageUrl,
+        fit: BoxFit.cover,
+        height: 100,
+        errorBuilder: (context, error, stackTrace) =>
+            Image.network(
+              networkImage,
+              fit: BoxFit.cover,
+              height: 100,
+            ),
+      ),
+    );
+  } else {
+    // Not an image: show default image and file/link name
+    return Container(
+      height: 100,
+      color: Colors.blue.shade100,
+      child: Column(
         children: [
           Expanded(
-            child: _buildAttachmentItem(attachments[0]),
+            flex: 2,
+            child: Image.asset(
+              'assets/images/default_image.png', // Your default image asset
+              fit: BoxFit.cover,
+              width: double.infinity,
+            ),
           ),
-          const SizedBox(width: 16),
           Expanded(
-            child: _buildAttachmentItem(attachments[1]),
+            flex: 2,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8.0),
+              child: Row(
+                children: [
+                  const Icon(Icons.link, color: Colors.blue),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      attachment.fileName,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ),
         ],
       ),
     );
   }
-
-  Widget _buildAttachmentItem(Map<String, String> attachment) {
-    if (attachment["type"] == "image") {
-      return ClipRRect(
-        borderRadius: BorderRadius.circular(8),
-        child: Image.network(
-          attachment["url"]!,
-          fit: BoxFit.cover,
-          height: 100,
-        ),
-      );
-    } else {
-      return Container(
-        height: 100,
-        color: Colors.blue.shade100,
-        child: Column(
-          children: [
-            Expanded(
-              flex: 2,
-              child: Image.network(
-                networkImage,
-                fit: BoxFit.cover,
-                width: double.infinity,
-              ),
-            ),
-            Expanded(
-              flex: 2,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                child: Row(
-                  children: [
-                    const Icon(Icons.link, color: Colors.blue),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        attachment["url"]!,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
-      );
-    }
-  }
+}
 
   Widget _buildCommentSection() {
     return Column(

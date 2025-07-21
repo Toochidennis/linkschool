@@ -1,5 +1,4 @@
 import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:hive/hive.dart';
@@ -18,6 +17,8 @@ class CreateTopicScreen extends StatefulWidget {
   final String? levelId;
   final String? courseId;
   final int? syllabusId;
+  final bool editMode;
+
 
   const CreateTopicScreen({
     super.key,
@@ -25,6 +26,8 @@ class CreateTopicScreen extends StatefulWidget {
     this.levelId,
     this.courseId,
     this.syllabusId,
+    this.editMode =false,
+ 
   });
 
   @override

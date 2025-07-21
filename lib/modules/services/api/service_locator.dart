@@ -7,6 +7,7 @@ import 'package:linkschool/modules/providers/admin/behaviour_provider.dart';
 import 'package:linkschool/modules/providers/admin/e_learning/assignment_provider.dart';
 import 'package:linkschool/modules/providers/admin/e_learning/material_provider.dart';
 import 'package:linkschool/modules/providers/admin/e_learning/quiz_provider.dart';
+import 'package:linkschool/modules/providers/admin/e_learning/syllabus_content_provider.dart';
 import 'package:linkschool/modules/providers/admin/e_learning/syllabus_provider.dart';
 import 'package:linkschool/modules/providers/admin/e_learning/topic_provider.dart';
 
@@ -16,6 +17,7 @@ import 'package:linkschool/modules/services/admin/attendance_service.dart';
 import 'package:linkschool/modules/services/admin/e_learning/assignment_service.dart';
 import 'package:linkschool/modules/services/admin/e_learning/material_service.dart';
 import 'package:linkschool/modules/services/admin/e_learning/quiz_service.dart';
+import 'package:linkschool/modules/services/admin/e_learning/syllabus_content_service.dart';
 import 'package:linkschool/modules/services/admin/e_learning/syllabus_service.dart';
 import 'package:linkschool/modules/services/admin/e_learning/topic_service.dart';
 import 'package:linkschool/modules/services/api/api_service.dart';
@@ -39,6 +41,15 @@ void setupServiceLocator() {
     apiKey: dotenv.env['API_KEY'],
   ));
 
+  // Register SyllabusContentService with ApiService dependency
+  locator.registerLazySingleton<SyllabusContentService>(
+    () => SyllabusContentService(locator<ApiService>()),
+  );
+
+  // Register SyllabusContentProvider with SyllabusContentService dependency
+  locator.registerLazySingleton<SyllabusContentProvider>(
+    () => SyllabusContentProvider(locator<SyllabusContentService>()),
+  );
 // Register QuizService with ApiService dependency
   locator.registerLazySingleton<QuizService>(
     () => QuizService(locator<ApiService>())

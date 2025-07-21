@@ -27,6 +27,10 @@ class AdminAssignmentScreen extends StatefulWidget {
   final String? levelId;
   final int? syllabusId;
   final syllabusClasses;
+
+    final bool editMode;
+  final Assignment? assignmentToEdit;
+
   const AdminAssignmentScreen({
     super.key,
     required this.onSave,
@@ -36,6 +40,8 @@ class AdminAssignmentScreen extends StatefulWidget {
     this.levelId, 
     this.syllabusId, 
     this.syllabusClasses,
+    this.editMode = false,
+    this.assignmentToEdit,
   });
 
   @override
@@ -47,7 +53,7 @@ class _AdminAssignmentScreenState extends State<AdminAssignmentScreen> {
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _descriptionController = TextEditingController();
   final TextEditingController _marksController = TextEditingController();
-  final List<AttachmentItem> _attachments = [];
+   List<AttachmentItem> _attachments = [];
   DateTime _startDate = DateTime.now();
   DateTime _endDate = DateTime.now().add(const Duration(days: 1));
     String _selectedTopic = 'No Topic';
@@ -59,11 +65,27 @@ class _AdminAssignmentScreenState extends State<AdminAssignmentScreen> {
   String? academicYear;
   int? academicTerm;
 
+
+
   @override
   void initState() {
     super.initState();
+         _populateFormForEdit();
     _loadUserData();
   }
+
+ void _populateFormForEdit() {
+  if (widget.editMode && widget.assignmentToEdit != null) {
+    final assignment = widget.assignmentToEdit!;
+    _titleController.text = assignment.title;
+    _descriptionController.text = assignment.description;
+    _marksController.text = assignment.marks;
+    _endDate = assignment.dueDate;
+    _selectedTopic = assignment.topic;
+     _attachments = assignment.attachments;
+     _selectedClass = assignment.selectedClass;
+  }
+}
 
   Future<void> _loadUserData() async {
     try {
@@ -801,7 +823,12 @@ class _AdminAssignmentScreenState extends State<AdminAssignmentScreen> {
         _selectedTopicId = result['topicId']; // Store topic ID
 
       });
-    }
+    }else {
+      setState(() {
+        _selectedTopic = 'No Topic'; // Reset if no topic is selected
+        _selectedTopicId = null; // Reset topic ID
+      });
+    } 
   }
 
   void _saveAssignment() async {
@@ -817,10 +844,7 @@ class _AdminAssignmentScreenState extends State<AdminAssignmentScreen> {
       CustomToaster.toastError(context, 'Error', 'Please select at least one class');
       return;
     }
-    if(_selectedTopic == 'No Topic') {
-      CustomToaster.toastError(context, 'Error', 'Please select a topic');
-      return;
-    }
+  
     if (_startDate == null || _endDate == null) {
       CustomToaster.toastError(context, 'Error', 'Please select both start and end dates');
       return;
@@ -907,6 +931,8 @@ class _AdminAssignmentScreenState extends State<AdminAssignmentScreen> {
 
         print(const JsonEncoder.withIndent('  ').convert(assignment));
     // debugPrint('Assignment: ${jsonEncode(assignment)}');
+
+      
     
       await assignmentProvider.addAssignment(assignment);
        
@@ -971,7 +997,8 @@ class Assignment {
     required this.dueDate,
     required this.topic,
     required this.marks,
-    DateTime? createdAt,
+    DateTime? createdAt, 
+    int? id,
   }) : createdAt = createdAt ?? DateTime.now();
 }
 
