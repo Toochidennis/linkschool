@@ -89,6 +89,3 @@ Future<ContentResponse> fetchContent(int syllabusId) async {
     throw Exception('Failed to load content');
   }
 }}
-  
-  
-

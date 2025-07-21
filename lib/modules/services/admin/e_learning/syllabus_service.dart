@@ -164,6 +164,4 @@ class SyllabusService {
       print('Syllabus deleted: ${response.message}');
     }
   }
-
-  
 }
