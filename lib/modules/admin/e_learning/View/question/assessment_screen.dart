@@ -1,4 +1,3 @@
-
 // ignore_for_file: deprecated_member_use
 import 'dart:async';
 
@@ -14,21 +13,28 @@ import 'package:linkschool/modules/common/buttons/custom_outline_button..dart';
 import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/model/e-learning/question_model.dart';
+import 'package:linkschool/modules/model/e-learning/quiz_model.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 
 class AssessmentScreen extends StatefulWidget {
   final Duration? timer;
-  const AssessmentScreen({super.key, this.timer});
-  
+  final Duration? duration;
+  final List<Map<String, dynamic>>? questions;
+  final correctAnswer;
+  const AssessmentScreen({
+    super.key,
+    this.timer,
+    this.questions,
+    this.duration,
+    this.correctAnswer,
+  });
 
   @override
   _AssessmentScreenState createState() => _AssessmentScreenState();
 }
 
 class _AssessmentScreenState extends State<AssessmentScreen> {
-
-
   bool _isTimerStopped = false;
   int _currentQuestionIndex = 0;
   late int _totalQuestions;
@@ -37,68 +43,78 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
   bool _isAnswered = false;
   bool _isCorrect = false;
   late double opacity;
-  
 
   List<QuizQuestion> questions = [];
+
+  // List to keep track of user answers
+  List<dynamic> userAnswers = [];
 
   @override
   void initState() {
     super.initState();
-  
     _loadQuestions();
-   
   }
 
   String _formatTime(int seconds) {
-  int hours = seconds ~/ 3600;
-  int minutes = (seconds % 3600) ~/ 60;
-  int remainingSeconds = seconds % 60;
-  return '${hours.toString().padLeft(2, '0')}:${minutes.toString().padLeft(2, '0')}:${remainingSeconds.toString().padLeft(2, '0')}';
-}
-
-   
-
-//  String _formatTime(int seconds) {
-//     int minutes = seconds ~/ 60;
-//     int remainingSeconds = seconds % 60;
-//     return '${minutes.toString().padLeft(2, '0')}:${remainingSeconds.toString().padLeft(2, '0')}';
-//   }
+    int hours = seconds ~/ 3600;
+    int minutes = (seconds % 3600) ~/ 60;
+    int remainingSeconds = seconds % 60;
+    return '${hours.toString().padLeft(2, '0')}:${minutes.toString().padLeft(2, '0')}:${remainingSeconds.toString().padLeft(2, '0')}';
+  }
 
   Future<void> _loadQuestions() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final String? questionsJson = prefs.getString('created_questions');
-      if (questionsJson != null) {
-        final List<dynamic> questionsData = json.decode(questionsJson);
+      if (widget.questions != null && widget.questions!.isNotEmpty) {
         setState(() {
-          questions = questionsData.map((q) {
+          questions = widget.questions!.map((q) {
             final String topic = q['topic'] ?? "General Knowledge";
-            final String questionText = q['title']?.isNotEmpty == true ? q['title'] : '';
-            final String? imagePath = q['file']?.isNotEmpty == true ? q['file'][0]['file'] : null;
-            final List<dynamic> correctAnswers = q['correct'] ?? [];
-            if (q['type'] == 'multiple_choice') {
+            final String questionText = q['question_text'] ?? '';
+            final List<dynamic> questionFiles =
+                q['question_files'] as List<dynamic>? ?? [];
+            final String? imagePath = questionFiles.isNotEmpty
+                ? questionFiles[0]['file'] as String?
+                : null;
+            final Map<String, dynamic>? correct =
+                q['correct'] as Map<String, dynamic>?;
+
+            if (q['question_type'] == 'multiple_choice') {
+              final List<dynamic> options =
+                  q['options'] as List<dynamic>? ?? [];
               return TextQuestion(
                 topic: topic,
                 questionText: questionText,
                 imageUrl: imagePath,
-                options: (q['options'] as List).map((opt) => ({
-                      'text': opt['text'],
-                      'imageUrl': opt['options_file']?['base64'],
-                    })).toList(),
-                correctAnswers: correctAnswers.map((e) => e['text'] as String).toList(),
+                options: options.map((opt) {
+                  final List<dynamic> optionFiles =
+                      opt['option_files'] as List<dynamic>? ?? [];
+                  return {
+                    'text': opt['text'] as String? ?? '',
+                    'imageUrl': optionFiles.isNotEmpty
+                        ? optionFiles[0]['file'] as String?
+                        : null,
+                  };
+                }).toList(),
+                correctAnswers: correct != null && correct['text'] != null
+                    ? [correct['text'] as String]
+                    : [],
               );
             } else {
+              // Handles 'short_answer'
               return TypedAnswerQuestion(
                 topic: topic,
                 questionText: questionText,
                 imageUrl: imagePath,
-                correctAnswer: correctAnswers.isNotEmpty ? correctAnswers[0]['text'] : null,
+                correctAnswer:
+                    correct != null ? correct['text'] as String? : null,
               );
             }
           }).toList();
           _totalQuestions = questions.length;
+          // Initialize userAnswers with nulls for each question
+          userAnswers = List<dynamic>.filled(_totalQuestions, null, growable: false);
         });
       } else {
+        // Fallback for when no questions are passed
         setState(() {
           questions = [
             TextQuestion(
@@ -132,6 +148,7 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
             ),
           ];
           _totalQuestions = questions.length;
+          userAnswers = List<dynamic>.filled(_totalQuestions, null, growable: false);
         });
       }
     } catch (e) {
@@ -189,32 +206,13 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
       children: [
         Row(
           children: [
-            
             const SizedBox(width: 8),
-           TimerWidget(
-          initialSeconds: widget.timer?.inSeconds ?? 3600, // Default to 1 hour
-          onTimeUp: _submitQuiz,
-        ),
+            TimerWidget(
+              initialSeconds: widget.duration?.inSeconds ?? 3600, // Default to 1 hour
+              onTimeUp: _submitQuiz,
+            ),
           ],
         ),
-        // TextButton(
-        //  onPressed: _isTimerStopped ? null : () {
-        //     _showStopTimerDialog();},
-        //   child: Container(
-        //     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        //     decoration: BoxDecoration(
-        //       color: _isTimerStopped ? Colors.grey : Colors.red,
-        //       borderRadius: BorderRadius.circular(4),
-        //     ),
-        //     child: const Text(
-        //       'Stop Timer',
-        //       style: TextStyle(
-        //         color: Colors.white,
-        //         fontWeight: FontWeight.bold,
-        //       ),
-        //     ),
-        //   ),
-        // ),
       ],
     );
   }
@@ -229,12 +227,10 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
           Row(
             children: [
               CustomOutlineButton(
-                onPressed: (){
-                   Navigator.of(context).pop();
-                
+                onPressed: () {
+                  Navigator.of(context).pop();
                   _submitQuiz();
-                 
-                } ,
+                },
                 text: 'End and Submit',
                 borderColor: AppColors.eLearningBtnColor3,
                 textColor: AppColors.eLearningBtnColor3,
@@ -308,13 +304,12 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-  
           const SizedBox(height: 8),
           if (question.imageUrl != null)
             Image.memory(
               base64Decode(question.imageUrl ?? ''),
               height: 100,
-              width:double.infinity,
+              width: double.infinity,
               fit: BoxFit.cover,
               errorBuilder: (context, error, stackTrace) => Image.asset(
                 'assets/images/e-learning/placeholder.png',
@@ -364,6 +359,8 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
                 _isAnswered = true;
                 _isCorrect = question is TextQuestion &&
                     (question as TextQuestion).correctAnswers.contains(value);
+                // Save user answer for this question
+                userAnswers[_currentQuestionIndex] = value;
               });
             },
             tileColor: _getOptionColor(option['text']),
@@ -542,10 +539,16 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
                       width: double.infinity,
                       height: 50,
                       onPressed: () {
+                        print("SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS $userAnswers");
+                        print("cccccccccccccccccccccc${widget.correctAnswer}");
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => PreviewQuizAssessmentScreen(),
+                            builder: (context) => PreviewQuizAssessmentScreen(
+                              userAnswer:userAnswers,
+                              question: questions,
+                              correctAnswers:widget.correctAnswer
+                            ),
                           ),
                         );
                       },
@@ -619,6 +622,3 @@ class TypedAnswerQuestion extends QuizQuestion {
     this.correctAnswer,
   });
 }
-
-
-

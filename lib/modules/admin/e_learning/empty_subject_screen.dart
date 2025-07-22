@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:hive/hive.dart';
 import 'package:intl/intl.dart';
+import 'package:linkschool/modules/admin/e_learning/View/quiz/quiz_screen.dart';
 import 'package:linkschool/modules/admin/e_learning/add_material_screen.dart'
     hide AttachmentItem;
 import 'package:linkschool/modules/admin/e_learning/admin_assignment_screen.dart';
@@ -15,6 +16,11 @@ import 'package:linkschool/modules/common/custom_toaster.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/model/e-learning/question_model.dart';
 import 'package:linkschool/modules/model/e-learning/syllabus_content_model.dart';
+import 'package:linkschool/modules/providers/admin/e_learning/assignment_provider.dart';
+import 'package:linkschool/modules/providers/admin/e_learning/material_provider.dart';
+import 'package:linkschool/modules/providers/admin/e_learning/quiz_provider.dart';
+
+import 'package:linkschool/modules/providers/admin/e_learning/topic_provider.dart';
 
 import 'package:linkschool/modules/staff/e_learning/view/quiz_answer_screen.dart';
 import 'package:linkschool/modules/staff/e_learning/view/staff_assignment_details_screen.dart';
@@ -23,6 +29,8 @@ import 'package:provider/provider.dart';
 import 'package:linkschool/modules/model/e-learning/material_model.dart'
     as custom;
 import 'package:linkschool/modules/services/api/service_locator.dart';
+import '../../common/widgets/portal/attachmentItem.dart';
+import '../../model/explore/home/exam_model.dart';
 import '../../providers/admin/e_learning/syllabus_content_provider.dart';
 
 class EmptySubjectScreen extends StatefulWidget {
@@ -229,7 +237,7 @@ class _EmptySubjectScreenState extends State<EmptySubjectScreen>
                   levelId: widget.levelId,
                   courseName: widget.courseName,
                   syllabusClasses: widget.syllabusClasses,
-                  editMode: true,
+                  editMode: false,
                   onSave: (assignment) {
                     _loadSyllabusContents();
                   },
@@ -669,8 +677,7 @@ class _EmptySubjectScreenState extends State<EmptySubjectScreen>
                     _handleEditItem(item);
                     break;
                   case 'delete':
-                    // Handle delete functionality
-                    //  _showDeleteConfirmation(item);
+                    _showDeleteConfirmationDialog(item);
                     break;
                 }
               },
@@ -758,8 +765,7 @@ class _EmptySubjectScreenState extends State<EmptySubjectScreen>
                     _handleEditItem(item);
                     break;
                   case 'delete':
-                    // Handle delete functionality
-                    // _showDeleteConfirmation(item);
+                    _showDeleteConfirmationDialog(item);
                     break;
                 }
               },
@@ -874,7 +880,9 @@ class _EmptySubjectScreenState extends State<EmptySubjectScreen>
                       ? DateTime.parse(item.endDate!)
                       : DateTime.now(),
                       
-                  duration: const Duration(minutes: 30), // Default duration
+                  duration: item.duration != null
+                    ? Duration(minutes: int.tryParse(item.duration.toString()) ?? 0)
+                    : Duration.zero, 
                   marks: item.grade ?? '0',
                   topic: item.topic ?? 'No Topic',
                 ),
@@ -895,6 +903,7 @@ class _EmptySubjectScreenState extends State<EmptySubjectScreen>
       courseId: widget.courseId,
       levelId: widget.levelId,
       classId: widget.classId,
+      id: item.id,
       syllabusId: widget.syllabusId,
       courseName: widget.courseName,
       editMode: true,
@@ -958,6 +967,88 @@ class _EmptySubjectScreenState extends State<EmptySubjectScreen>
     }
   }
 
+  void _showDeleteConfirmationDialog(SyllabusContentItem item) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Delete Confirmation'),
+          content: Text(
+              'Are you sure you want to delete "${item.title}"? This action cannot be undone.'),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('Cancel'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+            TextButton(
+              child: const Text(
+                'Delete',
+                style: TextStyle(color: Colors.red),
+              ),
+              onPressed: () {
+                Navigator.of(context).pop();
+                _handleDeleteItem(item);
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _handleDeleteItem(SyllabusContentItem item) async {
+    if (item.id == null) {
+      CustomToaster.toastError(context, 'Error', 'Item ID is missing.');
+      return;
+    }
+
+    try {
+      String? error;
+
+      switch (item.type.toLowerCase()) {
+        case 'assignment':
+          final provider = locator<AssignmentProvider>();
+          await provider.DeleteAssignment(item.id!);
+          error = provider.error;
+          break;
+
+        case 'material':
+          final provider = locator<MaterialProvider>();
+           await provider.deleteMaterial(item.id!);
+          error = provider.error;
+          break;
+
+          case "quiz":
+          case "question":
+          final provider =locator<QuizProvider>();
+          await provider.DeleteQuiz(item.id!);
+
+          case "topic":
+
+
+        // Other cases like 'quiz' and 'topic' would follow the same pattern
+        default:
+          CustomToaster.toastError(
+              context, 'Error', 'Delete not implemented for this item type.');
+          return;
+      }
+
+      // After the switch, check for success and refresh
+      if (error == null) {
+        CustomToaster.toastSuccess(
+            context, 'Success', '"${item.title}" has been deleted.');
+        _loadSyllabusContents(); // This is where the page is refreshed
+      } else {
+        CustomToaster.toastError(context, 'Error', error);
+      }
+    } catch (e) {
+      print('Error during deletion: $e');
+      CustomToaster.toastError(context, 'Error', 'An unexpected error occurred.');
+    }
+  }
+
   void _navigateToDetails(SyllabusContentItem item) {
     final attachments = item.contentFiles.map((file) {
       return AttachmentItem(
@@ -996,16 +1087,63 @@ class _EmptySubjectScreenState extends State<EmptySubjectScreen>
         break;
       case 'quiz':
       case 'question':
+          
+           // Here is a safer rewrite:
+
+          final questions =item.questions;
+  final List<Map<String, dynamic>> correctAnswers = [];
+  
+  if (item.questions != null) {
+    for (var q in item.questions!) {
+      correctAnswers.add({
+        'correct_answer': q['correct'],
+      });
+    }
+  }
+  print(correctAnswers);
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => QuizAnswersScreen(
-              quizTitle: item.title,
-            ),
-          ),
-        );
-        break;
-    }
+            builder: (context) => QuizScreen(
+              questions: item.questions,
+              correctAnswers: correctAnswers,
+              question: Question(
+                title: item.title,
+                description: item.description,
+                selectedClass: item.classes.map((c) => c.name).join(', '),
+                startDate: item.startDate != null ? DateTime.parse(item.startDate!) : DateTime.now(),
+                endDate: item.endDate != null ? DateTime.parse(item.endDate!) : DateTime.now(),
+                topic: item.topic ?? 'No Topic',
+                duration: item.duration != null
+                    ? Duration(minutes: int.tryParse(item.duration.toString()) ?? 0)
+                    : Duration.zero,
+                marks: item.grade?.toString() ?? '0',
+              ),
+            )));
+
+            break;
+            case "material": 
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => StaffMaterialDetailsScreen(
+                  material: custom.Material(
+                    title: item.title,
+                    description: item.description,
+                    selectedClass: item.classes.map((c) => c.name).join(', '),
+                    startDate: item.startDate != null ? DateTime.parse(item.startDate!) : DateTime.now(),
+                    endDate: item.endDate != null ? DateTime.parse(item.endDate!) : DateTime.now(),
+                    topic: item.topic ?? 'No Topic',
+                    attachments: attachments,
+                    duration: item.duration != null
+                        ? Duration(minutes: int.tryParse(item.duration.toString()) ?? 0)
+                        : Duration.zero,
+                    marks: item.grade?.toString() ?? '0',
+                  ),
+                ),
+              ),
+            );
+    };
   }
 
   String _formatDate(DateTime date) {
@@ -1046,7 +1184,7 @@ class _EmptySubjectScreenState extends State<EmptySubjectScreen>
       case 'question':
         return 'Quiz';
       case 'material':
-        return 'Material';
+        return 'Materia';
       default:
         return 'Content';
     }
@@ -1070,7 +1208,8 @@ class _EmptySubjectScreenState extends State<EmptySubjectScreen>
 
 // Import the necessary models for navigation
 // import 'package:linkschool/modules/model/e-learning/question_model.dart';
-// import 'package:linkschool/modules/model/e-learning/material_model.dart' as custom;
+// import 'package:linkschool/modules/model/e-learning/material_model.dart'
+//     as custom;
 
 // import '../../providers/admin/e_learning/syllabus_content_provider.dart';
 

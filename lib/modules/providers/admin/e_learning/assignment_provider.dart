@@ -20,4 +20,32 @@ class AssignmentProvider extends ChangeNotifier {
     isLoading = false;
     notifyListeners();
   }
+
+  Future<void> UpDateAssignment(Map<String, dynamic> assignment,int id) async {
+    isLoading = true;
+    error = null; 
+    notifyListeners();
+    try {
+      await _assignmentService.UpDateAssignment(assignment, id);
+    } catch (e) {
+      print('Error adding assignment: $e');
+      rethrow;
+    }
+    isLoading = false;
+    notifyListeners();
+  }
+  
+  Future<void> DeleteAssignment(int id) async {
+    isLoading = true;
+    error = null; 
+    notifyListeners();
+    try {
+      await _assignmentService.DeleteAssignment(id);
+    } catch (e) {
+      print('Error adding assignment: $e');
+      rethrow;
+    }
+    isLoading = false;
+    notifyListeners();
+  }
 }

@@ -8,7 +8,9 @@ import 'package:linkschool/modules/admin/e_learning/admin_assignment_screen.dart
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
-import 'package:linkschool/modules/common/widgets/portal/student/custom_input_field.dart'; // Import the custom input
+import 'package:linkschool/modules/common/widgets/portal/student/custom_input_field.dart';
+
+import '../../common/widgets/portal/attachmentItem.dart'; // Import the custom input
 
 class Comment {
   final String name;

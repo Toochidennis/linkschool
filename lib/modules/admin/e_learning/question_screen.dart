@@ -261,7 +261,7 @@ _selectedTopicId = widget.question!.topicId;
           'start_date': _startDate.toIso8601String(),
           'end_date': _endDate.toIso8601String(),
           'topic': _selectedTopic,
-          "topic_id": _selectedTopicId,
+           "topic_id": _selectedTopicId  ?? 0,
           'duration': _selectedDuration.inSeconds, // or .inMinutes
           'marks':int.tryParse(_marks.replaceAll(' marks', '')) != null,
           'course_id': courseId,

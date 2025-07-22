@@ -19,6 +19,8 @@ import 'package:linkschool/modules/common/widgets/portal/e_learning/select_class
 import 'package:linkschool/modules/providers/admin/e_learning/assignment_provider.dart';
 import 'package:provider/provider.dart';
 
+import '../../common/widgets/portal/attachmentItem.dart' show AttachmentItem;
+
 class AdminAssignmentScreen extends StatefulWidget {
   final Function(Map<String, dynamic>) onSave;
   final String? classId;
@@ -546,14 +548,14 @@ class _AdminAssignmentScreenState extends State<AdminAssignmentScreen> {
       child: Row(
         children: [
           SvgPicture.asset(
-            attachment.iconPath,
+            attachment.iconPath!,
             width: 20,
             height: 20,
           ),
           const SizedBox(width: 8.0),
           Expanded(
             child: Text(
-              attachment.fileName,
+              attachment.fileName!,
               style: AppTextStyles.normal400(fontSize: 14.0, color: AppColors.primaryLight),
               overflow: TextOverflow.ellipsis,
             ),
@@ -849,10 +851,10 @@ class _AdminAssignmentScreenState extends State<AdminAssignmentScreen> {
       CustomToaster.toastError(context, 'Error', 'Please select both start and end dates');
       return;
     }
-    if(_endDate.isBefore(_startDate)) {
-      CustomToaster.toastError(context, 'Error', 'End date cannot be before start date');
-      return;
-    }
+    // if(_endDate.isBefore(_startDate)) {
+    //   CustomToaster.toastError(context, 'Error', 'End date cannot be before start date');
+    //   return;
+    // }
     if(_marksController.text.isEmpty) {
         CustomToaster.toastError(context, 'Error', 'Please enter marks');
       return;
@@ -893,50 +895,49 @@ class _AdminAssignmentScreenState extends State<AdminAssignmentScreen> {
         });
       }
 
-      final assignment = {
-        
+      final Map<String, dynamic> assignmentPayload = {
         'title': _titleController.text,
         'description': _descriptionController.text,
         'topic': _selectedTopic,
-        'topic_id': _selectedTopicId!, // Use 0 if no topic is selected
-        "syllabus_id":widget.syllabusId!,
-         'creator_id': creatorId,
+        'topic_id': _selectedTopicId ?? 0,
+        "syllabus_id": widget.syllabusId!,
+        'creator_id': creatorId,
         'creator_name': creatorName,
         'start_date': _formatDate(_startDate),
         'end_date': _formatDate(_endDate),
-         'grade': _marks.replaceAll(RegExp(r'[^0-9]'), ''),
-         'classes': classIdList.isNotEmpty
+        'grade': _marks.replaceAll(RegExp(r'[^0-9]'), ''),
+        'classes': classIdList.isNotEmpty
             ? classIdList
             : [
                 {'id': '', 'name': ''},
               ],
-       
-        'files': _attachments.map((attachment) => {
-  'old_file_name': attachment.fileName,
-  'type': _getAttachmentType(attachment.iconPath, attachment.fileName),
-  'file_name': attachment.fileName,
-  'file': attachment.fileContent,
-}).toList(),
-       
-       // 'Level_id': widget.levelId,
-       // 'course_id': widget.courseId,
-        //'course_name': widget.courseName,
-        
-       
-       // 'year': academicYear,
-        //'term': academicTerm?.toInt(),
+        'files': _attachments.map((attachment) {
+          return {
+            'old_file_name': attachment.fileName,
+            'type': _getAttachmentType(attachment.iconPath!, attachment.fileName!),
+            'file_name': attachment.fileName,
+            'file': attachment.fileContent,
+          };
+        }).toList(),
       };
 
-      print('Complete Assignment Data:');
+      if (widget.editMode && widget.assignmentToEdit != null) {
+        final id =  widget.assignmentToEdit!.id;
+        print('Updating Assignment Data:');
+        print(const JsonEncoder.withIndent('  ').convert(assignmentPayload));
+        
 
-        print(const JsonEncoder.withIndent('  ').convert(assignment));
-    // debugPrint('Assignment: ${jsonEncode(assignment)}');
+        await assignmentProvider.UpDateAssignment(assignmentPayload ,id!);
 
-      
-    
-      await assignmentProvider.addAssignment(assignment);
+      } else {
+        // In CREATE mode
+        print('Creating Assignment Data:');
+        print(const JsonEncoder.withIndent('  ').convert(assignmentPayload));
+        
+        await assignmentProvider.addAssignment(assignmentPayload);
+      }
        
-      widget.onSave(assignment);
+      widget.onSave(assignmentPayload);
       Navigator.of(context).pop();
     } catch (e) {
       print('Error saving assignment: $e');
@@ -968,18 +969,10 @@ class _AdminAssignmentScreenState extends State<AdminAssignmentScreen> {
   }
 }
 
-class AttachmentItem {
-  final String fileName;      // Display name or URL
-  final String iconPath;
-  final String fileContent;   // base64 or URL
-  AttachmentItem({
-    required this.fileName,
-    required this.iconPath,
-    required this.fileContent,
-  });
-}
+
 
 class Assignment {
+  final int? id;
   final String title;
   final String description;
   final String selectedClass;
@@ -990,6 +983,7 @@ class Assignment {
   final DateTime createdAt;
 
   Assignment({
+    this.id,
     required this.title,
     required this.description,
     required this.selectedClass,
@@ -997,8 +991,7 @@ class Assignment {
     required this.dueDate,
     required this.topic,
     required this.marks,
-    DateTime? createdAt, 
-    int? id,
+    DateTime? createdAt,
   }) : createdAt = createdAt ?? DateTime.now();
 }
 

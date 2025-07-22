@@ -5,6 +5,8 @@ import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/model/e-learning/comment_model.dart';
 
+import '../../../common/widgets/portal/attachmentItem.dart' show AttachmentItem;
+
 class StaffAssignmentDetailsScreen extends StatefulWidget {
   final Assignment assignment ;
   const StaffAssignmentDetailsScreen(
@@ -301,12 +303,12 @@ class _StaffAssignmentDetailsScreenState
 
  Widget _buildAttachmentItem(AttachmentItem attachment) {
   // Detect image by file extension or type
-  final isImage = attachment.fileName.toLowerCase().endsWith('.jpg') ||
-                  attachment.fileName.toLowerCase().endsWith('.jpeg') ||
-                  attachment.fileName.toLowerCase().endsWith('.png') ||
-                  attachment.fileName.toLowerCase().endsWith('.gif') ||
-                  attachment.iconPath.contains('material.svg') || // your mapping for images
-                  attachment.iconPath.contains('photo');
+  final isImage = attachment.fileName!.toLowerCase().endsWith('.jpg') ||
+                  attachment.fileName!.toLowerCase().endsWith('.jpeg') ||
+                  attachment.fileName!.toLowerCase().endsWith('.png') ||
+                  attachment.fileName!.toLowerCase().endsWith('.gif') ||
+                  attachment.iconPath!.contains('material.svg') || // your mapping for images
+                  attachment.iconPath!.contains('photo');
 
   if (isImage) {
     // Build the full URL if needed
@@ -337,10 +339,10 @@ class _StaffAssignmentDetailsScreenState
         children: [
           Expanded(
             flex: 2,
-            child: Image.asset(
-              'assets/images/default_image.png', // Your default image asset
+            child: Image.network(
+              networkImage,
               fit: BoxFit.cover,
-              width: double.infinity,
+              height: 100,
             ),
           ),
           Expanded(
@@ -353,7 +355,7 @@ class _StaffAssignmentDetailsScreenState
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      attachment.fileName,
+                      attachment.fileName!,
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),

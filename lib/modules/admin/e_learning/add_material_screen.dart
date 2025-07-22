@@ -19,6 +19,8 @@ import 'package:linkschool/modules/model/e-learning/material_model.dart' as cust
 import 'package:linkschool/modules/providers/admin/e_learning/material_provider.dart';
 import 'package:provider/provider.dart';
 
+import '../../common/widgets/portal/attachmentItem.dart' show AttachmentItem;
+
 class AddMaterialScreen extends StatefulWidget {
   final Function(Map<String, dynamic>) onSave;
   final String? classId;
@@ -29,6 +31,7 @@ class AddMaterialScreen extends StatefulWidget {
  final List<Map<String, dynamic>>? syllabusClasses;
  final bool editMode;
 final custom.Material? materialToEdit;
+final int? id;
 
   const AddMaterialScreen({
     super.key,
@@ -40,7 +43,8 @@ final custom.Material? materialToEdit;
      this.syllabusId, 
      this.syllabusClasses,
     this.editMode = false,
-    this.materialToEdit,
+    this.materialToEdit, 
+    this.id,
   });
 
   @override
@@ -53,7 +57,7 @@ class _AddMaterialScreenState extends State<AddMaterialScreen> {
   String _selectedClass = 'Select classes';
   String _selectedTopic = 'No Topic';
   int? _selectedTopicId;
-  final List<AttachmentItem> _attachments = [];
+  List<AttachmentItem> _attachments = [];
   late double opacity;
   int? creatorId;
   String? creatorName;
@@ -64,6 +68,7 @@ class _AddMaterialScreenState extends State<AddMaterialScreen> {
   void initState() {
     super.initState();
     _loadUserData();
+    _populateFormForEdit();
   }
 
 
@@ -72,13 +77,16 @@ class _AddMaterialScreenState extends State<AddMaterialScreen> {
     final material = widget.materialToEdit!;
     _titleController.text = material.title;
     _descriptionController.text = material.description;
+    _selectedClass = material.selectedClass;
+    _attachments = List<AttachmentItem>.from(material.attachments ?? []);
+
     // _marksController.text = material.marks;
     // _endDate = material.endDate;
     // _startDate = material.startDate;
-    // _selectedDuration =material.duration;
+    // _selectedDuration = material.duration;
     _selectedTopic = material.topic;
-     //_attachments = material.;
-     _selectedClass = material.selectedClass;
+  
+    
   }
 }
 
@@ -275,7 +283,7 @@ class _AddMaterialScreenState extends State<AddMaterialScreen> {
                   shape: BoxShape.circle,
                 ),
                 child: SvgPicture.asset(
-                  iconPath!,
+                  iconPath ?? 'assets/icons/default.svg',
                   width: 32.0,
                   height: 32.0,
                 ),
@@ -377,36 +385,36 @@ class _AddMaterialScreenState extends State<AddMaterialScreen> {
   }
 
   Widget _buildAttachmentItem(AttachmentItem attachment, {bool isFirst = false}) {
-    return Container(
-      margin: EdgeInsets.only(bottom: isFirst ? 0 : 8.0),
-      child: Row(
-        children: [
-          SvgPicture.asset(
-            attachment.iconPath,
-            width: 20,
-            height: 20,
+  return Container(
+    margin: EdgeInsets.only(bottom: isFirst ? 0 : 8.0),
+    child: Row(
+      children: [
+        SvgPicture.asset(
+          attachment.iconPath ?? '',
+          width: 20,
+          height: 20,
+        ),
+        const SizedBox(width: 8.0),
+        Expanded(
+          child: Text(
+            attachment.fileName ?? '', // Use fileName instead of content
+            style: AppTextStyles.normal400(
+                fontSize: 14.0, color: AppColors.primaryLight),
+            overflow: TextOverflow.ellipsis,
           ),
-          const SizedBox(width: 8.0),
-          Expanded(
-            child: Text(
-              attachment.content,
-              style: AppTextStyles.normal400(
-                  fontSize: 14.0, color: AppColors.primaryLight),
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-          IconButton(
-            icon: const Icon(Icons.close, size: 20, color: Colors.red),
-            onPressed: () {
-              setState(() {
-                _attachments.remove(attachment);
-              });
-            },
-          ),
-        ],
-      ),
-    );
-  }
+        ),
+        IconButton(
+          icon: const Icon(Icons.close, size: 20, color: Colors.red),
+          onPressed: () {
+            setState(() {
+              _attachments.remove(attachment);
+            });
+          },
+        ),
+      ],
+    ),
+  );
+}
 
   Widget _buildAddMoreButton() {
     return GestureDetector(
@@ -666,14 +674,29 @@ void _showInsertLinkDialog() {
   }
 
   void _addAttachment(String content, String iconPath, [String? base64Content]) {
-    setState(() {
-      _attachments.add(AttachmentItem(
-        content: content,
-        iconPath: iconPath,
-        base64Content: base64Content,
-      ));
-    });
+  String fileName;
+  if (iconPath.contains('link3')) {
+    // For URLs, extract a meaningful file name
+    try {
+      final uri = Uri.parse(content);
+      fileName = uri.pathSegments.isNotEmpty ? uri.pathSegments.last : 'Link';
+    } catch (e) {
+      fileName = 'Link';
+    }
+  } else {
+    // For files, photos, and videos, use the content as the file name
+    fileName = content;
   }
+
+  setState(() {
+    _attachments.add(AttachmentItem(
+      content: content,
+      iconPath: iconPath,
+      base64Content: base64Content,
+      fileName: fileName,
+    ));
+  });
+}
 
  void _selectTopic() async {
     final result = await Navigator.push(
@@ -711,22 +734,7 @@ void _addMaterial() async {
     );
     return;
   }
-  if (_selectedTopic == 'No Topic' || _selectedTopicId == null) {
-    CustomToaster.toastError(
-      context,
-      'Error',
-      'Please select a topic.',
-    );
-    return;
-  }
-  if (_selectedTopic == 'No Topic' || _selectedTopicId == null) {
-    CustomToaster.toastError(
-      context,
-      'Error',
-      'Please select a topic.',
-    );
-    return;
-  }
+ 
   if (_selectedClass == 'Select classes' || _selectedClass.trim().isEmpty) {
     CustomToaster.toastError(
       context,
@@ -772,12 +780,13 @@ void _addMaterial() async {
         'name': (classData['class_name']?.toString() ?? _selectedClass),
       });
     }
+    
 
     final material = {
       'title': _titleController.text,
       'description': _descriptionController.text,
-      'topic': _selectedTopic,
-      'topic_id': _selectedTopicId,
+      'topic': _selectedTopic ,
+      'topic_id': _selectedTopicId ?? 0,
       'syllabus_id': widget.syllabusId,
       'creator_id': creatorId,
       'creator_name': creatorName,
@@ -787,19 +796,19 @@ void _addMaterial() async {
               {'id': '', 'name': ''},
             ],
       'files': _attachments.map((attachment) {
-        final attachmentType = _getAttachmentType(attachment.iconPath, attachment.content);
+        final attachmentType = _getAttachmentType(attachment.iconPath ?? "", attachment.content ?? "");
         String fileName;
         
         if (attachmentType == 'url') {
    
-          fileName =attachment.content;
+          fileName =attachment.content ?? '';
         } else {
-          fileName = attachment.content;
-        }
+          fileName = attachment.fileContent ?? "";
+  }
         
         return {
           'file_name': fileName,
-          'old_file_name': '',
+          'old_file_name':  fileName,
           'type': attachmentType,
           'file': attachmentType == 'url'
               ? attachment.content
@@ -808,9 +817,26 @@ void _addMaterial() async {
       }).toList(),
        
     };
+         
 
-    await materialProvider.addMaterial(material);
-    print('Final Payload to API:\n${jsonEncode(material)}');
+      if (widget.editMode && widget.materialToEdit != null) {
+        final id = widget.id!;
+        print('Updating Assignment Data:');
+
+        
+
+        await materialProvider.UpDateMaterial(material,id);
+
+      } else {
+        // In CREATE mode
+        print('Creating material Data:');
+        print(const JsonEncoder.withIndent('  ').convert(material));
+       
+        await materialProvider.addMaterial(material);
+      }
+
+    // await materialProvider.addMaterial(material);
+    // print('Final Payload to API:\n${jsonEncode(material)}');
     widget.onSave(material);
     Navigator.of(context).pop();
   } catch (e) {
@@ -844,14 +870,3 @@ void _addMaterial() async {
   }
 }
 
-class AttachmentItem {
-  final String content;
-  final String iconPath;
-  final String? base64Content;
-
-  AttachmentItem({
-    required this.content,
-    required this.iconPath,
-    this.base64Content,
-  });
-}
