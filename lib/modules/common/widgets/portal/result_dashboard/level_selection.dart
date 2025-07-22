@@ -13,7 +13,8 @@ class LevelSelection extends StatefulWidget {
   final List<String>? subjects; 
   final String? courseId; // Course ID for course selection
   final String? classId; // Class ID for class selection
-  final String? levelId; // Level ID for course selection
+  final String? levelId; // Level ID for level selection
+  final String? term; // Term for syllabus, used in course selection
   // Add subjects for course selection
   final bool isSecondScreen; // Flag to determine if it's for courses or classes
 
@@ -26,7 +27,9 @@ class LevelSelection extends StatefulWidget {
     this.isSecondScreen = false, 
     this.courseId, 
     this.classId, 
-    this.levelId, // Default to class selection
+    this.levelId,
+    this.term,
+    // Default to class selection
   });
 
   @override
@@ -210,7 +213,7 @@ class _LevelSelectionState extends State<LevelSelection> {
                               ),
                             );
                           },
-                        ),
+                 ),
                 ),
               ],
             ),
@@ -268,21 +271,23 @@ void _showCourseSelectionDialog() {
                                 final userBox = Hive.box('userData');
                                 await userBox.put('selectedCourseId', course[0]); // Save course ID
                                 await userBox.put('selectedLevelId', _selectedLevelId); // Save level ID
-                                
                                 Navigator.of(context).pop();
                                 Navigator.of(context).push(
                                   MaterialPageRoute(
                                     builder: (context) => EmptySyllabusScreen(
-                                      courseId: course[0], // Pass actual course ID
-                                      classId: widget.classId, // This might be null, handle it
-                                      levelId: _selectedLevelId, // Pass actual selected level ID
+                                      term: widget.term, 
+                                      courseId: course[0], 
+                                      classId: widget.classId,
+                                      levelId: _selectedLevelId, 
                                       selectedSubject: course[1],
+                                      course_name: widget.courseNames?[index][1] ?? '', // Pass course name
                                     ),
                                   ),
                                   
                                 );
-                                print("selected Class ID: ${widget.classId}");
+                               
                                 print("selected Level ID: $_selectedLevelId");
+                               
                               },
                             ),
                           );

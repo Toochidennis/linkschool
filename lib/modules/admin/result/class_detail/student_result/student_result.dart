@@ -135,9 +135,9 @@ class StudentResultScreen extends StatelessWidget {
                   chartData.length
               : 0.0;
 
-          // Retrieve levelId from Hive if not provided
+          // Retrieve levelId from Hive with a fallback
           final userBox = Hive.box('userData');
-          final storedLevelId = userBox.get('currentLevelId') ?? levelId;
+          final storedLevelId = userBox.get('currentLevelId') ?? levelId ?? '69'; // Fallback for testing
 
           // Build profile widget
           Widget profileImage = _buildProfileImage(student);
@@ -172,7 +172,6 @@ class StudentResultScreen extends StatelessWidget {
                     const SizedBox(height: 20),
                     _buildInfoRow('Student ID:', studentId.toString()),
                     _buildInfoRow('Class:', className ?? 'Unknown Class'),
-                    // _buildInfoRow('Gender:', 'Not specified'),
                     _buildInfoRow(
                       'Student Average:',
                       chartData.isEmpty
@@ -195,7 +194,11 @@ class StudentResultScreen extends StatelessWidget {
                       onPressed: () => Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => const StudentAnnualResultScreen(),
+                          builder: (context) => StudentAnnualResultScreen(
+                            studentId: studentId ?? student.id, // Use widget.studentId or fallback to student.id
+                            classId: classId ?? '66', // Fallback for testing
+                            levelId: storedLevelId, // Use storedLevelId from Hive or widget.levelId
+                          ),
                         ),
                       ),
                       text: 'See annual result',
@@ -293,6 +296,9 @@ class StudentResultScreen extends StatelessWidget {
       int studentId,
       String? classId,
       String? levelId) {
+    // Log parameters for debugging
+    print('StudentResultScreen: Using levelId=$levelId, classId=$classId, studentId=$studentId');
+
     return processedTerms.entries.map((entry) {
       final year = entry.key;
       final terms = entry.value;
@@ -320,19 +326,25 @@ class StudentResultScreen extends StatelessWidget {
             }
 
             return GestureDetector(
-              onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => SingleTermResult(
-                    studentId: studentId,
-                    termId: termData['term'],
-                    classId: classId ?? 'Unknown Class',
-                    year: year,
-                    levelId: levelId ?? 'Unknown Level',
-                    termName: termData['termName'],
+              onTap: () {
+                print('Navigating to SingleTermResult with: '
+                    'studentId=$studentId, termId=${termData['term']}, '
+                    'classId=$classId, year=$year, levelId=$levelId, '
+                    'termName=${termData['termName']}');
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => SingleTermResult(
+                      studentId: studentId,
+                      termId: termData['term'],
+                      classId: classId ?? '66', // Fallback for testing
+                      year: year,
+                      levelId: levelId ?? '69', // Fallback for testing
+                      termName: termData['termName'],
+                    ),
                   ),
-                ),
-              ),
+                );
+              },
               child: _buildTermRow(
                 termData['termName'],
                 termData['percent'],
@@ -503,7 +515,6 @@ class StudentResultScreen extends StatelessWidget {
 
 
 
-
 // import 'package:flutter/material.dart';
 // import 'package:linkschool/modules/common/app_colors.dart';
 // import 'package:linkschool/modules/common/buttons/custom_medium_elevated_button.dart';
@@ -516,20 +527,30 @@ class StudentResultScreen extends StatelessWidget {
 // import 'package:provider/provider.dart';
 // import 'package:linkschool/modules/providers/admin/student_provider.dart';
 // import 'package:linkschool/modules/common/widgets/portal/class_detail/overlays.dart';
+// import 'package:hive/hive.dart';
 
 // class StudentResultScreen extends StatelessWidget {
 //   final String? studentName;
 //   final String? className;
 //   final int? studentId;
+//   final String? classId;
+//   final String? levelId;
 
-//   const StudentResultScreen({super.key, this.studentName, this.className, this.studentId});
+//   const StudentResultScreen({
+//     super.key,
+//     this.studentName,
+//     this.className,
+//     this.studentId,
+//     this.classId,
+//     this.levelId,
+//   });
 
 //   @override
 //   Widget build(BuildContext context) {
 //     return Scaffold(
 //       appBar: AppBar(
 //         title: Text(
-//           className!,
+//           className ?? 'Unknown Class',
 //           style: AppTextStyles.normal600(fontSize: 18.0, color: Colors.black),
 //         ),
 //         leading: IconButton(
@@ -549,10 +570,10 @@ class StudentResultScreen extends StatelessWidget {
 //               onPressed: () => showStudentResultOverlay(
 //                 context,
 //                 className: className ?? 'Unknown Class',
+//                 classId: classId,
 //               ),
 //               backgroundColor: AppColors.videoColor4,
 //               textStyle: AppTextStyles.normal700(
-                    
 //                 fontSize: 14,
 //                 color: AppColors.backgroundLight,
 //               ),
@@ -599,11 +620,9 @@ class StudentResultScreen extends StatelessWidget {
 
 //                 for (var termData in termsList) {
 //                   final term = termData['term'] ?? termData['term_value'];
-//                   final termName = termData['term_name'] ?? '' ?? termData['term_value'];
-//                   // final termName = termData['term_name'] ?? '';
+//                   final termName = termData['term_name'] ?? 'Unknown Term';
 //                   final averageScore =
-//                       double.tryParse(
-//                       termData['average_score'].toString()) ??
+//                       double.tryParse(termData['average_score'].toString()) ??
 //                           0.0;
 //                   final percent = averageScore / 100.0;
 
@@ -627,9 +646,15 @@ class StudentResultScreen extends StatelessWidget {
 
 //           // Calculate overall average
 //           final double overallAverage = chartData.isNotEmpty
-//               ? chartData.map((e) => e['averageScore'])
-//                   .reduce((a, b) => a + b) / chartData.length
+//               ? chartData
+//                   .map((e) => e['averageScore'])
+//                   .reduce((a, b) => a + b) /
+//                   chartData.length
 //               : 0.0;
+
+//           // Retrieve levelId from Hive with a fallback
+//           final userBox = Hive.box('userData');
+//           final storedLevelId = userBox.get('currentLevelId') ?? levelId ?? '69'; // Fallback for testing
 
 //           // Build profile widget
 //           Widget profileImage = _buildProfileImage(student);
@@ -652,7 +677,7 @@ class StudentResultScreen extends StatelessWidget {
 //                           profileImage,
 //                           const SizedBox(height: 10),
 //                           Text(
-//                             student.fullName,
+//                             student.name,
 //                             style: AppTextStyles.normal700(
 //                               fontSize: 20,
 //                               color: AppColors.primaryLight,
@@ -663,8 +688,7 @@ class StudentResultScreen extends StatelessWidget {
 //                     ),
 //                     const SizedBox(height: 20),
 //                     _buildInfoRow('Student ID:', studentId.toString()),
-//                     _buildInfoRow('Class:', className!),
-//                     _buildInfoRow('Gender:','Not specified'),
+//                     _buildInfoRow('Class:', className ?? 'Unknown Class'),
 //                     _buildInfoRow(
 //                       'Student Average:',
 //                       chartData.isEmpty
@@ -679,7 +703,8 @@ class StudentResultScreen extends StatelessWidget {
 //                         child: Text('No academic records available'),
 //                       )
 //                     else
-//                       ..._buildAllSessions(processedTerms, context),
+//                       ..._buildAllSessions(
+//                           processedTerms, context, student.id, classId, storedLevelId),
 
 //                     const SizedBox(height: 30),
 //                     CustomOutlineButton2(
@@ -780,7 +805,13 @@ class StudentResultScreen extends StatelessWidget {
 
 //   List<Widget> _buildAllSessions(
 //       Map<String, List<Map<String, dynamic>>> processedTerms,
-//       BuildContext context) {
+//       BuildContext context,
+//       int studentId,
+//       String? classId,
+//       String? levelId) {
+//     // Log parameters for debugging
+//     print('StudentResultScreen: Using levelId=$levelId, classId=$classId, studentId=$studentId');
+
 //     return processedTerms.entries.map((entry) {
 //       final year = entry.key;
 //       final terms = entry.value;
@@ -808,14 +839,26 @@ class StudentResultScreen extends StatelessWidget {
 //             }
 
 //             return GestureDetector(
-//               onTap: () => Navigator.push(
-//                 context,
-//                 MaterialPageRoute(
-//                   builder: (context) => SingleTermResult(
-                   
+//               onTap: () {
+//                 print('Navigating to SingleTermResult with: '
+//                     'studentId=$studentId, termId=${termData['term']}, '
+//                     'classId=$classId, year=$year, levelId=$levelId, '
+//                     'termName=${termData['termName']}');
+//                 Navigator.push(
+//                   context,
+//                   MaterialPageRoute(
+//                     builder: (context) => SingleTermResult(
+//                       studentId: studentId,
+//                       // studentName: studentName,
+//                       termId: termData['term'],
+//                       classId: classId ?? '66', // Fallback for testing
+//                       year: year,
+//                       levelId: levelId ?? '69', // Fallback for testing
+//                       termName: termData['termName'],
+//                     ),
 //                   ),
-//                 ),
-//               ),
+//                 );
+//               },
 //               child: _buildTermRow(
 //                 termData['termName'],
 //                 termData['percent'],

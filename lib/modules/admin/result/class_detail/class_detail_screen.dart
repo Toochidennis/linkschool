@@ -22,7 +22,7 @@ class ClassDetailScreen extends StatefulWidget {
     super.key,
     required this.className,
     required this.classId,
-    required this.levelId, 
+    required this.levelId,
   });
 
   @override
@@ -32,7 +32,7 @@ class ClassDetailScreen extends StatefulWidget {
 class _ClassDetailScreenState extends State<ClassDetailScreen> {
   late TermProvider _termProvider;
   List<dynamic> classNames = [];
-  List<dynamic> levelNames = [];
+  List<dynamic> levelNames = [];  
 
   @override
   void initState() {
@@ -40,7 +40,7 @@ class _ClassDetailScreenState extends State<ClassDetailScreen> {
     _termProvider = Provider.of<TermProvider>(context, listen: false);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadTerms();
-      _loadUserData(); // Load user data to get class and level information
+      _loadUserData();
     });
     _debugHiveContents();
 
@@ -52,6 +52,7 @@ class _ClassDetailScreenState extends State<ClassDetailScreen> {
     final userBox = Hive.box('userData');
     await userBox.put('currentLevelId', widget.levelId);
     print('Stored level ID: ${widget.levelId}');
+    print('Hive currentLevelId after store: ${userBox.get('currentLevelId')}');
   }
 
   void _debugHiveContents() {
@@ -75,7 +76,7 @@ class _ClassDetailScreenState extends State<ClassDetailScreen> {
   Future<void> _loadUserData() async {
     try {
       final userBox = Hive.box('userData');
-      
+
       // Get stored user data (same logic as in ResultDashboardScreen)
       final storedUserData = userBox.get('userData');
       final storedLoginResponse = userBox.get('loginResponse');
@@ -88,8 +89,8 @@ class _ClassDetailScreenState extends State<ClassDetailScreen> {
       }
 
       if (dataToProcess != null) {
-        Map<String, dynamic> processedData = dataToProcess is String 
-            ? json.decode(dataToProcess) 
+        Map<String, dynamic> processedData = dataToProcess is String
+            ? json.decode(dataToProcess)
             : dataToProcess;
 
         final response = processedData['response'] ?? processedData;
@@ -101,14 +102,14 @@ class _ClassDetailScreenState extends State<ClassDetailScreen> {
         setState(() {
           // Transform levels to match the format [id, level_name]
           levelNames = levels.map((level) => [
-            (level['id'] ?? '').toString(), 
+            (level['id'] ?? '').toString(),
             level['level_name'] ?? ''
           ]).toList();
-          
+
           // Transform classes to match the format [id, class_name, level_id]
           classNames = classes.map((cls) => [
-            (cls['id'] ?? '').toString(), 
-            cls['class_name'] ?? '', 
+            (cls['id'] ?? '').toString(),
+            cls['class_name'] ?? '',
             (cls['level_id'] ?? '').toString()
           ]).toList();
 
@@ -160,7 +161,7 @@ class _ClassDetailScreenState extends State<ClassDetailScreen> {
                           itemBuilder: (context, index) {
                             final cls = filteredClasses[index];
                             final isCurrentClass = cls[0] == widget.classId;
-                            
+
                             return Padding(
                               padding: const EdgeInsets.symmetric(
                                   horizontal: 16, vertical: 8),
@@ -219,7 +220,7 @@ class _ClassDetailScreenState extends State<ClassDetailScreen> {
           borderRadius: BorderRadius.circular(4),
           child: Ink(
             decoration: BoxDecoration(
-                color: isCurrentClass ? AppColors.primaryLight.withOpacity(0.1) : Colors.white, 
+                color: isCurrentClass ? AppColors.primaryLight.withOpacity(0.1) : Colors.white,
                 borderRadius: BorderRadius.circular(4),
                 border: isCurrentClass ? Border.all(color: AppColors.primaryLight, width: 2) : null,
             ),
@@ -233,7 +234,7 @@ class _ClassDetailScreenState extends State<ClassDetailScreen> {
                   Text(
                     text,
                     style: AppTextStyles.normal600(
-                        fontSize: 16, 
+                        fontSize: 16,
                         color: isCurrentClass ? AppColors.primaryLight : AppColors.backgroundDark),
                   ),
                   if (isCurrentClass) ...[
@@ -259,12 +260,12 @@ class _ClassDetailScreenState extends State<ClassDetailScreen> {
     await userBox.put('selectedLevelId', widget.levelId);
 
     // Replace current route with new class detail screen
-    Navigator.of(context).pushReplacement( 
+    Navigator.of(context).pushReplacement(
       MaterialPageRoute(
         builder: (context) => ClassDetailScreen(
           classId: classId,
           className: className,
-          levelId: widget.levelId, 
+          levelId: widget.levelId,
         ),
       ),
     );
@@ -297,7 +298,7 @@ class _ClassDetailScreenState extends State<ClassDetailScreen> {
         actions: [
           CustomElevatedAppbarButton(
             text: 'See class list',
-            onPressed: _showClassSelectionDialog, // Updated to call the dialog
+            onPressed: _showClassSelectionDialog,
             backgroundColor: AppColors.videoColor4,
             textColor: Colors.white,
             fontSize: 14,
@@ -352,8 +353,10 @@ class _ClassDetailScreenState extends State<ClassDetailScreen> {
                                   iconPath:
                                       'assets/icons/result/assessment_icon.svg',
                                   onTap: () =>
-                                      showStudentResultOverlay(context, classId: widget.classId,
-                                      className: widget.className,
+                                      showStudentResultOverlay(
+                                        context,
+                                        classId: widget.classId,
+                                        className: widget.className,
                                       ),
                                 ),
                               ),
@@ -437,7 +440,7 @@ class _ClassDetailScreenState extends State<ClassDetailScreen> {
 
   List<Widget> _buildTermRows(List<Map<String, dynamic>> terms) {
     final groupedTerms = <String, List<Map<String, dynamic>>>{};
-    
+
     // Group terms by year
     for (final term in terms) {
       final year = term['year'].toString();
@@ -506,6 +509,7 @@ class _ClassDetailScreenState extends State<ClassDetailScreen> {
 // import 'package:flutter/material.dart';
 // import 'package:provider/provider.dart';
 // import 'package:hive/hive.dart';
+// import 'dart:convert';
 // import 'package:linkschool/modules/common/app_colors.dart';
 // import 'package:linkschool/modules/common/text_styles.dart';
 // import 'package:linkschool/modules/common/utils/class_detail/explore_button_item_utils.dart';
@@ -535,6 +539,8 @@ class _ClassDetailScreenState extends State<ClassDetailScreen> {
 
 // class _ClassDetailScreenState extends State<ClassDetailScreen> {
 //   late TermProvider _termProvider;
+//   List<dynamic> classNames = [];
+//   List<dynamic> levelNames = [];
 
 //   @override
 //   void initState() {
@@ -542,6 +548,7 @@ class _ClassDetailScreenState extends State<ClassDetailScreen> {
 //     _termProvider = Provider.of<TermProvider>(context, listen: false);
 //     WidgetsBinding.instance.addPostFrameCallback((_) {
 //       _loadTerms();
+//       _loadUserData(); // Load user data to get class and level information
 //     });
 //     _debugHiveContents();
 
@@ -573,6 +580,204 @@ class _ClassDetailScreenState extends State<ClassDetailScreen> {
 //     }
 //   }
 
+//   Future<void> _loadUserData() async {
+//     try {
+//       final userBox = Hive.box('userData');
+      
+//       // Get stored user data (same logic as in ResultDashboardScreen)
+//       final storedUserData = userBox.get('userData');
+//       final storedLoginResponse = userBox.get('loginResponse');
+
+//       dynamic dataToProcess;
+//       if (storedUserData != null) {
+//         dataToProcess = storedUserData;
+//       } else if (storedLoginResponse != null) {
+//         dataToProcess = storedLoginResponse;
+//       }
+
+//       if (dataToProcess != null) {
+//         Map<String, dynamic> processedData = dataToProcess is String 
+//             ? json.decode(dataToProcess) 
+//             : dataToProcess;
+
+//         final response = processedData['response'] ?? processedData;
+//         final data = response['data'] ?? response;
+
+//         final levels = data['levels'] ?? [];
+//         final classes = data['classes'] ?? [];
+
+//         setState(() {
+//           // Transform levels to match the format [id, level_name]
+//           levelNames = levels.map((level) => [
+//             (level['id'] ?? '').toString(), 
+//             level['level_name'] ?? ''
+//           ]).toList();
+          
+//           // Transform classes to match the format [id, class_name, level_id]
+//           classNames = classes.map((cls) => [
+//             (cls['id'] ?? '').toString(), 
+//             cls['class_name'] ?? '', 
+//             (cls['level_id'] ?? '').toString()
+//           ]).toList();
+
+//           print('Loaded Level Names: $levelNames');
+//           print('Loaded Class Names: $classNames');
+//         });
+//       }
+//     } catch (e) {
+//       print('Error loading user data for class selection: $e');
+//     }
+//   }
+
+//   void _showClassSelectionDialog() {
+//     // Filter classes that match the current level
+//     final filteredClasses = classNames
+//         .where((cls) => cls[2] == widget.levelId && cls[1].toString().isNotEmpty)
+//         .toList();
+
+//     showModalBottomSheet(
+//       context: context,
+//       isScrollControlled: true,
+//       shape: const RoundedRectangleBorder(
+//         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+//       ),
+//       builder: (BuildContext context) {
+//         return Padding(
+//           padding: EdgeInsets.only(
+//             bottom: MediaQuery.of(context).viewInsets.bottom,
+//           ),
+//           child: ConstrainedBox(
+//             constraints: BoxConstraints(
+//               maxHeight: MediaQuery.of(context).size.height * 0.6,
+//             ),
+//             child: Column(
+//               mainAxisSize: MainAxisSize.min,
+//               children: [
+//                 const SizedBox(height: 24),
+//                 Text(
+//                   'Select Class',
+//                   style: AppTextStyles.normal600(
+//                       fontSize: 24, color: Colors.black),
+//                 ),
+//                 const SizedBox(height: 24),
+//                 Flexible(
+//                   child: filteredClasses.isEmpty
+//                       ? _buildEmptyState('No classes available for this level')
+//                       : ListView.builder(
+//                           itemCount: filteredClasses.length,
+//                           itemBuilder: (context, index) {
+//                             final cls = filteredClasses[index];
+//                             final isCurrentClass = cls[0] == widget.classId;
+                            
+//                             return Padding(
+//                               padding: const EdgeInsets.symmetric(
+//                                   horizontal: 16, vertical: 8),
+//                               child: _buildSelectionButton(
+//                                 cls[1], // class name
+//                                 isCurrentClass,
+//                                 () {
+//                                   if (!isCurrentClass) {
+//                                     Navigator.of(context).pop();
+//                                     _navigateToClassDetail(cls[0], cls[1]); // class ID, class name
+//                                   }
+//                                 },
+//                               ),
+//                             );
+//                           },
+//                         ),
+//                 ),
+//               ],
+//             ),
+//           ),
+//         );
+//       },
+//     );
+//   }
+
+//   Widget _buildEmptyState(String message) {
+//     return Center(
+//       child: Padding(
+//         padding: const EdgeInsets.all(24.0),
+//         child: Text(
+//           message,
+//           style: AppTextStyles.normal600(
+//             fontSize: 16,
+//             color: Colors.grey,
+//           ),
+//         ),
+//       ),
+//     );
+//   }
+
+//   Widget _buildSelectionButton(String text, bool isCurrentClass, VoidCallback onPressed) {
+//     return Container(
+//       decoration: BoxDecoration(
+//         boxShadow: [
+//           BoxShadow(
+//               color: Colors.grey.withOpacity(0.3),
+//               spreadRadius: 1,
+//               blurRadius: 3,
+//               offset: const Offset(0, 2))
+//         ],
+//       ),
+//       child: Material(
+//         color: isCurrentClass ? AppColors.primaryLight.withOpacity(0.1) : AppColors.dialogBtnColor,
+//         child: InkWell(
+//           onTap: isCurrentClass ? null : onPressed,
+//           borderRadius: BorderRadius.circular(4),
+//           child: Ink(
+//             decoration: BoxDecoration(
+//                 color: isCurrentClass ? AppColors.primaryLight.withOpacity(0.1) : Colors.white, 
+//                 borderRadius: BorderRadius.circular(4),
+//                 border: isCurrentClass ? Border.all(color: AppColors.primaryLight, width: 2) : null,
+//             ),
+//             child: Container(
+//               width: double.infinity,
+//               height: 50,
+//               alignment: Alignment.center,
+//               child: Row(
+//                 mainAxisAlignment: MainAxisAlignment.center,
+//                 children: [
+//                   Text(
+//                     text,
+//                     style: AppTextStyles.normal600(
+//                         fontSize: 16, 
+//                         color: isCurrentClass ? AppColors.primaryLight : AppColors.backgroundDark),
+//                   ),
+//                   if (isCurrentClass) ...[
+//                     const SizedBox(width: 8),
+//                     Icon(
+//                       Icons.check_circle,
+//                       color: AppColors.primaryLight,
+//                       size: 20,
+//                     ),
+//                   ],
+//                 ],
+//               ),
+//             ),
+//           ),
+//         ),
+//       ),
+//     );
+//   }
+
+//   void _navigateToClassDetail(String classId, String className) async {
+//     final userBox = Hive.box('userData');
+//     await userBox.put('selectedClassId', classId);
+//     await userBox.put('selectedLevelId', widget.levelId);
+
+//     // Replace current route with new class detail screen
+//     Navigator.of(context).pushReplacement( 
+//       MaterialPageRoute(
+//         builder: (context) => ClassDetailScreen(
+//           classId: classId,
+//           className: className,
+//           levelId: widget.levelId, 
+//         ),
+//       ),
+//     );
+//   }
+
 //   @override
 //   Widget build(BuildContext context) {
 //     final termProvider = Provider.of<TermProvider>(context);
@@ -600,7 +805,7 @@ class _ClassDetailScreenState extends State<ClassDetailScreen> {
 //         actions: [
 //           CustomElevatedAppbarButton(
 //             text: 'See class list',
-//             onPressed: () {},
+//             onPressed: _showClassSelectionDialog, // Updated to call the dialog
 //             backgroundColor: AppColors.videoColor4,
 //             textColor: Colors.white,
 //             fontSize: 14,

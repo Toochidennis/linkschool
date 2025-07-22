@@ -28,7 +28,7 @@ class ApiResponse<T> {
   factory ApiResponse.fromJson(Map<String, dynamic> json, {T? parsedData}) {
     bool isSuccess = false;
     String message = "Unknown response";
-
+    
     // Check for common API status indicators
     if (json.containsKey('status')) {
       isSuccess = json['status'] == 'success' || json['status'] == true;
@@ -91,7 +91,6 @@ class ApiService {
       if (apiKey != null) {
         headers['X-API-KEY'] = apiKey!;
       }
-
       headers['Content-Type'] = 'application/json';
       headers['Accept'] = 'application/json';
 
@@ -116,10 +115,11 @@ class ApiService {
               body: body != null ? json.encode(body) : null,
             );
           } else {
-            final request = http.MultipartRequest('POST', uri,);
+            final request = http.MultipartRequest('POST', uri);
             final multipartHeaders = Map<String, String>.from(headers);
             multipartHeaders.remove('Content-Type');
             request.headers.addAll(multipartHeaders);
+            
             if (body is Map<String, dynamic>) {
               body.forEach((key, value) {
                 if (value is File) {
@@ -149,9 +149,9 @@ class ApiService {
           break;
         case HttpMethod.DELETE:
           response = await http.delete(
+            uri,
             headers: headers,
             body: body != null ? json.encode(body) : null,
-            uri,
           );
           break;
         case HttpMethod.PATCH:
@@ -169,12 +169,12 @@ class ApiService {
       if (response.statusCode >= 200 && response.statusCode < 300) {
         final jsonResponse = json.decode(response.body) as Map<String, dynamic>;
         print('Decoded JSON response: $jsonResponse');
-
+        
         final apiResponse = ApiResponse<T>.fromJson(
           jsonResponse,
           parsedData: fromJson != null ? fromJson(jsonResponse) : null,
         );
-
+        
         return ApiResponse<T>(
           success: apiResponse.success,
           message: apiResponse.message,
@@ -190,9 +190,17 @@ class ApiService {
           final message = response.reasonPhrase ?? 'Unknown error';
           return ApiResponse<T>.error(message, response.statusCode);
         }
-
+        
         final message = errorData['message'] ?? errorData['error'] ?? 'Request failed';
-        return ApiResponse<T>.error(message, response.statusCode);
+        
+        // Return error response with proper status code - this allows the service layer to handle 404s appropriately
+        return ApiResponse<T>(
+          success: false,
+          message: message,
+          statusCode: response.statusCode,
+          data: null,
+          rawData: errorData,
+        );
       }
     } catch (e) {
       print('Network error: $e');
@@ -262,6 +270,7 @@ class ApiService {
     );
   }
 }
+
 
 
 
@@ -384,7 +393,7 @@ class ApiService {
 //               body: body != null ? json.encode(body) : null,
 //             );
 //           } else {
-//             final request = http.MultipartRequest('POST', uri);
+//             final request = http.MultipartRequest('POST', uri,);
 //             final multipartHeaders = Map<String, String>.from(headers);
 //             multipartHeaders.remove('Content-Type');
 //             request.headers.addAll(multipartHeaders);
@@ -417,9 +426,9 @@ class ApiService {
 //           break;
 //         case HttpMethod.DELETE:
 //           response = await http.delete(
-//             uri,
 //             headers: headers,
 //             body: body != null ? json.encode(body) : null,
+//             uri,
 //           );
 //           break;
 //         case HttpMethod.PATCH:
@@ -448,7 +457,7 @@ class ApiService {
 //           message: apiResponse.message,
 //           statusCode: response.statusCode,
 //           data: apiResponse.data,
-//           rawData: jsonResponse['response'] ?? jsonResponse,
+//           rawData: jsonResponse, // Store the entire JSON response
 //         );
 //       } else {
 //         Map<String, dynamic> errorData = {};

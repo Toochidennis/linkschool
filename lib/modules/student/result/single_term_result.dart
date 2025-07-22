@@ -5,6 +5,8 @@ import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/providers/admin/student_provider.dart';
 
+import '../../model/admin/student_model.dart';
+
 class SingleTermResult extends StatefulWidget {
   final int studentId;
   final int termId;
@@ -28,14 +30,15 @@ class SingleTermResult extends StatefulWidget {
 }
 
 class _SingleTermResultState extends State<SingleTermResult> {
-  late double opacity;
-
   @override
   void initState() {
     super.initState();
     // Fetch term results when the widget is initialized
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final studentProvider = Provider.of<StudentProvider>(context, listen: false);
+      debugPrint('SingleTermResult: Fetching term results for studentId=${widget.studentId}, '
+          'termId=${widget.termId}, classId=${widget.classId}, '
+          'year=${widget.year}, levelId=${widget.levelId}');
       studentProvider.fetchStudentTermResults(
         studentId: widget.studentId,
         termId: widget.termId,
@@ -49,7 +52,9 @@ class _SingleTermResultState extends State<SingleTermResult> {
   @override
   Widget build(BuildContext context) {
     final Brightness brightness = Theme.of(context).brightness;
-    opacity = brightness == Brightness.light ? 0.1 : 0.15;
+    final double opacity = brightness == Brightness.light ? 0.1 : 0.15;
+    final studentProvider = Provider.of<StudentProvider>(context);
+    final student = studentProvider.student;
 
     return Scaffold(
       appBar: AppBar(
@@ -102,6 +107,9 @@ class _SingleTermResultState extends State<SingleTermResult> {
         decoration: Constants.customBoxDecoration(context),
         child: Consumer<StudentProvider>(
           builder: (context, studentProvider, child) {
+            debugPrint('SingleTermResult Consumer: isLoading=${studentProvider.isLoading}, '
+                'errorMessage=${studentProvider.errorMessage}, '
+                'termResult=${studentProvider.studentTermResult}');
             if (studentProvider.isLoading) {
               return const Center(child: CircularProgressIndicator());
             }
@@ -117,14 +125,31 @@ class _SingleTermResultState extends State<SingleTermResult> {
 
             final termResult = studentProvider.studentTermResult;
 
-            if (termResult == null) {
+            if (termResult == null || termResult.isEmpty) {
               return const Center(child: Text('No term results available'));
             }
 
             return SingleChildScrollView(
               child: Column(
                 children: [
-                  _buildAverageSection(),
+                  const SizedBox(height: 30),
+                  Center(
+                    child: Column(
+                      children: [
+                        _buildProfileImage(student),
+                        const SizedBox(height: 10),
+                        Text(
+                          student?.name ?? 'Unknown Student',
+                          style: AppTextStyles.normal700(
+                            fontSize: 20,
+                            color: AppColors.primaryLight,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  _buildAverageSection(termResult),
                   _buildTermSection(widget.termName, termResult),
                 ],
               ),
@@ -135,14 +160,52 @@ class _SingleTermResultState extends State<SingleTermResult> {
     );
   }
 
-  Widget _buildAverageSection() {
+  Widget _buildProfileImage(Student? student) {
+    if (student?.pictureUrl != null && student!.pictureUrl!.isNotEmpty) {
+      return Container(
+        width: 60,
+        height: 60,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          image: DecorationImage(
+            image: NetworkImage(
+              'https://linkskool.net/${student.pictureUrl}',
+            ),
+            fit: BoxFit.cover,
+          ),
+        ),
+      );
+    } else {
+      return Container(
+        width: 60,
+        height: 60,
+        decoration: const BoxDecoration(
+          color: AppColors.primaryLight,
+          shape: BoxShape.circle,
+        ),
+        child: const Icon(
+          Icons.person,
+          color: AppColors.backgroundLight,
+          size: 40,
+        ),
+      );
+    }
+  }
+
+  Widget _buildAverageSection(Map<String, dynamic> termResult) {
+    final average = (termResult['average'] is int
+        ? (termResult['average'] as int).toDouble()
+        : termResult['average'] is String
+            ? double.tryParse(termResult['average'].toString()) ?? 0.0
+            : termResult['average'] as double? ?? 0.0);
+
     return Padding(
       padding: const EdgeInsets.all(16.0),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           const Text(
-            'Annual average',
+            'Term average',
             style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w500,
@@ -150,7 +213,7 @@ class _SingleTermResultState extends State<SingleTermResult> {
             ),
           ),
           Text(
-            '86.80%', // Keeping dummy data as per requirement
+            '${average.toStringAsFixed(2)}%',
             style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w600,
@@ -380,11 +443,15 @@ class _SingleTermResultState extends State<SingleTermResult> {
         (a) => a['assessment_name'] == assessmentName,
         orElse: () => {'score': 'N/A'},
       );
-      return assessment['score'].toString();
+      return (assessment['score'] is int
+          ? (assessment['score'] as int).toDouble().toString()
+          : assessment['score'].toString());
     }
     switch (columnName) {
       case 'Total Score':
-        return subject['total']?.toString() ?? 'N/A';
+        return (subject['total'] is int
+            ? (subject['total'] as int).toDouble().toString()
+            : subject['total']?.toString() ?? 'N/A');
       case 'Grade':
         return subject['grade']?.toString() ?? 'N/A';
       case 'Remarks':
@@ -396,32 +463,71 @@ class _SingleTermResultState extends State<SingleTermResult> {
 }
 
 
+
+
 // import 'package:flutter/material.dart';
+// import 'package:provider/provider.dart';
 // import 'package:linkschool/modules/common/app_colors.dart';
 // import 'package:linkschool/modules/common/constants.dart';
 // import 'package:linkschool/modules/common/text_styles.dart';
+// import 'package:linkschool/modules/providers/admin/student_provider.dart';
 
 // class SingleTermResult extends StatefulWidget {
+//   final int studentId;
+//   final int termId;
+//   final String classId;
+//   final String year;
+//   final String levelId;
+//   final String termName;
 
-//   const SingleTermResult({super.key, });
+//   const SingleTermResult({
+//     super.key,
+//     required this.studentId,
+//     required this.termId,
+//     required this.classId,
+//     required this.year,
+//     required this.levelId,
+//     required this.termName,
+
+//   });
 
 //   @override
-//   State<SingleTermResult> createState() =>
-//       _SingleTermResultState();
+//   State<SingleTermResult> createState() => _SingleTermResultState();
 // }
 
 // class _SingleTermResultState extends State<SingleTermResult> {
 //   late double opacity;
 
 //   @override
+//   void initState() {
+//     super.initState();
+//     // Fetch term results when the widget is initialized
+//     WidgetsBinding.instance.addPostFrameCallback((_) {
+//       final studentProvider = Provider.of<StudentProvider>(context, listen: false);
+//       print('SingleTermResult: Fetching term results for studentId=${widget.studentId}, '
+//             'termId=${widget.termId}, classId=${widget.classId}, '
+//             'year=${widget.year}, levelId=${widget.levelId}');
+//       studentProvider.fetchStudentTermResults(
+//         studentId: widget.studentId,
+//         termId: widget.termId,
+//         classId: widget.classId,
+//         year: widget.year,
+//         levelId: widget.levelId,
+//       );
+//     });
+//   }
+
+//   @override
 //   Widget build(BuildContext context) {
 //     final Brightness brightness = Theme.of(context).brightness;
 //     opacity = brightness == Brightness.light ? 0.1 : 0.15;
+
 //     return Scaffold(
 //       appBar: AppBar(
 //         title: Text(
-//           'Annual result',
-//           style: AppTextStyles.normal600(fontSize: 18.0, color: AppColors.eLearningBtnColor1,)
+//           widget.termName,
+//           style: AppTextStyles.normal600(
+//               fontSize: 18.0, color: AppColors.eLearningBtnColor1),
 //         ),
 //         leading: IconButton(
 //           onPressed: () {
@@ -455,8 +561,7 @@ class _SingleTermResultState extends State<SingleTermResult> {
 //             onPressed: () {
 //               // Implement download functionality
 //             },
-//             icon:
-//                 const Icon(Icons.download, color: AppColors.eLearningBtnColor1),
+//             icon: const Icon(Icons.download, color: AppColors.eLearningBtnColor1),
 //             label: const Text(
 //               'Download',
 //               style: TextStyle(color: AppColors.eLearningBtnColor1),
@@ -466,13 +571,39 @@ class _SingleTermResultState extends State<SingleTermResult> {
 //       ),
 //       body: Container(
 //         decoration: Constants.customBoxDecoration(context),
-//         child: SingleChildScrollView(
-//           child: Column(
-//             children: [
-//               _buildAverageSection(),
-//               _buildTermSection('First Term Result'),
-//             ],
-//           ),
+//         child: Consumer<StudentProvider>(
+//           builder: (context, studentProvider, child) {
+//             print('SingleTermResult Consumer: isLoading=${studentProvider.isLoading}, '
+//                   'errorMessage=${studentProvider.errorMessage}, '
+//                   'termResult=${studentProvider.studentTermResult}');
+//             if (studentProvider.isLoading) {
+//               return const Center(child: CircularProgressIndicator());
+//             }
+
+//             if (studentProvider.errorMessage.isNotEmpty) {
+//               return Center(
+//                 child: Text(
+//                   'Error: ${studentProvider.errorMessage}',
+//                   style: const TextStyle(color: Colors.red),
+//                 ),
+//               );
+//             }
+
+//             final termResult = studentProvider.studentTermResult;
+
+//             if (termResult == null || termResult.isEmpty) {
+//               return const Center(child: Text('No term results available'));
+//             }
+
+//             return SingleChildScrollView(
+//               child: Column(
+//                 children: [
+//                   _buildAverageSection(),
+//                   _buildTermSection(widget.termName, termResult),
+//                 ],
+//               ),
+//             );
+//           },
 //         ),
 //       ),
 //     );
@@ -489,11 +620,11 @@ class _SingleTermResultState extends State<SingleTermResult> {
 //             style: TextStyle(
 //               fontSize: 16,
 //               fontWeight: FontWeight.w500,
-//               color:AppColors.primaryDark
+//               color: AppColors.primaryDark,
 //             ),
 //           ),
 //           Text(
-//             '86.80%',
+//             '86.80%', // Keeping dummy data as per requirement
 //             style: TextStyle(
 //               fontSize: 16,
 //               fontWeight: FontWeight.w600,
@@ -505,7 +636,12 @@ class _SingleTermResultState extends State<SingleTermResult> {
 //     );
 //   }
 
-//   Widget _buildTermSection(String title) {
+//   Widget _buildTermSection(String title, Map<String, dynamic> termResult) {
+//     final average = termResult['average']?.toString() ?? 'N/A';
+//     final position = termResult['position']?.toString() ?? 'N/A';
+//     final totalStudents = termResult['total_students']?.toString() ?? 'N/A';
+//     final subjects = termResult['subjects'] as List<dynamic>? ?? [];
+
 //     return Column(
 //       crossAxisAlignment: CrossAxisAlignment.start,
 //       children: [
@@ -522,7 +658,7 @@ class _SingleTermResultState extends State<SingleTermResult> {
 //             title,
 //             style: const TextStyle(
 //               fontSize: 16,
-//               color:AppColors.primaryDark,
+//               color: AppColors.primaryDark,
 //               fontWeight: FontWeight.w500,
 //             ),
 //           ),
@@ -531,11 +667,11 @@ class _SingleTermResultState extends State<SingleTermResult> {
 //           padding: const EdgeInsets.all(16.0),
 //           child: Column(
 //             children: [
-//               _buildInfoRow('Student average', '76.80%'),
+//               _buildInfoRow('Student average', '$average%'),
 //               const Divider(),
-//               _buildInfoRow('Class position', '4th of 22'),
+//               _buildInfoRow('Class position', '$position of $totalStudents'),
 //               const SizedBox(height: 16),
-//               _buildSubjectsTable(),
+//               _buildSubjectsTable(subjects),
 //             ],
 //           ),
 //         ),
@@ -551,10 +687,10 @@ class _SingleTermResultState extends State<SingleTermResult> {
 //         children: [
 //           Text(
 //             label,
-
 //             style: const TextStyle(
-//               color:AppColors.primaryDark,
-//               fontSize: 14),
+//               color: AppColors.primaryDark,
+//               fontSize: 14,
+//             ),
 //           ),
 //           Text(
 //             value,
@@ -569,18 +705,13 @@ class _SingleTermResultState extends State<SingleTermResult> {
 //     );
 //   }
 
-//   Widget _buildSubjectsTable() {
-//     final List<String> subjects = [
-//       'English Language',
-//       'Mathematics',
-//       'Physics',
-//       'Chemistry',
-//       'Biology',
-//       'Geography',
-//       'Economics',
-//       'Literature',
-//       'History',
-//     ];
+//   Widget _buildSubjectsTable(List<dynamic> subjects) {
+//     // Extract unique assessment names dynamically
+//     final assessmentNames = subjects.isNotEmpty
+//         ? (subjects.first['assessments'] as List<dynamic>)
+//             .map((assessment) => assessment['assessment_name'] as String)
+//             .toList()
+//         : [];
 
 //     return Container(
 //       decoration: BoxDecoration(
@@ -595,12 +726,13 @@ class _SingleTermResultState extends State<SingleTermResult> {
 //               scrollDirection: Axis.horizontal,
 //               child: Row(
 //                 children: [
-//                   _buildScrollableColumn('Assessment 1', 80, subjects),
-//                   _buildScrollableColumn('Assessment 2', 80, subjects),
-//                   _buildScrollableColumn('Assessment 3', 80, subjects),
-//                   _buildScrollableColumn('Examination', 100, subjects),
-//                   _buildScrollableColumn('Total Score', 100, subjects),
-//                   _buildScrollableColumn('Grade', 80, subjects),
+//                   // Dynamic assessment columns
+//                   ...assessmentNames.map((assessmentName) =>
+//                       _buildScrollableColumn(
+//                           assessmentName, 80, subjects, assessmentName)),
+//                   _buildScrollableColumn('Total Score', 100, subjects, null),
+//                   _buildScrollableColumn('Grade', 80, subjects, null),
+//                   _buildScrollableColumn('Remarks', 100, subjects, null),
 //                 ],
 //               ),
 //             ),
@@ -610,7 +742,7 @@ class _SingleTermResultState extends State<SingleTermResult> {
 //     );
 //   }
 
-//   Widget _buildSubjectColumn(List<String> subjects) {
+//   Widget _buildSubjectColumn(List<dynamic> subjects) {
 //     return Container(
 //       width: 120,
 //       decoration: BoxDecoration(
@@ -646,10 +778,11 @@ class _SingleTermResultState extends State<SingleTermResult> {
 //               child: Align(
 //                 alignment: Alignment.centerLeft,
 //                 child: Text(
-//                   subject,
+//                   subject['course_name'] ?? 'Unknown',
 //                   style: const TextStyle(
-//                     color:AppColors.primaryDark,
-//                     fontSize: 14),
+//                     color: AppColors.primaryDark,
+//                     fontSize: 14,
+//                   ),
 //                 ),
 //               ),
 //             );
@@ -660,7 +793,7 @@ class _SingleTermResultState extends State<SingleTermResult> {
 //   }
 
 //   Widget _buildScrollableColumn(
-//       String title, double width, List<String> subjects) {
+//       String title, double width, List<dynamic> subjects, String? assessmentName) {
 //     return Container(
 //       width: width,
 //       decoration: BoxDecoration(
@@ -689,6 +822,7 @@ class _SingleTermResultState extends State<SingleTermResult> {
 //           ),
 //           ...subjects.asMap().entries.map((entry) {
 //             final index = entry.key;
+//             final subject = entry.value;
 //             return Container(
 //               height: 50,
 //               alignment: Alignment.center,
@@ -700,9 +834,10 @@ class _SingleTermResultState extends State<SingleTermResult> {
 //                 ),
 //               ),
 //               child: Text(
-//                 _getDataForColumn(title, index),
-//                 style: const TextStyle(fontSize: 14,
-//                    color:AppColors.primaryDark,
+//                 _getDataForColumn(title, subject, assessmentName),
+//                 style: const TextStyle(
+//                   fontSize: 14,
+//                   color: AppColors.primaryDark,
 //                 ),
 //               ),
 //             );
@@ -712,21 +847,24 @@ class _SingleTermResultState extends State<SingleTermResult> {
 //     );
 //   }
 
-//   String _getDataForColumn(String columnName, int index) {
+//   String _getDataForColumn(String columnName, Map<String, dynamic> subject, String? assessmentName) {
+//     if (assessmentName != null) {
+//       final assessments = subject['assessments'] as List<dynamic>? ?? [];
+//       final assessment = assessments.firstWhere(
+//         (a) => a['assessment_name'] == assessmentName,
+//         orElse: () => {'score': 'N/A'},
+//       );
+//       return assessment['score'].toString();
+//     }
 //     switch (columnName) {
-//       case 'Assessment 1':
-//         return '${10 + index}';
-//       case 'Assessment 2':
-//       case 'Assessment 3':
-//         return '${15 + index}';
-//       case 'Examination':
-//         return '${60 + index}';
 //       case 'Total Score':
-//         return '${85 + index}';
+//         return subject['total']?.toString() ?? 'N/A';
 //       case 'Grade':
-//         return ['A', 'B', 'A', 'C', 'B', 'A', 'B', 'A', 'B'][index];
+//         return subject['grade']?.toString() ?? 'N/A';
+//       case 'Remarks':
+//         return subject['remark']?.toString() ?? 'N/A';
 //       default:
-//         return '';
+//         return 'N/A';
 //     }
 //   }
 // }

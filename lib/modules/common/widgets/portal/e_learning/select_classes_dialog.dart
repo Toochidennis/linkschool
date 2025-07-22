@@ -7,9 +7,10 @@ import 'package:linkschool/modules/common/text_styles.dart';
 
 class SelectClassesDialog extends StatefulWidget {
   final Function(String) onSave;
+  List<Map<String, dynamic>>? syllabusClasses;
   final String? levelId; // Changed from 'leveId' to 'levelId'
 
-  const SelectClassesDialog({super.key, required this.onSave, this.levelId});
+   SelectClassesDialog({super.key, required this.onSave, this.levelId, this.syllabusClasses});
 
   @override
   _SelectClassesDialogState createState() => _SelectClassesDialogState();
@@ -29,37 +30,68 @@ class _SelectClassesDialogState extends State<SelectClassesDialog> {
   }
 
   Future<void> _loadClasses() async {
-    try {
-      final userBox = Hive.box('userData');
-      final storedUserData = userBox.get('userData') ?? userBox.get('loginResponse');
-      if (storedUserData != null) {
-        final processedData = storedUserData is String
-            ? json.decode(storedUserData)
-            : storedUserData;
-        final response = processedData['response'] ?? processedData;
-        final data = response['data'] ?? response;
-        final classes = data['classes'] ?? [];
+  try {
 
-        setState(() {
-          // Filter classes by levelId if provided
-          _classes = classes
-              .where((cls) => 
-                  cls['class_name'] != null && 
-                  cls['class_name'].toString().trim().isNotEmpty &&
-                  (widget.levelId == null || cls['level_id']?.toString() == widget.levelId))
-              .map((cls) => [
-                    cls['id'].toString(),
-                    cls['class_name'].toString().trim(),
-                  ])
-              .toList();
-          _selectedClasses = List.generate(_classes.length, (_) => false);
-        });
-      }
-    } catch (e) {
-      print('Error loading classes: $e');
+    if (widget.syllabusClasses != null && widget.syllabusClasses!.isNotEmpty) {
+      setState(() {
+        _classes = widget.syllabusClasses!
+            .map((cls) => [
+                  cls['id']?.toString() ?? '',
+                  cls['name']?.toString() ?? cls['class_name']?.toString() ?? '',
+                ])
+            .toList();
+        _selectedClasses = List.generate(_classes.length, (_) => true);
+        _selectAll = true;
+        _selectedRowIndices = List.generate(_classes.length, (index) => index);
+      });
+      return;
     }
-  }
+    final userBox = Hive.box('userData');
+    final storedUserData = userBox.get('userData') ?? userBox.get('loginResponse');
+    final selectedClassIds = userBox.get('selectedClassIds') as List? ?? [];
+    
+    if (storedUserData != null) {
+      final processedData = storedUserData is String
+          ? json.decode(storedUserData)
+          : storedUserData;
+      final response = processedData['response'] ?? processedData;
+      final data = response['data'] ?? response;
+      final classes = data['classes'] ?? [];
 
+      setState(() {
+        _classes = classes
+            .where((cls) => 
+                cls['class_name'] != null && 
+                cls['class_name'].toString().trim().isNotEmpty &&
+                (widget.levelId == null || cls['level_id']?.toString() == widget.levelId))
+            .map((cls) => [
+                  cls['id'].toString(),
+                  cls['class_name'].toString().trim(),
+                ])
+            .toList();
+            
+        // Preselect classes that were previously selected
+        _selectedClasses = _classes.map((cls) {
+          return selectedClassIds.contains(cls[0]);
+        }).toList();
+        
+        _selectAll = _selectedClasses.every((isSelected) => isSelected);
+        if (_selectAll) {
+          _selectedRowIndices = List.generate(_classes.length, (index) => index);
+        } else {
+          _selectedRowIndices = [];
+          for (int i = 0; i < _selectedClasses.length; i++) {
+            if (_selectedClasses[i]) {
+              _selectedRowIndices.add(i);
+            }
+          }
+        }
+      });
+    }
+  } catch (e) {
+    print('Error loading classes: $e');
+  }
+}
   // Rest of the methods remain exactly the same
   void _toggleSelectAll() {
     setState(() {

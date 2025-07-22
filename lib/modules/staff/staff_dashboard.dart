@@ -3,6 +3,7 @@ import 'package:linkschool/modules/common/bottom_navigation_bar.dart';
 import 'package:linkschool/modules/common/bottom_nav_item.dart';
 import 'package:linkschool/modules/staff/e_learning/staff_elearning_home_screen.dart';
 import 'package:linkschool/modules/staff/home/staff_home_screen.dart';
+import 'package:linkschool/modules/staff/result/staff_result_screen.dart';
 
 class StaffDashboard extends StatefulWidget {
   final Function(bool) onSwitch;
@@ -37,10 +38,8 @@ class _StaffDashboardState extends State<StaffDashboard> {
       case 0:
         return const StaffHomeScreen();
       case 1:
-        return Container(
-          color: Colors.orange,
-          child: const Center(child: Text('Result')),
-        );
+        return StaffResultScreen();
+
       case 2:
         return const StaffElearningScreen();
       case 3:
