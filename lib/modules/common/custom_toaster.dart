@@ -8,7 +8,7 @@ class CustomToaster {
       // icon: Icons.check_circle, // Success icon
       title: Text(title, style: TextStyle(color: Colors.white)),
       description: Text(message, style: TextStyle(color: Colors.white)),
-      position: MotionToastPosition.top, 
+   toastAlignment:Alignment.topCenter,
       animationType: AnimationType.slideInFromTop,
       contentPadding: const EdgeInsets.all(10), 
 
@@ -19,7 +19,7 @@ class CustomToaster {
     MotionToast.warning(
       title: Text(title, style: TextStyle(color: Colors.white)),
       description: Text(message, style: TextStyle(color: Colors.white)),
-      position: MotionToastPosition.top, 
+      toastAlignment:Alignment.topCenter,
       animationType: AnimationType.slideInFromTop,
       contentPadding: const EdgeInsets.all(10), 
     ).show(context);
@@ -29,7 +29,7 @@ class CustomToaster {
     MotionToast.info(
       title: Text(title, style: TextStyle(color: Colors.white)),
       description: Text(message, style: TextStyle(color: Colors.white)),
-      position: MotionToastPosition.top, // Change to top, center, or bottom
+      toastAlignment:Alignment.topCenter,// Change to top, center, or bottom
       animationType: AnimationType.slideInFromTop,
       contentPadding: const EdgeInsets.all(10), 
     ).show(context);
@@ -39,7 +39,7 @@ class CustomToaster {
     MotionToast.error(
       title: Text(title, style: TextStyle(color: Colors.white)),
       description: Text(message, style: TextStyle(color: Colors.white)),
-      position: MotionToastPosition.top, // Change to top, center, or bottom
+     toastAlignment:Alignment.topCenter,// Change to top, center, or bottom
       animationType: AnimationType.slideInFromTop,
       contentPadding: const EdgeInsets.all(10), // // Adjust animation direction
     ).show(context);
