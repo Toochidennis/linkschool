@@ -1,141 +1,134 @@
 name: linkschool
 description: "A new Flutter project."
-# The following line prevents the package from being accidentally published to
-# pub.dev using `flutter pub publish`. This is preferred for private packages.
+
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 
-# The following defines the version and build number for your application.
-# A version number is three numbers separated by dots, like 1.2.43
-# followed by an optional build number separated by a +.
-# Both the version and the builder number may be overridden in flutter
-# build by specifying --build-name and --build-number, respectively.
-# In Android, build-name is used as versionName while build-number used as versionCode.
-# Read more about Android versioning at https://developer.android.com/studio/publish/versioning
-# In iOS, build-name is used as CFBundleShortVersionString while build-number is used as CFBundleVersion.
-# Read more about iOS versioning at
-# https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
-# In Windows, build-name is used as the major, minor, and patch parts
-# of the product and file versions while build-number is used as the build suffix.
+
 version: 1.0.0+1
 
 environment:
   sdk: '>=3.3.0 <4.0.0'
 
-# Dependencies specify other packages that your package needs in order to work.
-# To automatically upgrade your package dependencies to the latest versions
-# consider running `flutter pub upgrade --major-versions`. Alternatively,
-# dependencies can be manually updated by changing the version numbers below to
-# the latest version available on pub.dev. To see which dependencies have newer
-# versions available, run `flutter pub outdated`.
+
 dependencies:
   flutter:
     sdk: flutter
   flutter_svg: ^2.0.10+1
   curved_nav_bar: ^0.0.2
   flutter_rating_bar: ^4.0.1
-  carousel_slider: ^5.1.1
+  carousel_slider: ^5.0.0
   flip_card: ^0.7.0
+  percent_indicator: ^4.0.1
+  fl_chart: ^0.70.1
+  intl: ^0.20.1
+  image_picker: ^1.1.2
+  file_picker: ^8.1.7
+  shared_preferences: ^2.3.5
+  introduction_screen: ^3.1.14
+  flutter_plugin_android_lifecycle: ^2.0.24
+  smooth_page_indicator: ^1.2.0+3
+  dropdown_flutter: 1.0.1
+  flutter_chat_types: ^3.4.3
+  flutter_chat_ui: ^1.6.4
+  uuid: ^3.0.6
+  timezone: ^0.9.2
+  jiffy: ^6.3.2
+  skeletonizer: ^1.4.3
+  
+  # shimmer: ^3.0.0
+
+ 
+
+
+  # xml: ^6.4.0
+  # shimmer: ^3.0.0
+  # shared_preferences: ^2.3.2
+  # flutter_charts: ^0.5.2
+
 
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.6
+  # charts_flutter: ^0.12.0
+  community_charts_flutter: ^1.0.0
+  provider: ^6.1.2
+  foundation: ^0.0.5
+  chewie: ^1.10.0
+  video_player: ^2.9.2
+  bottom_picker: ^2.11.0
+  flutter_dotenv: ^5.2.1
+  fluttertoast: ^8.2.12
+  url_launcher: ^6.3.1
+  motion_toast: ^2.11.0
+  share_plus: ^10.1.4
+  sqflite: ^2.4.1
+  path: ^1.9.0
+  hive: ^2.2.3
+  hive_flutter: ^1.1.0
+  get_it: ^8.0.3
+  dio: ^5.8.0+1
+
+
+  animated_custom_dropdown: ^3.1.1
+  flutter_swiper_view: ^1.1.8
+  freezed_annotation: ^2.4.1
+  # freezed_annotation: ^3.0.0
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
 
-  # The "flutter_lints" package below contains a set of recommended lints to
-  # encourage good coding practices. The lint set provided by the package is
-  # activated in the `analysis_options.yaml` file located at the root of your
-  # package. See that file for information about deactivating specific lint
-  # rules and activating additional ones.
-  flutter_lints: ^4.0.0
+  freezed: ^2.4.1
+  flutter_lints: ^5.0.0
 
-# For information on the generic Dart part of this file, see the
-# following page: https://dart.dev/tools/pub/pubspec
 
-# The following section is specific to Flutter packages.
 flutter:
 
-  # The following line ensures that the Material Icons font is
-  # included with your application, so that you can use the icons in
-  # the material Icons class.
+
   uses-material-design: true
 
-  # To add assets to your application, add an assets section, like this:
+
   assets:
-    - assets/icons/notifications.svg
-    - assets/icons/home.svg
-    - assets/icons/e-learning.svg
-    - assets/icons/admission.svg
-    - assets/icons/games.svg
-    - assets/icons/cbt.svg
-    - assets/icons/portal.svg
-    - assets/icons/video.svg
-    - assets/icons/e-books.svg
-    - assets/icons/linkskool-ai.svg
-    - assets/icons/linkskool-logo.svg
-    - assets/icons/settings.svg
-    - assets/icons/comment.svg
-    - assets/icons/share.svg
-    - assets/icons/result.svg
-    - assets/icons/payment.svg
-    - assets/icons/profile.svg
-    - assets/icons/explore.svg
-    - assets/icons/arrow_back.png
-    - assets/icons/test.png
-    - assets/icons/success.png
-    - assets/icons/average.png
-    - assets/icons/search.png
-    - assets/icons/maths.png
-    - assets/icons/chemistry.png
-    - assets/icons/physics.png
-    - assets/icons/further_maths.png
-    - assets/icons/english.png
-    - assets/icons/biology.png
-    - assets/icons/agric.png
-    - assets/icons/views.png
-    - assets/icons/geography.png
-    - assets/images/background.png
-    - assets/images/millionaire.png
-    - assets/images/ai.png
-    - assets/images/video_1.png
-    - assets/images/book_1.png
-    - assets/images/book_2.png
-    - assets/images/book_3.png
-    - assets/images/book_4.png
-    - assets/images/book_5.png
-    - assets/images/games_1.png
-    - assets/images/games_2.png
-    - assets/images/games_3.png
-#     - images/a_dot_burr.jpeg
-#     - images/a_dot_ham.jpeg
+    - .env
+    - assets/icons/
+    - assets/images/
+    - assets/icons/e_learning/
+    - assets/icons/result/
+    - assets/icons/student/
+    - assets/images/student/
+    - assets/icons/profile/
+    - assets/icons/staff/
+    - assets/images/e-learning/
+    - assets/images/result/
+    - assets/images/admission/
+    - assets/images/explore-images/
+    - assets/images/profile/
+    - assets/images/onboardng-image/
+    - assets/images/gameDes/
+    - assets/icons/gamesicon/
+    - assets/images/video_images/
+    - assets/images/e-subject_detail/
+    - assets/images/news-images/
+    - assets/icons/exams/
+    # - assets/icons/home.svg
+    # - assets/icons/e-learning.svg
+    # - assets/icons/admission.svg
+    # - assets/icons/games.svg
+    # - assets/icons/cbt.svg
 
-  # An image asset can refer to one or more resolution-specific "variants", see
-  # https://flutter.dev/assets-and-images/#resolution-aware
 
-  # For details regarding adding assets from package dependencies, see
-  # https://flutter.dev/assets-and-images/#from-packages
-
-  # To add custom fonts to your application, add a fonts section here,
-  # in this "flutter" section. Each entry in this list should have a
-  # "family" key with the font family name, and a "fonts" key with a
-  # list giving the asset and other descriptors for the font. For
-  # example:
   fonts:
      - family: Urbanist
        fonts:
-         - asset: assets/fonts/Urbanist-Regular.ttf
+         - asset: assets/fonts/urbanist/Urbanist-Regular.ttf
            weight: 400
-         - asset: assets/fonts/Urbanist-Medium.ttf
+         - asset: assets/fonts/urbanist/Urbanist-Medium.ttf
            weight: 500
-         - asset: assets/fonts/Urbanist-MediumItalic.ttf
+         - asset: assets/fonts/urbanist/Urbanist-MediumItalic.ttf
            weight: 500
            style: italic
-         - asset: assets/fonts/Urbanist-SemiBold.ttf
+         - asset: assets/fonts/urbanist/Urbanist-SemiBold.ttf
            weight: 600
-         - asset: assets/fonts/Urbanist-BoldItalic.ttf
+         - asset: assets/fonts/urbanist/Urbanist-BoldItalic.ttf
            weight: 700
-  # For details regarding fonts from package dependencies,
-  # see https://flutter.dev/custom-fonts/#from-packages
