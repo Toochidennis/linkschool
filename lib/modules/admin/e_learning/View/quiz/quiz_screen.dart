@@ -144,6 +144,7 @@ class _QuizScreenState extends State<QuizScreen> {
               context,
               MaterialPageRoute(
                 builder: (context) => AssessmentScreen(
+                  title:widget.question.title,
                  duration: widget.question.duration,
                   questions: widget.questions ?? [],
                   mark:widget.question.marks,

@@ -8,6 +8,7 @@ import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/custom_toaster.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/common/widgets/portal/e_learning/select_classes_dialog.dart';
+import 'package:linkschool/modules/model/e-learning/syllabus_content_model.dart';
 import 'package:linkschool/modules/model/e-learning/topic_model.dart';
 import 'package:linkschool/modules/providers/admin/e_learning/topic_provider.dart';
 import 'package:provider/provider.dart';
@@ -18,7 +19,7 @@ class CreateTopicScreen extends StatefulWidget {
   final String? courseId;
   final int? syllabusId;
   final bool editMode;
-
+final TopicContent?  topicToEdit;
 
   const CreateTopicScreen({
     super.key,
@@ -27,7 +28,7 @@ class CreateTopicScreen extends StatefulWidget {
     this.courseId,
     this.syllabusId,
     this.editMode =false,
- 
+    this.topicToEdit
   });
 
   @override
@@ -56,6 +57,16 @@ class _CreateTopicScreenState extends State<CreateTopicScreen> {
     _objectiveController.dispose();
     super.dispose();
   }
+
+
+void _populateFormForEdit(){
+ if (widget.editMode && widget.topicToEdit != null) {
+      final topic = widget.topicToEdit!;
+      _titleController.text = topic.name ?? '';
+      _objectiveController.text = topic.children?.map((child) => child.title).join(', ') ?? '';
+     // _selectedClass = ''
+    }
+}
 
   Future<void> _loadUserData() async {
     try {

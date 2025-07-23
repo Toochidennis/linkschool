@@ -23,12 +23,16 @@ class ViewQuestionScreen extends StatefulWidget {
   final Map<String, dynamic> questiondata;
   final dynamic class_ids;
   final syllabusClasses;
+  final List<Map<String, dynamic>>? questions;
+  final bool editMode;
   const ViewQuestionScreen({
     super.key,
     required this.question,
     this.class_ids,
     required this.questiondata,
     this.syllabusClasses,
+    this.questions,
+    this.editMode = false,
   });
 
   @override
@@ -46,6 +50,9 @@ class _ViewQuestionScreenState extends State<ViewQuestionScreen> {
   void initState() {
     super.initState();
     currentQuestion = widget.question;
+  if (widget.editMode) {
+    showSaveButton = true; // Show save button in edit mode
+  }
   }
 
     @override
@@ -280,6 +287,8 @@ class _ViewQuestionScreenState extends State<ViewQuestionScreen> {
     CustomToaster.toastError(context, "Error", "Error saving questions: $e");
   }
 }
+
+
 
   Widget _buildSavedQuestionRow(
       String questionType, String questionText, String marks, List<Map<String, dynamic>> options) {
