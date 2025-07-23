@@ -146,6 +146,7 @@ class _QuizScreenState extends State<QuizScreen> {
                 builder: (context) => AssessmentScreen(
                  duration: widget.question.duration,
                   questions: widget.questions ?? [],
+                  mark:widget.question.marks,
                   correctAnswer:widget.correctAnswers
                 ),
               ),

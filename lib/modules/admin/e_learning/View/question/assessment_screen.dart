@@ -21,13 +21,14 @@ class AssessmentScreen extends StatefulWidget {
   final Duration? timer;
   final Duration? duration;
   final List<Map<String, dynamic>>? questions;
+  final String? mark;
   final correctAnswer;
   const AssessmentScreen({
     super.key,
     this.timer,
     this.questions,
     this.duration,
-    this.correctAnswer,
+    this.correctAnswer, this.mark,
   });
 
   @override
@@ -375,6 +376,8 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
             _isAnswered = value.isNotEmpty;
             _isCorrect = question.correctAnswer != null &&
                 value.trim().toLowerCase() == question.correctAnswer!.toLowerCase();
+            // Save user answer for this question
+            userAnswers[_currentQuestionIndex] = value;
           });
         },
         decoration: const InputDecoration(
@@ -435,7 +438,7 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
     if (_currentQuestionIndex > 0) {
       setState(() {
         _currentQuestionIndex--;
-        _resetQuestionState();
+        _restoreUserAnswer();
       });
     }
   }
@@ -444,16 +447,39 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
     if (_currentQuestionIndex < _totalQuestions - 1) {
       setState(() {
         _currentQuestionIndex++;
-        _resetQuestionState();
+        _restoreUserAnswer();
       });
     }
   }
 
+  void _restoreUserAnswer() {
+    // Restore the answer for the current question
+    final answer = userAnswers[_currentQuestionIndex];
+    final question = questions[_currentQuestionIndex];
+    if (question is OptionsQuestion) {
+      _selectedOption = answer as String?;
+      _typedAnswer = null;
+      _isAnswered = _selectedOption != null;
+      _isCorrect = question is TextQuestion &&
+          (question as TextQuestion).correctAnswers.contains(_selectedOption);
+    } else if (question is TypedAnswerQuestion) {
+      _typedAnswer = answer as String?;
+      _selectedOption = null;
+      _isAnswered = _typedAnswer != null && _typedAnswer!.isNotEmpty;
+      _isCorrect = question.correctAnswer != null &&
+          _typedAnswer != null &&
+          _typedAnswer!.trim().toLowerCase() == question.correctAnswer!.toLowerCase();
+    } else {
+      _selectedOption = null;
+      _typedAnswer = null;
+      _isAnswered = false;
+      _isCorrect = false;
+    }
+  }
+
   void _resetQuestionState() {
-    _selectedOption = null;
-    _typedAnswer = null;
-    _isAnswered = false;
-    _isCorrect = false;
+    // This is now handled by _restoreUserAnswer when navigating
+    _restoreUserAnswer();
   }
 
   void _submitQuiz() {
@@ -547,7 +573,9 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
                             builder: (context) => PreviewQuizAssessmentScreen(
                               userAnswer:userAnswers,
                               question: questions,
-                              correctAnswers:widget.correctAnswer
+                              correctAnswers:widget.correctAnswer,
+                              mark:widget.mark,
+                              duration:widget.duration
                             ),
                           ),
                         );

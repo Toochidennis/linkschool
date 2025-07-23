@@ -1090,16 +1090,19 @@ class _EmptySubjectScreenState extends State<EmptySubjectScreen>
           
            // Here is a safer rewrite:
 
-          final questions =item.questions;
-  final List<Map<String, dynamic>> correctAnswers = [];
-  
-  if (item.questions != null) {
-    for (var q in item.questions!) {
+ final questions = item.questions;
+final List<Map<String, dynamic>> correctAnswers = [];
+
+if (item.questions != null) {
+  for (var q in item.questions!) {
+    final correctData = q['correct'];
+    if (correctData != null && correctData is Map<String, dynamic>) {
       correctAnswers.add({
-        'correct_answer': q['correct'],
+        'correct_answer': correctData['text']?.toString() ?? '', // Extract just the text
       });
     }
   }
+}
   print(correctAnswers);
         Navigator.push(
           context,
