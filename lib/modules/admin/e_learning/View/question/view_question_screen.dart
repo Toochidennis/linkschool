@@ -11,7 +11,9 @@ import 'package:linkschool/modules/common/buttons/custom_save_elevated_button.da
 import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/model/e-learning/question_model.dart';
+import 'package:linkschool/modules/providers/admin/e_learning/delete_question.dart';
 import 'package:linkschool/modules/providers/admin/e_learning/quiz_provider.dart';
+import 'package:linkschool/modules/services/api/service_locator.dart';
 import 'package:linkschool/modules/staff/e_learning/form_classes/edit_staff_skill_behaviour_screen.dart';
 import 'package:provider/provider.dart';
 import 'dart:io';
@@ -50,10 +52,108 @@ class _ViewQuestionScreenState extends State<ViewQuestionScreen> {
   void initState() {
     super.initState();
     currentQuestion = widget.question;
-  if (widget.editMode) {
-    showSaveButton = true; // Show save button in edit mode
+
+  if (widget.questions != null) {
+    createdQuestions = widget.questions!;
+     showSaveButton = true; 
   }
+ _initializeQuestions();
+    if (widget.editMode) {
+      showSaveButton = true; 
+    }
   }
+
+
+void _initializeQuestions() {
+  if (widget.questions == null || widget.questions!.isEmpty) return;
+
+  createdQuestions = widget.questions!.map((q) {
+    final questionType = q['question_type'] ?? q['type'] ?? 'short_answer';
+    final questionText = q['question_text'] ?? q['title'] ?? '';
+    final grade = q['question_grade']?.toString() ?? q['grade']?.toString() ?? '1';
+    final id =q['question_id']?.toString();
+    // Initialize controllers
+    final questionController = TextEditingController(text: questionText);
+    final marksController = TextEditingController(text: grade);
+
+    // Handle options for multiple choice
+    List<TextEditingController> optionControllers = [];
+    List<int> correctOptions = [];
+    TextEditingController? correctAnswerController;
+
+    if (questionType == 'multiple_choice') {
+      final options = (q['options'] is List) ? q['options'] as List : [];
+      optionControllers = options.map<TextEditingController>((opt) {
+        return TextEditingController(text: (opt is Map && opt['text'] != null) ? opt['text'].toString() : '');
+      }).toList();
+
+      final correct = (q['correct'] is List) ? q['correct'] as List : [];
+      correctOptions = correct.map<int>((c) {
+        if (c is Map && c['order'] != null) {
+          return c['order'] is int ? c['order'] : int.tryParse(c['order'].toString()) ?? 0;
+        }
+        return 0;
+      }).toList();
+    } else {
+      if (q['correct'] is List && (q['correct'] as List).isNotEmpty) {
+        final firstCorrect = (q['correct'] as List).first;
+        correctAnswerController = TextEditingController(
+          text: (firstCorrect is Map && firstCorrect['text'] != null)
+              ? firstCorrect['text'].toString()
+              : '',
+        );
+      } else if (q['correct'] is Map && q['correct']?['text'] != null) {
+        correctAnswerController = TextEditingController(
+          text: q['correct']['text'].toString(),
+        );
+      } else {
+        correctAnswerController = TextEditingController();
+      }
+    }
+
+    // Handle files
+    final questionFiles = (q['question_files'] is List) ? q['question_files'] as List : [];
+    String? imagePath;
+    String? imageName;
+
+    if (questionFiles.isNotEmpty && questionFiles.first is Map) {
+      imagePath = questionFiles.first['file']?.toString();
+      imageName = questionFiles.first['file_name']?.toString();
+    }
+
+    // Defensive: always provide a Widget for 'widget' key to avoid null Widget exception
+    final questionCardWidget = _buildQuestionCard(
+      questionType,
+      questionController,
+      marksController,
+      optionControllers,
+      correctOptions,
+      correctAnswerController,
+      false,
+    );
+
+    return {
+      'type': questionType,
+      'title': questionText,
+      'grade': grade,
+      'topic': q['topic'] ?? currentQuestion.topic,
+      'options': q['options'] ?? [],
+      'correct': q['correct'] ?? [],
+      'imagePath': imagePath,
+      'imageName': imageName,
+      'question_id': id,
+      'questionController': questionController,
+      'marksController': marksController,
+      'optionControllers': optionControllers,
+      'correctOptions': correctOptions,
+      'correctAnswerController': correctAnswerController,
+      'isExpanded': false,
+      'widget': questionCardWidget, // Always provide a Widget
+    };
+  }).toList();
+}
+
+  
 
     @override
   void dispose() {
@@ -466,6 +566,7 @@ class _ViewQuestionScreenState extends State<ViewQuestionScreen> {
           classId: widget.questiondata['class_id'],
           courseName: widget.questiondata['course_name'],
           levelId: widget.questiondata['level_id'],
+            questions: widget.questions, 
         ),
       ),
 
@@ -1161,39 +1262,55 @@ void _showDeleteQuestionDialog(BuildContext context, int questionIndex) {
   );
 }
 
-void _deleteQuestionFromList(int questionIndex) {
-  if (questionIndex >= 0 && questionIndex < createdQuestions.length) {
-    setState(() {
-      // Get the question to be deleted
-      final questionToDelete = createdQuestions[questionIndex];
-      
-      // Dispose of controllers to prevent memory leaks
-      final questionController = questionToDelete['questionController'] as TextEditingController;
-      final marksController = questionToDelete['marksController'] as TextEditingController;
-      final optionControllers = questionToDelete['optionControllers'] as List<TextEditingController>;
-      final correctAnswerController = questionToDelete['correctAnswerController'] as TextEditingController?;
-      
-      // Dispose controllers
-      questionController.dispose();
-      marksController.dispose();
-      correctAnswerController?.dispose();
+void _deleteQuestionFromList(int questionIndex) async {
+    if (questionIndex < 0 || questionIndex >= createdQuestions.length) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Error: Invalid question index')),
+      );
+      return;
+    }
+
+    final settingId = widget.question.id.toString();
+    final  id =  createdQuestions[questionIndex]['question_id']?.toString(); 
+    final provider = locator<DeleteQuestionProvider>();
+
+    try {
+   
+      await provider.deleteQuestion(id!, settingId);
+      setState(() {
+        final questionToDelete = createdQuestions[questionIndex];
+
+        // Dispose controllers
+        final questionController = questionToDelete['questionController'] as TextEditingController;
+        final marksController = questionToDelete['marksController'] as TextEditingController;
+        final optionControllers = questionToDelete['optionControllers'] as List<TextEditingController>;
+        final correctAnswerController = questionToDelete['correctAnswerController'] as TextEditingController?;
+
+        questionController.dispose();
+        marksController.dispose();
+        correctAnswerController?.dispose();
+        for (var controller in optionControllers) {
+          controller.dispose();
+        }
+
+        // Remove the question
+        createdQuestions.removeAt(questionIndex);
+
+        // Update save button visibility
+        showSaveButton = createdQuestions.isNotEmpty;
+      });
+             CustomToaster.toastSuccess(context, "Success", "Questions deleted successfully");
       
 
-      for (var controller in optionControllers) {
-        controller.dispose();
-      }
-      
-      // Remove the question from the list
-      createdQuestions.removeAt(questionIndex);
-      
-      // Update save button visibility
+      // Navigate back if no questions remain
       if (createdQuestions.isEmpty) {
-        showSaveButton = false;
+        Navigator.of(context).popUntil(ModalRoute.withName('/empty_subject'));
       }
-    });
+    } catch (e) {
     
+      CustomToaster.toastSuccess(context, "Success", "Questions deleted successfully");
+    }
   }
-}
 Widget _buildOptionRow(
     int index,
     TextEditingController controller,

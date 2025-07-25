@@ -96,7 +96,10 @@ Future<List<Topic>> FetchTopic({required int syllabusId}) async {
     required String topic,
     required String objective,
     required int creatorId,
+    required String courseName,
+    required String courseId,
     required String creatorName,
+    required String term,
     required List<ClassModel> classes,
     required int syllabusId
   }) async {
@@ -125,6 +128,9 @@ Future<List<Topic>> FetchTopic({required int syllabusId}) async {
       'creator_name': creatorName,
       'objective': objective,
       'creator_id': creatorId,
+      'course_name':courseName,
+      'course_id':courseId,
+      'term':term,
       'classes': classesJson,
       '_db': dbName,
     };

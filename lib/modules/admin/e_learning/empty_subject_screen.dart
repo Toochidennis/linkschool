@@ -18,6 +18,7 @@ import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/model/e-learning/question_model.dart';
 import 'package:linkschool/modules/model/e-learning/syllabus_content_model.dart';
 import 'package:linkschool/modules/providers/admin/e_learning/assignment_provider.dart';
+import 'package:linkschool/modules/providers/admin/e_learning/delete_sylabus_content.dart';
 import 'package:linkschool/modules/providers/admin/e_learning/material_provider.dart';
 import 'package:linkschool/modules/providers/admin/e_learning/quiz_provider.dart';
 
@@ -186,8 +187,9 @@ class _EmptySubjectScreenState extends State<EmptySubjectScreen>
                 builder: (context) => AdminAssignmentScreen(
                   syllabusId: widget.syllabusId,
                   classId: widget.classId,
-                  courseId: widget.courseId,
+                  
                   levelId: widget.levelId,
+                  courseId: widget.courseId,
                   courseName: widget.courseName,
                   syllabusClasses: widget.syllabusClasses,
                   editMode: false,
@@ -233,6 +235,8 @@ class _EmptySubjectScreenState extends State<EmptySubjectScreen>
                 builder: (BuildContext context) => CreateTopicScreen(
                   syllabusId: widget.syllabusId,
                   courseId: widget.courseId,
+
+                  courseName: widget.courseName,
                   levelId: widget.levelId,
                   classId: widget.classId,
                 ),
@@ -513,8 +517,9 @@ class _EmptySubjectScreenState extends State<EmptySubjectScreen>
                     _handleEditTopic(topic);
                     break;
                   case 'delete':
-                    // Handle delete functionality
-                    //  _showDeleteConfirmation(item);
+              _handleTopicDelete(topic);
+              
+   
                     break;
                 }
               },
@@ -791,17 +796,17 @@ void _debugTopicData(TopicContent topic) {
         padding: const EdgeInsets.symmetric(vertical: 12),
         child: Row(
           children: [
-            Container(
+           Container(
               width: 40,
               height: 40,
-              decoration: const BoxDecoration(
-                color: AppColors.eLearningBtnColor1,
-                shape: BoxShape.circle,
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: AppColors.eLearningBtnColor1.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
               ),
-              child: Icon(
-                icon,
-                color: Colors.white,
-                size: 20,
+              child: SvgPicture.asset(
+                _getIconPathForType(item.type),
+                color: AppColors.eLearningBtnColor1,
               ),
             ),
             const SizedBox(width: 12),
@@ -885,7 +890,7 @@ void _debugTopicData(TopicContent topic) {
     }).toList();
 
     final questionData = {
-    'id': item.id, // Include the quiz ID for editing
+    'id': item.id, 
     'title': item.title,
     'description': item.description,
     'course_name': widget.courseName,
@@ -970,7 +975,8 @@ void _debugTopicData(TopicContent topic) {
             class_ids: item.classes.map((c) => c.id).toList(),
             syllabusClasses: widget.syllabusClasses,
             questions: item.questions, 
-            editMode: true, 
+            editMode: true,
+         
           ),
         ),
       );
@@ -1072,7 +1078,53 @@ void _debugTopicData(TopicContent topic) {
     );
   }
 
-  Future<void> _handleDeleteItem(SyllabusContentItem item) async {
+  void _handleTopicDelete(TopicContent topic) async {
+  // Show confirmation dialog
+  final shouldDelete = await showDialog<bool>(
+    context: context,
+    builder: (context) => AlertDialog(
+      title: const Text('Delete Topic'),
+      content: Text('Are you sure you want to delete "${topic.name}"?'),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context, false),
+          child: const Text('Cancel'),
+        ),
+        TextButton(
+          onPressed: () => Navigator.pop(context, true),
+          child: const Text(
+            'Delete',
+            style: TextStyle(color: Colors.red),
+          ),
+        ),
+      ],
+    ),
+  );
+
+  if (shouldDelete != true) return;
+
+  try {
+    final provider = locator<DeleteSyllabusProvider>();
+    await provider.DeleteTopic(topic.id.toString());
+    
+    // Refresh the content
+    _loadSyllabusContents();
+    
+    CustomToaster.toastSuccess(
+      context,
+      'Success',
+      'Topic deleted successfully',
+    );
+  } catch (e) {
+    CustomToaster.toastError(
+      context,
+      'Error',
+      'Failed to delete topic: ${e.toString()}',
+    );
+  }
+}
+
+  Future<void> _handleDeleteItem(SyllabusContentItem item,) async {
     if (item.id == null) {
       CustomToaster.toastError(context, 'Error', 'Item ID is missing.');
       return;
@@ -1080,29 +1132,26 @@ void _debugTopicData(TopicContent topic) {
 
     try {
       String? error;
-
+    final provider =locator<DeleteSyllabusProvider>();
       switch (item.type.toLowerCase()) {
         case 'assignment':
-          final provider = locator<AssignmentProvider>();
-          await provider.DeleteAssignment(item.id!);
-          error = provider.error;
+    
+          await provider.deleteAssignment(item.id.toString());
           break;
 
         case 'material':
-          final provider = locator<MaterialProvider>();
-          await provider.deleteMaterial(item.id!);
-          error = provider.error;
+          await provider.deleteMaterial(item.id.toString());
+ 
           break;
 
         case "quiz":
         case "question":
-          final provider = locator<QuizProvider>();
-          await provider.DeleteQuiz(item.id!);
-          error = provider.error;
+
+          await provider.DeleteQuiz(item.id.toString());
           break;
 
-        // If you want to support deleting topics, add logic here.
-
+          case "topic":
+           await provider.DeleteTopic(item.id.toString());
         default:
           CustomToaster.toastError(
               context, 'Error', 'Delete not implemented for this item type.');

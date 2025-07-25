@@ -333,7 +333,7 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
               ),
             ),
           const SizedBox(height: 8),
-          Text(question.questionText),
+          Text(question.questionText,style:TextStyle(fontSize: 23),),
           const SizedBox(height: 16),
           Expanded(child: _buildOptions(question)),
         ],

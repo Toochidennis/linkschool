@@ -31,6 +31,9 @@ class TopicProvider extends ChangeNotifier {
     required String topic,
     required String creatorName,
     required String objective,
+    required String courseId,
+    required String courseName,
+    required String term,
     required int creatorId,
     required List<ClassModel> classes,
   
@@ -44,11 +47,13 @@ class TopicProvider extends ChangeNotifier {
       await topicService.createTopic(
         syllabusId: syllabusId,
         topic: topic,
+        courseName:courseName,
+        courseId:courseId,
         creatorName: creatorName,
         objective: objective,
         creatorId: creatorId,
         classes: classes,
-       
+       term:term,
       );
     } catch (e) {
       error = e.toString();

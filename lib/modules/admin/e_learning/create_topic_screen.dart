@@ -17,7 +17,9 @@ class CreateTopicScreen extends StatefulWidget {
   final String? classId;
   final String? levelId;
   final String? courseId;
+  final String? courseName;
   final int? syllabusId;
+
   final bool editMode;
 final TopicContent?  topicToEdit;
 
@@ -28,7 +30,7 @@ final TopicContent?  topicToEdit;
     this.courseId,
     this.syllabusId,
     this.editMode =false,
-    this.topicToEdit
+    this.topicToEdit, this.courseName
   });
 
   @override
@@ -49,6 +51,7 @@ class _CreateTopicScreenState extends State<CreateTopicScreen> {
   void initState() {
     super.initState();
     _loadUserData();
+    _populateFormForEdit();
   }
 
   @override
@@ -158,6 +161,9 @@ void _populateFormForEdit(){
         'objective': _objectiveController.text,
         'creator_id': creatorId ?? 0,
         'classes': classModelList,
+        'course_name':widget.courseName,
+        'term':academicYear,
+        'course_id':widget.levelId
       };
 
       await topicProvider.addTopic(
@@ -165,6 +171,9 @@ void _populateFormForEdit(){
         topic: _titleController.text,
         creatorName: creatorName ?? 'Unknown',
         objective: _objectiveController.text,
+        term:academicYear!,
+        courseId: widget.levelId! ,
+        courseName:widget.courseName!,
         creatorId: creatorId ?? 0,
         classes: classModelList,
       );

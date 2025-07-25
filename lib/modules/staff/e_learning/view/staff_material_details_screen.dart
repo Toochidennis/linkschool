@@ -140,7 +140,7 @@ class _StaffMaterialDetailsScreenState extends State<StaffMaterialDetailsScreen>
           _buildDueDate(),
           _buildDivider(),
           _buildTitle(),
-          _buildGrade(),
+       
           _buildDivider(),
           _buildDescription(),
           _buildDivider(),
@@ -200,24 +200,7 @@ class _StaffMaterialDetailsScreenState extends State<StaffMaterialDetailsScreen>
     );
   }
 
-  Widget _buildGrade() {
-    return Padding(
-      padding: const EdgeInsets.all(16.0),
-      child: Row(
-        children: [
-          Text(
-            'Grade : ',
-            style: AppTextStyles.normal600(
-                fontSize: 16.0, color: AppColors.eLearningTxtColor1),
-          ),
-          Text(
-            widget.material.marks,
-            style: AppTextStyles.normal500(fontSize: 16.0, color: Colors.black),
-          ),
-        ],
-      ),
-    );
-  }
+
 
   Widget _buildDescription() {
     return Padding(
@@ -243,7 +226,7 @@ class _StaffMaterialDetailsScreenState extends State<StaffMaterialDetailsScreen>
   Widget _buildAttachments() {
     final attachments = widget.material.attachments;
     if (attachments == null || attachments.isEmpty) {
-      return const SizedBox.shrink();
+      return Center(child:Text(" no attachments available"),);
     }
     
     return Padding(

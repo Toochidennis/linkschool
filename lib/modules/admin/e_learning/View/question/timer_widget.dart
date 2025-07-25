@@ -77,7 +77,11 @@ class _TimerWidgetState extends State<TimerWidget> {
         const SizedBox(width: 8),
         Text(
           _formatTime(_remainingTimeInSeconds),
-          style: const TextStyle(color: Colors.white, fontSize: 18),
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 30,
+            fontWeight: FontWeight.bold,
+          ),
         ),
       ],
     );

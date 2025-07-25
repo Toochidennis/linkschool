@@ -39,24 +39,6 @@ class PreviewQuizAssessmentScreen extends StatelessWidget {
         ),
         title: const Text('Quiz Summary'),
         centerTitle: true,
-          actions: [
-            PopupMenuButton<String>(
-              icon: const Icon(Icons.more_vert, color: AppColors.primaryLight),
-              onSelected: (String result) {
-                // Handle menu item selection
-              },
-              itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
-                const PopupMenuItem<String>(
-                  value: 'edit',
-                  child: Text('Edit'),
-                ),
-                const PopupMenuItem<String>(
-                  value: 'delete',
-                  child: Text('Delete'),
-                ),
-              ],
-            ),
-          ],
         backgroundColor: AppColors.backgroundLight,
         flexibleSpace: FlexibleSpaceBar(
           background: Stack(

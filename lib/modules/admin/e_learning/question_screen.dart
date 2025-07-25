@@ -17,6 +17,7 @@ import 'package:linkschool/modules/model/e-learning/question_model.dart';
 
 class QuestionScreen extends StatefulWidget {
   final Function(Question) onSave;
+  final List<Map<String, dynamic>>? questions;
   final bool isEditing;
   final Question? question;
   final String? classId;
@@ -40,6 +41,7 @@ class QuestionScreen extends StatefulWidget {
     this.courseName,
     this.syllabusId,
       this.syllabusClasses,
+       this.questions,
       this.editMode = false,
       this.questionToEdit
   });
@@ -285,6 +287,7 @@ _selectedTopicId = widget.question!.topicId;
             MaterialPageRoute(
               builder: (context) => ViewQuestionScreen(
                 questiondata: questionData,
+                 questions: widget.questions,
                 class_ids: classIdList.isNotEmpty ? classIdList : [{'id': '', 'name': ''}],
                 question: question),
             ),

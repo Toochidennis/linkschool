@@ -789,32 +789,27 @@ void _addMaterial() async {
       'topic_id': _selectedTopicId ?? 0,
       'syllabus_id': widget.syllabusId,
       'creator_id': creatorId,
+      'course_name':widget.courseName,
+      'course_id':widget.courseId,
+      'level_id':widget.levelId,
       'creator_name': creatorName,
+      "term": academicTerm,
       'classes': classIdList.isNotEmpty
           ? classIdList
           : [
               {'id': '', 'name': ''},
             ],
-      'files': _attachments.map((attachment) {
-        final attachmentType = _getAttachmentType(attachment.iconPath ?? "", attachment.content ?? "");
-        String fileName;
-        
-        if (attachmentType == 'url') {
-   
-          fileName =attachment.content ?? '';
-        } else {
-          fileName = attachment.fileContent ?? "";
-  }
-        
-        return {
-          'file_name': fileName,
-          'old_file_name':  fileName,
-          'type': attachmentType,
-          'file': attachmentType == 'url'
-              ? attachment.content
-              : attachment.base64Content,
-        };
-      }).toList(),
+     'files': _attachments.map((attachment) {
+  final attachmentType = _getAttachmentType(attachment.iconPath ?? "", attachment.content ?? "");
+  return {
+    'file_name': attachment.fileName ?? '', // Use attachment.fileName
+    'old_file_name': attachment.fileName ?? '', // Use attachment.fileName
+    'type': attachmentType,
+    'file': attachmentType == 'url'
+        ? attachment.content
+        : attachment.base64Content,
+  };
+}).toList(),
        
     };
          

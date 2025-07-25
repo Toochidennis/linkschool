@@ -56,7 +56,7 @@ class StaffAssignmentDetailsScreen extends StatefulWidget {
           ),
         ),
         title: Text(
-          'Material',
+          'Assignment',
           style: AppTextStyles.normal600(
             fontSize: 24.0,
             color: AppColors.paymentTxtColor1,
@@ -241,7 +241,7 @@ class StaffAssignmentDetailsScreen extends StatefulWidget {
   Widget _buildAttachments() {
     final attachments = widget.assignment.attachments;
     if (attachments == null || attachments.isEmpty) {
-      return const SizedBox.shrink();
+      return Center(child: Text('no attachment available'),);
     }
     
     return Padding(
