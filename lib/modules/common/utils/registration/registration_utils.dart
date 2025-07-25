@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:linkschool/config/env_config.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/common/utils/registration/subject_selection.dart';
@@ -62,7 +63,7 @@ class CourseRegistrationService {
         "year": year,
         "term": term,
         "registered_courses": registeredCourses,
-        "_db": "aalmgzmy_linkskoo_practice"
+        "_db": EnvConfig.dbName
       };
       
       // Print payload for debugging
@@ -97,7 +98,7 @@ class CourseRegistrationService {
       }
 
       final Map<String, dynamic> queryParams = {
-        "_db": "aalmgzmy_linkskoo_practice",
+        "_db": EnvConfig.dbName,
         "year": year.toString(),
         "term": term.toString(),
       };

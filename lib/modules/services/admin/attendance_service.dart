@@ -50,42 +50,80 @@ Future<ApiResponse<List<AttendanceRecord>>> getAttendanceHistory({
   }
 }
 
-  Future<ApiResponse<AttendanceRecord>> getAttendanceDetails({
-    required String attendanceId,
-    required String dbName,
-  }) async {
-    try {
-      final response = await _apiService.get(
-        endpoint: 'portal/attendance/$attendanceId',
-        queryParams: {
-          '_db': dbName,
-        },
+Future<ApiResponse<AttendanceRecord>> getAttendanceDetails({
+  required String attendanceId,
+  required String dbName,
+}) async {
+  try {
+    final response = await _apiService.get(
+      endpoint: 'portal/attendance/$attendanceId',
+      queryParams: {
+        '_db': dbName,
+      },
+    );
+
+    if (response.success && response.rawData != null) {
+      final attendanceRecordData = response.rawData!['data']; // Changed from 'attendance_records' to 'data'
+      final AttendanceRecord attendanceRecord = AttendanceRecord.fromJson(attendanceRecordData);
+
+      return ApiResponse<AttendanceRecord>(
+        success: true,
+        message: 'Attendance details fetched successfully',
+        statusCode: response.statusCode,
+        data: attendanceRecord,
+        rawData: response.rawData,
       );
-
-      if (response.success && response.rawData != null) {
-        final attendanceRecordData = response.rawData!['attendance_records'];
-        final AttendanceRecord attendanceRecord = AttendanceRecord.fromJson(attendanceRecordData);
-
-        return ApiResponse<AttendanceRecord>(
-          success: true,
-          message: 'Attendance details fetched successfully',
-          statusCode: response.statusCode,
-          data: attendanceRecord,
-          rawData: response.rawData,
-        );
-      } else {
-        return ApiResponse<AttendanceRecord>.error(
-          response.message,
-          response.statusCode,
-        );
-      }
-    } catch (e) {
+    } else {
       return ApiResponse<AttendanceRecord>.error(
-        'Failed to fetch attendance details: ${e.toString()}',
-        500,
+        response.message,
+        response.statusCode,
       );
     }
+  } catch (e) {
+    return ApiResponse<AttendanceRecord>.error(
+      'Failed to fetch attendance details: ${e.toString()}',
+      500,
+    );
   }
+}
+
+
+  // Future<ApiResponse<AttendanceRecord>> getAttendanceDetails({
+  //   required String attendanceId,
+  //   required String dbName,
+  // }) async {
+  //   try {
+  //     final response = await _apiService.get(
+  //       endpoint: 'portal/attendance/$attendanceId',
+  //       queryParams: {
+  //         '_db': dbName,
+  //       },
+  //     );
+
+  //     if (response.success && response.rawData != null) {
+  //       final attendanceRecordData = response.rawData!['attendance_records'];
+  //       final AttendanceRecord attendanceRecord = AttendanceRecord.fromJson(attendanceRecordData);
+
+  //       return ApiResponse<AttendanceRecord>(
+  //         success: true,
+  //         message: 'Attendance details fetched successfully',
+  //         statusCode: response.statusCode,
+  //         data: attendanceRecord,
+  //         rawData: response.rawData,
+  //       );
+  //     } else {
+  //       return ApiResponse<AttendanceRecord>.error(
+  //         response.message,
+  //         response.statusCode,
+  //       );
+  //     }
+  //   } catch (e) {
+  //     return ApiResponse<AttendanceRecord>.error(
+  //       'Failed to fetch attendance details: ${e.toString()}',
+  //       500,
+  //     );
+  //   }
+  // }
 }
 
 
