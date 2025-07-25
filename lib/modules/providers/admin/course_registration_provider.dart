@@ -50,9 +50,9 @@ class CourseRegistrationProvider with ChangeNotifier {
       );
 
       if (response.success && response.rawData != null) {
-        final List<dynamic> coursesJson = response.rawData!['registered_courses'] ?? [];
+        final List<dynamic> coursesJson = response.rawData!['data'] ?? [];
         final courseIds = coursesJson
-            .map<int>((json) => json['id'] as int)
+            .map<int>((json) => (json['id'] as num).toInt())
             .toList();
         print('Fetched course IDs: $courseIds');
         return courseIds;
@@ -107,6 +107,7 @@ class CourseRegistrationProvider with ChangeNotifier {
 
 
 
+
 // import 'package:flutter/material.dart';
 // import 'package:linkschool/modules/model/admin/course_registration_model.dart';
 // import 'package:linkschool/modules/services/admin/course_registration_service.dart';
@@ -142,7 +143,6 @@ class CourseRegistrationProvider with ChangeNotifier {
 //     }
 //   }
 
-//   // New method to fetch registered courses for a single student
 //   Future<List<int>> fetchStudentRegisteredCourses({
 //     required int studentId,
 //     required String classId,
@@ -160,21 +160,22 @@ class CourseRegistrationProvider with ChangeNotifier {
 //       );
 
 //       if (response.success && response.rawData != null) {
-//         // Extract course IDs from the response
 //         final List<dynamic> coursesJson = response.rawData!['registered_courses'] ?? [];
-//         return coursesJson
+//         final courseIds = coursesJson
 //             .map<int>((json) => json['id'] as int)
 //             .toList();
+//         print('Fetched course IDs: $courseIds');
+//         return courseIds;
 //       }
-      
+
+//       print('No registered courses found for student $studentId');
 //       return [];
 //     } catch (e) {
-//       debugPrint('Error fetching student registered courses: ${e.toString()}');
+//       print('Error fetching student registered courses: ${e.toString()}');
 //       return [];
 //     }
 //   }
 
-//   // Updated to accept custom payload
 //   Future<bool> registerCourse(CourseRegistrationModel course, {Map<String, dynamic>? payload}) async {
 //     _isLoading = true;
 //     notifyListeners();
@@ -186,7 +187,6 @@ class CourseRegistrationProvider with ChangeNotifier {
 //       );
 
 //       if (response.success) {
-//         // Update the course count for the student
 //         int index = _registeredCourses.indexWhere((s) => s.studentId == course.studentId);
 //         if (index != -1) {
 //           var updatedStudent = CourseRegistrationModel(
