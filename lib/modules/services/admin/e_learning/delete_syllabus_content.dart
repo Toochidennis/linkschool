@@ -149,4 +149,31 @@ class DeleteSyllabusService {
       throw Exception("Failed to Delete topic Content: $e");
     }
   }
+
+   Future<void> deletesyllabus(int syllabusId) async {
+    final userBox = Hive.box('userData');
+    final loginData = userBox.get('userData') ?? userBox.get('loginResponse');
+    final dbName = userBox.get('_db') ?? 'aalmgzmy_linkskoo_practice';
+    if (loginData == null) {
+      throw Exception('No login data available');
+    }
+    final token = loginData['token'] ?? userBox.get('token');
+    if (token != null) {
+      _apiService.setAuthToken(token);
+      print('Token set: $token');
+    }
+    final response = await _apiService.delete<Map<String, dynamic>>(
+      endpoint: 'portal/elearning/contents/$syllabusId',
+      body: {'_db': dbName},
+    );
+
+    if (!response.success) {
+      print('Failed to delete syllabus: ${response.message}');
+      throw Exception('Failed to delete syllabus: ${response.message}');
+    } else {
+      print('Syllabus deleted: ${response.message}');
+    }
+  }
+
+  
 }

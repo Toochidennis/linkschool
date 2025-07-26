@@ -162,7 +162,7 @@ void _populateFormForEdit(){
         'creator_id': creatorId ?? 0,
         'classes': classModelList,
         'course_name':widget.courseName,
-        'term':academicYear,
+        'term':academicYear ?? 0,
         'course_id':widget.levelId
       };
 
@@ -171,9 +171,10 @@ void _populateFormForEdit(){
         topic: _titleController.text,
         creatorName: creatorName ?? 'Unknown',
         objective: _objectiveController.text,
-        term:academicYear!,
-        courseId: widget.levelId! ,
-        courseName:widget.courseName!,
+        term:academicYear ?? '',
+        courseId: widget.courseId! ,
+        levelId: widget.levelId!,
+        courseName:widget.courseName ??'',
         creatorId: creatorId ?? 0,
         classes: classModelList,
       );

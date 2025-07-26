@@ -76,4 +76,23 @@ class DeleteSyllabusProvider with ChangeNotifier {
     }
 
   }
+
+    Future<void> deletesyllabus(int syllabusId) async {
+ 
+   _isloading =true;
+    _error='';
+    notifyListeners();
+
+    try {
+      await _deleteSyllabusService.deletesyllabus(syllabusId);
+      print("Syllabus Deleted successfully");
+    } catch (e) {
+      _error = e.toString();
+      print("Delete Error: $_error");
+      rethrow;
+    } finally {
+      _isloading =false;
+      notifyListeners();
+    }
+  }
 }

@@ -99,6 +99,7 @@ Future<List<Topic>> FetchTopic({required int syllabusId}) async {
     required String courseName,
     required String courseId,
     required String creatorName,
+    required String levelId,
     required String term,
     required List<ClassModel> classes,
     required int syllabusId
@@ -130,6 +131,7 @@ Future<List<Topic>> FetchTopic({required int syllabusId}) async {
       'creator_id': creatorId,
       'course_name':courseName,
       'course_id':courseId,
+      'level_id': levelId,
       'term':term,
       'classes': classesJson,
       '_db': dbName,

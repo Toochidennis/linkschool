@@ -13,6 +13,7 @@ import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/custom_toaster.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/model/e-learning/syllabus_model.dart';
+import 'package:linkschool/modules/providers/admin/e_learning/delete_sylabus_content.dart';
 import 'package:linkschool/modules/providers/admin/e_learning/syllabus_provider.dart';
 import 'package:linkschool/modules/services/admin/e_learning/syllabus_service.dart';
 import 'package:linkschool/modules/services/api/api_service.dart';
@@ -373,8 +374,9 @@ await _syllabusProvider.fetchSyllabus(levelId, term,courseId);
     final String term = _syllabusList[index]["term"] ;
     final String levelId = widget.levelId!;
     final String courseId = widget.courseId!;
-    SyllabusProvider syllabusProvider = Provider.of<SyllabusProvider>(context, listen: false);
-  await  syllabusProvider.deletesyllabus(syllabusId, levelId, term, courseId);
+    final deleteProvider =Provider.of<DeleteSyllabusProvider>(context,listen:false);
+   
+  await  deleteProvider.deletesyllabus(syllabusId);
      _loadSyllabuses();
   }
 
