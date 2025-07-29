@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:linkschool/modules/admin/e_learning/View/question/assessment_screen.dart';
 import 'package:linkschool/modules/admin/e_learning/View/quiz/quiz_assessment_screen.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/buttons/custom_long_elevated_button.dart';
@@ -11,8 +12,10 @@ import '../../../../model/e-learning/question_model.dart';
 
 class QuizScreen extends StatefulWidget {
   final Question question;
+  final List<Map<String, dynamic>>? questions;
+  final List<Map<String,dynamic>>? correctAnswers;
 
-  const QuizScreen({super.key, required this.question});
+  const QuizScreen({super.key, required this.question, this.questions, this.correctAnswers});
 
   @override
   _QuizScreenState createState() => _QuizScreenState();
@@ -136,11 +139,14 @@ class _QuizScreenState extends State<QuizScreen> {
         CustomLongElevatedButton(
           onPressed: () {
             // Navigate to the assessment screen
+            print("SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS ${widget.correctAnswers}");
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (context) => QuizAssessmentScreen(
-                  question: widget.question,
+                builder: (context) => AssessmentScreen(
+                 duration: widget.question.duration,
+                  questions: widget.questions ?? [],
+                  correctAnswer:widget.correctAnswers
                 ),
               ),
             );

@@ -26,6 +26,9 @@ class QuestionScreen extends StatefulWidget {
   final int? syllabusId;
    final syllabusClasses;
 
+     final bool editMode;
+  final Question?  questionToEdit;
+
   const QuestionScreen({
     super.key,
     required this.onSave,
@@ -37,6 +40,8 @@ class QuestionScreen extends StatefulWidget {
     this.courseName,
     this.syllabusId,
       this.syllabusClasses,
+      this.editMode = false,
+      this.questionToEdit
   });
 
   @override
@@ -73,18 +78,9 @@ class _QuestionScreenState extends State<QuestionScreen> {
   void initState() {
     super.initState();
     _loadUserData();
+    _populateFormForEdit();
     if (widget.question != null) {
-      print('question: ${widget.question}');
-      print('title: ${widget.question?.title}');
-      // print('levelId: ${widget.question?.levelId}'); // Removed: levelId is not defined on Question
-      print('description: ${widget.question?.description}');
-      print('selectedClass: ${widget.question?.selectedClass}');
-      print('startDate: ${widget.question?.startDate}');
-      print('endDate: ${widget.question?.endDate}');
-      print('topic: ${widget.question?.topic}');
-      print('topicId: ${widget.question?.topicId}');
-      print('duration: ${widget.question?.duration}');
-      print('marks: ${widget.question?.marks}');
+     
       _titleController.text = widget.question!.title;
       _descriptionController.text = widget.question!.description;
       _selectedClass = widget.question!.selectedClass;
@@ -96,6 +92,22 @@ _selectedTopicId = widget.question!.topicId;
       _marks = widget.question!.marks;
     }
   }
+
+ void _populateFormForEdit() {
+  if (widget.editMode && widget.questionToEdit != null) {
+    final question = widget.questionToEdit!;
+    _titleController.text = question.title;
+    _descriptionController.text = question.description;
+    _marksController.text = question.marks;
+    _endDate = question.endDate;
+    _startDate = question.startDate;
+    _selectedDuration =question.duration;
+    _selectedTopic = question.topic;
+    //  _attachments = question.attachments;
+     _selectedClass = question.selectedClass;
+  }
+}
+
 
   // Validation methods
   bool _validateMarks() {
@@ -249,7 +261,7 @@ _selectedTopicId = widget.question!.topicId;
           'start_date': _startDate.toIso8601String(),
           'end_date': _endDate.toIso8601String(),
           'topic': _selectedTopic,
-          "topic_id": _selectedTopicId,
+           "topic_id": _selectedTopicId  ?? 0,
           'duration': _selectedDuration.inSeconds, // or .inMinutes
           'marks':int.tryParse(_marks.replaceAll(' marks', '')) != null,
           'course_id': courseId,

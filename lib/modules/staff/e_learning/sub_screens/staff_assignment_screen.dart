@@ -12,6 +12,8 @@ import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/common/widgets/portal/e_learning/select_classes_dialog.dart';
 import 'package:linkschool/modules/admin/e_learning/select_topic_screen.dart';
 
+import '../../../common/widgets/portal/attachmentItem.dart';
+
 
 
 
@@ -396,14 +398,14 @@ class _StaffAssignmentScreenState extends State<StaffAssignmentScreen> {
       child: Row(
         children: [
           SvgPicture.asset(
-            attachment.iconPath,
+            attachment.iconPath!,
             width: 20,
             height: 20,
           ),
           const SizedBox(width: 8.0),
           Expanded(
             child: Text(
-              attachment.fileName,
+              attachment.fileName!,
               style: AppTextStyles.normal400(
                   fontSize: 14.0, color: AppColors.primaryLight),
               overflow: TextOverflow.ellipsis,

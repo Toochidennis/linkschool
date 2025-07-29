@@ -20,4 +20,30 @@ class MaterialProvider extends ChangeNotifier {
     isLoading = false;
     notifyListeners();
   }
+  Future<void> UpDateMaterial(Map<String, dynamic> material ,int id) async {
+    isLoading = true;
+    error = null; 
+    notifyListeners();
+    try {
+      await _materialService.UpDateMaterial(material,id);
+    } catch (e) {
+      print('Error adding material: $e');
+      rethrow;
+    }
+    isLoading = false;
+    notifyListeners();
+  }
+
+  Future<void> deleteMaterial(int id) async {
+    isLoading = true;
+    error = null;
+    notifyListeners();
+    try {
+      await _materialService.deleteMaterial(id);
+    } catch (e) {
+      error = e.toString();
+    }
+    isLoading = false;
+    notifyListeners();
+  }
 }

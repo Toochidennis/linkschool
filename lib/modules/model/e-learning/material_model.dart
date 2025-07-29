@@ -1,3 +1,7 @@
+import 'package:linkschool/modules/admin/e_learning/admin_assignment_screen.dart';
+
+import '../../common/widgets/portal/attachmentItem.dart';
+
 class Material {
   final String title;
   final String description;
@@ -8,6 +12,7 @@ class Material {
   final Duration duration;
   final String marks;
   final DateTime createdAt;
+  final  List<AttachmentItem>? attachments;
 
   Material({
     required this.title,
@@ -18,7 +23,8 @@ class Material {
     required this.topic,
     required this.duration,
     required this.marks,
-
-    DateTime? createdAt,
+    this.attachments,
+    DateTime? createdAt, int? id,
+   
   }) : createdAt = createdAt ?? DateTime.now();
 }
