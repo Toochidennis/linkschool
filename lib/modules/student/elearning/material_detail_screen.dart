@@ -10,16 +10,16 @@ import 'package:linkschool/modules/student/elearning/attachment_preview_screen.d
 import '../../common/widgets/portal/attachmentItem.dart';
 import '../../model/student/elearningcontent_model.dart';
 
-class AssignmentDetailsScreen extends StatefulWidget {
+class MaterialDetailScreen extends StatefulWidget {
   final ChildContent childContent;
 
-  const AssignmentDetailsScreen({super.key, required this.childContent});
+  const MaterialDetailScreen({super.key, required this.childContent});
 
   @override
-  State<AssignmentDetailsScreen> createState() => _AssignmentDetailsScreenState();
+  State<MaterialDetailScreen> createState() => _MaterialDetailScreen();
 }
 
-class _AssignmentDetailsScreenState extends State<AssignmentDetailsScreen> {
+class _MaterialDetailScreen extends State<MaterialDetailScreen> {
   late double opacity;
   final String networkImage = 'https://img.freepik.com/free-vector/gradient-human-rights-day-background_52683-149974.jpg?t=st=1717832829~exp=1717833429~hmac=3e938edcacd7fef2a791b36c7d3decbf64248d9760dd7da0a304acee382b8a86';
 
@@ -34,14 +34,14 @@ class _AssignmentDetailsScreenState extends State<AssignmentDetailsScreen> {
 
 
 
-void _navigateToAttachmentPreview() {
-  Navigator.push(
-    context,
-    MaterialPageRoute(
-      builder: (context) => AttachmentPreviewScreen(attachments: _attachments),
-    ),
-  );
-}
+  void _navigateToAttachmentPreview() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => AttachmentPreviewScreen(attachments: _attachments),
+      ),
+    );
+  }
 
 
   @override
@@ -62,7 +62,7 @@ void _navigateToAttachmentPreview() {
           ),
         ),
         title: Text(
-          'Assignment',
+          'Material',
           style: AppTextStyles.normal600(
             fontSize: 24.0,
             color: AppColors.eLearningBtnColor1,
@@ -97,12 +97,12 @@ void _navigateToAttachmentPreview() {
                 style: TextStyle(color: Colors.black, fontSize: 14),
               ),
               const SizedBox(height: 16),
-               Text(
+              Text(
                 '${widget.childContent.description}',
                 style: TextStyle(fontSize: 16, color: Colors.black),
               ),
               const SizedBox(height: 24),
-               Text(
+              Text(
                 'Grade:${widget.childContent.grade} marks',
                 style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
               ),
@@ -160,18 +160,6 @@ void _navigateToAttachmentPreview() {
                 ],
               ),
               const Spacer(),
-              ElevatedButton(
-                // onPressed: _showAttachmentOptions,
-                onPressed: _navigateToAttachmentPreview,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.eLearningBtnColor1,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  minimumSize: const Size(double.infinity, 50),
-                ),
-                child: const Text('Add work', style: TextStyle(fontSize: 16, color: AppColors.backgroundLight)),
-              ),
             ],
           ),
         ),

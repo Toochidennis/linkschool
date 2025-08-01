@@ -30,6 +30,9 @@ import 'package:linkschool/modules/services/admin/course_registration_service.da
 import 'package:linkschool/modules/services/admin/assessment_service.dart';
 import 'package:linkschool/modules/providers/admin/student_provider.dart';
 import 'package:linkschool/modules/services/admin/behaviour_service.dart';
+import 'package:linkschool/modules/services/student/elearningcontent_service.dart';
+
+import '../student/student_dasboard_service.dart';
 
 
 final GetIt locator = GetIt.instance;
@@ -124,6 +127,10 @@ void setupServiceLocator() {
   locator.registerLazySingleton<SyllabusService>(
     () => SyllabusService(locator<ApiService>())
   );
+  locator.registerLazySingleton<DashboardService>(()
+  => DashboardService());
+  locator.registerLazySingleton<ElearningContentService>(()
+  => ElearningContentService());
   locator.registerLazySingleton<SyllabusProvider>(
     () => SyllabusProvider(locator<SyllabusService>())
   );
