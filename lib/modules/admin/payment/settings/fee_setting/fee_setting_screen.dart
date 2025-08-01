@@ -265,11 +265,11 @@ void _showLevelSelectionOverlay(BuildContext context) {
   );
 }
 
-  void _navigateToFeeDetailsScreen(BuildContext context, String className) {
+  void _navigateToFeeDetailsScreen(BuildContext context, String levelName) {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => FeeSettingDetailsScreen(className: className),
+        builder: (context) => FeeSettingDetailsScreen(levelName: levelName),
       ),
     );
   }

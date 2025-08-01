@@ -6,9 +6,9 @@ import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 
 class FeeSettingDetailsScreen extends StatefulWidget {
-  final String className;
+  final String levelName;
 
-  const FeeSettingDetailsScreen({super.key, required this.className});
+  const FeeSettingDetailsScreen({super.key, required this.levelName});
 
   @override
   State<FeeSettingDetailsScreen> createState() =>
@@ -16,7 +16,7 @@ class FeeSettingDetailsScreen extends StatefulWidget {
 }
 
 class _FeeSettingDetailsScreenState extends State<FeeSettingDetailsScreen> {
-  String selectedClass = '';
+  String selectedLevel = '';
   late double opacity;
 
   final List<Map<String, dynamic>> feeItems = [
@@ -36,7 +36,7 @@ class _FeeSettingDetailsScreenState extends State<FeeSettingDetailsScreen> {
   @override
   void initState() {
     super.initState();
-    selectedClass = widget.className;
+    selectedLevel = widget.levelName;
     
     // Initialize focus nodes and states for each fee item
     for (var i = 0; i < feeItems.length; i++) {
@@ -68,7 +68,7 @@ class _FeeSettingDetailsScreenState extends State<FeeSettingDetailsScreen> {
     super.dispose();
   }
 
-void _showClassSelectionBottomSheet() {
+void _showLevelSelectionBottomSheet() {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -93,7 +93,7 @@ void _showClassSelectionBottomSheet() {
                 children: [
                   Center(
                     child: Text(
-                      'Select Class',
+                      'Select Levels',
                       style: AppTextStyles.normal600(
                         fontSize: 20,
                         color: AppColors.eLearningBtnColor1,
@@ -103,9 +103,9 @@ void _showClassSelectionBottomSheet() {
                   const SizedBox(height: 24),
                   Flexible(
                     child: ListView.builder(
-                      itemCount: ['Basic One A', 'Basic One B', 'Basic Two A'].length,
+                      itemCount: ['Basic One', 'Basic Two', 'Basic Three'].length,
                       itemBuilder: (context, index) {
-                        String className = ['Basic One A', 'Basic One B', 'Basic Two A'][index];
+                        String levelName = ['Basic One', 'Basic Two', 'Basic Three'][index];
                         return Padding(
                           padding: const EdgeInsets.symmetric(
                             horizontal: 24,
@@ -114,7 +114,7 @@ void _showClassSelectionBottomSheet() {
                           child: ElevatedButton(
                             onPressed: () {
                               setState(() {
-                                selectedClass = className;
+                                selectedLevel = levelName;
                               });
                               Navigator.pop(context);
                             },
@@ -130,10 +130,10 @@ void _showClassSelectionBottomSheet() {
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
                                 Text(
-                                  className,
+                                  levelName,
                                   style: const TextStyle(fontSize: 16),
                                 ),
-                                if (selectedClass == className)
+                                if (selectedLevel == levelName)
                                   const Icon(
                                     Icons.check_circle,
                                     color: AppColors.eLearningBtnColor1,
@@ -176,7 +176,7 @@ void _showClassSelectionBottomSheet() {
           ),
         ),
         title: Text(
-          selectedClass,
+          selectedLevel,
           style: AppTextStyles.normal600(
             fontSize: 24.0,
             color: AppColors.eLearningBtnColor1,
@@ -206,7 +206,7 @@ void _showClassSelectionBottomSheet() {
           Padding(
             padding: const EdgeInsets.all(16.0),
             child: InkWell(
-              onTap: _showClassSelectionBottomSheet,
+              onTap: _showLevelSelectionBottomSheet,
               child: Container(
                 padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 decoration: BoxDecoration(
@@ -217,7 +217,7 @@ void _showClassSelectionBottomSheet() {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      selectedClass,
+                      selectedLevel,
                       style: AppTextStyles.normal500(fontSize: 16, color: AppColors.backgroundDark),
                     ),
                     Icon(
