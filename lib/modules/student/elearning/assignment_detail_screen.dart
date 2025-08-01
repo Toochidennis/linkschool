@@ -7,6 +7,8 @@ import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/student/elearning/attachment_preview_screen.dart';
 
+import '../../common/widgets/portal/attachmentItem.dart';
+
 class AssignmentDetailsScreen extends StatefulWidget {
   const AssignmentDetailsScreen({super.key});
 

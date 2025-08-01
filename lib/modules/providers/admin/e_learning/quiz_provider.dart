@@ -33,6 +33,25 @@ class QuizProvider extends ChangeNotifier {
       notifyListeners();
     }
   }
+  Future<void> DeleteQuiz(int id) async {
+    isLoading = true;
+    error = null;
+    message = null;
+    notifyListeners();
+
+    try {
+      await _quizService.DeleteQuiz(id);
+      message = 'quiz deleted successfully';
+    } catch (e) {
+      print('Error deleting quiz: $e');
+      error = e.toString();
+      message = 'Failed to delete quiz: $error';
+      rethrow;
+    } finally {
+      isLoading = false;
+      notifyListeners();
+    }
+  }
 
   Future<void> loadContent(int syllabusId) async {
     // Prevent multiple simultaneous loads

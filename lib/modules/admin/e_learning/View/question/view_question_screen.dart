@@ -208,7 +208,7 @@ class _ViewQuestionScreenState extends State<ViewQuestionScreen> {
       'duration': durationInSeconds, // Use the converted value
       'start_date': widget.questiondata['start_date'],
       'end_date': widget.questiondata['end_date'],
-      'topic': widget.questiondata['topic'],
+      'topic': widget.questiondata['topic'] ,
       "creator_id": widget.questiondata['creator_id'],
       'creator_name': widget.questiondata['creator_name'],
       'course_id': widget.questiondata['course_id'],

@@ -1,5 +1,4 @@
-// ignore_for_file: deprecated_member_use
-
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:linkschool/modules/admin/e_learning/View/quiz/preview_quiz_assessment_screen.dart';
@@ -13,9 +12,10 @@ import 'package:linkschool/modules/model/e-learning/question_model.dart';
 
 
 class QuizAssessmentScreen extends StatefulWidget {
+    final List<Map<String, dynamic>> questions;
   final Question question;
 
-  const QuizAssessmentScreen({super.key, required this.question});
+  const QuizAssessmentScreen({super.key, required this.question, required this.questions});
 
   @override
   _QuizAssessmentScreenState createState() => _QuizAssessmentScreenState();
@@ -24,41 +24,19 @@ class QuizAssessmentScreen extends StatefulWidget {
 class _QuizAssessmentScreenState extends State<QuizAssessmentScreen> {
   bool _isTimerStopped = false;
   int _currentQuestionIndex = 0;
-  final int _totalQuestions = 3;
-  bool isTimerStopped = false;
   String? _selectedOption;
   bool _isAnswered = false;
   bool _isCorrect = false;
   late double opacity;
 
-  List<QuizQuestion> questions = [
-    TextQuestion(
-      topic: "Anti-corruption in the world",
-      questionText: "What is the main reason for corruption in Nigeria?",
-      options: [
-        "Poverty",
-        "Lack of education",
-        "Weak institutions",
-        "Cultural norms"
-      ],
-    ),
-    ImageQuestion(
-      topic: "Geography",
-      questionText: "Which country does this flag belong to?",
-      imageUrl: "assets/images/e-learning/france_flag.png",
-      options: ["France", "Italy", "Germany", "Spain"],
-    ),
-    TypedAnswerQuestion(
-      topic: "History",
-      questionText: "In which year did World War II end?",
-      imageUrl: "assets/images/e-learning/ww2.jpg",
-    ),
-  ];
-
   @override
   Widget build(BuildContext context) {
     final Brightness brightness = Theme.of(context).brightness;
     opacity = brightness == Brightness.light ? 0.1 : 0.15;
+
+    // Use the passed-in questions
+    final currentQuestionData = widget.questions.isNotEmpty ? widget.questions[_currentQuestionIndex] : null;
+
     return Scaffold(
       backgroundColor: AppColors.eLearningBtnColor1,
       appBar: AppBar(
@@ -72,21 +50,22 @@ class _QuizAssessmentScreenState extends State<QuizAssessmentScreen> {
             height: 34.0,
           ),
         ),
-        title: const Text('2nd Continuous Assessment',
-            style: TextStyle(color: Colors.white)),
+        title: Text(widget.question.title,
+            style: const TextStyle(color: Colors.white)),
         elevation: 0,
       ),
-      body: Padding(
+      body: widget.questions.isEmpty
+          ? const Center(child: Text('No questions available.', style: TextStyle(color: Colors.white)))
+          : Padding(
         padding: const EdgeInsets.all(16.0),
         child: SingleChildScrollView(
           child: Column(
             children: [
-              // const SizedBox(height: 16),
               _buildTimerRow(),
               const SizedBox(height: 16),
               _buildProgressSection(),
               const SizedBox(height: 16),
-              _buildQuestionCard(),
+              if (currentQuestionData != null) _buildQuestionCard(currentQuestionData),
               const SizedBox(height: 16),
               _buildNavigationButtons(),
             ],
@@ -109,16 +88,14 @@ class _QuizAssessmentScreenState extends State<QuizAssessmentScreen> {
               color: Colors.white,
             ),
             const SizedBox(width: 8),
-            const Text(
-              '58:22',
-              style: TextStyle(color: Colors.white, fontSize: 18),
+            Text(
+              '${widget.question.duration.inMinutes}:00',
+              style: const TextStyle(color: Colors.white, fontSize: 18),
             ),
-            // const Spacer(),
           ],
         ),
         TextButton(
           onPressed: () {
-            // Show the stop timer confirmation dialog
             _showStopTimerDialog();
           },
           child: Container(
@@ -188,7 +165,7 @@ class _QuizAssessmentScreenState extends State<QuizAssessmentScreen> {
         children: [
           Row(
             children: [
-              Text('${_currentQuestionIndex + 1} of $_totalQuestions',
+              Text('${_currentQuestionIndex + 1} of ${widget.questions.length}',
                   style: const TextStyle(color: Colors.white, fontSize: 16)),
               const SizedBox(width: 8),
               const Text('Completed',
@@ -199,7 +176,7 @@ class _QuizAssessmentScreenState extends State<QuizAssessmentScreen> {
           ClipRRect(
             borderRadius: BorderRadius.circular(64),
             child: LinearProgressIndicator(
-              value: (_currentQuestionIndex + 1) / _totalQuestions,
+              value: (_currentQuestionIndex + 1) / widget.questions.length,
               backgroundColor: AppColors.eLearningContColor2,
               valueColor: const AlwaysStoppedAnimation<Color>(
                   AppColors.eLearningContColor3),
@@ -211,8 +188,7 @@ class _QuizAssessmentScreenState extends State<QuizAssessmentScreen> {
     );
   }
 
-  Widget _buildQuestionCard() {
-    final question = questions[_currentQuestionIndex];
+  Widget _buildQuestionCard(Map<String, dynamic> questionData) {
     return Container(
       width: 400,
       height: 400,
@@ -224,41 +200,50 @@ class _QuizAssessmentScreenState extends State<QuizAssessmentScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Topic: ${question.topic}',
+          Text('Topic: ${widget.question.topic}',
               style: const TextStyle(fontWeight: FontWeight.bold)),
           const SizedBox(height: 8),
-          if (question is ImageQuestion) Image.asset(question.imageUrl),
-          Text(question.questionText),
+          // Handle image display if available
+          if (questionData['question_files'] != null && (questionData['question_files'] as List).isNotEmpty)
+            Image.network(
+              // Assuming the file is a URL, adjust if it's base64 or a local path
+              "https://your-base-url.com/${questionData['question_files'][0]['file_name']}",
+              height: 100,
+              width: double.infinity,
+              fit: BoxFit.cover,
+            ),
+          Text(questionData['question_text'] ?? 'No question text'),
           const SizedBox(height: 16),
-          _buildOptions(question),
+          _buildOptions(questionData),
         ],
       ),
     );
   }
 
-  Widget _buildOptions(QuizQuestion question) {
-    if (question is OptionsQuestion) {
+  Widget _buildOptions(Map<String, dynamic> questionData) {
+    final questionType = questionData['question_type'];
+    final options = (questionData['options'] as List<dynamic>?) ?? [];
+
+    if (questionType == 'multiple_choice' && options.isNotEmpty) {
       return Column(
-        children: question.options.map((option) {
+        children: options.map((option) {
+          final optionText = option['text']?.toString() ?? '';
           return RadioListTile<String>(
-            title: question is ImageQuestion
-                ? Image.asset('assets/images/$option.png')
-                : Text(option),
-            value: option,
+            title: Text(optionText),
+            value: optionText,
             groupValue: _selectedOption,
             onChanged: (value) {
               setState(() {
                 _selectedOption = value;
                 _isAnswered = true;
-                // Assuming the last option is always correct for this example
-                _isCorrect = value == question.options.last;
+                _isCorrect = (questionData['correct']?['text'] == value);
               });
             },
-            tileColor: _getOptionColor(option),
+            tileColor: _getOptionColor(optionText),
           );
         }).toList(),
       );
-    } else if (question is TypedAnswerQuestion) {
+    } else if (questionType == 'short_answer') {
       return const TextField(
         decoration: InputDecoration(
           labelText: 'Enter answer',
@@ -279,7 +264,7 @@ class _QuizAssessmentScreenState extends State<QuizAssessmentScreen> {
   }
 
   Widget _buildNavigationButtons() {
-    bool isLastQuestion = _currentQuestionIndex == _totalQuestions - 1;
+    bool isLastQuestion = _currentQuestionIndex == widget.questions.length - 1;
     return Row(
       children: [
         Expanded(
@@ -324,7 +309,7 @@ class _QuizAssessmentScreenState extends State<QuizAssessmentScreen> {
   }
 
   void _navigateToNextQuestion() {
-    if (_currentQuestionIndex < _totalQuestions - 1) {
+    if (_currentQuestionIndex < widget.questions.length - 1) {
       setState(() {
         _currentQuestionIndex++;
         _resetQuestionState();
@@ -364,9 +349,7 @@ class _QuizAssessmentScreenState extends State<QuizAssessmentScreen> {
             actions: [
               IconButton(
                 icon: const Icon(Icons.more_vert),
-                onPressed: () {
-                  // Handle menu options
-                },
+                onPressed: () {},
               ),
             ],
             backgroundColor: AppColors.backgroundLight,
@@ -389,7 +372,7 @@ class _QuizAssessmentScreenState extends State<QuizAssessmentScreen> {
           body: Container(
             decoration: Constants.customBoxDecoration(context),
             child: Container(
-              padding: EdgeInsets.symmetric(horizontal: 16.0),
+              padding: const EdgeInsets.symmetric(horizontal: 16.0),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.center,
@@ -409,7 +392,9 @@ class _QuizAssessmentScreenState extends State<QuizAssessmentScreen> {
                   ),
                   CustomLongElevatedButton(
                     text: 'Back to Home',
-                    onPressed: () {},
+                    onPressed: () {
+                      Navigator.of(context).popUntil((route) => route.isFirst);
+                    },
                     backgroundColor: AppColors.eLearningContColor2,
                     textStyle: AppTextStyles.normal600(
                         fontSize: 22, color: AppColors.backgroundLight),
@@ -424,7 +409,12 @@ class _QuizAssessmentScreenState extends State<QuizAssessmentScreen> {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => PreviewQuizAssessmentScreen(),
+                            builder: (context) => PreviewQuizAssessmentScreen(
+                              correctAnswers: [],
+                              question:[], 
+                              userAnswer: [],
+                             // You need to define and maintain this map/list in your state to track correct answers
+                            ),
                           ),
                         );
                       },
@@ -439,44 +429,4 @@ class _QuizAssessmentScreenState extends State<QuizAssessmentScreen> {
       ),
     );
   }
-}
-
-abstract class QuizQuestion {
-  final String topic;
-  final String questionText;
-
-  QuizQuestion({required this.topic, required this.questionText});
-}
-
-class OptionsQuestion extends QuizQuestion {
-  final List<String> options;
-
-  OptionsQuestion(
-      {required super.topic,
-      required super.questionText,
-      required this.options});
-}
-
-class TextQuestion extends OptionsQuestion {
-  TextQuestion(
-      {required super.topic,
-      required super.questionText,
-      required super.options});
-}
-
-class ImageQuestion extends OptionsQuestion {
-  final String imageUrl;
-
-  ImageQuestion(
-      {required super.topic,
-      required super.questionText,
-      required this.imageUrl,
-      required super.options});
-}
-
-class TypedAnswerQuestion extends QuizQuestion {
-  final String? imageUrl;
-
-  TypedAnswerQuestion(
-      {required super.topic, required super.questionText, this.imageUrl});
 }

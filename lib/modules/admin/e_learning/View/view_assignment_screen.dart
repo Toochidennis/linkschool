@@ -6,6 +6,8 @@ import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/model/e-learning/comment_model.dart';
 
+import '../../../common/widgets/portal/attachmentItem.dart';
+
 
 class ViewAssignmentScreen extends StatefulWidget {
   final Assignment assignment;
@@ -247,11 +249,11 @@ class _ViewAssignmentScreenState extends State<ViewAssignmentScreen>
   }
 
   Widget _buildAttachmentItem(AttachmentItem attachment) {
-    if (attachment.fileName.startsWith('http')) {
+    if (attachment.fileName!.startsWith('http')) {
       return Card(
         child: Padding(
           padding: const EdgeInsets.all(8.0),
-          child: Text(attachment.fileName),
+          child: Text(attachment.fileName!),
         ),
       );
     } else {
@@ -264,7 +266,7 @@ class _ViewAssignmentScreenState extends State<ViewAssignmentScreen>
           borderRadius: BorderRadius.circular(8.0),
         ),
         child: Center(
-          child: Text(attachment.fileContent),
+          child: Text(attachment.fileContent!),
         ),
       );
     }

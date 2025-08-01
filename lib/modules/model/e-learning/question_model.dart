@@ -21,6 +21,6 @@ class Question {
     required this.duration,
     required this.marks,
 
-    DateTime? createdAt,
+    DateTime? createdAt, int? id,
   }) : createdAt = createdAt ?? DateTime.now();
 }
