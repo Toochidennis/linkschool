@@ -167,7 +167,7 @@ class _FeeSettingScreenState extends State<FeeSettingScreen> {
                       SizedBox(width: 16),
                       Expanded(
                         child: ElevatedButton(
-                          onPressed: () => _showClassSelectionOverlay(context),
+                          onPressed: () => _showLevelSelectionOverlay(context),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppColors.eLearningBtnColor5,
                             shape: RoundedRectangleBorder(
@@ -194,7 +194,7 @@ class _FeeSettingScreenState extends State<FeeSettingScreen> {
     );
   }
 
-void _showClassSelectionOverlay(BuildContext context) {
+void _showLevelSelectionOverlay(BuildContext context) {
   showModalBottomSheet(
     context: context,
     isScrollControlled: true,
@@ -214,7 +214,7 @@ void _showClassSelectionOverlay(BuildContext context) {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  'Select Class',
+                  'Select Level',
                   style: AppTextStyles.normal600(
                     fontSize: 20,
                     color: const Color.fromRGBO(47, 85, 221, 1),
@@ -226,7 +226,7 @@ void _showClassSelectionOverlay(BuildContext context) {
                     itemCount: 3, // Replace with your actual class list length
                     itemBuilder: (context, index) {
                       // Replace with your actual class list data
-                      List<String> classes = ['Basic One A', 'Basic One B', 'Basic Two A'];
+                      List<String> levels = ['Basic One ', 'Basic Two', 'Basic Three'];
                       return Padding(
                         padding: const EdgeInsets.symmetric(
                           horizontal: 24,
@@ -236,7 +236,7 @@ void _showClassSelectionOverlay(BuildContext context) {
                           onPressed: () {
                             Navigator.pop(context);
                             Navigator.pop(context);
-                            _navigateToFeeDetailsScreen(context, classes[index]);
+                            _navigateToFeeDetailsScreen(context, levels[index]);
                           },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.white,
@@ -247,7 +247,7 @@ void _showClassSelectionOverlay(BuildContext context) {
                             padding: const EdgeInsets.symmetric(vertical: 16),
                           ),
                           child: Text(
-                            classes[index],
+                            levels[index],
                             style: const TextStyle(fontSize: 16),
                             textAlign: TextAlign.center,
                           ),
