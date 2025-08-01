@@ -78,7 +78,7 @@ class _StudentResultScreenState extends State<StudentResultScreen> {
                           context,
                           MaterialPageRoute(
                             builder: (context) =>
-                                const StudentAnnualResultScreen(
+                            const StudentAnnualResultScreen(
                               studentId: 292, // Use widget.studentId or fallback to student.id
                               classId: "66", // Fallback for testing
                               levelId: "",
@@ -118,7 +118,7 @@ class _StudentResultScreenState extends State<StudentResultScreen> {
                               sideTitles: SideTitles(
                                 showTitles: true,
                                 getTitlesWidget: (double value,
-                                        TitleMeta meta) =>
+                                    TitleMeta meta) =>
                                     getTitles(value, meta), // Pass `meta` here
                                 reservedSize: 38,
                               ),
@@ -217,8 +217,8 @@ class _StudentResultScreenState extends State<StudentResultScreen> {
         height: 75,
         decoration: const BoxDecoration(
             border: Border(
-          bottom: BorderSide(color: AppColors.borderGray, width: 1),
-        )),
+              bottom: BorderSide(color: AppColors.borderGray, width: 1),
+            )),
         child: Padding(
           padding: const EdgeInsets.symmetric(vertical: 16.0),
           child: Row(
@@ -227,7 +227,7 @@ class _StudentResultScreenState extends State<StudentResultScreen> {
               Text(
                 term,
                 style:
-                    AppTextStyles.normal700(fontSize: 14, color: Colors.black),
+                AppTextStyles.normal700(fontSize: 14, color: Colors.black),
               ),
               CircularPercentIndicator(
                 radius: 20.0,
@@ -283,64 +283,67 @@ class _StudentResultScreenState extends State<StudentResultScreen> {
         break;
     }
     return SideTitleWidget(
+      axisSide: meta.axisSide, // pass just this instead of `meta`
       space: 4.0,
-      meta: meta,
-      child: Text(text,
-          style: AppTextStyles.normal400(fontSize: 12, color: Colors.black)),
+      child: Text(
+        text,
+        style: AppTextStyles.normal400(fontSize: 12, color: Colors.black),
+      ),
     );
+
   }
 }
 
 
 
-                          // titlesData: FlTitlesData(
-                          //   show: true,
-                          //   bottomTitles: AxisTitles(
-                          //     sideTitles: SideTitles(
-                          //       showTitles: true,
-                          //       getTitlesWidget: getTitles,
-                          //       reservedSize: 38,
-                          //     ),
-                          //   ),
-                          //   leftTitles: AxisTitles(
-                          //     sideTitles: SideTitles(
-                          //       showTitles: true,
-                          //       reservedSize: 40,
-                          //       getTitlesWidget: (value, meta) => Text(
-                          //         value.toInt().toString(),
-                          //         style: AppTextStyles.normal400(
-                          //             color: Colors.black, fontSize: 12),
-                          //       ),
-                          //     ),
-                          //   ),
-                          //   topTitles: const AxisTitles(
-                          //       sideTitles: SideTitles(showTitles: false)),
-                          //   rightTitles: const AxisTitles(
-                          //       sideTitles: SideTitles(showTitles: false)),
-                          // ),
+// titlesData: FlTitlesData(
+//   show: true,
+//   bottomTitles: AxisTitles(
+//     sideTitles: SideTitles(
+//       showTitles: true,
+//       getTitlesWidget: getTitles,
+//       reservedSize: 38,
+//     ),
+//   ),
+//   leftTitles: AxisTitles(
+//     sideTitles: SideTitles(
+//       showTitles: true,
+//       reservedSize: 40,
+//       getTitlesWidget: (value, meta) => Text(
+//         value.toInt().toString(),
+//         style: AppTextStyles.normal400(
+//             color: Colors.black, fontSize: 12),
+//       ),
+//     ),
+//   ),
+//   topTitles: const AxisTitles(
+//       sideTitles: SideTitles(showTitles: false)),
+//   rightTitles: const AxisTitles(
+//       sideTitles: SideTitles(showTitles: false)),
+// ),
 
 
-                                              // OutlinedButton(
-                    //   onPressed: () {
-                    //     Navigator.push(
-                    //       context,
-                    //       MaterialPageRoute(
-                    //         builder: (context) =>
-                    //             const StudentAnnualResultScreen(),
-                    //       ),
-                    //     );
-                    //   },
-                    //   style: OutlinedButton.styleFrom(
-                    //       side: const BorderSide(
-                    //           color: AppColors.paymentTxtColor1),
-                    //       minimumSize: const Size(double.infinity, 48),
-                    //       shape: RoundedRectangleBorder(
-                    //           borderRadius: BorderRadius.circular(10.0))),
-                    //   child: Text(
-                    //     'See annual result',
-                    //     style: AppTextStyles.normal600(
-                    //       fontSize: 18,
-                    //       color: AppColors.paymentTxtColor1,
-                    //     ),
-                    //   ),
-                    // ),
+// OutlinedButton(
+//   onPressed: () {
+//     Navigator.push(
+//       context,
+//       MaterialPageRoute(
+//         builder: (context) =>
+//             const StudentAnnualResultScreen(),
+//       ),
+//     );
+//   },
+//   style: OutlinedButton.styleFrom(
+//       side: const BorderSide(
+//           color: AppColors.paymentTxtColor1),
+//       minimumSize: const Size(double.infinity, 48),
+//       shape: RoundedRectangleBorder(
+//           borderRadius: BorderRadius.circular(10.0))),
+//   child: Text(
+//     'See annual result',
+//     style: AppTextStyles.normal600(
+//       fontSize: 18,
+//       color: AppColors.paymentTxtColor1,
+//     ),
+//   ),
+// ),

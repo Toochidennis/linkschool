@@ -1,0 +1,2 @@
+C:/Users/HP/Downloads/linkschool/android/app/.cxx/Debug/2v3a2949/x86_64/CMakeFiles/edit_cache.dir
+C:/Users/HP/Downloads/linkschool/android/app/.cxx/Debug/2v3a2949/x86_64/CMakeFiles/rebuild_cache.dir

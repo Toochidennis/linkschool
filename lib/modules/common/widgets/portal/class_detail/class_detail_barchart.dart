@@ -93,7 +93,7 @@ class ClassDetailBarChart extends StatelessWidget {
     if (index >= 0 && index < chartData.length) {
       final abbr = chartData[index]['abbr']?.toString() ?? '';
       return SideTitleWidget(
-        meta: meta,
+        axisSide: meta.axisSide,
         space: 8.0,
         child: Text(
           abbr,
@@ -131,7 +131,7 @@ class ClassDetailBarChart extends StatelessWidget {
     }
 
     return SideTitleWidget(
-      meta: meta,
+      axisSide: meta.axisSide,
       space: 8,
       child: Text(text, style: style, textAlign: TextAlign.right),
     );

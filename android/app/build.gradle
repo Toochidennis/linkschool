@@ -24,7 +24,7 @@ if (flutterVersionName == null) {
 
     android {
         namespace "com.digitaldream.linkskool.linkschool"
-        compileSdkVersion 35 // Explicitly set to 35
+        compileSdkVersion 35// Explicitly set to 35
         ndkVersion flutter.ndkVersion
 
         compileOptions {
@@ -42,7 +42,7 @@ if (flutterVersionName == null) {
 
         defaultConfig {
             applicationId "com.digitaldream.linkskool.linkschool"
-            minSdkVersion flutter.minSdkVersion
+            minSdkVersion 23 
             targetSdkVersion 35 // Explicitly set to 35
             versionCode flutterVersionCode.toInteger()
             versionName flutterVersionName

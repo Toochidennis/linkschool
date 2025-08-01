@@ -125,7 +125,7 @@ class PerformanceChart extends StatelessWidget {
     );
 
     return SideTitleWidget(
-      meta: meta,
+      axisSide: meta.axisSide, // pass just this instead of `meta`
       space: 16,
       child: text,
     );
@@ -183,7 +183,7 @@ class PerformanceChart extends StatelessWidget {
     }
 
     return SideTitleWidget(
-      meta: meta,
+      axisSide: meta.axisSide, // pass just this instead of `meta`
       space: 8,
       child: Text(
         text,

@@ -32,10 +32,13 @@ import 'package:linkschool/modules/services/explore/cbt_service.dart';
 import 'package:linkschool/routes/onboardingScreen.dart';
 import 'package:provider/provider.dart';
 import 'package:linkschool/modules/services/api/service_locator.dart';
+import 'package:webview_flutter/webview_flutter.dart';
 import 'modules/providers/admin/e_learning/syllabus_content_provider.dart';
 import 'modules/providers/admin/registered_terms_provider.dart';
 import 'modules/providers/explore/game/game_provider.dart';
 import 'modules/providers/admin/grade_provider.dart';
+import 'package:webview_flutter_android/webview_flutter_android.dart';
+
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -60,7 +63,6 @@ Future<void> main() async {
       statusBarBrightness: Brightness.dark,
     ),
   );
-  
   runApp(
     MultiProvider(
       providers: [

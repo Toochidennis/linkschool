@@ -355,8 +355,7 @@ class CustomToaster {
     MotionToast.success(
       title: Text(title, style: const TextStyle(color: Colors.white)),
       description: Text(message, style: const TextStyle(color: Colors.white)),
-      toastAlignment:Alignment.topCenter,
-      animationType: AnimationType.slideInFromTop,
+      animationType: AnimationType.fromTop,
       contentPadding: const EdgeInsets.all(10),
     ).show(context);
   }
@@ -365,9 +364,7 @@ class CustomToaster {
     MotionToast.error(
       title: Text(title, style: const TextStyle(color: Colors.white)),
       description: Text(message, style: const TextStyle(color: Colors.white)),
-      toastAlignment:Alignment.topCenter,
-      animationType: AnimationType.slideInFromTop,
-      contentPadding: const EdgeInsets.all(10),
+      animationType: AnimationType.fromTop,      contentPadding: const EdgeInsets.all(10),
     ).show(context);
   }
 }
