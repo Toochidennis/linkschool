@@ -3,6 +3,7 @@ import 'package:hive/hive.dart';
 import 'package:linkschool/modules/auth/model/user.dart';
 import 'package:linkschool/modules/auth/service/auth_service.dart';
 import 'package:linkschool/modules/services/api/service_locator.dart';
+import 'package:linkschool/modules/services/api/api_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class AuthProvider with ChangeNotifier {
@@ -48,6 +49,10 @@ class AuthProvider with ChangeNotifier {
         await userBox.put('isLoggedIn', true);
         await userBox.put('role', _user!.role);
         await userBox.put('token', _token);
+
+        // Set the token on ApiService for future requests
+        final apiService = locator<ApiService>();
+        apiService.setAuthToken(_token!);
 
         // Save role-specific data
         if (_user!.role == 'admin') {
@@ -103,30 +108,75 @@ class AuthProvider with ChangeNotifier {
   Future<void> logout() async {
     final userBox = Hive.box('userData');
     await userBox.clear();
+
     final prefs = await SharedPreferences.getInstance();
     await prefs.clear();
+
     _user = null;
     _token = null;
     _isLoggedIn = false;
     _settings = null;
+
     notifyListeners();
   }
 
   Future<void> checkLoginStatus() async {
-    final userBox = Hive.box('userData');
-    final isLoggedIn = userBox.get('isLoggedIn', defaultValue: false);
-    final userData = userBox.get('userData');
-    final settings = userBox.get('settings');
+    try {
+      final userBox = Hive.box('userData');
+      final isLoggedIn = userBox.get('isLoggedIn', defaultValue: false);
+      final userData = userBox.get('userData');
+      final settings = userBox.get('settings');
+      final token = userBox.get('token');
 
-    if (isLoggedIn && userData != null) {
-      final userDataMap = userData['data'];
-      _user = User.fromJson(userDataMap);
-      _token = userData['token'];
-      _isLoggedIn = true;
-      if (settings != null) {
-        _settings = Map<String, dynamic>.from(settings);
+      if (isLoggedIn && userData != null && token != null) {
+        // Safely convert userData to Map<String, dynamic>
+        Map<String, dynamic> userDataMap;
+        if (userData is Map<String, dynamic>) {
+          userDataMap = userData;
+        } else if (userData is Map) {
+          userDataMap = Map<String, dynamic>.from(userData);
+        } else {
+          print('Invalid userData format, clearing login status');
+          await logout();
+          return;
+        }
+
+        // Extract user data safely
+        final userDataContent = userDataMap['data'];
+        Map<String, dynamic> userDataContentMap;
+        if (userDataContent is Map<String, dynamic>) {
+          userDataContentMap = userDataContent;
+        } else if (userDataContent is Map) {
+          userDataContentMap = Map<String, dynamic>.from(userDataContent);
+        } else {
+          print('Invalid user data content format, clearing login status');
+          await logout();
+          return;
+        }
+
+        _user = User.fromJson(userDataContentMap);
+        _token = token.toString();
+        _isLoggedIn = true;
+
+        // Set the token on ApiService for future requests
+        final apiService = locator<ApiService>();
+        apiService.setAuthToken(_token!);
+
+        // Handle settings safely
+        if (settings != null) {
+          if (settings is Map<String, dynamic>) {
+            _settings = settings;
+          } else if (settings is Map) {
+            _settings = Map<String, dynamic>.from(settings);
+          }
+        }
+
+        notifyListeners();
       }
-      notifyListeners();
+    } catch (e) {
+      print('Error checking login status: $e');
+      // Clear any corrupted data and reset login status
+      await logout();
     }
   }
 
@@ -135,7 +185,11 @@ class AuthProvider with ChangeNotifier {
     final userBox = Hive.box('userData');
     final settings = userBox.get('settings');
     if (settings != null) {
-      return Map<String, dynamic>.from(settings);
+      if (settings is Map<String, dynamic>) {
+        return settings;
+      } else if (settings is Map) {
+        return Map<String, dynamic>.from(settings);
+      }
     }
     return {};
   }
@@ -145,7 +199,14 @@ class AuthProvider with ChangeNotifier {
     final userBox = Hive.box('userData');
     final levels = userBox.get('levels');
     if (levels != null && levels is List) {
-      return List<Map<String, dynamic>>.from(levels);
+      return levels.map((item) {
+        if (item is Map<String, dynamic>) {
+          return item;
+        } else if (item is Map) {
+          return Map<String, dynamic>.from(item);
+        }
+        return <String, dynamic>{};
+      }).toList();
     }
     return [];
   }
@@ -154,7 +215,14 @@ class AuthProvider with ChangeNotifier {
     final userBox = Hive.box('userData');
     final classes = userBox.get('classes');
     if (classes != null && classes is List) {
-      return List<Map<String, dynamic>>.from(classes);
+      return classes.map((item) {
+        if (item is Map<String, dynamic>) {
+          return item;
+        } else if (item is Map) {
+          return Map<String, dynamic>.from(item);
+        }
+        return <String, dynamic>{};
+      }).toList();
     }
     return [];
   }
@@ -163,7 +231,14 @@ class AuthProvider with ChangeNotifier {
     final userBox = Hive.box('userData');
     final courses = userBox.get('courses');
     if (courses != null && courses is List) {
-      return List<Map<String, dynamic>>.from(courses);
+      return courses.map((item) {
+        if (item is Map<String, dynamic>) {
+          return item;
+        } else if (item is Map) {
+          return Map<String, dynamic>.from(item);
+        }
+        return <String, dynamic>{};
+      }).toList();
     }
     return [];
   }
@@ -173,7 +248,14 @@ class AuthProvider with ChangeNotifier {
     final userBox = Hive.box('userData');
     final formClasses = userBox.get('form_classes');
     if (formClasses != null && formClasses is List) {
-      return List<Map<String, dynamic>>.from(formClasses);
+      return formClasses.map((item) {
+        if (item is Map<String, dynamic>) {
+          return item;
+        } else if (item is Map) {
+          return Map<String, dynamic>.from(item);
+        }
+        return <String, dynamic>{};
+      }).toList();
     }
     return [];
   }
@@ -182,7 +264,14 @@ class AuthProvider with ChangeNotifier {
     final userBox = Hive.box('userData');
     final staffCourses = userBox.get('staff_courses');
     if (staffCourses != null && staffCourses is List) {
-      return List<Map<String, dynamic>>.from(staffCourses);
+      return staffCourses.map((item) {
+        if (item is Map<String, dynamic>) {
+          return item;
+        } else if (item is Map) {
+          return Map<String, dynamic>.from(item);
+        }
+        return <String, dynamic>{};
+      }).toList();
     }
     return [];
   }
@@ -192,7 +281,11 @@ class AuthProvider with ChangeNotifier {
     final userBox = Hive.box('userData');
     final studentProfile = userBox.get('student_profile');
     if (studentProfile != null) {
-      return Map<String, dynamic>.from(studentProfile);
+      if (studentProfile is Map<String, dynamic>) {
+        return studentProfile;
+      } else if (studentProfile is Map) {
+        return Map<String, dynamic>.from(studentProfile);
+      }
     }
     return {};
   }
@@ -226,8 +319,24 @@ class AuthProvider with ChangeNotifier {
   Map<String, dynamic> getUserProfile() {
     final userBox = Hive.box('userData');
     final userData = userBox.get('userData');
-    if (userData != null && userData['data'] != null) {
-      return userData['data']['profile'] ?? {};
+    if (userData != null) {
+      Map<String, dynamic> userDataMap;
+      if (userData is Map<String, dynamic>) {
+        userDataMap = userData;
+      } else if (userData is Map) {
+        userDataMap = Map<String, dynamic>.from(userData);
+      } else {
+        return {};
+      }
+
+      if (userDataMap['data'] != null) {
+        final profileData = userDataMap['data']['profile'];
+        if (profileData is Map<String, dynamic>) {
+          return profileData;
+        } else if (profileData is Map) {
+          return Map<String, dynamic>.from(profileData);
+        }
+      }
     }
     return {};
   }
@@ -238,6 +347,7 @@ class AuthProvider with ChangeNotifier {
     return userBox.get('role', defaultValue: '');
   }
 }
+
 
 
 
@@ -268,12 +378,19 @@ class AuthProvider with ChangeNotifier {
 //         // Save the entire API response to Hive
 //         final userBox = Hive.box('userData');
 //         await userBox.put('userData', response.rawData);
+//         await userBox.put('loginResponse', response.rawData); // Also save as loginResponse for compatibility
 
 //         // Extract user data
 //         final userData = response.rawData!['data'];
 //         _user = User.fromJson(userData);
 //         _token = response.rawData!['token'];
 //         _isLoggedIn = true;
+
+//         // Save database identifier
+//         final db = response.rawData!['_db'];
+//         if (db != null) {
+//           await userBox.put('_db', db);
+//         }
 
 //         // Save settings data
 //         if (userData.containsKey('settings')) {
@@ -305,6 +422,21 @@ class AuthProvider with ChangeNotifier {
 //           }
 //           if (userData.containsKey('courses')) {
 //             await userBox.put('staff_courses', userData['courses']);
+//           }
+//         } else if (_user!.role == 'student') {
+//           // Save student-specific data
+//           final profile = userData['profile'] ?? {};
+//           await userBox.put('student_profile', profile);
+          
+//           // Store student-specific parameters for API calls
+//           await userBox.put('student_id', profile['id']?.toString() ?? profile['staff_id']?.toString());
+//           await userBox.put('class_id', profile['class_id']?.toString());
+//           await userBox.put('level_id', profile['level_id']?.toString());
+//           await userBox.put('registration_no', profile['registration_no']);
+          
+//           // Store current year from settings for API calls
+//           if (_settings != null && _settings!.containsKey('year')) {
+//             await userBox.put('current_year', _settings!['year'].toString());
 //           }
 //         }
 
@@ -345,7 +477,6 @@ class AuthProvider with ChangeNotifier {
 //       _user = User.fromJson(userDataMap);
 //       _token = userData['token'];
 //       _isLoggedIn = true;
-
 //       if (settings != null) {
 //         _settings = Map<String, dynamic>.from(settings);
 //       }
@@ -408,6 +539,41 @@ class AuthProvider with ChangeNotifier {
 //       return List<Map<String, dynamic>>.from(staffCourses);
 //     }
 //     return [];
+//   }
+
+//   // Student-specific getter methods
+//   Map<String, dynamic> getStudentProfile() {
+//     final userBox = Hive.box('userData');
+//     final studentProfile = userBox.get('student_profile');
+//     if (studentProfile != null) {
+//       return Map<String, dynamic>.from(studentProfile);
+//     }
+//     return {};
+//   }
+
+//   String? getStudentId() {
+//     final userBox = Hive.box('userData');
+//     return userBox.get('student_id');
+//   }
+
+//   String? getClassId() {
+//     final userBox = Hive.box('userData');
+//     return userBox.get('class_id');
+//   }
+
+//   String? getLevelId() {
+//     final userBox = Hive.box('userData');
+//     return userBox.get('level_id');
+//   }
+
+//   String? getCurrentYear() {
+//     final userBox = Hive.box('userData');
+//     return userBox.get('current_year');
+//   }
+
+//   String? getRegistrationNo() {
+//     final userBox = Hive.box('userData');
+//     return userBox.get('registration_no');
 //   }
 
 //   // Helper method to get user profile data

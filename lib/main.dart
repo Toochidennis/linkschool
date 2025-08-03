@@ -115,12 +115,56 @@ class MyApp extends StatelessWidget {
       theme: AppThemes.lightTheme,
       darkTheme: AppThemes.darkTheme,
       themeMode: ThemeMode.system,
-      home: Onboardingscreen(),
+      home: const AppInitializer(),
     );
   }
 }
 
+class AppInitializer extends StatefulWidget {
+  const AppInitializer({super.key});
 
+  @override
+  State<AppInitializer> createState() => _AppInitializerState();
+}
+
+class _AppInitializerState extends State<AppInitializer> {
+  bool _isInitialized = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _initializeApp();
+  }
+
+  Future<void> _initializeApp() async {
+    try {
+      // Initialize auth provider and check login status
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      await authProvider.checkLoginStatus();
+    } catch (e) {
+      print('Error initializing app: $e');
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isInitialized = true;
+        });
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (!_isInitialized) {
+      return const Scaffold(
+        body: Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
+
+    return Onboardingscreen();
+  }
+}
 
 
 
@@ -145,8 +189,8 @@ class MyApp extends StatelessWidget {
 // import 'package:linkschool/modules/providers/admin/e_learning/topic_provider.dart';
 // import 'package:linkschool/modules/providers/admin/level_provider.dart';
 // import 'package:linkschool/modules/providers/admin/payment/account_provider.dart';
+// import 'package:linkschool/modules/providers/admin/payment/fee_provider.dart';
 // import 'package:linkschool/modules/providers/admin/performance_provider.dart';
-// // import 'package:linkschool/modules/providers/admin/account_provider.dart'; // Add this import
 // import 'package:linkschool/modules/providers/admin/skills_behavior_table_provider.dart';
 // import 'package:linkschool/modules/providers/admin/student_provider.dart';
 // import 'package:linkschool/modules/providers/admin/term_provider.dart';
@@ -166,7 +210,7 @@ class MyApp extends StatelessWidget {
 
 // Future<void> main() async {
 //   WidgetsFlutterBinding.ensureInitialized();
-    
+  
 //   try {
 //     await Hive.initFlutter();
 //     await Hive.openBox('userData');
@@ -176,10 +220,10 @@ class MyApp extends StatelessWidget {
 //   } catch (e) {
 //     print('Error initializing Hive: $e');
 //   }
-    
+  
 //   await EnvConfig.init();
 //   setupServiceLocator();
-    
+  
 //   SystemChrome.setSystemUIOverlayStyle(
 //     const SystemUiOverlayStyle(
 //       statusBarColor: Colors.transparent,
@@ -187,7 +231,7 @@ class MyApp extends StatelessWidget {
 //       statusBarBrightness: Brightness.dark,
 //     ),
 //   );
-    
+  
 //   runApp(
 //     MultiProvider(
 //       providers: [
@@ -201,8 +245,8 @@ class MyApp extends StatelessWidget {
 //         ChangeNotifierProvider(create: (_) => locator<SyllabusProvider>()),
 //         ChangeNotifierProvider(create: (_) => locator<SyllabusContentProvider>()),
 //         ChangeNotifierProvider(create: (_) => locator<GradeProvider>()),
-//         ChangeNotifierProvider(create: (_) => locator<SkillsProvider>()),         
-//         ChangeNotifierProvider(create: (_) => locator<SkillsBehaviorTableProvider>()),         
+//         ChangeNotifierProvider(create: (_) => locator<SkillsProvider>()),        
+//         ChangeNotifierProvider(create: (_) => locator<SkillsBehaviorTableProvider>()),        
 //         ChangeNotifierProvider(create: (_) => LevelProvider()),
 //         ChangeNotifierProvider(create: (_) => ClassProvider()),
 //         ChangeNotifierProvider(create: (_) => AssessmentProvider()),
@@ -223,6 +267,8 @@ class MyApp extends StatelessWidget {
 //         ChangeNotifierProvider(create: (_) => locator<PerformanceProvider>()),
 //         // Add AccountProvider from service locator
 //         ChangeNotifierProvider(create: (_) => locator<AccountProvider>()),
+//         // Add FeeProvider from service locator
+//         ChangeNotifierProvider(create: (_) => locator<FeeProvider>()),
 //       ],
 //       child: const MyApp(),
 //     ),
@@ -231,7 +277,7 @@ class MyApp extends StatelessWidget {
 
 // class MyApp extends StatelessWidget {
 //   const MyApp({super.key});
-    
+  
 //   @override
 //   Widget build(BuildContext context) {
 //     return MaterialApp(
