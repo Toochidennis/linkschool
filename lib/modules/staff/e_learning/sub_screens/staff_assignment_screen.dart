@@ -37,6 +37,8 @@ class _StaffAssignmentScreenState extends State<StaffAssignmentScreen> {
   String _marks = '200 marks';
   late double opacity;
 
+  bool _isSaving = false;
+
   @override
   Widget build(BuildContext context) {
     final Brightness brightness = Theme.of(context).brightness;
@@ -83,6 +85,7 @@ class _StaffAssignmentScreenState extends State<StaffAssignmentScreen> {
             child: CustomSaveElevatedButton(
               onPressed: _saveAssignment,
               text: 'Save',
+              isLoading: _isSaving,
             ),
           ),
         ],

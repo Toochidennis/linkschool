@@ -256,14 +256,14 @@ class _StaffMaterialDetailsScreenState extends State<StaffMaterialDetailsScreen>
 
     if (isImage) {
       // Build the full URL if needed
-      final imageUrl = "https://linkskool.net/api/v3/portal/${attachment.fileName}";
+      final imageUrl = "https://linkskool.net/${attachment.fileName}";
 
       return ClipRRect(
         borderRadius: BorderRadius.circular(8),
         child: Image.network(
           imageUrl,
           fit: BoxFit.cover,
-          height: 100,
+          height: 200,
           errorBuilder: (context, error, stackTrace) => Image.network(
             networkImage,
             fit: BoxFit.cover,

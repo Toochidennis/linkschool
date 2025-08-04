@@ -47,6 +47,8 @@ class _CreateTopicScreenState extends State<CreateTopicScreen> {
   String? academicYear;
   int? academicTerm;
 
+  bool _isSaving = false;
+
   @override
   void initState() {
     super.initState();
@@ -124,6 +126,9 @@ void _populateFormForEdit(){
       return;
     }
 
+    setState(() {
+      _isSaving = true;
+    });
 
     try {
       final userBox = Hive.box('userData');
@@ -163,7 +168,7 @@ void _populateFormForEdit(){
         'classes': classModelList,
         'course_name':widget.courseName,
         'term':academicYear ?? 0,
-        'course_id':widget.levelId
+        'course_id':widget.courseId
       };
 
       await topicProvider.addTopic(
@@ -172,14 +177,15 @@ void _populateFormForEdit(){
         creatorName: creatorName ?? 'Unknown',
         objective: _objectiveController.text,
         term:academicYear ?? '',
-        courseId: widget.courseId! ,
-        levelId: widget.levelId!,
-        courseName:widget.courseName ??'',
+        courseId: widget.courseId ??'' ,
+        levelId: widget.levelId ??"",
+        courseName:widget.courseName  ??"",
         creatorId: creatorId ?? 0,
         classes: classModelList,
       );
 
-      print('Topic Data to POST: $topicData');
+    
+      print('Topieeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeec Data to POST: $topicData');
 
       Navigator.of(context).pop();
     } catch (e) {
@@ -189,8 +195,10 @@ void _populateFormForEdit(){
         'Error',
         'Failed to create topic: ${e.toString()}',
       );
-
-     
+    } finally {
+      setState(() {
+        _isSaving = false;
+      });
     }
   }
 
@@ -270,9 +278,10 @@ void _populateFormForEdit(){
         actions: [
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 8.0),
-            child: CustomSaveElevatedButton(
+          child: CustomSaveElevatedButton(
               onPressed: _addTopic,
               text: 'Save',
+              isLoading: _isSaving,
             ),
           ),
         ],

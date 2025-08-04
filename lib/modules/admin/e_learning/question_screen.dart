@@ -59,7 +59,7 @@ class _QuestionScreenState extends State<QuestionScreen> {
   DateTime _endDate = DateTime.now().add(const Duration(days: 1));
   String _selectedTopic = 'No Topic';
     int? _selectedTopicId;
-  Duration _selectedDuration = const Duration(hours:0 );
+  Duration _selectedDuration = const Duration(seconds:0 );
   String _marks = '0 marks';
   late double opacity;
   bool isLoading = false;
@@ -71,7 +71,7 @@ class _QuestionScreenState extends State<QuestionScreen> {
   final _formKey = GlobalKey<FormState>();
 
   // Validation states
-  bool _isMarksValid = true;
+  //bool _isMarksValid = true;
   bool _isDurationValid = true;
   bool _isDateValid = true;
   bool _isClassValid = true;
@@ -112,14 +112,14 @@ _selectedTopicId = widget.question!.topicId;
 
 
   // Validation methods
-  bool _validateMarks() {
-    final isValid = _marks != ' marks' && 
-                   _marks.isNotEmpty && 
-                   _marks != 'Select marks' &&
-                   int.tryParse(_marks.replaceAll(' marks', '')) != null;
-    setState(() => _isMarksValid = isValid);
-    return isValid;
-  }
+  // bool _validateMarks() {
+  //   final isValid = _marks != ' marks' && 
+  //                  _marks.isNotEmpty && 
+  //                  _marks != 'Select marks' &&
+  //                  int.tryParse(_marks.replaceAll(' marks', '')) != null;
+  //   setState(() => _isMarksValid = isValid);
+  //   return isValid;
+  // }
 
   bool _validateDuration() {
     final isValid = _selectedDuration.inMinutes > 0;
@@ -140,12 +140,13 @@ _selectedTopicId = widget.question!.topicId;
   }
 
   bool _validateAll() {
-    final marksValid = _validateMarks();
+  //  final marksValid = _validateMarks();
     final durationValid = _validateDuration();
     final datesValid = _validateDates();
     final classValid = _validateClass();
     
-    return marksValid && durationValid && datesValid && classValid;
+  //  return marksValid && durationValid && datesValid && classValid;
+    return durationValid && datesValid && classValid;
   }
 
   Future<void> _loadUserData() async {
@@ -264,8 +265,9 @@ _selectedTopicId = widget.question!.topicId;
           'end_date': _endDate.toIso8601String(),
           'topic': _selectedTopic,
            "topic_id": _selectedTopicId  ?? 0,
-          'duration': _selectedDuration.inSeconds, // or .inMinutes
-          'marks':int.tryParse(_marks.replaceAll(' marks', '')) != null,
+          'duration': _selectedDuration.inMinutes,
+ // or .inMinutes
+          'marks':int.tryParse(_marks.replaceAll(' marks', '')) ,
           'course_id': courseId,
           "course_name": widget.courseName!,
           'syllabus_id': widget.syllabusId!,
@@ -283,6 +285,7 @@ _selectedTopicId = widget.question!.topicId;
         if (mounted) {
           widget.onSave(question);
        print('SSSSSSSSSSSSSSSSSSSSSSSSSSSSSS $_selectedDuration');
+      
           Navigator.of(context).push(
             MaterialPageRoute(
               builder: (context) => ViewQuestionScreen(
@@ -325,6 +328,18 @@ _selectedTopicId = widget.question!.topicId;
       appBar: AppBar(
         leading: IconButton(
           onPressed: () {
+            if (widget.isEditing) {
+              Navigator.of(context).pop();
+              return;
+            }
+            if (widget.editMode) {
+              Navigator.of(context).pop();
+              return;
+            }
+            if (widget.questions != null && widget.questions!.isNotEmpty) {
+              Navigator.of(context).pop();
+              return;
+            }
            Navigator.of(context).popUntil(ModalRoute.withName('/empty_subject'));
 
           },
@@ -459,7 +474,7 @@ _selectedTopicId = widget.question!.topicId;
                     context,
                     iconPath: 'assets/icons/e_learning/mark.svg',
                     text: _marks,
-                    isValid: _isMarksValid,
+                  // isValid: _isMarksValid,
                     showEditButton: true,
                     onTap: _showMarksDialog,
                   ),
@@ -639,7 +654,7 @@ _selectedTopicId = widget.question!.topicId;
                             int.tryParse(_marksController.text) != null) {
                           setState(() {
                             _marks = '${_marksController.text} marks';
-                            _validateMarks();
+                            //_validateMarks();
                           });
                           Navigator.of(context).pop();
                         } else {

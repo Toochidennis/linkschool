@@ -266,13 +266,14 @@ class StaffAssignmentDetailsScreen extends StatefulWidget {
         attachment.fileName!.toLowerCase().endsWith('.jpeg') ||
         attachment.fileName!.toLowerCase().endsWith('.png') ||
         attachment.fileName!.toLowerCase().endsWith('.gif') ||
+        attachment.iconPath!.contains('svg') || 
         attachment.iconPath!.contains('material.svg') ||
         attachment.iconPath!.contains('photo');
 
     if (isImage) {
       // Build the full URL if needed
-      final imageUrl = "https://linkskool.net/api/v3/portal/${attachment.fileName}";
-
+      final imageUrl = "https://linkskool.net/${attachment.fileName}";
+      print('$imageUrl');
       return ClipRRect(
         borderRadius: BorderRadius.circular(8),
         child: Image.network(

@@ -71,13 +71,19 @@ class _EmptySubjectScreenState extends State<EmptySubjectScreen>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    _loadSyllabusContents();
+    _initializeState();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _initializeState();
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
-      _loadSyllabusContents();
+      _initializeState();
     }
   }
 
@@ -87,12 +93,15 @@ class _EmptySubjectScreenState extends State<EmptySubjectScreen>
     super.dispose();
   }
 
-  Future<void> _loadSyllabusContents() async {
-    if (widget.syllabusId == null) {
-      CustomToaster.toastError(context, 'Error', 'Syllabus ID is missing');
-      return;
-    }
+  void _initializeState() {
+    setState(() {
+      _topics = [];
+      _noTopicItems = [];
+    });
+    _loadSyllabusContents();
+  }
 
+  Future<void> _loadSyllabusContents() async {
     try {
       final contentProvider = locator<SyllabusContentProvider>();
 
@@ -176,6 +185,8 @@ class _EmptySubjectScreenState extends State<EmptySubjectScreen>
     String text,
     String iconPath,
   ) {
+  print("Addingffffffffffffff new ${widget.courseId} syllabus with  ${widget.term} levelId: ${widget.levelId}, course_name: ${widget.courseName}");
+  
     return InkWell(
       onTap: () {
         Navigator.pop(context);
@@ -187,7 +198,6 @@ class _EmptySubjectScreenState extends State<EmptySubjectScreen>
                 builder: (context) => AdminAssignmentScreen(
                   syllabusId: widget.syllabusId,
                   classId: widget.classId,
-                  
                   levelId: widget.levelId,
                   courseId: widget.courseId,
                   courseName: widget.courseName,
@@ -488,77 +498,74 @@ class _EmptySubjectScreenState extends State<EmptySubjectScreen>
     return 'N/A';
   }
 
-  Widget _buildTopicSection(TopicContent topic) {
-    if (topic.children.isEmpty) return const SizedBox.shrink();
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(vertical: 16),
-          child: Row(children: [
-            Expanded(
-              child: Text(
-                topic.name,
-                style: AppTextStyles.normal600(
-                  fontSize: 18,
-                  color: AppColors.backgroundDark,
-                ),
+// Replace your existing _buildTopicSection method with this simplified version:
+Widget _buildTopicSection(TopicContent topic) {
+  return Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Row(
+        children: [
+          Expanded(
+            child: Text(
+              topic.name,
+              style: AppTextStyles.normal600(
+                fontSize: 18,
+                color: AppColors.backgroundDark,
               ),
             ),
-            PopupMenuButton<String>(
-              icon: const Icon(
-                Icons.more_vert,
-                color: AppColors.paymentTxtColor1,
-              ),
-              onSelected: (String result) {
-                switch (result) {
-                  case 'edit':
-                    _handleEditTopic(topic);
-                    break;
-                  case 'delete':
-              _handleTopicDelete(topic);
-              
-   
-                    break;
-                }
-              },
-              itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
-                const PopupMenuItem<String>(
-                  value: 'edit',
-                  child: Row(
-                    children: [
-                      Icon(Icons.edit, size: 16),
-                      SizedBox(width: 8),
-                      Text('Edit'),
-                    ],
-                  ),
-                ),
-                const PopupMenuItem<String>(
-                  value: 'delete',
-                  child: Row(
-                    children: [
-                      Icon(Icons.delete, size: 16, color: Colors.red),
-                      SizedBox(width: 8),
-                      Text('Delete', style: TextStyle(color: Colors.red)),
-                    ],
-                  ),
-                ),
-              ],
+          ),
+          PopupMenuButton<String>(
+            icon: const Icon(
+              Icons.more_vert,
+              color: AppColors.paymentTxtColor1,
             ),
-          ]),
-        ),
-        ...topic.children.map((item) => _buildTopicItem(
-              item.title,
-              item.datePosted != null
-                  ? _formatDate(DateTime.parse(item.datePosted!))
-                  : 'No date',
-              _getIconForType(item.type),
-              item,
-            )),
-      ],
-    );
-  }
+            onSelected: (String result) {
+              switch (result) {
+                case 'edit':
+                  _handleEditTopic(topic);
+                  break;
+                case 'delete':
+                  _handleTopicDelete(topic);
+                  break;
+              }
+            },
+            itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
+              const PopupMenuItem<String>(
+                value: 'edit',
+                child: Row(
+                  children: [
+                    Icon(Icons.edit, size: 16),
+                    SizedBox(width: 8),
+                    Text('Edit'),
+                  ],
+                ),
+              ),
+              const PopupMenuItem<String>(
+                value: 'delete',
+                child: Row(
+                  children: [
+                    Icon(Icons.delete, size: 16, color: Colors.red),
+                    SizedBox(width: 8),
+                    Text('Delete', style: TextStyle(color: Colors.red)),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+      // Display children if they exist, otherwise show nothing (but topic title is still shown above)
+      ...topic.children.map((item) => _buildTopicItem(
+        item.title,
+        item.datePosted != null
+            ? _formatDate(DateTime.parse(item.datePosted!))
+            : 'No date',
+        _getIconForType(item.type),
+        item,
+      )),
+    ],
+  );
+}
 
   // Replace your _handleEditTopic method with this improved version:
 
@@ -793,7 +800,7 @@ void _debugTopicData(TopicContent topic) {
     return InkWell(
       onTap: () => _navigateToDetails(item),
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 12),
+       // padding: const EdgeInsets.symmetric(vertical: 12),
         child: Row(
           children: [
            Container(
@@ -1173,15 +1180,16 @@ void _debugTopicData(TopicContent topic) {
   }
 
   void _navigateToDetails(SyllabusContentItem item) {
+      _loadSyllabusContents();
     final attachments = item.contentFiles.map((file) {
       return AttachmentItem(
         fileName: file.fileName,
-        iconPath: (file.type == 'image' || file.type == 'photo')
+        iconPath: (file.type == 'image' || file.type == 'photo' || file.type == 'video')
             ? 'assets/icons/e_learning/material.svg'
             : 'assets/icons/e_learning/link.svg',
         fileContent: file.file.isNotEmpty
             ? file.file
-            : 'https://yourserver.com/${file.fileName}', // Replace with your base URL
+            : 'https://linkskool.net/${file.fileName}', // Replace with your base URL
       );
     }).toList();
 
@@ -1205,7 +1213,9 @@ void _debugTopicData(TopicContent topic) {
               assignment: assignment,
             ),
           ),
-        );
+        ).then((_) {
+          _loadSyllabusContents();
+        });
         break;
       case 'quiz':
       case 'question':
@@ -1232,6 +1242,7 @@ void _debugTopicData(TopicContent topic) {
               question: Question(
                 title: item.title,
                 description: item.description,
+                
                 selectedClass: item.classes.map((c) => c.name).join(', '),
                 startDate: item.startDate != null ? DateTime.parse(item.startDate!) : DateTime.now(),
                 endDate: item.endDate != null ? DateTime.parse(item.endDate!) : DateTime.now(),
@@ -1241,9 +1252,12 @@ void _debugTopicData(TopicContent topic) {
                     : Duration.zero,
                 marks: item.grade?.toString() ?? '0',
               ),
+              
             ),
           ),
-        );
+        ).then((_) {
+          _loadSyllabusContents();
+        });
         break;
       case "material":
         Navigator.push(
@@ -1265,7 +1279,9 @@ void _debugTopicData(TopicContent topic) {
               ),
             ),
           ),
-        );
+        ).then((_){
+          _loadSyllabusContents();
+        });
         break;
     }
   }

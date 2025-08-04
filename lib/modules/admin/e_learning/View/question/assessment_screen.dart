@@ -81,9 +81,10 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
             final String questionText = q['question_text'] ?? '';
             final List<dynamic> questionFiles =
                 q['question_files'] as List<dynamic>? ?? [];
-            final String? imagePath = questionFiles.isNotEmpty
-                ? questionFiles[0]['file'] as String?
-                : null;
+          final String? imagePath = questionFiles.isNotEmpty
+    ? questionFiles[0]['file_name'] as String?
+    : null;
+
             final Map<String, dynamic>? correct =
                 q['correct'] as Map<String, dynamic>?;
 
@@ -100,7 +101,7 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
                   return {
                     'text': opt['text'] as String? ?? '',
                     'imageUrl': optionFiles.isNotEmpty
-                        ? optionFiles[0]['file'] as String?
+                        ? optionFiles[0]['file_name'] as String?
                         : null,
                   };
                 }).toList(),
@@ -306,7 +307,12 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
 }
 
   Widget _buildQuestionCard() {
+    
     final question = questions[_currentQuestionIndex];
+    final questionImage = question.imageUrl != null
+        ? NetworkImage("https://linkskool.net/${question.imageUrl}")
+        : null;
+
     return Container(
       width: 400,
       height: 400,
@@ -321,7 +327,7 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
           const SizedBox(height: 8),
           if (question.imageUrl != null)
             Image.network(
-          " https://linkskool.net/api/v3/portal/${question.imageUrl}",
+          "https://linkskool.net/${question.imageUrl}",
               height: 100,
               width: double.infinity,
               fit: BoxFit.cover,
@@ -339,31 +345,36 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
         ],
       ),
     );
+    
   }
 
  Widget _buildOptions(QuizQuestion question) {
   if (question is OptionsQuestion && question.options.isNotEmpty) {
+    print("SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS ${question.options[0]['imageUrl']}");
     return ListView(
       children: question.options.map((option) {
         return RadioListTile<String>(
           title: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(option['text']),
+      
+              if (option['imageUrl'] == null)
+              
+                Text(option['text']),
               if (option['imageUrl'] != null)
-                Image.memory(
-                  base64Decode(option['imageUrl']),
-                  height: 50,
-                  width: 50,
+                Image.network(
+                  "https://linkskool.net/${option['imageUrl']}",
+                  height: 100,
+                  width: double.infinity,
                   fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) => Image.asset(
-                    'assets/images/e-learning/placeholder.png',
-                    height: 50,
-                    width: 50,
+                  errorBuilder: (context, error, stackTrace) => Image.network(
+                    'https://img.freepik.com/free-vector/gradient-human-rights-day-background_52683-149974.jpg',
+                    height: 100,
+                    width: double.infinity,
                     fit: BoxFit.cover,
                   ),
                 ),
-            ],
+             ],
           ),
           value: option['text'],
           groupValue: _selectedOption,

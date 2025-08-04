@@ -67,6 +67,8 @@ class _AdminAssignmentScreenState extends State<AdminAssignmentScreen> {
   String? academicYear;
   int? academicTerm;
 
+  bool _isSaving = false;
+
 
 
   @override
@@ -156,9 +158,10 @@ class _AdminAssignmentScreenState extends State<AdminAssignmentScreen> {
         actions: [
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 8.0),
-            child: CustomSaveElevatedButton(
+          child: CustomSaveElevatedButton(
               onPressed: _saveAssignment,
               text: 'Save',
+              isLoading: _isSaving,
             ),
           ),
         ],
@@ -815,7 +818,10 @@ class _AdminAssignmentScreenState extends State<AdminAssignmentScreen> {
           builder: (context) =>  SelectTopicScreen(
                 callingScreen: '',
                 syllabusId: widget.syllabusId,
-                levelId: widget.levelId!, // Pass the appropriate levelId here
+                levelId: widget.levelId!,
+                courseName:widget.courseName,
+                courseId:widget.courseId
+                 // Pass the appropriate levelId here
               )),
     );
 
@@ -859,6 +865,9 @@ class _AdminAssignmentScreenState extends State<AdminAssignmentScreen> {
         CustomToaster.toastError(context, 'Error', 'Please enter marks');
       return;
     }
+    setState(() {
+      _isSaving = true;
+    });
     try {
       final assignmentProvider = Provider.of<AssignmentProvider>(context, listen: false);
       final userBox = Hive.box('userData');
@@ -950,6 +959,10 @@ class _AdminAssignmentScreenState extends State<AdminAssignmentScreen> {
         'Error',
         'Failed to save assignment: ${e.toString()}',
       );
+    } finally {
+      setState(() {
+        _isSaving = false;
+      });
     }
   }
 

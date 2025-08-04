@@ -17,6 +17,8 @@ class SelectTopicScreen extends StatefulWidget {
   final VoidCallback? onTopicCreated;
   final String? levelId;
   final int? syllabusId;
+  final courseId;
+  final courseName;
 
   const SelectTopicScreen({
     super.key,
@@ -24,6 +26,8 @@ class SelectTopicScreen extends StatefulWidget {
     this.onTopicCreated,
     this.levelId,
     this.syllabusId,
+    this.courseId,
+    this.courseName
   });
 
   @override
@@ -144,6 +148,8 @@ class _SelectTopicScreenState extends State<SelectTopicScreen> {
               builder: (context) => CreateTopicScreen(
                 levelId: widget.levelId,
                 syllabusId: widget.syllabusId!,
+                courseId: widget.courseId,
+                courseName: widget.courseName,
               ),
             ),
           );

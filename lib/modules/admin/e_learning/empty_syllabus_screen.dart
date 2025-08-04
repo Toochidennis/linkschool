@@ -304,6 +304,7 @@ await _syllabusProvider.fetchSyllabus(levelId, term,courseId);
       itemBuilder: (context, index) {
         return GestureDetector(
           onTap: () => Navigator.push(
+          
             context,
             MaterialPageRoute(
               builder: (context) => EmptySubjectScreen(
@@ -376,9 +377,21 @@ await _syllabusProvider.fetchSyllabus(levelId, term,courseId);
     final String courseId = widget.courseId!;
     final deleteProvider =Provider.of<DeleteSyllabusProvider>(context,listen:false);
    
-  await  deleteProvider.deletesyllabus(syllabusId);
-     _loadSyllabuses();
-  }
+try{
+    await  deleteProvider.deletesyllabus(syllabusId);
+    CustomToaster.toastSuccess(
+      context,
+      'Syllabus Deleted',
+      'Syllabus deleted successfully',
+    );
+       _loadSyllabuses();
+}catch(e){
+  CustomToaster.toastError(
+    context,
+    'Error',
+   "${e.toString()}",
+  );
+  }}
 
   void _confirmDeleteSyllabus(int index) {
     showDialog(

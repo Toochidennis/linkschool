@@ -140,6 +140,8 @@ class _QuizScreenState extends State<QuizScreen> {
           onPressed: () {
             // Navigate to the assessment screen
             print("SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS ${widget.correctAnswers}");
+            print("https://linkskool.net/${widget.questions}");
+        
             Navigator.push(
               context,
               MaterialPageRoute(

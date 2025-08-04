@@ -64,6 +64,8 @@ class _AddMaterialScreenState extends State<AddMaterialScreen> {
   String? academicYear;
   int? academicTerm;
 
+  bool _isSaving = false;
+
   @override
   void initState() {
     super.initState();
@@ -159,6 +161,7 @@ class _AddMaterialScreenState extends State<AddMaterialScreen> {
             child: CustomSaveElevatedButton(
               onPressed: _addMaterial,
               text: 'Save',
+              isLoading: _isSaving,
             ),
           ),
         ],
@@ -705,6 +708,8 @@ void _showInsertLinkDialog() {
         builder: (context) => SelectTopicScreen(
           levelId: widget.levelId!,
           syllabusId: widget.syllabusId,
+           courseName:widget.courseName,
+                courseId:widget.courseId,
           callingScreen: '',
         ),
       ),
@@ -743,6 +748,10 @@ void _addMaterial() async {
     );
     return;
   }
+
+  setState(() {
+    _isSaving = true;
+  });
 
   try {
     final materialProvider = Provider.of<MaterialProvider>(context, listen: false);
@@ -841,6 +850,10 @@ void _addMaterial() async {
       'Error',
       'Failed to save material: ${e.toString()}',
     );
+  } finally {
+    setState(() {
+      _isSaving = false;
+    });
   }
 }
 
@@ -852,7 +865,7 @@ void _addMaterial() async {
     if (iconPath.contains('upload')) {
       final extension = content.split('.').last.toLowerCase();
       if (['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'].contains(extension)) {
-        return 'photo';
+        return 'image';
       }
       if (['mp4', 'mov', 'avi', 'wmv', 'flv', 'webm'].contains(extension)) {
         return 'video';
