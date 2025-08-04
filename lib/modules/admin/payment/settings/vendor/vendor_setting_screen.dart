@@ -4,11 +4,11 @@ import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/model/admin/vendor/vendor_model.dart';
 import 'package:linkschool/modules/services/admin/payment/vendor_service.dart';
-// import 'package:linkschool/modules/model/vendor.dart';
-// import 'package:linkschool/modules/services/admin/vendor_service.dart';
 import 'package:linkschool/modules/services/api/service_locator.dart';
 import 'package:linkschool/modules/common/custom_toaster.dart';
 import 'package:linkschool/modules/admin/payment/settings/vendor/vendor_transaction_screen.dart';
+// import 'package:linkschool/modules/model/vendor.dart';
+// import 'package:linkschool/modules/services/admin/vendor_service.dart';
 
 class VendorSettingsScreen extends StatefulWidget {
   const VendorSettingsScreen({super.key});

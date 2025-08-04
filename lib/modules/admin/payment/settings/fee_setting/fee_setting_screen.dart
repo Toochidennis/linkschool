@@ -4,6 +4,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:linkschool/modules/admin/payment/settings/widgets/add_fee_overlay.dart';
 import 'package:linkschool/modules/admin/payment/settings/widgets/fee_action_overlay.dart';
 import 'package:linkschool/modules/admin/payment/settings/widgets/level_selection_overlay.dart';
+import 'package:linkschool/modules/auth/provider/auth_provider.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/custom_toaster.dart';
@@ -282,10 +283,22 @@ class _FeeSettingScreenState extends State<FeeSettingScreen> {
   }
 
   void _navigateToFeeDetailsScreen(BuildContext context, String levelName) {
+    // Retrieve levelId from AuthProvider
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final levels = authProvider.getLevels();
+    final selectedLevel = levels.firstWhere(
+      (level) => level['level_name'] == levelName,
+      orElse: () => {'id': 0, 'level_name': levelName},
+    );
+    final levelId = selectedLevel['id'] as int;
+
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => FeeSettingDetailsScreen(levelName: levelName),
+        builder: (context) => FeeSettingDetailsScreen(
+          levelName: levelName,
+          levelId: levelId,
+        ),
       ),
     );
   }
@@ -294,25 +307,19 @@ class _FeeSettingScreenState extends State<FeeSettingScreen> {
 
 
 
-
 // // ignore_for_file: prefer_const_constructors
 // import 'package:flutter/material.dart';
 // import 'package:flutter_svg/flutter_svg.dart';
+// import 'package:linkschool/modules/admin/payment/settings/widgets/add_fee_overlay.dart';
+// import 'package:linkschool/modules/admin/payment/settings/widgets/fee_action_overlay.dart';
+// import 'package:linkschool/modules/admin/payment/settings/widgets/level_selection_overlay.dart';
 // import 'package:linkschool/modules/common/app_colors.dart';
 // import 'package:linkschool/modules/common/constants.dart';
 // import 'package:linkschool/modules/common/custom_toaster.dart';
 // import 'package:linkschool/modules/common/text_styles.dart';
 // import 'package:linkschool/modules/admin/payment/settings/fee_setting/fee_setting_details_screen.dart';
-// // import 'package:linkschool/modules/common/widgets/custom_toaster.dart';
-// // import 'package:linkschool/modules/admin/payment/settings/fee_setting/widgets/add_fee_overlay.dart';
-// // import 'package:linkschool/modules/admin/payment/settings/fee_setting/widgets/level_selection_overlay.dart';
-// // import 'package:linkschool/modules/admin/payment/settings/fee_setting/widgets/fee_action_overlay.dart';
 // import 'package:linkschool/modules/providers/admin/payment/fee_provider.dart';
 // import 'package:provider/provider.dart';
-
-// import '../widgets/add_fee_overlay.dart';
-// import '../widgets/fee_action_overlay.dart';
-// import '../widgets/level_selection_overlay.dart';
 
 // class FeeSettingScreen extends StatefulWidget {
 //   const FeeSettingScreen({super.key});
@@ -376,13 +383,13 @@ class _FeeSettingScreenState extends State<FeeSettingScreen> {
 //         decoration: Constants.customBoxDecoration(context),
 //         child: Consumer<FeeProvider>(
 //           builder: (context, feeProvider, child) {
-//             if (feeProvider.isLoading) {
+//             if (feeProvider.isLoading && feeProvider.feeNames.isEmpty) {
 //               return const Center(
 //                 child: CircularProgressIndicator(),
 //               );
 //             }
 
-//             if (feeProvider.error != null) {
+//             if (feeProvider.error != null && feeProvider.feeNames.isEmpty) {
 //               return Center(
 //                 child: Column(
 //                   mainAxisAlignment: MainAxisAlignment.center,
@@ -404,17 +411,53 @@ class _FeeSettingScreenState extends State<FeeSettingScreen> {
 //               );
 //             }
 
-//             return Padding(
-//               padding: const EdgeInsets.all(16.0),
-//               child: ListView.builder(
-//                 itemCount: feeProvider.feeNames.length,
-//                 itemBuilder: (context, index) {
-//                   final feeName = feeProvider.feeNames[index];
-//                   return _buildFeeRow(
-//                     feeName.feeName,
-//                     isRequired: feeName.isMandatory,
-//                   );
-//                 },
+//             return RefreshIndicator(
+//               onRefresh: () async {
+//                 await feeProvider.fetchFeeNames();
+//               },
+//               child: Padding(
+//                 padding: const EdgeInsets.all(16.0),
+//                 child: Column(
+//                   children: [
+//                     // Show loading indicator at top when adding new fee
+//                     if (feeProvider.isLoading && feeProvider.feeNames.isNotEmpty)
+//                       Container(
+//                         padding: const EdgeInsets.all(8),
+//                         child: Row(
+//                           mainAxisAlignment: MainAxisAlignment.center,
+//                           children: [
+//                             SizedBox(
+//                               width: 16,
+//                               height: 16,
+//                               child: CircularProgressIndicator(strokeWidth: 2),
+//                             ),
+//                             const SizedBox(width: 8),
+//                             Text(
+//                               'Adding fee name...',
+//                               style: TextStyle(
+//                                 fontSize: 12,
+//                                 color: Colors.grey[600],
+//                               ),
+//                             ),
+//                           ],
+//                         ),
+//                       ),
+//                     // Fee names list
+//                     Expanded(
+//                       child: ListView.builder(
+//                         itemCount: feeProvider.feeNames.length,
+//                         itemBuilder: (context, index) {
+//                           final feeName = feeProvider.feeNames[index];
+//                           return _buildFeeRow(
+//                             feeName.feeName,
+//                             isRequired: feeName.isMandatory,
+//                             isNewlyAdded: index == 0 && feeProvider.isLoading,
+//                           );
+//                         },
+//                       ),
+//                     ),
+//                   ],
+//                 ),
 //               ),
 //             );
 //           },
@@ -432,24 +475,53 @@ class _FeeSettingScreenState extends State<FeeSettingScreen> {
 //     );
 //   }
 
-//   Widget _buildFeeRow(String title, {required bool isRequired}) {
+//   Widget _buildFeeRow(String title, {required bool isRequired, bool isNewlyAdded = false}) {
 //     return Container(
 //       margin: EdgeInsets.only(bottom: 8),
 //       decoration: BoxDecoration(
-//         border: Border.all(color: Colors.grey.shade300),
+//         border: Border.all(
+//           color: isNewlyAdded ? AppColors.eLearningBtnColor1 : Colors.grey.shade300,
+//           width: isNewlyAdded ? 2 : 1,
+//         ),
 //         borderRadius: BorderRadius.circular(8),
+//         color: isNewlyAdded ? AppColors.eLearningBtnColor1.withOpacity(0.05) : null,
 //       ),
 //       child: ListTile(
 //         leading: CircleAvatar(
-//           backgroundColor: AppColors.eLearningBtnColor1,
+//           backgroundColor: isNewlyAdded ? AppColors.eLearningBtnColor1 : AppColors.eLearningBtnColor1,
 //           child: SvgPicture.asset('assets/icons/profile/fee.svg',
 //               color: Colors.white),
 //         ),
-//         title: Text(title),
+//         title: Text(
+//           title,
+//           style: TextStyle(
+//             fontWeight: isNewlyAdded ? FontWeight.bold : FontWeight.normal,
+//           ),
+//         ),
 //         subtitle: Text(
 //           isRequired ? 'Required' : 'Not Required',
-//           style: TextStyle(color: Colors.grey),
+//           style: TextStyle(
+//             color: Colors.grey,
+//             fontWeight: isNewlyAdded ? FontWeight.w500 : FontWeight.normal,
+//           ),
 //         ),
+//         trailing: isNewlyAdded
+//             ? Container(
+//                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+//                 decoration: BoxDecoration(
+//                   color: AppColors.eLearningBtnColor1,
+//                   borderRadius: BorderRadius.circular(12),
+//                 ),
+//                 child: Text(
+//                   'NEW',
+//                   style: TextStyle(
+//                     color: Colors.white,
+//                     fontSize: 10,
+//                     fontWeight: FontWeight.bold,
+//                   ),
+//                 ),
+//               )
+//             : null,
 //       ),
 //     );
 //   }
