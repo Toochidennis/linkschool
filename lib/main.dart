@@ -29,6 +29,7 @@ import 'package:linkschool/modules/providers/explore/exam_provider.dart';
 import 'package:linkschool/modules/providers/explore/for_you_provider.dart';
 import 'package:linkschool/modules/providers/explore/home/news_provider.dart';
 import 'package:linkschool/modules/providers/explore/subject_provider.dart';
+import 'package:linkschool/modules/services/admin/payment/vendor_service.dart';
 import 'package:linkschool/modules/services/explore/cbt_service.dart';
 import 'package:linkschool/routes/onboardingScreen.dart';
 import 'package:provider/provider.dart';
@@ -36,6 +37,7 @@ import 'package:linkschool/modules/services/api/service_locator.dart';
 import 'modules/providers/admin/registered_terms_provider.dart';
 import 'modules/providers/explore/game/game_provider.dart';
 import 'modules/providers/admin/grade_provider.dart';
+// import 'modules/services/admin/vendor_service.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -87,17 +89,14 @@ Future<void> main() async {
         ChangeNotifierProvider(create: (_) => locator<AssignmentProvider>()),
         ChangeNotifierProvider(create: (_) => locator<QuizProvider>()),
         ChangeNotifierProvider(create: (_) => locator<SyllabusContentProvider>()),
-        // StudentProvider from service locator
         ChangeNotifierProvider(create: (_) => locator<StudentProvider>()),
         ChangeNotifierProvider(create: (_) => locator<AttendanceProvider>()),
         ChangeNotifierProvider(create: (_) => CourseResultProvider()),
         ChangeNotifierProvider(create: (_) => ViewCourseResultProvider()),
-        // Add PerformanceProvider from service locator
         ChangeNotifierProvider(create: (_) => locator<PerformanceProvider>()),
-        // Add AccountProvider from service locator
         ChangeNotifierProvider(create: (_) => locator<AccountProvider>()),
-        // Add FeeProvider from service locator
         ChangeNotifierProvider(create: (_) => locator<FeeProvider>()),
+        Provider(create: (_) => locator<VendorService>()),
       ],
       child: const MyApp(),
     ),
@@ -138,7 +137,6 @@ class _AppInitializerState extends State<AppInitializer> {
 
   Future<void> _initializeApp() async {
     try {
-      // Initialize auth provider and check login status
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
       await authProvider.checkLoginStatus();
     } catch (e) {
@@ -165,7 +163,6 @@ class _AppInitializerState extends State<AppInitializer> {
     return Onboardingscreen();
   }
 }
-
 
 
 
@@ -286,7 +283,53 @@ class _AppInitializerState extends State<AppInitializer> {
 //       theme: AppThemes.lightTheme,
 //       darkTheme: AppThemes.darkTheme,
 //       themeMode: ThemeMode.system,
-//       home: Onboardingscreen(),
+//       home: const AppInitializer(),
 //     );
+//   }
+// }
+
+// class AppInitializer extends StatefulWidget {
+//   const AppInitializer({super.key});
+
+//   @override
+//   State<AppInitializer> createState() => _AppInitializerState();
+// }
+
+// class _AppInitializerState extends State<AppInitializer> {
+//   bool _isInitialized = false;
+
+//   @override
+//   void initState() {
+//     super.initState();
+//     _initializeApp();
+//   }
+
+//   Future<void> _initializeApp() async {
+//     try {
+//       // Initialize auth provider and check login status
+//       final authProvider = Provider.of<AuthProvider>(context, listen: false);
+//       await authProvider.checkLoginStatus();
+//     } catch (e) {
+//       print('Error initializing app: $e');
+//     } finally {
+//       if (mounted) {
+//         setState(() {
+//           _isInitialized = true;
+//         });
+//       }
+//     }
+//   }
+
+//   @override
+//   Widget build(BuildContext context) {
+//     if (!_isInitialized) {
+//       return const Scaffold(
+//         body: Center(
+//           child: CircularProgressIndicator(),
+//         ),
+//       );
+//     }
+
+//     return Onboardingscreen();
 //   }
 // }
