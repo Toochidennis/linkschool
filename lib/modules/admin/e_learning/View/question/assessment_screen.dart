@@ -79,6 +79,9 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
           questions = widget.questions!.map((q) {
             final String topic = q['topic'] ?? "General Knowledge";
             final String questionText = q['question_text'] ?? '';
+            
+           final int questionGrade = int.tryParse(q['question_grade'].toString()) ?? 0;
+
             final List<dynamic> questionFiles =
                 q['question_files'] as List<dynamic>? ?? [];
           final String? imagePath = questionFiles.isNotEmpty
@@ -93,6 +96,7 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
                   q['options'] as List<dynamic>? ?? [];
               return TextQuestion(
                 topic: topic,
+                questionGrade:questionGrade,
                 questionText: questionText,
                 imageUrl: imagePath,
                 options: options.map((opt) {
@@ -103,7 +107,8 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
                     'imageUrl': optionFiles.isNotEmpty
                         ? optionFiles[0]['file_name'] as String?
                         : null,
-                  };
+                    'order': opt['order'] as String?,
+                                      };
                 }).toList(),
                 correctAnswers: correct != null && correct['text'] != null
                     ? [correct['text'] as String]
@@ -113,10 +118,11 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
               // Handles 'short_answer'
               return TypedAnswerQuestion(
                 topic: topic,
+                questionGrade:questionGrade,
                 questionText: questionText,
                 imageUrl: imagePath,
                 correctAnswer:
-                    correct != null ? correct['text'] as String? : null,
+                    correct != null ? correct['text'] as String? : null, 
               );
             }
           }).toList();
@@ -313,57 +319,23 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
         ? NetworkImage("https://linkskool.net/${question.imageUrl}")
         : null;
 
-    return Container(
-      width: 400,
-      height: 400,
-      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 16.0),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const SizedBox(height: 8),
-          if (question.imageUrl != null)
-            Image.network(
-          "https://linkskool.net/${question.imageUrl}",
-              height: 100,
-              width: double.infinity,
-              fit: BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) => Image.network(
-                'https://img.freepik.com/free-vector/gradient-human-rights-day-background_52683-149974.jpg',
-                height: 100,
-                width: double.infinity,
-                fit: BoxFit.cover,
-              ),
-            ),
-          const SizedBox(height: 8),
-          Text(question.questionText,style:TextStyle(fontSize: 23),),
-          const SizedBox(height: 16),
-          Expanded(child: _buildOptions(question)),
-        ],
-      ),
-    );
-    
-  }
-
- Widget _buildOptions(QuizQuestion question) {
-  if (question is OptionsQuestion && question.options.isNotEmpty) {
-    print("SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS ${question.options[0]['imageUrl']}");
-    return ListView(
-      children: question.options.map((option) {
-        return RadioListTile<String>(
-          title: Column(
+    return Column(
+      children: [
+        Container(
+          width: 400,
+          height: 450,
+          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 16.0),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-      
-              if (option['imageUrl'] == null)
-              
-                Text(option['text']),
-              if (option['imageUrl'] != null)
+              const SizedBox(height: 8),
+              if (question.imageUrl != null)
                 Image.network(
-                  "https://linkskool.net/${option['imageUrl']}",
+              "https://linkskool.net/${question.imageUrl}",
                   height: 100,
                   width: double.infinity,
                   fit: BoxFit.cover,
@@ -374,27 +346,90 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
                     fit: BoxFit.cover,
                   ),
                 ),
-             ],
+              const SizedBox(height: 8),
+              Text(question.questionText,style:TextStyle(fontSize: 23),),
+              const SizedBox(height: 16),
+              Expanded(child: _buildOptions(question)),
+            ],
           ),
-          value: option['text'],
-          groupValue: _selectedOption,
-          onChanged: (value) {
-            setState(() {
-              _selectedOption = value;
-              _tempAnswer = value; // Store in _tempAnswer
-              _isAnswered = true;
-              _isCorrect = question is TextQuestion &&
-                  (question as TextQuestion).correctAnswers.contains(value);
-              // Remove: userAnswers[_currentQuestionIndex] = value;
-            });
-          },
-          tileColor: _getOptionColor(option['text']),
+        ),
+      ],
+    );
+    
+  }
+
+Widget _buildOptions(QuizQuestion question) {
+  if (question is OptionsQuestion && question.options.isNotEmpty) {
+    print(question.options);
+    return Column(
+      children: question.options.map((option) {
+        return Container(
+          margin: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 8.0),
+          decoration: BoxDecoration(
+            color: _getOptionColor(option['text']),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(
+              color: _selectedOption == option['text']
+                  ? Colors.blue
+                  : Colors.grey.shade300,
+              width: 1,
+            ),
+          ),
+          child: RadioListTile<String>(
+            title: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (option['imageUrl'] == null)
+                  Text(option['text']),
+                if (option['imageUrl'] != null)
+                  GestureDetector(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => Image.network(
+                            'https://linkskool.net/${option['imageUrl']}',
+                            fit: BoxFit.contain,
+                          ),
+                        ),
+                      );
+                    },
+                    child: Image.network(
+                      'https://linkskool.net/${option['imageUrl']}',
+                      height: 50,
+                      width: 50,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) => Image.network(
+                        'https://img.freepik.com/free-vector/gradient-human-rights-day-background_52683-149974.jpg',
+                        height: 100,
+                        width: 100,
+                        fit: BoxFit.cover,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+            value: option['text'],
+            groupValue: _selectedOption,
+            onChanged: (value) {
+              setState(() {
+                _selectedOption = value;
+                _tempAnswer = value; // Store in _tempAnswer instead of userAnswers
+                _isAnswered = true;
+                _isCorrect = question is TextQuestion &&
+                    (question as TextQuestion).correctAnswers.contains(value);
+                // Removed: userAnswers[_currentQuestionIndex] = value;
+              });
+            },
+            activeColor: Colors.blue,
+            tileColor: Colors.transparent,
+          ),
         );
       }).toList(),
     );
   } else if (question is TypedAnswerQuestion) {
     return TextField(
-      controller: _textController, // Use the controller
+      controller: _textController, // Added controller
       onChanged: (value) {
         setState(() {
           _typedAnswer = value;
@@ -402,7 +437,7 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
           _isAnswered = value.isNotEmpty;
           _isCorrect = question.correctAnswer != null &&
               value.trim().toLowerCase() == question.correctAnswer!.toLowerCase();
-          // Remove: userAnswers[_currentQuestionIndex] = value;
+          // Removed: userAnswers[_currentQuestionIndex] = value;
         });
       },
       decoration: const InputDecoration(
@@ -417,7 +452,7 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
   Color _getOptionColor(String option) {
     if (_selectedOption == option && _isAnswered) {
       return _isCorrect
-          ? AppColors.eLearningBtnColor6
+          ? const Color.fromARGB(255, 230, 236, 255)
           : AppColors.eLearningBtnColor7;
     }
     return Colors.transparent;
@@ -513,35 +548,170 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
     _restoreUserAnswer();
   }
 
-  void _submitQuiz() {
-    // Directly navigate to the preview screen after submitting
-    if (_isAnswered) {
+ void _submitQuiz() {
+  // Save current answer if user is answering
+  if (_isAnswered) {
     userAnswers[_currentQuestionIndex] = _tempAnswer;
   }
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(
-        builder: (context) => PreviewQuizAssessmentScreen(
-          userAnswer: userAnswers,
-          question: questions,
-          correctAnswers: widget.correctAnswer,
-          mark: widget.mark,
-          duration: widget.duration,
-        ),
-      ),
-    );
+
+int totalScore = 0;
+  for (int i = 0; i < questions.length; i++) {
+    final question = questions[i];
+    final userAnswer = userAnswers[i];
+    final correctAnswer = question is TextQuestion
+        ? question.correctAnswers.first
+        : (question as TypedAnswerQuestion).correctAnswer;
+    if (userAnswer != null &&
+        userAnswer.toString().trim().toLowerCase() == correctAnswer?.toLowerCase()) {
+      totalScore += question.questionGrade;
+    }
   }
+  // Process user answers to check for image extensions and get corresponding image URLs
+  List<dynamic> processedAnswers = [];
+  
+  for (int i = 0; i < userAnswers.length; i++) {
+    dynamic answer = userAnswers[i];
+    if (answer != null && answer is String) {
+      // Check if answer ends with common image extensions
+      bool endsWithImageExtension = answer.toLowerCase().endsWith('.jpg') ||
+                                   answer.toLowerCase().endsWith('.jpeg') ||
+                                   answer.toLowerCase().endsWith('.png') ||
+                                   answer.toLowerCase().endsWith('.gif') ||
+                                   answer.toLowerCase().endsWith('.webp') ||
+                                   answer.toLowerCase().endsWith('.bmp');
+      
+      if (endsWithImageExtension) {
+        // Find the corresponding option's image URL
+        final question = questions[i];
+        if (question is OptionsQuestion) {
+          // Look for the option that matches this answer
+          bool foundMatch = false;
+          for (var option in question.options) {
+            if (option['text'] == answer && option['imageUrl'] != null) {
+              // Replace the text answer with the image URL
+              processedAnswers.add(option['imageUrl']);
+              foundMatch = true;
+              break;
+            }
+          }
+          // If no matching option found, keep the original answer
+          if (!foundMatch) {
+            processedAnswers.add(answer);
+          }
+        } else {
+          processedAnswers.add(answer);
+        }
+      } else {
+        // Answer doesn't end with image extension, keep as is
+        processedAnswers.add(answer);
+      }
+    } else {
+      // Answer is null or not a string, keep as is
+      processedAnswers.add(answer);
+    }
+  }
+
+  // Process correct answers separately
+ List<Map<String, dynamic>> processedCorrectAnswers = [];
+  
+  for (int i = 0; i < questions.length; i++) {
+    final question = questions[i];
+    
+    if (question is TextQuestion) {
+      // For TextQuestion, get the first correct answer
+      final correctAnswer = question.correctAnswers.isNotEmpty 
+          ? question.correctAnswers.first 
+          : null;
+      
+      if (correctAnswer != null && correctAnswer is String) {
+        // Check if it's an image file name
+        bool endsWithImageExtension = correctAnswer.toLowerCase().endsWith('.jpg') ||
+                                     correctAnswer.toLowerCase().endsWith('.jpeg') ||
+                                     correctAnswer.toLowerCase().endsWith('.png') ||
+                                     correctAnswer.toLowerCase().endsWith('.gif') ||
+                                     correctAnswer.toLowerCase().endsWith('.webp') ||
+                                     correctAnswer.toLowerCase().endsWith('.bmp');
+        
+        if (endsWithImageExtension) {
+          // Find the corresponding option's image URL
+          bool foundMatch = false;
+          for (var option in question.options) {
+            if (option['text'] == correctAnswer && option['imageUrl'] != null) {
+              processedCorrectAnswers.add({
+                'text': correctAnswer,
+                'imageUrl': option['imageUrl']
+              });
+              foundMatch = true;
+              break;
+            }
+          }
+          if (!foundMatch) {
+            processedCorrectAnswers.add({
+              'text': correctAnswer,
+              'imageUrl': null
+            });
+          }
+        } else {
+          processedCorrectAnswers.add({
+            'text': correctAnswer,
+            'imageUrl': null
+          });
+        }
+      } else {
+        processedCorrectAnswers.add({
+          'text': '',
+          'imageUrl': null
+        });
+      }
+    } else if (question is TypedAnswerQuestion) {
+      final correctAnswer = question.correctAnswer;
+      if (correctAnswer != null && correctAnswer is String) {
+        processedCorrectAnswers.add({
+          'text': correctAnswer,
+          'imageUrl': null
+        });
+      } else {
+        processedCorrectAnswers.add({
+          'text': '',
+          'imageUrl': null
+        });
+      }
+    } else {
+      // Default case
+      processedCorrectAnswers.add({
+        'text': '',
+        'imageUrl': null
+      });
+    }
+  }
+
+  // Navigate to preview screen with processed answers
+  Navigator.pushReplacement(
+    context,
+    MaterialPageRoute(
+      builder: (context) => PreviewQuizAssessmentScreen(
+        userAnswer: processedAnswers,
+        question: questions,
+        correctAnswers: processedCorrectAnswers,
+        mark:totalScore.toString(),
+        duration: widget.duration,
+      ),
+    ),
+  );
+}
 }
 
 abstract class QuizQuestion {
   final String topic;
   final String questionText;
   final String? imageUrl;
+    final int questionGrade;
 
   QuizQuestion({
     required this.topic,
     required this.questionText,
     this.imageUrl,
+  required this.questionGrade,
   });
 }
 
@@ -553,6 +723,7 @@ class OptionsQuestion extends QuizQuestion {
     required super.questionText,
     required this.options,
     super.imageUrl,
+    required super.questionGrade,
   });
 }
 
@@ -564,7 +735,7 @@ class TextQuestion extends OptionsQuestion {
     required super.questionText,
     required super.options,
     super.imageUrl,
-    required this.correctAnswers,
+    required this.correctAnswers, required super.questionGrade,
   });
 }
 
@@ -576,17 +747,19 @@ class ImageQuestion extends OptionsQuestion {
     required super.questionText,
     required super.options,
     required super.imageUrl,
-    required this.correctAnswers,
+    required this.correctAnswers, required super.questionGrade,
   });
 }
 
 class TypedAnswerQuestion extends QuizQuestion {
   final String? correctAnswer;
+  // Removed duplicate questionGrade field and moved required super.questionGrade to constructor initializer list
 
   TypedAnswerQuestion({
     required super.topic,
     required super.questionText,
     super.imageUrl,
+    required super.questionGrade,
     this.correctAnswer,
   });
 }

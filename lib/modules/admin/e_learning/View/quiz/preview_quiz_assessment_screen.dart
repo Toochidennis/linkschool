@@ -94,15 +94,8 @@ class PreviewQuizAssessmentScreen extends StatelessWidget {
 
 String _getCorrectAnswer(int index) {
   if (index < correctAnswers.length && correctAnswers[index] != null) {
-    var correctAnswer = correctAnswers[index];
-
-    // Handle map with 'correct_answer' field
-    if (correctAnswer is Map && correctAnswer.containsKey('correct_answer')) {
-      return correctAnswer['correct_answer']?.toString().trim() ?? '';
-    }
-
-    // If it's already a string or simple value, return it as string
-    return correctAnswer.toString().trim();
+    final answer = correctAnswers[index] as Map<String, dynamic>;
+    return answer['imageUrl']?.toString().trim() ?? answer['text']?.toString().trim() ?? '';
   }
   return '';
 }
@@ -144,7 +137,7 @@ String _getCorrectAnswer(int index) {
     for (int i = 0; i < question.length; i++) {
       if (_getQuestionStatus(i) == 'Correct') {
        // score += question[i].questionGrade ?? 5; // Default to 5 if grade is null
-       score += 5;
+     score += question[i].questionGrade;
       }
     }
     return score;
@@ -155,7 +148,7 @@ String _getCorrectAnswer(int index) {
     int total = 0;
     for (var q in question) {
       //total += q.questionGrade ?? 5; // Default to 5 if grade is null
-      total +=5;
+    total += q.questionGrade;
     }
     return total;
   }
@@ -171,61 +164,61 @@ String _getCorrectAnswer(int index) {
     return correct;
   }
 
-  Widget _buildScoreCard() {
-    int correctAnswers = _countCorrectAnswers();
-    int totalQuestions = question.length;
-    int score = _calculateScore();
-    int totalScore = _calculateTotalScore();
+ Widget _buildScoreCard() {
+  int correctAnswers = _countCorrectAnswers();
+  int totalQuestions = question.length;
+  int totalScore = _calculateTotalScore();
+  int score = mark != null ? int.tryParse(mark!) ?? 0 : _calculateScore(); // Use mark if available
 
-    return Card(
-      elevation: 4,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-      child: Container(
-        height: 65,
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text(
-                  'Your Score',
-                  style: TextStyle(color: Colors.grey),
-                ),
-                Text(
-                  '$correctAnswers of $totalQuestions questions', 
-                  style: AppTextStyles.normal500(fontSize: 12, color: AppColors.backgroundDark)
-                ),
-              ],
-            ),
-            const SizedBox(height: 4),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  '$score/$totalScore',
-                  style: AppTextStyles.normal700(fontSize: 18, color: AppColors.eLearningContColor2),
-                ),
-                Row(
-                  children: [
-                    const Icon(Icons.access_time, color: Colors.grey, size: 16),
-                    const SizedBox(width: 4),
-                    Text(
-                      duration != null
-                          ? _formatTime(duration!.inSeconds)
-                          : 'N/A',
-                      style: AppTextStyles.normal600(fontSize: 12, color: AppColors.backgroundDark),
-                        ),]
-                ),
-              ],
-            ),
-          ],
-        ),
+  return Card(
+    elevation: 4,
+    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+    child: Container(
+      height: 65,
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'Your Score',
+                style: TextStyle(color: Colors.grey),
+              ),
+              Text(
+                '$correctAnswers of $totalQuestions questions',
+                style: AppTextStyles.normal500(fontSize: 12, color: AppColors.backgroundDark),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                '$score/$totalScore',
+                style: AppTextStyles.normal700(fontSize: 18, color: AppColors.eLearningContColor2),
+              ),
+              Row(
+                children: [
+                  const Icon(Icons.access_time, color: Colors.grey, size: 16),
+                  const SizedBox(width: 4),
+                  Text(
+                    duration != null
+                        ? _formatTime(duration!.inSeconds)
+                        : 'N/A',
+                    style: AppTextStyles.normal600(fontSize: 12, color: AppColors.backgroundDark),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ],
       ),
-    );
-  }
-
+    ),
+  );
+}
   String _formatTime(int seconds) {
     int hours = seconds ~/ 3600;
     int minutes = (seconds % 3600) ~/ 60;
@@ -238,8 +231,9 @@ String _getCorrectAnswer(int index) {
     Color statusColor = _getStatusColor(status);
     String userAns = _getUserAnswer(index);
     String correctAns = _getCorrectAnswer(index);
-    //int marks = question[index].questionGrade ?? 5;
-    int marks = 5;
+int marks = question[index].questionGrade;
+   
+    
 
     return Card(
       elevation: 2,
@@ -295,7 +289,17 @@ String _getCorrectAnswer(int index) {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 const Text('Your answer:'),
-                Flexible(
+                if(userAns.endsWith('.jpg'))
+                GestureDetector(
+                  child: Image.network(
+                           "https://linkskool.net/$userAns",
+                            height: 50,
+                            width: 50,
+                            fit: BoxFit.contain,
+                          ),
+                )
+
+              else  Flexible(
                   child: Text(
                     userAns.isEmpty ? 'No answer' : userAns,
                     textAlign: TextAlign.right,
@@ -312,7 +316,17 @@ String _getCorrectAnswer(int index) {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
+                
                 const Text('Correct Answer:'),
+                if (correctAns.endsWith(".jpg"))
+               Image.network(
+                   "https://linkskool.net/$correctAns",
+                 height: 50,
+                 width: 50,
+                 fit: BoxFit.contain,
+               )
+      else
+
                 Flexible(
                   child: Text(
                     correctAns,
