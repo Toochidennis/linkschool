@@ -8,6 +8,9 @@ import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/common/widgets/portal/result_dashboard/level_selection.dart';
 import 'package:carousel_slider/carousel_slider.dart';
+import 'package:linkschool/modules/model/e-learning/activity_model.dart';
+import 'package:linkschool/modules/providers/admin/e_learning/activity_provider.dart';
+import 'package:provider/provider.dart';
 
 class ELearningDashboardScreen extends StatefulWidget {
   final PreferredSizeWidget appBar;
@@ -86,6 +89,16 @@ class _ELearningDashboardScreenState extends State<ELearningDashboardScreen> {
         });
       }
     });
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final recentProvider = Provider.of<RecentProvider>(context, listen: false);
+      recentProvider.fetchDashboardData(
+        class_id: selectedCourseId,
+        level_id: selectedLevelId,
+        term: academicTerm, // Pass the actual term
+      );
+    });
+    
   }
 
   @override
@@ -173,6 +186,8 @@ Future<void> _loadUserData() async {
 
   @override
   Widget build(BuildContext context) {
+    
+
     return Scaffold(
       appBar: widget.appBar,
       body: Container(
@@ -411,91 +426,96 @@ SliverToBoxAdapter(
     );
   }
 
-  Widget _buildRecentActivity() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Text(
-            'Recent activity',
-            style: AppTextStyles.normal600(
-                fontSize: 18, color: AppColors.backgroundDark),
-          ),
+Widget _buildRecentActivity() {
+  final activities = userData != null && userData!['recentActivities'] != null
+         ? RecentData.fromJson(userData!['recentActivities']).recentActivities
+         : [];
+ // Replace with the new data source
+
+  return Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        child: Text(
+          'Recent activity',
+          style: AppTextStyles.normal600(
+              fontSize: 18, color: AppColors.backgroundDark),
         ),
-        const SizedBox(height: 16),
-        SizedBox(
-          height: 110,
-          child: PageView.builder(
-            controller: activityController,
-            itemCount: activities.length,
-            itemBuilder: (context, index) {
-              final activity = activities[index];
-              return Container(
-                margin: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 8.0),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(12.0),
-                  color: Colors.white,
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.2), // Increased opacity
-                      blurRadius: 12, // Increased blur radius
-                      spreadRadius: 2, // Added spread radius
-                      offset: const Offset(0, 4), // Shadow position
+      ),
+      const SizedBox(height: 16),
+      SizedBox(
+        height: 110,
+        child: PageView.builder(
+          controller: activityController,
+          itemCount: activities.length,
+          itemBuilder: (context, index) {
+            final activity = activities[index];
+            return Container(
+              margin: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 8.0),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(12.0),
+                color: Colors.white,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.2), // Increased opacity
+                    blurRadius: 12, // Increased blur radius
+                    spreadRadius: 2, // Added spread radius
+                    offset: const Offset(0, 4), // Shadow position
+                  ),
+                ],
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(12.0),
+                child: Row(
+                  children: [
+                    CircleAvatar(
+                      backgroundImage: AssetImage(activity.avatar ?? 'assets/images/default_avatar.png'),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          RichText(
+                            text: TextSpan(
+                              style: const TextStyle(
+                                  color: Colors.black, fontSize: 14),
+                              children: [
+                                TextSpan(text: '${activity.createdBy} '),
+                                TextSpan(
+                                  text: '${activity.type} ',
+                                  style: const TextStyle(
+                                      fontWeight: FontWeight.normal),
+                                ),
+                                TextSpan(
+                                  text: '${activity.courseName}',
+                                  style: const TextStyle(
+                                      fontWeight: FontWeight.bold),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            activity.datePosted,
+                            style: const TextStyle(
+                                color: Colors.grey, fontSize: 12),
+                          ),
+                        ],
+                      ),
                     ),
                   ],
                 ),
-                child: Padding(
-                  padding: const EdgeInsets.all(12.0),
-                  child: Row(
-                    children: [
-                      CircleAvatar(
-                        backgroundImage: AssetImage(activity['avatar']!),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            RichText(
-                              text: TextSpan(
-                                style: const TextStyle(
-                                    color: Colors.black, fontSize: 14),
-                                children: [
-                                  TextSpan(text: '${activity['name']} '),
-                                  TextSpan(
-                                    text: '${activity['activity']} ',
-                                    style: const TextStyle(
-                                        fontWeight: FontWeight.normal),
-                                  ),
-                                  TextSpan(
-                                    text: '${activity['subject']}',
-                                    style: const TextStyle(
-                                        fontWeight: FontWeight.bold),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              activity['timestamp']!,
-                              style: const TextStyle(
-                                  color: Colors.grey, fontSize: 12),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              );
-            },
-          ),
+              ),
+            );
+          },
         ),
-      ],
-    );
-  }
+      ),
+    ],
+  );
+}
 
   Color _getAssessmentColor(int index) {
     final colors = [

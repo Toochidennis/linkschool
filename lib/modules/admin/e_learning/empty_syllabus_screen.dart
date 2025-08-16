@@ -149,7 +149,7 @@ await _syllabusProvider.fetchSyllabus(levelId, term,courseId);
           'upload_date': syllabus.uploadDate,
           'classes': syllabus.classes,
           'selectedClass': selectedClass,
-          'selectedTeacher': "select a teacher",
+          'selectedTeacher': syllabus.authorName,
           'backgroundImagePath': _imagePaths.isNotEmpty
               ? _imagePaths[index % _imagePaths.length]
               : '',
@@ -314,6 +314,7 @@ await _syllabusProvider.fetchSyllabus(levelId, term,courseId);
                 classId: widget.classId,
                 courseId: widget.courseId,
                 levelId: widget.levelId,
+                authorName:  _syllabusList[index]['author_name']?.toString() ?? '',
                 courseName: widget.course_name,
                 term: _syllabusList[index]['term']?.toString() ?? '',
                 courseTitle: _syllabusList[index]['title']?.toString() ?? '',

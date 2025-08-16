@@ -32,6 +32,7 @@ class AddMaterialScreen extends StatefulWidget {
  final bool editMode;
 final custom.Material? materialToEdit;
 final int? id;
+final int? itemId;
 
   const AddMaterialScreen({
     super.key,
@@ -45,6 +46,7 @@ final int? id;
     this.editMode = false,
     this.materialToEdit, 
     this.id,
+    this.itemId,
   });
 
   @override

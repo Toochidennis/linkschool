@@ -69,7 +69,11 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
     int hours = seconds ~/ 3600;
     int minutes = (seconds % 3600) ~/ 60;
     int remainingSeconds = seconds % 60;
-    return '${hours.toString().padLeft(2, '0')}:${minutes.toString().padLeft(2, '0')}:${remainingSeconds.toString().padLeft(2, '0')}';
+    if (hours == 0 ) {
+      return "${minutes.toString().padLeft(2, '0')}:${remainingSeconds.toString().padLeft(2, '0')}";
+    }else {
+      return '${hours.toString().padLeft(2, '0')}:${minutes.toString().padLeft(2, '0')}:${remainingSeconds.toString().padLeft(2, '0')}';
+    }
   }
 
   Future<void> _loadQuestions() async {
@@ -192,7 +196,7 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
         ),
         title:  Text(
        widget.title ?? '2nd Continuous Assessment',
-          style: TextStyle(color: Colors.white),
+          style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w700, fontFamily:"urbanist"),
         ),
         elevation: 0,
       ),
@@ -200,18 +204,16 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
           ? const Center(child:Text("no Questions Available",style: TextStyle( color:Colors.white,fontSize: 20),))
           : Padding(
               padding: const EdgeInsets.all(16.0),
-              child: SingleChildScrollView(
-                child: Column(
-                  children: [
-                    _buildTimerRow(),
-                    const SizedBox(height: 16),
-                    _buildProgressSection(),
-                    const SizedBox(height: 16),
-                    _buildQuestionCard(),
-                    const SizedBox(height: 16),
-                    _buildNavigationButtons(),
-                  ],
-                ),
+              child: Column(
+                children: [
+                  _buildTimerRow(),
+                  const SizedBox(height: 16),
+                  _buildProgressSection(),
+                  const SizedBox(height: 16),
+                  Expanded(child: _buildQuestionCard()),
+                  const SizedBox(height: 16),
+                  _buildNavigationButtons(),
+                ],
               ),
             ),
     );
@@ -319,11 +321,10 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
         ? NetworkImage("https://linkskool.net/${question.imageUrl}")
         : null;
 
-    return Column(
-      children: [
-        Container(
+    return SingleChildScrollView(
+      child: Container(
           width: 400,
-          height: 450,
+        
           padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 16.0),
           decoration: BoxDecoration(
             color: Colors.white,
@@ -334,26 +335,56 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
             children: [
               const SizedBox(height: 8),
               if (question.imageUrl != null)
-                Image.network(
-              "https://linkskool.net/${question.imageUrl}",
-                  height: 100,
-                  width: double.infinity,
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) => Image.network(
-                    'https://img.freepik.com/free-vector/gradient-human-rights-day-background_52683-149974.jpg',
+            GestureDetector(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => Scaffold(
+                      appBar: AppBar(
+                        backgroundColor: AppColors.eLearningBtnColor1,
+                        leading: IconButton(
+                          icon: const Icon(Icons.arrow_back, color: Colors.white),
+                          onPressed: () => Navigator.of(context).pop(),
+                        ),
+                      ),
+                      body: Center(
+                        child: Image.network(
+                          "https://linkskool.net/${question.imageUrl}",
+                          fit: BoxFit.cover,
+                          height: double.infinity,
+                          width: double.infinity,
+                          errorBuilder: (context, error, stackTrace) => Image.network(
+                            'https://img.freepik.com/free-vector/gradient-human-rights-day-background_52683-149974.jpg',
+                            fit: BoxFit.cover,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                );
+              },
+                  child: Image.network(
+                    "https://linkskool.net/${question.imageUrl}",
                     height: 100,
                     width: double.infinity,
                     fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) => Image.network(
+                      'https://img.freepik.com/free-vector/gradient-human-rights-day-background_52683-149974.jpg',
+                      height: 100,
+                      width: double.infinity,
+                      fit: BoxFit.cover,
+                    ),
                   ),
                 ),
               const SizedBox(height: 8),
-              Text(question.questionText,style:TextStyle(fontSize: 23),),
+              Text(question.questionText[0].toUpperCase() + question.questionText.substring(1),style:TextStyle(fontSize: 23),),
               const SizedBox(height: 16),
-              Expanded(child: _buildOptions(question)),
+              _buildOptions(question),
             ],
           ),
         ),
-      ],
+    
     );
     
   }
@@ -363,15 +394,19 @@ Widget _buildOptions(QuizQuestion question) {
     print(question.options);
     return Column(
       children: question.options.map((option) {
+        // Check if the option is an image (has imageUrl and is not null)
+        final bool isImage = option['imageUrl'] != null;
         return Container(
           margin: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 8.0),
           decoration: BoxDecoration(
             color: _getOptionColor(option['text']),
             borderRadius: BorderRadius.circular(8),
-            border: Border.all(
+            border: isImage
+          ? null // Remove border if it's an image
+          : Border.all(
               color: _selectedOption == option['text']
-                  ? Colors.blue
-                  : Colors.grey.shade300,
+            ? Colors.blue
+            : Colors.grey.shade300,
               width: 1,
             ),
           ),
@@ -379,65 +414,82 @@ Widget _buildOptions(QuizQuestion question) {
             title: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                if (option['imageUrl'] == null)
-                  Text(option['text']),
-                if (option['imageUrl'] != null)
-                  GestureDetector(
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => Image.network(
-                            'https://linkskool.net/${option['imageUrl']}',
-                            fit: BoxFit.contain,
-                          ),
-                        ),
-                      );
-                    },
-                    child: Image.network(
-                      'https://linkskool.net/${option['imageUrl']}',
-                      height: 50,
-                      width: 50,
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) => Image.network(
-                        'https://img.freepik.com/free-vector/gradient-human-rights-day-background_52683-149974.jpg',
-                        height: 100,
-                        width: 100,
-                        fit: BoxFit.cover,
-                      ),
-                    ),
+          if (!isImage)
+            Text(option['text']),
+          if (isImage)
+            GestureDetector(
+              onTap: () {
+                Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => Scaffold(
+                appBar: AppBar(
+                  backgroundColor: AppColors.eLearningBtnColor1,
+                  leading: IconButton(
+              icon: const Icon(Icons.arrow_back, color: Colors.white),
+              onPressed: () => Navigator.of(context).pop(),
                   ),
+                ),
+                body: Center(
+                  child: Image.network(
+              'https://linkskool.net/${option['imageUrl']}',
+              fit: BoxFit.cover,
+            height: double.infinity,
+                          width: double.infinity,
+              errorBuilder: (context, error, stackTrace) => Image.network(
+                'https://img.freepik.com/free-vector/gradient-human-rights-day-background_52683-149974.jpg',
+                fit: BoxFit.cover,
+              ),
+                  ),
+                ),
+              ),
+            ),
+                );
+              },
+              child: SizedBox(
+                width: 400,
+                height: 100,
+                child: Image.network(
+            'https://linkskool.net/${option['imageUrl']}',
+            fit: BoxFit.cover,
+            errorBuilder: (context, error, stackTrace) => Image.network(
+              'https://img.freepik.com/free-vector/gradient-human-rights-day-background_52683-149974.jpg',
+              fit: BoxFit.cover,
+              width: double.infinity,
+              height: 120,
+            ),
+                ),
+              ),
+            ),
               ],
             ),
             value: option['text'],
             groupValue: _selectedOption,
             onChanged: (value) {
               setState(() {
-                _selectedOption = value;
-                _tempAnswer = value; // Store in _tempAnswer instead of userAnswers
-                _isAnswered = true;
-                _isCorrect = question is TextQuestion &&
-                    (question as TextQuestion).correctAnswers.contains(value);
-                // Removed: userAnswers[_currentQuestionIndex] = value;
+          _selectedOption = value;
+          _tempAnswer = value; // Store in _tempAnswer instead of userAnswers
+          _isAnswered = true;
+          _isCorrect = question is TextQuestion &&
+              (question as TextQuestion).correctAnswers.contains(value);
               });
             },
             activeColor: Colors.blue,
             tileColor: Colors.transparent,
           ),
         );
-      }).toList(),
-    );
-  } else if (question is TypedAnswerQuestion) {
-    return TextField(
-      controller: _textController, // Added controller
-      onChanged: (value) {
+            }).toList(),
+          );
+        } else if (question is TypedAnswerQuestion) {
+          return TextField(
+            controller: _textController,
+            onChanged: (value) {
         setState(() {
           _typedAnswer = value;
-          _tempAnswer = value; // Store in _tempAnswer
+          _tempAnswer = value;
           _isAnswered = value.isNotEmpty;
           _isCorrect = question.correctAnswer != null &&
               value.trim().toLowerCase() == question.correctAnswer!.toLowerCase();
-          // Removed: userAnswers[_currentQuestionIndex] = value;
         });
       },
       decoration: const InputDecoration(
@@ -451,9 +503,12 @@ Widget _buildOptions(QuizQuestion question) {
 
   Color _getOptionColor(String option) {
     if (_selectedOption == option && _isAnswered) {
-      return _isCorrect
-          ? const Color.fromARGB(255, 230, 236, 255)
-          : AppColors.eLearningBtnColor7;
+      // return _isCorrect
+      //     ? const Color.fromARGB(255, 230, 236, 255)
+      //     : AppColors.eLearningBtnColor7;
+
+      return  const Color.fromARGB(255, 230, 236, 255);
+          // Red for incorrect
     }
     return Colors.transparent;
   }

@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:linkschool/modules/admin/e_learning/View/question/assessment_screen.dart';
+import 'package:linkschool/modules/admin/e_learning/View/question/view_question_screen.dart';
 import 'package:linkschool/modules/admin/e_learning/View/quiz/quiz_assessment_screen.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/buttons/custom_long_elevated_button.dart';
 import 'package:linkschool/modules/common/constants.dart';
+import 'package:linkschool/modules/common/custom_toaster.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/common/widgets/portal/quiz/answer_tab_widget.dart';
+import 'package:linkschool/modules/providers/admin/e_learning/delete_sylabus_content.dart';
+import 'package:linkschool/modules/services/api/service_locator.dart';
 import '../../../../model/e-learning/question_model.dart';
 
 // import 'package:linkschool/modules/model/e-learning/question_model.dart';
@@ -14,8 +18,10 @@ class QuizScreen extends StatefulWidget {
   final Question question;
   final List<Map<String, dynamic>>? questions;
   final List<Map<String,dynamic>>? correctAnswers;
-
-  const QuizScreen({super.key, required this.question, this.questions, this.correctAnswers});
+  final Map<String, dynamic?>? questiondata;
+  final List<Map<String, String>>? class_ids;
+  final  String? syllabusClasses;
+  const QuizScreen({super.key, required this.question, this.questions, this.correctAnswers,  this.questiondata, this.class_ids,  this.syllabusClasses});
 
   @override
   _QuizScreenState createState() => _QuizScreenState();
@@ -53,7 +59,44 @@ class _QuizScreenState extends State<QuizScreen> {
             PopupMenuButton<String>(
               icon: const Icon(Icons.more_vert, color: AppColors.primaryLight),
               onSelected: (String result) {
-                // Handle menu item selection
+                   switch (result) {
+                case 'edit':
+              Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => ViewQuestionScreen(
+            
+            question: Question(
+              id: widget.question.id, // Pass the quiz ID
+              title: widget.question.title,
+              description: widget.question.description,
+              selectedClass: widget.question.selectedClass,
+              endDate: DateTime.now(),
+              startDate: DateTime.now(),
+            //  startDate:widget.question.startDate != null ? DateTime.parse(widget.question.startDate ?? {}) : DateTime.now(),
+             // endDate: widget.question.endDate != null ? DateTime.parse(widget.question.endDate!) : DateTime.now(),
+              topic: widget.question.topic ?? 'No Topic',
+              duration: widget.question.duration != null
+
+                  ? Duration(minutes: int.tryParse(widget.question.duration.toString()) ?? 0)
+                  : Duration.zero,
+              marks: widget.question.marks?.toString() ?? '0',
+              topicId: widget.question.topicId,
+            ),
+            questiondata:widget.questiondata ?? {},
+         class_ids: widget.class_ids,
+            syllabusClasses: widget.syllabusClasses,
+            questions: widget.questions, 
+            editMode: true,
+         
+          ),
+        ),
+      );
+            case 'Delete':
+            deleteAssignment(widget.question.id);
+
+      }
+
               },
               itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
                 const PopupMenuItem<String>(
@@ -118,11 +161,22 @@ class _QuizScreenState extends State<QuizScreen> {
     );
   }
 
+      Future<void> deleteAssignment(id) async {
+                    try {
+                   final provider =locator<DeleteSyllabusProvider>();
+                   await provider.deleteAssignment(widget.question.id.toString());
+                   CustomToaster.toastSuccess(context, 'Success', 'Assignment deleted successfully');
+                   Navigator.of(context).pop();
+                  } catch (e) {
+                    print('Error deleting assignment: $e');
+                  }
+                  }
+
   Widget _buildQuestionTab() {
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
-        _buildInfoRow('Due date:', _formatDate(widget.question.endDate)),
+        _buildInfoRow('Due:', _formatDate(widget.question.endDate)),
         const Divider(color: Colors.grey),
         Text(
           widget.question.title,

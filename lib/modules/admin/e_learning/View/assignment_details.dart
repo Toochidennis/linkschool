@@ -18,7 +18,7 @@ import 'package:skeletonizer/skeletonizer.dart';
 
 import '../../../common/widgets/portal/attachmentItem.dart' show AttachmentItem;
 
-class StaffAssignmentDetailsScreen extends StatefulWidget {
+class AdminAssignmentDetailsScreen extends StatefulWidget {
   final Assignment assignment ;
   final int? syllabusId;
   final String? courseId;
@@ -28,20 +28,22 @@ class StaffAssignmentDetailsScreen extends StatefulWidget {
   final int? itemId;
   final List<Map<String, dynamic>>? syllabusClasses;
   
-  const StaffAssignmentDetailsScreen(
+  const AdminAssignmentDetailsScreen(
       {super.key, required this.assignment, this.syllabusId, this.courseId, this.levelId, this.classId, this.courseName, this.syllabusClasses, this.itemId});
 
   @override
-  _StaffAssignmentDetailsScreenState createState() =>
-      _StaffAssignmentDetailsScreenState();
+  _AdminAssignmentDetailsScreenState createState() =>
+      _AdminAssignmentDetailsScreenState();
 }
- class _StaffAssignmentDetailsScreenState extends State<StaffAssignmentDetailsScreen>
+ class _AdminAssignmentDetailsScreenState extends State<AdminAssignmentDetailsScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
   final TextEditingController _commentController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   List<Comment> comments = [];
   bool _isAddingComment = false;
+    bool _isEditing = false;
+  Comment? _editingComment;
   late double opacity;
   final String networkImage = 'https://img.freepik.com/free-vector/gradient-human-rights-day-background_52683-149974.jpg?t=st=1717832829~exp=1717833429~hmac=3e938edcacd7fef2a791b36c7d3decbf64248d9760dd7da0a304acee382b8a86';
  String? creatorName;
@@ -535,6 +537,7 @@ Widget _buildCommentSection() {
 
   Widget _buildCommentItem(Comment comment) {
     return ListTile(
+      minTileHeight: 20,
       leading: CircleAvatar(
         backgroundColor: AppColors.paymentTxtColor1,
         child: Text(
@@ -553,6 +556,11 @@ Widget _buildCommentSection() {
             DateFormat('d MMMM').format(comment.date),
             style: AppTextStyles.normal400(fontSize: 14.0, color: Colors.grey),
           ),
+
+          const SizedBox(width: 8),
+          IconButton(onPressed: (){
+            _editComment(comment);
+          }, icon:Icon(Icons.edit, color: AppColors.paymentTxtColor1)),
         ],
       ),
       subtitle: Text(
@@ -587,36 +595,43 @@ Widget _buildCommentSection() {
     );
   }
 
-  void _addComment() async {
-  
-    if (_commentController.text.isNotEmpty) {
-      final comment = {
+ 
+void _addComment([Map<String, dynamic>? updatedComment]) async {
+  if (_commentController.text.isNotEmpty) {
+    final comment = updatedComment ?? {
+      "content_title": widget.assignment.title,
+      "user_id": creatorId,
+      "user_name": creatorName,
+      "comment": _commentController.text,
+      "level_id": widget.levelId,
+      "course_id": widget.courseId,
+      "course_name": widget.courseName,
+      "term": academicTerm,
+         if (_isEditing == true && _editingComment != null)
+        "content_id": widget.itemId.toString() , // Use the ID of the comment being edited
+    };
 
-    "content_title": widget.assignment.title,
-
-    "user_id": creatorId.toString(),
-
-    "user_name": creatorName,
-
-    "comment": _commentController.text,
-
-    "level_id": widget.levelId,
-
-    "course_id": widget.courseId,
-
-    "course_name": widget.courseName,
-
-    "term": academicTerm,
-};
-try {
-        final commentProvider = Provider.of<CommentProvider>(context, listen: false);
-      final success =  await commentProvider.createComment(comment,widget.itemId.toString());
+    try {
+      final commentProvider = Provider.of<CommentProvider>(context, listen: false);
+      final contentId = _editingComment?.id;
+      if (_isEditing) {
+        comment['content_id'];
+        print("printed Comment $comment");
+        await commentProvider.UpdateComment(comment,contentId.toString());
+        CustomToaster.toastSuccess(context, 'Success', 'Comment updated successfully');
+      } else {
+      
+        await commentProvider.createComment(comment, widget.itemId.toString());
         CustomToaster.toastSuccess(context, 'Success', 'Comment added successfully');
-        await commentProvider.fetchComments(widget.itemId.toString());
-        setState(() {
-          
-          _isAddingComment = false;
-          _commentController.clear();
+      }
+
+      await commentProvider.fetchComments(widget.itemId.toString());
+      setState(() {
+        _isAddingComment = false;
+        _isEditing = false;
+        _editingComment = null;
+        _commentController.clear();
+        if (!_isEditing) {
           comments.add(Comment(
             author: creatorName ?? 'Unknown',
             date: DateTime.now(),
@@ -628,14 +643,43 @@ try {
             courseName: widget.courseName,
             term: academicTerm,
           ));
-        });
-      } catch (e) {
-        CustomToaster.toastError(context, 'Error', 'Failed to add comment');
-      }
-      
-   
+        }
+      });
+    } catch (e) {
+      CustomToaster.toastError(context, 'Error', _isEditing ? 'Failed to update comment' : 'Failed to add comment');
     }
   }
+}
+
+ void _editComment(Comment comment) {
+  if(comment.text.isEmpty) {
+    CustomToaster.toastError(context, 'Error', 'Comment text cannot be empty');
+    return;
+  }
+  print('Setting up edit for comment ID: ${comment.id}');
+  
+   _editingComment = comment;
+  _commentController.text = comment.text;
+  final updatedComment = {
+    "content_title": widget.assignment.title,
+    "user_id": creatorId,
+    "user_name": creatorName,
+    "comment": _commentController.text,
+    "level_id": widget.levelId,
+    "course_id": widget.courseId,
+    "course_name": widget.courseName,
+    "term": academicTerm,
+    "comment_id": comment.id, // Assuming comment.id is the ID of the comment to update
+  };
+  print('Editing comment: ${updatedComment['comment']} with ID: ${comment.id}');
+
+  setState(() {
+    _isAddingComment = true;
+    _isEditing = true;
+  });
+
+  
+}
 }
 
 

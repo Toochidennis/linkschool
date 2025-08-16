@@ -1,19 +1,44 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
+import 'package:hive/hive.dart';
 import 'package:intl/intl.dart';
+import 'package:linkschool/modules/admin/e_learning/add_material_screen.dart';
 import 'package:linkschool/modules/admin/e_learning/admin_assignment_screen.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/constants.dart';
+import 'package:linkschool/modules/common/custom_toaster.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/model/e-learning/comment_model.dart';
 import 'package:linkschool/modules/model/e-learning/material_model.dart' as custom;
+import 'package:linkschool/modules/providers/admin/e_learning/comment_provider.dart';
+import 'package:linkschool/modules/providers/admin/e_learning/delete_sylabus_content.dart';
+import 'package:linkschool/modules/services/api/service_locator.dart';
+import 'package:provider/provider.dart';
+import 'package:skeletonizer/skeletonizer.dart';
 import '../../../common/widgets/portal/attachmentItem.dart';
 
 class StaffMaterialDetailsScreen extends StatefulWidget {
   final custom.Material material;
+  final int? syllabusId;
+  final String? courseId;
+  final String? levelId;
+  final String? classId;
+  final String? courseName;
+  final int? itemId;
+  final List<Map<String, dynamic>>? syllabusClasses;
+  
 
   const StaffMaterialDetailsScreen({
     super.key,
     required this.material,
+    this.syllabusId,
+    this.courseId,
+    this.levelId,
+    this.classId,
+    this.courseName,
+    this.itemId,
+    this.syllabusClasses,
   });
 
   @override
@@ -24,22 +49,73 @@ class _StaffMaterialDetailsScreenState extends State<StaffMaterialDetailsScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
   final TextEditingController _commentController = TextEditingController();
+    final ScrollController _scrollController = ScrollController();
   List<Comment> comments = [];
   bool _isAddingComment = false;
   late double opacity;
   final String networkImage = 'https://img.freepik.com/free-vector/gradient-human-rights-day-background_52683-149974.jpg?t=st=1717832829~exp=1717833429~hmac=3e938edcacd7fef2a791b36c7d3decbf64248d9760dd7da0a304acee382b8a86';
+ String? creatorName;
+    int? creatorId;
+  int? academicTerm;
+  String? academicYear;
 
   @override
   void initState() {
     super.initState();
+    
     _tabController = TabController(length: 2, vsync: this);
+       locator<CommentProvider>().fetchComments(widget.itemId.toString());
+    _scrollController.addListener(() {
+      if (_scrollController.position.pixels >=
+              _scrollController.position.maxScrollExtent * 0.9 &&
+          !locator<CommentProvider>().isLoading &&
+          locator<CommentProvider>().hasNext) {
+        
+        Provider.of<CommentProvider>(context, listen: false)
+            .fetchComments(widget.itemId.toString());
+      }
+    });
+    _loadUserData();
   }
 
   @override
   void dispose() {
     _tabController.dispose();
     _commentController.dispose();
+    _scrollController.dispose();
     super.dispose();
+  }
+
+   Future<void> _loadUserData() async {
+  
+
+    try {
+      final userBox = Hive.box('userData');
+      final storedUserData = userBox.get('userData') ?? userBox.get('loginResponse');
+      if (storedUserData != null) {
+        final processedData = storedUserData is String
+            ? json.decode(storedUserData)
+            : storedUserData as Map<String, dynamic>;
+        final response = processedData['response'] ?? processedData;
+        final data = response['data'] ?? response;
+        final profile = data['profile'] ?? {};
+        final settings = data['settings'] ?? {};
+
+        setState(() {
+          creatorId = profile['staff_id'] as int?;
+          creatorName = profile['name']?.toString();
+          academicYear = settings['year']?.toString();
+         academicTerm = settings['term'] as int?;
+        });
+      }
+    print('Creator ID: $creatorId');
+    print('Creator Name: $creatorName');
+    print('Academic Year: $academicYear');
+    print('Academic Term: $academicTerm');
+    } catch (e) {
+      print('Error loading user data: $e');
+    }
+  
   }
 
   @override
@@ -68,8 +144,43 @@ class _StaffMaterialDetailsScreenState extends State<StaffMaterialDetailsScreen>
           PopupMenuButton<String>(
             icon: const Icon(Icons.more_vert, color: AppColors.paymentTxtColor1),
             onSelected: (String result) {
-              final attachments = widget.material.attachments;
-              print('${attachments}');
+              // final attachments = widget.material.attachments;
+              // print('${attachments}');
+               switch (result) {
+                  case 'edit':
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => AddMaterialScreen(
+              itemId: widget.itemId,
+              syllabusId: widget.syllabusId,
+              courseId: widget.courseId,
+              levelId: widget.levelId,
+              classId: widget.classId,
+              courseName: widget.courseName,
+              syllabusClasses: widget.syllabusClasses,
+              materialToEdit: custom.Material(
+                title: widget.material.title,
+                description: widget.material.description,
+                selectedClass: widget.material.selectedClass,
+                startDate: widget.material.startDate,
+                endDate: widget.material.endDate,
+                topic: widget.material.topic,
+                attachments: widget.material.attachments,
+                duration: widget.material.duration,
+                marks: widget.material.marks,
+              ), onSave: (material) {
+               
+              },
+            ),
+                      ),
+                    );
+                    break;
+                  case 'delete':
+                    deleteMaterial(widget.itemId);
+                    break;
+                }
+
             },
             itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
               const PopupMenuItem<String>(
@@ -132,6 +243,18 @@ class _StaffMaterialDetailsScreenState extends State<StaffMaterialDetailsScreen>
     );
   }
 
+
+      Future<void> deleteMaterial(id) async {
+                    try {
+                   final provider =locator<DeleteSyllabusProvider>();
+                   await provider.deleteMaterial(id.toString());
+                   CustomToaster.toastSuccess(context, 'Success', 'Material deleted successfully');
+                   Navigator.of(context).pop();
+                  } catch (e) {
+                    print('Error deleting material: $e');
+                  }
+                  }
+
   Widget _buildInstructionsTab() {
     return SingleChildScrollView(
       child: Column(
@@ -140,7 +263,6 @@ class _StaffMaterialDetailsScreenState extends State<StaffMaterialDetailsScreen>
           _buildDueDate(),
           _buildDivider(),
           _buildTitle(),
-       
           _buildDivider(),
           _buildDescription(),
           _buildDivider(),
@@ -258,16 +380,25 @@ class _StaffMaterialDetailsScreenState extends State<StaffMaterialDetailsScreen>
       // Build the full URL if needed
       final imageUrl = "https://linkskool.net/${attachment.fileName}";
 
-      return ClipRRect(
-        borderRadius: BorderRadius.circular(8),
-        child: Image.network(
-          imageUrl,
-          fit: BoxFit.cover,
-          height: 200,
-          errorBuilder: (context, error, stackTrace) => Image.network(
-            networkImage,
+      return Container(
+         decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(8.0),
+           border: Border.all(
+      color: Colors.blue, // Border color
+      width: 2.0,        // Border width
+    ),
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(8),
+          child: Image.network(
+            imageUrl,
             fit: BoxFit.cover,
-            height: 100,
+            height: 200,
+            errorBuilder: (context, error, stackTrace) => Image.network(
+              networkImage,
+              fit: BoxFit.cover,
+              height: 100,
+            ),
           ),
         ),
       );
@@ -310,41 +441,159 @@ class _StaffMaterialDetailsScreenState extends State<StaffMaterialDetailsScreen>
     }
   }
 
-  Widget _buildCommentSection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        if (comments.isNotEmpty) ...[
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Text(
-              'Class comments',
-              style:
-                  AppTextStyles.normal600(fontSize: 18.0, color: Colors.black),
+Widget _buildCommentSection() {
+  return Consumer<CommentProvider>(
+    builder: (context, commentProvider, child) {
+      final commentList = commentProvider.comments;
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (commentProvider.isLoading && commentList.isEmpty)
+          Skeletonizer(
+            child: ListView.builder(
+              controller: _scrollController,
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: 5, // Show 5 skeleton items
+              itemBuilder: (context, index) {
+                return ListTile(
+                  leading: CircleAvatar(
+                    backgroundColor: Colors.grey.shade300,
+                  ),
+                  title: Container(
+                    height: 16,
+                    color: Colors.grey.shade300,
+                  ),
+                  subtitle: Container(
+                    height: 14,
+                    color: Colors.grey.shade300,
+                  ),
+                );
+              },
             ),
           ),
-          ...comments.map(_buildCommentItem),
-          _buildDivider(),
-        ],
-        Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: _isAddingComment
-              ? _buildCommentInput()
-              : InkWell(
-                  onTap: () {
-                    setState(() {
-                      _isAddingComment = true;
-                    });
-                  },
-                  child: Text(
-                    'Add class comment',
-                    style: AppTextStyles.normal500(
-                        fontSize: 16.0, color: AppColors.paymentTxtColor1),
-                  ),
+          if (commentList.isNotEmpty) ...[
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Text(
+                'Class comments',
+                style: AppTextStyles.normal600(fontSize: 18.0, color: Colors.black),
+              ),
+            ),
+            ListView.builder(
+              controller: _scrollController,
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: commentList.length + (commentProvider.isLoading ? 1 : 0),
+              itemBuilder: (context, index) {
+                if (index == commentList.length) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+                return _buildCommentItem(commentList[index]);
+              },
+            ),
+            if (commentProvider.error != null)
+              Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Text(
+                  commentProvider.message!,
+                  style: const TextStyle(color: Colors.red),
                 ),
+              ),
+            _buildDivider(),
+          ],
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: _isAddingComment
+                ? _buildCommentInput()
+                : InkWell(
+                    onTap: () => setState(() => _isAddingComment = true),
+                    child: Text(
+                      'Add class comment',
+                      style: AppTextStyles.normal500(
+                          fontSize: 16.0, color: AppColors.paymentTxtColor1),
+                    ),
+                  ),
+          ),
+        ],
+      );
+    },
+  );
+}
+
+
+  Widget _buildCommentInput() {
+    final provider = Provider.of<CommentProvider>(context, listen: false);
+    return Row(
+      children: [
+        Expanded(
+          child: TextField(
+            controller: _commentController,
+            decoration: const InputDecoration(
+              hintText: 'Type your comment...',
+              border: OutlineInputBorder(),
+            ),
+          ),
         ),
+        provider.isLoading
+            ? const CircularProgressIndicator()
+            : IconButton(
+                icon: const Icon(Icons.send),
+                onPressed: _addComment,
+                color: AppColors.paymentTxtColor1,
+              ),
       ],
     );
+  }
+
+  void _addComment() async {
+  
+    if (_commentController.text.isNotEmpty) {
+      final comment = {
+
+    "content_title": widget.material.title,
+
+    "user_id": creatorId,
+
+    "user_name": creatorName,
+
+    "comment": _commentController.text,
+
+    "level_id": widget.levelId,
+
+    "course_id": widget.courseId,
+
+    "course_name": widget.courseName,
+
+    "term": academicTerm,
+};
+try {
+        final commentProvider = Provider.of<CommentProvider>(context, listen: false);
+      final success =  await commentProvider.createComment(comment,widget.itemId.toString());
+        CustomToaster.toastSuccess(context, 'Success', 'Comment added successfully');
+        await commentProvider.fetchComments(widget.itemId.toString());
+        setState(() {
+          
+          _isAddingComment = false;
+          _commentController.clear();
+          comments.add(Comment(
+            author: creatorName ?? 'Unknown',
+            date: DateTime.now(),
+            text: _commentController.text,
+            contentTitle: widget.material.title,
+            userId: creatorId,
+            levelId: widget.levelId,
+            courseId: widget.courseId,
+            courseName: widget.courseName,
+            term: academicTerm,
+          ));
+        });
+      } catch (e) {
+        CustomToaster.toastError(context, 'Error', 'Failed to add comment');
+      }
+      
+   
+    }
   }
 
   Widget _buildCommentItem(Comment comment) {
@@ -367,6 +616,11 @@ class _StaffMaterialDetailsScreenState extends State<StaffMaterialDetailsScreen>
             DateFormat('d MMMM').format(comment.date),
             style: AppTextStyles.normal400(fontSize: 14.0, color: Colors.grey),
           ),
+
+          const SizedBox(width: 8),
+          IconButton(onPressed: (){
+            _editComment(comment);
+          }, icon:Icon(Icons.edit, color: AppColors.paymentTxtColor1)),
         ],
       ),
       subtitle: Text(
@@ -377,40 +631,15 @@ class _StaffMaterialDetailsScreenState extends State<StaffMaterialDetailsScreen>
     );
   }
 
-  Widget _buildCommentInput() {
-    return Row(
-      children: [
-        Expanded(
-          child: TextField(
-            controller: _commentController,
-            decoration: const InputDecoration(
-              hintText: 'Type your comment...',
-              border: OutlineInputBorder(),
-            ),
-          ),
-        ),
-        IconButton(
-          icon: const Icon(Icons.send),
-          onPressed: _addComment,
-          color: AppColors.paymentTxtColor1,
-        ),
-      ],
-    );
+  void _editComment(Comment comment) {
+    _commentController.text = comment.text;
+    setState(() {
+      _isAddingComment = true;
+    });
   }
 
-  void _addComment() {
-    if (_commentController.text.isNotEmpty) {
-      setState(() {
-        comments.add(Comment(
-          author: 'Joe Onwe',
-          text: _commentController.text,
-          date: DateTime.now(),
-        ));
-        _commentController.clear();
-        _isAddingComment = false;
-      });
-    }
-  }
+
+
 }
 
 

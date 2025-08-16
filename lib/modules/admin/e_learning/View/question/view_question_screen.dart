@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:hive/hive.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:linkschool/modules/admin/e_learning/View/question/assessment_screen.dart';
 import 'package:linkschool/modules/admin/e_learning/View/quiz/quiz_screen.dart';
@@ -48,6 +49,10 @@ class _ViewQuestionScreenState extends State<ViewQuestionScreen> {
   int? _selectedTopicId;
   bool showSaveButton = false;
     bool _isSaving = false;
+     String? creatorName;
+    String? creatorRole;
+    int? creatorId;
+    
 
   @override
   void initState() {
@@ -57,23 +62,62 @@ class _ViewQuestionScreenState extends State<ViewQuestionScreen> {
   if (widget.questions != null) {
     createdQuestions = widget.questions!;
      showSaveButton = true; 
+    // Print the IDs of each question in widget.questions
+    for (var q in widget.questions!) {
+      print("Question ID: ${q['question_id']}");
+    }
+    
   }
  _initializeQuestions();
     if (widget.editMode) {
       showSaveButton = true; 
     }
   }
+  Future<void> _loadUserData() async {
+  
+
+    try {
+      final userBox = Hive.box('userData');
+      final storedUserData = userBox.get('userData') ?? userBox.get('loginResponse');
+      if (storedUserData != null) {
+        final processedData = storedUserData is String
+            ? json.decode(storedUserData)
+            : storedUserData as Map<String, dynamic>;
+        final response = processedData['response'] ?? processedData;
+        final data = response['data'] ?? response;
+        final profile = data['profile'] ?? {};
+        final settings = data['settings'] ?? {};
+
+        setState(() {
+          creatorId = profile['staff_id'] as int?;
+          creatorRole = profile['role']?.toString();
+           creatorName = profile['name']?.toString();
+         final academicYear = settings['year']?.toString();
+        final  academicTerm = settings['term'] as int?;
+        });
+      }
+    } catch (e) {
+      print('Error loading user data: $e');
+    }
+  }
+ 
+  
 
 
 void _initializeQuestions() {
   if (widget.questions == null || widget.questions!.isEmpty) return;
 
+  // Print the IDs of each question
+  
+
   createdQuestions = widget.questions!.map((q) {
     final questionType = q['question_type'] ?? q['type'] ?? 'short_answer';
     final questionText = q['question_text'] ?? q['title'] ?? '';
+    final id = q['question_id']?.toString() ?? '';
+    print('SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS$id');
     final grade = q['question_grade']?.toString() ?? q['grade']?.toString() ?? '1';
-    final id = q['question_id']?.toString();
 
+  
     // Initialize controllers
     final questionController = TextEditingController(text: questionText);
     final marksController = TextEditingController(text: grade);
@@ -150,6 +194,7 @@ void _initializeQuestions() {
       correctAnswerController,
       false,
     );
+    print('Questions ID: $id, Type: $questionType, Text: $questionText');
 
     return {
       'type': questionType,
@@ -169,6 +214,7 @@ void _initializeQuestions() {
       'isExpanded': false,
       'widget': questionCardWidget,
     };
+
   }).toList();
 }
 
@@ -183,6 +229,8 @@ void _initializeQuestions() {
       final marksController = question['marksController'] as TextEditingController?;
       final optionControllers = question['optionControllers'] as List<TextEditingController>?;
       final correctAnswerController = question['correctAnswerController'] as TextEditingController?;
+
+      
       
       questionController?.dispose();
       marksController?.dispose();
@@ -271,6 +319,7 @@ void _initializeQuestions() {
     List<Map<String, dynamic>> updatedQuestions = [];
     for (var question in createdQuestions) {
       final questionType = question['type'];
+      final questionId = question['question_id'] ?? '';
       final questionController = question['questionController'] as TextEditingController;
       final marksController = question['marksController'] as TextEditingController;
       final optionControllers = question['optionControllers'] as List<TextEditingController>;
@@ -283,6 +332,7 @@ void _initializeQuestions() {
         'title': questionController.text,
         'grade': marksController.text.isNotEmpty ? marksController.text : '1',
         'topic': currentQuestion.topic,
+        'question_id': questionId,
         'options': questionType == 'multiple_choice'
             ? optionControllers.asMap().entries.map((e) => {
                   'order': e.key,
@@ -324,20 +374,35 @@ void _initializeQuestions() {
 
   // Convert Duration to total seconds for serialization
   final durationInSeconds = currentQuestion.duration.inSeconds;
+  if(widget.questiondata['creator_name'] == null || widget.questiondata['creator_id'] == null) {
+    await _loadUserData();
+    creatorName = creatorName ?? 'Unknown';
+    creatorId = creatorId ; 
+  } else {
+    creatorName = widget.questiondata['creator_name'];
+    creatorId =
+     widget.questiondata['creator_id'];
+  }
+  var classId = widget.class_ids ?? [];
+  if (classId == null || classId.isEmpty) {
+    classId = widget.questiondata['classes'] ?? [];
+  } else {
+    classId = widget.class_ids;
+  }
 
   final assessment = {
-    'setting': {
+    'settings': {
       'title': widget.questiondata['title'],
       'description': widget.questiondata['description'],
-      'classes': widget.class_ids,
+      'classes': widget.class_ids ?? [],
       "course_name": widget.questiondata['course_name'],
       "level_id": widget.questiondata['level_id'],
       "duration": currentQuestion.duration.inMinutes,
       'start_date': widget.questiondata['start_date'],
       'end_date': widget.questiondata['end_date'],
       'topic': widget.questiondata['topic'],
-      "creator_id": widget.questiondata['creator_id'],
-      'creator_name': widget.questiondata['creator_name'],
+      "creator_id": creatorId,
+      'creator_name': creatorName,
       'course_id': widget.questiondata['course_id'],
       "term": widget.questiondata['term'],
       'marks': widget.questiondata['marks'],
@@ -348,12 +413,12 @@ void _initializeQuestions() {
       List<Map<String, dynamic>> options = [];
       if (q['options'] != null) {
         options = (q['options'] as List).map<Map<String, dynamic>>((opt) {
-          // Fixed: Proper null checking and file handling
+      
           Map<String, dynamic>? optionFile = opt['options_file'];
           
           return {
             'order': opt['order'],
-            'text': opt['text'] ?? '', // Ensure text is never null
+            'text': opt['text'] ?? '', 
             'option_files': optionFile != null
                 ? [{
                     'file_name': optionFile['file_name'] ?? '',
@@ -375,6 +440,7 @@ void _initializeQuestions() {
       }
 
       return {
+      
         'question_text': q['title'] ?? '',
         'question_grade': q['grade'] ?? '1',
         'question_type': q['type'],
@@ -393,6 +459,78 @@ void _initializeQuestions() {
       };
     }).toList(),
   };
+  final Updatedassessment = {
+  'setting': {
+    "id": widget.question.id,
+    'title': widget.questiondata['title'],
+    'description': widget.questiondata['description'],
+    'classes': widget.class_ids ?? [],
+    "course_name": widget.questiondata['course_name'],
+    "level_id": widget.questiondata['level_id'],
+    "duration": currentQuestion.duration.inMinutes,
+    'start_date': widget.questiondata['start_date'],
+    'end_date': widget.questiondata['end_date'],
+    'topic': widget.questiondata['topic'],
+    "creator_id": creatorId,
+    'creator_name': creatorName,
+    'course_id': widget.questiondata['course_id'],
+    "term": widget.questiondata['term'],
+    'marks': widget.questiondata['marks'],
+    'syllabus_id': widget.questiondata['syllabus_id'],
+    'topic_id': widget.questiondata['topic_id'],
+  },
+  'questions': createdQuestions.map((q) {
+    List<Map<String, dynamic>> options = [];
+    if (q['options'] != null) {
+      options = (q['options'] as List).map<Map<String, dynamic>>((opt) {
+        Map<String, dynamic>? optionFile = opt['options_file'];
+        
+        return {
+          'order': opt['order'],
+          'text': opt['text'] ?? '', 
+          'option_files': optionFile != null
+              ? [{
+                  'file_name': optionFile['file_name'] ?? '',
+                  'old_file_name': '',
+                  'type': 'image',
+                  'file': optionFile['base64'] ?? '',
+                }]
+              : [],
+        };
+      }).toList();
+    }
+
+    // Handle correct answer
+    dynamic correct = {};
+    if (q['correct'] is List && (q['correct'] as List).isNotEmpty) {
+      correct = (q['correct'] as List).first;
+    } else if (q['correct'] is Map) {
+      correct = q['correct'];
+    }
+
+    // Debug print to verify question_id exists
+
+    
+    return {
+      'question_id': q['question_id'], // Ensure this is included
+      'question_text': q['title'] ?? '',
+      'question_grade': q['grade'] ?? '1',
+      'question_type': q['type'],
+      'question_files': q['imagePath'] != null
+          ? [
+              {
+                'file_name': q['imageName'] ?? '',
+                'old_file_name': "",
+                'type': 'image',
+                'file': q['imagePath'],
+              }
+            ]
+          : [],
+      'options': options,
+      'correct': correct,
+    };
+  }).toList(),
+};
 
   setState(() {
     _isSaving = true;
@@ -400,9 +538,15 @@ void _initializeQuestions() {
 
   try {
     // Debug: Print the assessment to check the structure
-    print('Assessment JSON: ${jsonEncode(assessment)}');
+  //  print('Assessment JSON: ${jsonEncode(assessment)}');
+
+      print('Updating existing quiz with ID: ${widget.question.id}');
+    if (widget.editMode == true) {
     
-    await quizProvider.addTest(assessment);
+      await quizProvider.updateTest(Updatedassessment);
+    } else {
+      //await quizProvider.addTest(assessment);
+    }
     setState(() {
       showSaveButton = false;
     });
@@ -951,6 +1095,7 @@ Widget _buildQuestionCard(
   return StatefulBuilder(
     builder: (BuildContext context, StateSetter setState) {
       int index = createdQuestions.indexWhere((q) => q['questionController'] == questionController);
+      final  questionId = index != -1 ? createdQuestions[index]['question_id'] : '';
       String? imageName = index != -1 ? createdQuestions[index]['imageName'] : null;
       String? imagePath = index != -1 ? createdQuestions[index]['imagePath'] : null;
 
@@ -1485,6 +1630,7 @@ void _deleteQuestionFromList(int questionIndex) async {
         // Update save button visibility
         showSaveButton = createdQuestions.isNotEmpty;
       });
+      print('Deleting question with ID: $id and setting ID: $settingId');
            await provider.deleteQuestion(id!, settingId);
              CustomToaster.toastSuccess(context, "Success", "Questions deleted successfully");
       

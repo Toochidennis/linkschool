@@ -10,7 +10,9 @@ import 'package:linkschool/modules/providers/admin/behaviour_provider.dart';
 import 'package:linkschool/modules/providers/admin/behaviour_provider.dart';
 import 'package:linkschool/modules/providers/admin/class_provider.dart';
 import 'package:linkschool/modules/providers/admin/course_registration_provider.dart';
+import 'package:linkschool/modules/providers/admin/e_learning/activity_provider.dart';
 import 'package:linkschool/modules/providers/admin/e_learning/assignment_provider.dart';
+import 'package:linkschool/modules/providers/admin/e_learning/comment_provider.dart';
 import 'package:linkschool/modules/providers/admin/e_learning/delete_question.dart';
 import 'package:linkschool/modules/providers/admin/e_learning/delete_sylabus_content.dart';
 import 'package:linkschool/modules/providers/admin/e_learning/material_provider.dart';
@@ -90,6 +92,8 @@ Future<void> main() async {
             ChangeNotifierProvider(create: (_) => locator<DeleteSyllabusProvider>()),
             ChangeNotifierProvider(create: (_) => locator<DeleteQuestionProvider>()),
         // StudentProvider from service locator
+        ChangeNotifierProvider(create: (_) => locator<CommentProvider>()),
+            ChangeNotifierProvider(create: (_) => RecentProvider()),
         ChangeNotifierProvider(create: (_) => locator<StudentProvider>()),
         ChangeNotifierProvider(create: (_) => locator<AttendanceProvider>()),
         ChangeNotifierProvider(create: (_) => CourseResultProvider()),

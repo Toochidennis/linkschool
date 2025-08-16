@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:hive/hive.dart';
 import 'package:intl/intl.dart';
+import 'package:linkschool/modules/admin/e_learning/View/assignment_details.dart';
+import 'package:linkschool/modules/admin/e_learning/View/material_details.dart';
 import 'package:linkschool/modules/admin/e_learning/View/question/view_question_screen.dart' hide AttachmentItem;
 import 'package:linkschool/modules/admin/e_learning/View/quiz/quiz_screen.dart';
 import 'package:linkschool/modules/admin/e_learning/add_material_screen.dart'
@@ -43,6 +45,7 @@ class EmptySubjectScreen extends StatefulWidget {
   final String? courseName;
   final String? term;
   final int? syllabusId;
+  final String? authorName;
   final List<Map<String, dynamic>>? syllabusClasses;
 
   const EmptySubjectScreen({
@@ -54,7 +57,7 @@ class EmptySubjectScreen extends StatefulWidget {
     this.classId,
     this.courseName,
     this.term,
-    this.syllabusClasses,
+    this.syllabusClasses, this.authorName,
   });
 
   @override
@@ -463,7 +466,7 @@ class _EmptySubjectScreenState extends State<EmptySubjectScreen>
                             overflow: TextOverflow.ellipsis,
                           ),
                           Text(
-                            'Teacher: Current Teacher',
+                            'Teacher: ${widget.authorName ?? 'N/A'}',
                             style: AppTextStyles.normal600(
                               fontSize: 12,
                               color: AppColors.backgroundLight,
@@ -675,11 +678,7 @@ void _processContents(List<Map<String, dynamic>> contents) {
 
 // Additional debugging method to check topic data:
 void _debugTopicData(TopicContent topic) {
-  print('=== Topic Debug Info ===');
-  print('Topic ID: ${topic.id}');
-  print('Topic Name: ${topic.name}');
-  print('Topic Type: ${topic.type}');
-  print('Children Count: ${topic.children.length}');
+
   for (int i = 0; i < topic.children.length; i++) {
     final child = topic.children[i];
     print('Child $i: ${child.title} (${child.type})');
@@ -719,13 +718,13 @@ void _debugTopicData(TopicContent topic) {
                 children: [
                   Row(
                     children: [
-                      Text(
-                        '${_getTypeDisplayName(item.type)}: ',
-                        style: AppTextStyles.normal600(
-                          fontSize: 14,
-                          color: AppColors.backgroundDark,
-                        ),
-                      ),
+                      // Text(
+                      //   '${_getTypeDisplayName(item.type)}: ',
+                      //   style: AppTextStyles.normal600(
+                      //     fontSize: 14,
+                      //     color: AppColors.backgroundDark,
+                      //   ),
+                      // ),
                       Expanded(
                         child: Text(
                           item.title,
@@ -895,7 +894,7 @@ void _debugTopicData(TopicContent topic) {
             : 'https://yourserver.com/${file.fileName}', // Replace with your base URL
       );
     }).toList();
-
+print("Editing item: ${item.title}, ID: ${item.id}"); // Debug log
     final questionData = {
     'id': item.id, 
     'title': item.title,
@@ -964,6 +963,7 @@ void _debugTopicData(TopicContent topic) {
         context,
         MaterialPageRoute(
           builder: (context) => ViewQuestionScreen(
+
             question: Question(
               id: item.id, // Pass the quiz ID
               title: item.title,
@@ -973,20 +973,23 @@ void _debugTopicData(TopicContent topic) {
               endDate: item.endDate != null ? DateTime.parse(item.endDate!) : DateTime.now(),
               topic: item.topic ?? 'No Topic',
               duration: item.duration != null
+
                   ? Duration(minutes: int.tryParse(item.duration.toString()) ?? 0)
                   : Duration.zero,
               marks: item.grade?.toString() ?? '0',
               topicId: item.topicId,
             ),
             questiondata: questionData,
-            class_ids: item.classes.map((c) => c.id).toList(),
-            syllabusClasses: widget.syllabusClasses,
+         class_ids: item.classes.map((c) => {'id': c.id.toString(), 'name': c.name}).toList(),
+            syllabusClasses: item.classes.map((c) =>{'id': c.id.toString(), 'name': c.name}).join(', '),
             questions: item.questions, 
             editMode: true,
          
           ),
         ),
-      );
+      ).then((_) {
+        _loadSyllabusContents();
+      });
 
         break;
 
@@ -1193,6 +1196,24 @@ void _debugTopicData(TopicContent topic) {
       );
     }).toList();
 
+    final syllabusItem = SyllabusContentItem(
+      id: item.id,
+      title: item.title,
+      description: item.description,
+      type: item.type,
+      classes: item.classes,
+      startDate: item.startDate,
+      endDate: item.endDate,
+      duration: item.duration,
+      grade: item.grade,
+      topicId: item.topicId,
+      topic: item.topic,
+     // Use the attachments list created above
+      contentFiles: [],
+      datePosted: item.datePosted,
+      questions: item.questions, rank:0,
+    );
+
     final assignment = Assignment(
       title: item.title,
       description: item.description,
@@ -1206,11 +1227,20 @@ void _debugTopicData(TopicContent topic) {
 
     switch (item.type.toLowerCase()) {
       case 'assignment':
+      print('Navigating to assignment details for: ${item.id}');
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => StaffAssignmentDetailsScreen(
+            builder: (context) => AdminAssignmentDetailsScreen(
+              itemId: item.id,
               assignment: assignment,
+              syllabusId: widget.syllabusId,
+              courseId: widget.courseId,
+              levelId: widget.levelId,
+              classId: widget.classId,
+              courseName: widget.courseName,
+              syllabusClasses: widget.syllabusClasses,
+             
             ),
           ),
         ).then((_) {
@@ -1232,17 +1262,40 @@ void _debugTopicData(TopicContent topic) {
             }
           }
         }
+
+            final questionData = {
+    'id': item.id, 
+    'title': item.title,
+    'description': item.description,
+    'course_name': widget.courseName,
+    'level_id': widget.levelId,
+    'course_id': widget.courseId,
+    'class_id': widget.classId,
+    'start_date': item.startDate,
+    'end_date': item.endDate,
+    'duration': item.duration,
+    'marks': item.grade ?? '0',
+    'syllabus_id': widget.syllabusId,
+    'topic_id': item.topicId,
+    'topic': item.topic ?? 'No Topic',
+    'creator_id': null, // Add logic to fetch creator_id if available
+    'creator_name': null, // Add logic to fetch creator_name if available
+    'term': widget.term,
+  };
         print(correctAnswers);
         Navigator.push(
           context,
           MaterialPageRoute(
             builder: (context) => QuizScreen(
-              questions: item.questions,
+              questiondata: questionData,
+         class_ids: item.classes.map((c) => {'id': c.id.toString(), 'name': c.name}).toList(),
+            syllabusClasses: item.classes.map((c) =>{'id': c.id.toString(), 'name': c.name}).join(', '),
+            questions: item.questions, 
               correctAnswers: correctAnswers,
               question: Question(
                 title: item.title,
                 description: item.description,
-                
+                id: item.id,
                 selectedClass: item.classes.map((c) => c.name).join(', '),
                 startDate: item.startDate != null ? DateTime.parse(item.startDate!) : DateTime.now(),
                 endDate: item.endDate != null ? DateTime.parse(item.endDate!) : DateTime.now(),
@@ -1263,7 +1316,14 @@ void _debugTopicData(TopicContent topic) {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (_) => StaffMaterialDetailsScreen(
+            builder: (_) => AdminMaterialDetailsScreen (
+              itemId: item.id,
+              syllabusId: widget.syllabusId,
+              courseId: widget.courseId,
+              levelId: widget.levelId,
+              classId: widget.classId,
+              courseName: widget.courseName,
+              syllabusClasses: widget.syllabusClasses,
               material: custom.Material(
                 title: item.title,
                 description: item.description,
