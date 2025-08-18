@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+// import 'package:flutter_svg/flutter_svg.dart';
 import 'package:hive/hive.dart';
 import 'package:linkschool/modules/auth/provider/auth_provider.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
@@ -8,9 +9,8 @@ import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/common/widgets/portal/profile/naira_icon.dart';
 import 'package:linkschool/modules/services/api/api_service.dart';
 import 'package:linkschool/modules/services/api/service_locator.dart';
-import 'package:provider/provider.dart';
 // import 'package:linkschool/modules/common/widgets/naira_icon.dart';
-// import 'package:flutter_svg/flutter_svg.dart';
+import 'package:provider/provider.dart';
 
 class FeeSettingDetailsScreen extends StatefulWidget {
   final String levelName;
@@ -480,11 +480,25 @@ class _FeeSettingDetailsScreenState extends State<FeeSettingDetailsScreen> {
                                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                           children: [
                                             Expanded(
-                                              child: Text(
-                                                '${fee['fee_name']}${fee['is_mandatory'] == 1 ? '*' : ''}',
-                                                style: AppTextStyles.normal400(
-                                                  fontSize: 14,
-                                                  color: AppColors.paymentTxtColor5,
+                                              child: RichText(
+                                                text: TextSpan(
+                                                  children: [
+                                                    TextSpan(
+                                                      text: fee['fee_name'],
+                                                      style: AppTextStyles.normal600(
+                                                        fontSize: 14,
+                                                        color: AppColors.paymentTxtColor5,
+                                                      ),
+                                                    ),
+                                                    if (fee['is_mandatory'] == 1)
+                                                      TextSpan(
+                                                        text: '*',
+                                                        style: AppTextStyles.normal600(
+                                                          fontSize: 14,
+                                                          color: Colors.red,
+                                                        ),
+                                                      ),
+                                                  ],
                                                 ),
                                               ),
                                             ),
@@ -496,7 +510,7 @@ class _FeeSettingDetailsScreenState extends State<FeeSettingDetailsScreen> {
                                               child: TextField(
                                                 focusNode: _focusNodes['amount_$index'],
                                                 controller: _amountControllers['amount_$index'],
-                                                style: AppTextStyles.normal400(
+                                                style: AppTextStyles.normal600(
                                                     fontSize: 14, color: AppColors.paymentTxtColor5),
                                                 keyboardType: TextInputType.number,
                                                 textAlign: TextAlign.right,
@@ -522,60 +536,6 @@ class _FeeSettingDetailsScreenState extends State<FeeSettingDetailsScreen> {
                                         ),
                                       );
                                     }),
-                                    
-                                    // Add Fee Name Input
-                                    const SizedBox(height: 24),
-                                    // Row(
-                                    //   children: [
-                                    //     Expanded(
-                                    //       child: TextField(
-                                    //         decoration: InputDecoration(
-                                    //           hintText: 'Add fee name',
-                                    //           hintStyle: AppTextStyles.normal400(
-                                    //             fontSize: 14,
-                                    //             color: Colors.grey,
-                                    //           ),
-                                    //           border: UnderlineInputBorder(
-                                    //             borderSide: BorderSide(color: Colors.grey.shade300),
-                                    //           ),
-                                    //           enabledBorder: UnderlineInputBorder(
-                                    //             borderSide: BorderSide(color: Colors.grey.shade300),
-                                    //           ),
-                                    //           focusedBorder: const UnderlineInputBorder(
-                                    //             borderSide: BorderSide(
-                                    //                 color: AppColors.eLearningBtnColor1, width: 2),
-                                    //           ),
-                                    //         ),
-                                    //       ),
-                                    //     ),
-                                    //     const SizedBox(width: 16),
-                                    //     SizedBox(
-                                    //       width: 106.5,
-                                    //       child: TextField(
-                                    //         decoration: InputDecoration(
-                                    //           hintText: 'Add amount',
-                                    //           hintStyle: AppTextStyles.normal400(
-                                    //             fontSize: 12,
-                                    //             color: Colors.grey,
-                                    //           ),
-                                    //           prefixIcon: NairaSvgIcon(color: Colors.grey),
-                                    //           border: UnderlineInputBorder(
-                                    //             borderSide: BorderSide(color: Colors.grey.shade300),
-                                    //           ),
-                                    //           enabledBorder: UnderlineInputBorder(
-                                    //             borderSide: BorderSide(color: Colors.grey.shade300),
-                                    //           ),
-                                    //           focusedBorder: const UnderlineInputBorder(
-                                    //             borderSide: BorderSide(
-                                    //                 color: AppColors.eLearningBtnColor1, width: 2),
-                                    //           ),
-                                    //         ),
-                                    //         textAlign: TextAlign.right,
-                                    //         keyboardType: TextInputType.number,
-                                    //       ),
-                                    //     ),
-                                    //   ],
-                                    // ),
                                   ],
                                 ),
                               ),
@@ -630,6 +590,8 @@ class _FeeSettingDetailsScreenState extends State<FeeSettingDetailsScreen> {
     );
   }
 }
+
+
 
 
 // import 'package:flutter/material.dart';
