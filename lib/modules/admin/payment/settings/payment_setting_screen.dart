@@ -8,9 +8,9 @@ import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/admin/payment/settings/vendor/vendor_setting_screen.dart';
 import 'package:linkschool/modules/admin/payment/settings/account_setting_screen.dart';
 import 'package:linkschool/modules/admin/payment/settings/fee_setting/fee_setting_screen.dart';
+import 'package:linkschool/modules/admin/payment/settings/fee_setting/fee_setting_details_screen.dart';
+import 'package:linkschool/modules/admin/payment/settings/widgets/level_selection_overlay.dart';
 import 'package:provider/provider.dart';
-
-
 
 class PaymentSettingScreen extends StatefulWidget {
   final VoidCallback onLogout;
@@ -88,6 +88,11 @@ class _PaymentSettingScreenState extends State<PaymentSettingScreen> {
               ),
               _buildSettingsRow(
                 icon: 'assets/icons/profile/fee_amount.svg',
+                title: 'Amount Setting',
+                onTap: () => _showLevelSelectionOverlay(context),
+              ),
+              _buildSettingsRow(
+                icon: 'assets/icons/profile/fee_amount.svg',
                 title: 'Vendor',
                 onTap: () => Navigator.push(
                   context,
@@ -132,7 +137,60 @@ class _PaymentSettingScreenState extends State<PaymentSettingScreen> {
       ),
     );
   }
+
+  void _showLevelSelectionOverlay(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (BuildContext context) {
+        return LevelSelectionOverlay(
+          onLevelSelected: (levelName) {
+            _navigateToFeeDetailsScreen(context, levelName);
+          },
+        );
+      },
+    );
+  }
+
+  void _navigateToFeeDetailsScreen(BuildContext context, String levelName) {
+    // Retrieve levelId from AuthProvider
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final levels = authProvider.getLevels();
+    final selectedLevel = levels.firstWhere(
+      (level) => level['level_name'] == levelName,
+      orElse: () => {'id': 0, 'level_name': levelName},
+    );
+    final levelId = selectedLevel['id'] as int;
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => FeeSettingDetailsScreen(
+          levelName: levelName,
+          levelId: levelId,
+        ),
+      ),
+    );
+  }
 }
+
+
+
+
+
+// // ignore_for_file: deprecated_member_use
+// import 'package:flutter/material.dart';
+// import 'package:flutter_svg/flutter_svg.dart';
+// import 'package:linkschool/modules/auth/provider/auth_provider.dart';
+// import 'package:linkschool/modules/common/app_colors.dart';
+// import 'package:linkschool/modules/common/constants.dart';
+// import 'package:linkschool/modules/common/text_styles.dart';
+// import 'package:linkschool/modules/admin/payment/settings/vendor/vendor_setting_screen.dart';
+// import 'package:linkschool/modules/admin/payment/settings/account_setting_screen.dart';
+// import 'package:linkschool/modules/admin/payment/settings/fee_setting/fee_setting_screen.dart';
+// import 'package:provider/provider.dart';
+
 
 
 // class PaymentSettingScreen extends StatefulWidget {
@@ -212,7 +270,6 @@ class _PaymentSettingScreenState extends State<PaymentSettingScreen> {
 //               _buildSettingsRow(
 //                 icon: 'assets/icons/profile/fee_amount.svg',
 //                 title: 'Vendor',
-//                 // onTap: () {}
 //                 onTap: () => Navigator.push(
 //                   context,
 //                   MaterialPageRoute(builder: (context) => VendorSettingsScreen()),
@@ -221,7 +278,11 @@ class _PaymentSettingScreenState extends State<PaymentSettingScreen> {
 //               _buildSettingsRow(
 //                 icon: 'assets/icons/profile/logout.svg',
 //                 title: 'Logout',
-//                 onTap: widget.onLogout,
+//                 onTap: () async {
+//                   final authProvider = Provider.of<AuthProvider>(context, listen: false);
+//                   await authProvider.logout(); // Clear user data from Hive
+//                   widget.onLogout(); // Trigger the logout callback
+//                 },
 //               ),
 //             ],
 //           ),

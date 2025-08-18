@@ -1,15 +1,10 @@
-// ignore_for_file: prefer_const_constructors
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:linkschool/modules/admin/payment/settings/widgets/add_fee_overlay.dart';
-import 'package:linkschool/modules/admin/payment/settings/widgets/fee_action_overlay.dart';
-import 'package:linkschool/modules/admin/payment/settings/widgets/level_selection_overlay.dart';
-import 'package:linkschool/modules/auth/provider/auth_provider.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/custom_toaster.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
-import 'package:linkschool/modules/admin/payment/settings/fee_setting/fee_setting_details_screen.dart';
 import 'package:linkschool/modules/providers/admin/payment/fee_provider.dart';
 import 'package:provider/provider.dart';
 
@@ -156,7 +151,7 @@ class _FeeSettingScreenState extends State<FeeSettingScreen> {
         ),
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () => _showFeeActionOverlay(context),
+        onPressed: () => _showAddFeeOverlay(context),
         backgroundColor: AppColors.videoColor4,
         child: Icon(
           Icons.add,
@@ -218,20 +213,6 @@ class _FeeSettingScreenState extends State<FeeSettingScreen> {
     );
   }
 
-  void _showFeeActionOverlay(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (BuildContext context) {
-        return FeeActionOverlay(
-          onSetFeeName: () => _showAddFeeOverlay(context),
-          onSetFeeAmount: () => _showLevelSelectionOverlay(context),
-        );
-      },
-    );
-  }
-
   void _showAddFeeOverlay(BuildContext context) {
     showModalBottomSheet(
       context: context,
@@ -266,43 +247,9 @@ class _FeeSettingScreenState extends State<FeeSettingScreen> {
       },
     );
   }
-
-  void _showLevelSelectionOverlay(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (BuildContext context) {
-        return LevelSelectionOverlay(
-          onLevelSelected: (levelName) {
-            _navigateToFeeDetailsScreen(context, levelName);
-          },
-        );
-      },
-    );
-  }
-
-  void _navigateToFeeDetailsScreen(BuildContext context, String levelName) {
-    // Retrieve levelId from AuthProvider
-    final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    final levels = authProvider.getLevels();
-    final selectedLevel = levels.firstWhere(
-      (level) => level['level_name'] == levelName,
-      orElse: () => {'id': 0, 'level_name': levelName},
-    );
-    final levelId = selectedLevel['id'] as int;
-
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => FeeSettingDetailsScreen(
-          levelName: levelName,
-          levelId: levelId,
-        ),
-      ),
-    );
-  }
 }
+
+
 
 
 
@@ -313,6 +260,7 @@ class _FeeSettingScreenState extends State<FeeSettingScreen> {
 // import 'package:linkschool/modules/admin/payment/settings/widgets/add_fee_overlay.dart';
 // import 'package:linkschool/modules/admin/payment/settings/widgets/fee_action_overlay.dart';
 // import 'package:linkschool/modules/admin/payment/settings/widgets/level_selection_overlay.dart';
+// import 'package:linkschool/modules/auth/provider/auth_provider.dart';
 // import 'package:linkschool/modules/common/app_colors.dart';
 // import 'package:linkschool/modules/common/constants.dart';
 // import 'package:linkschool/modules/common/custom_toaster.dart';
@@ -591,10 +539,22 @@ class _FeeSettingScreenState extends State<FeeSettingScreen> {
 //   }
 
 //   void _navigateToFeeDetailsScreen(BuildContext context, String levelName) {
+//     // Retrieve levelId from AuthProvider
+//     final authProvider = Provider.of<AuthProvider>(context, listen: false);
+//     final levels = authProvider.getLevels();
+//     final selectedLevel = levels.firstWhere(
+//       (level) => level['level_name'] == levelName,
+//       orElse: () => {'id': 0, 'level_name': levelName},
+//     );
+//     final levelId = selectedLevel['id'] as int;
+
 //     Navigator.push(
 //       context,
 //       MaterialPageRoute(
-//         builder: (context) => FeeSettingDetailsScreen(levelName: levelName),
+//         builder: (context) => FeeSettingDetailsScreen(
+//           levelName: levelName,
+//           levelId: levelId,
+//         ),
 //       ),
 //     );
 //   }
