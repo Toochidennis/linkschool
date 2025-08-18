@@ -1,14 +1,16 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:hive/hive.dart';
 import 'package:linkschool/modules/auth/provider/auth_provider.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/custom_toaster.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
+import 'package:linkschool/modules/common/widgets/portal/profile/naira_icon.dart';
 import 'package:linkschool/modules/services/api/api_service.dart';
 import 'package:linkschool/modules/services/api/service_locator.dart';
 import 'package:provider/provider.dart';
+// import 'package:linkschool/modules/common/widgets/naira_icon.dart';
+// import 'package:flutter_svg/flutter_svg.dart';
 
 class FeeSettingDetailsScreen extends StatefulWidget {
   final String levelName;
@@ -523,56 +525,57 @@ class _FeeSettingDetailsScreenState extends State<FeeSettingDetailsScreen> {
                                     
                                     // Add Fee Name Input
                                     const SizedBox(height: 24),
-                                    Row(
-                                      children: [
-                                        Expanded(
-                                          child: TextField(
-                                            decoration: InputDecoration(
-                                              hintText: 'Add fee name',
-                                              hintStyle: AppTextStyles.normal400(
-                                                fontSize: 14,
-                                                color: Colors.grey,
-                                              ),
-                                              border: UnderlineInputBorder(
-                                                borderSide: BorderSide(color: Colors.grey.shade300),
-                                              ),
-                                              enabledBorder: UnderlineInputBorder(
-                                                borderSide: BorderSide(color: Colors.grey.shade300),
-                                              ),
-                                              focusedBorder: const UnderlineInputBorder(
-                                                borderSide: BorderSide(
-                                                    color: AppColors.eLearningBtnColor1, width: 2),
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                        const SizedBox(width: 16),
-                                        SizedBox(
-                                          width: 106.5,
-                                          child: TextField(
-                                            decoration: InputDecoration(
-                                              hintText: 'Add amount (₦)',
-                                              hintStyle: AppTextStyles.normal400(
-                                                fontSize: 12,
-                                                color: Colors.grey,
-                                              ),
-                                              border: UnderlineInputBorder(
-                                                borderSide: BorderSide(color: Colors.grey.shade300),
-                                              ),
-                                              enabledBorder: UnderlineInputBorder(
-                                                borderSide: BorderSide(color: Colors.grey.shade300),
-                                              ),
-                                              focusedBorder: const UnderlineInputBorder(
-                                                borderSide: BorderSide(
-                                                    color: AppColors.eLearningBtnColor1, width: 2),
-                                              ),
-                                            ),
-                                            textAlign: TextAlign.right,
-                                            keyboardType: TextInputType.number,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
+                                    // Row(
+                                    //   children: [
+                                    //     Expanded(
+                                    //       child: TextField(
+                                    //         decoration: InputDecoration(
+                                    //           hintText: 'Add fee name',
+                                    //           hintStyle: AppTextStyles.normal400(
+                                    //             fontSize: 14,
+                                    //             color: Colors.grey,
+                                    //           ),
+                                    //           border: UnderlineInputBorder(
+                                    //             borderSide: BorderSide(color: Colors.grey.shade300),
+                                    //           ),
+                                    //           enabledBorder: UnderlineInputBorder(
+                                    //             borderSide: BorderSide(color: Colors.grey.shade300),
+                                    //           ),
+                                    //           focusedBorder: const UnderlineInputBorder(
+                                    //             borderSide: BorderSide(
+                                    //                 color: AppColors.eLearningBtnColor1, width: 2),
+                                    //           ),
+                                    //         ),
+                                    //       ),
+                                    //     ),
+                                    //     const SizedBox(width: 16),
+                                    //     SizedBox(
+                                    //       width: 106.5,
+                                    //       child: TextField(
+                                    //         decoration: InputDecoration(
+                                    //           hintText: 'Add amount',
+                                    //           hintStyle: AppTextStyles.normal400(
+                                    //             fontSize: 12,
+                                    //             color: Colors.grey,
+                                    //           ),
+                                    //           prefixIcon: NairaSvgIcon(color: Colors.grey),
+                                    //           border: UnderlineInputBorder(
+                                    //             borderSide: BorderSide(color: Colors.grey.shade300),
+                                    //           ),
+                                    //           enabledBorder: UnderlineInputBorder(
+                                    //             borderSide: BorderSide(color: Colors.grey.shade300),
+                                    //           ),
+                                    //           focusedBorder: const UnderlineInputBorder(
+                                    //             borderSide: BorderSide(
+                                    //                 color: AppColors.eLearningBtnColor1, width: 2),
+                                    //           ),
+                                    //         ),
+                                    //         textAlign: TextAlign.right,
+                                    //         keyboardType: TextInputType.number,
+                                    //       ),
+                                    //     ),
+                                    //   ],
+                                    // ),
                                   ],
                                 ),
                               ),
@@ -606,10 +609,16 @@ class _FeeSettingDetailsScreenState extends State<FeeSettingDetailsScreen> {
                       style: AppTextStyles.normal600(
                           fontSize: 16, color: AppColors.backgroundDark),
                     ),
-                    Text(
-                      "₦${totalAmount.toStringAsFixed(2)}",
-                      style: AppTextStyles.normal600(
-                          fontSize: 18, color: AppColors.backgroundDark),
+                    Row(
+                      children: [
+                        NairaSvgIcon(color: AppColors.backgroundDark),
+                        const SizedBox(width: 4),
+                        Text(
+                          "${totalAmount.toStringAsFixed(2)}",
+                          style: AppTextStyles.normal600(
+                              fontSize: 18, color: AppColors.backgroundDark),
+                        ),
+                      ],
                     ),
                   ],
                 ),
@@ -621,8 +630,6 @@ class _FeeSettingDetailsScreenState extends State<FeeSettingDetailsScreen> {
     );
   }
 }
-
-
 
 
 // import 'package:flutter/material.dart';
