@@ -124,6 +124,7 @@ class _AddMaterialScreenState extends State<AddMaterialScreen> {
   Widget build(BuildContext context) {
     final Brightness brightness = Theme.of(context).brightness;
     opacity = brightness == Brightness.light ? 0.1 : 0.15;
+        final materialProvider = Provider.of<MaterialProvider>(context, listen: false);
     
     return Scaffold(
       appBar: AppBar(
@@ -168,7 +169,10 @@ class _AddMaterialScreenState extends State<AddMaterialScreen> {
           ),
         ],
       ),
-      body:  Container(
+      body: materialProvider.isLoading
+    ? Center(child: CircularProgressIndicator()) 
+
+      :Container(
         height: MediaQuery.of(context).size.height,
         decoration: Constants.customBoxDecoration(context),
         child: Padding(
@@ -826,12 +830,12 @@ void _addMaterial() async {
          
 
       if (widget.editMode && widget.materialToEdit != null) {
-        final id = widget.id!;
+        final id = widget?.id ?? widget.itemId;
         print('Updating Assignment Data:');
 
         
 
-        await materialProvider.UpDateMaterial(material,id);
+        await materialProvider.UpDateMaterial(material,id!);
 
       } else {
         // In CREATE mode

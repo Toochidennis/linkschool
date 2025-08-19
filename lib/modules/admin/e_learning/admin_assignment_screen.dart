@@ -29,6 +29,7 @@ class AdminAssignmentScreen extends StatefulWidget {
   final String? levelId;
   final int? syllabusId;
   final syllabusClasses;
+  final int? itemId;
 
     final bool editMode;
   final Assignment? assignmentToEdit;
@@ -44,6 +45,7 @@ class AdminAssignmentScreen extends StatefulWidget {
     this.syllabusClasses,
     this.editMode = false,
     this.assignmentToEdit,
+    this.itemId
   });
 
   @override
@@ -935,7 +937,8 @@ class _AdminAssignmentScreenState extends State<AdminAssignmentScreen> {
       };
 
       if (widget.editMode && widget.assignmentToEdit != null) {
-        final id =  widget.assignmentToEdit!.id;
+       final id = widget.assignmentToEdit?.id ?? widget.itemId;
+       print("id to edit $id");
         print('Updating Assignment Data:');
         print(const JsonEncoder.withIndent('  ').convert(assignmentPayload));
         
@@ -982,7 +985,7 @@ class _AdminAssignmentScreenState extends State<AdminAssignmentScreen> {
     }
     if (iconPath.contains('camera')) return 'photo';
     if (iconPath.contains('video')) return 'video';
-    return 'other';
+    return 'image';
   }
 }
 

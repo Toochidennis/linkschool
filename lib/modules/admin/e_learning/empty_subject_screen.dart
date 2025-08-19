@@ -422,6 +422,7 @@ class _EmptySubjectScreenState extends State<EmptySubjectScreen>
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: SingleChildScrollView(
+          physics: const BouncingScrollPhysics(),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -483,6 +484,7 @@ class _EmptySubjectScreenState extends State<EmptySubjectScreen>
             const SizedBox(height: 16),
             ..._noTopicItems.map(_buildContentItem),
             ..._topics.map(_buildTopicSection),
+            SizedBox(height: 70),
           ],
         ),
       ),

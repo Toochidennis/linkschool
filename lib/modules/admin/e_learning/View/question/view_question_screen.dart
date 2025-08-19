@@ -391,7 +391,7 @@ void _initializeQuestions() {
   }
 
   final assessment = {
-    'settings': {
+    'setting': {
       'title': widget.questiondata['title'],
       'description': widget.questiondata['description'],
       'classes': widget.class_ids ?? [],
@@ -545,7 +545,7 @@ void _initializeQuestions() {
     
       await quizProvider.updateTest(Updatedassessment);
     } else {
-      //await quizProvider.addTest(assessment);
+      await quizProvider.addTest(assessment);
     }
     setState(() {
       showSaveButton = false;
@@ -1964,11 +1964,14 @@ void _performOptionDeletion(int questionIndex, int optionIndex, Function setStat
               style: style,
             ),
           Expanded(
-            child: Text(
-              value,
-              style: style,
-            ),
-          ),
+  child: Text(
+    value,
+    style: style,
+    maxLines: 1, 
+    overflow: TextOverflow.ellipsis, 
+    softWrap: false, 
+  ),
+),
         ],
       ),
     );

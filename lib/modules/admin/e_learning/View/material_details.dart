@@ -50,6 +50,7 @@ class _AdminMaterialDetailsScreenState extends State<AdminMaterialDetailsScreen>
   late TabController _tabController;
   final TextEditingController _commentController = TextEditingController();
     final ScrollController _scrollController = ScrollController();
+    final FocusNode _commentFocusNode = FocusNode();
   List<Comment> comments = [];
   bool _isAddingComment = false;
   bool _isEditing = false;
@@ -85,6 +86,7 @@ class _AdminMaterialDetailsScreenState extends State<AdminMaterialDetailsScreen>
     _tabController.dispose();
     _commentController.dispose();
     _scrollController.dispose();
+    _commentFocusNode.dispose();
     super.dispose();
   }
 
@@ -146,20 +148,22 @@ class _AdminMaterialDetailsScreenState extends State<AdminMaterialDetailsScreen>
           PopupMenuButton<String>(
             icon: const Icon(Icons.more_vert, color: AppColors.paymentTxtColor1),
             onSelected: (String result) {
-              // final attachments = widget.material.attachments;
-              // print('${attachments}');
+               print('mmmmmmmmmmmmmmmm ${widget.material.title}');
                switch (result) {
                   case 'edit':
+                  
                     Navigator.push(
                       context,
                       MaterialPageRoute(
                         builder: (context) => AddMaterialScreen(
+
               itemId: widget.itemId,
               syllabusId: widget.syllabusId,
               courseId: widget.courseId,
               levelId: widget.levelId,
               classId: widget.classId,
               courseName: widget.courseName,
+               editMode: true,
               syllabusClasses: widget.syllabusClasses,
               materialToEdit: custom.Material(
                 title: widget.material.title,
@@ -172,7 +176,7 @@ class _AdminMaterialDetailsScreenState extends State<AdminMaterialDetailsScreen>
                 duration: widget.material.duration,
                 marks: widget.material.marks,
               ), onSave: (material) {
-               
+              
               },
             ),
                       ),
@@ -212,37 +216,12 @@ class _AdminMaterialDetailsScreenState extends State<AdminMaterialDetailsScreen>
             ],
           ),
         ),
-        bottom: TabBar(
-          controller: _tabController,
-          tabs: [
-            Tab(
-              child: Text(
-                'Instructions',
-                style: AppTextStyles.normal600(
-                    fontSize: 18, color: AppColors.paymentTxtColor1),
-              ),
-            ),
-            Tab(
-              child: Text(
-                'Student work',
-                style: AppTextStyles.normal600(
-                    fontSize: 18, color: AppColors.paymentTxtColor1),
-              ),
-            ),
-          ],
-        ),
       ),
       body: Container(
         decoration: Constants.customBoxDecoration(context),
-        child: TabBarView(
-          controller: _tabController,
-          children: [
-            _buildInstructionsTab(),
-            const Center(child: Text('Student work content')),
-          ],
-        ),
-      ),
-    );
+        child: _buildInstructionsTab(),
+      ),);
+     
   }
 
 
@@ -348,100 +327,118 @@ class _AdminMaterialDetailsScreenState extends State<AdminMaterialDetailsScreen>
   }
 
   Widget _buildAttachments() {
-    final attachments = widget.material.attachments;
-    if (attachments == null || attachments.isEmpty) {
-      return Center(child:Text(" no attachments available"),);
-    }
-    
-    return Padding(
-      padding: const EdgeInsets.all(16.0),
-      child: Row(
-        children: List.generate(attachments.length, (index) {
-          return Expanded(
-            child: Padding(
-              padding: EdgeInsets.only(
-                  right: index < attachments.length - 1 ? 16.0 : 0),
-              child: _buildAttachmentItem(attachments[index]),
-            ),
-          );
-        }),
-      ),
-    );
+  final attachments = widget.material.attachments;
+  if (attachments == null || attachments.isEmpty) {
+    return const Center(child: Text('No attachment available'));
   }
 
-  Widget _buildAttachmentItem(AttachmentItem attachment) {
-    // Detect image by file extension or type
-    final isImage = attachment.fileName!.toLowerCase().endsWith('.jpg') ||
-        attachment.fileName!.toLowerCase().endsWith('.jpeg') ||
-        attachment.fileName!.toLowerCase().endsWith('.png') ||
-        attachment.fileName!.toLowerCase().endsWith('.gif') ||
-        attachment.iconPath!.contains('material.svg') ||
-        attachment.iconPath!.contains('photo');
-
-    if (isImage) {
-      // Build the full URL if needed
-      final imageUrl = "https://linkskool.net/${attachment.fileName}";
-
-      return Container(
-         decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(8.0),
-           border: Border.all(
-      color: Colors.blue, // Border color
-      width: 2.0,        // Border width
+  return Padding(
+    padding: const EdgeInsets.all(16.0),
+    child: Row(
+      children: List.generate(attachments.length, (index) {
+        return Expanded(
+          child: Padding(
+            padding: EdgeInsets.only(
+                right: index < attachments.length - 1 ? 16.0 : 0),
+            child: _buildAttachmentItem(attachments[index]),
+          ),
+        );
+      }),
     ),
+  );
+}
+
+ Widget _buildAttachmentItem(AttachmentItem attachment) {
+  // Safe image detection
+  final isImage = (attachment.fileName?.toLowerCase().endsWith('.jpg') ?? false) ||
+      (attachment.fileName?.toLowerCase().endsWith('.jpeg') ?? false) ||
+      (attachment.fileName?.toLowerCase().endsWith('.png') ?? false) ||
+      (attachment.fileName?.toLowerCase().endsWith('.gif') ?? false) ||
+      (attachment.iconPath?.contains('material.svg') ?? false) ||
+      (attachment.iconPath?.contains('photo') ?? false);
+
+  if (isImage) {
+    final imageUrl = "https://linkskool.net/${attachment.fileName ?? ''}";
+
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(8.0),
+        border: Border.all(
+          color: Colors.blue,
+          width: 2.0,
         ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(8),
-          child: Image.network(
-            imageUrl,
-            fit: BoxFit.cover,
-            height: 200,
-            errorBuilder: (context, error, stackTrace) => Image.network(
-              networkImage,
-              fit: BoxFit.cover,
-              height: 100,
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(8),
+        child: Image.network(
+          imageUrl,
+          fit: BoxFit.cover,
+          height: 100, // keep the larger preview from the first snippet
+          errorBuilder: (context, error, stackTrace) => Container(
+            height: 100,
+            color: Colors.grey.shade200,
+            child: const Center(
+              child: Icon(
+                Icons.broken_image,
+                color: Colors.grey,
+                size: 40,
+              ),
             ),
           ),
         ),
-      );
-    } else {
-      // Not an image: show default image and file/link name
-      return Container(
-        height: 100,
-        color: Colors.blue.shade100,
-        child: Column(
-          children: [
-            Expanded(
-              flex: 2,
-              child: Image.network(
-                networkImage,
-                fit: BoxFit.cover,
-                width: double.infinity,
-              ),
-            ),
-            Expanded(
-              flex: 2,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                child: Row(
-                  children: [
-                    const Icon(Icons.link, color: Colors.blue),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        attachment.fileName!,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ],
+      ),
+    );
+  } else {
+    // Not an image: show placeholder and file/link name
+    return Container(
+      height: 100,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(8.0),
+        border: Border.all(
+          color: Colors.blue,
+          width: 2.0,
         ),
-      );
-    }
+        color: Colors.blue.shade100,
+      ),
+      child: Column(
+        children: [
+          Expanded(
+            flex: 2,
+            child: Container(
+              decoration: BoxDecoration(
+               image: DecorationImage(
+                  image: NetworkImage(networkImage),
+                  fit: BoxFit.cover,
+                ),
+                borderRadius: BorderRadius.circular(8.0),
+              ),
+            
+            ),
+          ),
+          Expanded(
+            flex: 2,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8.0),
+              child: Row(
+                children: [
+                  const Icon(Icons.link, color: Colors.blue),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      attachment.fileName ?? 'Unknown file',
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
+}
+
 
 Widget _buildCommentSection() {
   return Consumer<CommentProvider>(
@@ -531,6 +528,7 @@ Widget _buildCommentSection() {
         Expanded(
           child: TextField(
             controller: _commentController,
+         focusNode: _commentFocusNode,
             decoration: const InputDecoration(
               hintText: 'Type your comment...',
               border: OutlineInputBorder(),
@@ -603,40 +601,104 @@ void _addComment([Map<String, dynamic>? updatedComment]) async {
   }
 }
 
-  Widget _buildCommentItem(Comment comment) {
-    return ListTile(
-      leading: CircleAvatar(
-        backgroundColor: AppColors.paymentTxtColor1,
-        child: Text(
-          comment.author[0].toUpperCase(),
-          style: AppTextStyles.normal500(
-              fontSize: 18, color: AppColors.backgroundLight),
+Widget _buildCommentItem(Comment comment) {
+  return Container(
+    margin: const EdgeInsets.symmetric(vertical: 8),
+    padding: const EdgeInsets.all(12),
+    decoration: BoxDecoration(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(12),
+      boxShadow: [
+        BoxShadow(
+          color: Colors.black.withOpacity(0.05),
+          blurRadius: 6,
+          offset: const Offset(0, 3),
         ),
-      ),
-      title: Row(
-        children: [
-          Text(comment.author,
-              style: AppTextStyles.normal600(
-                  fontSize: 16.0, color: AppColors.backgroundDark)),
-          const SizedBox(width: 8),
-          Text(
-            DateFormat('d MMMM').format(comment.date),
-            style: AppTextStyles.normal400(fontSize: 14.0, color: Colors.grey),
+      ],
+    ),
+    child: Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        CircleAvatar(
+          radius: 20,
+          backgroundColor: AppColors.paymentTxtColor1,
+          child: Text(
+            comment.author[0].toUpperCase(),
+            style: AppTextStyles.normal500(
+              fontSize: 16,
+              color: AppColors.backgroundLight,
+            ),
           ),
+        ),
 
-          const SizedBox(width: 8),
-          IconButton(onPressed: (){
-            _editComment(comment);
-          }, icon:Icon(Icons.edit, color: AppColors.paymentTxtColor1)),
-        ],
-      ),
-      subtitle: Text(
-        comment.text,
-        style:
-            AppTextStyles.normal500(fontSize: 16, color: AppColors.text4Light),
-      ),
-    );
-  }
+        const SizedBox(width: 12),
+
+        // Comment Content
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Header row: name + date + actions
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      comment.author,
+                      style: AppTextStyles.normal600(
+                        fontSize: 15,
+                        color: AppColors.backgroundDark,
+                      ),
+                    ),
+                  ),
+                 
+                ],
+              ),
+
+              const SizedBox(height: 1),
+
+              // Comment text
+              Text(
+                comment.text,
+                style: AppTextStyles.normal500(
+                  fontSize: 14,
+                  color: AppColors.text4Light,
+                ),
+              ),
+              Row(
+               
+                children: [
+                 Text(
+                    DateFormat('d MMM, HH:mm').format(comment.date),
+                    style: AppTextStyles.normal400(
+                      fontSize: 13,
+                      color: Colors.grey.shade600,
+                    ),
+                  ),
+                 InkWell(
+                    onTap: () => _editComment(comment),
+                    child: const Padding(
+                      padding: EdgeInsets.only(left: 8.0),
+                      child: Text(
+                        'Edit',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: AppColors.paymentTxtColor1,
+                        ),
+                      ),
+                    ),
+                  ),
+                  
+                ],
+              ),
+            ],
+          ),
+        ),
+      ],
+    ),
+  );
+}
+
+
 
  void _editComment(Comment comment) {
   if(comment.text.isEmpty) {
@@ -663,6 +725,7 @@ void _addComment([Map<String, dynamic>? updatedComment]) async {
   setState(() {
     _isAddingComment = true;
     _isEditing = true;
+    _commentFocusNode.requestFocus();
   });
 
   print('Edit setup complete. _isEditing: $_isEditing, _editingComment.id: ${_editingComment?.id}');
