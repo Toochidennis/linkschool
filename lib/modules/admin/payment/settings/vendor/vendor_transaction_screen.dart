@@ -8,8 +8,6 @@ import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/model/admin/vendor/vendor_model.dart';
 import 'package:linkschool/modules/model/profile/vendor_transaction_model.dart';
 import 'package:linkschool/modules/services/admin/payment/vendor_service.dart';
-// import 'package:linkschool/modules/model/vendor.dart';
-// import 'package:linkschool/modules/services/admin/vendor_service.dart';
 import 'package:linkschool/modules/services/api/service_locator.dart';
 import 'package:linkschool/modules/common/custom_toaster.dart';
 import 'package:linkschool/modules/admin/payment/expenditure/add_expenditure_screen.dart';
@@ -488,7 +486,7 @@ class _VendorTransactionScreenState extends State<VendorTransactionScreen> {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => AddExpenditureScreen(),
+                              builder: (context) => AddExpenditureScreen(vendor: _currentVendor,),
                             ),
                           );
                         },
