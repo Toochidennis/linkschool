@@ -1,10 +1,9 @@
-// ignore_for_file: deprecated_member_use
-
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
+import 'package:linkschool/modules/model/admin/expenditure_model.dart';
 import 'package:linkschool/modules/model/admin/vendor/vendor_model.dart';
 import 'package:linkschool/modules/model/profile/vendor_transaction_model.dart';
 import 'package:linkschool/modules/services/admin/payment/vendor_service.dart';
@@ -29,6 +28,8 @@ class _VendorTransactionScreenState extends State<VendorTransactionScreen> {
   late double opacity;
   final VendorService _vendorService = locator<VendorService>();
   late Vendor _currentVendor;
+
+  bool _hasExpenditure = false;
 
   // Sample transaction data
   final List<VendorTransaction> transactions = [
@@ -88,6 +89,22 @@ class _VendorTransactionScreenState extends State<VendorTransactionScreen> {
   void initState() {
     super.initState();
     _currentVendor = widget.vendor;
+  }
+
+  Expenditure _mapToExpenditure(VendorTransaction vt) {
+    return Expenditure(
+      id: 0,
+      customerId: _currentVendor.id,
+      customerReference: vt.reference,
+      customerName: vt.name,
+      description: vt.description,
+      amount: vt.amount,
+      date: vt.dateTime.split('  ')[0],
+      accountNumber: '',
+      accountName: '',
+      year: int.tryParse(vt.period.split('/')[0]) ?? 2022,
+      term: 1,
+    );
   }
 
   void _navigateToTransactionDetails(
@@ -483,15 +500,20 @@ class _VendorTransactionScreenState extends State<VendorTransactionScreen> {
                     Expanded(
                       child: OutlinedButton.icon(
                         onPressed: () {
+                          final expenditure = _hasExpenditure ? _mapToExpenditure(transactions.first) : null;
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => AddExpenditureScreen(vendor: _currentVendor,),
+                              builder: (context) => AddExpenditureScreen(vendor: _currentVendor, expenditure: expenditure),
                             ),
-                          );
+                          ).then((_) {
+                            setState(() {
+                              _hasExpenditure = true;
+                            });
+                          });
                         },
                         icon: SvgPicture.asset(
-                          'assets/icons/profile/add_icon.svg',
+                          _hasExpenditure ? 'assets/icons/profile/edit_pen.svg' : 'assets/icons/profile/add_icon.svg',
                           color: AppColors.paymentTxtColor1,
                           width: 20,
                           height: 20,
@@ -613,17 +635,20 @@ class _VendorTransactionScreenState extends State<VendorTransactionScreen> {
 // import 'package:linkschool/modules/common/app_colors.dart';
 // import 'package:linkschool/modules/common/constants.dart';
 // import 'package:linkschool/modules/common/text_styles.dart';
+// import 'package:linkschool/modules/model/admin/vendor/vendor_model.dart';
 // import 'package:linkschool/modules/model/profile/vendor_transaction_model.dart';
+// import 'package:linkschool/modules/services/admin/payment/vendor_service.dart';
+// import 'package:linkschool/modules/services/api/service_locator.dart';
+// import 'package:linkschool/modules/common/custom_toaster.dart';
 // import 'package:linkschool/modules/admin/payment/expenditure/add_expenditure_screen.dart';
 // import 'package:linkschool/modules/admin/payment/settings/vendor/vendor_transaction_details_screen.dart';
 
 // class VendorTransactionScreen extends StatefulWidget {
-//   final String vendorName;
-
+//   final Vendor vendor;
 
 //   const VendorTransactionScreen({
 //     super.key,
-//     required this.vendorName,
+//     required this.vendor,
 //   });
 
 //   @override
@@ -632,8 +657,10 @@ class _VendorTransactionScreenState extends State<VendorTransactionScreen> {
 
 // class _VendorTransactionScreenState extends State<VendorTransactionScreen> {
 //   late double opacity;
+//   final VendorService _vendorService = locator<VendorService>();
+//   late Vendor _currentVendor;
 
-// // Sample transaction data
+//   // Sample transaction data
 //   final List<VendorTransaction> transactions = [
 //     VendorTransaction(
 //       period: '2022/2023',
@@ -687,6 +714,12 @@ class _VendorTransactionScreenState extends State<VendorTransactionScreen> {
 //     ),
 //   ];
 
+//   @override
+//   void initState() {
+//     super.initState();
+//     _currentVendor = widget.vendor;
+//   }
+
 //   void _navigateToTransactionDetails(
 //       BuildContext context, VendorTransaction transaction) {
 //     Navigator.push(
@@ -709,6 +742,220 @@ class _VendorTransactionScreenState extends State<VendorTransactionScreen> {
 //           Text(value, style: const TextStyle(fontWeight: FontWeight.w500)),
 //         ],
 //       ),
+//     );
+//   }
+
+//   void _showAddVendorModal(BuildContext context, {bool isEdit = false}) {
+//     final vendorNameController = TextEditingController(text: isEdit ? _currentVendor.vendorName : '');
+//     final emailController = TextEditingController(text: isEdit ? _currentVendor.email : '');
+//     final phoneNumberController = TextEditingController(text: isEdit ? _currentVendor.phoneNumber : '');
+//     final addressController = TextEditingController(text: isEdit ? _currentVendor.address : '');
+//     final referenceController = TextEditingController(text: isEdit ? _currentVendor.reference : '');
+//     final formKey = GlobalKey<FormState>();
+
+//     showModalBottomSheet(
+//       context: context,
+//       isScrollControlled: true,
+//       backgroundColor: Colors.transparent,
+//       builder: (BuildContext context) {
+//         return Container(
+//           height: MediaQuery.of(context).size.height * 0.75,
+//           decoration: const BoxDecoration(
+//             color: Colors.white,
+//             borderRadius: BorderRadius.only(
+//               topLeft: Radius.circular(20),
+//               topRight: Radius.circular(20),
+//             ),
+//           ),
+//           child: Column(
+//             children: [
+//               Padding(
+//                 padding: const EdgeInsets.all(16.0),
+//                 child: Row(
+//                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
+//                   children: [
+//                     Text(
+//                       isEdit ? 'Edit Vendor' : 'Vendor Info',
+//                       style: AppTextStyles.normal600(
+//                         fontSize: 20.0,
+//                         color: AppColors.primaryLight,
+//                       ),
+//                     ),
+//                     IconButton(
+//                       onPressed: () => Navigator.pop(context),
+//                       icon: const Icon(Icons.close),
+//                       color: AppColors.primaryLight,
+//                     ),
+//                   ],
+//                 ),
+//               ),
+//               Expanded(
+//                 child: SingleChildScrollView(
+//                   padding: const EdgeInsets.all(16.0),
+//                   child: Form(
+//                     key: formKey,
+//                     child: Column(
+//                       crossAxisAlignment: CrossAxisAlignment.start,
+//                       children: [
+//                         _buildFormField(
+//                           'Vendor name',
+//                           'Enter vendor name',
+//                           vendorNameController,
+//                           validator: (value) {
+//                             if (value == null || value.isEmpty) {
+//                               return 'Vendor name is required';
+//                             }
+//                             return null;
+//                           },
+//                         ),
+//                         const SizedBox(height: 16),
+//                         _buildFormField(
+//                           'Email (optional)',
+//                           'Enter email',
+//                           emailController,
+//                           validator: (value) {
+//                             if (value != null && value.isNotEmpty) {
+//                               if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$')
+//                                   .hasMatch(value)) {
+//                                 return 'Enter a valid email';
+//                               }
+//                             }
+//                             return null;
+//                           },
+//                         ),
+//                         const SizedBox(height: 16),
+//                         _buildFormField(
+//                           'Phone number',
+//                           'Enter phone number',
+//                           phoneNumberController,
+//                           validator: (value) {
+//                             if (value == null || value.isEmpty) {
+//                               return 'Phone number is required';
+//                             }
+//                             if (!RegExp(r'^\d{10,15}$').hasMatch(value)) {
+//                               return 'Enter a valid phone number';
+//                             }
+//                             return null;
+//                           },
+//                         ),
+//                         const SizedBox(height: 16),
+//                         _buildFormField(
+//                           'Address',
+//                           'Enter address',
+//                           addressController,
+//                           validator: (value) {
+//                             if (value == null || value.isEmpty) {
+//                               return 'Address is required';
+//                             }
+//                             return null;
+//                           },
+//                         ),
+//                         const SizedBox(height: 16),
+//                         _buildFormField(
+//                           'Reference number',
+//                           'Enter reference number',
+//                           referenceController,
+//                           validator: (value) {
+//                             if (value == null || value.isEmpty) {
+//                               return 'Reference number is required';
+//                             }
+//                             return null;
+//                           },
+//                         ),
+//                         const SizedBox(height: 24),
+//                         SizedBox(
+//                           width: double.infinity,
+//                           child: ElevatedButton(
+//                             onPressed: () async {
+//                               if (formKey.currentState!.validate()) {
+//                                 final response = await _vendorService.updateVendor(
+//                                   vendorId: _currentVendor.id,
+//                                   vendorName: vendorNameController.text,
+//                                   phoneNumber: phoneNumberController.text,
+//                                   email: emailController.text,
+//                                   address: addressController.text,
+//                                   reference: referenceController.text,
+//                                 );
+//                                 if (response.success) {
+//                                   setState(() {
+//                                     _currentVendor = Vendor(
+//                                       id: _currentVendor.id,
+//                                       vendorName: vendorNameController.text,
+//                                       phoneNumber: phoneNumberController.text,
+//                                       email: emailController.text,
+//                                       address: addressController.text,
+//                                       reference: referenceController.text,
+//                                     );
+//                                   });
+//                                   CustomToaster.toastSuccess(
+//                                       context, 'Success', 'Vendor updated successfully');
+//                                   Navigator.pop(context);
+//                                 } else {
+//                                   CustomToaster.toastError(
+//                                       context, 'Error', response.message);
+//                                 }
+//                               }
+//                             },
+//                             style: ElevatedButton.styleFrom(
+//                               backgroundColor: AppColors.paymentTxtColor1,
+//                               padding: const EdgeInsets.symmetric(vertical: 16),
+//                               shape: RoundedRectangleBorder(
+//                                 borderRadius: BorderRadius.circular(8),
+//                               ),
+//                             ),
+//                             child: Text(
+//                               'Update Vendor',
+//                               style: AppTextStyles.normal600(
+//                                 fontSize: 16.0,
+//                                 color: Colors.white,
+//                               ),
+//                             ),
+//                           ),
+//                         ),
+//                       ],
+//                     ),
+//                   ),
+//                 ),
+//               ),
+//             ],
+//           ),
+//         );
+//       },
+//     );
+//   }
+
+//   Widget _buildFormField(
+//     String label,
+//     String hint,
+//     TextEditingController controller, {
+//     String? Function(String?)? validator,
+//   }) {
+//     return Column(
+//       crossAxisAlignment: CrossAxisAlignment.start,
+//       children: [
+//         Text(
+//           label,
+//           style: AppTextStyles.normal500(
+//             fontSize: 14.0,
+//             color: AppColors.primaryLight,
+//           ),
+//         ),
+//         const SizedBox(height: 8),
+//         TextFormField(
+//           controller: controller,
+//           decoration: InputDecoration(
+//             hintText: hint,
+//             border: OutlineInputBorder(
+//               borderRadius: BorderRadius.circular(8),
+//             ),
+//             contentPadding: const EdgeInsets.symmetric(
+//               horizontal: 16,
+//               vertical: 12,
+//             ),
+//           ),
+//           validator: validator,
+//         ),
+//       ],
 //     );
 //   }
 
@@ -780,7 +1027,7 @@ class _VendorTransactionScreenState extends State<VendorTransactionScreen> {
 //                       child: Column(
 //                         children: [
 //                           Text(
-//                             widget.vendorName,
+//                             _currentVendor.vendorName,
 //                             style: AppTextStyles.normal600(
 //                                 fontSize: 18, color: AppColors.paymentTxtColor1),
 //                           ),
@@ -795,7 +1042,7 @@ class _VendorTransactionScreenState extends State<VendorTransactionScreen> {
 //                               ),
 //                               const SizedBox(width: 4),
 //                               Text(
-//                                 '20, Ogui Road Houston, TX',
+//                                 _currentVendor.address ?? 'No address provided',
 //                                 style: AppTextStyles.normal400(
 //                                     fontSize: 14, color: AppColors.backgroundDark),
 //                               ),
@@ -814,7 +1061,7 @@ class _VendorTransactionScreenState extends State<VendorTransactionScreen> {
 //                               ),
 //                               const SizedBox(width: 4),
 //                               Text(
-//                                 '+234 819 567 000',
+//                                 _currentVendor.phoneNumber,
 //                                 style: AppTextStyles.normal500(
 //                                     fontSize: 14, color: AppColors.backgroundDark),
 //                               ),
@@ -835,21 +1082,21 @@ class _VendorTransactionScreenState extends State<VendorTransactionScreen> {
 //                     ),
 //                   ],
 //                 ),
-        
+
 //                 // Second Section - Buttons
 //                 const SizedBox(height: 24),
 //                 Row(
 //                   children: [
 //                     Expanded(
 //                       child: ElevatedButton.icon(
-//                         onPressed: () => _showAddVendorModal(context),
+//                         onPressed: () => _showAddVendorModal(context, isEdit: true),
 //                         icon: SvgPicture.asset(
 //                           'assets/icons/profile/edit_pen.svg',
 //                           color: AppColors.backgroundLight,
 //                           width: 20,
 //                           height: 20,
 //                         ),
-//                         label: Text('Edit details', style: AppTextStyles.normal600(fontSize: 16, color: AppColors.backgroundLight),),
+//                         label: Text('Edit details', style: AppTextStyles.normal600(fontSize: 16, color: AppColors.backgroundLight)),
 //                         style: ElevatedButton.styleFrom(
 //                           backgroundColor: AppColors.paymentTxtColor1,
 //                           shape: RoundedRectangleBorder(
@@ -869,7 +1116,7 @@ class _VendorTransactionScreenState extends State<VendorTransactionScreen> {
 //                           Navigator.push(
 //                             context,
 //                             MaterialPageRoute(
-//                               builder: (context) => AddExpenditureScreen(),
+//                               builder: (context) => AddExpenditureScreen(vendor: _currentVendor,),
 //                             ),
 //                           );
 //                         },
@@ -879,10 +1126,9 @@ class _VendorTransactionScreenState extends State<VendorTransactionScreen> {
 //                           width: 20,
 //                           height: 20,
 //                         ),
-//                         label: Text('Expenditure', style: AppTextStyles.normal600(fontSize: 14, color: AppColors.paymentTxtColor1),),
+//                         label: Text('Expenditure', style: AppTextStyles.normal600(fontSize: 14, color: AppColors.paymentTxtColor1)),
 //                         style: OutlinedButton.styleFrom(
-//                           side: const BorderSide(
-//                               color: AppColors.paymentTxtColor1),
+//                           side: const BorderSide(color: AppColors.paymentTxtColor1),
 //                           shape: RoundedRectangleBorder(
 //                             borderRadius: BorderRadius.circular(8),
 //                           ),
@@ -895,7 +1141,7 @@ class _VendorTransactionScreenState extends State<VendorTransactionScreen> {
 //                     ),
 //                   ],
 //                 ),
-        
+
 //                 // Third Section - Transaction History
 //                 const SizedBox(height: 64),
 //                 Column(
@@ -983,124 +1229,6 @@ class _VendorTransactionScreenState extends State<VendorTransactionScreen> {
 //           ),
 //         ),
 //       ),
-//     );
-//   }
-
-//   void _showAddVendorModal(BuildContext context) {
-//     showModalBottomSheet(
-//       context: context,
-//       isScrollControlled: true,
-//       backgroundColor: Colors.transparent,
-//       builder: (BuildContext context) {
-//         return Container(
-//           height: MediaQuery.of(context).size.height * 0.75,
-//           decoration: const BoxDecoration(
-//             color: Colors.white,
-//             borderRadius: BorderRadius.only(
-//               topLeft: Radius.circular(20),
-//               topRight: Radius.circular(20),
-//             ),
-//           ),
-//           child: Column(
-//             children: [
-//               // Header section
-//               Padding(
-//                 padding: const EdgeInsets.all(16.0),
-//                 child: Row(
-//                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
-//                   children: [
-//                     Text(
-//                       'Vendor Info',
-//                       style: AppTextStyles.normal600(
-//                         fontSize: 20.0,
-//                         color: AppColors.primaryLight,
-//                       ),
-//                     ),
-//                     IconButton(
-//                       onPressed: () => Navigator.pop(context),
-//                       icon: const Icon(Icons.close),
-//                       color: AppColors.primaryLight,
-//                     ),
-//                   ],
-//                 ),
-//               ),
-//               // const Divider(),
-//               // Form section
-//               Expanded(
-//                 child: SingleChildScrollView(
-//                   padding: const EdgeInsets.all(16.0),
-//                   child: Column(
-//                     crossAxisAlignment: CrossAxisAlignment.start,
-//                     children: [
-//                       _buildFormField('Vendor name', 'Vendor name'),
-//                       const SizedBox(height: 16),
-//                       _buildFormField('Email (optional)', 'Email (optional)'),
-//                       const SizedBox(height: 16),
-//                       _buildFormField('Phone number', 'Phone number'),
-//                       const SizedBox(height: 16),
-//                       _buildFormField('Address', 'Address'),
-//                       const SizedBox(height: 16),
-//                       _buildFormField('Reference number', 'Reference number'),
-//                       const SizedBox(height: 24),
-//                       SizedBox(
-//                         width: double.infinity,
-//                         child: ElevatedButton(
-//                           onPressed: () {
-//                             // Handle record payment
-//                             Navigator.pop(context);
-//                           },
-//                           style: ElevatedButton.styleFrom(
-//                             backgroundColor: AppColors.paymentTxtColor1,
-//                             padding: const EdgeInsets.symmetric(vertical: 16),
-//                             shape: RoundedRectangleBorder(
-//                               borderRadius: BorderRadius.circular(8),
-//                             ),
-//                           ),
-//                           child: Text(
-//                             'Add Vendor',
-//                             style: AppTextStyles.normal600(
-//                               fontSize: 16.0,
-//                               color: Colors.white,
-//                             ),
-//                           ),
-//                         ),
-//                       ),
-//                     ],
-//                   ),
-//                 ),
-//               ),
-//             ],
-//           ),
-//         );
-//       },
-//     );
-//   }
-
-//   Widget _buildFormField(String label, String hint) {
-//     return Column(
-//       crossAxisAlignment: CrossAxisAlignment.start,
-//       children: [
-//         Text(
-//           label,
-//           style: AppTextStyles.normal500(
-//             fontSize: 14.0,
-//             color: AppColors.primaryLight,
-//           ),
-//         ),
-//         const SizedBox(height: 8),
-//         TextField(
-//           decoration: InputDecoration(
-//             hintText: hint,
-//             border: OutlineInputBorder(
-//               borderRadius: BorderRadius.circular(8),
-//             ),
-//             contentPadding: const EdgeInsets.symmetric(
-//               horizontal: 16,
-//               vertical: 12,
-//             ),
-//           ),
-//         ),
-//       ],
 //     );
 //   }
 // }
