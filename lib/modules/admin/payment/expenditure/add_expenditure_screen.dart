@@ -198,6 +198,7 @@ class _AddExpenditureScreenState extends State<AddExpenditureScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        backgroundColor: AppColors.backgroundLight,
         leading: IconButton(
           onPressed: () => Navigator.pop(context),
           icon: Image.asset(

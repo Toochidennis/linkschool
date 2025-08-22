@@ -6,7 +6,9 @@ import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/common/widgets/portal/profile/naira_icon.dart';
 import 'package:linkschool/modules/model/profile/student_model.dart';
 import 'package:linkschool/modules/model/profile/vendor_transaction_model.dart';
-import 'package:linkschool/modules/admin/payment/settings/vendor/vendor_transaction_details_screen.dart';
+import 'package:linkschool/modules/admin/payment/settings/vendor/vendor_transaction_receipts_screen.dart';
+
+import '../../../model/admin/vendor/vendor_transaction_year.dart';
 
 class StudentPaymentDetailsScreen extends StatefulWidget {
   final StudentPayment student;
@@ -229,8 +231,8 @@ class _StudentPaymentDetailsScreenState extends State<StudentPaymentDetailsScree
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => VendorTransactionDetailsScreen(
-                      transaction: vendorTransaction,
+                    builder: (context) => VendorTransactionReceiptsScreen(
+                      transaction: vendorTransaction, detail: "dummy" as VendorTransactionDetail,
                     ),
                   ),
                 );

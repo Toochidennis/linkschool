@@ -1,16 +1,20 @@
+// Updated vendor_transaction_screen.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
+import 'package:linkschool/modules/common/widgets/portal/profile/naira_icon.dart';
 import 'package:linkschool/modules/model/admin/expenditure_model.dart';
 import 'package:linkschool/modules/model/admin/vendor/vendor_model.dart';
-import 'package:linkschool/modules/model/profile/vendor_transaction_model.dart';
+import 'package:linkschool/modules/model/admin/vendor/vendor_transaction_year.dart';
+// import 'package:linkschool/modules/model/admin/vendor/vendor_transaction_model.dart';
 import 'package:linkschool/modules/services/admin/payment/vendor_service.dart';
 import 'package:linkschool/modules/services/api/service_locator.dart';
 import 'package:linkschool/modules/common/custom_toaster.dart';
 import 'package:linkschool/modules/admin/payment/expenditure/add_expenditure_screen.dart';
 import 'package:linkschool/modules/admin/payment/settings/vendor/vendor_transaction_details_screen.dart';
+// import 'package:linkschool/modules/common/naira_icon.dart';
 
 class VendorTransactionScreen extends StatefulWidget {
   final Vendor vendor;
@@ -30,105 +34,45 @@ class _VendorTransactionScreenState extends State<VendorTransactionScreen> {
   late Vendor _currentVendor;
 
   bool _hasExpenditure = false;
-
-  // Sample transaction data
-  final List<VendorTransaction> transactions = [
-    VendorTransaction(
-      period: '2022/2023',
-      dateTime: '07-03-2018  17:23',
-      amount: 23790.00,
-      description: 'Clinical medication',
-      name: 'Joseph Raphael',
-      phoneNumber: '+234 819 567 000',
-      reference: 'REF123456',
-      session: '2022/2023',
-    ),
-    VendorTransaction(
-      period: '2022/2023',
-      dateTime: '08-03-2018  10:45',
-      amount: 15600.00,
-      description: 'Laboratory supplies',
-      name: 'Joseph Raphael',
-      phoneNumber: '+234 819 567 000',
-      reference: 'REF123457',
-      session: '2022/2023',
-    ),
-    VendorTransaction(
-      period: '2022/2023',
-      dateTime: '09-03-2018  14:30',
-      amount: 31250.00,
-      description: 'Medical equipment',
-      name: 'Joseph Raphael',
-      phoneNumber: '+234 819 567 000',
-      reference: 'REF123458',
-      session: '2022/2023',
-    ),
-    VendorTransaction(
-      period: '2022/2023',
-      dateTime: '10-03-2018  09:15',
-      amount: 18900.00,
-      description: 'Pharmaceutical supplies',
-      name: 'Joseph Raphael',
-      phoneNumber: '+234 819 567 000',
-      reference: 'REF123459',
-      session: '2022/2023',
-    ),
-    VendorTransaction(
-      period: '2022/2023',
-      dateTime: '11-03-2018  16:20',
-      amount: 27500.00,
-      description: 'Medical consumables',
-      name: 'Joseph Raphael',
-      phoneNumber: '+234 819 567 000',
-      reference: 'REF123460',
-      session: '2022/2023',
-    ),
-  ];
+  List<VendorTransactionYear> transactionYears = [];
+  bool isLoadingTransactions = true;
 
   @override
   void initState() {
     super.initState();
     _currentVendor = widget.vendor;
+    _fetchTransactions();
   }
 
-  Expenditure _mapToExpenditure(VendorTransaction vt) {
+  Future<void> _fetchTransactions() async {
+    final response = await _vendorService.fetchVendorTransactionHistory(widget.vendor.id);
+    if (response.success && response.data != null) {
+      setState(() {
+        transactionYears = response.data!;
+        isLoadingTransactions = false;
+      });
+    } else {
+      setState(() {
+        isLoadingTransactions = false;
+      });
+      CustomToaster.toastError(context, 'Error', response.message);
+    }
+  }
+
+  Expenditure _mapToExpenditure(VendorTransactionYear ty) {
+    // Adjusted mapping as per new model; this is for expenditure feature which remains separate
     return Expenditure(
       id: 0,
       customerId: _currentVendor.id,
-      customerReference: vt.reference,
-      customerName: vt.name,
-      description: vt.description,
-      amount: vt.amount,
-      date: vt.dateTime.split('  ')[0],
+      customerReference: '',
+      customerName: _currentVendor.vendorName,
+      description: '',
+      amount: ty.total,
+      date: '',
       accountNumber: '',
       accountName: '',
-      year: int.tryParse(vt.period.split('/')[0]) ?? 2022,
+      year: ty.year,
       term: 1,
-    );
-  }
-
-  void _navigateToTransactionDetails(
-      BuildContext context, VendorTransaction transaction) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => VendorTransactionDetailsScreen(
-          transaction: transaction,
-        ),
-      ),
-    );
-  }
-
-  Widget _detailRow(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(label, style: const TextStyle(color: Colors.grey)),
-          Text(value, style: const TextStyle(fontWeight: FontWeight.w500)),
-        ],
-      ),
     );
   }
 
@@ -500,7 +444,7 @@ class _VendorTransactionScreenState extends State<VendorTransactionScreen> {
                     Expanded(
                       child: OutlinedButton.icon(
                         onPressed: () {
-                          final expenditure = _hasExpenditure ? _mapToExpenditure(transactions.first) : null;
+                          final expenditure = _hasExpenditure && transactionYears.isNotEmpty ? _mapToExpenditure(transactionYears.first) : null;
                           Navigator.push(
                             context,
                             MaterialPageRoute(
@@ -545,75 +489,70 @@ class _VendorTransactionScreenState extends State<VendorTransactionScreen> {
                           fontSize: 18, color: AppColors.backgroundDark),
                     ),
                     const SizedBox(height: 16),
-                    ListView.separated(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      itemCount: transactions.length,
-                      separatorBuilder: (context, index) => const Divider(),
-                      itemBuilder: (context, index) {
-                        return InkWell(
-                          onTap: () => _navigateToTransactionDetails(
-                            context,
-                            transactions[index],
-                          ),
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 8.0),
-                            child: Row(
-                              children: [
-                                SvgPicture.asset(
-                                  'assets/icons/profile/payment_icon.svg',
-                                  width: 36,
-                                  height: 36,
+                    if (isLoadingTransactions)
+                      const Center(child: CircularProgressIndicator())
+                    else if (transactionYears.isEmpty)
+                      const Center(child: Text('No transactions found'))
+                    else
+                      ListView.separated(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        itemCount: transactionYears.length,
+                        separatorBuilder: (context, index) => const Divider(),
+                        itemBuilder: (context, index) {
+                          final ty = transactionYears[index];
+                          final displayYear = '${ty.year - 1}/${ty.year}';
+                          return InkWell(
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => VendorTransactionDetailsScreen(
+                                    vendor: _currentVendor,
+                                    year: ty.year.toString(),
+                                  ),
                                 ),
-                                const SizedBox(width: 16),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                              );
+                            },
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 8.0),
+                              child: Row(
+                                children: [
+                                  SvgPicture.asset(
+                                    'assets/icons/profile/payment_icon.svg',
+                                    width: 36,
+                                    height: 36,
+                                  ),
+                                  const SizedBox(width: 16),
+                                  Expanded(
+                                    child: Text(
+                                      displayYear,
+                                      style: const TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w500,
+                                        color: Colors.black,
+                                      ),
+                                    ),
+                                  ),
+                                  Row(
                                     children: [
+                                      const NairaSvgIcon(color: Colors.red),
                                       Text(
-                                        transactions[index].period,
+                                        ty.total.toStringAsFixed(2),
                                         style: const TextStyle(
                                           fontSize: 16,
                                           fontWeight: FontWeight.w500,
-                                          color: Colors.black,
-                                        ),
-                                      ),
-                                      Text(
-                                        transactions[index].dateTime,
-                                        style: const TextStyle(
-                                          fontSize: 12,
-                                          color: Colors.grey,
+                                          color: Colors.red,
                                         ),
                                       ),
                                     ],
                                   ),
-                                ),
-                                Column(
-                                  crossAxisAlignment: CrossAxisAlignment.end,
-                                  children: [
-                                    Text(
-                                      '₦${transactions[index].amount.toStringAsFixed(2)}',
-                                      style: const TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.w500,
-                                        color: Colors.red,
-                                      ),
-                                    ),
-                                    Text(
-                                      transactions[index].description,
-                                      style: const TextStyle(
-                                        fontSize: 12,
-                                        color: Colors.grey,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ],
+                                ],
+                              ),
                             ),
-                          ),
-                        );
-                      },
-                    ),
+                          );
+                        },
+                      ),
                   ],
                 ),
               ],
@@ -628,20 +567,22 @@ class _VendorTransactionScreenState extends State<VendorTransactionScreen> {
 
 
 
-// // ignore_for_file: deprecated_member_use
 
 // import 'package:flutter/material.dart';
 // import 'package:flutter_svg/svg.dart';
 // import 'package:linkschool/modules/common/app_colors.dart';
 // import 'package:linkschool/modules/common/constants.dart';
 // import 'package:linkschool/modules/common/text_styles.dart';
+// import 'package:linkschool/modules/model/admin/expenditure_model.dart';
 // import 'package:linkschool/modules/model/admin/vendor/vendor_model.dart';
 // import 'package:linkschool/modules/model/profile/vendor_transaction_model.dart';
 // import 'package:linkschool/modules/services/admin/payment/vendor_service.dart';
 // import 'package:linkschool/modules/services/api/service_locator.dart';
 // import 'package:linkschool/modules/common/custom_toaster.dart';
 // import 'package:linkschool/modules/admin/payment/expenditure/add_expenditure_screen.dart';
-// import 'package:linkschool/modules/admin/payment/settings/vendor/vendor_transaction_details_screen.dart';
+// import 'package:linkschool/modules/admin/payment/settings/vendor/vendor_transaction_receipts_screen.dart';
+
+// import 'vendor_transaction_details_screen.dart';
 
 // class VendorTransactionScreen extends StatefulWidget {
 //   final Vendor vendor;
@@ -659,6 +600,8 @@ class _VendorTransactionScreenState extends State<VendorTransactionScreen> {
 //   late double opacity;
 //   final VendorService _vendorService = locator<VendorService>();
 //   late Vendor _currentVendor;
+
+//   bool _hasExpenditure = false;
 
 //   // Sample transaction data
 //   final List<VendorTransaction> transactions = [
@@ -720,13 +663,29 @@ class _VendorTransactionScreenState extends State<VendorTransactionScreen> {
 //     _currentVendor = widget.vendor;
 //   }
 
+//   Expenditure _mapToExpenditure(VendorTransaction vt) {
+//     return Expenditure(
+//       id: 0,
+//       customerId: _currentVendor.id,
+//       customerReference: vt.reference,
+//       customerName: vt.name,
+//       description: vt.description,
+//       amount: vt.amount,
+//       date: vt.dateTime.split('  ')[0],
+//       accountNumber: '',
+//       accountName: '',
+//       year: int.tryParse(vt.period.split('/')[0]) ?? 2022,
+//       term: 1,
+//     );
+//   }
+
 //   void _navigateToTransactionDetails(
 //       BuildContext context, VendorTransaction transaction) {
 //     Navigator.push(
 //       context,
 //       MaterialPageRoute(
-//         builder: (context) => VendorTransactionDetailsScreen(
-//           transaction: transaction,
+//         builder: (context) => VendorTransactionDetailsScreen (
+//           transaction: transaction, studentName: '', amount: '',
 //         ),
 //       ),
 //     );
@@ -1113,15 +1072,20 @@ class _VendorTransactionScreenState extends State<VendorTransactionScreen> {
 //                     Expanded(
 //                       child: OutlinedButton.icon(
 //                         onPressed: () {
+//                           final expenditure = _hasExpenditure ? _mapToExpenditure(transactions.first) : null;
 //                           Navigator.push(
 //                             context,
 //                             MaterialPageRoute(
-//                               builder: (context) => AddExpenditureScreen(vendor: _currentVendor,),
+//                               builder: (context) => AddExpenditureScreen(vendor: _currentVendor, expenditure: expenditure),
 //                             ),
-//                           );
+//                           ).then((_) {
+//                             setState(() {
+//                               _hasExpenditure = true;
+//                             });
+//                           });
 //                         },
 //                         icon: SvgPicture.asset(
-//                           'assets/icons/profile/add_icon.svg',
+//                           _hasExpenditure ? 'assets/icons/profile/edit_pen.svg' : 'assets/icons/profile/add_icon.svg',
 //                           color: AppColors.paymentTxtColor1,
 //                           width: 20,
 //                           height: 20,
