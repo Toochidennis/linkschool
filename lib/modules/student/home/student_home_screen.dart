@@ -63,6 +63,8 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
     super.dispose();
   }
 
+  
+
   void _startAutoScroll() {
     _timer = Timer.periodic(const Duration(seconds: 3), (timer) {
       if (_currentPage < notifications.length - 1) {

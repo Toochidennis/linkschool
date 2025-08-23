@@ -1,11 +1,18 @@
 import 'dart:async';
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:hive/hive.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/widgets/portal/student/student_customized_appbar.dart';
 import 'package:linkschool/modules/student/elearning/course_detail_screen.dart';
 import 'package:linkschool/modules/student/home/new_post_dialog.dart';
+import 'package:provider/provider.dart';
+
+import '../../auth/provider/auth_provider.dart';
+import '../../model/student/dashboard_model.dart';
+import '../../providers/student/dashboard_provider.dart';
 
 class StudentElearningScreen extends StatefulWidget {
   const StudentElearningScreen({super.key});
@@ -15,6 +22,9 @@ class StudentElearningScreen extends StatefulWidget {
 }
 
 class _StudentElearningScreenState extends State<StudentElearningScreen> {
+  DashboardData? dashboardData;
+  bool isLoading = true;
+
   int currentAssessmentIndex = 0;
   int currentActivityIndex = 0;
   late PageController assessmentController;
@@ -47,44 +57,9 @@ class _StudentElearningScreenState extends State<StudentElearningScreen> {
     },
   ];
 
-  final List<Map<String, String>> activities = [
-    {
-      'name': 'Dennis Toochi',
-      'activity': 'posted an assignment on',
-      'subject': 'Homeostasis for JSS2',
-      'timestamp': 'Yesterday at 9:42 AM',
-      'avatar': 'assets/images/student/avatar3.svg',
-    },
-    {
-      'name': 'Ifeanyi Toochi',
-      'activity': 'posted an assignment on',
-      'subject': 'Hygiene for JSS2',
-      'timestamp': 'Yesterday at 9:42 AM',
-      'avatar': 'assets/images/student/avatar3.svg',
-    },
-    {
-      'name': 'Raphael Toochi',
-      'activity': 'posted an assignment on',
-      'subject': 'Exercises for JSS2',
-      'timestamp': 'Yesterday at 9:42 AM',
-      'avatar': 'assets/images/student/avatar3.svg',
-    },
-  ];
 
-  final List<String> courses = [
-    'Civic Education',
-    'Mathematics',
-    'English',
-    'Biology',
-    'Chemistry',
-    'Physics',
-    'History',
-    'Geography',
-    'Computer Science',
-    'Physical Education',
-    'Music',
-    'Art',
-  ];
+
+
 
   final List<String> courseBackgrounds = [
     'assets/images/student/bg-light-blue.svg',
@@ -100,14 +75,29 @@ class _StudentElearningScreenState extends State<StudentElearningScreen> {
     'assets/images/student/bg-purple.svg',
     'assets/images/student/bg-purple.svg',
   ];
-
+  String extractTime(String datetime) {
+    DateTime dt = DateTime.parse(datetime);
+    return "${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}:${dt.second.toString().padLeft(2, '0')}";
+  }
   @override
   void initState() {
     super.initState();
+
     assessmentController = PageController(viewportFraction: 0.90);
     activityController = PageController(viewportFraction: 0.90);
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+
+      final dashboardProvider = Provider.of<DashboardProvider>(context, listen: false);
+      dashboardProvider.fetchDashboardData(
+class_id: getuserdata()['profile']['class_id'], level_id: getuserdata()['profile']['level_id'], term: getuserdata()['settings']['term'],
+      );
+
+
+    });
+
 
     // Start timers for auto-scrolling
+
     assessmentTimer = Timer.periodic(const Duration(seconds: 5), (_) {
       if (assessmentController.hasClients) {
         setState(() {
@@ -123,6 +113,8 @@ class _StudentElearningScreenState extends State<StudentElearningScreen> {
     });
 
     activityTimer = Timer.periodic(const Duration(seconds: 7), (_) {
+      final dashboardProvider = Provider.of<DashboardProvider>(context, listen: false);
+      final activities = dashboardProvider.dashboardData?.recentActivities ?? [];
       if (activityController.hasClients) {
         setState(() {
           currentActivityIndex = (currentActivityIndex + 1) % activities.length;
@@ -134,6 +126,20 @@ class _StudentElearningScreenState extends State<StudentElearningScreen> {
         });
       }
     });
+    fetchDashboard();
+
+  }
+  Future<void> fetchDashboard() async {
+    final provider = Provider.of<DashboardProvider>(context, listen: false);
+    final data = await provider.fetchDashboardData(
+      class_id: getuserdata()['profile']['class_id'].toString(),
+      level_id: getuserdata()['profile']['level_id'].toString(),
+      term: getuserdata()['settings']['term'].toString(),
+    );
+    setState(() {
+      dashboardData = data;
+      isLoading = false;
+    });
   }
 
   @override
@@ -144,7 +150,17 @@ class _StudentElearningScreenState extends State<StudentElearningScreen> {
     activityTimer?.cancel();
     super.dispose();
   }
-
+ getuserdata(){
+  final userBox = Hive.box('userData');
+  final storedUserData =
+      userBox.get('userData') ?? userBox.get('loginResponse');
+  final processedData = storedUserData is String
+      ? json.decode(storedUserData)
+      : storedUserData;
+  final response = processedData['response'] ?? processedData;
+  final data = response['data'] ?? response;
+  return data;
+}
   void _showNewPostDialog() {
     showDialog(
       context: context,
@@ -154,29 +170,47 @@ class _StudentElearningScreenState extends State<StudentElearningScreen> {
     );
   }
 
-  void _navigateToCourseDetail(String courseTitle) {
+  void _navigateToCourseDetail(String courseTitle, DashboardData dashboardata) {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => CourseDetailScreen(courseTitle: courseTitle),
+        builder: (context) => CourseDetailScreen(courseTitle: courseTitle, dashboardData: dashboardata),
       ),
     );
   }
 
+//
+
   @override
   Widget build(BuildContext context) {
+
+    if (isLoading || dashboardData == null) {
+      return const Scaffold(
+        body: Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
+  final activities= dashboardData!.recentActivities;
+
+    final courses = dashboardData!.availableCourses;
+final assessments=dashboardData!.recentQuizzes;
+
+
+    final userName =getuserdata()['profile']['name'] ?? 'Guest'; // Use the logged-in user's name
+
     final Brightness brightness = Theme.of(context).brightness;
     opacity = brightness == Brightness.light ? 0.1 : 0.15;
     return Scaffold(
       appBar: CustomStudentAppBar(
         title: 'Welcome',
-        subtitle: 'Tochukwu',
+        subtitle: userName,
         showNotification: true,
         // showPostInput: true,
         onNotificationTap: () {},
         // onPostTap: _showNewPostDialog,
       ),
-      body: Container(
+      body:isLoading?const Center(child: CircularProgressIndicator(),): Container(
         decoration: Constants.customBoxDecoration(context),
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 8.0),
@@ -228,7 +262,7 @@ class _StudentElearningScreenState extends State<StudentElearningScreen> {
                                   // Subject and Title Section
                                   Expanded(
                                     child: Text(
-                                      '${assessment['subject']} ${assessment['title']}',
+                                      '${assessment.title} ${assessment.courseName}',
                                       style: const TextStyle(
                                         color: Colors.black,
                                         fontSize: 14,
@@ -259,7 +293,7 @@ class _StudentElearningScreenState extends State<StudentElearningScreen> {
                                         ),
                                         const SizedBox(width: 4),
                                         Text(
-                                          assessment['date']!,
+                                          assessment.datePosted,
                                           style: const TextStyle(
                                             color: Colors.white,
                                             fontSize: 12,
@@ -277,7 +311,7 @@ class _StudentElearningScreenState extends State<StudentElearningScreen> {
                               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                               children: [
                                 // Time
-                                const Column(
+                                 Column(
                                   children: [
                                     Text(
                                       'Time',
@@ -289,7 +323,7 @@ class _StudentElearningScreenState extends State<StudentElearningScreen> {
                                     ),
                                     SizedBox(height: 4),
                                     Text(
-                                      '08:00 AM',
+                                      extractTime(assessment.datePosted),
                                       style: TextStyle(
                                         color: AppColors.backgroundLight,
                                         fontSize: 14,
@@ -306,27 +340,6 @@ class _StudentElearningScreenState extends State<StudentElearningScreen> {
                                       horizontal: 16.0),
                                 ),
                                 // Classes
-                                Column(
-                                  children: [
-                                    const Text(
-                                      'Classes',
-                                      style: TextStyle(
-                                        color: AppColors.backgroundLight,
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      assessment['classes']!,
-                                      textAlign: TextAlign.center,
-                                      style: const TextStyle(
-                                        color: AppColors.backgroundLight,
-                                        fontSize: 14,
-                                      ),
-                                    ),
-                                  ],
-                                ),
                                 // Vertical Divider
                                 Container(
                                   height: 40,
@@ -336,26 +349,7 @@ class _StudentElearningScreenState extends State<StudentElearningScreen> {
                                       horizontal: 16.0),
                                 ),
                                 // Duration
-                                const Column(
-                                  children: [
-                                    Text(
-                                      'Duration',
-                                      style: TextStyle(
-                                        color: AppColors.backgroundLight,
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                    SizedBox(height: 4),
-                                    Text(
-                                      '2h 30m',
-                                      style: TextStyle(
-                                        color: AppColors.backgroundLight,
-                                        fontSize: 14,
-                                      ),
-                                    ),
-                                  ],
-                                ),
+
                               ],
                             ),
                           ],
@@ -400,9 +394,9 @@ class _StudentElearningScreenState extends State<StudentElearningScreen> {
                 height: 110,
                 child: PageView.builder(
                   controller: activityController,
-                  itemCount: activities.length,
+                  itemCount: activities?.length,
                   itemBuilder: (context, index) {
-                    final activity = activities[index];
+                    final activity = activities?[index];
                     return Container(
                       margin: const EdgeInsets.symmetric(horizontal: 8.0),
                       child: Card(
@@ -414,7 +408,7 @@ class _StudentElearningScreenState extends State<StudentElearningScreen> {
                             children: [
                               CircleAvatar(
                                 backgroundImage:
-                                    AssetImage(activity['avatar']!),
+                                    AssetImage("Non rc"),
                               ),
                               const SizedBox(width: 8),
                               Expanded(
@@ -428,14 +422,14 @@ class _StudentElearningScreenState extends State<StudentElearningScreen> {
                                             color: Colors.black, fontSize: 14),
                                         children: [
                                           TextSpan(
-                                              text: '${activity['name']} '),
+                                              text: '${activity?.createdBy} '),
                                           TextSpan(
-                                              text: '${activity['activity']} ',
+                                              text: '${activity?.type} ',
                                               style: const TextStyle(
                                                   fontWeight:
                                                       FontWeight.normal)),
                                           TextSpan(
-                                              text: '${activity['subject']}',
+                                              text: '${activity?.courseName}',
                                               style: const TextStyle(
                                                   fontWeight: FontWeight.bold)),
                                         ],
@@ -443,7 +437,7 @@ class _StudentElearningScreenState extends State<StudentElearningScreen> {
                                     ),
                                     const SizedBox(height: 4),
                                     Text(
-                                      activity['timestamp']!,
+                                      activity!.datePosted,
                                       style: const TextStyle(
                                           color: Colors.grey, fontSize: 12),
                                     ),
@@ -483,7 +477,7 @@ class _StudentElearningScreenState extends State<StudentElearningScreen> {
                   final svgBackground =
                       courseBackgrounds[index % courseBackgrounds.length];
                   return GestureDetector(
-                    onTap: () => _navigateToCourseDetail(course),
+                    onTap: () => _navigateToCourseDetail(course.courseName, dashboardData!),
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(12.0),
                       child: Stack(
@@ -512,7 +506,7 @@ class _StudentElearningScreenState extends State<StudentElearningScreen> {
                                   width:
                                       8), // Add some spacing between icon and text
                               Text(
-                                course,
+                                course.courseName,
                                 style: const TextStyle(
                                   color: Colors.white,
                                   fontWeight: FontWeight.bold,

@@ -2,17 +2,23 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 
 class NairaSvgIcon extends StatelessWidget {
-  final Color? color;  // Accept color as a parameter
+  final Color color;
+  final double size; // new parameter
 
-  const NairaSvgIcon({super.key, this.color});
+  const NairaSvgIcon({
+    super.key,
+    required this.color,
+    this.size = 24, // default size
+  });
 
   @override
   Widget build(BuildContext context) {
     return SvgPicture.asset(
-      'assets/icons/e_learning/naira_icon.svg',
-      width: 16,
-      height: 16,
-      color: color ?? Colors.black,  // Use the provided color or default to black
+     'assets/icons/e_learning/naira_icon.svg',
+      color: color,
+      width: size,
+      height: size,
     );
   }
 }
+

@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:carousel_slider/carousel_slider.dart';
+import 'package:linkschool/modules/model/student/payment_model.dart';
+import 'package:linkschool/modules/providers/student/payment_provider.dart';
+import 'package:linkschool/modules/student/payment/see_all_payments.dart';
+import 'package:provider/provider.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/common/widgets/portal/profile/naira_icon.dart';
 import 'package:linkschool/modules/common/widgets/portal/student/student_customized_appbar.dart';
-import 'package:linkschool/modules/student/home/new_post_dialog.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
-import 'package:linkschool/modules/student/payment/paystack_webview.dart'; // New screen
 import 'package:linkschool/modules/student/payment/student_reciept_dialog.dart';
 import 'package:linkschool/modules/student/payment/student_setting_dialog.dart';
 import 'package:linkschool/modules/student/payment/student_view_detail_payment.dart';
@@ -23,41 +23,27 @@ class StudentPaymentHomeScreen extends StatefulWidget {
   });
 
   @override
-  _StudentPaymentHomeScreenState createState() =>
-      _StudentPaymentHomeScreenState();
+  _StudentPaymentHomeScreenState createState() => _StudentPaymentHomeScreenState();
 }
 
 class _StudentPaymentHomeScreenState extends State<StudentPaymentHomeScreen> {
   int _currentCardIndex = 0;
   late double opacity;
 
-  final List<Map<String, dynamic>> _cards = [
-    {
-      'term': '2017/2018 First Term Fees',
-      'amount': '534,790.00',
-    },
-    {
-      'term': '2019/2020 Second Term Fees',
-      'amount': '534,790.00',
-    },
-  ];
+  String _formatAmount(double amount) {
+    return '${amount.toStringAsFixed(2).replaceAllMapped(
+      RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), 
+      (Match m) => '${m[1]},'
+    )}';
+  }
 
-  final List<Map<String, dynamic>> _paymentHistory = [
-    {
-      'term': '2017/2018 Second Term Fees',
-      'date': '2022-05-24',
-      'amount': '23,790.00',
-      'status': 'Paid',
-      'icon': 'assets/icons/e_learning/receipt_list_icon.svg',
-    },
-    {
-      'term': '2016/2017 Third Term Fees',
-      'date': '2022-05-24',
-      'amount': '23,790.00',
-      'status': 'Paid',
-      'icon': 'assets/icons/e_learning/receipt_list_icon.svg',
-    },
-  ];
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Provider.of<InvoiceProvider>(context, listen: false).fetchInvoiceData('277');
+    });
+  }
 
   void _showSettingsDialog() {
     showDialog(
@@ -68,58 +54,30 @@ class _StudentPaymentHomeScreenState extends State<StudentPaymentHomeScreen> {
     );
   }
 
-  void _navigateToViewDetailDialog() {
+  void _navigateToViewDetailDialog(Invoice invoice) {
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (context) => const StudentViewDetailPaymentDialog(),
+        builder: (context) => StudentViewDetailPaymentDialog(invoice: invoice),
       ),
     );
   }
 
-  void _showReceiptDialog(Map<String, dynamic> payment) {
+  void _showReceiptDialog(Payment payment) {
     showDialog(
       context: context,
       builder: (BuildContext context) {
-        return StudentRecieptDialog();
+        return StudentRecieptDialog(payment: payment);
       },
     );
-  }
-
-  Future<void> initializePayment(String email, int amount) async {
-    const String paystackSecretKey = 'sk_test_b4681ae0b21bc31924009cefa8a3ee8fee0da634';
-    const url = 'https://api.paystack.co/transaction/initialize';
-
-    final response = await http.post(
-      Uri.parse(url),
-      headers: {
-        'Authorization': 'Bearer $paystackSecretKey',
-        'Content-Type': 'application/json',
-      },
-      body: json.encode({
-        'email': email,
-        'amount': amount,
-      }),
-    );
-
-    if (response.statusCode == 200) {
-      final data = json.decode(response.body);
-      final String paymentUrl = data['data']['authorization_url'];
-
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) => PaystackWebView(checkoutUrl: paymentUrl),
-        ),
-      );
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Payment failed: ${response.body}')),
-      );
-    }
   }
 
   @override
   Widget build(BuildContext context) {
+    final studentId = '277';
+    final invoiceProvider = Provider.of<InvoiceProvider>(context);
+    if (invoiceProvider.invoiceData == null) {
+      invoiceProvider.fetchInvoiceData(studentId);
+    }
     final Brightness brightness = Theme.of(context).brightness;
     opacity = brightness == Brightness.light ? 0.1 : 0.15;
 
@@ -133,25 +91,42 @@ class _StudentPaymentHomeScreenState extends State<StudentPaymentHomeScreen> {
         onNotificationTap: () {},
         onSettingsTap: _showSettingsDialog,
       ),
-      body: Container(
-        decoration: Constants.customBoxDecoration(context),
-        child: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
+      body: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (invoiceProvider.isLoading)
+              const Padding(
+                padding: EdgeInsets.all(16.0),
+                child: Center(child: CircularProgressIndicator()),
+              )
+            else if (invoiceProvider.error != null)
+              Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Text(
+                  'Error: ${invoiceProvider.error}',
+                  style: const TextStyle(color: Colors.red),
+                ),
+              )
+            else if (invoiceProvider.invoices == null || invoiceProvider.invoices!.isEmpty)
+              const Padding(
+                padding: EdgeInsets.all(16.0),
+                child: Text('No current invoices available'),
+              )
+            else ...[
               CarouselSlider(
                 options: CarouselOptions(
                   height: 150,
                   viewportFraction: 0.93,
-                  enableInfiniteScroll: true,
-                  autoPlay: true,
+                  enableInfiniteScroll: invoiceProvider.invoices!.length > 1,
+                  autoPlay: invoiceProvider.invoices!.length > 1,
                   onPageChanged: (index, reason) {
                     setState(() {
                       _currentCardIndex = index;
                     });
                   },
                 ),
-                items: _cards.map((card) {
+                items: invoiceProvider.invoices!.map((invoice) {
                   return Builder(
                     builder: (BuildContext context) {
                       return Padding(
@@ -164,69 +139,62 @@ class _StudentPaymentHomeScreenState extends State<StudentPaymentHomeScreen> {
                           ),
                           child: Padding(
                             padding: const EdgeInsets.symmetric(vertical: 7.0, horizontal: 8.0),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Text(
-                                      card['term'],
-                                      style: const TextStyle(color: Colors.white, fontSize: 16),
-                                    ),
-                                    ElevatedButton(
+                            child: Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                children: [
+                                  Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Text(
+                                        ' ${invoice.year} ${invoice.termName} Fees',
+                                        style: const TextStyle(color: Colors.white, fontSize: 16),
+                                      ),
+                                      const SizedBox(height: 25),
+                                      Row(
+                                        children: [
+                                          const NairaSvgIcon(
+                                                color: Colors.white,
+                                               size: 25,
+                                              ),
+                                          Text(
+                                            _formatAmount(invoice.amount),
+                                            style: AppTextStyles.normal710(
+                                              fontSize: 27,
+                                              color: AppColors.backgroundLight,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                  Padding(
+                                    padding: const EdgeInsets.only(top: 30),
+                                    child: ElevatedButton(
                                       style: ElevatedButton.styleFrom(
                                         backgroundColor: const Color.fromRGBO(198, 210, 255, 1),
-                                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
+                                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                                         shape: RoundedRectangleBorder(
                                           borderRadius: BorderRadius.circular(10),
                                         ),
                                         elevation: 0,
                                       ),
                                       onPressed: () {
-                                        initializePayment('student@email.com', 53479000); // Replace email and amount dynamically if needed
+                                        _navigateToViewDetailDialog(invoice);
                                       },
                                       child: Text(
                                         'Pay Now',
                                         style: AppTextStyles.normal500(
-                                          fontSize: 12,
+                                          fontSize: 14,
                                           color: AppColors.paymentTxtColor1,
                                         ),
                                       ),
                                     ),
-                                  ],
-                                ),
-                                const SizedBox(height: 14),
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Row(
-                                      children: [
-                                        const NairaSvgIcon(color: AppColors.backgroundLight),
-                                        const SizedBox(width: 4),
-                                        Text(
-                                          '${card['amount']}',
-                                          style: AppTextStyles.normal700(
-                                            fontSize: 24,
-                                            color: AppColors.backgroundLight,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                    GestureDetector(
-                                      onTap: _navigateToViewDetailDialog,
-                                      child: const Padding(
-                                        padding: EdgeInsets.all(8.0),
-                                        child: Text(
-                                          'View Details',
-                                          style: TextStyle(color: Colors.white),
-                                        ),
-                                      ),
-                                    )
-                                  ],
-                                ),
-                              ],
-                            ),
+                                  ),
+                                ],
+                              ),
+
                           ),
                         ),
                       );
@@ -235,43 +203,69 @@ class _StudentPaymentHomeScreenState extends State<StudentPaymentHomeScreen> {
                 }).toList(),
               ),
               const SizedBox(height: 10),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: _cards.asMap().entries.map((entry) {
-                  return Container(
-                    width: 8,
-                    height: 8,
-                    margin: const EdgeInsets.symmetric(horizontal: 4),
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: _currentCardIndex == entry.key
-                          ? const Color.fromRGBO(33, 150, 243, 1)
-                          : const Color.fromRGBO(224, 224, 224, 1),
-                    ),
-                  );
-                }).toList(),
-              ),
-              Padding(
-                padding: const EdgeInsets.all(16),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: const [
-                    Text(
-                      'Payment History',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
+              if (invoiceProvider.invoices!.length > 1)
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: invoiceProvider.invoices!.asMap().entries.map((entry) {
+                    return Container(
+                      width: 8,
+                      height: 8,
+                      margin: const EdgeInsets.symmetric(horizontal: 4),
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: _currentCardIndex == entry.key
+                            ? const Color.fromRGBO(33, 150, 243, 1)
+                            : const Color.fromRGBO(224, 224, 224, 1),
                       ),
-                    ),
-                    TextButton(
-                      onPressed: null,
-                      child: Text('See all'),
-                    ),
-                  ],
+                    );
+                  }).toList(),
                 ),
+            ],
+            Padding(
+              padding: const EdgeInsets.all(8),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'Payment History',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+               TextButton(
+                    onPressed: () {
+                      final payments = invoiceProvider.payments ?? [];
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => PaymentHistorySeeAllScreen(payments: payments),
+                        ),
+                      );
+                    },
+                    child: const Text('See all'),
+                  ),
+                ],
               ),
+            ),
+            if (invoiceProvider.isLoading)
+              const Center(child: CircularProgressIndicator())
+            else if (invoiceProvider.error != null)
+              Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Text(
+                  'Error: ${invoiceProvider.error}',
+                  style: const TextStyle(color: Colors.red),
+                ),
+              )
+            else if (invoiceProvider.payments == null || invoiceProvider.payments!.isEmpty)
+              const Padding(
+                padding: EdgeInsets.all(16.0),
+                child: Text('No payment history available'),
+              )
+            else
               Column(
-                children: _paymentHistory.asMap().entries.map((entry) {
+                children: invoiceProvider.payments!.asMap().entries.map((entry) {
                   final index = entry.key;
                   final payment = entry.value;
 
@@ -281,14 +275,13 @@ class _StudentPaymentHomeScreenState extends State<StudentPaymentHomeScreen> {
                         payment: payment,
                         onTap: () => _showReceiptDialog(payment),
                       ),
-                      if (index != _paymentHistory.length - 1)
+                      if (index != invoiceProvider.payments!.length - 1)
                         const Divider(color: Colors.grey, thickness: 0.5, height: 1),
                     ],
                   );
                 }).toList(),
               ),
-            ],
-          ),
+          ],
         ),
       ),
     );
@@ -296,7 +289,7 @@ class _StudentPaymentHomeScreenState extends State<StudentPaymentHomeScreen> {
 }
 
 class PaymentHistoryItem extends StatelessWidget {
-  final Map<String, dynamic> payment;
+  final Payment payment;
   final VoidCallback onTap;
 
   const PaymentHistoryItem({
@@ -304,6 +297,14 @@ class PaymentHistoryItem extends StatelessWidget {
     required this.payment,
     required this.onTap,
   }) : super(key: key);
+
+  String _formatDate(DateTime date) {
+    return '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+  }
+
+  String _formatAmount(double amount) {
+    return '${amount.toStringAsFixed(2).replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]},')}';
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -319,7 +320,7 @@ class PaymentHistoryItem extends StatelessWidget {
           ),
           child: Center(
             child: SvgPicture.asset(
-              payment['icon'],
+              'assets/icons/e_learning/receipt_list_icon.svg',
               width: 24,
               height: 24,
               color: Colors.white,
@@ -327,11 +328,11 @@ class PaymentHistoryItem extends StatelessWidget {
           ),
         ),
         title: Text(
-          payment['term'],
+          '${payment.year} ${payment.termName} Fees',
           style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
         ),
         subtitle: Text(
-          payment['date'],
+          _formatDate(payment.date),
           style: TextStyle(color: Colors.grey[600], fontSize: 14),
         ),
         trailing: Column(
@@ -341,17 +342,17 @@ class PaymentHistoryItem extends StatelessWidget {
             Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const NairaSvgIcon(color: AppColors.paymentTxtColor5),
+                const NairaSvgIcon(color: AppColors.paymentTxtColor5, size:16,),
                 const SizedBox(width: 2),
                 Text(
-                  payment['amount'],
+                  _formatAmount(payment.amount),
                   style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
                 ),
               ],
             ),
-            Text(
-              payment['status'],
-              style: const TextStyle(color: Colors.green, fontSize: 14),
+            const Text(
+              'Paid',
+              style: TextStyle(color: Colors.green, fontSize: 14),
             ),
           ],
         ),

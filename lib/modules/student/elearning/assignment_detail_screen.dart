@@ -8,9 +8,12 @@ import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/student/elearning/attachment_preview_screen.dart';
 
 import '../../common/widgets/portal/attachmentItem.dart';
+import '../../model/student/elearningcontent_model.dart';
 
 class AssignmentDetailsScreen extends StatefulWidget {
-  const AssignmentDetailsScreen({super.key});
+  final ChildContent childContent;
+
+  const AssignmentDetailsScreen({super.key, required this.childContent});
 
   @override
   State<AssignmentDetailsScreen> createState() => _AssignmentDetailsScreenState();
@@ -89,18 +92,18 @@ void _navigateToAttachmentPreview() {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                'Due: Friday, 26 July, 2022 11:25am',
+              Text(
+                'Due: ${widget.childContent.endDate}',
                 style: TextStyle(color: Colors.black, fontSize: 14),
               ),
               const SizedBox(height: 16),
-              const Text(
-                'In a PDF document, highlight how to stop the national grid from collapsing.',
+               Text(
+                '${widget.childContent.description}',
                 style: TextStyle(fontSize: 16, color: Colors.black),
               ),
               const SizedBox(height: 24),
-              const Text(
-                'Grade: 100 marks',
+               Text(
+                'Grade:${widget.childContent.grade} marks',
                 style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 24),
