@@ -1,163 +1,112 @@
-class RecentData {
-  final List<RecentQuiz> recentQuizzes;
-  final List<RecentActivity> recentActivities;
-  final List<AvailableCourse> availableCourses;
+class ClassModel {
+  final String id;
+  final String name;
 
-  RecentData({
-    required this.recentQuizzes,
-    required this.recentActivities,
-    required this.availableCourses,
-  });
+  ClassModel({required this.id, required this.name});
 
-  factory RecentData.fromJson(Map<String, dynamic> json) {
-    return RecentData(
-      recentQuizzes: (json['recent_quizzes'] as List<dynamic>?)
-          ?.map((e) => RecentQuiz.fromJson(e))
-          .toList() ??
-          [],
-      recentActivities: (json['recent_activities'] as List<dynamic>?)
-          ?.map((e) => RecentActivity.fromJson(e))
-          .toList() ??
-          [],
-      availableCourses: (json['available_courses'] as List<dynamic>?)
-          ?.map((e) => AvailableCourse.fromJson(e))
-          .toList() ??
-          [],
-    );
-  }
-
-  Map<String, dynamic> toJson() {
-    return {
-      'recent_quizzes': recentQuizzes.map((e) => e.toJson()).toList(),
-      'recent_activities': recentActivities.map((e) => e.toJson()).toList(),
-      'available_courses': availableCourses.map((e) => e.toJson()).toList(),
-    };
-  }
-}
-
-class RecentQuiz {
-  final int id;
-  final int? syllabusId;
-  final int courseId;
-  final String levelId;
-  final String title;
-  final String type;
-  final String courseName;
-  final String createdBy;
-  final String datePosted;
-
-  RecentQuiz({
-    required this.id,
-    this.syllabusId,
-    required this.courseId,
-    required this.levelId,
-    required this.title,
-    required this.type,
-    required this.courseName,
-    required this.createdBy,
-    required this.datePosted,
-  });
-
-  factory RecentQuiz.fromJson(Map<String, dynamic> json) {
-    return RecentQuiz(
-      id: json['id'],
-      syllabusId: json['syllabus_id'],
-      courseId: json['course_id'],
-      levelId: json['level_id'],
-      title: json['title'] ?? '',
-      type: json['type'] ?? '',
-      courseName: json['course_name'] ?? '',
-      createdBy: json['created_by'] ?? '',
-      datePosted: json['date_posted'] ?? '',
-    );
-  }
-
-
-  Map<String, dynamic> toJson() {
-    return {};
-  }
-}
-
-class RecentActivity {
-  final int id;
-  final int? syllabusId;
-  final int courseId;
-  final String levelId;
-  final String title;
-  final String type;
-  final String courseName;
-  final String createdBy;
-  final String datePosted;
-
-  RecentActivity({
-    required this.id,
-    this.syllabusId,
-    required this.courseId,
-    required this.levelId,
-    required this.title,
-    required this.type,
-    required this.courseName,
-    required this.createdBy,
-    required this.datePosted,
-  });
-
-  factory RecentActivity.fromJson(Map<String, dynamic> json) {
-    return RecentActivity(
-      id: json['id'],
-      syllabusId: json['syllabus_id'],
-      courseId: json['course_id'],
-      levelId: json['level_id'],
-      title: json['title'] ?? '',
-      type: json['type'] ?? '',
-      courseName: json['course_name'] ?? '',
-      createdBy: json['created_by'] ?? '',
-      datePosted: json['date_posted'] ?? '',
+  factory ClassModel.fromJson(Map<String, dynamic> json) {
+    return ClassModel(
+      id: json['id'].toString(),
+      name: json['name'] ?? '',
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
       'id': id,
-      'syllabus_id': syllabusId,
-      'course_id': courseId,
-      'level_id': levelId,
-      'title': title,
-      'type': type,
-      'course_name': courseName,
-      'created_by': createdBy,
-      'date_posted': datePosted,
+      'name': name,
     };
   }
 }
 
-class AvailableCourse {
+class RecentQuizModel {
+  final int id;
+  final int syllabusId;
+  final int courseId;
+  final String title;
+  final String courseName;
+  final String levelId;
+  final List<ClassModel> classes;
+  final String type;
+  final int outline;
+  final String createdBy;
+  final String datePosted;
+
+  RecentQuizModel({
+    required this.id,
+    required this.syllabusId,
+    required this.courseId,
+    required this.title,
+    required this.courseName,
+    required this.levelId,
+    required this.classes,
+    required this.type,
+    required this.outline,
+    required this.createdBy,
+    required this.datePosted,
+  });
+
+  factory RecentQuizModel.fromJson(Map<String, dynamic> json) {
+    return RecentQuizModel(
+      id: json['id'],
+      syllabusId: json['syllabus_id'],
+      courseId: json['course_id'],
+      title: json['title'] ?? '',
+      courseName: json['course_name'] ?? '',
+      levelId: json['level_id'].toString(),
+      classes: (json['classes'] as List<dynamic>)
+          .map((e) => ClassModel.fromJson(e))
+          .toList(),
+      type: json['type'] ?? '',
+      outline: json['outline'],
+      createdBy: json['created_by'] ?? '',
+      datePosted: json['date_posted'] ?? '',
+    );
+  }
+}
+
+class RecentActivityModel {
+  final int id;
   final int syllabusId;
   final int courseId;
   final String levelId;
+  final String title;
+  final String comment;
+  final String type;
+  final List<ClassModel> classes;
   final String courseName;
+  final String createdBy;
+  final String datePosted;
 
-  AvailableCourse({
+  RecentActivityModel({
+    required this.id,
     required this.syllabusId,
     required this.courseId,
     required this.levelId,
+    required this.title,
+    required this.comment,
+    required this.type,
+    required this.classes,
     required this.courseName,
+    required this.createdBy,
+    required this.datePosted,
   });
 
-  factory AvailableCourse.fromJson(Map<String, dynamic> json) {
-    return AvailableCourse(
+  factory RecentActivityModel.fromJson(Map<String, dynamic> json) {
+    return RecentActivityModel(
+      id: json['id'],
       syllabusId: json['syllabus_id'],
       courseId: json['course_id'],
-      levelId: json['level_id'],
+      levelId: json['level_id'].toString(),
+      title: json['title'] ?? '',
+      comment: json['comment'] ?? '',
+      type: json['type'] ?? '',
+      classes: (json['classes'] as List<dynamic>)
+          .map((e) => ClassModel.fromJson(e))
+          .toList(),
       courseName: json['course_name'] ?? '',
+      createdBy: json['created_by'] ?? '',
+      datePosted: json['date_posted'] ?? '',
     );
-  }
-
-  Map<String, dynamic> toJson() {
-    return {
-      'syllabus_id': syllabusId,
-      'course_id': courseId,
-      'level_id': levelId,
-      'course_name': courseName,
-    };
   }
 }

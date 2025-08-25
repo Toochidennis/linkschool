@@ -608,8 +608,8 @@ void _showInsertLinkDialog() {
 
       if (result != null) {
         PlatformFile file = result.files.first;
+        
         String fileName = file.name;
-
         if (file.bytes != null) {
           String base64String = base64Encode(file.bytes!);
           _addAttachment(fileName, 'assets/icons/e_learning/upload_file.svg', base64String);

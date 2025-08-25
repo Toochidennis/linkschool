@@ -1,0 +1,2 @@
+C:/Users/ewoch/Documents/linkschool/android/app/.cxx/RelWithDebInfo/286a2n43/x86/CMakeFiles/edit_cache.dir
+C:/Users/ewoch/Documents/linkschool/android/app/.cxx/RelWithDebInfo/286a2n43/x86/CMakeFiles/rebuild_cache.dir

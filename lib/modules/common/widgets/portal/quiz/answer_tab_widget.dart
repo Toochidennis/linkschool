@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
-import 'package:linkschool/modules/common/widgets/portal/quiz/quiz_resultscreen.dart';
 
 class AnswersTabWidget extends StatefulWidget {
   const AnswersTabWidget({super.key});
@@ -119,19 +118,14 @@ class _AnswersTabWidgetState extends State<AnswersTabWidget> {
       separatorBuilder: (context, index) => const Divider(),
       itemBuilder: (context, index) {
         var item = items[index];
-        return GestureDetector(
-          onTap:(){
-            Navigator.push(context, MaterialPageRoute(builder: (context) => QuizResultsScreen()));
-          },
-          child: ListTile(
-            leading: CircleAvatar(
-              backgroundColor: AppColors.primaryLight,
-              child: Text(item['name']![0], style: AppTextStyles.normal500(fontSize: 16, color: AppColors.backgroundLight),),
-            ),
-            title: Text(item['name']!),
-            subtitle: Text(item['progress']!),
-            trailing: Text(item['time']!),
+        return ListTile(
+          leading: CircleAvatar(
+            backgroundColor: AppColors.primaryLight,
+            child: Text(item['name']![0], style: AppTextStyles.normal500(fontSize: 16, color: AppColors.backgroundLight),),
           ),
+          title: Text(item['name']!),
+          subtitle: Text(item['progress']!),
+          trailing: Text(item['time']!),
         );
       },
     );

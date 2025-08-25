@@ -8,6 +8,7 @@ import 'package:linkschool/modules/providers/admin/e_learning/assignment_provide
 import 'package:linkschool/modules/providers/admin/e_learning/comment_provider.dart';
 import 'package:linkschool/modules/providers/admin/e_learning/delete_question.dart';
 import 'package:linkschool/modules/providers/admin/e_learning/delete_sylabus_content.dart';
+import 'package:linkschool/modules/providers/admin/e_learning/mark_assignment_provider.dart';
 import 'package:linkschool/modules/providers/admin/e_learning/material_provider.dart';
 import 'package:linkschool/modules/providers/admin/e_learning/quiz_provider.dart';
 import 'package:linkschool/modules/providers/admin/e_learning/syllabus_content_provider.dart';
@@ -22,6 +23,7 @@ import 'package:linkschool/modules/services/admin/e_learning/assignment_service.
 import 'package:linkschool/modules/services/admin/e_learning/comment_service.dart';
 import 'package:linkschool/modules/services/admin/e_learning/delete_question.dart';
 import 'package:linkschool/modules/services/admin/e_learning/delete_syllabus_content.dart';
+import 'package:linkschool/modules/services/admin/e_learning/marking_service.dart';
 import 'package:linkschool/modules/services/admin/e_learning/material_service.dart';
 import 'package:linkschool/modules/services/admin/e_learning/quiz_service.dart';
 import 'package:linkschool/modules/services/admin/e_learning/syllabus_content_service.dart';
@@ -48,6 +50,16 @@ void setupServiceLocator() {
     apiKey: dotenv.env['API_KEY'],
   ));
 
+// mark assignment Api with ApiService dependency
+ locator.registerLazySingleton<MarkingService>(
+    () => MarkingService(locator<ApiService>())
+  );
+
+   locator.registerLazySingleton<MarkAssignmentProvider>(
+    () => MarkAssignmentProvider(locator<MarkingService>())
+  );
+
+
   // Register CommentService with ApiService dependency
   locator.registerLazySingleton<CommentService>(
     () => CommentService(locator<ApiService>())
@@ -58,8 +70,8 @@ void setupServiceLocator() {
   );
 
   // Register RecentService with ApiService dependency
- locator.registerLazySingleton<RecentService>(()
-  => RecentService());
+ locator.registerLazySingleton<OverviewService>(()
+  => OverviewService( locator<ApiService>()));
 
 
   // register delete singlequestion with api service dependency

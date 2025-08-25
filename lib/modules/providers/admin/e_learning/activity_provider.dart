@@ -1,51 +1,37 @@
-
-
-import 'package:flutter/cupertino.dart';
+import 'package:flutter/foundation.dart';
 import 'package:linkschool/modules/model/e-learning/activity_model.dart';
 import 'package:linkschool/modules/services/admin/e_learning/activity_service.dart';
-import 'package:linkschool/modules/services/api/service_locator.dart';
 
 
+class OverviewProvider with ChangeNotifier {
+  final OverviewService _overviewService;
 
-class RecentProvider with ChangeNotifier {
-  final  _RecentService = locator<RecentService>();
+  OverviewProvider(this._overviewService);
 
-RecentData? _recentData;
+  List<RecentQuizModel> _recentQuizzes = [];
+  List<RecentActivityModel> _recentActivities = [];
   bool _isLoading = false;
   String? _errorMessage;
 
-  RecentData? get recentData => _recentData;
+  List<RecentQuizModel> get recentQuizzes => _recentQuizzes;
+  List<RecentActivityModel> get recentActivities => _recentActivities;
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
 
-  void _setLoading(bool loading) {
-    _isLoading = loading;
+  Future<void> fetchOverview(String term) async {
+    _isLoading = true;
+    _errorMessage = null;
     notifyListeners();
-  }
-
-  void _setError(String? message) {
-    _errorMessage = message;
-    notifyListeners();
-  }
-
-  Future<RecentData?> fetchDashboardData({
-    required String class_id,
-    required String level_id,
-    required String term,
-  }) async {
-    _setLoading(true);
-    _setError(null);
 
     try {
-      final response = await _RecentService.getDashboardData(class_id, level_id, term);
-      _recentData = response;
-      return response; // Return DashboardData directly
+      final data = await _overviewService.getOverview(term);
+      _recentQuizzes = data['recent_quizzes'] ?? [];
+      _recentActivities = data['recent_activities'] ?? [];
     } catch (e) {
-      _setError('Unexpected error: $e');
-      return null;
+      _errorMessage = e.toString();
     } finally {
-      _setLoading(false);
+      _isLoading = false;
+      notifyListeners();
     }
   }
-
 }

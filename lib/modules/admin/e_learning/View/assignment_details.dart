@@ -3,15 +3,18 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
 import 'package:intl/intl.dart';
+import 'package:linkschool/modules/admin/e_learning/View/mark_assignment.dart';
 import 'package:linkschool/modules/admin/e_learning/admin_assignment_screen.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/custom_toaster.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
+import 'package:linkschool/modules/common/widgets/portal/quiz/quiz_resultscreen.dart';
 import 'package:linkschool/modules/model/e-learning/comment_model.dart';
 import 'package:linkschool/modules/model/e-learning/syllabus_content_model.dart';
 import 'package:linkschool/modules/providers/admin/e_learning/comment_provider.dart';
 import 'package:linkschool/modules/providers/admin/e_learning/delete_sylabus_content.dart';
+import 'package:linkschool/modules/providers/admin/e_learning/mark_assignment_provider.dart';
 import 'package:linkschool/modules/services/api/service_locator.dart';
 import 'package:provider/provider.dart';
 import 'package:skeletonizer/skeletonizer.dart';
@@ -234,7 +237,7 @@ class AdminAssignmentDetailsScreen extends StatefulWidget {
           controller: _tabController,
           children: [
             _buildInstructionsTab(),
-            const Center(child: Text('Student work content')),
+            AnswersTabWidget(itemId: widget.itemId.toString(),)
           ],
         ),
       ),
@@ -764,6 +767,276 @@ void _addComment([Map<String, dynamic>? updatedComment]) async {
 }
 }
 
+
+
+
+class AnswersTabWidget extends StatefulWidget {
+  final String itemId;
+  const AnswersTabWidget({
+    super.key,
+    required this.itemId,
+  });
+
+  @override
+  _AnswersTabWidgetState createState() => _AnswersTabWidgetState();
+}
+
+class _AnswersTabWidgetState extends State<AnswersTabWidget> {
+  String _selectedCategory = 'SUBMITTED';
+
+  @override
+  void initState() {
+    super.initState();
+    // Fetch assignments on init using the provider
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final markProvider = Provider.of<MarkAssignmentProvider>(context, listen: false);
+      markProvider.fetchAssignment(widget.itemId);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Consumer<MarkAssignmentProvider>(
+      builder: (context, markProvider, _) {
+        final isLoading = markProvider.isLoading;
+        final error = markProvider.error;
+        final assignmentData = markProvider.assignmentData;
+
+        return Column(
+          children: [
+            _buildNavigationRow(assignmentData),
+            Expanded(
+              child: isLoading
+                  ? const Center(child: CircularProgressIndicator())
+                  : error != null
+                      ? Center(
+                          child: Text(
+                            error,
+                            style: AppTextStyles.normal500(fontSize: 16, color: Colors.red),
+                          ),
+                        )
+                      : _selectedCategory == 'SUBMITTED'
+                          ? _buildSubmittedContent(assignmentData)
+                          : _buildListContent(_selectedCategory, assignmentData),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildNavigationRow(Map<String, dynamic>? assignmentData) {
+    return Padding(
+      padding: const EdgeInsets.all(8.0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: [
+          _buildNavigationContainer('SUBMITTED', assignmentData),
+          _buildNavigationContainer('UNMARKED', assignmentData),
+          _buildNavigationContainer('MARKED', assignmentData),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildNavigationContainer(String text, Map<String, dynamic>? assignmentData) {
+    bool isSelected = _selectedCategory == text;
+    int itemCount = _getItemCount(text, assignmentData);
+
+    return GestureDetector(
+      onTap: () => setState(() => _selectedCategory = text),
+      child: Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: Container(
+          width: 89,
+          height: 30,
+          decoration: BoxDecoration(
+            color: isSelected
+                ? const Color.fromRGBO(171, 190, 255, 1)
+                : const Color.fromRGBO(224, 224, 224, 1),
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Stack(
+            children: [
+              Center(
+                child: Text(
+                  text,
+                  style: TextStyle(
+                    color: isSelected ? AppColors.primaryLight : Colors.black,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+              if (!isSelected && itemCount > 0)
+                Positioned(
+                  right: 0,
+                  top: -4,
+                  child: Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: const BoxDecoration(
+                      color: Color.fromRGBO(244, 67, 54, 1),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Text(
+                      '$itemCount',
+                      style: const TextStyle(
+                          color: Color.fromRGBO(255, 255, 255, 1), fontSize: 10),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSubmittedContent(Map<String, dynamic>? assignmentData) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Expanded(
+          child: _buildListContent('SUBMITTED', assignmentData),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildListContent(String category, Map<String, dynamic>? assignmentData) {
+    if (assignmentData == null) {
+      return Center(
+        child: Text(
+          'No $category assignments',
+          style: AppTextStyles.normal500(fontSize: 16, color: AppColors.backgroundDark),
+        ),
+      );
+    }
+
+    List<dynamic> assignments = [];
+    switch (category) {
+      case 'SUBMITTED':
+        assignments = (assignmentData['submitted'] as List<dynamic>?) ?? [];
+        break;
+      case 'UNMARKED':
+        assignments = (assignmentData['unmarked'] as List<dynamic>?) ?? [];
+        break;
+      case 'MARKED':
+        assignments = (assignmentData['marked'] as List<dynamic>?) ?? [];
+        break;
+      default:
+        assignments = [];
+    }
+
+    if (assignments.isEmpty) {
+      return Center(
+        child: Text(
+          'No $category assignments',
+          style: AppTextStyles.normal500(fontSize: 16, color: AppColors.backgroundDark),
+        ),
+      );
+    }
+
+    return ListView.separated(
+      itemCount: assignments.length,
+      separatorBuilder: (context, index) => const Divider(),
+      itemBuilder: (context, index) {
+        var assignmentJson = assignments[index] as Map<String, dynamic>;
+
+        // Defensive extraction of fields from assignmentJson
+        final String studentName = assignmentJson['student_name']?.toString() ?? 'Unknown';
+        final String score = assignmentJson['score']?.toString() ?? '';
+        final String markingScore = assignmentJson['marking_score']?.toString() ?? '';
+        final List<dynamic> files = assignmentJson['files'] is List ? assignmentJson['files'] : [];
+        final String dateStr = assignmentJson['date']?.toString() ?? '';
+        DateTime? date;
+        try {
+          date = DateTime.parse(dateStr);
+        } catch (_) {
+          date = null;
+        }
+
+        return GestureDetector(
+          onTap: () {
+            // Navigate to QuizResultsScreen with assignment data
+            print("assignmentJson $assignmentJson");
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => AssignmentGradingScreen(
+                  itemId:widget.itemId,
+                  assignmentTitle: assignmentJson['assignment_title']?.toString() ?? 'yyyyy',
+                  files:files,
+                  maxScore: int.tryParse(markingScore) ?? 0,
+                  studentName: studentName,
+                  submissionId: assignmentJson['submission_id']?.toString() ?? '',
+                  currentScore: int.tryParse(score),
+                  turnedInAt: date ?? DateTime.now(),
+              ),
+            ));
+          },
+          child: ListTile(
+            leading: CircleAvatar(
+              backgroundColor: AppColors.primaryLight,
+              child: Text(
+                studentName.isNotEmpty ? studentName[0].toUpperCase() : '?',
+                style: AppTextStyles.normal500(fontSize: 16, color: AppColors.backgroundLight),
+              ),
+            ),
+            title: Text(
+              studentName,
+              style: AppTextStyles.normal600(fontSize: 16, color: Colors.black87),
+            ),
+            subtitle: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SizedBox(height: 2),
+                Text(
+                  'Score: ${score.isNotEmpty ? score : "N/A"}/${markingScore.isNotEmpty ? markingScore : "N/A"}',
+                  style: AppTextStyles.normal500(fontSize: 14, color: Colors.grey[600]!),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  'Files: ${files.length} attached',
+                  style: AppTextStyles.normal500(fontSize: 14, color: Colors.grey[600]!),
+                ),
+              ],
+            ),
+            trailing: Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  date != null ? DateFormat('MMM dd').format(date) : 'Invalid date',
+                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  date != null ? DateFormat('HH:mm').format(date) : '',
+                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  int _getItemCount(String category, Map<String, dynamic>? assignmentData) {
+    if (assignmentData == null) return 0;
+    switch (category) {
+      case 'SUBMITTED':
+        return (assignmentData['submitted'] as List<dynamic>?)?.length ?? 0;
+      case 'UNMARKED':
+        return (assignmentData['unmarked'] as List<dynamic>?)?.length ?? 0;
+      case 'MARKED':
+        return (assignmentData['marked'] as List<dynamic>?)?.length ?? 0;
+      default:
+        return 0;
+    }
+  }
+}
 
 // import 'package:flutter/material.dart';
 // import 'package:intl/intl.dart';
@@ -1649,3 +1922,6 @@ void _addComment([Map<String, dynamic>? updatedComment]) async {
 //     }
 //   }
 // }
+
+
+

@@ -46,7 +46,7 @@ class Student {
 }
 
 class QuizResultsScreen extends StatefulWidget {
-  const QuizResultsScreen({Key? key}) : super(key: key);
+  const QuizResultsScreen({Key? key, required Map<String, dynamic> assignmentData}) : super(key: key);
 
   @override
   State<QuizResultsScreen> createState() => _QuizResultsScreenState();

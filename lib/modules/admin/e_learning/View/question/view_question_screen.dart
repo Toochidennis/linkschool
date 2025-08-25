@@ -542,17 +542,19 @@ void _initializeQuestions() {
 
       print('Updating existing quiz with ID: ${widget.question.id}');
     if (widget.editMode == true) {
-    
+      print('Updated assessment: ${jsonEncode(Updatedassessment)}');
       await quizProvider.updateTest(Updatedassessment);
+      CustomToaster.toastSuccess(context, "Success", "Questions updated successfully");
     } else {
       await quizProvider.addTest(assessment);
+      CustomToaster.toastSuccess(context, "Success", "Questions saved successfully");
     }
     setState(() {
       showSaveButton = false;
     });
     print('Quiz posted!');
     if (mounted) {
-      CustomToaster.toastSuccess(context, "Success", "Questions saved successfully");
+      
       Navigator.of(context).popUntil(ModalRoute.withName('/empty_subject'));
     }
   } catch (e) {
