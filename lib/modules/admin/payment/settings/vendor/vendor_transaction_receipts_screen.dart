@@ -7,8 +7,7 @@ import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/common/widgets/portal/profile/naira_icon.dart';
 import 'package:linkschool/modules/model/admin/vendor/vendor_transaction_year.dart';
 import 'package:linkschool/modules/model/profile/vendor_transaction_model.dart';
-// import 'package:linkschool/modules/model/admin/vendor/vendor_transaction_model.dart';
-// import 'package:linkschool/modules/common/naira_icon.dart';
+
 
 class VendorTransactionReceiptsScreen extends StatefulWidget {
   final VendorTransactionDetail detail;
