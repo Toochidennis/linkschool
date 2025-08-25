@@ -27,52 +27,62 @@ class AccountProvider extends ChangeNotifier {
   String get searchQuery => _searchQuery;
   String? get selectedAccountTypeFilter => _selectedAccountTypeFilter;
 
-  // Fetch accounts from API
+  // Fetch accounts from API, handling pagination
   Future<void> fetchAccounts() async {
     _isLoading = true;
     _errorMessage = '';
     notifyListeners();
 
-    try {
-      final response = await _accountService.fetchAccounts();
-      
-      if (response.success && response.data != null) {
-        // Sort accounts by ID in descending order (newest first)
-        _accounts = response.data!.data;
-        _accounts.sort((a, b) => b.id.compareTo(a.id));
-        _applyFilters();
-        _errorMessage = '';
-      } else {
-        // Check if it's an auth error
-        if (response.statusCode == 401 || response.statusCode == 400 || 
-            response.message.toLowerCase().contains('token')) {
-          await _handleAuthError();
-          // Retry once after handling auth error
-          final retryResponse = await _accountService.fetchAccounts();
-          if (retryResponse.success && retryResponse.data != null) {
-            _accounts = retryResponse.data!.data;
-            _accounts.sort((a, b) => b.id.compareTo(a.id));
-            _applyFilters();
-            _errorMessage = '';
-          } else {
-            _errorMessage = retryResponse.message;
-            _accounts = [];
-            _filteredAccounts = [];
-          }
+    List<AccountModel> allData = [];
+    int page = 1;
+    bool hasNext = true;
+
+    while (hasNext) {
+      try {
+        final response = await _accountService.fetchAccounts(page: page);
+
+        if (response.success && response.data != null) {
+          allData.addAll(response.data!.data);
+          hasNext = response.data!.meta['has_next'] ?? false;
+          page++;
         } else {
-          _errorMessage = response.message;
-          _accounts = [];
-          _filteredAccounts = [];
+          // Check if it's an auth error
+          if (response.statusCode == 401 || response.statusCode == 400 || 
+              response.message.toLowerCase().contains('token')) {
+            await _handleAuthError();
+            // Retry the current page after handling auth error
+            final retryResponse = await _accountService.fetchAccounts(page: page);
+            if (retryResponse.success && retryResponse.data != null) {
+              allData.addAll(retryResponse.data!.data);
+              hasNext = retryResponse.data!.meta['has_next'] ?? false;
+              page++;
+            } else {
+              _errorMessage = retryResponse.message;
+              hasNext = false;
+            }
+          } else {
+            _errorMessage = response.message;
+            hasNext = false;
+          }
         }
+      } catch (e) {
+        _errorMessage = 'Failed to fetch accounts: ${e.toString()}';
+        hasNext = false;
       }
-    } catch (e) {
-      _errorMessage = 'Failed to fetch accounts: ${e.toString()}';
+    }
+
+    if (_errorMessage.isEmpty) {
+      // Sort accounts by ID in descending order (newest first)
+      _accounts = allData;
+      _accounts.sort((a, b) => b.id.compareTo(a.id));
+      _applyFilters();
+    } else {
       _accounts = [];
       _filteredAccounts = [];
-    } finally {
-      _isLoading = false;
-      notifyListeners();
     }
+
+    _isLoading = false;
+    notifyListeners();
   }
 
   // Add new account
@@ -238,9 +248,8 @@ class AccountProvider extends ChangeNotifier {
 
 
 
+
 // import 'package:flutter/material.dart';
-// // import 'package:linkschool/modules/models/account_model.dart';
-// // import 'package:linkschool/modules/services/admin/account_service.dart';
 // import 'package:hive/hive.dart';
 // import 'package:linkschool/modules/model/admin/account_model.dart';
 // import 'package:linkschool/modules/services/admin/payment/account_service.dart';
@@ -251,17 +260,23 @@ class AccountProvider extends ChangeNotifier {
 //   AccountProvider(this._accountService);
 
 //   List<AccountModel> _accounts = [];
+//   List<AccountModel> _filteredAccounts = [];
 //   bool _isLoading = false;
 //   String _errorMessage = '';
 //   bool _isAddingAccount = false;
 //   bool _isUpdatingAccount = false;
+//   String _searchQuery = '';
+//   String? _selectedAccountTypeFilter;
 
 //   // Getters
-//   List<AccountModel> get accounts => _accounts;
+//   List<AccountModel> get accounts => _filteredAccounts;
+//   List<AccountModel> get allAccounts => _accounts;
 //   bool get isLoading => _isLoading;
 //   String get errorMessage => _errorMessage;
 //   bool get isAddingAccount => _isAddingAccount;
 //   bool get isUpdatingAccount => _isUpdatingAccount;
+//   String get searchQuery => _searchQuery;
+//   String? get selectedAccountTypeFilter => _selectedAccountTypeFilter;
 
 //   // Fetch accounts from API
 //   Future<void> fetchAccounts() async {
@@ -273,7 +288,10 @@ class AccountProvider extends ChangeNotifier {
 //       final response = await _accountService.fetchAccounts();
       
 //       if (response.success && response.data != null) {
+//         // Sort accounts by ID in descending order (newest first)
 //         _accounts = response.data!.data;
+//         _accounts.sort((a, b) => b.id.compareTo(a.id));
+//         _applyFilters();
 //         _errorMessage = '';
 //       } else {
 //         // Check if it's an auth error
@@ -284,19 +302,24 @@ class AccountProvider extends ChangeNotifier {
 //           final retryResponse = await _accountService.fetchAccounts();
 //           if (retryResponse.success && retryResponse.data != null) {
 //             _accounts = retryResponse.data!.data;
+//             _accounts.sort((a, b) => b.id.compareTo(a.id));
+//             _applyFilters();
 //             _errorMessage = '';
 //           } else {
 //             _errorMessage = retryResponse.message;
 //             _accounts = [];
+//             _filteredAccounts = [];
 //           }
 //         } else {
 //           _errorMessage = response.message;
 //           _accounts = [];
+//           _filteredAccounts = [];
 //         }
 //       }
 //     } catch (e) {
 //       _errorMessage = 'Failed to fetch accounts: ${e.toString()}';
 //       _accounts = [];
+//       _filteredAccounts = [];
 //     } finally {
 //       _isLoading = false;
 //       notifyListeners();
@@ -373,6 +396,52 @@ class AccountProvider extends ChangeNotifier {
 //       _isUpdatingAccount = false;
 //       notifyListeners();
 //     }
+//   }
+
+//   // Search functionality
+//   void searchAccounts(String query) {
+//     _searchQuery = query;
+//     _applyFilters();
+//     notifyListeners();
+//   }
+
+//   // Filter functionality
+//   void filterByAccountType(String? accountType) {
+//     _selectedAccountTypeFilter = accountType;
+//     _applyFilters();
+//     notifyListeners();
+//   }
+
+//   // Clear all filters
+//   void clearFilters() {
+//     _searchQuery = '';
+//     _selectedAccountTypeFilter = null;
+//     _applyFilters();
+//     notifyListeners();
+//   }
+
+//   // Apply search and filter logic
+//   void _applyFilters() {
+//     _filteredAccounts = _accounts.where((account) {
+//       // Apply search filter
+//       bool matchesSearch = true;
+//       if (_searchQuery.isNotEmpty) {
+//         matchesSearch = account.accountName.toLowerCase().contains(_searchQuery.toLowerCase()) ||
+//                        account.accountNumber.toLowerCase().contains(_searchQuery.toLowerCase());
+//       }
+
+//       // Apply account type filter
+//       bool matchesTypeFilter = true;
+//       if (_selectedAccountTypeFilter != null) {
+//         if (_selectedAccountTypeFilter == 'Income') {
+//           matchesTypeFilter = account.accountType == 0;
+//         } else if (_selectedAccountTypeFilter == 'Expenditure') {
+//           matchesTypeFilter = account.accountType == 1;
+//         }
+//       }
+
+//       return matchesSearch && matchesTypeFilter;
+//     }).toList();
 //   }
 
 //   // Clear error message

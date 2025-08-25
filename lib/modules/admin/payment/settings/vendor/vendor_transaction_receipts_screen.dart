@@ -1,13 +1,13 @@
 // Updated vendor_transaction_receipts_screen.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
+import 'package:intl/intl.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/common/widgets/portal/profile/naira_icon.dart';
 import 'package:linkschool/modules/model/admin/vendor/vendor_transaction_year.dart';
 import 'package:linkschool/modules/model/profile/vendor_transaction_model.dart';
-
 
 class VendorTransactionReceiptsScreen extends StatefulWidget {
   final VendorTransactionDetail detail;
@@ -49,6 +49,7 @@ class _VendorTransactionReceiptsScreenState extends State<VendorTransactionRecei
     final Brightness brightness = Theme.of(context).brightness;
     opacity = brightness == Brightness.light ? 0.1 : 0.15;
     final displayYear = '${widget.detail.year - 1}/${widget.detail.year}';
+    final formattedAmount = NumberFormat('#,##0.00').format(widget.detail.amount);
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
@@ -125,7 +126,7 @@ class _VendorTransactionReceiptsScreenState extends State<VendorTransactionRecei
                             children: [
                               const NairaSvgIcon(color: Colors.red),
                               Text(
-                                widget.detail.amount.toStringAsFixed(2),
+                                formattedAmount,
                                 style: AppTextStyles.normal600(
                                   fontSize: 18,
                                   color: Colors.red,

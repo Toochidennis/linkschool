@@ -6,6 +6,7 @@ import 'package:linkschool/modules/auth/provider/auth_provider.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/custom_toaster.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
+import 'package:linkschool/modules/common/widgets/portal/profile/naira_icon.dart';
 import 'package:linkschool/modules/model/admin/account_model.dart';
 import 'package:linkschool/modules/model/admin/expenditure_model.dart';
 import 'package:linkschool/modules/model/admin/vendor/vendor_model.dart';
@@ -14,6 +15,7 @@ import 'package:linkschool/modules/services/admin/payment/expenditure_service.da
 import 'package:linkschool/modules/services/admin/payment/vendor_service.dart';
 import 'package:linkschool/modules/services/api/api_service.dart';
 import 'package:linkschool/modules/services/api/service_locator.dart';
+// import 'package:linkschool/modules/admin/payment/settings/widgets/naira_icon.dart';
 import 'package:provider/provider.dart';
 
 class AddExpenditureScreen extends StatefulWidget {
@@ -249,7 +251,21 @@ class _AddExpenditureScreenState extends State<AddExpenditureScreen> {
                     label: 'Amount',
                     controller: _amountController,
                     keyboardType: TextInputType.numberWithOptions(decimal: true),
-                    prefixText: '₦ ',
+                    prefixIcon: SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: const NairaSvgIcon(
+                        color: AppColors.backgroundDark,
+                        width: 12.0,
+                        height: 12.0,
+                      ),
+                    ),
+                    prefixIconConstraints: const BoxConstraints(
+                      minWidth: 16,
+                      minHeight: 16,
+                      maxWidth: 16,
+                      maxHeight: 16,
+                    ),
                   ),
                   const SizedBox(height: 20),
 
@@ -275,6 +291,7 @@ class _AddExpenditureScreenState extends State<AddExpenditureScreen> {
                     label: 'Account Type',
                     controller: _accountTypeController,
                     readOnly: true,
+                    hintText: 'Select account',
                     onTap: () async {
                       final result = await Navigator.push(
                         context,
@@ -324,7 +341,10 @@ class _AddExpenditureScreenState extends State<AddExpenditureScreen> {
     IconData? suffixIcon,
     VoidCallback? onSuffixPressed,
     String? prefixText,
+    String? hintText,
     TextInputType? keyboardType,
+    Widget? prefixIcon,
+    BoxConstraints? prefixIconConstraints,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -341,6 +361,9 @@ class _AddExpenditureScreenState extends State<AddExpenditureScreen> {
           keyboardType: keyboardType,
           decoration: InputDecoration(
             prefixText: prefixText,
+            prefixIcon: prefixIcon,
+            prefixIconConstraints: prefixIconConstraints,
+            hintText: hintText,
             suffixIcon: suffixIcon != null
                 ? IconButton(
                     icon: Icon(suffixIcon, color: AppColors.paymentTxtColor1),
@@ -368,8 +391,6 @@ class _AddExpenditureScreenState extends State<AddExpenditureScreen> {
 
 
 
-
-// // Updated file: modules/admin/payment/expenditure/add_expenditure_screen.dart
 // import 'package:flutter/material.dart';
 // import 'package:intl/intl.dart';
 // import 'package:linkschool/modules/admin/payment/settings/vendor/account_selection_screen.dart';
@@ -378,6 +399,7 @@ class _AddExpenditureScreenState extends State<AddExpenditureScreen> {
 // import 'package:linkschool/modules/common/app_colors.dart';
 // import 'package:linkschool/modules/common/custom_toaster.dart';
 // import 'package:linkschool/modules/common/text_styles.dart';
+// import 'package:linkschool/modules/common/widgets/portal/profile/naira_icon.dart';
 // import 'package:linkschool/modules/model/admin/account_model.dart';
 // import 'package:linkschool/modules/model/admin/expenditure_model.dart';
 // import 'package:linkschool/modules/model/admin/vendor/vendor_model.dart';
@@ -386,6 +408,7 @@ class _AddExpenditureScreenState extends State<AddExpenditureScreen> {
 // import 'package:linkschool/modules/services/admin/payment/vendor_service.dart';
 // import 'package:linkschool/modules/services/api/api_service.dart';
 // import 'package:linkschool/modules/services/api/service_locator.dart';
+// // import 'package:linkschool/modules/admin/payment/settings/widgets/naira_icon.dart';
 // import 'package:provider/provider.dart';
 
 // class AddExpenditureScreen extends StatefulWidget {
@@ -425,7 +448,7 @@ class _AddExpenditureScreenState extends State<AddExpenditureScreen> {
 //     _isEditMode = widget.expenditure != null;
 //     _vendorNameController = TextEditingController();
 //     _amountController = TextEditingController();
-//     _dateController = TextEditingController();
+//     _dateController = TextEditingController(text: DateFormat('yyyy-MM-dd').format(DateTime.now()));
 //     _referenceController = TextEditingController();
 //     _accountTypeController = TextEditingController();
 //     _descriptionController = TextEditingController();
@@ -446,7 +469,7 @@ class _AddExpenditureScreenState extends State<AddExpenditureScreen> {
 //     final response = await _vendorService.fetchVendors();
 //     if (response.success && response.data != null) {
 //       _vendors = response.data!;
-//       if (_isEditMode) {
+//       if (_isEditMode && _vendors.isNotEmpty) {
 //         _selectedVendor = _vendors.firstWhere(
 //           (v) => v.id == widget.expenditure!.customerId,
 //           orElse: () => widget.vendor,
@@ -468,13 +491,25 @@ class _AddExpenditureScreenState extends State<AddExpenditureScreen> {
 //     _descriptionController.text = exp.description;
 //     _accountTypeController.text = exp.accountName;
 
-//     // Find account
+//     // Fetch accounts and set selected account
 //     final accountProvider = Provider.of<AccountProvider>(context, listen: false);
-//     accountProvider.fetchAccounts();
-//     _selectedAccount = accountProvider.allAccounts.firstWhere(
-//       (acc) => acc.accountNumber == exp.accountNumber,
-//       orElse: () => AccountModel(id: 0, accountName: '', accountType: 0, accountNumber: '', inactive: ''),
-//     );
+//     accountProvider.fetchAccounts().then((_) {
+//       if (accountProvider.allAccounts.isNotEmpty) {
+//         setState(() {
+//           _selectedAccount = accountProvider.allAccounts.firstWhere(
+//             (acc) => acc.accountNumber == exp.accountNumber,
+//             orElse: () => AccountModel(
+//               id: 0,
+//               accountName: '',
+//               accountType: 0,
+//               accountNumber: '',
+//               inactive: '',
+//             ),
+//           );
+//           _accountTypeController.text = _selectedAccount!.accountName;
+//         });
+//       }
+//     });
 //   }
 
 //   Future<void> _selectDate() async {
@@ -485,13 +520,32 @@ class _AddExpenditureScreenState extends State<AddExpenditureScreen> {
 //       lastDate: DateTime(2101),
 //     );
 //     if (picked != null) {
-//       _dateController.text = DateFormat('yyyy-MM-dd').format(picked);
+//       setState(() {
+//         _dateController.text = DateFormat('yyyy-MM-dd').format(picked);
+//       });
 //     }
 //   }
 
 //   Future<void> _submitExpenditure() async {
-//     if (_selectedVendor == null || _selectedAccount == null || _amountController.text.isEmpty || _dateController.text.isEmpty || _descriptionController.text.isEmpty) {
-//       CustomToaster.toastWarning(context, 'Warning', 'Please fill all required fields');
+//     // Validate inputs
+//     if (_selectedVendor == null) {
+//       CustomToaster.toastWarning(context, 'Warning', 'Please select a vendor');
+//       return;
+//     }
+//     if (_selectedAccount == null) {
+//       CustomToaster.toastWarning(context, 'Warning', 'Please select an account');
+//       return;
+//     }
+//     if (_amountController.text.isEmpty || double.tryParse(_amountController.text) == null) {
+//       CustomToaster.toastWarning(context, 'Warning', 'Please enter a valid amount');
+//       return;
+//     }
+//     if (_dateController.text.isEmpty) {
+//       CustomToaster.toastWarning(context, 'Warning', 'Please select a date');
+//       return;
+//     }
+//     if (_descriptionController.text.isEmpty) {
+//       CustomToaster.toastWarning(context, 'Warning', 'Please enter a description');
 //       return;
 //     }
 
@@ -524,7 +578,11 @@ class _AddExpenditureScreenState extends State<AddExpenditureScreen> {
 //     setState(() => _isLoading = false);
 
 //     if (response.success) {
-//       CustomToaster.toastSuccess(context, 'Success', _isEditMode ? 'Expenditure updated successfully' : 'Expenditure added successfully');
+//       CustomToaster.toastSuccess(
+//         context,
+//         'Success',
+//         _isEditMode ? 'Expenditure updated successfully' : 'Expenditure added successfully',
+//       );
 //       Navigator.pop(context);
 //     } else {
 //       CustomToaster.toastError(context, 'Error', response.message);
@@ -535,6 +593,7 @@ class _AddExpenditureScreenState extends State<AddExpenditureScreen> {
 //   Widget build(BuildContext context) {
 //     return Scaffold(
 //       appBar: AppBar(
+//         backgroundColor: AppColors.backgroundLight,
 //         leading: IconButton(
 //           onPressed: () => Navigator.pop(context),
 //           icon: Image.asset(
@@ -584,8 +643,8 @@ class _AddExpenditureScreenState extends State<AddExpenditureScreen> {
 //                   _buildFormField(
 //                     label: 'Amount',
 //                     controller: _amountController,
-//                     keyboardType: TextInputType.number,
-//                     prefixText: '₦ ',
+//                     keyboardType: TextInputType.numberWithOptions(decimal: true),
+//                     prefixIcon: const NairaSvgIcon(color: AppColors.paymentTxtColor1, ),
 //                   ),
 //                   const SizedBox(height: 20),
 
@@ -593,10 +652,9 @@ class _AddExpenditureScreenState extends State<AddExpenditureScreen> {
 //                   _buildFormField(
 //                     label: 'Date',
 //                     controller: _dateController,
-//                     keyboardType: TextInputType.datetime,
+//                     readOnly: true,
 //                     suffixIcon: Icons.calendar_today,
-//                     onSuffixPressed: _selectDate,
-//                     readOnly: false,
+//                     onTap: _selectDate,
 //                   ),
 //                   const SizedBox(height: 20),
 
@@ -612,6 +670,7 @@ class _AddExpenditureScreenState extends State<AddExpenditureScreen> {
 //                     label: 'Account Type',
 //                     controller: _accountTypeController,
 //                     readOnly: true,
+//                     hintText: 'Select account',
 //                     onTap: () async {
 //                       final result = await Navigator.push(
 //                         context,
@@ -661,7 +720,9 @@ class _AddExpenditureScreenState extends State<AddExpenditureScreen> {
 //     IconData? suffixIcon,
 //     VoidCallback? onSuffixPressed,
 //     String? prefixText,
+//     String? hintText,
 //     TextInputType? keyboardType,
+//     Widget? prefixIcon,
 //   }) {
 //     return Column(
 //       crossAxisAlignment: CrossAxisAlignment.start,
@@ -678,6 +739,8 @@ class _AddExpenditureScreenState extends State<AddExpenditureScreen> {
 //           keyboardType: keyboardType,
 //           decoration: InputDecoration(
 //             prefixText: prefixText,
+//             prefixIcon: prefixIcon,
+//             hintText: hintText,
 //             suffixIcon: suffixIcon != null
 //                 ? IconButton(
 //                     icon: Icon(suffixIcon, color: AppColors.paymentTxtColor1),
