@@ -32,6 +32,8 @@ import 'package:linkschool/modules/providers/admin/student_provider.dart';
 import 'package:linkschool/modules/services/admin/behaviour_service.dart';
 import 'package:linkschool/modules/services/student/elearningcontent_service.dart';
 
+import '../../providers/student/comment_provider.dart';
+import '../student/comment_service.dart';
 import '../student/student_dasboard_service.dart';
 
 
@@ -133,6 +135,13 @@ void setupServiceLocator() {
   => ElearningContentService());
   locator.registerLazySingleton<SyllabusProvider>(
     () => SyllabusProvider(locator<SyllabusService>())
+  );
+  locator.registerLazySingleton<CommentService>(
+          () => CommentService(locator<ApiService>())
+  );
+
+  locator.registerLazySingleton<CommentProvider>(
+          () => CommentProvider(locator<CommentService>())
   );
 
 

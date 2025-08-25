@@ -38,6 +38,7 @@ import 'modules/providers/admin/registered_terms_provider.dart';
 import 'modules/providers/explore/game/game_provider.dart';
 import 'modules/providers/admin/grade_provider.dart';
 import 'modules/providers/student/dashboard_provider.dart';
+import 'modules/providers/student/comment_provider.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -96,6 +97,7 @@ Future<void> main() async {
         ChangeNotifierProvider(create: (_) => ViewCourseResultProvider()),
         ChangeNotifierProvider(create: (_) => DashboardProvider()),
         ChangeNotifierProvider(create: (_) => ElearningContentProvider()),
+        ChangeNotifierProvider(create: (_) => locator<CommentProvider>()),
 
       ],
       child: const MyApp(),

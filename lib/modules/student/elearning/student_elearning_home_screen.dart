@@ -196,7 +196,6 @@ class_id: getuserdata()['profile']['class_id'], level_id: getuserdata()['profile
     final courses = dashboardData!.availableCourses;
 final assessments=dashboardData!.recentQuizzes;
 
-
     final userName =getuserdata()['profile']['name'] ?? 'Guest'; // Use the logged-in user's name
 
     final Brightness brightness = Theme.of(context).brightness;

@@ -17,6 +17,8 @@ import '../../common/text_styles.dart';
 class AssessmentScreen extends StatefulWidget {
   final Duration? timer;
   final Duration? duration;
+  final String? quizTitle;
+
   final List<Question>? questions;
   final correctAnswer;
   const AssessmentScreen({
@@ -25,6 +27,7 @@ class AssessmentScreen extends StatefulWidget {
     this.questions,
     this.duration,
     this.correctAnswer,
+    this.quizTitle
   });
 
   @override
@@ -70,7 +73,7 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
             final List<dynamic> questionFiles = q.questionFiles ?? [];
 
             final String? imagePath = questionFiles.isNotEmpty
-                ? questionFiles[0]['file'] as String?
+                ? questionFiles[0]['file_name'] as String?
                 : null;
 
             final CorrectAnswer? correct = q.correct;
@@ -84,7 +87,7 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
                 imageUrl: imagePath,
                 options: options.map((opt) {
                   final String? optionImage = opt.optionFiles.isNotEmpty
-                      ? opt.optionFiles[0]['file'] as String?
+                      ? opt.optionFiles[0]['file_name'] as String?
                       : null;
 
                   return {
@@ -164,17 +167,8 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
       backgroundColor: AppColors.eLearningBtnColor1,
       appBar: AppBar(
         backgroundColor: AppColors.eLearningBtnColor1,
-        leading: IconButton(
-          onPressed: () => Navigator.of(context).pop(),
-          icon: Image.asset(
-            'assets/icons/arrow_back.png',
-            color: AppColors.backgroundLight,
-            width: 34.0,
-            height: 34.0,
-          ),
-        ),
-        title: const Text(
-          '2nd Continuous Assessment',
+        title:  Text(
+          widget.quizTitle ?? 'No title',
           style: TextStyle(color: Colors.white, fontSize: 16),
         ),
         elevation: 0,
@@ -268,7 +262,7 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
         children: [
           Row(
             children: [
-              Text('${_currentQuestionIndex + 1} of $_totalQuestions',
+              Text('${_currentQuestionIndex } of $_totalQuestions',
                   style: const TextStyle(color: Colors.white, fontSize: 16)),
               const SizedBox(width: 8),
               const Text('Completed',
@@ -279,7 +273,7 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
           ClipRRect(
             borderRadius: BorderRadius.circular(64),
             child: LinearProgressIndicator(
-              value: (_currentQuestionIndex + 1) / _totalQuestions,
+              value: (_currentQuestionIndex ) / _totalQuestions,
               backgroundColor: AppColors.eLearningContColor2,
               valueColor: const AlwaysStoppedAnimation<Color>(
                   AppColors.eLearningContColor3),
@@ -306,21 +300,56 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
         children: [
           const SizedBox(height: 8),
           if (question.imageUrl != null)
-            Image.memory(
-              base64Decode(question.imageUrl ?? ''),
-              height: 100,
-              width: double.infinity,
-              fit: BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) => Image.network(
-                networkImage,
-                height: 100,
-                width: 100,
-                fit: BoxFit.cover,
+            Padding(
+              padding: const EdgeInsets.fromLTRB(0,10,0,10),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(8.0),
+                child:
+                GestureDetector(
+                  onTap: (){
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => Scaffold(
+                          appBar: AppBar(
+                            leading: IconButton(
+                              icon: Icon(Icons.arrow_back),
+                              onPressed: () => Navigator.pop(context),
+                            ),
+                            title: Text("Image View"),
+                          ),
+                          body: Center(
+                            child: Image.network(
+                              'https://linkskool.net/${question.imageUrl}',
+                              height: double.infinity,
+                              width: double.infinity,
+                              fit: BoxFit.cover,
+                            ),
+                          ),
+                        ),
+                      ),
+                    );
 
-              )
+                  },
+                  child: Image.network(
+                      "https://linkskool.net/${  question.imageUrl!}",
+                      height: 100,
+
+                      width: double.infinity,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) => Image.network(
+                        networkImage,
+                        height: 100,
+                        width: 100,
+                        fit: BoxFit.cover,
+
+                      )
+                  ),
+                ),
+              ),
             ),
           const SizedBox(height: 8),
-          Text(question.questionText, style: TextStyle(fontSize: 20),),
+          Text(question.questionText, style: TextStyle(fontSize: 20,fontWeight: FontWeight.w700),),
           const SizedBox(height: 16),
           Expanded(child: _buildOptions(question)),
         ],
@@ -332,39 +361,83 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
     if (question is OptionsQuestion && question.options.isNotEmpty) {
       return ListView(
         children: question.options.map((option) {
-          return RadioListTile<String>(
-            title: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(option['text']),
-                if (option['imageUrl'] != null)
-                  Image.memory(
-                    base64Decode(option['imageUrl']),
-                    height: 50,
-                    width: 50,
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) => Image.asset(
-                      'assets/images/e-learning/placeholder.png',
-                      height: 50,
-                      width: 50,
-                      fit: BoxFit.cover,
-                    ),
-                  ),
-              ],
+          return Container(
+            margin: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 8.0),
+            decoration: BoxDecoration(
+              color: _getOptionColor(option['text']),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(
+                color: _selectedOption == option['text']
+                    ? Colors.blue
+                    : Colors.grey.shade300,
+                width: 1,
+              ),
             ),
-            value: option['text'],
-            groupValue: _selectedOption,
-            onChanged: (value) {
-              setState(() {
-                _selectedOption = value;
-                _isAnswered = true;
-                _isCorrect = question is TextQuestion &&
-                    (question as TextQuestion).correctAnswers.contains(value);
-                // Save user answer for this question
-                userAnswers[_currentQuestionIndex] = value;
-              });
-            },
-            tileColor: _getOptionColor(option['text']),
+            child: RadioListTile<String>(
+              title: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (option['imageUrl'] == null)
+                  Text(option['text'],style: TextStyle(fontWeight: FontWeight.w600),),
+                  if (option['imageUrl'] != null)
+
+                    GestureDetector(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => Scaffold(
+                              appBar: AppBar(
+                                leading: IconButton(
+                                  icon: Icon(Icons.arrow_back),
+                                  onPressed: () => Navigator.pop(context),
+                                ),
+                                title: Text("Image View"),
+                              ),
+                              body: Center(
+                                child: Image.network(
+                                  'https://linkskool.net/${option['imageUrl']}',
+                                  height: double.infinity,
+                                  width: double.infinity,
+                                  fit: BoxFit.cover,
+                                ),
+                              ),
+                            ),
+                          ),
+                        );
+
+                      },
+                      child: Image.network(
+                        'https://linkskool.net/${option['imageUrl']}',
+                        height: 60,
+                        width: double.infinity,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) => Image.network(
+                          'https://img.freepik.com/free-vector/gradient-human-rights-day-background_52683-149974.jpg',
+                          height: 100,
+                          width: 100,
+                          fit: BoxFit.contain,
+                        ),
+                      ),
+                    ),
+
+                ],
+              ),
+              value: option['text'],
+              groupValue: _selectedOption,
+              onChanged: (value) {
+                setState(() {
+                  _selectedOption = value;
+                  _isAnswered = true;
+                  _isCorrect = question is TextQuestion &&
+                      (question as TextQuestion).correctAnswers.contains(value);
+
+                  userAnswers[_currentQuestionIndex] = value;
+                });
+              },
+              activeColor: Colors.blue, // Radio color when selected
+              tileColor: Colors.transparent, // Let container handle color
+            ),
           );
         }).toList(),
       );
@@ -388,13 +461,13 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
   }
 
   Color _getOptionColor(String option) {
-    if (_selectedOption == option && _isAnswered) {
-      return _isCorrect
-          ? AppColors.eLearningBtnColor6
-          : AppColors.eLearningBtnColor7;
+    if (_selectedOption == option) {
+      // Highlight in blue if selected
+      return Colors.blue.shade100; // Or use your theme color
     }
     return Colors.transparent;
   }
+
 
   Widget _buildNavigationButtons() {
     bool isLastQuestion = _currentQuestionIndex == _totalQuestions - 1;
@@ -463,8 +536,8 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
       barrierDismissible: false,
       builder: (context) => Dialog.fullscreen(
         child: Scaffold(
-          appBar: AppBar(
-            leading: IconButton(
+          /*appBar: AppBar(
+            /*leading: IconButton(
               onPressed: () => Navigator.of(context).pop(),
               icon: Image.asset(
                 'assets/icons/arrow_back.png',
@@ -472,7 +545,7 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
                 width: 34.0,
                 height: 34.0,
               ),
-            ),
+            ),*/
             title: Text(
               'Quiz Completed',
               style: AppTextStyles.normal600(
@@ -502,7 +575,7 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
                 ],
               ),
             ),
-          ),
+          ),*/
           body: Container(
             decoration: Constants.customBoxDecoration(context),
             child: Container(
@@ -527,7 +600,10 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
                   CustomLongElevatedButton(
                     text: 'Back to Home',
                     onPressed: () {
-                      Navigator.of(context).popUntil((route) => route.isFirst);
+                      Navigator.of(context)
+                        ..pop()
+                        ..pop()
+                        ..pop();
                     },
                     backgroundColor: AppColors.eLearningContColor2,
                     textStyle: AppTextStyles.normal600(

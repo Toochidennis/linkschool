@@ -16,7 +16,6 @@ class DashboardService {
         : storedUserData;
     final response = processedData['response'] ?? processedData;
     final data = response['data'] ?? response;
-
     return data;
   }
   Future<DashboardData> getDashboardData(String classId, String levelId, String term) async {
@@ -24,8 +23,7 @@ class DashboardService {
       final userBox = Hive.box('userData');
       final token = userBox.get('token');
       final dbName = userBox.get('_db') ?? 'aalmgzmy_linkskoo_practice';
-      final studentid = getuserdata()['profile']['staff_id'];
-
+      final studentid = getuserdata()['profile']['student_id'];
       if (token == null) {
         throw Exception("Authentication token is missing.");
       }

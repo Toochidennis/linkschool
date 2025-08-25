@@ -51,6 +51,7 @@ class _CourseContentScreenState extends State<CourseContentScreen> {
     final provider = Provider.of<ElearningContentProvider>(context, listen: false);
     final data = await provider.fetchElearningContentData(
     );
+
     setState(() {
       elearningContentData = data;
       isLoading = false;
@@ -59,8 +60,14 @@ class _CourseContentScreenState extends State<CourseContentScreen> {
 
   @override
   Widget build(BuildContext context) {
+    if ( elearningContentData == null) {
+      return const Scaffold(
+        body: Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
 
-    final activities= elearningContentData?[0].title;
 
     String termString = getTermString(getuserdata()['settings']['term']);
     String sessionString = deduceSession(widget.dashboardData.recentActivities.last.datePosted);
@@ -170,7 +177,7 @@ class _CourseContentScreenState extends State<CourseContentScreen> {
                 onTap:(){
                   Navigator.push(
                     context,MaterialPageRoute(
-                    builder: (context) => AssignmentDetailsScreen(childContent: child,),),
+                    builder: (context) => AssignmentDetailsScreen(childContent: child, title: e.title, id: e.id ?? 0),),
                   );
                 }
             );
@@ -309,7 +316,7 @@ class _CourseContentScreenState extends State<CourseContentScreen> {
                           onTap:(){
                             Navigator.push(
                               context,MaterialPageRoute(
-                              builder: (context) => AssignmentDetailsScreen(childContent: child,),),
+                              builder: (context) => AssignmentDetailsScreen(childContent: child, title: e.title, id: e.id!),),
                             );
                           }
                       );

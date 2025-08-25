@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:hive/hive.dart';
 import 'package:intl/intl.dart';
 import 'package:linkschool/modules/student/elearning/quiz_page.dart';
 
@@ -35,10 +36,9 @@ class QuizIntroPage extends StatelessWidget {
     if (child.settings!=null){
       try {
         final int seconds = int.tryParse(child.settings!.duration) ?? 0;
-        final int minutes = seconds ~/ 60;
-        final int remainingSeconds = seconds % 60;
+        final int minutes = seconds % 60;
 
-        return '$minutes min ${remainingSeconds}s';
+        return '$minutes minutes';
       } catch (e) {
         return 'Invalid Form';
       }
@@ -113,7 +113,7 @@ class QuizIntroPage extends StatelessWidget {
 
                     // Quiz title
                     Text(
-                      "2nd Continuous Assessment Test",
+                      "${childContent.settings!.title}",
                       style: TextStyle(
                         color: Color(0xFF1E50C1),
                         fontSize: 18,
@@ -150,12 +150,43 @@ class QuizIntroPage extends StatelessWidget {
                     Center(
                       child: ElevatedButton(
                         onPressed: () {
-                          Navigator.push(
-                            context,MaterialPageRoute(
+                          final userBox = Hive.box('userData');
+                          final List<dynamic> quizzesTaken = userBox.get('quizzes', defaultValue: []);
+                          final int quizId = childContent.settings!.id;
 
-                            builder: (context) => AssessmentScreen(questions: childContent.questions,),),
-                          );
-                        },
+                          if (!quizzesTaken.contains(quizId)) {
+                            showDialog(
+                              context: context,
+                              builder: (context) => AlertDialog(
+                                title: Text("Quiz Already Taken"),
+                                content: Text("You've already taken this quiz."),
+                                actions: [
+                                  TextButton(
+                                    child: Text("OK"),
+                                    onPressed: () => Navigator.pop(context),
+                                  )
+                                ],
+                              ),
+                            );
+                          } else {
+                            // Add quizId to Hive
+                            quizzesTaken.add(quizId);
+                            userBox.put('quizzes', quizzesTaken);
+
+                            // Navigate to quiz screen
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => AssessmentScreen(
+                                  questions: childContent.questions,
+                                  duration: Duration(minutes: int.tryParse(childContent.settings!.duration) ?? 0),
+                                  quizTitle: childContent.settings!.title,
+                                ),
+                              ),
+                            );
+                          }
+                        }
+,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.paymentTxtColor1,
                           padding: EdgeInsets.symmetric(horizontal: 40, vertical: 16),
