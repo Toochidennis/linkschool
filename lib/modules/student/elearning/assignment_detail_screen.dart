@@ -10,8 +10,10 @@ import 'package:linkschool/modules/model/student/comment_model.dart';
 
 import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
+import 'package:linkschool/modules/student/elearning/pdf_reader.dart';
 import 'package:provider/provider.dart';
 import 'package:skeletonizer/skeletonizer.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../common/custom_toaster.dart';
 import '../../common/widgets/portal/attachmentItem.dart';
@@ -165,51 +167,110 @@ class _AssignmentDetailsScreenState extends State<AssignmentDetailsScreen> {
                 children: [
                   Expanded(
                     child: Container(
-                      height: 100, // Increased height to accommodate the layout
-                      color: Colors.blue.shade100,
                       child: Column(
                         children: [
-                          Expanded(
-                            flex: 2, // Takes up 75% of the container
-                            child: Image.network(
-                              networkImage,
-                              fit: BoxFit.cover,
-                              width: double.infinity,
-                            ),
-                          ),
-                          const Expanded(
-                            flex: 2, // Takes up 25% of the container
-                            child: Padding(
-                              padding: EdgeInsets.symmetric(horizontal: 8.0),
-                              child: Row(
-                                children: [
-                                  Icon(Icons.link, color: Colors.blue),
-                                  SizedBox(width: 8),
-                                  Expanded(
-                                    child: Text(
-                                      'https://jdidlf.com.ng...',
-                                      overflow: TextOverflow.ellipsis,
+                          ListView.builder(
+                            shrinkWrap: true,
+                            physics: const NeverScrollableScrollPhysics(),
+                            itemCount: widget.childContent.contentFiles?.length ?? 0,
+                            itemBuilder: (context, index) {
+                              final file = widget.childContent.contentFiles![index];
+                              if (file.type == "url") {
+                                // Case 1: URL → clickable link
+                                return Column(
+                                  children: [
+                                    Container(
+                                      height: 100, // Increased height to accommodate the layout
+                                      color: Colors.blue.shade100,
+                                      child: Center(
+                                        child: InkWell(
+                                          onTap: () async {
+                                            final uri = Uri.parse(file.file);
+                                            if (await canLaunchUrl(uri)) {
+                                              await launchUrl(uri, mode: LaunchMode.externalApplication);
+                                            }
+                                          },
+                                          child: Row(
+                                            children: [
+                                              Icon(Icons.link, color: Colors.blue),
+                                              SizedBox(width: 8,),
+                                              Text(
+                                                overflow: TextOverflow.ellipsis,
+                                                file.file,
+                                                style: const TextStyle(
+                                                  color: Colors.blue,
+                                                  decoration: TextDecoration.underline,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ),
                                     ),
-                                  ),
-                                ],
-                              ),
-                            ),
+                                    const SizedBox(height: 10),
+
+                                  ],
+                                );
+                              }
+
+                              else if (file.type == "image" || file.type == "photo" ) {
+                                // Case 2: Image → render image
+                                return Column(
+                                  children: [
+                                    Padding(
+                                      padding: const EdgeInsets.only(bottom: 8.0),
+                                      child: Image.network(
+                                        "https://linkskool.net/${file.file}",
+                                        fit: BoxFit.cover,
+                                        width: double.infinity,
+                                        errorBuilder: (context, error, stackTrace) =>
+                                        const Text("Failed to load image"),
+                                      ),
+                                    ),
+                                    const SizedBox(height: 10),
+
+                                  ],
+                                );
+                              }
+                              else if (file.type == "pdf" ) {
+
+                                return Column(
+                                  children: [
+                                    IconButton(onPressed: (){
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (_) => PdfViewerPage(url:"https://linkskool.net/${file.fileName}"),
+                                        ),
+                                      );
+                                    }, icon:  Icon(Icons.picture_as_pdf, size: 36)),                                      const SizedBox(height: 10),
+                                    const SizedBox(height: 10),
+
+                                  ],
+                                );
+                              }
+                              else {
+                                // Case 3: Unknown type → show error
+                                return Column(
+                                  children: [
+                                    const Text(
+                                      "Error rendering content",
+                                      style: TextStyle(color: Colors.red),
+                                    ),
+                                    const SizedBox(height: 10),
+
+                                  ],
+                                );
+
+                              }
+                            },
                           ),
+
                         ],
                       ),
                     ),
                   ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(8),
-                      child: Image.network(
-                        networkImage,
-                        fit: BoxFit.cover,
-                        height: 100,
-                      ),
-                    ),
-                  ),
+
                 ],
               ),
               const Spacer(),
