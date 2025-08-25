@@ -224,58 +224,6 @@ class _AttachmentPreviewScreenState extends State<AttachmentPreviewScreen> {
               const SizedBox(height: 16),
               // Two-column attachment layout
              const SizedBox(height: 24),
-              Row(
-                children: [
-                  Expanded(
-                    child: Container(
-                      height: 100, // Increased height to accommodate the layout
-                      color: Colors.blue.shade100,
-                      child: Column(
-                        children: [
-                          Expanded(
-                            flex: 2, // Takes up 75% of the container
-                            child: Image.network(
-                              networkImage,
-                              fit: BoxFit.cover,
-                              width: double.infinity,
-                            ),
-                          ),
-                          const Expanded(
-                            flex: 2, // Takes up 25% of the container
-                            child: Padding(
-                              padding: EdgeInsets.symmetric(horizontal: 8.0),
-                              child: Row(
-                                children: [
-                                  Icon(Icons.link, color: Colors.blue),
-                                  SizedBox(width: 8),
-                                  Expanded(
-                                    child: Text(
-                                      'https://jdidlf.com.ng...',
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(8),
-                      child: Image.network(
-                        networkImage,
-                        fit: BoxFit.cover,
-                        height: 100,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
               // Custom Comment Input Field
               _buildCommentInput(),
               // Comments section
