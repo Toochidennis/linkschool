@@ -247,11 +247,10 @@ class _AttachmentPreviewScreenState extends State<AttachmentPreviewScreen> {
                   final List<Map<String, dynamic>> files = _attachments.map((attachment) {
                     return {
                       "file_name": attachment.fileName,
-                      "type": attachment.type?? "pdf", // or attachment.type if you want it dynamic
-                      "file": attachment.file , // assuming this is already base64 string
+                      "type": attachment.type?? "pdf",
+                      "file": attachment.file ,
                     };
                   }).toList();
-                  print("Pressed ${files[0]['type']}");
                   Map<String, dynamic> assignmentPayload = {
                     "assignment_id": widget.childContent?.id,
                     "student_id": getuserdata()['profile']['student_id'],

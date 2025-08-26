@@ -154,7 +154,7 @@ class QuizIntroPage extends StatelessWidget {
                           final List<dynamic> quizzesTaken = userBox.get('quizzes', defaultValue: []);
                           final int quizId = childContent.settings!.id;
 
-                          if (!quizzesTaken.contains(quizId)) {
+                          if (quizzesTaken.contains(quizId)) {
                             showDialog(
                               context: context,
                               builder: (context) => AlertDialog(
@@ -178,6 +178,7 @@ class QuizIntroPage extends StatelessWidget {
                               context,
                               MaterialPageRoute(
                                 builder: (context) => AssessmentScreen(
+                                  childContent: childContent,
                                   questions: childContent.questions,
                                   duration: Duration(minutes: int.tryParse(childContent.settings!.duration) ?? 0),
                                   quizTitle: childContent.settings!.title,

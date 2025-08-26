@@ -4,7 +4,10 @@ import 'dart:convert';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:hive/hive.dart';
 import 'package:linkschool/modules/model/student/elearningcontent_model.dart';
+import 'package:linkschool/modules/model/student/quiz_submission_model.dart';
+import 'package:linkschool/modules/services/student/quiz_submission_service.dart';
 
 import '../../admin/e_learning/View/question/timer_widget.dart';
 import '../../common/app_colors.dart';
@@ -18,7 +21,7 @@ class AssessmentScreen extends StatefulWidget {
   final Duration? timer;
   final Duration? duration;
   final String? quizTitle;
-
+final ChildContent? childContent;
   final List<Question>? questions;
   final correctAnswer;
   const AssessmentScreen({
@@ -27,7 +30,8 @@ class AssessmentScreen extends StatefulWidget {
     this.questions,
     this.duration,
     this.correctAnswer,
-    this.quizTitle
+    this.quizTitle,
+    this.childContent
   });
 
   @override
@@ -62,7 +66,17 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
     int remainingSeconds = seconds % 60;
     return '${hours.toString().padLeft(2, '0')}:${minutes.toString().padLeft(2, '0')}:${remainingSeconds.toString().padLeft(2, '0')}';
   }
-
+  getuserdata(){
+    final userBox = Hive.box('userData');
+    final storedUserData =
+        userBox.get('userData') ?? userBox.get('loginResponse');
+    final processedData = storedUserData is String
+        ? json.decode(storedUserData)
+        : storedUserData;
+    final response = processedData['response'] ?? processedData;
+    final data = response['data'] ?? response;
+    return data;
+  }
   Future<void> _loadQuestions() async {
     try {
       if (widget.questions != null && widget.questions!.isNotEmpty) {
@@ -530,95 +544,93 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
     _isCorrect = false;
   }
 
-  void _submitQuiz() {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => Dialog.fullscreen(
-        child: Scaffold(
-          /*appBar: AppBar(
-            /*leading: IconButton(
-              onPressed: () => Navigator.of(context).pop(),
-              icon: Image.asset(
-                'assets/icons/arrow_back.png',
-                color: AppColors.primaryLight,
-                width: 34.0,
-                height: 34.0,
-              ),
-            ),*/
-            title: Text(
-              'Quiz Completed',
-              style: AppTextStyles.normal600(
-                fontSize: 24.0,
-                color: AppColors.primaryLight,
-              ),
-            ),
-            actions: [
-              IconButton(
-                icon: const Icon(Icons.more_vert),
-                onPressed: () {},
-              ),
-            ],
-            backgroundColor: AppColors.backgroundLight,
-            flexibleSpace: FlexibleSpaceBar(
-              background: Stack(
-                children: [
-                  Positioned.fill(
-                    child: Opacity(
-                      opacity: opacity,
-                      child: Image.asset(
-                        'assets/images/background.png',
-                        fit: BoxFit.cover,
-                      ),
+  Future<void> _submitQuiz() async {
+    print(widget.questions);
+    final List<Map<String, dynamic>> answers = widget.questions!.asMap().entries.map((entry) {
+      int index = entry.key;
+      var q = entry.value;
+      return {
+        "question_id": q.questionId,
+        "question": q.questionText,
+        "correct": q.correct.text,
+        "answer": userAnswers[index] ?? "Blank",
+        "type": q.questionType
+      };
+    }).toList();
+    QuizSubmissionService service = QuizSubmissionService();
+    Map<String, dynamic> quizpayload = {
+      "quiz_id": widget.childContent?.id ?? 0,
+      "student_id": getuserdata()['profile']['student_id'],
+      "student_name":getuserdata()['profile']['name'] ,
+      "answers":answers,
+      "mark": 0,
+      "score": 0,
+      "level_id": getuserdata()['profile']['level_id'],
+      "course_id": widget.childContent?.id ?? 0,
+      "class_id": getuserdata()['profile']['class_id'],
+      "course_name":widget.childContent!.title?? "No title",
+      "class_name": (widget.childContent?.classes != null && widget.childContent!.classes!.isNotEmpty)
+          ? widget.childContent!.classes![0].name  : "No class name",
+      "term": getuserdata()['settings']['term'],
+      "year": int.parse(getuserdata()['settings']['year']),
+      "_db": "aalmgzmy_linkskoo_practice"
+    };
+
+    bool success = await service.submitAssignment(QuizSubmissionModel.fromJson(quizpayload));
+    if (success){
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => Dialog.fullscreen(
+          child: Scaffold(
+            body: Container(
+              decoration: Constants.customBoxDecoration(context),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Text(
+                      'Good Job!',
+                      style: AppTextStyles.normal600(
+                          fontSize: 34, color: AppColors.eLearningContColor2),
                     ),
-                  )
-                ],
-              ),
-            ),
-          ),*/
-          body: Container(
-            decoration: Constants.customBoxDecoration(context),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Text(
-                    'Good Job!',
-                    style: AppTextStyles.normal600(
-                        fontSize: 34, color: AppColors.eLearningContColor2),
-                  ),
-                  Text(
-                    'Your test has been recorded and will be marked by your tutor soon.',
-                    style: AppTextStyles.normal500(
-                        fontSize: 18, color: AppColors.textGray),
-                  ),
-                  const SizedBox(
-                    height: 48.0,
-                  ),
-                  CustomLongElevatedButton(
-                    text: 'Back to Home',
-                    onPressed: () {
-                      Navigator.of(context)
-                        ..pop()
-                        ..pop()
-                        ..pop();
-                    },
-                    backgroundColor: AppColors.eLearningContColor2,
-                    textStyle: AppTextStyles.normal600(
-                        fontSize: 22, color: AppColors.backgroundLight),
-                  ),
-                  const SizedBox(
-                    height: 16.0,
-                  ),
-                ],
+                    Text(
+                      'Your test has been recorded and will be marked by your tutor soon.',
+                      style: AppTextStyles.normal500(
+                          fontSize: 18, color: AppColors.textGray),
+                    ),
+                    const SizedBox(
+                      height: 48.0,
+                    ),
+                    CustomLongElevatedButton(
+                      text: 'Back to Home',
+                      onPressed: () {
+                        Navigator.of(context)
+                          ..pop()
+                          ..pop()
+                          ..pop();
+                      },
+                      backgroundColor: AppColors.eLearningContColor2,
+                      textStyle: AppTextStyles.normal600(
+                          fontSize: 22, color: AppColors.backgroundLight),
+                    ),
+                    const SizedBox(
+                      height: 16.0,
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
         ),
-      ),
-    );
+      );
+    }
+    else{
+      print("E no goooo ");
+    }
+
   }
 }
 
