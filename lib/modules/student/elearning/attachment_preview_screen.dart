@@ -725,7 +725,7 @@ Future<void> _takePhoto() async {
         "comment": _commentController.text,
         "level_id": widget.childContent?.classes?[0].id,
         "course_id": 25,
-        "course_name": "widget.courseName",
+        "course_name": widget.childContent!.title?? "No couresname",
         "term": academicTerm,
         if (_isEditing == true && _editingComment != null)
           "content_id": widget.childContent?.id.toString() , // Use the ID of the comment being edited

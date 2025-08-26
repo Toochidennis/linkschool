@@ -172,7 +172,6 @@ class QuizIntroPage extends StatelessWidget {
                             // Add quizId to Hive
                             quizzesTaken.add(quizId);
                             userBox.put('quizzes', quizzesTaken);
-
                             // Navigate to quiz screen
                             Navigator.push(
                               context,

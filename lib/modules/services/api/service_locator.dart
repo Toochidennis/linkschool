@@ -13,6 +13,7 @@ import 'package:linkschool/modules/providers/admin/e_learning/topic_provider.dar
 
 import 'package:linkschool/modules/providers/admin/grade_provider.dart';
 import 'package:linkschool/modules/providers/admin/skills_behavior_table_provider.dart';
+import 'package:linkschool/modules/providers/student/streams_provider.dart';
 import 'package:linkschool/modules/services/admin/attendance_service.dart';
 import 'package:linkschool/modules/services/admin/e_learning/assignment_service.dart';
 import 'package:linkschool/modules/services/admin/e_learning/material_service.dart';
@@ -31,6 +32,7 @@ import 'package:linkschool/modules/services/admin/assessment_service.dart';
 import 'package:linkschool/modules/providers/admin/student_provider.dart';
 import 'package:linkschool/modules/services/admin/behaviour_service.dart';
 import 'package:linkschool/modules/services/student/elearningcontent_service.dart';
+import 'package:linkschool/modules/services/student/streams_service.dart';
 
 import '../../providers/student/comment_provider.dart';
 import '../student/comment_service.dart';
@@ -144,6 +146,12 @@ void setupServiceLocator() {
           () => CommentProvider(locator<CommentService>())
   );
 
+  locator.registerLazySingleton<StreamsService>(
+          () => StreamsService(locator<ApiService>())
+  );
+  locator.registerLazySingleton<StreamsProvider>(
+          () => StreamsProvider(locator<StreamsService>())
+  );
 
 
 

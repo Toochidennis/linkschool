@@ -28,6 +28,7 @@ import 'package:linkschool/modules/providers/explore/for_you_provider.dart';
 import 'package:linkschool/modules/providers/explore/home/news_provider.dart';
 import 'package:linkschool/modules/providers/explore/subject_provider.dart';
 import 'package:linkschool/modules/providers/student/elearningcontent_provider.dart';
+import 'package:linkschool/modules/providers/student/streams_provider.dart';
 import 'package:linkschool/modules/services/admin/e_learning/syllabus_content_service.dart';
 import 'package:linkschool/modules/services/explore/cbt_service.dart';
 import 'package:linkschool/routes/onboardingScreen.dart';
@@ -97,6 +98,8 @@ Future<void> main() async {
         ChangeNotifierProvider(create: (_) => ViewCourseResultProvider()),
         ChangeNotifierProvider(create: (_) => DashboardProvider()),
         ChangeNotifierProvider(create: (_) => ElearningContentProvider()),
+        ChangeNotifierProvider(create: (_) => locator<StreamsProvider>()),
+
         ChangeNotifierProvider(create: (_) => locator<CommentProvider>()),
 
       ],
