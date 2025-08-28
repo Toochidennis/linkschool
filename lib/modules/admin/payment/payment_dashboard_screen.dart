@@ -132,7 +132,7 @@ class _PaymentDashboardScreenState extends State<PaymentDashboardScreen> {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              _buildInfoContainer('Received', '234,790.00',
+                              _buildInfoContainer('Received', '114,790.00',
                                   () {
                                 Navigator.push(
                                   context,

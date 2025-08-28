@@ -58,7 +58,7 @@ class _FeeSettingDetailsScreenState extends State<FeeSettingDetailsScreen> {
 
       final apiService = locator<ApiService>();
       final response = await apiService.get<List<Map<String, dynamic>>>(
-        endpoint: 'portal/payments/next-term-fees',
+        endpoint: 'portal/payments/invoices',
         queryParams: {
           'year': year,
           'term': term,
@@ -269,7 +269,7 @@ class _FeeSettingDetailsScreenState extends State<FeeSettingDetailsScreen> {
       };
 
       final response = await apiService.post(
-        endpoint: 'portal/payments/next-term-fees',
+        endpoint: 'portal/payments/invoices',
         body: payload,
         addDatabaseParam: false,
       );
