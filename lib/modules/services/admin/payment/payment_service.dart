@@ -116,7 +116,7 @@ class PaymentService {
     required String reference,
     required String regNo,
     required String name,
-    required List<InvoiceDetail> fees,
+    required List<InvoiceDetail> invoice_details,
     required double amount,
     required int classId,
     required int levelId,
@@ -129,7 +129,7 @@ class PaymentService {
         'reference': reference,
         'reg_no': regNo,
         'name': name,
-        'fees': fees.map((fee) => {
+        'fees': invoice_details.map((fee) => {
           'fee_id': int.tryParse(fee.feeId) ?? 0,
           'fee_name': fee.feeName,
           'amount': fee.amount,

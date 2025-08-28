@@ -416,7 +416,7 @@ class _PaymentBottomSheetState extends State<_PaymentBottomSheet> {
         reference: _referenceController.text,
         regNo: widget.student.regNo,
         name: widget.student.name,
-        fees: widget.fees,
+        invoice_details: widget.fees,
         amount: widget.totalAmount,
         classId: widget.student.classId,
         levelId: widget.student.levelId,
