@@ -19,6 +19,7 @@ import 'receipt/receipt_screen.dart';
 import 'settings/payment_setting_screen.dart';
 
 
+
 class PaymentDashboardScreen extends StatefulWidget {
   final VoidCallback onLogout;
 
@@ -38,8 +39,30 @@ class _PaymentDashboardScreenState extends State<PaymentDashboardScreen> {
   @override
   void initState() {
     super.initState();
-    _paymentService = PaymentService(ApiService());
+    _initializeServices();
     _loadDashboardData();
+  }
+
+  void _initializeServices() {
+    try {
+      final userBox = Hive.box('userData');
+      final token = userBox.get('token');
+      
+      if (token == null || token.toString().isEmpty) {
+        print('No authentication token found. User needs to login again.');
+        // Optionally redirect to login screen
+        return;
+      }
+      
+      final apiService = ApiService();
+      apiService.setAuthToken(token.toString());
+      _paymentService = PaymentService(apiService);
+      
+      print('ApiService initialized with authentication token');
+    } catch (e) {
+      print('Error initializing services: $e');
+      // Handle error - maybe show error dialog or redirect to login
+    }
   }
 
   Future<void> _loadDashboardData() async {

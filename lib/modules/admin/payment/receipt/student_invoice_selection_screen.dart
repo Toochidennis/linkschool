@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
+import 'package:hive/hive.dart';
 import '../../../common/app_colors.dart';
 import '../../../common/constants.dart';
 import '../../../common/text_styles.dart';
@@ -8,6 +9,7 @@ import '../../../model/admin/payment_models.dart';
 import '../../../services/admin/payment/payment_service.dart';
 import '../../../services/api/api_service.dart';
 import 'student_payment_detail_screen.dart';
+
 
 class StudentInvoiceSelectionScreen extends StatefulWidget {
   final UnpaidStudent student;
@@ -28,7 +30,27 @@ class _StudentInvoiceSelectionScreenState extends State<StudentInvoiceSelectionS
   @override
   void initState() {
     super.initState();
-    _paymentService = PaymentService(ApiService());
+    _initializeServices();
+  }
+
+  void _initializeServices() {
+    try {
+      final userBox = Hive.box('userData');
+      final token = userBox.get('token');
+      
+      if (token == null || token.toString().isEmpty) {
+        print('No authentication token found. User needs to login again.');
+        return;
+      }
+      
+      final apiService = ApiService();
+      apiService.setAuthToken(token.toString());
+      _paymentService = PaymentService(apiService);
+      
+      print('ApiService initialized with authentication token');
+    } catch (e) {
+      print('Error initializing services: $e');
+    }
   }
 
   @override
@@ -233,3 +255,4 @@ class _StudentInvoiceSelectionScreenState extends State<StudentInvoiceSelectionS
     );
   }
 }
+

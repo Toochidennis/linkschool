@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
+import 'package:hive/hive.dart';
 
 import '../../../common/app_colors.dart';
 import '../../../common/constants.dart';
@@ -9,14 +10,8 @@ import '../../../common/widgets/portal/profile/naira_icon.dart';
 import '../../../model/admin/payment_models.dart';
 import '../../../services/admin/payment/payment_service.dart';
 import '../../../services/api/api_service.dart';
-// import '../models/payment_models.dart';
-// import '../services/payment_service.dart';
-// import '../services/api_service.dart';
-// import '../common/app_colors.dart';
-// import '../common/constants.dart';
-// import '../common/text_styles.dart';
-// import '../common/widgets/portal/profile/naira_icon.dart';
-// import '../utils/custom_toaster.dart';
+
+
 
 class StudentPaymentDetailScreen extends StatefulWidget {
   final UnpaidStudent student;
@@ -40,7 +35,27 @@ class _StudentPaymentDetailScreenState extends State<StudentPaymentDetailScreen>
   @override
   void initState() {
     super.initState();
-    _paymentService = PaymentService(ApiService());
+    _initializeServices();
+  }
+
+  void _initializeServices() {
+    try {
+      final userBox = Hive.box('userData');
+      final token = userBox.get('token');
+      
+      if (token == null || token.toString().isEmpty) {
+        print('No authentication token found. User needs to login again.');
+        return;
+      }
+      
+      final apiService = ApiService();
+      apiService.setAuthToken(token.toString());
+      _paymentService = PaymentService(apiService);
+      
+      print('ApiService initialized with authentication token');
+    } catch (e) {
+      print('Error initializing services: $e');
+    }
   }
 
   @override
@@ -299,6 +314,7 @@ class _StudentPaymentDetailScreenState extends State<StudentPaymentDetailScreen>
           invoice: widget.invoice,
           fees: activeFees,
           totalAmount: totalAmount,
+          paymentService: _paymentService,
           onPaymentSuccess: () {
             Navigator.pop(context); // Close bottom sheet
             Navigator.pop(context); // Go back to previous screen
@@ -327,6 +343,7 @@ class _PaymentBottomSheet extends StatefulWidget {
   final UnpaidInvoice invoice;
   final List<InvoiceDetail> fees;
   final double totalAmount;
+  final PaymentService paymentService;
   final VoidCallback onPaymentSuccess;
   final Function(String) onPaymentError;
 
@@ -335,6 +352,7 @@ class _PaymentBottomSheet extends StatefulWidget {
     required this.invoice,
     required this.fees,
     required this.totalAmount,
+    required this.paymentService,
     required this.onPaymentSuccess,
     required this.onPaymentError,
   });
@@ -349,12 +367,10 @@ class _PaymentBottomSheetState extends State<_PaymentBottomSheet> {
   final TextEditingController _dateController = TextEditingController();
   DateTime? _selectedDate;
   bool _isProcessing = false;
-  late PaymentService _paymentService;
 
   @override
   void initState() {
     super.initState();
-    _paymentService = PaymentService(ApiService());
     _amountController.text = widget.totalAmount.toStringAsFixed(2);
     _selectedDate = DateTime.now();
     _dateController.text = "${_selectedDate!.day}/${_selectedDate!.month}/${_selectedDate!.year}";
@@ -395,7 +411,7 @@ class _PaymentBottomSheetState extends State<_PaymentBottomSheet> {
     setState(() => _isProcessing = true);
 
     try {
-      final success = await _paymentService.makePayment(
+      final success = await widget.paymentService.makePayment(
         invoiceId: widget.invoice.id.toString(),
         reference: _referenceController.text,
         regNo: widget.student.regNo,
@@ -545,6 +561,8 @@ class _PaymentBottomSheetState extends State<_PaymentBottomSheet> {
     );
   }
 }
+
+
 
 
 
