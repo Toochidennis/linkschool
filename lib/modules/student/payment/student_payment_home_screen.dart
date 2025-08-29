@@ -143,7 +143,9 @@ class _StudentPaymentHomeScreenState extends State<StudentPaymentHomeScreen>
       body: RefreshIndicator(
         onRefresh: _refreshData,
         child: SingleChildScrollView(
-          physics: const AlwaysScrollableScrollPhysics(),
+         physics: const BouncingScrollPhysics(
+              parent: AlwaysScrollableScrollPhysics(),
+            ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
