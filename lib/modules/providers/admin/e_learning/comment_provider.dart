@@ -5,6 +5,7 @@ import 'package:linkschool/modules/services/admin/e_learning/comment_service.dar
 class CommentProvider with ChangeNotifier {
   final CommentService _commentService;
   List<Comment> comments = [];
+  
   bool isLoading = false;
   String? message;
   String? error;
@@ -72,6 +73,24 @@ class CommentProvider with ChangeNotifier {
     message = null;
     try {
       await _commentService.updateComment(commentData, contentId);
+      message = "Comment updated successfully.";
+      return true;
+    } catch (e) {
+      error = "Failed to update comment: $e";
+      return false;
+    } finally {
+      isLoading = false;
+      notifyListeners();
+    }
+  }
+  Future<bool>DeleteComment(String commentId) async {
+    isLoading = true;
+    notifyListeners();
+    error = null;
+    message = null;
+    try {
+      await _commentService.deleteComment(commentId);
+       comments.removeWhere((c) => c.id.toString() == commentId);
       message = "Comment updated successfully.";
       return true;
     } catch (e) {

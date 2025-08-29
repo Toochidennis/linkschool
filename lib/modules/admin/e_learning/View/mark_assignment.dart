@@ -1,14 +1,17 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter_pdfview/flutter_pdfview.dart';
 import 'package:intl/intl.dart';
 import 'package:linkschool/modules/common/pdf_reader.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:hive/hive.dart';
-
+import 'package:http/http.dart' as http;
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/common/custom_toaster.dart';
-import 'package:linkschool/modules/providers/admin/e_learning/comment_provider.dart';
+
 import 'package:linkschool/modules/providers/admin/e_learning/mark_assignment_provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -25,7 +28,7 @@ class AssignmentGradingScreen extends StatefulWidget {
   final DateTime turnedInAt;
   final int maxScore;                // e.g. 100
   final int? currentScore;           // nullable, if ungraded
-  final String submissionId;         // backend id for this submission
+  final String assignmentId;         // backend id for this submission
   final List<dynamic> files;  // attachments
   final String itemId;              // assignment id
   const AssignmentGradingScreen({
@@ -34,7 +37,7 @@ class AssignmentGradingScreen extends StatefulWidget {
     required this.studentName,
     required this.turnedInAt,
     required this.maxScore,
-    required this.submissionId,
+    required this.assignmentId,
     required this.files,
     this.currentScore, required this.itemId,
   });
@@ -98,7 +101,7 @@ class _AssignmentGradingScreenState extends State<AssignmentGradingScreen> {
           color: AppColors.paymentTxtColor1,
         ),
         title: Text(
-          widget.assignmentTitle,
+            "Assignment",
           overflow: TextOverflow.ellipsis,
           style: AppTextStyles.normal600(
             fontSize: 20,
@@ -131,18 +134,15 @@ class _AssignmentGradingScreenState extends State<AssignmentGradingScreen> {
           const SizedBox(height: 16),
           _SubmissionPreview(files: widget.files),
           const SizedBox(height: 24),
-          _PrivateComments(
-            controller: _privateCommentCtrl,
-            onSend: _handleSendPrivateComment,
-          ),
+      
         ],
       ),
     ),
 
-    // This stays at the bottom, but is part of body not bottomNavigationBar
     SafeArea(
       minimum: const EdgeInsets.fromLTRB(16, 8, 16, 16),
       child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
           _GradeBox(
             controller: _scoreCtrl,
@@ -153,22 +153,27 @@ class _AssignmentGradingScreenState extends State<AssignmentGradingScreen> {
             focusNode: _scoreFocusNode,
           ),
           const SizedBox(width: 12),
-          Expanded(
-            child: SizedBox(
-              height: 44,
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.paymentTxtColor1,
-                  foregroundColor: AppColors.backgroundLight,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
-                ),
-                onPressed: _returning ? null : _handleReturnWithGrade,
-                child: _returning
-                    ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2))
-                    : const Text('Return'),
-              ),
-            ),
-          ),
+         SizedBox(
+           height: 40, 
+           width: 80,
+           child: ElevatedButton(
+         style: ElevatedButton.styleFrom(
+           fixedSize: const Size(80, 40),           // 👈 exact size
+           backgroundColor: AppColors.paymentTxtColor1,
+           foregroundColor: AppColors.backgroundLight,
+           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+           padding: EdgeInsets.zero,                // avoid extra growth
+           tapTargetSize: MaterialTapTargetSize.shrinkWrap, // reduce default tap target
+         ),
+         onPressed: _returning ? null : _handleReturnWithGrade,
+         child: _returning
+             ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2))
+             : const Text('Return'),
+         )
+         
+         
+         ),
+      
         ],
       ),
     ),
@@ -178,29 +183,7 @@ class _AssignmentGradingScreenState extends State<AssignmentGradingScreen> {
     );
   }
 
-  Future<void> _handleSendPrivateComment() async {
-    final text = _privateCommentCtrl.text.trim();
-    if (text.isEmpty) {
-      CustomToaster.toastError(context, 'Oops', 'Private comment cannot be empty');
-      return;
-    }
 
-    try {
-      final comments = context.read<CommentProvider>();
-      // adjust payload keys to your API
-      // await comments.createPrivateComment({
-      //   'submission_id': widget.submissionId,
-      //   'comment': text,
-      //   'user_id': _creatorId,
-      //   'user_name': _creatorName,
-      //   'visibility': 'private',
-      // });
-      _privateCommentCtrl.clear();
-      CustomToaster.toastSuccess(context, 'Sent', 'Private comment added');
-    } catch (e) {
-      CustomToaster.toastError(context, 'Error', 'Failed to add private comment');
-    }
-  }
 
  Future<void> _handleReturnWithGrade() async {
   final raw = _scoreCtrl.text.trim();
@@ -222,11 +205,10 @@ class _AssignmentGradingScreenState extends State<AssignmentGradingScreen> {
   setState(() => _returning = true);
   try {
     final marker = context.read<MarkAssignmentProvider>();
-    // await marker.markAndReturnSubmission(
-    //   submissionId: widget.submissionId,
-    //   score: score,
-    //   maxScore: widget.maxScore,
-    // );
+    await marker.markAssignment(widget.assignmentId, score.toString());
+    print('Marked with score: $score');
+    print('Returning submission id: ${widget.assignmentId}');
+    print('Grader id: ${widget.assignmentId}, name: $_creatorName');
     CustomToaster.toastSuccess(context, 'Returned', 'Grade shared with student');
     Navigator.pop(context, true);
   } catch (e) {
@@ -337,20 +319,22 @@ class _SubmissionPreview extends StatelessWidget {
           return InkWell(
             onTap: () async {
               if (isImg) {
+                print("this is an image $name");
                 Navigator.push(
                   context,
                   MaterialPageRoute(
                     builder: (_) => Scaffold(
                       appBar: AppBar(),
-                      body: Center(child: Image.network(url)),
+                      body: Center(child: Image.network("https://linkskool.net/$name")),
                     ),
                   ),
                 );
               } else if (isPdf) {
+                print("this is an image $name");
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (_) => PdfViewerPage(url:"https://linkskool.net/$url"),
+                    builder: (_) => PdfViewerPage(url:"https://linkskool.net/$name"),
                   ),
                 );
               } else if (url.isNotEmpty) {
@@ -380,8 +364,26 @@ class _SubmissionPreview extends StatelessWidget {
                             errorBuilder: (_, __, ___) =>
                                 const Icon(Icons.image_not_supported))
                         : isPdf
-                            ? const Icon(Icons.picture_as_pdf, size: 36)
-                            : const Icon(Icons.insert_drive_file, size: 36),
+        ? FutureBuilder<String>(
+            future: _downloadPdf(url), // Download to local temp file
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(child: CircularProgressIndicator(strokeWidth: 2));
+              } else if (snapshot.hasError || !snapshot.hasData) {
+                return const Icon(Icons.picture_as_pdf, size: 36);
+              } else {
+                return PDFView(
+                  filePath: snapshot.data!,
+                  enableSwipe: false,
+                  swipeHorizontal: false,
+                  pageSnap: false,
+                  autoSpacing: false,
+                  defaultPage: 0, // only first page
+                );
+              }
+            },
+          )
+        : const Icon(Icons.insert_drive_file, size: 36),
                   ),
                   const SizedBox(height: 6),
                   Text(
@@ -403,7 +405,20 @@ class _SubmissionPreview extends StatelessWidget {
         },
       ),
     );
+    
   }
+  Future<String> _downloadPdf(String url) async {
+  final response = await http.get(Uri.parse("https://linkskool.net/$url"));
+  if (response.statusCode == 200) {
+    final dir = await getTemporaryDirectory();
+    final file = File("${dir.path}/${url.split('/').last}");
+    await file.writeAsBytes(response.bodyBytes);
+    return file.path;
+  } else {
+    throw Exception("Failed to load PDF");
+  }
+}
+
 
 //   BoxDecoration _cardDecoration(BuildContext context) {
 //     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -440,54 +455,6 @@ class _SubmissionPreview extends StatelessWidget {
 }
 
 
-class _PrivateComments extends StatelessWidget {
-  final TextEditingController controller;
-  final VoidCallback onSend;
-  const _PrivateComments({required this.controller, required this.onSend});
-
-  @override
-  Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text('Private comments', style: AppTextStyles.normal600(fontSize: 16, color: isDark ? Colors.white : Colors.black)),
-        const SizedBox(height: 8),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-          decoration: BoxDecoration(
-            color: isDark ? const Color(0xFF17191E) : Colors.white,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.white10),
-          ),
-          child: Row(
-            children: [
-              Expanded(
-                child: TextField(
-                  controller: controller,
-                  minLines: 1,
-                  maxLines: 4,
-                  decoration: const InputDecoration(
-                    hintText: 'Private comment',
-                    border: InputBorder.none,
-                  ),
-                  autofocus: true, // Show keyboard and focus on input
-                ),
-              ),
-              IconButton(
-                onPressed: onSend,
-                icon: const Icon(Icons.send_rounded),
-                color: AppColors.paymentTxtColor1,
-                tooltip: 'Send',
-              )
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-}
 
 class _GradeBox extends StatelessWidget {
   final TextEditingController controller;

@@ -616,17 +616,20 @@ void _handleEditTopic(TopicContent topic) {
 
 // Also update your _processContents method to ensure topic data is properly structured:
 void _processContents(List<Map<String, dynamic>> contents) {
-  final topics = <TopicContent>[];
-  final noTopicItems = <SyllabusContentItem>[];
+  _topics = [];
+  _noTopicItems = [];
 
-  for (final content in contents) {
-    print('Processing content: ${content['type']}, ID: ${content['id']}'); // Debug log
-    
+  // First, collect all topics
+  Map<int, TopicContent> topicMap = {};
+  for (var content in contents) {
     if (content['type'] == 'topic') {
-      final children = content['children'] as List<dynamic>? ?? [];
+      final topicId = content['id'] != null
+          ? int.tryParse(content['id'].toString()) ?? 0
+          : 0;
+      final topicName = content['title']?.toString() ?? 'Untitled';
       final topicChildren = <SyllabusContentItem>[];
       
-      for (final child in children) {
+      for (var child in content['children'] ?? []) {
         if (child is Map<String, dynamic> && child.containsKey('settings')) {
           final settings = child['settings'] as Map<String, dynamic>;
           topicChildren.add(SyllabusContentItem.fromJson({
@@ -634,51 +637,52 @@ void _processContents(List<Map<String, dynamic>> contents) {
             'questions': child['questions'] ?? [],
           }));
         } else {
-          topicChildren.add(
-              SyllabusContentItem.fromJson(child as Map<String, dynamic>));
+          topicChildren.add(SyllabusContentItem.fromJson(child as Map<String, dynamic>));
         }
       }
       
-      // Ensure topic has proper ID and data
-      final topicId = content['id'] != null
-          ? int.tryParse(content['id'].toString()) ?? 0
-          : 0;
-      final topicName = content['title']?.toString() ?? content['name']?.toString() ?? '';
-      
-      print('Creating topic: $topicName with ID: $topicId'); // Debug log
-      
-      topics.add(TopicContent(
+      topicMap[topicId] = TopicContent(
         id: topicId,
         name: topicName,
-        type: content['type'] ?? 'topic',
+        type: content['type']?.toString() ?? '',
         children: topicChildren,
-      ));
-    } else if (content['type'] == 'no topic') {
-      final children = content['children'] as List<dynamic>? ?? [];
-      for (final child in children) {
+      );
+      _debugTopicData(topicMap[topicId]!);
+    }
+  }
+
+  // Process non-topic items and reassign based on topic_id
+  for (var content in contents) {
+    if (content['type'] != 'topic') {
+      for (var child in content['children'] ?? []) {
+        SyllabusContentItem item;
         if (child is Map<String, dynamic> && child.containsKey('settings')) {
           final settings = child['settings'] as Map<String, dynamic>;
-          noTopicItems.add(SyllabusContentItem.fromJson({
+          item = SyllabusContentItem.fromJson({
             ...settings,
             'questions': child['questions'] ?? [],
-          }));
+          });
         } else {
-          noTopicItems.add(
-              SyllabusContentItem.fromJson(child as Map<String, dynamic>));
+          item = SyllabusContentItem.fromJson(child as Map<String, dynamic>);
+        }
+
+        // Check if item has a valid topic_id and reassign to the correct topic
+        final topicId = item.topicId ?? 0;
+        if (topicId != 0 && topicMap.containsKey(topicId)) {
+          topicMap[topicId]!.children.add(item);
+          print('Reassigned item ${item.id} to topic $topicId');
+        } else {
+          _noTopicItems.add(item);
         }
       }
     }
   }
 
-  setState(() {
-    _topics = topics;
-    _noTopicItems = noTopicItems;
-  });
-  
-  print('Processed ${_topics.length} topics and ${_noTopicItems.length} no-topic items'); // Debug log
+  _topics = topicMap.values.toList();
+  setState(() {});
 }
 
-// Additional debugging method to check topic data:
+
 void _debugTopicData(TopicContent topic) {
 
   for (int i = 0; i < topic.children.length; i++) {
@@ -1285,6 +1289,7 @@ print("Editing item: ${item.title}, ID: ${item.id}"); // Debug log
     'term': widget.term,
   };
         print(correctAnswers);
+        print("${item.id}");
         Navigator.push(
           context,
           MaterialPageRoute(

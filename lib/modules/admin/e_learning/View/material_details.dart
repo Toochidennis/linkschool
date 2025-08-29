@@ -63,23 +63,37 @@ class _AdminMaterialDetailsScreenState extends State<AdminMaterialDetailsScreen>
   String? academicYear;
 
   @override
-  void initState() {
-    super.initState();
-    
-    _tabController = TabController(length: 2, vsync: this);
-       locator<CommentProvider>().fetchComments(widget.itemId.toString());
-    _scrollController.addListener(() {
-      if (_scrollController.position.pixels >=
-              _scrollController.position.maxScrollExtent * 0.9 &&
-          !locator<CommentProvider>().isLoading &&
-          locator<CommentProvider>().hasNext) {
-        
-        Provider.of<CommentProvider>(context, listen: false)
-            .fetchComments(widget.itemId.toString());
-      }
+   void initState() {
+  super.initState();
+  _loadUserData();
+  if (mounted) setState(() {});
+  _tabController = TabController(length: 2, vsync: this);
+  locator<CommentProvider>().fetchComments(widget.itemId.toString());
+  _scrollController.addListener(() {
+    if (_scrollController.position.pixels >=
+            _scrollController.position.maxScrollExtent * 0.9 &&
+        !locator<CommentProvider>().isLoading &&
+        locator<CommentProvider>().hasNext) {
+      Provider.of<CommentProvider>(context, listen: false)
+          .fetchComments(widget.itemId.toString());
+    }
+  });
+  // Add listener to handle tab changes
+  _tabController.addListener(_handleTabChange);
+}
+
+void _handleTabChange() {
+  if (_tabController.indexIsChanging && mounted) {
+    setState(() {
+      // Reset comment input state when switching tabs
+      _isAddingComment = false;
+      _isEditing = false;
+      _editingComment = null;
+      _commentController.clear();
+      _commentFocusNode.unfocus();
     });
-    _loadUserData();
   }
+}
 
   @override
   void dispose() {
@@ -218,9 +232,44 @@ class _AdminMaterialDetailsScreenState extends State<AdminMaterialDetailsScreen>
         ),
       ),
       body: Container(
-        decoration: Constants.customBoxDecoration(context),
+      color: Colors.white,
         child: _buildInstructionsTab(),
-      ),);
+      ),
+      bottomNavigationBar: _tabController.index == 0
+        ? SafeArea(
+            child: AnimatedPadding(
+              duration: const Duration(milliseconds: 300),
+              padding: EdgeInsets.only(
+                bottom: MediaQuery.of(context).viewInsets.bottom,
+                left: 8.0,
+                right: 8.0,
+                top: 8.0,
+              ),
+              child: _isAddingComment
+                  ? _buildCommentInput()
+                  : InkWell(
+                      onTap: () {
+                        setState(() {
+                          _isAddingComment = true;
+                          // Ensure focus is requested after the state update
+                          WidgetsBinding.instance.addPostFrameCallback((_) {
+                            _commentFocusNode.requestFocus();
+                          });
+                        });
+                      },
+                      child: Padding(
+                        padding: const EdgeInsets.all(12.0),
+                        child: Text(
+                          'Add class comment',
+                          style: AppTextStyles.normal500(
+                              fontSize: 16.0, color: AppColors.paymentTxtColor1),
+                        ),
+                      ),
+                    ),
+            ),
+          )
+        : null,
+      );
      
   }
 
@@ -501,19 +550,7 @@ Widget _buildCommentSection() {
               ),
             _buildDivider(),
           ],
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: _isAddingComment
-                ? _buildCommentInput()
-                : InkWell(
-                    onTap: () => setState(() => _isAddingComment = true),
-                    child: Text(
-                      'Add class comment',
-                      style: AppTextStyles.normal500(
-                          fontSize: 16.0, color: AppColors.paymentTxtColor1),
-                    ),
-                  ),
-          ),
+       
         ],
       );
     },
@@ -608,13 +645,7 @@ Widget _buildCommentItem(Comment comment) {
     decoration: BoxDecoration(
       color: Colors.white,
       borderRadius: BorderRadius.circular(12),
-      boxShadow: [
-        BoxShadow(
-          color: Colors.black.withOpacity(0.05),
-          blurRadius: 6,
-          offset: const Offset(0, 3),
-        ),
-      ],
+      
     ),
     child: Row(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -640,23 +671,57 @@ Widget _buildCommentItem(Comment comment) {
             children: [
               // Header row: name + date + actions
               Row(
+                mainAxisAlignment: MainAxisAlignment.start,
                 children: [
                   Expanded(
-                    child: Text(
-                      comment.author,
-                      style: AppTextStyles.normal600(
-                        fontSize: 15,
-                        color: AppColors.backgroundDark,
+                    child: Row(
+                      children: [
+                        Text(
+                          comment.author,
+                          style: AppTextStyles.normal600(
+                            fontSize: 15,
+                            color: AppColors.backgroundDark,
+                          ),
+                        ),
+
+                        SizedBox(width:8,),
+                    
+                        Text(
+                      DateFormat('d MMM, HH:mm').format(comment.date),
+                      style: AppTextStyles.normal400(
+                        fontSize: 13,
+                        color: Colors.grey.shade600,
                       ),
                     ),
+                      ],
+                    ),
                   ),
-                 
+                  
+
+                  // Popup menu button for actions
+                  PopupMenuButton<String>(
+                    icon: const Icon(Icons.more_vert, size: 20, color: AppColors.primaryLight,),
+                    onSelected: (value) {
+                      if (value == 'edit') {
+                        _editComment(comment);
+                      } else if (value == 'delete') {
+                        _deleteComment(comment);
+                      }
+                    },
+                    itemBuilder: (context) => [
+                      const PopupMenuItem(
+                        value: 'edit',
+                        child: Text('Edit'),
+                      ),
+                      const PopupMenuItem(
+                        value: 'delete',
+                        child: Text('Delete'),
+                      ),
+                    ],
+                  ),
                 ],
               ),
 
-              const SizedBox(height: 1),
-
-              // Comment text
               Text(
                 comment.text,
                 style: AppTextStyles.normal500(
@@ -664,38 +729,25 @@ Widget _buildCommentItem(Comment comment) {
                   color: AppColors.text4Light,
                 ),
               ),
-              Row(
-               
-                children: [
-                 Text(
-                    DateFormat('d MMM, HH:mm').format(comment.date),
-                    style: AppTextStyles.normal400(
-                      fontSize: 13,
-                      color: Colors.grey.shade600,
-                    ),
-                  ),
-                 InkWell(
-                    onTap: () => _editComment(comment),
-                    child: const Padding(
-                      padding: EdgeInsets.only(left: 8.0),
-                      child: Text(
-                        'Edit',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: AppColors.paymentTxtColor1,
-                        ),
-                      ),
-                    ),
-                  ),
-                  
-                ],
-              ),
             ],
           ),
         ),
       ],
     ),
   );
+}
+
+void _deleteComment(Comment comment)async{
+   final commentProvider = Provider.of<CommentProvider>(context, listen: false);
+    print('Setting up delete for comment ID: ${comment.id}');
+    final commentId = comment.id.toString() ?? "";
+    try{
+       await commentProvider.DeleteComment(commentId);
+       CustomToaster.toastSuccess(context, 'Success', 'Comment updated successfully');
+  }catch(e){
+    CustomToaster.toastError(context, 'Error',  'Failed to delete comment');
+  }
+   
 }
 
 

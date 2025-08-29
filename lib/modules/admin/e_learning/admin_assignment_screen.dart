@@ -88,8 +88,16 @@ class _AdminAssignmentScreenState extends State<AdminAssignmentScreen> {
     _marksController.text = assignment.marks;
     _endDate = assignment.dueDate;
     _selectedTopic = assignment.topic;
-     _attachments = assignment.attachments;
-     _selectedClass = assignment.selectedClass;
+    _selectedClass = assignment.selectedClass;
+    
+    // Mark existing attachments properly
+    _attachments = assignment.attachments.map((attachment) => AttachmentItem(
+      fileName: attachment.fileName,
+      iconPath: attachment.iconPath,
+      fileContent: attachment.fileContent,
+      isExisting: true, // Mark as existing file
+      originalServerFileName: attachment.fileName, // Store original server name
+    )).toList();
   }
 }
 
@@ -807,11 +815,17 @@ class _AdminAssignmentScreenState extends State<AdminAssignmentScreen> {
     }
   }
 
-  void _addAttachment(String content, String iconPath, [String? base64Content]) {
-    setState(() {
-      _attachments.add(AttachmentItem(fileName: content, iconPath: iconPath, fileContent: base64Content ?? ''));
-    });
-  }
+ void _addAttachment(String content, String iconPath, [String? base64Content]) {
+  setState(() {
+    _attachments.add(AttachmentItem(
+      fileName: content, 
+      iconPath: iconPath, 
+      fileContent: base64Content ?? '',
+      isExisting: false, 
+      originalServerFileName: null, 
+    ));
+  });
+}
 
   void _selectTopic() async {
     final result = await Navigator.push(
@@ -926,14 +940,22 @@ class _AdminAssignmentScreenState extends State<AdminAssignmentScreen> {
             : [
                 {'id': '', 'name': ''},
               ],
-        'files': _attachments.map((attachment) {
-          return {
-            'old_file_name': attachment.fileName,
-            'type': _getAttachmentType(attachment.iconPath!, attachment.fileName!),
-            'file_name': attachment.fileName,
-            'file': attachment.fileContent,
-          };
-        }).toList(),
+       'files': _attachments.map((attachment) {
+  Map<String, dynamic> fileData = {
+    'type': _getAttachmentType(attachment.iconPath!, attachment.fileName!),
+    'file_name': attachment.fileName,
+   // 'file': attachment.fileContent,
+  };
+  
+
+  if (widget.editMode && attachment.isExisting) {
+    fileData['old_file_name'] = attachment.content?? '';
+  } else {
+    fileData['old_file_name'] = '';
+  }
+  
+  return fileData;
+}).toList(),
       };
 
       if (widget.editMode && widget.assignmentToEdit != null) {
@@ -943,14 +965,14 @@ class _AdminAssignmentScreenState extends State<AdminAssignmentScreen> {
         print(const JsonEncoder.withIndent('  ').convert(assignmentPayload));
         
 
-        await assignmentProvider.UpDateAssignment(assignmentPayload ,id!);
+        //await assignmentProvider.UpDateAssignment(assignmentPayload ,id!);
 
       } else {
         // In CREATE mode
         print('Creating Assignment Data:');
         print(const JsonEncoder.withIndent('  ').convert(assignmentPayload));
         
-        await assignmentProvider.addAssignment(assignmentPayload);
+       // await assignmentProvider.addAssignment(assignmentPayload);
       }
        
       widget.onSave(assignmentPayload);

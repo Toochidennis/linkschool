@@ -218,7 +218,9 @@ class _QuizScreenState extends State<QuizScreen> {
   }
 
 Widget _buildAnswersTab() {
-  return const AnswersTabWidget();
+  return AnswersTabWidget(
+  itemId: widget.question.id.toString(),
+  );
 }
 
   Widget _buildInfoRow(String label, String value) {

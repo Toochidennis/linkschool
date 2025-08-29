@@ -130,8 +130,37 @@ class CommentService {
     }
   }
 
-  // // Example method to delete a comment
-  // Future<void> deleteComment(String commentId) async {
-  //   // Implement the logic to delete a comment from the API or database
-  // }
+
+  Future<void> deleteComment(String commentId) async {
+     final userBox = Hive.box('userData');
+    final loginData = userBox.get('userData') ?? userBox.get('loginResponse');
+    final dbName = userBox.get('_db') ?? 'aalmgzmy_linkskoo_practice';
+    if (loginData == null || loginData['token'] == null) {
+      throw Exception("No valid login data or token found");
+    }
+
+    final token = loginData['token'] as String;
+  
+    _apiService.setAuthToken(token);
+
+
+     try {
+      final response = await _apiService.delete<Map<String, dynamic>>(
+        endpoint: 'portal/elearning/comments/$commentId',
+       body: {
+        "_db":dbName,
+       }
+      );
+
+      if (response.success) {
+        print('Comment Deleted successfully.');
+      } else {
+        print('Failed to delete comment: ${response.message}');
+        throw Exception("Failed to delete Comment: ${response.message}");
+      }
+    } catch (e) {
+      print("Error delete comment: $e");
+      throw Exception("Failed to delete Comment: $e");
+    }
+  }
 }
