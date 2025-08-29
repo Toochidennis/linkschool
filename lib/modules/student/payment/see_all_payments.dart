@@ -21,11 +21,16 @@ class PaymentHistorySeeAllScreen extends StatefulWidget {
 class _PaymentHistorySeeAllScreenState
     extends State<PaymentHistorySeeAllScreen> {
   String? selectedYear;
+  String? selectedTerm;
   bool sortNewestFirst = true;
 
   List<String> get years =>
       widget.payments.map((p) => p.year.toString()).toSet().toList()
         ..sort((a, b) => b.compareTo(a)); // newest year first
+
+  List<String> get terms =>
+      widget.payments.map((p) => p.termName).toSet().toList()
+        ..sort((a, b) => a.compareTo(b));
 
   List<Payment> _applyFilters() {
     var data = List<Payment>.from(widget.payments);
@@ -33,6 +38,11 @@ class _PaymentHistorySeeAllScreenState
     // Filter by year
     if (selectedYear != null) {
       data = data.where((p) => p.year.toString() == selectedYear).toList();
+    }
+
+    // Filter by term
+    if (selectedTerm != null) {
+      data = data.where((p) => p.termName == selectedTerm).toList();
     }
 
     // Sort by date
@@ -80,6 +90,7 @@ class _PaymentHistorySeeAllScreenState
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
               child: Row(
                 children: [
+                  // Year filter
                   Expanded(
                     child: DropdownButtonFormField<String>(
                       value: selectedYear,
@@ -96,6 +107,26 @@ class _PaymentHistorySeeAllScreenState
                     ),
                   ),
                   const SizedBox(width: 8),
+
+                  // Term filter
+                  Expanded(
+                    child: DropdownButtonFormField<String>(
+                      value: selectedTerm,
+                      decoration: const InputDecoration(
+                        labelText: "Term",
+                        border: OutlineInputBorder(),
+                        isDense: true,
+                      ),
+                      items: terms
+                          .map((t) =>
+                              DropdownMenuItem(value: t, child: Text(t)))
+                          .toList(),
+                      onChanged: (v) => setState(() => selectedTerm = v),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+
+                  // Sort
                   IconButton(
                     tooltip: sortNewestFirst ? "Newest first" : "Oldest first",
                     onPressed: () =>
