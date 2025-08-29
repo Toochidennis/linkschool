@@ -51,13 +51,13 @@ class PaymentSubmissionService {
       'reference': reference,
       'reg_no': regNo,
       'name': name,
-      'amount': amount.toInt(),
+      'amount': amount,
       'fees': fees,
       'class_id': classId,
       'level_id': levelId,
       'year': year,
       'term': term,
-      '_db': dbName,
+      '_db': 'aalmgzmy_linkskoo_practice',
       'email': email,
       'student_id': studentId,
     };
@@ -66,7 +66,7 @@ class PaymentSubmissionService {
 
     try {
       final response = await _apiService.post<Map<String, dynamic>>(
-        endpoint: 'portal/payments/submit',
+        endpoint: 'portal/students/277/make-payment',
         body: paymentData,
       );
 

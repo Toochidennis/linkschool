@@ -67,9 +67,9 @@ class Invoice {
               .map((d) => InvoiceDetail.fromJson(d as Map<String, dynamic>))
               .toList() ??
           [],
-      amount: double.parse(json['amount'].toString()),
+      amount: double.tryParse(json['amount']?.toString() ?? '') ?? 0.0,
       year: _formatSchoolSession(json['year']?.toString()),
-      term: json['term'],
+      term: json['term']
     );
   }
 
@@ -100,7 +100,7 @@ class Invoice {
 }
 
 class InvoiceDetail {
-  final int? feeId;
+  final String feeId;
   final String feeName;
   final double feeAmount;
 
@@ -110,13 +110,13 @@ class InvoiceDetail {
     required this.feeAmount,
   });
 
-  factory InvoiceDetail.fromJson(Map<String, dynamic> json) {
-    return InvoiceDetail(
-      feeId: json['fee_id'],
-      feeName: json['fee_name']?.toString() ?? '',
-      feeAmount: double.parse(json['fee_amount'].toString()),
-    );
-  }
+factory InvoiceDetail.fromJson(Map<String, dynamic> json) {
+  return InvoiceDetail(
+    feeId: json['fee_id'],
+    feeName: json['fee_name']?.toString() ?? '',
+    feeAmount: double.tryParse(json['amount']?.toString() ?? '') ?? 0.0, 
+  );
+}
 }
 
 class Payment {
@@ -155,7 +155,7 @@ class Payment {
       regNo: json['reg_no']?.toString() ?? '',
       description: json['description']?.toString() ?? '',
       name: json['name']?.toString() ?? '',
-      amount: double.parse(json['amount'].toString()),
+      amount: double.tryParse(json['amount']?.toString() ?? '') ?? 0.0,
       date: json['date'] != null
           ? DateTime.parse(json['date'])
           : DateTime.now(),

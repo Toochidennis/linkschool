@@ -14,15 +14,18 @@ class PaymentHistorySeeAllScreen extends StatefulWidget {
   const PaymentHistorySeeAllScreen({super.key, required this.payments});
 
   @override
-  State<PaymentHistorySeeAllScreen> createState() => _PaymentHistorySeeAllScreenState();
+  State<PaymentHistorySeeAllScreen> createState() =>
+      _PaymentHistorySeeAllScreenState();
 }
 
-class _PaymentHistorySeeAllScreenState extends State<PaymentHistorySeeAllScreen> {
+class _PaymentHistorySeeAllScreenState
+    extends State<PaymentHistorySeeAllScreen> {
   String? selectedYear;
   bool sortNewestFirst = true;
 
-  List<String> get years => widget.payments.map((p) => p.year.toString()).toSet().toList()
-    ..sort((a, b) => b.compareTo(a)); // newest year first
+  List<String> get years =>
+      widget.payments.map((p) => p.year.toString()).toSet().toList()
+        ..sort((a, b) => b.compareTo(a)); // newest year first
 
   List<Payment> _applyFilters() {
     var data = List<Payment>.from(widget.payments);
@@ -33,7 +36,8 @@ class _PaymentHistorySeeAllScreenState extends State<PaymentHistorySeeAllScreen>
     }
 
     // Sort by date
-    data.sort((a, b) => sortNewestFirst ? b.date.compareTo(a.date) : a.date.compareTo(b.date));
+    data.sort((a, b) =>
+        sortNewestFirst ? b.date.compareTo(a.date) : a.date.compareTo(b.date));
     return data;
   }
 
@@ -65,66 +69,83 @@ class _PaymentHistorySeeAllScreenState extends State<PaymentHistorySeeAllScreen>
         ),
         iconTheme: const IconThemeData(color: Colors.black),
       ),
-      body: Column(
-        children: [
+      body: CustomScrollView(
+        physics: const BouncingScrollPhysics(
+          parent: AlwaysScrollableScrollPhysics(),
+        ),
+        slivers: [
           // Filters + Sort
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-            child: Row(
-              children: [
-                Expanded(
-                  child: DropdownButtonFormField<String>(
-                    value: selectedYear,
-                    decoration: const InputDecoration(
-                      labelText: "Year",
-                      border: OutlineInputBorder(),
-                      isDense: true,
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: DropdownButtonFormField<String>(
+                      value: selectedYear,
+                      decoration: const InputDecoration(
+                        labelText: "Year",
+                        border: OutlineInputBorder(),
+                        isDense: true,
+                      ),
+                      items: years
+                          .map((y) =>
+                              DropdownMenuItem(value: y, child: Text(y)))
+                          .toList(),
+                      onChanged: (v) => setState(() => selectedYear = v),
                     ),
-                    items: years
-                        .map((y) => DropdownMenuItem(value: y, child: Text(y)))
-                        .toList(),
-                    onChanged: (v) => setState(() => selectedYear = v),
                   ),
-                ),
-                const SizedBox(width: 8),
-                IconButton(
-                  tooltip: sortNewestFirst ? "Newest first" : "Oldest first",
-                  onPressed: () => setState(() => sortNewestFirst = !sortNewestFirst),
-                  icon: Icon(
-                    sortNewestFirst ? Icons.arrow_downward : Icons.arrow_upward,
-                    color: Colors.black87,
+                  const SizedBox(width: 8),
+                  IconButton(
+                    tooltip: sortNewestFirst ? "Newest first" : "Oldest first",
+                    onPressed: () =>
+                        setState(() => sortNewestFirst = !sortNewestFirst),
+                    icon: Icon(
+                      sortNewestFirst
+                          ? Icons.arrow_downward
+                          : Icons.arrow_upward,
+                      color: Colors.black87,
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
 
           // Count
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 6),
-            child: Align(
-              alignment: Alignment.centerLeft,
-              child: Text(
-                _formatCount(filtered.length),
-                style: AppTextStyles.normalLight.copyWith(color: Colors.grey[700]),
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 6),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  _formatCount(filtered.length),
+                  style: AppTextStyles.normalLight
+                      .copyWith(color: Colors.grey[700]),
+                ),
               ),
             ),
           ),
 
           // List
-          Expanded(
-            child: ListView.separated(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-              itemCount: filtered.length,
-              separatorBuilder: (_, __) => const Divider(height: 1, thickness: 0.5, color: Colors.grey),
-              itemBuilder: (context, index) {
-                final payment = filtered[index];
-                return PaymentHistoryItem(
+          SliverList.separated(
+            itemCount: filtered.length,
+            separatorBuilder: (_, __) => const Divider(
+              height: 1,
+              thickness: 0.5,
+              color: Colors.grey,
+            ),
+            itemBuilder: (context, index) {
+              final payment = filtered[index];
+              return Padding(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                child: PaymentHistoryItem(
                   payment: payment,
                   onTap: () => _openReceipt(context, payment),
-                );
-              },
-            ),
+                ),
+              );
+            },
           ),
         ],
       ),
@@ -149,9 +170,9 @@ class PaymentHistoryItem extends StatelessWidget {
 
   String _formatAmount(double amount) {
     return amount.toStringAsFixed(2).replaceAllMapped(
-      RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
-      (Match m) => '${m[1]},',
-    );
+          RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+          (Match m) => '${m[1]},',
+        );
   }
 
   @override
@@ -194,7 +215,8 @@ class PaymentHistoryItem extends StatelessWidget {
                 const SizedBox(width: 2),
                 Text(
                   _formatAmount(payment.amount),
-                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+                  style: const TextStyle(
+                      fontSize: 16, fontWeight: FontWeight.w500),
                 ),
               ],
             ),
