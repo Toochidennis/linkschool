@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:hive/hive.dart';
+import 'package:linkschool/modules/student/elearning/assignment_score_view_screen.dart';
 import 'package:linkschool/modules/student/elearning/material_detail_screen.dart';
 import 'package:linkschool/modules/student/elearning/quiz_intro_page.dart';
 import 'package:linkschool/modules/auth/model/user.dart';
@@ -174,12 +175,24 @@ class _CourseContentScreenState extends State<CourseContentScreen> {
                 title: child?.title ?? "No title",
                 description: ellipsize(child?.description) ?? "No description",
                 progressBarPercentage: 75,
-                onTap:(){
-                  Navigator.push(
-                    context,MaterialPageRoute(
-                    builder: (context) => AssignmentDetailsScreen(childContent: child, title: e.title, id: e.id ?? 0),),
-                  );
+                onTap: () {
+                  final userBox = Hive.box('userData');
+                  final List<dynamic> assignmentssubmitted = userBox.get('assignments', defaultValue: []);
+                  final int? assignmentId = child.id;
+
+                  if (assignmentssubmitted.contains(assignmentId)) {
+                    Navigator.push(
+                      context,MaterialPageRoute(
+                      builder: (context) => AssignmentScorePage(childContent: child,year:int.parse(getuserdata()['settings']['year']), term:getuserdata()['settings']['term'], attachedMaterials: [""],),),
+                    );
+                  } else {
+                    Navigator.push(
+                      context,MaterialPageRoute(
+                      builder: (context) => AssignmentDetailsScreen(childContent: child, title: e.title, id: e.id ?? 0),),
+                    );
+                  }
                 }
+
             );
           } else {
             return SizedBox.shrink(); // If neither condition is met
@@ -406,7 +419,7 @@ class _CourseContentScreenState extends State<CourseContentScreen> {
                     ),
                   ),
                   Text(
-                    term,
+                    '${term} Term',
                     style: TextStyle(
                       color: Colors.white70,
                       fontSize: 12,

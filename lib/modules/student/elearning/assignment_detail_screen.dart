@@ -143,12 +143,12 @@ class _AssignmentDetailsScreenState extends State<AssignmentDetailsScreen> {
       body: Container(
         decoration: Constants.customBoxDecoration(context),
         child: Padding(
-          padding: const EdgeInsets.all(16.0),
+          padding: const EdgeInsets.all(4.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Due: ${widget.childContent.endDate}',
+                'Due: ${DateFormat("EEEE, d MMMM, y  h:mma").format(DateTime.parse(widget.childContent.endDate ?? ""))}',
                 style: TextStyle(color: Colors.black, fontSize: 14),
               ),
               const SizedBox(height: 16),
@@ -156,7 +156,11 @@ class _AssignmentDetailsScreenState extends State<AssignmentDetailsScreen> {
                 '${widget.childContent.description}',
                 style: TextStyle(fontSize: 16, color: Colors.black),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 12),
+
+              Divider(color: Colors.blue),
+              const SizedBox(height: 12),
+
               Text(
                 'Grade:${widget.childContent.grade} marks',
                 style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
@@ -274,6 +278,11 @@ class _AssignmentDetailsScreenState extends State<AssignmentDetailsScreen> {
                 ],
               ),
               const Spacer(),
+              const SizedBox(height: 12),
+
+              Divider(color: Colors.grey.shade300),
+              const SizedBox(height: 12),
+
               ElevatedButton(
                 // onPressed: _showAttachmentOptions,
                 onPressed: _navigateToAttachmentPreview,

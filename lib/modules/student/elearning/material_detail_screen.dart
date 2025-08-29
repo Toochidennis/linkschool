@@ -91,16 +91,13 @@ class _MaterialDetailScreen extends State<MaterialDetailScreen> {
         final settings = data['settings'] ?? {};
 
         setState(() {
-          creatorId = profile['student_id'] as int?;
+          creatorId = profile['id'] as int?;
           creatorName = profile['name']?.toString();
           academicYear = settings['year']?.toString();
           academicTerm = settings['term'] as int?;
         });
       }
-      print('Creator ID: $creatorId');
-      print('Creator Name: $creatorName');
-      print('Academic Year: $academicYear');
-      print('Academic Term: $academicTerm');
+
     } catch (e) {
       print('Error loading user data: $e');
     }
@@ -176,31 +173,35 @@ class _MaterialDetailScreen extends State<MaterialDetailScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Due: ${widget.childContent.endDate}',
-                style: TextStyle(color: Colors.black, fontSize: 14),
-              ),
+                '${widget.childContent.title}',
+                style: AppTextStyles.normal600(
+                  fontSize: 24.0,
+                  color: AppColors.eLearningBtnColor1,
+                ),
+              ),              const SizedBox(height: 16),
+
+              const Divider(color: AppColors.eLearningBtnColor1),
               const SizedBox(height: 16),
+
               Text(
                 '${widget.childContent.description}',
-                style: TextStyle(fontSize: 16, color: Colors.black),
+                style: TextStyle(fontSize: 16,fontWeight: FontWeight.w400, color: Colors.black),
               ),
-              const SizedBox(height: 24),
-              Text(
-                'Grade:${widget.childContent.grade} marks',
-                style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
-              ),
+
               const SizedBox(height: 24),
               // Attachment section
-              Row(
-                children: [
-                  Expanded(
-                    child: Container(
-                      child: Column(
-                        children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Container(
+                    child: Column(
+                      children: [
+                        if (widget.childContent.contentFiles != null &&
+                            widget.childContent.contentFiles!.isNotEmpty)
                           ListView.builder(
                             shrinkWrap: true,
                             physics: const NeverScrollableScrollPhysics(),
-                            itemCount: widget.childContent.contentFiles?.length ?? 0,
+                            itemCount: widget.childContent.contentFiles!.length,
                             itemBuilder: (context, index) {
                               final file = widget.childContent.contentFiles![index];
 
@@ -209,26 +210,31 @@ class _MaterialDetailScreen extends State<MaterialDetailScreen> {
                                 return Column(
                                   children: [
                                     Container(
-                                      height: 100, // Increased height to accommodate the layout
+                                      height: 100,
                                       color: Colors.blue.shade100,
                                       child: Center(
                                         child: InkWell(
                                           onTap: () async {
                                             final uri = Uri.parse(file.file);
                                             if (await canLaunchUrl(uri)) {
-                                              await launchUrl(uri, mode: LaunchMode.externalApplication);
+                                              await launchUrl(
+                                                uri,
+                                                mode: LaunchMode.externalApplication,
+                                              );
                                             }
                                           },
                                           child: Row(
                                             children: [
-                                              Icon(Icons.link, color: Colors.blue),
-                                              SizedBox(width: 8,),
-                                              Text(
-                                                overflow: TextOverflow.ellipsis,
-                                                file.file,
-                                                style: const TextStyle(
-                                                  color: Colors.blue,
-                                                  decoration: TextDecoration.underline,
+                                              const Icon(Icons.link, color: Colors.blue),
+                                              const SizedBox(width: 8),
+                                              Expanded(
+                                                child: Text(
+                                                  file.file,
+                                                  overflow: TextOverflow.ellipsis,
+                                                  style: const TextStyle(
+                                                    color: Colors.blue,
+                                                    decoration: TextDecoration.underline,
+                                                  ),
                                                 ),
                                               ),
                                             ],
@@ -237,11 +243,11 @@ class _MaterialDetailScreen extends State<MaterialDetailScreen> {
                                       ),
                                     ),
                                     const SizedBox(height: 10),
-
                                   ],
                                 );
                               }
-                              else if (file.type == "image" || file.type == "photo" ) {
+
+                              else if (file.type == "image" || file.type == "photo") {
                                 // Case 2: Image → render image
                                 return Column(
                                   children: [
@@ -256,56 +262,63 @@ class _MaterialDetailScreen extends State<MaterialDetailScreen> {
                                       ),
                                     ),
                                     const SizedBox(height: 10),
-
                                   ],
                                 );
                               }
-                              else if (file.type == "pdf" ) {
 
+                              else if (file.type == "pdf") {
                                 return Column(
                                   children: [
-                                    IconButton(onPressed: (){
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (_) => PdfViewerPage(url:"https://linkskool.net/${file.fileName}"),
-                                        ),
-                                      );
-                                    }, icon:  Icon(Icons.picture_as_pdf, size: 36)),                                      const SizedBox(height: 10),
+                                    IconButton(
+                                      onPressed: () {
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (_) => PdfViewerPage(
+                                              url: "https://linkskool.net/${file.fileName}",
+                                            ),
+                                          ),
+                                        );
+                                      },
+                                      icon: const Icon(Icons.picture_as_pdf, size: 36),
+                                    ),
                                     const SizedBox(height: 10),
-
                                   ],
                                 );
                               }
+
                               else {
-                                // Case 3: Unknown type → show error
+                                // Case 3: Unknown type
                                 return Column(
-                                  children: [
-                                    const Text(
+                                  children: const [
+                                    Text(
                                       "Error rendering content",
                                       style: TextStyle(color: Colors.red),
                                     ),
-                                    const SizedBox(height: 10),
-
+                                    SizedBox(height: 10),
                                   ],
                                 );
-
                               }
                             },
+                          )
+                        else
+                          const Text(
+                            "No content available",
+                            style: TextStyle(color: Colors.grey),
                           ),
-
-                        ],
-                      ),
+                      ],
                     ),
                   ),
-                  const SizedBox(width: 16),
+                ),
+              ],
+            ),
 
-                ],
-              ),
-              const Spacer(),
+            const Spacer(),
               const SizedBox(height: 16),
          _buildCommentSection(),
+              Divider(color: Colors.grey.shade300),
 
+_buildCommentInput()
 
             ],
           ),
@@ -333,7 +346,6 @@ class _MaterialDetailScreen extends State<MaterialDetailScreen> {
       ),
     );
   }
-
   Widget _buildCommentSection() {
     return Consumer<CommentProvider>(
       builder: (context, commentProvider, child) {
@@ -345,7 +357,8 @@ class _MaterialDetailScreen extends State<MaterialDetailScreen> {
               Skeletonizer(
                 child: ListView.builder(
                   controller: _scrollController,
-                  physics: const AlwaysScrollableScrollPhysics(),
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
                   itemCount: 5, // Show 5 skeleton items
                   itemBuilder: (context, index) {
                     return ListTile(
@@ -375,7 +388,7 @@ class _MaterialDetailScreen extends State<MaterialDetailScreen> {
               ListView.builder(
                 controller: _scrollController,
                 shrinkWrap: true,
-                physics: const AlwaysScrollableScrollPhysics(),
+                physics: const NeverScrollableScrollPhysics(),
                 itemCount: commentList.length + (commentProvider.isLoading ? 1 : 0),
                 itemBuilder: (context, index) {
                   if (index == commentList.length) {
@@ -392,21 +405,9 @@ class _MaterialDetailScreen extends State<MaterialDetailScreen> {
                     style: const TextStyle(color: Colors.red),
                   ),
                 ),
-              _buildDivider(),
+            //  _buildDivider(),
             ],
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: _isAddingComment
-                  ? _buildCommentInput()
-                  : InkWell(
-                onTap: () => setState(() => _isAddingComment = true),
-                child: Text(
-                  'Add class comment',
-                  style: AppTextStyles.normal500(
-                      fontSize: 16.0, color: AppColors.paymentTxtColor1),
-                ),
-              ),
-            ),
+
           ],
         );
       },
@@ -506,14 +507,11 @@ class _MaterialDetailScreen extends State<MaterialDetailScreen> {
             controller: _commentController,
             focusNode: _commentFocusNode,
             decoration: const InputDecoration(
-              hintText: 'Type your comment...',
-              border: OutlineInputBorder(),
-            ),
+              hintText: 'Post a comment...',
+              border: InputBorder.none,             ),
           ),
         ),
-        provider.isLoading
-            ? const CircularProgressIndicator()
-            : IconButton(
+        IconButton(
           icon: const Icon(Icons.send),
           onPressed: _addComment,
           color: AppColors.paymentTxtColor1,
@@ -546,11 +544,9 @@ class _MaterialDetailScreen extends State<MaterialDetailScreen> {
           comment['content_id'];
           print("printed Comment $comment");
           await commentProvider.UpdateComment(comment,contentId.toString());
-          CustomToaster.toastSuccess(context, 'Success', 'Comment updated successfully');
         } else {
 
           await commentProvider.createComment(comment, widget.childContent!.id.toString());
-          CustomToaster.toastSuccess(context, 'Success', 'Comment added successfully');
         }
 
         await commentProvider.fetchComments(widget.childContent!.id.toString());

@@ -1,10 +1,10 @@
 class AssignmentFile {
-  final String fileName;
+  final String? fileName;
   final String type; // e.g. pdf, image, doc
   final String file; // base64 string
 
   AssignmentFile({
-    required this.fileName,
+     this.fileName,
     required this.type,
     required this.file,
   });

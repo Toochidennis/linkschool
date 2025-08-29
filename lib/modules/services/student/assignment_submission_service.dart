@@ -28,7 +28,7 @@ class AssignmentSubmissionService {
     final userBox = Hive.box('userData');
     final token = userBox.get('token');
     final dbName = userBox.get('_db') ?? 'aalmgzmy_linkskoo_practice';
-    final studentid = getuserdata()['profile']['student_id'];
+    final studentid = getuserdata()['profile']['id'];
     if (token == null) {
       throw Exception("Authentication token is missing.");
     }
@@ -36,7 +36,7 @@ class AssignmentSubmissionService {
       print(submission.toJson());
 
     final response = await _apiService.post(
-      endpoint: 'portal/students/${studentid}/assignment-submissions',
+      endpoint: 'portal/students/${273}/assignment-submissions',
       body: submission.toJson(),
     );
 

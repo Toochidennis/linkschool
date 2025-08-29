@@ -33,7 +33,7 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
 
     final List<Widget> _screens = [
       CourseContentScreen(dashboardData:widget.dashboardData,courseTitle:widget.courseTitle),
-      ForumScreen(),
+      ForumScreen(dashboardData:widget.dashboardData,courseTitle:widget.courseTitle),
     ];
 
     final Brightness brightness = Theme.of(context).brightness;

@@ -19,6 +19,7 @@ import 'package:linkschool/modules/services/student/assignment_submission_servic
 import 'package:provider/provider.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 
+import '../../common/buttons/custom_long_elevated_button.dart';
 import '../../common/custom_toaster.dart';
 import '../../common/widgets/portal/attachmentItem.dart';
 import '../../model/student/comment_model.dart';
@@ -97,7 +98,7 @@ class _AttachmentPreviewScreenState extends State<AttachmentPreviewScreen> {
         final settings = data['settings'] ?? {};
 
         setState(() {
-          creatorId = profile['student_id'] as int?;
+          creatorId = profile['id'] as int?;
           creatorName = profile['name']?.toString();
           academicYear = settings['year']?.toString();
           academicTerm = settings['term'] as int?;
@@ -146,16 +147,16 @@ class _AttachmentPreviewScreenState extends State<AttachmentPreviewScreen> {
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 16),
-              _buildAttachmentOption(
+          /*    _buildAttachmentOption(
                   'Insert link',
                   'assets/icons/student/link1.svg',
-                  _showInsertLinkDialog),
+                  _showInsertLinkDialog),*/
               _buildAttachmentOption(
                   'Upload file', 'assets/icons/e_learning/upload_file.svg', _uploadFile),
-              _buildAttachmentOption(
+        /*      _buildAttachmentOption(
                   'Take photo', 'assets/icons/e_learning/take_photo.svg', _takePhoto),
               _buildAttachmentOption(
-                  'Record Video', 'assets/icons/e_learning/record_video.svg', _recordVideo),
+                  'Record Video', 'assets/icons/e_learning/record_video.svg', _recordVideo),*/
             ],
           ),
         );
@@ -221,19 +222,34 @@ class _AttachmentPreviewScreenState extends State<AttachmentPreviewScreen> {
                   color: AppColors.eLearningBtnColor1,
                 ),
               ),
+              Column(
+                children: [
+                  ..._attachments.asMap().entries.map((entry) {
+                    final index = entry.key;
+                    final attachment = entry.value;
+                    return _buildAttachmentItem(attachment, isFirst: index == 0);
+                  }),
+                  const SizedBox(height: 8.0),
+                  _buildAddMoreButton(),
+                ],
+              ),
               const SizedBox(height: 16),
               // Two-column attachment layout
              const SizedBox(height: 24),
               // Custom Comment Input Field
-              _buildCommentInput(),
-              // Comments section
+                           // Comments section
               SingleChildScrollView(
                   child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-               //         _buildCommentSection(),
+                        _buildCommentSection(),
                       ])),
+              Padding(
+                  padding: const EdgeInsets.all(0.0),
+                  child:
+                  _buildCommentInput()
 
+              ),
               const Spacer(), // This will push the remaining buttons to the bottom
 
               // Add work and Submit buttons
@@ -247,13 +263,13 @@ class _AttachmentPreviewScreenState extends State<AttachmentPreviewScreen> {
                   final List<Map<String, dynamic>> files = _attachments.map((attachment) {
                     return {
                       "file_name": attachment.fileName,
-                      "type": attachment.type?? "pdf",
+                      "type": "pdf",
                       "file": attachment.file ,
                     };
                   }).toList();
                   Map<String, dynamic> assignmentPayload = {
                     "assignment_id": widget.childContent?.id,
-                    "student_id": getuserdata()['profile']['student_id'],
+                    "student_id": getuserdata()['profile']['id'] ?? 0,
                     "student_name":getuserdata()['profile']['name'] ,
                     "files": files,
                   "mark": 0,
@@ -269,11 +285,14 @@ class _AttachmentPreviewScreenState extends State<AttachmentPreviewScreen> {
                   };
 
                   bool success = await service.submitAssignment(AssignmentSubmission.fromJson(assignmentPayload));
-
+//
                   if (success) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text("Assignment submitted successfully!")),
-                    );
+                    final userBox = Hive.box('userData');
+                    final List<dynamic> assignmentssubmitted = userBox.get('assignments', defaultValue: []);
+                    final int? assignmentId = widget.childContent!.id;
+                    assignmentssubmitted.add(assignmentId);
+                    userBox.put('assignments', assignmentssubmitted);
+                    _Assignmentsubmissionpop();
                   } else {
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(content: Text("Failed to submit assignment.")),
@@ -336,8 +355,8 @@ class _AttachmentPreviewScreenState extends State<AttachmentPreviewScreen> {
             CustomSaveElevatedButton(
               onPressed: () {
                 if (linkController.text.isNotEmpty) {
-                  _addAttachment(
-                      linkController.text, 'assets/icons/e_learning/link3.svg');
+                  _addAttachment(linkController.text,'assets/icons/e_learning/link3.svg','link','Link: ${linkController.text}' );
+                  print("AAQASSSS ${widget.attachments}");
                 }
                 Navigator.of(context).pop();
               },
@@ -375,7 +394,6 @@ Future<void> _uploadFile() async {
     PlatformFile plat = result.files.first;
 
     String? extension = plat.extension;
-    print("THis is base64ooo ${plat}");
 if (plat.bytes!=null){
     String base64String = base64Encode(plat.bytes!);
     if (result != null) {
@@ -387,7 +405,7 @@ if (plat.bytes!=null){
       _attachments.add(
         AssignmentFile(
           fileName: result.files.single.name,
-          file: "base64String",
+          file: base64String,
           type: extension!,
         ),
       );
@@ -404,7 +422,14 @@ Future<void> _takePhoto() async {
   final ImagePicker picker = ImagePicker();
   final XFile? photo = await picker.pickImage(source: ImageSource.camera);
   if (photo != null) {
-    _addAttachment('Photo: ${photo.name}', 'assets/icons/e_learning/camera.svg');
+    File imageFile = File(photo.path);
+
+    // Convert to bytes
+    List<int> imageBytes = await imageFile.readAsBytes();
+
+    // Encode to Base64
+    String base64Image = base64Encode(imageBytes);
+    _addAttachment(base64Image,'assets/icons/e_learning/camera.svg','photo','Photo: ${photo.name}' );
     // _navigateToAttachmentPreview();
   }
 }
@@ -414,12 +439,22 @@ Future<void> _takePhoto() async {
     final ImagePicker picker = ImagePicker();
     final XFile? video = await picker.pickVideo(source: ImageSource.camera);
     if (video != null) {
-      _addAttachment('Video: ${video.name}', 'assets/icons/e_learning/video.svg');
+      File videoFile = File(video.path);
+
+      // Read as bytes
+      List<int> videoBytes = await videoFile.readAsBytes();
+
+      // Encode to Base64
+      String base64Video = base64Encode(videoBytes);
+      _addAttachment(base64Video,'assets/icons/e_learning/video.svg','video','Video: ${video.name}' );
+
     }
   }
 
-  void _addAttachment(String content, String iconPath) {
+  void _addAttachment(String content, String iconPath, String type, String filename) {
     setState(() {
+      print(_attachments);
+      _attachments.add(AssignmentFile(type: type, file: content, fileName: filename));
     });
   }
   Widget _buildCommentSection() {
@@ -483,20 +518,7 @@ Future<void> _takePhoto() async {
                 ),
               _buildDivider(),
             ],
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: _isAddingComment
-                  ? _buildCommentInput()
-                  :
-              InkWell(
-                onTap: () => setState(() => _isAddingComment = true),
-                child: Text(
-                  'Add class comment',
-                  style: AppTextStyles.normal500(
-                      fontSize: 16.0, color: AppColors.paymentTxtColor1),
-                ),
-              ),
-            ),
+
           ],
         );
       },
@@ -645,7 +667,7 @@ Future<void> _takePhoto() async {
             const SizedBox(width: 8.0),
             Expanded(
               child: Text(
-                attachment.fileName!,
+                attachment.fileName ?? "No filename",
                 style: AppTextStyles.normal400(fontSize: 14.0, color: AppColors.primaryLight),
                 overflow: TextOverflow.ellipsis,
               ),
@@ -703,9 +725,7 @@ Future<void> _takePhoto() async {
               ),
             ),
           ),
-          provider.isLoading
-              ? const CircularProgressIndicator()
-              : IconButton(
+         IconButton(
             icon: const Icon(Icons.send),
             onPressed: _addComment,
             color: AppColors.paymentTxtColor1,
@@ -738,11 +758,9 @@ Future<void> _takePhoto() async {
         if (_isEditing) {
           comment['content_id'];
           await commentProvider.UpdateComment(comment,contentId.toString());
-          CustomToaster.toastSuccess(context, 'Success', 'Comment updated successfully');
         } else {
 
           await commentProvider.createComment(comment, widget.childContent!.id.toString());
-          CustomToaster.toastSuccess(context, 'Success', 'Comment added successfully');
         }
 
         await commentProvider.fetchComments(widget.childContent!.id.toString());
@@ -776,6 +794,95 @@ Future<void> _takePhoto() async {
       child: Divider(color: Colors.grey.withOpacity(0.5)),
     );
   }
+    void _Assignmentsubmissionpop() {
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => Dialog.fullscreen(
+          child: Scaffold(
+            appBar: AppBar(
+              leading: IconButton(
+                onPressed: () => Navigator.of(context).pop(),
+                icon: Image.asset(
+                  'assets/icons/arrow_back.png',
+                  color: AppColors.primaryLight,
+                  width: 34.0,
+                  height: 34.0,
+                ),
+              ),
+              title: Text(
+                'Quiz Completed',
+                style: AppTextStyles.normal600(
+                  fontSize: 24.0,
+                  color: AppColors.primaryLight,
+                ),
+              ),
+              actions: [
+                IconButton(
+                  icon: const Icon(Icons.more_vert),
+                  onPressed: () {},
+                ),
+              ],
+              backgroundColor: AppColors.backgroundLight,
+              flexibleSpace: FlexibleSpaceBar(
+                background: Stack(
+                  children: [
+                    Positioned.fill(
+                      child: Opacity(
+                        opacity: opacity,
+                        child: Image.asset(
+                          'assets/images/background.png',
+                          fit: BoxFit.cover,
+                        ),
+                      ),
+                    )
+                  ],
+                ),
+              ),
+            ),
+            body: Container(
+              decoration: Constants.customBoxDecoration(context),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Text(
+                      'Good Job!',
+                      style: AppTextStyles.normal600(
+                          fontSize: 34, color: AppColors.eLearningContColor2),
+                    ),
+                    Text(
+                      'Your quiz has been recorded and will be marked by your tutor soon.',
+                      style: AppTextStyles.normal500(
+                          fontSize: 18, color: AppColors.textGray),
+                    ),
+                    const SizedBox(
+                      height: 48.0,
+                    ),
+                    CustomLongElevatedButton(
+                      text: 'Back to Home',
+                      onPressed: () {
+                        Navigator.of(context).popUntil((route) => route.isFirst);
+                      },
+                      backgroundColor: AppColors.eLearningContColor2,
+                      textStyle: AppTextStyles.normal600(
+                          fontSize: 22, color: AppColors.backgroundLight),
+                    ),
+                    const SizedBox(
+                      height: 16.0,
+                    ),
+
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
 }
 
 

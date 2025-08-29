@@ -50,6 +50,7 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
   final String networkImage = 'https://img.freepik.com/free-vector/gradient-human-rights-day-background_52683-149974.jpg?t=st=1717832829~exp=1717833429~hmac=3e938edcacd7fef2a791b36c7d3decbf64248d9760dd7da0a304acee382b8a86';
 
   List<QuizQuestion> questions = [];
+  double? totalscore;
 
   // List to keep track of user answers
   List<dynamic> userAnswers = [];
@@ -553,15 +554,15 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
         "question_id": q.questionId,
         "question": q.questionText,
         "correct": q.correct.text,
-        "answer": userAnswers[index] ?? "Blank",
+        "answer": userAnswers[index] ?? "",
         "type": q.questionType
       };
     }).toList();
     print("Here are answers${answers}");
     QuizSubmissionService service = QuizSubmissionService();
     Map<String, dynamic> quizpayload = {
-      "quiz_id": widget.childContent?.id ?? 0,
-      "student_id": getuserdata()['profile']['student_id'],
+      "quiz_id": widget.childContent?.settings!.id,
+      "student_id": getuserdata()['profile']['id'],
       "student_name":getuserdata()['profile']['name'] ,
       "answers":answers,
       "mark": 0,

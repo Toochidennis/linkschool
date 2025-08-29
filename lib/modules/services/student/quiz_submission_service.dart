@@ -28,7 +28,7 @@ class QuizSubmissionService {
     final userBox = Hive.box('userData');
     final token = userBox.get('token');
     final dbName = userBox.get('_db') ?? 'aalmgzmy_linkskoo_practice';
-    final studentid = getuserdata()['profile']['student_id'];
+    final studentid = getuserdata()['profile']['id'];
     if (token == null) {
       throw Exception("Authentication token is missing.");
     }

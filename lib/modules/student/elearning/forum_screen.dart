@@ -5,6 +5,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:hive/hive.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/constants.dart';
+import 'package:linkschool/modules/model/student/dashboard_model.dart';
 import 'package:linkschool/modules/model/student/streams_model.dart';
 import 'package:linkschool/modules/providers/student/streams_provider.dart';
 import 'package:provider/provider.dart';
@@ -16,7 +17,11 @@ import '../../services/api/service_locator.dart';
 
 
 class ForumScreen extends StatefulWidget {
-  const ForumScreen({super.key});
+  final DashboardData dashboardData;
+  final String courseTitle;
+
+  const ForumScreen({super.key, required this.dashboardData,required this.courseTitle});
+
 
   @override
   State<ForumScreen> createState() => _ForumScreenState();
@@ -77,7 +82,6 @@ class _ForumScreenState extends State<ForumScreen> {
   void initState() {
     super.initState();
     _loadUserData();
-    final streamsprovider = Provider.of<StreamsProvider>(context, listen: false);
     fetchStreams();
   }
   Future<void> fetchStreams() async {
@@ -105,7 +109,7 @@ class _ForumScreenState extends State<ForumScreen> {
         final settings = data['settings'] ?? {};
 
         setState(() {
-          creatorId = profile['student_id'] as int?;
+          creatorId = profile['id'] as int?;
           creatorName = profile['name']?.toString();
           academicYear = settings['year']?.toString();
           academicTerm = settings['term'] as int?;
@@ -136,9 +140,39 @@ class _ForumScreenState extends State<ForumScreen> {
   }
 
 
+  String deduceSession(String datePosted) {
+    DateTime date = DateTime.parse(datePosted);
+    int year = date.year;
+
+    // If before September, session started the previous year
+    if (date.month < 9) {
+      return "${year - 1}/${year} Session";
+    } else {
+      return "${year}/${year + 1} Session";
+    }
+  }
+  String getTermString(int term) {
+    return {
+      1: "1st",
+      2: "2nd",
+      3: "3rd",
+    }[term] ?? "Unknown";
+  }
+
+  getuserdata(){
+    final userBox = Hive.box('userData');
+    final storedUserData =
+        userBox.get('userData') ?? userBox.get('loginResponse');
+    final processedData = storedUserData is String
+        ? json.decode(storedUserData)
+        : storedUserData;
+    final response = processedData['response'] ?? processedData;
+    final data = response['data'] ?? response;
+    return data;
+  }
   @override
   Widget build(BuildContext context) {
-    if (isLoading || streams!['streams'] == null) {
+    if (isLoading || streams?['streams'] == null) {
       return const Scaffold(
         body: Center(
           child: CircularProgressIndicator(),
@@ -146,6 +180,9 @@ class _ForumScreenState extends State<ForumScreen> {
       );
     }
     final streamsList = streams!['streams'] as List<StreamsModel>;
+    String termString = getTermString(getuserdata()['settings']['term']);
+    String sessionString = deduceSession(widget.dashboardData.recentActivities.last.datePosted);
+    String coursetitle = widget.courseTitle;
 
     return Scaffold(
       body: Container(
@@ -179,12 +216,12 @@ class _ForumScreenState extends State<ForumScreen> {
                           child: Container(
                             height: 100,
                             alignment: Alignment.centerLeft,
-                            child: const Column(
+                            child:  Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  'Agricultural Science',
+                                  '${coursetitle}',
                                   style: TextStyle(
                                     color: Colors.white,
                                     fontSize: 18,
@@ -193,7 +230,7 @@ class _ForumScreenState extends State<ForumScreen> {
                                 ),
                                 SizedBox(height: 4),
                                 Text(
-                                  '2018/2019 Session',
+                                  '${sessionString} Session',
                                   style: TextStyle(
                                     color: Colors.white70,
                                     fontSize: 14,
@@ -201,7 +238,7 @@ class _ForumScreenState extends State<ForumScreen> {
                                 ),
                                 SizedBox(height: 2),
                                 Text(
-                                  'First Term',
+                                  '${termString} Term',
                                   style: TextStyle(
                                     color: Colors.white70,
                                     fontSize: 12,
@@ -285,12 +322,14 @@ class _ForumScreenState extends State<ForumScreen> {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0),
       child: Card(
-        elevation: 2,
+        color: Colors.white,
+        elevation: 10,
         shadowColor: Colors.grey.shade200,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(8),
         ),
         child: Padding(
+
           padding: const EdgeInsets.all(12.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -445,11 +484,9 @@ class _ForumScreenState extends State<ForumScreen> {
         if (_isEditing) {
           comment['content_id'];
           await commentProvider.UpdateComment(comment,contentId.toString());
-          CustomToaster.toastSuccess(context, 'Success', 'Comment updated successfully');
         } else {
 
           await commentProvider.createComment(comment, sm.id.toString());
-          CustomToaster.toastSuccess(context, 'Success', 'Comment added successfully');
         }
 
         setState(() {
