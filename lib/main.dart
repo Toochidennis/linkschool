@@ -9,7 +9,12 @@ import 'package:linkschool/modules/providers/admin/attendance_provider.dart';
 import 'package:linkschool/modules/providers/admin/behaviour_provider.dart';
 import 'package:linkschool/modules/providers/admin/class_provider.dart';
 import 'package:linkschool/modules/providers/admin/course_registration_provider.dart';
+import 'package:linkschool/modules/providers/admin/e_learning/activity_provider.dart';
 import 'package:linkschool/modules/providers/admin/e_learning/assignment_provider.dart';
+import 'package:linkschool/modules/providers/admin/e_learning/comment_provider.dart';
+import 'package:linkschool/modules/providers/admin/e_learning/delete_question.dart';
+import 'package:linkschool/modules/providers/admin/e_learning/delete_sylabus_content.dart';
+import 'package:linkschool/modules/providers/admin/e_learning/mark_assignment_provider.dart';
 import 'package:linkschool/modules/providers/admin/e_learning/material_provider.dart';
 import 'package:linkschool/modules/providers/admin/e_learning/quiz_provider.dart';
 import 'package:linkschool/modules/providers/admin/e_learning/syllabus_content_provider.dart';
@@ -29,6 +34,7 @@ import 'package:linkschool/modules/providers/explore/exam_provider.dart';
 import 'package:linkschool/modules/providers/explore/for_you_provider.dart';
 import 'package:linkschool/modules/providers/explore/home/news_provider.dart';
 import 'package:linkschool/modules/providers/explore/subject_provider.dart';
+import 'package:linkschool/modules/services/admin/e_learning/activity_service.dart';
 import 'package:linkschool/modules/services/admin/payment/vendor_service.dart';
 import 'package:linkschool/modules/services/explore/cbt_service.dart';
 import 'package:linkschool/routes/onboardingScreen.dart';
@@ -88,7 +94,15 @@ Future<void> main() async {
         ChangeNotifierProvider(create: (_) => locator<MaterialProvider>()),
         ChangeNotifierProvider(create: (_) => locator<AssignmentProvider>()),
         ChangeNotifierProvider(create: (_) => locator<QuizProvider>()),
-        ChangeNotifierProvider(create: (_) => locator<SyllabusContentProvider>()),
+            ChangeNotifierProvider(create: (_) => locator<SyllabusContentProvider>()),
+            ChangeNotifierProvider(create: (_) => locator<DeleteSyllabusProvider>()),
+            ChangeNotifierProvider(create: (_) => locator<DeleteQuestionProvider>()),
+            ChangeNotifierProvider(create: (_) => locator<MarkAssignmentProvider>()),
+            ChangeNotifierProvider(create: (_) => locator<CommentProvider>()),
+            ChangeNotifierProvider(create: (_) => OverviewProvider( locator<OverviewService>())),
+
+        // StudentProvider from service locator
+        
         ChangeNotifierProvider(create: (_) => locator<StudentProvider>()),
         ChangeNotifierProvider(create: (_) => locator<AttendanceProvider>()),
         ChangeNotifierProvider(create: (_) => CourseResultProvider()),

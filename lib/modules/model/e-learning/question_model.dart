@@ -1,4 +1,5 @@
 class Question {
+  int? id;
   final int? topicId;
   final String title;
   final String description;
@@ -21,6 +22,6 @@ class Question {
     required this.duration,
     required this.marks,
 
-    DateTime? createdAt, int? id,
+    DateTime? createdAt, this.id,
   }) : createdAt = createdAt ?? DateTime.now();
 }

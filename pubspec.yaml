@@ -73,7 +73,12 @@ dependencies:
   animated_custom_dropdown: ^3.1.1
   flutter_swiper_view: ^1.1.8
   freezed_annotation: ^2.4.1
+<<<<<<< HEAD
   json_annotation: ^4.9.0
+=======
+  flutter_pdfview: ^1.4.1+1
+  path_provider: ^2.1.5
+>>>>>>> 4b78ca78c31c307da3f3139098cb38f899bdca93
   # freezed_annotation: ^3.0.0
 
 dev_dependencies:

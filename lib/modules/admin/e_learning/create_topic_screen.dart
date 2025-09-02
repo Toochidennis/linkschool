@@ -8,6 +8,7 @@ import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/custom_toaster.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/common/widgets/portal/e_learning/select_classes_dialog.dart';
+import 'package:linkschool/modules/model/e-learning/syllabus_content_model.dart';
 import 'package:linkschool/modules/model/e-learning/topic_model.dart';
 import 'package:linkschool/modules/providers/admin/e_learning/topic_provider.dart';
 import 'package:provider/provider.dart';
@@ -16,9 +17,11 @@ class CreateTopicScreen extends StatefulWidget {
   final String? classId;
   final String? levelId;
   final String? courseId;
+  final String? courseName;
   final int? syllabusId;
-  final bool editMode;
 
+  final bool editMode;
+final TopicContent?  topicToEdit;
 
   const CreateTopicScreen({
     super.key,
@@ -27,7 +30,7 @@ class CreateTopicScreen extends StatefulWidget {
     this.courseId,
     this.syllabusId,
     this.editMode =false,
- 
+    this.topicToEdit, this.courseName
   });
 
   @override
@@ -44,10 +47,13 @@ class _CreateTopicScreenState extends State<CreateTopicScreen> {
   String? academicYear;
   int? academicTerm;
 
+  bool _isSaving = false;
+
   @override
   void initState() {
     super.initState();
     _loadUserData();
+    _populateFormForEdit();
   }
 
   @override
@@ -56,6 +62,16 @@ class _CreateTopicScreenState extends State<CreateTopicScreen> {
     _objectiveController.dispose();
     super.dispose();
   }
+
+
+void _populateFormForEdit(){
+ if (widget.editMode && widget.topicToEdit != null) {
+      final topic = widget.topicToEdit!;
+      _titleController.text = topic.name ?? '';
+      _objectiveController.text = topic.children?.map((child) => child.title).join(', ') ?? '';
+     // _selectedClass = ''
+    }
+}
 
   Future<void> _loadUserData() async {
     try {
@@ -110,6 +126,9 @@ class _CreateTopicScreenState extends State<CreateTopicScreen> {
       return;
     }
 
+    setState(() {
+      _isSaving = true;
+    });
 
     try {
       final userBox = Hive.box('userData');
@@ -147,6 +166,9 @@ class _CreateTopicScreenState extends State<CreateTopicScreen> {
         'objective': _objectiveController.text,
         'creator_id': creatorId ?? 0,
         'classes': classModelList,
+        'course_name':widget.courseName,
+        'term':academicYear ?? 0,
+        'course_id':widget.courseId
       };
 
       await topicProvider.addTopic(
@@ -154,11 +176,16 @@ class _CreateTopicScreenState extends State<CreateTopicScreen> {
         topic: _titleController.text,
         creatorName: creatorName ?? 'Unknown',
         objective: _objectiveController.text,
+        term:academicYear ?? '',
+        courseId: widget.courseId ??'' ,
+        levelId: widget.levelId ??"",
+        courseName:widget.courseName  ??"",
         creatorId: creatorId ?? 0,
         classes: classModelList,
       );
 
-      print('Topic Data to POST: $topicData');
+    
+      print('Topieeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeec Data to POST: $topicData');
 
       Navigator.of(context).pop();
     } catch (e) {
@@ -168,8 +195,10 @@ class _CreateTopicScreenState extends State<CreateTopicScreen> {
         'Error',
         'Failed to create topic: ${e.toString()}',
       );
-
-     
+    } finally {
+      setState(() {
+        _isSaving = false;
+      });
     }
   }
 
@@ -249,9 +278,10 @@ class _CreateTopicScreenState extends State<CreateTopicScreen> {
         actions: [
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 8.0),
-            child: CustomSaveElevatedButton(
+          child: CustomSaveElevatedButton(
               onPressed: _addTopic,
               text: 'Save',
+              isLoading: _isSaving,
             ),
           ),
         ],

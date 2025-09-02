@@ -12,6 +12,8 @@ import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/common/widgets/portal/e_learning/select_classes_dialog.dart';
 import 'package:linkschool/modules/admin/e_learning/select_topic_screen.dart';
 
+import '../../../common/widgets/portal/attachmentItem.dart';
+
 
 
 
@@ -34,6 +36,8 @@ class _StaffAssignmentScreenState extends State<StaffAssignmentScreen> {
   String _selectedTopic = 'No Topic';
   String _marks = '200 marks';
   late double opacity;
+
+  bool _isSaving = false;
 
   @override
   Widget build(BuildContext context) {
@@ -81,6 +85,7 @@ class _StaffAssignmentScreenState extends State<StaffAssignmentScreen> {
             child: CustomSaveElevatedButton(
               onPressed: _saveAssignment,
               text: 'Save',
+              isLoading: _isSaving,
             ),
           ),
         ],
@@ -396,14 +401,14 @@ class _StaffAssignmentScreenState extends State<StaffAssignmentScreen> {
       child: Row(
         children: [
           SvgPicture.asset(
-            attachment.iconPath,
+            attachment.iconPath!,
             width: 20,
             height: 20,
           ),
           const SizedBox(width: 8.0),
           Expanded(
             child: Text(
-              attachment.fileName,
+              attachment.fileName!,
               style: AppTextStyles.normal400(
                   fontSize: 14.0, color: AppColors.primaryLight),
               overflow: TextOverflow.ellipsis,

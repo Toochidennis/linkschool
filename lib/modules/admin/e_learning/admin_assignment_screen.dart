@@ -19,6 +19,8 @@ import 'package:linkschool/modules/common/widgets/portal/e_learning/select_class
 import 'package:linkschool/modules/providers/admin/e_learning/assignment_provider.dart';
 import 'package:provider/provider.dart';
 
+import '../../common/widgets/portal/attachmentItem.dart' show AttachmentItem;
+
 class AdminAssignmentScreen extends StatefulWidget {
   final Function(Map<String, dynamic>) onSave;
   final String? classId;
@@ -27,6 +29,7 @@ class AdminAssignmentScreen extends StatefulWidget {
   final String? levelId;
   final int? syllabusId;
   final syllabusClasses;
+  final int? itemId;
 
     final bool editMode;
   final Assignment? assignmentToEdit;
@@ -42,6 +45,7 @@ class AdminAssignmentScreen extends StatefulWidget {
     this.syllabusClasses,
     this.editMode = false,
     this.assignmentToEdit,
+    this.itemId
   });
 
   @override
@@ -65,6 +69,8 @@ class _AdminAssignmentScreenState extends State<AdminAssignmentScreen> {
   String? academicYear;
   int? academicTerm;
 
+  bool _isSaving = false;
+
 
 
   @override
@@ -82,8 +88,16 @@ class _AdminAssignmentScreenState extends State<AdminAssignmentScreen> {
     _marksController.text = assignment.marks;
     _endDate = assignment.dueDate;
     _selectedTopic = assignment.topic;
-     _attachments = assignment.attachments;
-     _selectedClass = assignment.selectedClass;
+    _selectedClass = assignment.selectedClass;
+    
+    // Mark existing attachments properly
+    _attachments = assignment.attachments.map((attachment) => AttachmentItem(
+      fileName: attachment.fileName,
+      iconPath: attachment.iconPath,
+      fileContent: attachment.fileContent,
+      isExisting: true, // Mark as existing file
+      originalServerFileName: attachment.fileName, // Store original server name
+    )).toList();
   }
 }
 
@@ -154,9 +168,10 @@ class _AdminAssignmentScreenState extends State<AdminAssignmentScreen> {
         actions: [
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 8.0),
-            child: CustomSaveElevatedButton(
+          child: CustomSaveElevatedButton(
               onPressed: _saveAssignment,
               text: 'Save',
+              isLoading: _isSaving,
             ),
           ),
         ],
@@ -546,14 +561,14 @@ class _AdminAssignmentScreenState extends State<AdminAssignmentScreen> {
       child: Row(
         children: [
           SvgPicture.asset(
-            attachment.iconPath,
+            attachment.iconPath!,
             width: 20,
             height: 20,
           ),
           const SizedBox(width: 8.0),
           Expanded(
             child: Text(
-              attachment.fileName,
+              attachment.fileName!,
               style: AppTextStyles.normal400(fontSize: 14.0, color: AppColors.primaryLight),
               overflow: TextOverflow.ellipsis,
             ),
@@ -800,11 +815,17 @@ class _AdminAssignmentScreenState extends State<AdminAssignmentScreen> {
     }
   }
 
-  void _addAttachment(String content, String iconPath, [String? base64Content]) {
-    setState(() {
-      _attachments.add(AttachmentItem(fileName: content, iconPath: iconPath, fileContent: base64Content ?? ''));
-    });
-  }
+ void _addAttachment(String content, String iconPath, [String? base64Content]) {
+  setState(() {
+    _attachments.add(AttachmentItem(
+      fileName: content, 
+      iconPath: iconPath, 
+      fileContent: base64Content ?? '',
+      isExisting: false, 
+      originalServerFileName: null, 
+    ));
+  });
+}
 
   void _selectTopic() async {
     final result = await Navigator.push(
@@ -813,7 +834,10 @@ class _AdminAssignmentScreenState extends State<AdminAssignmentScreen> {
           builder: (context) =>  SelectTopicScreen(
                 callingScreen: '',
                 syllabusId: widget.syllabusId,
-                levelId: widget.levelId!, // Pass the appropriate levelId here
+                levelId: widget.levelId!,
+                courseName:widget.courseName,
+                courseId:widget.courseId
+                 // Pass the appropriate levelId here
               )),
     );
 
@@ -849,14 +873,17 @@ class _AdminAssignmentScreenState extends State<AdminAssignmentScreen> {
       CustomToaster.toastError(context, 'Error', 'Please select both start and end dates');
       return;
     }
-    if(_endDate.isBefore(_startDate)) {
-      CustomToaster.toastError(context, 'Error', 'End date cannot be before start date');
-      return;
-    }
+    // if(_endDate.isBefore(_startDate)) {
+    //   CustomToaster.toastError(context, 'Error', 'End date cannot be before start date');
+    //   return;
+    // }
     if(_marksController.text.isEmpty) {
         CustomToaster.toastError(context, 'Error', 'Please enter marks');
       return;
     }
+    setState(() {
+      _isSaving = true;
+    });
     try {
       final assignmentProvider = Provider.of<AssignmentProvider>(context, listen: false);
       final userBox = Hive.box('userData');
@@ -893,50 +920,62 @@ class _AdminAssignmentScreenState extends State<AdminAssignmentScreen> {
         });
       }
 
-      final assignment = {
-        
+      final Map<String, dynamic> assignmentPayload = {
         'title': _titleController.text,
         'description': _descriptionController.text,
         'topic': _selectedTopic,
-        'topic_id': _selectedTopicId!, // Use 0 if no topic is selected
-        "syllabus_id":widget.syllabusId!,
-         'creator_id': creatorId,
+        'topic_id': _selectedTopicId ?? 0,
+        "syllabus_id": widget.syllabusId!,
+        "course_id":widget.courseId,
+        "course_name":widget.courseName,
+        "term":academicTerm,
+        "level_id":widget.levelId,
+        'creator_id': creatorId,
         'creator_name': creatorName,
         'start_date': _formatDate(_startDate),
         'end_date': _formatDate(_endDate),
-         'grade': _marks.replaceAll(RegExp(r'[^0-9]'), ''),
-         'classes': classIdList.isNotEmpty
+        'grade': _marks.replaceAll(RegExp(r'[^0-9]'), ''),
+        'classes': classIdList.isNotEmpty
             ? classIdList
             : [
                 {'id': '', 'name': ''},
               ],
-       
-        'files': _attachments.map((attachment) => {
-  'old_file_name': attachment.fileName,
-  'type': _getAttachmentType(attachment.iconPath, attachment.fileName),
-  'file_name': attachment.fileName,
-  'file': attachment.fileContent,
+       'files': _attachments.map((attachment) {
+  Map<String, dynamic> fileData = {
+    'type': _getAttachmentType(attachment.iconPath!, attachment.fileName!),
+    'file_name': attachment.fileName,
+   // 'file': attachment.fileContent,
+  };
+  
+
+  if (widget.editMode && attachment.isExisting) {
+    fileData['old_file_name'] = attachment.content?? '';
+  } else {
+    fileData['old_file_name'] = '';
+  }
+  
+  return fileData;
 }).toList(),
-       
-       // 'Level_id': widget.levelId,
-       // 'course_id': widget.courseId,
-        //'course_name': widget.courseName,
-        
-       
-       // 'year': academicYear,
-        //'term': academicTerm?.toInt(),
       };
 
-      print('Complete Assignment Data:');
+      if (widget.editMode && widget.assignmentToEdit != null) {
+       final id = widget.assignmentToEdit?.id ?? widget.itemId;
+       print("id to edit $id");
+        print('Updating Assignment Data:');
+        print(const JsonEncoder.withIndent('  ').convert(assignmentPayload));
+        
 
-        print(const JsonEncoder.withIndent('  ').convert(assignment));
-    // debugPrint('Assignment: ${jsonEncode(assignment)}');
+        //await assignmentProvider.UpDateAssignment(assignmentPayload ,id!);
 
-      
-    
-      await assignmentProvider.addAssignment(assignment);
+      } else {
+        // In CREATE mode
+        print('Creating Assignment Data:');
+        print(const JsonEncoder.withIndent('  ').convert(assignmentPayload));
+        
+       // await assignmentProvider.addAssignment(assignmentPayload);
+      }
        
-      widget.onSave(assignment);
+      widget.onSave(assignmentPayload);
       Navigator.of(context).pop();
     } catch (e) {
       print('Error saving assignment: $e');
@@ -945,6 +984,10 @@ class _AdminAssignmentScreenState extends State<AdminAssignmentScreen> {
         'Error',
         'Failed to save assignment: ${e.toString()}',
       );
+    } finally {
+      setState(() {
+        _isSaving = false;
+      });
     }
   }
 
@@ -964,22 +1007,14 @@ class _AdminAssignmentScreenState extends State<AdminAssignmentScreen> {
     }
     if (iconPath.contains('camera')) return 'photo';
     if (iconPath.contains('video')) return 'video';
-    return 'other';
+    return 'image';
   }
 }
 
-class AttachmentItem {
-  final String fileName;      // Display name or URL
-  final String iconPath;
-  final String fileContent;   // base64 or URL
-  AttachmentItem({
-    required this.fileName,
-    required this.iconPath,
-    required this.fileContent,
-  });
-}
+
 
 class Assignment {
+  final int? id;
   final String title;
   final String description;
   final String selectedClass;
@@ -990,6 +1025,7 @@ class Assignment {
   final DateTime createdAt;
 
   Assignment({
+    this.id,
     required this.title,
     required this.description,
     required this.selectedClass,
@@ -997,8 +1033,7 @@ class Assignment {
     required this.dueDate,
     required this.topic,
     required this.marks,
-    DateTime? createdAt, 
-    int? id,
+    DateTime? createdAt,
   }) : createdAt = createdAt ?? DateTime.now();
 }
 

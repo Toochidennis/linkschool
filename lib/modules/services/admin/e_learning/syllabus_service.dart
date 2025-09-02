@@ -7,12 +7,13 @@ class SyllabusService {
 
   SyllabusService(this._apiService);
 
-  Future<List<SyllabusModel>> getSyllabus(String levelId, String term ,String courseId) async {
+  Future<List<SyllabusModel>> getSyllabus(
+      String levelId, String term, String courseId) async {
     final userBox = Hive.box('userData');
     final loginData = userBox.get('userData') ?? userBox.get('loginResponse');
 
     final dbName = userBox.get('_db') ?? 'aalmgzmy_linkskoo_practice';
-    
+
     if (loginData == null) {
       throw Exception('No login data available');
     }
@@ -54,7 +55,7 @@ class SyllabusService {
     final loginData = userBox.get('userData') ?? userBox.get('loginResponse');
 
     final dbName = userBox.get('_db') ?? 'aalmgzmy_linkskoo_practice';
-    
+
     if (loginData == null) {
       throw Exception('No login data available');
     }
@@ -65,7 +66,8 @@ class SyllabusService {
       _apiService.setAuthToken(token);
       print('Token set: $token');
     }
-    final classesJson = syllabus.classes.map((classModel) => classModel.toJson()).toList();
+    final classesJson =
+        syllabus.classes.map((classModel) => classModel.toJson()).toList();
     final requestBody = {
       'title': syllabus.title,
       'description': syllabus.description,
@@ -74,16 +76,15 @@ class SyllabusService {
       'level_id': syllabus.levelId,
       'creator_name': syllabus.authorName,
       'creator_id': syllabus.creatorId,
-      'term': syllabus.term ,
+      'term': syllabus.term,
       'classes': classesJson,
-      '_db':dbName
+      '_db': dbName
     };
 
     print('Request Body: $requestBody');
 
     final response = await _apiService.post<Map<String, dynamic>>(
       endpoint: 'portal/elearning/syllabus',
-      
       body: requestBody,
     );
 
@@ -95,13 +96,12 @@ class SyllabusService {
     }
   }
 
-
-  Future<void> UpdateSyllabus(SyllabusModel syllabus,int syllabusId) async {
+  Future<void> UpdateSyllabus(SyllabusModel syllabus, int syllabusId) async {
     final userBox = Hive.box('userData');
     final loginData = userBox.get('userData') ?? userBox.get('loginResponse');
 
     final dbName = userBox.get('_db') ?? 'aalmgzmy_linkskoo_practice';
-    
+
     if (loginData == null) {
       throw Exception('No login data available');
     }
@@ -112,12 +112,13 @@ class SyllabusService {
       _apiService.setAuthToken(token);
       print('Token set: $token');
     }
-    final classesJson = syllabus.classes.map((classModel) => classModel.toJson()).toList();
+    final classesJson =
+        syllabus.classes.map((classModel) => classModel.toJson()).toList();
     final requestBody = {
       'title': syllabus.title,
       'description': syllabus.description,
       'classes': classesJson,
-      '_db':dbName
+      '_db': dbName
     };
 
     print('Request Body: $requestBody');
@@ -140,7 +141,7 @@ class SyllabusService {
     final loginData = userBox.get('userData') ?? userBox.get('loginResponse');
 
     final dbName = userBox.get('_db') ?? 'aalmgzmy_linkskoo_practice';
-    
+
     if (loginData == null) {
       throw Exception('No login data available');
     }

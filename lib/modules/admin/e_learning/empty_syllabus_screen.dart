@@ -13,6 +13,7 @@ import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/custom_toaster.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/model/e-learning/syllabus_model.dart';
+import 'package:linkschool/modules/providers/admin/e_learning/delete_sylabus_content.dart';
 import 'package:linkschool/modules/providers/admin/e_learning/syllabus_provider.dart';
 import 'package:linkschool/modules/services/admin/e_learning/syllabus_service.dart';
 import 'package:linkschool/modules/services/api/api_service.dart';
@@ -148,7 +149,7 @@ await _syllabusProvider.fetchSyllabus(levelId, term,courseId);
           'upload_date': syllabus.uploadDate,
           'classes': syllabus.classes,
           'selectedClass': selectedClass,
-          'selectedTeacher': "select a teacher",
+          'selectedTeacher': syllabus.authorName,
           'backgroundImagePath': _imagePaths.isNotEmpty
               ? _imagePaths[index % _imagePaths.length]
               : '',
@@ -303,6 +304,7 @@ await _syllabusProvider.fetchSyllabus(levelId, term,courseId);
       itemBuilder: (context, index) {
         return GestureDetector(
           onTap: () => Navigator.push(
+          
             context,
             MaterialPageRoute(
               builder: (context) => 
@@ -314,6 +316,7 @@ await _syllabusProvider.fetchSyllabus(levelId, term,courseId);
                 classId: widget.classId,
                 courseId: widget.courseId,
                 levelId: widget.levelId,
+                authorName:  _syllabusList[index]['author_name']?.toString() ?? '',
                 courseName: widget.course_name,
                 term: _syllabusList[index]['term']?.toString() ?? '',
                 courseTitle: _syllabusList[index]['title']?.toString() ?? '',
@@ -375,10 +378,23 @@ await _syllabusProvider.fetchSyllabus(levelId, term,courseId);
     final String term = _syllabusList[index]["term"] ;
     final String levelId = widget.levelId!;
     final String courseId = widget.courseId!;
-    SyllabusProvider syllabusProvider = Provider.of<SyllabusProvider>(context, listen: false);
-  await  syllabusProvider.deletesyllabus(syllabusId, levelId, term, courseId);
-     _loadSyllabuses();
-  }
+    final deleteProvider =Provider.of<DeleteSyllabusProvider>(context,listen:false);
+   
+try{
+    await  deleteProvider.deletesyllabus(syllabusId);
+    CustomToaster.toastSuccess(
+      context,
+      'Syllabus Deleted',
+      'Syllabus deleted successfully',
+    );
+       _loadSyllabuses();
+}catch(e){
+  CustomToaster.toastError(
+    context,
+    'Error',
+   "${e.toString()}",
+  );
+  }}
 
   void _confirmDeleteSyllabus(int index) {
     showDialog(

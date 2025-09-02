@@ -41,6 +41,10 @@ class TopicProvider extends ChangeNotifier {
     required String topic,
     required String creatorName,
     required String objective,
+    required String courseId,
+    required String levelId,
+    required String courseName,
+    required String term,
     required int creatorId,
     required List<ClassModel> classes,
   }) async {
@@ -52,10 +56,14 @@ class TopicProvider extends ChangeNotifier {
       await topicService.createTopic(
         syllabusId: syllabusId,
         topic: topic,
+        courseName:courseName,
+        courseId:courseId,
+        levelId: levelId,
         creatorName: creatorName,
         objective: objective,
         creatorId: creatorId,
         classes: classes,
+       term:term,
       );
       
       // Refresh the topics list after adding

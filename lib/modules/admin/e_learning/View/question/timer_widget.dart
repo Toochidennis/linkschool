@@ -55,6 +55,9 @@ class _TimerWidgetState extends State<TimerWidget> {
     int hours = seconds ~/ 3600;
     int minutes = (seconds % 3600) ~/ 60;
     int remainingSeconds = seconds % 60;
+    if (hours == 0 ) {
+      return "${minutes.toString().padLeft(2, '0')}:${remainingSeconds.toString().padLeft(2, '0')}";
+    }
     return '${hours.toString().padLeft(2, '0')}:${minutes.toString().padLeft(2, '0')}:${remainingSeconds.toString().padLeft(2, '0')}';
   }
 
@@ -77,7 +80,11 @@ class _TimerWidgetState extends State<TimerWidget> {
         const SizedBox(width: 8),
         Text(
           _formatTime(_remainingTimeInSeconds),
-          style: const TextStyle(color: Colors.white, fontSize: 18),
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 35,
+            fontWeight: FontWeight.bold,
+          ),
         ),
       ],
     );

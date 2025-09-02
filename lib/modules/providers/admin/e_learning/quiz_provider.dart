@@ -34,29 +34,68 @@ class QuizProvider extends ChangeNotifier {
     }
   }
 
-  Future<void> loadContent(int syllabusId) async {
-    // Prevent multiple simultaneous loads
-    if (_isLoadingContent) return;
-    
-    _isLoadingContent = true;
+  Future<void> updateTest( Map<String, dynamic> quizPayload) async {
     isLoading = true;
     error = null;
-    contentResponse = null;
+    message = null;
     notifyListeners();
 
     try {
-      final response = await _quizService.fetchContent(syllabusId);
-      contentResponse = response;
-      print('Content loaded successfully: ${contentResponse?.response.length} items');
+      await _quizService.updateTest( quizPayload);
+      message = 'Test updated successfully';
     } catch (e) {
-      print('Error loading content: $e');
+      print('Error updating test: $e');
       error = e.toString();
+      message = 'Failed to update test: $error';
+      rethrow;
     } finally {
       isLoading = false;
-      _isLoadingContent = false;
       notifyListeners();
     }
   }
 
+  Future<void> DeleteQuiz(int id) async {
+    isLoading = true;
+    error = null;
+    message = null;
+    notifyListeners();
 
-}
+    try {
+      await _quizService.DeleteQuiz(id);
+      message = 'quiz deleted successfully';
+    } catch (e) {
+      print('Error deleting quiz: $e');
+      error = e.toString();
+      message = 'Failed to delete quiz: $error';
+      rethrow;
+    } finally {
+      isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  // Future<void> loadContent(int syllabusId) async {
+  //   // Prevent multiple simultaneous loads
+  //   if (_isLoadingContent) return;
+    
+  //   _isLoadingContent = true;
+  //   isLoading = true;
+  //   error = null;
+  //   contentResponse = null;
+  //   notifyListeners();
+
+  //   try {
+  //     final response = await _quizService.fetchContent(syllabusId);
+  //     contentResponse = response;
+  //     print('Content loaded successfully: ${contentResponse?.response.length} items');
+  //   } catch (e) {
+  //     print('Error loading content: $e');
+  //     error = e.toString();
+  //   } finally {
+  //     isLoading = false;
+  //     _isLoadingContent = false;
+  //     notifyListeners();
+  //   }
+  }
+
+
