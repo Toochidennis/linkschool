@@ -38,6 +38,8 @@ import 'package:linkschool/modules/services/admin/assessment_service.dart';
 import 'package:linkschool/modules/providers/admin/student_provider.dart';
 import 'package:linkschool/modules/services/admin/behaviour_service.dart';
 
+import '../admin/payment/payment_service.dart';
+
 final GetIt locator = GetIt.instance;
 
 void setupServiceLocator() {
@@ -206,6 +208,11 @@ void setupServiceLocator() {
   // Register AttendanceProvider
   locator.registerLazySingleton<AttendanceProvider>(
     () => AttendanceProvider(),
+  );
+
+  // Register PaymentService with ApiService dependency
+  locator.registerLazySingleton<PaymentService>(
+    () => PaymentService(locator<ApiService>()),
   );
 }
 

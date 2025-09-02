@@ -5,9 +5,10 @@ import '../../../common/app_colors.dart';
 import '../../../common/constants.dart';
 import '../../../common/text_styles.dart';
 import '../../../common/widgets/portal/profile/naira_icon.dart';
-import '../../../model/admin/payment_models.dart';
+import '../../../model/admin/payment_model.dart';
 import '../../../services/admin/payment/payment_service.dart';
 import '../../../services/api/api_service.dart';
+import '../../../services/api/service_locator.dart';
 import 'student_payment_detail_screen.dart';
 import 'student_invoice_selection_screen.dart';
 
@@ -53,23 +54,26 @@ class _PaymentOutstandingScreenState extends State<PaymentOutstandingScreen> {
   }
 
   void _initializeServices() {
-    try {
-      final userBox = Hive.box('userData');
-      final token = userBox.get('token');
+        _paymentService = PaymentService(locator<ApiService>());
+    print('PaymentService initialized with shared ApiService instance');
+    // try {
+    //   final userBox = Hive.box('userData');
+    //   final token = userBox.get('token');
       
-      if (token == null || token.toString().isEmpty) {
-        print('No authentication token found. User needs to login again.');
-        return;
-      }
+    //   if (token == null || token.toString().isEmpty) {
+    //     print('No authentication token found. User needs to login again.');
+    //     return;
+    //   }
       
-      final apiService = ApiService();
-      apiService.setAuthToken(token.toString());
-      _paymentService = PaymentService(apiService);
+    //   final apiService = ApiService();
+    //   apiService.setAuthToken(token.toString());
+    //   _paymentService = PaymentService(apiService);
       
-      print('ApiService initialized with authentication token');
-    } catch (e) {
-      print('Error initializing services: $e');
-    }
+    //   print('ApiService initialized with authentication token');
+    // } catch (e) {
+    //   print('Error initializing services: $e');
+    // }
+
   }
 
   Future<void> _loadUnpaidInvoices() async {

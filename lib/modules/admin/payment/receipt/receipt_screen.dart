@@ -9,6 +9,11 @@ import 'package:linkschool/modules/common/widgets/portal/profile/naira_icon.dart
 import 'package:linkschool/modules/admin/payment/receipt/student_list_screen.dart';
 import 'package:linkschool/modules/admin/payment/receipt/generate_report/report_payment.dart';
 
+import '../../../model/admin/payment_model.dart';
+import '../../../services/admin/payment/payment_service.dart';
+import '../../../services/api/api_service.dart';
+import '../../../services/api/service_locator.dart';
+
 
 class ReceiptScreen extends StatefulWidget {
   const ReceiptScreen({super.key});
@@ -62,6 +67,8 @@ class _ReceiptScreenState extends State<ReceiptScreen>
 
   int _selectedReportType = 0;
 
+  late PaymentService _paymentService;
+
   // Define level and class data
   final Map<String, List<String>> levelClassMap = {
     'JSS': ['JSS 1', 'JSS 2', 'JSS 3'],
@@ -85,6 +92,9 @@ class _ReceiptScreenState extends State<ReceiptScreen>
   @override
   void initState() {
     super.initState();
+
+    final apiService = locator<ApiService>();
+    _paymentService = PaymentService(apiService);
     _tabController = TabController(length: 3, vsync: this);
     _animationController = AnimationController(
       duration: const Duration(milliseconds: 300),
@@ -216,20 +226,17 @@ class _ReceiptScreenState extends State<ReceiptScreen>
     );
   }
 
-  void _showLevelSelectionOverlay() {
+void _showLevelSelectionOverlay() {
+    final levels = _paymentService.getAvailableLevels();
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: AppColors.backgroundLight,
       builder: (BuildContext context) {
         return Padding(
-          padding: EdgeInsets.only(
-            bottom: MediaQuery.of(context).viewInsets.bottom,
-          ),
+          padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
           child: ConstrainedBox(
-            constraints: BoxConstraints(
-              maxHeight: MediaQuery.of(context).size.height * 0.4,
-            ),
+            constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.4),
             child: Padding(
               padding: const EdgeInsets.only(top: 16.0),
               child: Column(
@@ -237,21 +244,35 @@ class _ReceiptScreenState extends State<ReceiptScreen>
                 children: [
                   Text(
                     'Select Level',
-                    style: AppTextStyles.normal600(
-                      fontSize: 20,
-                      color: const Color.fromRGBO(47, 85, 221, 1),
-                    ),
+                    style: AppTextStyles.normal600(fontSize: 20, color: const Color.fromRGBO(47, 85, 221, 1)),
                   ),
                   const SizedBox(height: 24),
                   Flexible(
                     child: ListView.builder(
-                      itemCount: levelClassMap.keys.length,
+                      itemCount: levels.length,
                       itemBuilder: (context, index) {
-                        String level = levelClassMap.keys.elementAt(index);
+                        final level = levels[index];
                         return Padding(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 24, vertical: 8),
-                          child: _buildSubjectButton(level),
+                          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+                          child: GestureDetector(
+                            onTap: () {
+                              Navigator.pop(context);
+                              _showClassSelectionOverlay(level);
+                            },
+                            child: Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+                              decoration: BoxDecoration(
+                                color: const Color.fromRGBO(47, 85, 221, 1),
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: Text(
+                                level.levelName,
+                                style: AppTextStyles.normal500(fontSize: 18, color: AppColors.backgroundLight),
+                                textAlign: TextAlign.center,
+                              ),
+                            ),
+                          ),
                         );
                       },
                     ),
@@ -265,44 +286,53 @@ class _ReceiptScreenState extends State<ReceiptScreen>
     );
   }
 
-  void _showClassSelectionOverlay(String level) {
+  void _showClassSelectionOverlay(Level level) {
+    final classes = _paymentService.getClassesForLevel(level.id);
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: AppColors.backgroundLight,
       builder: (BuildContext context) {
         return Padding(
-          padding: EdgeInsets.only(
-            bottom: MediaQuery.of(context).viewInsets.bottom,
-          ),
+          padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
           child: ConstrainedBox(
-            constraints: BoxConstraints(
-              maxHeight: MediaQuery.of(context).size.height * 0.4,
-            ),
+            constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.4),
             child: Padding(
               padding: const EdgeInsets.only(top: 16.0),
               child: Column(
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Text(
-                      'Select Class',
-                      style: AppTextStyles.normal600(
-                        fontSize: 20,
-                        color: const Color.fromRGBO(47, 85, 221, 1),
-                      ),
-                    ),
+                  Text(
+                    'Select Class',
+                    style: AppTextStyles.normal600(fontSize: 20, color: const Color.fromRGBO(47, 85, 221, 1)),
                   ),
                   const SizedBox(height: 24),
                   Flexible(
                     child: ListView.builder(
-                      itemCount: levelClassMap[level]?.length ?? 0,
+                      itemCount: classes.length,
                       itemBuilder: (context, index) {
-                        String className = levelClassMap[level]![index];
+                        final classModel = classes[index];
                         return Padding(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 24, vertical: 8),
-                          child: _buildSubjectButton(className, isClass: true),
+                          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+                          child: GestureDetector(
+                            onTap: () {
+                              Navigator.pop(context);
+                              _showStudentList(classModel);
+                            },
+                            child: Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+                              decoration: BoxDecoration(
+                                color: const Color.fromRGBO(47, 85, 221, 1),
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: Text(
+                                classModel.className,
+                                style: AppTextStyles.normal500(fontSize: 18, color: AppColors.backgroundLight),
+                                textAlign: TextAlign.center,
+                              ),
+                            ),
+                          ),
                         );
                       },
                     ),
@@ -316,26 +346,143 @@ class _ReceiptScreenState extends State<ReceiptScreen>
     );
   }
 
-  void _showStudentList(String className) {
-    // Simulated student data - replace with actual data fetch
-    List<String> students = [
-      'John ifeanyi',
-      'Amaka Smith',
-      'Mike Okoro',
-      'Sarah Uche',
-      'David Ugonna',
-    ];
-
+  void _showStudentList(ClassModel classModel) {
     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => StudentListScreen(
-          className: className,
-          students: students,
+          levelId: classModel.levelId,
+          classId: classModel.id,
+          className: classModel.className,
         ),
       ),
     );
   }
+
+
+  // void _showLevelSelectionOverlay() {
+  //   showModalBottomSheet(
+  //     context: context,
+  //     isScrollControlled: true,
+  //     backgroundColor: AppColors.backgroundLight,
+  //     builder: (BuildContext context) {
+  //       return Padding(
+  //         padding: EdgeInsets.only(
+  //           bottom: MediaQuery.of(context).viewInsets.bottom,
+  //         ),
+  //         child: ConstrainedBox(
+  //           constraints: BoxConstraints(
+  //             maxHeight: MediaQuery.of(context).size.height * 0.4,
+  //           ),
+  //           child: Padding(
+  //             padding: const EdgeInsets.only(top: 16.0),
+  //             child: Column(
+  //               mainAxisSize: MainAxisSize.min,
+  //               children: [
+  //                 Text(
+  //                   'Select Level',
+  //                   style: AppTextStyles.normal600(
+  //                     fontSize: 20,
+  //                     color: const Color.fromRGBO(47, 85, 221, 1),
+  //                   ),
+  //                 ),
+  //                 const SizedBox(height: 24),
+  //                 Flexible(
+  //                   child: ListView.builder(
+  //                     itemCount: levelClassMap.keys.length,
+  //                     itemBuilder: (context, index) {
+  //                       String level = levelClassMap.keys.elementAt(index);
+  //                       return Padding(
+  //                         padding: const EdgeInsets.symmetric(
+  //                             horizontal: 24, vertical: 8),
+  //                         child: _buildSubjectButton(level),
+  //                       );
+  //                     },
+  //                   ),
+  //                 ),
+  //               ],
+  //             ),
+  //           ),
+  //         ),
+  //       );
+  //     },
+  //   );
+  // }
+
+
+  // void _showClassSelectionOverlay(String level) {
+  //   showModalBottomSheet(
+  //     context: context,
+  //     isScrollControlled: true,
+  //     backgroundColor: AppColors.backgroundLight,
+  //     builder: (BuildContext context) {
+  //       return Padding(
+  //         padding: EdgeInsets.only(
+  //           bottom: MediaQuery.of(context).viewInsets.bottom,
+  //         ),
+  //         child: ConstrainedBox(
+  //           constraints: BoxConstraints(
+  //             maxHeight: MediaQuery.of(context).size.height * 0.4,
+  //           ),
+  //           child: Padding(
+  //             padding: const EdgeInsets.only(top: 16.0),
+  //             child: Column(
+  //               children: [
+  //                 Padding(
+  //                   padding: const EdgeInsets.all(16.0),
+  //                   child: Text(
+  //                     'Select Class',
+  //                     style: AppTextStyles.normal600(
+  //                       fontSize: 20,
+  //                       color: const Color.fromRGBO(47, 85, 221, 1),
+  //                     ),
+  //                   ),
+  //                 ),
+  //                 const SizedBox(height: 24),
+  //                 Flexible(
+  //                   child: ListView.builder(
+  //                     itemCount: levelClassMap[level]?.length ?? 0,
+  //                     itemBuilder: (context, index) {
+  //                       String className = levelClassMap[level]![index];
+  //                       return Padding(
+  //                         padding: const EdgeInsets.symmetric(
+  //                             horizontal: 24, vertical: 8),
+  //                         child: _buildSubjectButton(className, isClass: true),
+  //                       );
+  //                     },
+  //                   ),
+  //                 ),
+  //               ],
+  //             ),
+  //           ),
+  //         ),
+  //       );
+  //     },
+  //   );
+  // }
+
+
+
+  // void _showStudentList(String className) {
+  //   // Simulated student data - replace with actual data fetch
+  //   List<String> students = [
+  //     'John ifeanyi',
+  //     'Amaka Smith',
+  //     'Mike Okoro',
+  //     'Sarah Uche',
+  //     'David Ugonna',
+  //   ];
+
+  //   Navigator.push(
+  //     context,
+  //     MaterialPageRoute(
+  //       builder: (context) => StudentListScreen(
+  //         className: className,
+  //         students: students,
+  //       ),
+  //     ),
+  //   );
+  // }
 
   Widget _buildAnimatedFAB() {
     final bool showLabels = _buttonAnimation.value == 1;
@@ -764,10 +911,10 @@ class _ReceiptScreenState extends State<ReceiptScreen>
         Navigator.pop(context); // Close current overlay
         if (isClass) {
           _showStudentList(
-              text); // Navigate to StudentListScreen for class selection
+              text as ClassModel); // Navigate to StudentListScreen for class selection
         } else {
           _showClassSelectionOverlay(
-              text); // Show class selection for level selection
+              text as Level); // Show class selection for level selection
         }
       },
       style: ElevatedButton.styleFrom(

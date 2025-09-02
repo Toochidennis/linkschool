@@ -5,7 +5,7 @@ import '../../../common/app_colors.dart';
 import '../../../common/constants.dart';
 import '../../../common/text_styles.dart';
 import '../../../common/widgets/portal/profile/naira_icon.dart';
-import '../../../model/admin/payment_models.dart';
+import '../../../model/admin/payment_model.dart';
 import '../../../services/admin/payment/payment_service.dart';
 import '../../../services/api/api_service.dart';
 import 'student_payment_detail_screen.dart';

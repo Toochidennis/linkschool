@@ -7,7 +7,7 @@ import '../../../common/constants.dart';
 import '../../../common/custom_toaster.dart';
 import '../../../common/text_styles.dart';
 import '../../../common/widgets/portal/profile/naira_icon.dart';
-import '../../../model/admin/payment_models.dart';
+import '../../../model/admin/payment_model.dart';
 import '../../../services/admin/payment/payment_service.dart';
 import '../../../services/api/api_service.dart';
 
@@ -31,11 +31,14 @@ class _StudentPaymentDetailScreenState extends State<StudentPaymentDetailScreen>
   late double opacity;
   late PaymentService _paymentService;
   bool _isProcessingPayment = false;
+  Map<String, bool> _selectedFees = {};
+  bool _selectAll = false;
 
   @override
   void initState() {
     super.initState();
     _initializeServices();
+    _initializeCheckboxStates();
   }
 
   void _initializeServices() {
@@ -58,6 +61,46 @@ class _StudentPaymentDetailScreenState extends State<StudentPaymentDetailScreen>
     }
   }
 
+  void _initializeCheckboxStates() {
+    final activeFees = widget.invoice.invoiceDetails.where((fee) => fee.amount > 0).toList();
+    for (var fee in activeFees) {
+      _selectedFees[fee.feeId] = true; // All selected by default
+    }
+    _selectAll = true;
+  }
+
+  double get _calculateSelectedTotal {
+    final activeFees = widget.invoice.invoiceDetails.where((fee) => fee.amount > 0).toList();
+    return activeFees
+        .where((fee) => _selectedFees[fee.feeId] == true)
+        .fold(0.0, (sum, fee) => sum + fee.amount);
+  }
+
+  List<InvoiceDetail> get _getSelectedFees {
+    final activeFees = widget.invoice.invoiceDetails.where((fee) => fee.amount > 0).toList();
+    return activeFees.where((fee) => _selectedFees[fee.feeId] == true).toList();
+  }
+
+  void _toggleSelectAll(bool? value) {
+    setState(() {
+      _selectAll = value ?? false;
+      final activeFees = widget.invoice.invoiceDetails.where((fee) => fee.amount > 0).toList();
+      for (var fee in activeFees) {
+        _selectedFees[fee.feeId] = _selectAll;
+      }
+    });
+  }
+
+  void _toggleFeeSelection(String feeId, bool? value) {
+    setState(() {
+      _selectedFees[feeId] = value ?? false;
+      
+      // Update select all state
+      final activeFees = widget.invoice.invoiceDetails.where((fee) => fee.amount > 0).toList();
+      _selectAll = activeFees.every((fee) => _selectedFees[fee.feeId] == true);
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final Brightness brightness = Theme.of(context).brightness;
@@ -65,7 +108,7 @@ class _StudentPaymentDetailScreenState extends State<StudentPaymentDetailScreen>
     
     // Filter out fees with zero amount
     final activeFees = widget.invoice.invoiceDetails.where((fee) => fee.amount > 0).toList();
-    final totalAmount = activeFees.fold(0.0, (sum, fee) => sum + fee.amount);
+    final selectedTotal = _calculateSelectedTotal;
     
     return Scaffold(
       appBar: AppBar(
@@ -107,154 +150,200 @@ class _StudentPaymentDetailScreenState extends State<StudentPaymentDetailScreen>
       ),
       body: Container(
         decoration: Constants.customBoxDecoration(context),
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Student Info Card
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.blue[50],
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.blue[200]!),
-                ),
-                child: Row(
+        child: Column(
+          children: [
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    SvgPicture.asset(
-                      'assets/icons/profile/payment_icon.svg',
-                      width: 50,
-                      height: 50,
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                    // Student Info Card
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.blue[50],
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: Colors.blue[200]!),
+                      ),
+                      child: Row(
                         children: [
-                          Text(
-                            widget.student.name,
-                            style: AppTextStyles.normal600(
-                              fontSize: 18,
-                              color: AppColors.backgroundDark,
-                            ),
+                          SvgPicture.asset(
+                            'assets/icons/profile/payment_icon.svg',
+                            width: 50,
+                            height: 50,
                           ),
-                          Text(
-                            'Reg No: ${widget.student.regNo}',
-                            style: AppTextStyles.normal400(
-                              fontSize: 14,
-                              color: Colors.grey[600]!,
-                            ),
-                          ),
-                          Text(
-                            _paymentService.getClassName(widget.student.classId) ?? 'Unknown Class',
-                            style: AppTextStyles.normal400(
-                              fontSize: 14,
-                              color: Colors.grey[600]!,
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  widget.student.name,
+                                  style: AppTextStyles.normal600(
+                                    fontSize: 18,
+                                    color: AppColors.backgroundDark,
+                                  ),
+                                ),
+                                Text(
+                                  'Reg No: ${widget.student.regNo}',
+                                  style: AppTextStyles.normal400(
+                                    fontSize: 14,
+                                    color: Colors.grey[600]!,
+                                  ),
+                                ),
+                                Text(
+                                  _paymentService.getClassName(widget.student.classId) ?? 'Unknown Class',
+                                  style: AppTextStyles.normal400(
+                                    fontSize: 14,
+                                    color: Colors.grey[600]!,
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                         ],
                       ),
                     ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 24),
-              
-              // Payment Title
-              Text(
-                '${widget.invoice.termText} ${widget.invoice.sessionText}',
-                style: AppTextStyles.normal600(
-                  fontSize: 20,
-                  color: const Color.fromRGBO(47, 85, 221, 1),
-                ),
-              ),
-              const SizedBox(height: 16),
-              
-              // Fee Breakdown
-              Text(
-                'Fee Breakdown',
-                style: AppTextStyles.normal600(
-                  fontSize: 18,
-                  color: AppColors.backgroundDark,
-                ),
-              ),
-              const SizedBox(height: 12),
-              
-              Container(
-                decoration: BoxDecoration(
-                  border: Border.all(color: Colors.grey.shade300),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Column(
-                  children: activeFees.map((fee) => _buildFeeItem(fee)).toList(),
-                ),
-              ),
-              
-              const SizedBox(height: 24),
-              
-              // Total Amount
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: const Color.fromRGBO(47, 85, 221, 0.1),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: const Color.fromRGBO(47, 85, 221, 0.3)),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
+                    const SizedBox(height: 24),
+                    
+                    // Payment Title
                     Text(
-                      'Total amount to pay',
+                      '${widget.invoice.termText} ${widget.invoice.sessionText}',
                       style: AppTextStyles.normal600(
-                        fontSize: 18,
-                        color: AppColors.backgroundDark,
+                        fontSize: 20,
+                        color: const Color.fromRGBO(47, 85, 221, 1),
                       ),
                     ),
+                    const SizedBox(height: 16),
+                    
+                    // Fee Breakdown Header with Select All
                     Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const NairaSvgIcon(color: Color.fromRGBO(47, 85, 221, 1)),
-                        const SizedBox(width: 4),
                         Text(
-                          totalAmount.toStringAsFixed(2),
-                          style: AppTextStyles.normal700(
-                            fontSize: 20,
-                            color: const Color.fromRGBO(47, 85, 221, 1),
+                          'Fee Breakdown',
+                          style: AppTextStyles.normal600(
+                            fontSize: 18,
+                            color: AppColors.backgroundDark,
                           ),
+                        ),
+                        Row(
+                          children: [
+                            Checkbox(
+                              value: _selectAll,
+                              onChanged: _toggleSelectAll,
+                              activeColor: const Color.fromRGBO(47, 85, 221, 1),
+                            ),
+                            Text(
+                              'Select All',
+                              style: AppTextStyles.normal500(
+                                fontSize: 14,
+                                color: AppColors.backgroundDark,
+                              ),
+                            ),
+                          ],
                         ),
                       ],
                     ),
+                    const SizedBox(height: 12),
+                    
+                    Container(
+                      decoration: BoxDecoration(
+                        border: Border.all(color: Colors.grey.shade300),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Column(
+                        children: activeFees.map((fee) => _buildFeeItem(fee)).toList(),
+                      ),
+                    ),
+                    
+                    const SizedBox(height: 100), // Added space for fixed bottom section
                   ],
                 ),
               ),
-              
-              const SizedBox(height: 32),
-              
-              // Proceed to Pay Button
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: _isProcessingPayment ? null : () => _showPaymentBottomSheet(),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color.fromRGBO(47, 85, 221, 1),
-                    minimumSize: const Size(double.infinity, 50),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10.0),
-                    ),
+            ),
+            
+            Container(
+              padding: const EdgeInsets.all(16.0),
+              decoration: BoxDecoration(
+                color: Theme.of(context).scaffoldBackgroundColor,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.grey.withOpacity(0.3),
+                    spreadRadius: 1,
+                    blurRadius: 5,
+                    offset: const Offset(0, -3),
                   ),
-                  child: _isProcessingPayment
-                      ? const CircularProgressIndicator(color: Colors.white)
-                      : Text(
-                          'Proceed to pay',
-                          style: AppTextStyles.normal500(
+                ],
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Total Amount
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: const Color.fromRGBO(47, 85, 221, 0.1),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: const Color.fromRGBO(47, 85, 221, 0.3)),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'Total amount to pay',
+                          style: AppTextStyles.normal600(
                             fontSize: 18,
-                            color: AppColors.backgroundLight,
+                            color: AppColors.backgroundDark,
                           ),
                         ),
-                ),
+                        Row(
+                          children: [
+                            const NairaSvgIcon(color: Color.fromRGBO(47, 85, 221, 1)),
+                            const SizedBox(width: 4),
+                            Text(
+                              selectedTotal.toStringAsFixed(2),
+                              style: AppTextStyles.normal700(
+                                fontSize: 20,
+                                color: const Color.fromRGBO(47, 85, 221, 1),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  
+                  const SizedBox(height: 16),
+                  
+                  // Proceed to Pay Button
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: (_isProcessingPayment || selectedTotal == 0) ? null : () => _showPaymentBottomSheet(),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color.fromRGBO(47, 85, 221, 1),
+                        minimumSize: const Size(double.infinity, 50),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10.0),
+                        ),
+                      ),
+                      child: _isProcessingPayment
+                          ? const CircularProgressIndicator(color: Colors.white)
+                          : Text(
+                              'Proceed to pay',
+                              style: AppTextStyles.normal500(
+                                fontSize: 18,
+                                color: AppColors.backgroundLight,
+                              ),
+                            ),
+                    ),
+                  ),
+                ],
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
@@ -269,8 +358,13 @@ class _StudentPaymentDetailScreenState extends State<StudentPaymentDetailScreen>
         ),
       ),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
+          Checkbox(
+            value: _selectedFees[fee.feeId] ?? false,
+            onChanged: (value) => _toggleFeeSelection(fee.feeId, value),
+            activeColor: const Color.fromRGBO(47, 85, 221, 1),
+          ),
+          const SizedBox(width: 8),
           Expanded(
             child: Text(
               fee.feeName,
@@ -299,8 +393,17 @@ class _StudentPaymentDetailScreenState extends State<StudentPaymentDetailScreen>
   }
 
   void _showPaymentBottomSheet() {
-    final activeFees = widget.invoice.invoiceDetails.where((fee) => fee.amount > 0).toList();
-    final totalAmount = activeFees.fold(0.0, (sum, fee) => sum + fee.amount);
+    final selectedFees = _getSelectedFees;
+    final selectedTotal = _calculateSelectedTotal;
+    
+    if (selectedFees.isEmpty) {
+      CustomToaster.toastError(
+        context,
+        'No Fees Selected',
+        'Please select at least one fee to proceed with payment',
+      );
+      return;
+    }
     
     showModalBottomSheet(
       context: context,
@@ -312,8 +415,8 @@ class _StudentPaymentDetailScreenState extends State<StudentPaymentDetailScreen>
         return _PaymentBottomSheet(
           student: widget.student,
           invoice: widget.invoice,
-          fees: activeFees,
-          totalAmount: totalAmount,
+          fees: selectedFees, // Pass only selected fees
+          totalAmount: selectedTotal, // Pass calculated total
           paymentService: _paymentService,
           onPaymentSuccess: () {
             Navigator.pop(context); // Close bottom sheet
@@ -414,9 +517,10 @@ class _PaymentBottomSheetState extends State<_PaymentBottomSheet> {
       final success = await widget.paymentService.makePayment(
         invoiceId: widget.invoice.id.toString(),
         reference: _referenceController.text,
+        studentId: widget.student.studentId,
         regNo: widget.student.regNo,
         name: widget.student.name,
-        invoice_details: widget.fees,
+        fees: widget.fees,
         amount: widget.totalAmount,
         classId: widget.student.classId,
         levelId: widget.student.levelId,
@@ -435,6 +539,7 @@ class _PaymentBottomSheetState extends State<_PaymentBottomSheet> {
       setState(() => _isProcessing = false);
     }
   }
+
 
   @override
   Widget build(BuildContext context) {
