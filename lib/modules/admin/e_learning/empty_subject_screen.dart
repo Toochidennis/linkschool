@@ -69,6 +69,7 @@ class _EmptySubjectScreenState extends State<EmptySubjectScreen>
   late double opacity = 0.1;
   List<TopicContent> _topics = [];
   List<SyllabusContentItem> _noTopicItems = [];
+  bool _shouldRefresh = false;
 
   @override
   void initState() {
@@ -91,17 +92,34 @@ class _EmptySubjectScreenState extends State<EmptySubjectScreen>
   }
 
   @override
+  void didUpdateWidget(EmptySubjectScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+  
+    if (_shouldRefresh) {
+      _loadSyllabusContents();
+      _shouldRefresh = false; 
+    }
+  }
+
+  @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
 
-  void _initializeState() {
+ void _initializeState() {
     setState(() {
       _topics = [];
       _noTopicItems = [];
+      _shouldRefresh = false; // Initialize flag
     });
     _loadSyllabusContents();
+  }
+
+  void setRefreshFlag() {
+    setState(() {
+      _shouldRefresh = true;
+    });
   }
 
   Future<void> _loadSyllabusContents() async {
@@ -227,7 +245,7 @@ class _EmptySubjectScreenState extends State<EmptySubjectScreen>
               context,
               MaterialPageRoute(
                 builder: (context) => QuestionScreen(
-                  // Use QuestionScreen instead of StaffQuestionScreen
+                  
                   classId: widget.classId,
                   syllabusId: widget.syllabusId!,
                   courseId: widget.courseId,
@@ -971,7 +989,7 @@ print("Editing item: ${item.title}, ID: ${item.id}"); // Debug log
           builder: (context) => ViewQuestionScreen(
 
             question: Question(
-              id: item.id, // Pass the quiz ID
+              id: item.id, 
               title: item.title,
               description: item.description,
               selectedClass: item.classes.map((c) => c.name).join(', '),
@@ -990,7 +1008,7 @@ print("Editing item: ${item.title}, ID: ${item.id}"); // Debug log
             syllabusClasses: item.classes.map((c) =>{'id': c.id.toString(), 'name': c.name}).join(', '),
             questions: item.questions, 
             editMode: true,
-         
+            onSaveFlag: setRefreshFlag,
           ),
         ),
       ).then((_) {

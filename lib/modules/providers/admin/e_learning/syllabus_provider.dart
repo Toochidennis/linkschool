@@ -41,7 +41,7 @@ class SyllabusProvider with ChangeNotifier {
     required String courseId,
     required String courseName,
   required List<ClassModel> classes,
-    required String levelId,
+    required  levelId,
     required String creatorId,
   }) async {
     _isLoading = true;

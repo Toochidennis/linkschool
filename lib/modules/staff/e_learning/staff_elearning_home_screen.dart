@@ -1,13 +1,15 @@
 import 'dart:async';
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:hive/hive.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/constants.dart';
+import 'package:linkschool/modules/common/custom_toaster.dart';
 import 'package:linkschool/modules/common/widgets/portal/student/student_customized_appbar.dart';
 import 'package:linkschool/modules/staff/e_learning/staff_course_detail_screen.dart';
 import 'package:linkschool/modules/student/home/new_post_dialog.dart';
 import 'package:carousel_slider/carousel_slider.dart';
-
 
 class StaffElearningScreen extends StatefulWidget {
   const StaffElearningScreen({super.key});
@@ -15,7 +17,6 @@ class StaffElearningScreen extends StatefulWidget {
   @override
   _StaffElearningScreenState createState() => _StaffElearningScreenState();
 }
-
 
 class _StaffElearningScreenState extends State<StaffElearningScreen> {
   int currentAssessmentIndex = 0;
@@ -26,7 +27,7 @@ class _StaffElearningScreenState extends State<StaffElearningScreen> {
   Timer? activityTimer;
   late double opacity;
 
-   final String courseIcon = 'assets/icons/course-icon.svg';
+  final String courseIcon = 'assets/icons/course-icon.svg';
 
   final List<Map<String, String>> assessments = [
     {
@@ -73,42 +74,33 @@ class _StaffElearningScreenState extends State<StaffElearningScreen> {
     },
   ];
 
-  final List<String> courses = [
-    'Civic Education',
-    'Mathematics',
-    'English',
-    'Biology',
-    'Chemistry',
-    'Physics',
-    'History',
-    'Geography',
-    'Computer Science',
-    'Physical Education',
-    'Music',
-    'Art',
-  ];
-
+  // Remove the hardcoded courses list
+  // final List<String> courses = [...];
 
   final List<String> courseBackgrounds = [
     'assets/images/student/bg-light-blue.svg',
-    'assets/images/student/bg-light-blue.svg',
     'assets/images/student/bg-green.svg',
-    'assets/images/student/bg-green.svg',
-    'assets/images/student/bg-light-blue.svg',
-    'assets/images/student/bg-light-blue.svg',
     'assets/images/student/bg-dark-blue.svg',
-    'assets/images/student/bg-dark-blue.svg',
-    'assets/images/student/bg-green.svg',
-    'assets/images/student/bg-green.svg',
-    'assets/images/student/bg-purple.svg',
     'assets/images/student/bg-purple.svg',
   ];
+
+  Map<String, dynamic>? userData;
+  List<dynamic> levelNames = [];
+  List<dynamic> courseNames = [];
+  List<dynamic> classNames = [];
+  List<dynamic> levelsWithCourses = [];
+  String selectedLevelId = '';
+  String selectedCourseId = '';
+  String academicTerm = '';
 
   @override
   void initState() {
     super.initState();
     assessmentController = PageController(viewportFraction: 0.90);
     activityController = PageController(viewportFraction: 0.90);
+
+    // Load user data
+    _loadUserData();
 
     // Start timers for auto-scrolling
     assessmentTimer = Timer.periodic(const Duration(seconds: 5), (_) {
@@ -156,14 +148,107 @@ class _StaffElearningScreenState extends State<StaffElearningScreen> {
     );
   }
 
-  void _navigateToCourseDetail(String courseTitle) {
-    Navigator.push(
+ void _navigateToCourseDetail(Map<String, dynamic> course, String classId) {
+  print("======Navigating to Course Detail=====");
+  print("Course Name: ${course['course_name']}");
+  print("Course ID: ${course['course_id']}");
+  print("Class ID: $classId");
+
+  // Find the classData from levelsWithCourses to get class_name
+  final classData = levelsWithCourses.firstWhere(
+    (data) => data['class_id'].toString() == classId,
+    orElse: () => {'class_id': '', 'class_name': ''},
+  );
+
+  print("Class Name: ${classData['class_name']}");
+
+  // Construct classesList
+  final List<Map<String, dynamic>> classesList = [
+    {
+      'id': classId,
+      'name': classData['class_name']?.toString() ?? '',
+    }
+  ];
+
+  // Validate classesList
+  if (classesList[0]['id'].isEmpty || classesList[0]['name'].isEmpty) {
+    print("Warning: Invalid class data - id or name is empty");
+    CustomToaster.toastError(
       context,
-      MaterialPageRoute(
-        builder: (context) => StaffCourseDetailScreen(courseTitle: courseTitle),
-      ),
+      'Navigation Error',
+      'Invalid class data. Please try again.',
     );
+    return;
   }
+
+  Navigator.push(
+    context,
+    MaterialPageRoute(
+      builder: (context) => StaffCourseDetailScreen(
+        selectedSubject: course['course_name'] ?? '',
+        classId: classId,
+        courseId: course['course_id']?.toString() ?? '',
+        course_name: course['course_name'] ?? '',
+        classesList: classesList, // Pass the extracted classes list
+        levelId: classData['level_id']?.toString(), // Pass levelId if available
+        term: academicTerm, // Pass academicTerm
+      ),
+    ),
+  );
+}
+
+
+Future<void> _loadUserData() async {
+  try {
+    final userBox = Hive.box('userData');
+    final storedUserData = userBox.get('userData');
+    final storedLoginResponse = userBox.get('loginResponse');
+
+    dynamic dataToProcess;
+    if (storedUserData != null) {
+      dataToProcess = storedUserData;
+    } else if (storedLoginResponse != null) {
+      dataToProcess = storedLoginResponse;
+    }
+
+    if (dataToProcess != null) {
+      Map<String, dynamic> processedData = dataToProcess is String
+          ? json.decode(dataToProcess)
+          : dataToProcess;
+
+      final response = processedData['response'] ?? processedData;
+      final data = response['data'] ?? response;
+      final settings = data['settings'] ?? {};
+      final term = settings['term']?.toString() ?? '';
+      final rawCourses = data['courses'] ?? [];
+
+      // Build a simpler "levelsWithCourses"
+      final grouped = rawCourses.map((classData) {
+        return {
+          "class_name": classData["class_name"] ?? "",
+          "class_id":classData["class_id"] ?? "",
+          "courses": (classData["courses"] ?? []).map((c) {
+            return {
+              "course_id": (c["course_id"] ?? "").toString(),
+              "course_name": (c["course_name"] ?? "").toString().trim(),
+            };
+          }).toList()
+        };
+      }).toList();
+
+      setState(() {
+        userData = processedData;
+        levelsWithCourses = grouped;
+        academicTerm = term;
+      });
+
+      print("levelsWithCourses: $levelsWithCourses");
+    }
+  } catch (e) {
+    print("Error loading user data: $e");
+  }
+}
+
 
   @override
   Widget build(BuildContext context) {
@@ -174,9 +259,7 @@ class _StaffElearningScreenState extends State<StaffElearningScreen> {
         title: 'Welcome',
         subtitle: 'Tochukwu',
         showNotification: true,
-        // showPostInput: true,
         onNotificationTap: () {},
-        // onPostTap: _showNewPostDialog,
       ),
       body: Container(
         decoration: Constants.customBoxDecoration(context),
@@ -257,91 +340,84 @@ class _StaffElearningScreenState extends State<StaffElearningScreen> {
                             ),
                           ),
                           const SizedBox(height: 48),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                              children: [
-                                // Time
-                                const Column(
-                                  children: [
-                                    Text(
-                                      'Time',
-                                      style: TextStyle(
-                                        color: AppColors.backgroundLight,
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.bold,
-                                      ),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                            children: [
+                              const Column(
+                                children: [
+                                  Text(
+                                    'Time',
+                                    style: TextStyle(
+                                      color: AppColors.backgroundLight,
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.bold,
                                     ),
-                                    SizedBox(height: 4),
-                                    Text(
-                                      '08:00 AM',
-                                      style: TextStyle(
-                                        color: AppColors.backgroundLight,
-                                        fontSize: 14,
-                                      ),
+                                  ),
+                                  SizedBox(height: 4),
+                                  Text(
+                                    '08:00 AM',
+                                    style: TextStyle(
+                                      color: AppColors.backgroundLight,
+                                      fontSize: 14,
                                     ),
-                                  ],
-                                ),
-                                // Vertical Divider
-                                Container(
-                                  height: 40,
-                                  width: 1,
-                                  color: Colors.white, // White line
-                                  margin: const EdgeInsets.symmetric(
-                                      horizontal: 8.0),
-                                ),
-                                // Classes
-                                Column(
-                                  children: [
-                                    const Text(
-                                      'Classes',
-                                      style: TextStyle(
-                                        color: AppColors.backgroundLight,
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.bold,
-                                      ),
+                                  ),
+                                ],
+                              ),
+                              Container(
+                                height: 40,
+                                width: 1,
+                                color: Colors.white,
+                                margin: const EdgeInsets.symmetric(horizontal: 8.0),
+                              ),
+                              Column(
+                                children: [
+                                  const Text(
+                                    'Classes',
+                                    style: TextStyle(
+                                      color: AppColors.backgroundLight,
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.bold,
                                     ),
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      assessment['classes']!,
-                                      textAlign: TextAlign.center,
-                                      style: const TextStyle(
-                                        color: AppColors.backgroundLight,
-                                        fontSize: 14,
-                                      ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    assessment['classes']!,
+                                    textAlign: TextAlign.center,
+                                    style: const TextStyle(
+                                      color: AppColors.backgroundLight,
+                                      fontSize: 14,
                                     ),
-                                  ],
-                                ),
-                                // Vertical Divider
-                                Container(
-                                  height: 40,
-                                  width: 1,
-                                  color: Colors.white, // White line
-                                  margin: const EdgeInsets.symmetric(
-                                      horizontal: 8.0),
-                                ),
-                                // Duration
-                                const Column(
-                                  children: [
-                                    Text(
-                                      'Duration',
-                                      style: TextStyle(
-                                        color: AppColors.backgroundLight,
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.bold,
-                                      ),
+                                  ),
+                                ],
+                              ),
+                              Container(
+                                height: 40,
+                                width: 1,
+                                color: Colors.white,
+                                margin: const EdgeInsets.symmetric(horizontal: 8.0),
+                              ),
+                              const Column(
+                                children: [
+                                  Text(
+                                    'Duration',
+                                    style: TextStyle(
+                                      color: AppColors.backgroundLight,
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.bold,
                                     ),
-                                    SizedBox(height: 4),
-                                    Text(
-                                      '2h 30m',
-                                      style: TextStyle(
-                                        color: AppColors.backgroundLight,
-                                        fontSize: 14,
-                                      ),
+                                  ),
+                                  SizedBox(height: 4),
+                                  Text(
+                                    '2h 30m',
+                                    style: TextStyle(
+                                      color: AppColors.backgroundLight,
+                                      fontSize: 14,
                                     ),
-                                  ],
-                                ),
-                              ],
-                            ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
                         ],
                       ),
                     ),
@@ -362,8 +438,6 @@ class _StaffElearningScreenState extends State<StaffElearningScreen> {
                   },
                 ),
               ),
-
-// Carousel Dots
               const SizedBox(height: 16),
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -377,14 +451,12 @@ class _StaffElearningScreenState extends State<StaffElearningScreen> {
                       shape: BoxShape.circle,
                       color: currentAssessmentIndex == index
                           ? Colors.blue
-                          : Colors.grey, // Highlight current page
+                          : Colors.grey,
                     ),
                   ),
                 ),
               ),
-
               const SizedBox(height: 24),
-              // Recent Activity Carousel with Peek Effect
               const Padding(
                 padding: EdgeInsets.only(left: 8.0),
                 child: Text(
@@ -410,8 +482,7 @@ class _StaffElearningScreenState extends State<StaffElearningScreen> {
                           child: Row(
                             children: [
                               CircleAvatar(
-                                backgroundImage:
-                                    AssetImage(activity['avatar']!),
+                                backgroundImage: AssetImage(activity['avatar']!),
                               ),
                               const SizedBox(width: 8),
                               Expanded(
@@ -424,13 +495,11 @@ class _StaffElearningScreenState extends State<StaffElearningScreen> {
                                         style: const TextStyle(
                                             color: Colors.black, fontSize: 14),
                                         children: [
-                                          TextSpan(
-                                              text: '${activity['name']} '),
+                                          TextSpan(text: '${activity['name']} '),
                                           TextSpan(
                                               text: '${activity['activity']} ',
                                               style: const TextStyle(
-                                                  fontWeight:
-                                                      FontWeight.normal)),
+                                                  fontWeight: FontWeight.normal)),
                                           TextSpan(
                                               text: '${activity['subject']}',
                                               style: const TextStyle(
@@ -456,7 +525,6 @@ class _StaffElearningScreenState extends State<StaffElearningScreen> {
                 ),
               ),
               const SizedBox(height: 24),
-              // Courses Grid with Navigation
               const Padding(
                 padding: EdgeInsets.only(left: 8.0),
                 child: Text(
@@ -465,68 +533,86 @@ class _StaffElearningScreenState extends State<StaffElearningScreen> {
                 ),
               ),
               const SizedBox(height: 16),
-              GridView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2,
-                  mainAxisSpacing: 14,
-                  crossAxisSpacing: 14,
-                  childAspectRatio: 3,
-                ),
-                itemCount: courses.length,
-                itemBuilder: (context, index) {
-                  final course = courses[index];
-                  final svgBackground =
-                      courseBackgrounds[index % courseBackgrounds.length];
-                  return GestureDetector(
-                    onTap: () => _navigateToCourseDetail(course),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(12.0),
-                      child: Stack(
-                        alignment: Alignment.center,
-                        children: [
-                          SvgPicture.asset(
-                            svgBackground,
-                            fit: BoxFit.cover,
-                            width: double.infinity,
-                            height: double.infinity,
-                          ),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              // Add course icon
-                              SvgPicture.asset(
-                                courseIcon,
-                                width: 24,
-                                height: 24,
-                                colorFilter: const ColorFilter.mode(
-                                  Colors.white,
-                                  BlendMode.srcIn,
-                                ),
-                              ),
-                              const SizedBox(
-                                  width:
-                                      8), // Add some spacing between icon and text
-                              Text(
-                                course,
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
-                },
+            
+Column(
+  crossAxisAlignment: CrossAxisAlignment.start,
+  children: [
+    for (var classData in levelsWithCourses) ...[
+      Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8.0),
+        child: Text(
+          classData['class_name'] ?? '',
+          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+        ),
+      ),
+      GridView.builder(
+          padding: const EdgeInsets.only(bottom: 8.0),
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 2,
+          mainAxisSpacing: 14,
+          crossAxisSpacing: 14,
+          childAspectRatio: 3,
+        ),
+        itemCount: classData['courses'].length,
+        itemBuilder: (context, index) {
+          final course = classData['courses'][index];
+          final svgBackground =
+              courseBackgrounds[index % courseBackgrounds.length];
+
+         return GestureDetector(
+  onTap: () => _navigateToCourseDetail(course, classData['class_id'].toString()),
+  child: ClipRRect(
+    borderRadius: BorderRadius.circular(12.0),
+    child: Stack(
+      alignment: Alignment.center,
+      children: [
+        SvgPicture.asset(svgBackground,
+            fit: BoxFit.cover,
+            width: double.infinity,
+            height: double.infinity),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            SvgPicture.asset(
+              courseIcon,
+              width: 24,
+              height: 24,
+              colorFilter: const ColorFilter.mode(
+                Colors.white,
+                BlendMode.srcIn,
               ),
+            ),
+            const SizedBox(width: 8),
+            Flexible(
+              child: Text(
+                course['course_name'] ?? '',
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ],
+    ),
+  ),
+);
+
+        },
+      ),
+    ],
+  ],
+),
+SizedBox(height:100)
             ],
           ),
         ),
       ),
+      
     );
   }
 }

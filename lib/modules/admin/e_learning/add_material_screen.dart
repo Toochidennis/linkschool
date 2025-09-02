@@ -28,11 +28,11 @@ class AddMaterialScreen extends StatefulWidget {
   final String? courseName;
   final String? levelId;
   final int? syllabusId;
- final List<Map<String, dynamic>>? syllabusClasses;
- final bool editMode;
-final custom.Material? materialToEdit;
-final int? id;
-final int? itemId;
+  final List<Map<String, dynamic>>? syllabusClasses;
+  final bool editMode;
+  final custom.Material? materialToEdit;
+  final int? id;
+  final int? itemId;
 
   const AddMaterialScreen({
     super.key,
@@ -41,8 +41,8 @@ final int? itemId;
     this.courseId,
     this.courseName,
     this.levelId, 
-     this.syllabusId, 
-     this.syllabusClasses,
+    this.syllabusId, 
+    this.syllabusClasses,
     this.editMode = false,
     this.materialToEdit, 
     this.id,
@@ -65,8 +65,11 @@ class _AddMaterialScreenState extends State<AddMaterialScreen> {
   String? creatorName;
   String? academicYear;
   int? academicTerm;
-
   bool _isSaving = false;
+  
+  // Added these variables to match AdminAssignmentScreen functionality
+  String? _replacingServerFileName;
+  List<String> _removedServerFileNames = [];
 
   @override
   void initState() {
@@ -75,24 +78,24 @@ class _AddMaterialScreenState extends State<AddMaterialScreen> {
     _populateFormForEdit();
   }
 
-
-   void _populateFormForEdit() {
-  if (widget.editMode && widget.materialToEdit != null) {
-    final material = widget.materialToEdit!;
-    _titleController.text = material.title;
-    _descriptionController.text = material.description;
-    _selectedClass = material.selectedClass;
-    _attachments = List<AttachmentItem>.from(material.attachments ?? []);
-
-    // _marksController.text = material.marks;
-    // _endDate = material.endDate;
-    // _startDate = material.startDate;
-    // _selectedDuration = material.duration;
-    _selectedTopic = material.topic;
-  
-    
+  void _populateFormForEdit() {
+    if (widget.editMode && widget.materialToEdit != null) {
+      final material = widget.materialToEdit!;
+      _titleController.text = material.title;
+      _descriptionController.text = material.description;
+      _selectedClass = material.selectedClass;
+      _selectedTopic = material.topic;
+      
+      // Updated to match AdminAssignmentScreen structure
+      _attachments = material.attachments?.map((attachment) => AttachmentItem(
+        fileName: attachment.fileName,
+        iconPath: attachment.iconPath,
+        fileContent: attachment.fileContent,
+        isExisting: true,
+        originalServerFileName: attachment.fileName,
+      )).toList() ?? [];
+    }
   }
-}
 
   Future<void> _loadUserData() async {
     try {
@@ -118,13 +121,12 @@ class _AddMaterialScreenState extends State<AddMaterialScreen> {
       print('Error loading user data: $e');
     }
   }
-  
 
   @override
   Widget build(BuildContext context) {
     final Brightness brightness = Theme.of(context).brightness;
     opacity = brightness == Brightness.light ? 0.1 : 0.15;
-        final materialProvider = Provider.of<MaterialProvider>(context, listen: false);
+    final materialProvider = Provider.of<MaterialProvider>(context, listen: false);
     
     return Scaffold(
       appBar: AppBar(
@@ -170,110 +172,103 @@ class _AddMaterialScreenState extends State<AddMaterialScreen> {
         ],
       ),
       body: materialProvider.isLoading
-    ? Center(child: CircularProgressIndicator()) 
-
-      :Container(
-        height: MediaQuery.of(context).size.height,
-        decoration: Constants.customBoxDecoration(context),
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: SingleChildScrollView(
-            physics: const AlwaysScrollableScrollPhysics(),
-            child: ConstrainedBox(
-              constraints: BoxConstraints(
-                minHeight: MediaQuery.of(context).size.height,
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Title:',
-                    style: AppTextStyles.normal600(
-                        fontSize: 16.0, color: Colors.black),
-                  ),
-                  const SizedBox(height: 8.0),
-                  TextField(
-                    controller: _titleController,
-                    decoration: InputDecoration(
-                      hintText: 'e.g Dying and Bleaching',
-                      hintStyle: const TextStyle(color: Colors.grey),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8.0),
+          ? Center(child: CircularProgressIndicator()) 
+          : Container(
+              height: MediaQuery.of(context).size.height,
+              decoration: Constants.customBoxDecoration(context),
+              child: Padding(
+                padding: const EdgeInsets.all(8.0), // Changed to match AdminAssignmentScreen
+                child: SingleChildScrollView(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Title:',
+                        style: AppTextStyles.normal600(
+                            fontSize: 16.0, color: Colors.black),
                       ),
-                      contentPadding: const EdgeInsets.all(12.0),
-                    ),
-                  ),
-                  const SizedBox(height: 16.0),
-                  Text(
-                    'Description:',
-                    style: AppTextStyles.normal600(
-                        fontSize: 16.0, color: Colors.black),
-                  ),
-                  const SizedBox(height: 8.0),
-                  TextField(
-                    controller: _descriptionController,
-                    maxLines: 5,
-                    decoration: InputDecoration(
-                      hintText: 'Type here...',
-                      hintStyle: const TextStyle(color: Colors.grey),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8.0),
-                      ),
-                      contentPadding: const EdgeInsets.all(12.0),
-                    ),
-                  ),
-                  const SizedBox(height: 32.0),
-                  Text(
-                    'Select the learners for this outline*:',
-                    style: AppTextStyles.normal600(
-                        fontSize: 16.0, color: Colors.black),
-                  ),
-                  const SizedBox(height: 16.0),
-                  _buildGroupRow(
-                    context,
-                    iconPath: 'assets/icons/e_learning/people.svg',
-                    text: _selectedClass,
-                    onTap: () async {
-                      await Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (context) => SelectClassesDialog(
-                            onSave: (selectedClass) {
-                              setState(() {
-                                _selectedClass = selectedClass;
-                              });
-                            },
-                            levelId: widget.levelId,
-                          syllabusClasses: widget.syllabusClasses,
+                      const SizedBox(height: 8.0),
+                      TextField(
+                        controller: _titleController,
+                        decoration: InputDecoration(
+                          hintText: 'e.g Dying and Bleaching',
+                          hintStyle: const TextStyle(color: Colors.grey),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8.0),
                           ),
+                          contentPadding: const EdgeInsets.all(12.0),
                         ),
-                      );
-                    },
+                      ),
+                      const SizedBox(height: 16.0),
+                      Text(
+                        'Description:',
+                        style: AppTextStyles.normal600(
+                            fontSize: 16.0, color: Colors.black),
+                      ),
+                      const SizedBox(height: 8.0),
+                      TextField(
+                        controller: _descriptionController,
+                        maxLines: 5,
+                        decoration: InputDecoration(
+                          hintText: 'Type here...',
+                          hintStyle: const TextStyle(color: Colors.grey),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8.0),
+                          ),
+                          contentPadding: const EdgeInsets.all(12.0),
+                        ),
+                      ),
+                      const SizedBox(height: 32.0),
+                      Text(
+                        'Select the learners for this outline*:',
+                        style: AppTextStyles.normal600(
+                            fontSize: 16.0, color: Colors.black),
+                      ),
+                      const SizedBox(height: 16.0),
+                      _buildGroupRow(
+                        context,
+                        iconPath: 'assets/icons/e_learning/people.svg',
+                        text: _selectedClass,
+                        onTap: () async {
+                          await Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (context) => SelectClassesDialog(
+                                onSave: (selectedClass) {
+                                  setState(() {
+                                    _selectedClass = selectedClass;
+                                  });
+                                },
+                                levelId: widget.levelId,
+                                syllabusClasses: widget.syllabusClasses,
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 8.0),
+                        child: _buildAttachmentsSection(),
+                      ),
+                      Divider(color: Colors.grey.withOpacity(0.5)),
+                      _buildGroupRow(
+                        context,
+                        iconPath: 'assets/icons/e_learning/clipboard.svg',
+                        text: _selectedTopic,
+                        showEditButton: true,
+                        isSelected: true,
+                        onTap: () => _selectTopic(),
+                      ),
+                    ],
                   ),
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 8.0),
-                    child: _buildAttachmentsSection(),
-                  ),
-                  Divider(color: Colors.grey.withOpacity(0.5)),
-                  _buildGroupRow(
-                    context,
-                    iconPath: 'assets/icons/e_learning/clipboard.svg',
-                    text: _selectedTopic,
-                    showEditButton: true,
-                    isSelected: true,
-                    onTap: () => _selectTopic(),
-                  ),
-                ],
+                ),
               ),
             ),
-          ),
-        ),
-      ),
     );
   }
 
   Widget _buildGroupRow(
     BuildContext context, {
-    required String? iconPath,
+    required String iconPath,
     required String text,
     required VoidCallback onTap,
     bool showEditButton = false,
@@ -292,7 +287,7 @@ class _AddMaterialScreenState extends State<AddMaterialScreen> {
                   shape: BoxShape.circle,
                 ),
                 child: SvgPicture.asset(
-                  iconPath ?? 'assets/icons/default.svg',
+                  iconPath,
                   width: 32.0,
                   height: 32.0,
                 ),
@@ -393,37 +388,44 @@ class _AddMaterialScreenState extends State<AddMaterialScreen> {
     );
   }
 
+  // Updated to match AdminAssignmentScreen functionality
   Widget _buildAttachmentItem(AttachmentItem attachment, {bool isFirst = false}) {
-  return Container(
-    margin: EdgeInsets.only(bottom: isFirst ? 0 : 8.0),
-    child: Row(
-      children: [
-        SvgPicture.asset(
-          attachment.iconPath ?? '',
-          width: 20,
-          height: 20,
-        ),
-        const SizedBox(width: 8.0),
-        Expanded(
-          child: Text(
-            attachment.fileName ?? '', // Use fileName instead of content
-            style: AppTextStyles.normal400(
-                fontSize: 14.0, color: AppColors.primaryLight),
-            overflow: TextOverflow.ellipsis,
+    return Container(
+      margin: EdgeInsets.only(bottom: isFirst ? 0 : 8.0),
+      child: Row(
+        children: [
+          SvgPicture.asset(
+            attachment.iconPath!,
+            width: 20,
+            height: 20,
           ),
-        ),
-        IconButton(
-          icon: const Icon(Icons.close, size: 20, color: Colors.red),
-          onPressed: () {
-            setState(() {
-              _attachments.remove(attachment);
-            });
-          },
-        ),
-      ],
-    ),
-  );
-}
+          const SizedBox(width: 8.0),
+          Expanded(
+            child: Text(
+              attachment.fileName!,
+              style: AppTextStyles.normal400(fontSize: 14.0, color: AppColors.primaryLight),
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          IconButton(
+            icon: const Icon(Icons.close, size: 20, color: Colors.red),
+            onPressed: () {
+              setState(() {
+                if (attachment.isExisting && attachment.originalServerFileName != null) {
+                  _replacingServerFileName = attachment.originalServerFileName;
+                  _removedServerFileNames.add(attachment.originalServerFileName!);
+                }
+                _attachments.remove(attachment);
+              });
+              if (attachment.isExisting) {
+                _showAttachmentOptionsForReplacement();
+              }
+            },
+          ),
+        ],
+      ),
+    );
+  }
 
   Widget _buildAddMoreButton() {
     return GestureDetector(
@@ -489,6 +491,38 @@ class _AddMaterialScreenState extends State<AddMaterialScreen> {
     );
   }
 
+  // Added this method from AdminAssignmentScreen
+  void _showAttachmentOptionsForReplacement() {
+    showModalBottomSheet(
+      context: context,
+      builder: (BuildContext context) {
+        return Container(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'Replace attachment',
+                style: AppTextStyles.normal600(fontSize: 20, color: AppColors.backgroundDark),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 16),
+              _buildAttachmentOption('Upload file', 'assets/icons/e_learning/upload_file.svg', _uploadFile),
+              _buildAttachmentOption('Take photo', 'assets/icons/e_learning/take_photo.svg', _takePhoto),
+              _buildAttachmentOption('Record Video', 'assets/icons/e_learning/record_video.svg', _recordVideo),
+              _buildAttachmentOption('Cancel', 'assets/icons/e_learning/cancel.svg', () {
+                setState(() {
+                  _replacingServerFileName = null;
+                });
+                Navigator.of(context).pop();
+              }),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   Widget _buildAttachmentOption(String text, String iconPath, VoidCallback onTap) {
     return InkWell(
       onTap: onTap,
@@ -510,377 +544,288 @@ class _AddMaterialScreenState extends State<AddMaterialScreen> {
     );
   }
 
-void _showInsertLinkDialog() {
-  TextEditingController linkController = TextEditingController();
+  void _showInsertLinkDialog() {
+    TextEditingController linkController = TextEditingController();
 
-  showDialog(
-    context: context,
-    builder: (BuildContext context) {
-      return StatefulBuilder(
-        builder: (context, setState) {
-        bool isValidUrl(String url) {
-  try {
-    
-    final uri = Uri.parse(url);
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            bool isValidUrl(String url) {
+              try {
+                final uri = Uri.parse(url);
+                return uri.isAbsolute && uri.scheme.isNotEmpty;
+              } catch (e) {
+                return false;
+              }
+            }
 
-    return uri.isAbsolute && uri.scheme.isNotEmpty;
-  } catch (e) {
-    return false;
-  }
-}
+            final isValid = isValidUrl(linkController.text);
 
-          final isValid = isValidUrl(linkController.text);
-
-          return AlertDialog(
-            title: Text(
-              'Insert Link',
-              style: AppTextStyles.normal600(
-                fontSize: 20,
-                color: AppColors.backgroundDark,
+            return AlertDialog(
+              title: Text(
+                'Insert Link',
+                style: AppTextStyles.normal600(
+                  fontSize: 20,
+                  color: AppColors.backgroundDark,
+                ),
+                textAlign: TextAlign.center,
               ),
-              textAlign: TextAlign.center,
-            ),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextField(
-                  controller: linkController,
-                  onChanged: (_) => setState(() {}),
-                  decoration: InputDecoration(
-                    fillColor: Colors.grey[100],
-                    filled: true,
-                    hintText: 'Enter link here (https://...)',
-                    errorText: linkController.text.isNotEmpty && !isValid
-                        ? 'Please enter a valid URL'
-                        : null,
-                    prefixIcon: Padding(
-                      padding: const EdgeInsets.all(10),
-                      child: SvgPicture.asset(
-                        'assets/icons/e_learning/link3.svg',
-                        width: 24,
-                        height: 24,
-                        fit: BoxFit.scaleDown,
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(
+                    controller: linkController,
+                    onChanged: (_) => setState(() {}),
+                    decoration: InputDecoration(
+                      fillColor: Colors.grey[100],
+                      filled: true,
+                      hintText: 'Enter link here (https://...)',
+                      errorText: linkController.text.isNotEmpty && !isValid
+                          ? 'Please enter a valid URL'
+                          : null,
+                      prefixIcon: Padding(
+                        padding: const EdgeInsets.all(10),
+                        child: SvgPicture.asset(
+                          'assets/icons/e_learning/link3.svg',
+                          width: 24,
+                          height: 24,
+                          fit: BoxFit.scaleDown,
+                        ),
+                      ),
+                      border: const UnderlineInputBorder(),
+                      focusedBorder: const UnderlineInputBorder(
+                        borderSide: BorderSide(color: AppColors.primaryLight),
                       ),
                     ),
-                    border: const UnderlineInputBorder(),
-                    focusedBorder: const UnderlineInputBorder(
-                      borderSide: BorderSide(color: AppColors.primaryLight),
-                    ),
                   ),
+                ],
+              ),
+              actions: [
+                CustomOutlineButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  text: 'Cancel',
+                  borderColor: AppColors.eLearningBtnColor3.withOpacity(0.4),
+                  textColor: AppColors.eLearningBtnColor3,
+                ),
+                CustomSaveElevatedButton(
+                  onPressed: isValid && linkController.text.isNotEmpty
+                      ? () {
+                          String fullUrl = linkController.text.replaceAll(' ', '');
+                          _addAttachment(fullUrl, 'assets/icons/e_learning/link3.svg', fullUrl);
+                          Navigator.of(context).pop();
+                          Navigator.of(context).pop();
+                        }
+                      : () {},
+                  text: 'Save',
                 ),
               ],
-            ),
-            actions: [
-              CustomOutlineButton(
-                onPressed: () => Navigator.of(context).pop(),
-                text: 'Cancel',
-                borderColor: AppColors.eLearningBtnColor3.withOpacity(0.4),
-                textColor: AppColors.eLearningBtnColor3,
-              ),
-              CustomSaveElevatedButton(
-                onPressed: isValid && linkController.text.isNotEmpty
-                    ? () {
-                        String fullUrl = linkController.text;
-
-                        _addAttachment(
-                          fullUrl, // Use full URL as the display name
-                          'assets/icons/e_learning/link3.svg',
-                          fullUrl, // Use full URL as the content
-                        );
-
-                        Navigator.of(context).pop();
-                        Navigator.of(context).pop(); // Close both dialog and bottom sheet
-                      }
-                    : () {},
-                text: 'Save',
-              ),
-            ],
-          );
-        },
-      );
-    },
-  );
-}
+            );
+          },
+        );
+      },
+    );
+  }
 
   Future<void> _uploadFile() async {
     try {
       FilePickerResult? result = await FilePicker.platform.pickFiles();
-
       if (result != null) {
         PlatformFile file = result.files.first;
-        
         String fileName = file.name;
+        String? base64String;
         if (file.bytes != null) {
-          String base64String = base64Encode(file.bytes!);
-          _addAttachment(fileName, 'assets/icons/e_learning/upload_file.svg', base64String);
+          base64String = base64Encode(file.bytes!);
         } else if (file.path != null) {
-          Uint8List fileBytes = await File(file.path!).readAsBytes();
-          String base64String = base64Encode(fileBytes);
-          _addAttachment(fileName, 'assets/icons/e_learning/upload_file.svg', base64String);
-        } else {
-          _addAttachment(fileName, 'assets/icons/e_learning/upload_file.svg');
+          base64String = base64Encode(await File(file.path!).readAsBytes());
         }
+        _addAttachment(fileName, 'assets/icons/e_learning/upload_file.svg', base64String);
         Navigator.of(context).pop();
       }
     } catch (e) {
       print('Error picking file: $e');
-      CustomToaster.toastError(
-        context,
-        'Error',
-        'Failed to pick file: ${e.toString()}',
-      );
+      CustomToaster.toastError(context, 'Error', 'Failed to pick file: $e');
     }
   }
 
   Future<void> _takePhoto() async {
-    try {
-      final ImagePicker picker = ImagePicker();
-      final XFile? photo = await picker.pickImage(source: ImageSource.camera);
-
-      if (photo != null) {
-        Uint8List fileBytes = await photo.readAsBytes();
-        final base64String = base64Encode(fileBytes);
-        _addAttachment(
-          'Photo: ${photo.name}',
-          'assets/icons/e_learning/take_photo.svg',
-          base64String,
-        );
-        Navigator.of(context).pop();
-      }
-    } catch (e) {
-      print('Error taking photo: $e');
-      CustomToaster.toastError(
-        context,
-        'Error',
-        'Failed to take photo: ${e.toString()}',
-      );
+    final ImagePicker picker = ImagePicker();
+    final XFile? photo = await picker.pickImage(source: ImageSource.camera);
+    if (photo != null) {
+      Uint8List fileBytes = await photo.readAsBytes();
+      final base64String = base64Encode(fileBytes);
+      _addAttachment('Photo: ${photo.name}', 'assets/icons/e_learning/take_photo.svg', base64String);
+      Navigator.of(context).pop();
     }
   }
 
   Future<void> _recordVideo() async {
-    try {
-      final ImagePicker picker = ImagePicker();
-      final XFile? video = await picker.pickVideo(source: ImageSource.camera);
-
-      if (video != null) {
-        Uint8List fileBytes = await video.readAsBytes();
-        final base64String = base64Encode(fileBytes);
-        _addAttachment(
-          'Video: ${video.name}',
-          'assets/icons/e_learning/record_video.svg',
-          base64String,
-        );
-        Navigator.of(context).pop();
-      }
-    } catch (e) {
-      print('Error recording video: $e');
-      CustomToaster.toastError(
-        context,
-        'Error',
-        'Failed to record video: ${e.toString()}',
-      );
+    final ImagePicker picker = ImagePicker();
+    final XFile? video = await picker.pickVideo(source: ImageSource.camera);
+    if (video != null) {
+      Uint8List fileBytes = await video.readAsBytes();
+      final base64String = base64Encode(fileBytes);
+      _addAttachment('Video: ${video.name}', 'assets/icons/e_learning/record_video.svg', base64String);
+      Navigator.of(context).pop();
     }
   }
 
+  
   void _addAttachment(String content, String iconPath, [String? base64Content]) {
-  String fileName;
-  if (iconPath.contains('link3')) {
-    // For URLs, extract a meaningful file name
-    try {
-      final uri = Uri.parse(content);
-      fileName = uri.pathSegments.isNotEmpty ? uri.pathSegments.last : 'Link';
-    } catch (e) {
-      fileName = 'Link';
-    }
-  } else {
-    // For files, photos, and videos, use the content as the file name
-    fileName = content;
+    setState(() {
+      _attachments.add(AttachmentItem(
+        fileName: content,
+        iconPath: iconPath,
+        fileContent: base64Content ?? '',
+        isExisting: _replacingServerFileName != null,
+        originalServerFileName: _replacingServerFileName,
+      ));
+      if (_replacingServerFileName != null) {
+        _removedServerFileNames.remove(_replacingServerFileName);
+      }
+      _replacingServerFileName = null;
+    });
   }
 
-  setState(() {
-    _attachments.add(AttachmentItem(
-      content: content,
-      iconPath: iconPath,
-      base64Content: base64Content,
-      fileName: fileName,
-    ));
-  });
-}
-
- void _selectTopic() async {
+  void _selectTopic() async {
     final result = await Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => SelectTopicScreen(
           levelId: widget.levelId!,
           syllabusId: widget.syllabusId,
-           courseName:widget.courseName,
-                courseId:widget.courseId,
+          courseName: widget.courseName,
+          courseId: widget.courseId,
           callingScreen: '',
         ),
       ),
     );
     if (result != null && result is Map) {
       setState(() {
-        _selectedTopic = result['topicName'] ?? 'No Topic'; // Update topic name
-        _selectedTopicId = result['topicId']; // Store topic ID
+        _selectedTopic = result['topicName'] ?? 'No Topic';
+        _selectedTopicId = result['topicId'];
       });
     }
   }
-void _addMaterial() async {
-  // Validation
-  if (_titleController.text.trim().isEmpty) {
-    CustomToaster.toastError(
-      context,
-      'Error',
-      'Please enter a title.',
-    );
-    return;
-  }
-  if (_descriptionController.text.trim().isEmpty) {
-    CustomToaster.toastError(
-      context,
-      'Error',
-      'Please enter a description.',
-    );
-    return;
-  }
- 
-  if (_selectedClass == 'Select classes' || _selectedClass.trim().isEmpty) {
-    CustomToaster.toastError(
-      context,
-      'Error',
-      'Please select at least one class.',
-    );
-    return;
-  }
 
-  setState(() {
-    _isSaving = true;
-  });
-
-  try {
-    final materialProvider = Provider.of<MaterialProvider>(context, listen: false);
-    final userBox = Hive.box('userData');
-    final storedUserData = userBox.get('userData') ?? userBox.get('loginResponse');
-    final processedData = storedUserData is String
-        ? json.decode(storedUserData)
-        : storedUserData;
-    final response = processedData['response'] ?? processedData;
-    final data = response['data'] ?? response;
-    final classes = data['classes'] ?? [];
-    final selectedClassIds = userBox.get('selectedClassIds') ?? [];
-
-    final classIdList = selectedClassIds.map<Map<String, String>>((classId) {
-      final classIdStr = classId.toString();
-      final classData = classes.firstWhere(
-        (cls) => cls['id'].toString() == classIdStr,
-        orElse: () => {'id': classIdStr, 'class_name': 'Unknown'},
-      );
-     return {
-  'id': classIdStr,
-  'name': (classData['class_name']?.toString() ?? 'Unknown'),
-};
-
-    }).toList();
-
-    if (classIdList.isEmpty && widget.classId != null) {
-      final classIdStr = widget.classId!;
-      final classData = classes.firstWhere(
-        (cls) => cls['id'].toString() == classIdStr,
-        orElse: () => {'id': classIdStr, 'class_name': _selectedClass},
-      );
-      classIdList.add({
-        'id': classIdStr,
-        'name': (classData['class_name']?.toString() ?? _selectedClass),
-      });
+  void _addMaterial() async {
+    // Validation
+    if (_titleController.text.isEmpty) {
+      CustomToaster.toastError(context, 'Error', 'Please enter a title');
+      return;
     }
-    
+    if (_descriptionController.text.isEmpty) {
+      CustomToaster.toastError(context, 'Error', 'Please enter a description');
+      return;
+    }
+    if (_selectedClass == 'Select classes') {
+      CustomToaster.toastError(context, 'Error', 'Please select at least one class');
+      return;
+    }
 
-    final material = {
-      'title': _titleController.text,
-      'description': _descriptionController.text,
-      'topic': _selectedTopic ,
-      'topic_id': _selectedTopicId ?? 0,
-      'syllabus_id': widget.syllabusId,
-      'creator_id': creatorId,
-      'course_name':widget.courseName,
-      'course_id':widget.courseId,
-      'level_id':widget.levelId,
-      'creator_name': creatorName,
-      "term": academicTerm,
-      'classes': classIdList.isNotEmpty
-          ? classIdList
-          : [
-              {'id': '', 'name': ''},
-            ],
-     'files': _attachments.map((attachment) {
-  final attachmentType = _getAttachmentType(attachment.iconPath ?? "", attachment.content ?? "");
-  return {
-    'file_name': attachment.fileName ?? '', // Use attachment.fileName
-    'old_file_name': attachment.fileName ?? '', // Use attachment.fileName
-    'type': attachmentType,
-    'file': attachmentType == 'url'
-        ? attachment.content
-        : attachment.base64Content,
-  };
-}).toList(),
-       
-    };
-         
+    setState(() {
+      _isSaving = true;
+    });
 
-      if (widget.editMode && widget.materialToEdit != null) {
-        final id = widget?.id ?? widget.itemId;
-        print('Updating Assignment Data:');
+    try {
+      final materialProvider = Provider.of<MaterialProvider>(context, listen: false);
+      final userBox = Hive.box('userData');
+      final storedUserData = userBox.get('userData') ?? userBox.get('loginResponse');
+      final processedData = storedUserData is String
+          ? json.decode(storedUserData)
+          : storedUserData;
+      final response = processedData['response'] ?? processedData;
+      final data = response['data'] ?? response;
+      final classes = data['classes'] ?? [];
+      final selectedClassIds = userBox.get('selectedClassIds') ?? [];
 
-        
+      final classIdList = selectedClassIds.map<Map<String, String>>((classId) {
+        final classIdStr = classId.toString();
+        final classData = classes.firstWhere(
+          (cls) => cls['id'].toString() == classIdStr,
+          orElse: () => {'id': classIdStr, 'class_name': 'Unknown'},
+        );
+        return {
+          'id': classIdStr,
+          'name': (classData['class_name']?.toString() ?? 'Unknown'),
+        };
+      }).toList();
 
-        await materialProvider.UpDateMaterial(material,id!);
-
-      } else {
-        // In CREATE mode
-        print('Creating material Data:');
-        print(const JsonEncoder.withIndent('  ').convert(material));
-       
-        await materialProvider.addMaterial(material);
+      if (classIdList.isEmpty && widget.classId != null) {
+        final classIdStr = widget.classId!;
+        final classData = classes.firstWhere(
+          (cls) => cls['id'].toString() == classIdStr,
+          orElse: () => {'id': classIdStr, 'class_name': _selectedClass},
+        );
+        classIdList.add({
+          'id': classIdStr,
+          'name': (classData['class_name']?.toString() ?? _selectedClass),
+        });
       }
 
-    // await materialProvider.addMaterial(material);
-    // print('Final Payload to API:\n${jsonEncode(material)}');
-    widget.onSave(material);
-    Navigator.of(context).pop();
-  } catch (e) {
-    print('Error saving material: $e');
-    CustomToaster.toastError(
-      context,
-      'Error',
-      'Failed to save material: ${e.toString()}',
-    );
-  } finally {
-    setState(() {
-      _isSaving = false;
-    });
+      final Map<String, dynamic> materialPayload = {
+        'title': _titleController.text,
+        'description': _descriptionController.text,
+        'topic': _selectedTopic,
+        'topic_id': _selectedTopicId ?? 0,
+        'syllabus_id': widget.syllabusId!,
+        'course_id': widget.courseId,
+        'course_name': widget.courseName,
+        'term': academicTerm,
+        'level_id': widget.levelId,
+        'creator_id': creatorId,
+        'creator_name': creatorName,
+        'classes': classIdList.isNotEmpty
+            ? classIdList
+            : [
+                {'id': '', 'name': ''},
+              ],
+        'files': _attachments.map((attachment) {
+          return {
+            'type': _getAttachmentType(attachment.iconPath!, attachment.fileName!),
+            'file_name': attachment.fileName,
+           'file': attachment.fileContent != null ? attachment.fileContent : null,
+            'old_file_name': attachment.isExisting ? (attachment.originalServerFileName ?? '') : '',
+          };
+        }).toList(),
+        if (widget.editMode) 'removed_files': _removedServerFileNames,
+      };
+
+      if (widget.editMode && widget.materialToEdit != null) {
+        final id = widget.id ?? widget.itemId;
+        print('Updating Material Data:');
+        print(const JsonEncoder.withIndent('  ').convert(materialPayload));
+        await materialProvider.UpDateMaterial(materialPayload, id!);
+      } else {
+        print('Creating Material Data:');
+        print(const JsonEncoder.withIndent('  ').convert(materialPayload));
+       await materialProvider.addMaterial(materialPayload);
+      }
+
+      widget.onSave(materialPayload);
+      Navigator.of(context).pop();
+    } catch (e) {
+      print('Error saving material: $e');
+      CustomToaster.toastError(context, 'Error', 'Failed to save material: $e');
+    } finally {
+      setState(() {
+        _isSaving = false;
+      });
+    }
   }
-}
-
-
-
 
   String _getAttachmentType(String iconPath, String content) {
     if (iconPath.contains('link')) return 'url';
     if (iconPath.contains('upload')) {
       final extension = content.split('.').last.toLowerCase();
-      if (['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'].contains(extension)) {
-        return 'image';
-      }
-      if (['mp4', 'mov', 'avi', 'wmv', 'flv', 'webm'].contains(extension)) {
-        return 'video';
-      }
-      return 'file';
+      if (extension == 'pdf') return 'pdf';
+      if (['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'].contains(extension)) return 'image';
+      if (['mp4', 'mov', 'avi', 'wmv', 'flv', 'webm'].contains(extension)) return 'video';
+      return 'file'; // Default for other uploaded files
     }
-    if (iconPath.contains('camera')) return 'photo';
-    if (iconPath.contains('video')) return 'video';
-    return 'other';
+    if (iconPath.contains('camera')) return 'image';
+    if (iconPath.contains('video')) return 'video'; // Fixed typo from 'vidoe'
+    return 'file type'; // Used for replaced files in edit mode
   }
 }
-

@@ -1,149 +1,233 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
-import 'package:intl/intl.dart';
-import 'package:linkschool/modules/admin/e_learning/admin_assignment_screen.dart';
+import 'package:hive/hive.dart';
+import 'package:linkschool/modules/admin/e_learning/empty_subject_screen.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/buttons/custom_medium_elevated_button.dart';
-import 'package:linkschool/modules/common/constants.dart';
+import 'package:linkschool/modules/common/custom_toaster.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
-import 'package:linkschool/modules/model/e-learning/question_model.dart';
-import 'package:linkschool/modules/model/e-learning/material_model.dart' as custom;
-import 'package:linkschool/modules/model/e-learning/topic_model.dart';
+import 'package:linkschool/modules/model/e-learning/syllabus_model.dart' as elModel;
+import 'package:linkschool/modules/model/staff/syllabus_model.dart' as staffModel;
+import 'package:linkschool/modules/providers/admin/e_learning/delete_sylabus_content.dart';
+import 'package:linkschool/modules/providers/staff/syllabus_provider.dart';
 import 'package:linkschool/modules/staff/e_learning/staff_create_syllabus_screen.dart';
-import 'package:linkschool/modules/staff/e_learning/sub_screens/staff_add_material_screen.dart';
-import 'package:linkschool/modules/staff/e_learning/sub_screens/staff_assignment_screen.dart';
-import 'package:linkschool/modules/staff/e_learning/sub_screens/staff_question_screen.dart';
-import 'package:linkschool/modules/staff/e_learning/view/quiz_answer_screen.dart';
-import 'package:linkschool/modules/staff/e_learning/view/staff_assignment_details_screen.dart';
-import 'package:linkschool/modules/staff/e_learning/view/staff_material_details_screen.dart';
 
-
+import 'package:provider/provider.dart';
 
 class StaffCourseDetailScreen extends StatefulWidget {
-  final String courseTitle;
+  final String selectedSubject;
+  final String courseId;
+  final List<Map<String, dynamic>> classesList; // Receives List<Map<String, dynamic>>
+  final String? classId;
+  final String? levelId;
+  final String? course_name;
+  final String? term;
 
-  const StaffCourseDetailScreen({super.key, required this.courseTitle});
+  const StaffCourseDetailScreen({
+    super.key,
+    required this.selectedSubject,
+    required this.courseId,
+    required this.classesList,
+    this.classId,
+    this.levelId,
+    this.course_name,
+    this.term,
+  });
 
   @override
   State<StaffCourseDetailScreen> createState() => _StaffCourseDetailScreenState();
 }
 
-class _StaffCourseDetailScreenState extends State<StaffCourseDetailScreen> {
-  final List<Map<String, dynamic>> _syllabusList = [];
-  late double opacity = 0.1;
-  int _currentIndex = 0;
-  Map<String, dynamic>? _currentSyllabus;
-  List<Topic> topics = [];
+class _StaffCourseDetailScreenState extends State<StaffCourseDetailScreen> with WidgetsBindingObserver {
+  List<Map<String, dynamic>> _syllabusList = [];
+  bool isLoading = false;
+  int? creatorId;
+  String? creatorName;
+  String? creatorRole;
+  String? academicYear;
+  int? academicTerm;
 
-  static const String _courseworkIconPath = 'assets/icons/student/coursework_icon.svg';
-  static const String _forumIconPath = 'assets/icons/student/forum_icon.svg';
+  final List<String> _imagePaths = [
+    'assets/images/result/bg_box1.svg',
+    'assets/images/result/bg_box2.svg',
+    'assets/images/result/bg_box3.svg',
+    'assets/images/result/bg_box4.svg',
+    'assets/images/result/bg_box5.svg',
+  ];
 
   @override
   void initState() {
     super.initState();
-    _addDummyData();
+    WidgetsBinding.instance.addObserver(this);
+    _loadSyllabuses();
+    _loadUserData();
+    print("Received classesList: ${widget.classesList}");
   }
 
-  void _addDummyData() {
-    topics = [
-      Topic(
-        name: 'Punctuality',
-        assignments: [
-          Assignment(
-            title: 'Assignment 1',
-            createdAt: DateTime.now().subtract(const Duration(days: 5)),
-            topic: 'Punctuality',
-            description: 'Write an essay about the importance of punctuality',
-            selectedClass: 'Class 10A',
-            attachments: [],
-            dueDate: DateTime.now().add(const Duration(days: 7)),
-            marks: '20',
-          ),
-        ],
-        questions: [
-          Question(
-            title: 'Question 1',
-            createdAt: DateTime.now().subtract(const Duration(days: 4)),
-            topic: 'Punctuality',
-            description: 'What are the benefits of being punctual?',
-            selectedClass: 'Class 10A',
-            startDate: DateTime.now(),
-            endDate: DateTime.now().add(const Duration(days: 1)),
-            duration: const Duration(minutes: 30),
-            marks: '10',
-          ),
-        ],
-        materials: [
-          custom.Material(
-            title: 'Importance of Time Management',
-            createdAt: DateTime.now().subtract(const Duration(days: 3)),
-            topic: 'Punctuality',
-            description: 'A comprehensive guide on time management techniques',
-            selectedClass: 'Class 10A',
-            startDate: DateTime.now(),
-            endDate: DateTime.now().add(const Duration(days: 1)),
-            duration: const Duration(minutes: 30),
-            marks: '10',
-          ),
-        ], description: '',
-      ),
-      Topic(
-        name: 'Time Management',
-        assignments: [
-          Assignment(
-            title: 'Assignment 3',
-            createdAt: DateTime.now().subtract(const Duration(days: 6)),
-            topic: 'Time Management',
-            description: 'Create a weekly schedule to improve time management',
-            selectedClass: 'Class 11A',
-            attachments: [],
-            dueDate: DateTime.now().add(const Duration(days: 5)),
-            marks: '25',
-          ),
-        ],
-        questions: [
-          Question(
-            title: 'Question 3',
-            createdAt: DateTime.now().subtract(const Duration(days: 1)),
-            topic: 'Time Management',
-            description: 'What are the key principles of effective time management?',
-            selectedClass: 'Class 11A',
-            startDate: DateTime.now(),
-            endDate: DateTime.now().add(const Duration(days: 1)),
-            duration: const Duration(minutes: 20),
-            marks: '20',
-          ),
-        ],
-        materials: [
-          custom.Material(
-            title: 'Importance of Time Management',
-            createdAt: DateTime.now().subtract(const Duration(days: 3)),
-            topic: 'Punctuality',
-            description: 'A comprehensive guide on time management techniques',
-            selectedClass: 'Class 10A',
-            startDate: DateTime.now(),
-            endDate: DateTime.now().add(const Duration(days: 1)),
-            duration: const Duration(minutes: 30),
-            marks: '10',
-          ),
-        ], description: '',
-      ),
-    ];
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  Future<void> _loadUserData() async {
+    try {
+      final userBox = Hive.box('userData');
+      final storedUserData = userBox.get('userData') ?? userBox.get('loginResponse');
+
+      if (storedUserData != null) {
+        final processedData = storedUserData is String
+            ? json.decode(storedUserData)
+            : storedUserData as Map<String, dynamic>;
+
+        final response = processedData['response'] ?? processedData;
+        final data = response['data'] ?? response;
+        final profile = data['profile'] ?? {};
+        final settings = data['settings'] ?? {};
+
+        setState(() {
+          creatorId = profile['staff_id'] as int?;
+          creatorName = profile['name']?.toString() ?? 'Unknown';
+          creatorRole = profile['role']?.toString();
+          academicTerm = settings['term'] != null
+              ? int.tryParse(settings['term'].toString())
+              : null;
+          academicYear = settings['year']?.toString();
+        });
+
+        print('Loaded user data: creatorId=$creatorId, creatorName=$creatorName, '
+            'creatorRole=$creatorRole, academicTerm=$academicTerm, academicYear=$academicYear');
+      }
+    } catch (e) {
+      print('Error loading user data: $e');
+    }
+  }
+
+  Future<void> _loadSyllabuses() async {
+    print("Loading syllabuses with courseId: ${widget.courseId}, classId: ${widget.classId}, levelId: ${widget.levelId}, classesList: ${widget.classesList}");
+
+    final syllabusProvider = Provider.of<StaffSyllabusProvider>(context, listen: false);
+    setState(() => isLoading = true);
+
+    try {
+      String levelId = widget.levelId ?? "";
+      String? term = widget.term;
+      String? courseId = widget.courseId;
+      String classId = widget.classId ?? '';
+
+      if (levelId.isEmpty || term == null || term.isEmpty) {
+        final userBox = Hive.box('userData');
+        final storedUserData = userBox.get('userData') ?? userBox.get('loginResponse');
+
+        if (storedUserData != null) {
+          final processedData = storedUserData is String
+              ? json.decode(storedUserData)
+              : storedUserData as Map<String, dynamic>;
+
+          final response = processedData['response'] ?? processedData;
+          final data = response['data'] ?? response;
+          final settings = data['settings'] ?? {};
+          final formClasses = (data['form_classes'] ?? []) as List;
+
+          final firstClass = formClasses.isNotEmpty ? formClasses.first : null;
+          final fallbackLevelId = firstClass?['level_id']?.toString();
+
+          setState(() {
+            levelId = fallbackLevelId ?? '';
+            term = settings['term']?.toString() ?? '';
+          });
+        }
+      }
+
+      await syllabusProvider.fetchSyllabus(
+        levelId,
+        term ?? '',
+        courseId ?? '',
+        classId,
+      );
+
+      final syllabusModels = syllabusProvider.syllabusList;
+      print('Received ${syllabusModels.length} syllabus models');
+
+      if (syllabusProvider.error.isNotEmpty) {
+        throw Exception(syllabusProvider.error);
+      }
+
+      setState(() {
+        _syllabusList.clear();
+        _syllabusList.addAll(
+          syllabusModels.asMap().entries.map((entry) {
+            final index = entry.key;
+            final syllabus = entry.value;
+
+            if (syllabus.id == null) {
+              print('Warning: Syllabus at index $index has null ID');
+              return null;
+            }
+
+            // Use widget.classesList if available, otherwise fall back to syllabus.classes
+            final classes = widget.classesList.isNotEmpty
+                ? widget.classesList
+                : syllabus.classes
+                    .map((c) => {'id': c.id.toString(), 'name': c.name})
+                    .toList();
+
+            final classNames = classes.map((c) => c['name']?.toString() ?? '').join(', ');
+            final selectedClass = classNames.isEmpty ? 'No classes selected' : classNames;
+
+            return {
+              'id': syllabus.id,
+              'title': syllabus.title,
+              'description': syllabus.description,
+              'author_name': syllabus.authorName,
+              'term': syllabus.term,
+              'upload_date': syllabus.uploadDate,
+              'classes': classes, // Use List<Map<String, dynamic>>
+              'selectedClass': selectedClass,
+              'selectedTeacher': syllabus.authorName,
+              'backgroundImagePath': _imagePaths.isNotEmpty
+                  ? _imagePaths[index % _imagePaths.length]
+                  : '',
+              'course_id': syllabus.courseId ?? widget.courseId ?? '',
+              'course_name': syllabus.courseName ?? widget.course_name ?? '',
+              'level_id': syllabus.levelId ?? levelId,
+              'creator_id': syllabus.creatorId ?? '',
+            };
+          }).whereType<Map<String, dynamic>>(),
+        );
+      });
+
+      print('Successfully processed ${_syllabusList.length} syllabuses for UI');
+    } catch (e) {
+      print('Error: $e');
+      if (mounted) {
+        CustomToaster.toastError(context, 'Error', 'Failed to load syllabuses: $e');
+      }
+    } finally {
+      if (mounted) {
+        setState(() => isLoading = false);
+      }
+    }
   }
 
   void _addNewSyllabus() async {
+    print("Adding new syllabus with courseId: ${widget.courseId}, levelId: ${widget.levelId}, course_name: ${widget.course_name}, classId: ${widget.classId}, classesList: ${widget.classesList}");
     final result = await Navigator.of(context).push(
       MaterialPageRoute(
         fullscreenDialog: true,
-        builder: (BuildContext context) => const StaffCreateSyllabusScreen(),
+        builder: (BuildContext context) => StaffCreateSyllabusScreen(
+          classId: widget.classId,
+          courseId: widget.courseId,
+          levelId: widget.levelId,
+          courseName: widget.course_name,
+          className: widget.classesList.isNotEmpty ? widget.classesList[0]['name'] : '',
+        ),
       ),
     );
 
     if (result != null) {
-      setState(() {
-        _syllabusList.add(result);
-        _currentSyllabus = result;
-      });
+      _loadSyllabuses();
     }
   }
 
@@ -152,66 +236,176 @@ class _StaffCourseDetailScreenState extends State<StaffCourseDetailScreen> {
       MaterialPageRoute(
         builder: (BuildContext context) => StaffCreateSyllabusScreen(
           syllabusData: _syllabusList[index],
+          classId: widget.classId,
+          courseId: widget.courseId,
+          levelId: widget.levelId,
+          courseName: widget.course_name,
         ),
       ),
     );
-    if (result != null) {
-      setState(() {
-        _syllabusList[index] = result;
-        _currentSyllabus = result;
-      });
+
+    // If the user saved changes, result should contain the new values
+    if (result != null && result is Map<String, dynamic>) {
+      final String newTitle = result['title'];
+      final String newDescription = result['description'];
+      final List<staffModel.ClassModel> newClasses =
+          ((result['classes'] as List?) ?? []).map((c) {
+        if (c is staffModel.ClassModel) return c;
+        if (c is elModel.ClassModel) {
+          return staffModel.ClassModel(id: c.id, name: c.name);
+        }
+        if (c is Map) {
+          return staffModel.ClassModel(
+            id: (c['id'] ?? '').toString(),
+            name: (c['name'] ?? c['class_name'] ?? '').toString(),
+          );
+        }
+        return staffModel.ClassModel(id: c.toString(), name: '');
+      }).toList();
+      updateSyllabus(index, newTitle, newDescription, newClasses);
     }
   }
 
-  void _deleteSyllabus(int index) {
-    setState(() {
-      _syllabusList.removeAt(index);
-      if (_syllabusList.isEmpty) {
-        _currentSyllabus = null;
-      }
-    });
+  void updateSyllabus(int index, String newTitle, String newDescription, List<staffModel.ClassModel> newClasses) async {
+    final int syllabusId = _syllabusList[index]['id'];
+    final String term = _syllabusList[index]['term'];
+    final String levelId = widget.levelId ?? '';
+    final syllabusProvider = Provider.of<StaffSyllabusProvider>(context, listen: false);
+    try {
+      await syllabusProvider.updateSyllabus(
+        title: newTitle,
+        description: newDescription,
+        term: term,
+        levelId: int.parse(levelId),
+        syllabusId: syllabusId,
+        classes: newClasses,
+      );
+      CustomToaster.toastSuccess(
+        context,
+        'Syllabus Updated',
+        'Syllabus updated successfully',
+      );
+      _loadSyllabuses();
+    } catch (e) {
+      CustomToaster.toastError(
+        context,
+        'Error',
+        'Failed to update syllabus: $e',
+      );
+    }
   }
 
-  void _addAssignment(Assignment assignment) {
-    setState(() {
-      if (topics.isEmpty) {
-        _addDummyData();
-      }
+  Widget _buildSyllabusList() {
+    print('Building syllabus list with ${_syllabusList.length} items');
+    print('Widget parameters - classId: ${widget.classId}, levelId: ${widget.levelId}, courseId: ${widget.courseId}, course_name: ${widget.course_name}, classesList: ${widget.classesList}');
 
-      Topic? existingTopic = topics.firstWhere(
-        (topic) => topic.name == assignment.topic,
-        orElse: () => Topic(name: assignment.topic, assignments: [], questions: [], materials: [], description: ''),
-      );
-
-      if (!topics.contains(existingTopic)) {
-        topics.add(existingTopic);
-      }
-
-      existingTopic.assignments.add(assignment);
-    });
+    return ListView.builder(
+      itemCount: _syllabusList.length,
+      itemBuilder: (context, index) {
+        return GestureDetector(
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => EmptySubjectScreen(
+                syllabusId: _syllabusList[index]['id'] as int?,
+                syllabusClasses: _syllabusList[index]['classes'] as List<Map<String, dynamic>>,
+                classId: widget.classId,
+                courseId: widget.courseId,
+                levelId: widget.levelId,
+                authorName: _syllabusList[index]['author_name']?.toString() ?? '',
+                courseName: widget.course_name,
+                term: _syllabusList[index]['term']?.toString() ?? '',
+                courseTitle: _syllabusList[index]['title']?.toString() ?? '',
+              ),
+              settings: const RouteSettings(name: '/empty_subject'),
+            ),
+          ),
+          child: _buildOutlineContainers(_syllabusList[index], index),
+        );
+      },
+    );
   }
 
-  void _addQuestion(Question question) {
-    setState(() {
-      if (topics.isEmpty) {
-        _addDummyData();
-      }
-
-      Topic? existingTopic = topics.firstWhere(
-        (topic) => topic.name == question.topic,
-        orElse: () => Topic(name: question.topic, assignments: [], questions: [], materials: []),
-      );
-
-      if (!topics.contains(existingTopic)) {
-        topics.add(existingTopic);
-      }
-
-      existingTopic.questions.add(question);
-
-      if (_currentSyllabus != null) {
-        _currentSyllabus!['questionTitle'] = question.title;
-      }
-    });
+  Widget _buildOutlineContainers(Map<String, dynamic> syllabus, int index) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+      child: Container(
+        height: 150,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(10),
+          color: Colors.transparent,
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: Stack(
+          children: [
+            if (syllabus['backgroundImagePath'] != null)
+              SvgPicture.asset(
+                syllabus['backgroundImagePath'] as String,
+                width: double.infinity,
+                height: double.infinity,
+                fit: BoxFit.cover,
+              ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          syllabus['title']?.toString() ?? '',
+                          style: AppTextStyles.normal700(
+                            fontSize: 18,
+                            color: AppColors.backgroundLight,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      IconButton(
+                        icon: SvgPicture.asset(
+                          'assets/icons/result/edit.svg',
+                          color: Colors.white,
+                          width: 20,
+                          height: 20,
+                        ),
+                        onPressed: () => _editSyllabus(index),
+                      ),
+                      IconButton(
+                        icon: SvgPicture.asset(
+                          'assets/icons/result/delete.svg',
+                          color: Colors.white,
+                          width: 20,
+                          height: 20,
+                        ),
+                        onPressed: () => _confirmDeleteSyllabus(index),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+                  Text(
+                    syllabus['selectedClass']?.toString() ?? '',
+                    style: AppTextStyles.normal500(
+                      fontSize: 18,
+                      color: AppColors.backgroundLight,
+                    ),
+                  ),
+                  const SizedBox(height: 30),
+                  Text(
+                    syllabus['selectedTeacher']?.toString() ?? '',
+                    style: AppTextStyles.normal600(
+                      fontSize: 14,
+                      color: AppColors.backgroundLight,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   void _confirmDeleteSyllabus(int index) {
@@ -246,8 +440,8 @@ class _StaffCourseDetailScreenState extends State<StaffCourseDetailScreen> {
             ),
             TextButton(
               onPressed: () {
-                _deleteSyllabus(index);
                 Navigator.of(context).pop();
+                _deleteSyllabus(index);
               },
               child: Text(
                 'Yes',
@@ -263,150 +457,37 @@ class _StaffCourseDetailScreenState extends State<StaffCourseDetailScreen> {
     );
   }
 
-  void _showCreateOptionsBottomSheet(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      builder: (BuildContext context) {
-        return Container(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                'What do you want to create?',
-                style: AppTextStyles.normal600(
-                    fontSize: 18.0, color: AppColors.backgroundDark),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 20),
-              _buildOptionRow(context, 'Assignment', 'assets/icons/e_learning/assignment.svg'),
-              _buildOptionRow(context, 'Question', 'assets/icons/e_learning/question_icon.svg'),
-              _buildOptionRow(context, 'Material', 'assets/icons/e_learning/material.svg'),
-              _buildOptionRow(context, 'Topic', 'assets/icons/e_learning/topic.svg'),
-              const Padding(
-                padding: EdgeInsets.symmetric(vertical: 10),
-                child: Row(
-                  children: [
-                    Expanded(child: Divider()),
-                    Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 10),
-                      child: Text('or', style: TextStyle(color: Colors.grey)),
-                    ),
-                    Expanded(child: Divider()),
-                  ],
-                ),
-              ),
-              _buildOptionRow(context, 'Reuse content', 'assets/icons/e_learning/share.svg'),
-            ],
-          ),
-        );
-      },
-    );
-  }
+  void _deleteSyllabus(int index) async {
+    final int syllabusId = _syllabusList[index]['id'];
+    final deleteProvider = Provider.of<DeleteSyllabusProvider>(context, listen: false);
 
-  Widget _buildOptionRow(BuildContext context, String text, String iconPath) {
-    return InkWell(
-      onTap: () {
-        Navigator.pop(context);
-        switch (text) {
-          case 'Assignment':
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => StaffAssignmentScreen(
-                  onSave: (assignment) {
-                    _addAssignment(assignment);
-                  },
-                ),
-              ),
-            );
-            break;
-          case 'Question':
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => StaffQuestionScreen(
-                  onSave: (question) {
-                    _addQuestion(question);
-                  },
-                ),
-              ),
-            );
-            break;
-          case 'Topic':
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                fullscreenDialog: true,
-                builder: (BuildContext context) => const StaffCreateSyllabusScreen(),
-              ),
-            );
-            break;
-          case 'Material':
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => StaffAddMaterialScreen(
-                  onSave: (material) {
-                    setState(() {
-                      if (topics.isEmpty) {
-                        topics.add(Topic(name: "Default Topic", assignments: [], questions: [], materials: []));
-                      }
-                      topics.first.materials.add(material as custom.Material);
-                    });
-                  },
-                ),
-              ),
-            );
-            break;
-        }
-      },
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-        margin: const EdgeInsets.only(bottom: 8),
-        decoration: BoxDecoration(
-          color: AppColors.backgroundLight,
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Row(
-          children: [
-            SvgPicture.asset(iconPath, width: 24, height: 24),
-            const SizedBox(width: 16),
-            Text(
-              text,
-              style: AppTextStyles.normal500(fontSize: 16, color: AppColors.backgroundDark),
-            ),
-          ],
-        ),
-      ),
-    );
+    try {
+      await deleteProvider.deletesyllabus(syllabusId);
+      CustomToaster.toastSuccess(
+        context,
+        'Syllabus Deleted',
+        'Syllabus deleted successfully',
+      );
+      _loadSyllabuses();
+    } catch (e) {
+      CustomToaster.toastError(
+        context,
+        'Error',
+        "${e.toString()}",
+      );
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final Brightness brightness = Theme.of(context).brightness;
-    opacity = brightness == Brightness.light ? 0.1 : 0.15;
+    final double opacity = brightness == Brightness.light ? 0.1 : 0.15;
 
     return Scaffold(
       appBar: AppBar(
-        leading: IconButton(
-          onPressed: () {
-            Navigator.of(context).pop();
-          },
-          icon: Image.asset(
-            'assets/icons/arrow_back.png',
-            color: AppColors.paymentTxtColor1,
-            width: 34.0,
-            height: 34.0,
-          ),
-        ),
         title: Text(
-          widget.courseTitle,
-          style: const TextStyle(
-            fontSize: 22,
-            fontWeight: FontWeight.bold,
-            color: AppColors.paymentTxtColor1,
-          ),
+          'Syllabus',
+          style: AppTextStyles.normal600(fontSize: 24.0, color: AppColors.primaryLight),
         ),
         backgroundColor: AppColors.backgroundLight,
         flexibleSpace: FlexibleSpaceBar(
@@ -420,75 +501,32 @@ class _StaffCourseDetailScreenState extends State<StaffCourseDetailScreen> {
                     fit: BoxFit.cover,
                   ),
                 ),
-              )
+              ),
             ],
           ),
         ),
       ),
-      body: IndexedStack(
-        index: _currentIndex,
-        children: [
-          _buildCourseworkScreen(),
-          _buildForumScreen(),
-        ],
-      ),
-      floatingActionButton: _currentIndex == 0
-          ? FloatingActionButton(
-              onPressed: () => _showCreateOptionsBottomSheet(context),
-              backgroundColor: AppColors.staffBtnColor1,
-              child: const Icon(Icons.add, color: Colors.white),
-            )
-          : null,
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _currentIndex,
-        onTap: (index) {
-          setState(() {
-            _currentIndex = index;
-          });
-        },
-        selectedItemColor: AppColors.eLearningBtnColor1,
-        unselectedItemColor: Colors.grey,
-        items: [
-          BottomNavigationBarItem(
-            icon: SvgPicture.asset(
-              _courseworkIconPath,
-              width: 24,
-              height: 24,
-              color: _currentIndex == 0 ? AppColors.eLearningBtnColor1 : Colors.grey,
-            ),
-            label: 'Coursework',
+      body: Container(
+        width: double.infinity,
+        height: double.infinity,
+        decoration: BoxDecoration(
+          image: DecorationImage(
+            image: const AssetImage('assets/images/background.png'),
+            fit: BoxFit.cover,
+            opacity: opacity,
           ),
-          BottomNavigationBarItem(
-            icon: SvgPicture.asset(
-              _forumIconPath,
-              width: 24,
-              height: 24,
-              color: _currentIndex == 1 ? AppColors.eLearningBtnColor1 : Colors.grey,
-            ),
-            label: 'Forum',
-          ),
-        ],
+        ),
+        child: isLoading
+            ? const Center(child: CircularProgressIndicator())
+            : _syllabusList.isEmpty
+                ? _buildEmptyState()
+                : _buildSyllabusList(),
       ),
-    );
-  }
-
-  Widget _buildCourseworkScreen() {
-    return Container(
-      width: double.infinity,
-      height: double.infinity,
-      decoration: Constants.customBoxDecoration(context),
-      child: _currentSyllabus == null
-          ? _buildEmptyState()
-          : _buildSyllabusDetails(),
-    );
-  }
-
-  Widget _buildForumScreen() {
-    return Container(
-      width: double.infinity,
-      height: double.infinity,
-      decoration: Constants.customBoxDecoration(context),
-      child: _currentSyllabus == null ? _buildEmptyState() : _buildForumContent(),
+      floatingActionButton: FloatingActionButton(
+        onPressed: _addNewSyllabus,
+        backgroundColor: AppColors.staffBtnColor1,
+        child: const Icon(Icons.add, color: Colors.white),
+      ),
     );
   }
 
@@ -512,701 +550,10 @@ class _StaffCourseDetailScreenState extends State<StaffCourseDetailScreen> {
                 color: AppColors.backgroundLight,
               ),
               padding: const EdgeInsets.all(12),
-            )
-          ],
-        )
-      ],
-    );
-  }
-
-  // ======= syllabus detail ======== //
-
-  Widget _buildSyllabusDetails() {
-    if (_currentSyllabus == null) return _buildEmptyState();
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-      child: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Container(
-              height: 95,
-              width: MediaQuery.of(context).size.width,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(10),
-                color: Colors.transparent,
-              ),
-              child: Stack(
-                fit: StackFit.expand,
-                children: [
-                  SvgPicture.asset(
-                    _currentSyllabus!['backgroundImagePath'],
-                    width: MediaQuery.of(context).size.width,
-                    height: 95,
-                    fit: BoxFit.cover,
-                  ),
-                  Positioned.fill(
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 12.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            _currentSyllabus!['title'],
-                            style: AppTextStyles.normal700(
-                              fontSize: 18,
-                              color: AppColors.backgroundLight,
-                            ),
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          const SizedBox(height: 5),
-                          Text(
-                            'Class: ${_currentSyllabus!['selectedClass']}',
-                            style: AppTextStyles.normal500(
-                              fontSize: 14,
-                              color: AppColors.backgroundLight,
-                            ),
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          Text(
-                            'Teacher: ${_currentSyllabus!['selectedTeacher']}',
-                            style: AppTextStyles.normal600(
-                              fontSize: 12,
-                              color: AppColors.backgroundLight,
-                            ),
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
             ),
-            const SizedBox(height: 16),
-            if (_currentSyllabus!['description'] != null &&
-                _currentSyllabus!['description'].isNotEmpty)
-              Card(
-                elevation: 2,
-                child: Padding(
-                  padding: const EdgeInsets.all(12.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Description:',
-                        style: AppTextStyles.normal600(
-                          fontSize: 16,
-                          color: AppColors.backgroundDark,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        _currentSyllabus!['description'],
-                        style: AppTextStyles.normal500(
-                          fontSize: 14,
-                          color: AppColors.backgroundDark,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            if (topics.isNotEmpty && topics.first.assignments.isNotEmpty)
-              InkWell(
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => StaffAssignmentDetailsScreen(
-                        assignment: topics.first.assignments.first,
-                      ),
-                    ),
-                  );
-                },
-                child: Container(
-                  padding: const EdgeInsets.symmetric(vertical: 12.0),
-                  decoration: const BoxDecoration(
-                    border: Border(
-                      bottom: BorderSide(color: Colors.grey, width: 0.5),
-                    ),
-                  ),
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 40,
-                        height: 40,
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: AppColors.eLearningBtnColor1.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: SvgPicture.asset(
-                          'assets/icons/e_learning/assignment.svg',
-                          color: AppColors.eLearningBtnColor1,
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                Text(
-                                  'Assignment: ',
-                                  style: AppTextStyles.normal600(
-                                    fontSize: 14,
-                                    color: AppColors.backgroundDark,
-                                  ),
-                                ),
-                                Text(
-                                  topics.first.assignments.first.title,
-                                  style: AppTextStyles.normal400(
-                                    fontSize: 14,
-                                    color: AppColors.backgroundDark,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              'Created on ${DateFormat('dd MMMM, yyyy').format(topics.first.assignments.first.createdAt)} · ${DateFormat('hh:mma').format(topics.first.assignments.first.createdAt).toLowerCase()}',
-                              style: AppTextStyles.normal400(
-                                fontSize: 12,
-                                color: Colors.grey,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            if (topics.isNotEmpty && topics.first.questions.isNotEmpty)
-              InkWell(
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => QuizAnswersScreen(
-                        quizTitle: topics.first.questions.first.title,
-                      ),
-                    ),
-                  );
-                },
-                child: Container(
-                  padding: const EdgeInsets.symmetric(vertical: 12.0),
-                  decoration: const BoxDecoration(
-                    border: Border(
-                      bottom: BorderSide(color: Colors.grey, width: 0.5),
-                    ),
-                  ),
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 40,
-                        height: 40,
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: AppColors.eLearningBtnColor1.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: SvgPicture.asset(
-                          'assets/icons/e_learning/question_icon.svg',
-                          color: AppColors.eLearningBtnColor1,
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                Text(
-                                  'Quiz: ',
-                                  style: AppTextStyles.normal600(
-                                    fontSize: 14,
-                                    color: AppColors.backgroundDark,
-                                  ),
-                                ),
-                                Text(
-                                  topics.first.questions.first.title,
-                                  style: AppTextStyles.normal400(
-                                    fontSize: 14,
-                                    color: AppColors.backgroundDark,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              'Created on ${DateFormat('dd MMMM, yyyy').format(topics.first.questions.first.createdAt)} · ${DateFormat('hh:mma').format(topics.first.questions.first.createdAt).toLowerCase()}',
-                              style: AppTextStyles.normal400(
-                                fontSize: 12,
-                                color: Colors.grey,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            if (topics.isNotEmpty && topics.first.materials.isNotEmpty)
-              InkWell(
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => StaffMaterialDetailsScreen(
-                        material: topics.first.materials.first,
-                      ),
-                    ),
-                  );
-                },
-                child: Container(
-                  padding: const EdgeInsets.symmetric(vertical: 12.0),
-                  decoration: const BoxDecoration(
-                    border: Border(
-                      bottom: BorderSide(color: Colors.grey, width: 0.5),
-                    ),
-                  ),
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 40,
-                        height: 40,
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: AppColors.eLearningBtnColor1.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: SvgPicture.asset(
-                          'assets/icons/e_learning/material.svg',
-                          color: AppColors.eLearningBtnColor1,
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                Text(
-                                  'Material: ',
-                                  style: AppTextStyles.normal600(
-                                    fontSize: 14,
-                                    color: AppColors.backgroundDark,
-                                  ),
-                                ),
-                                Text(
-                                  topics.first.materials.first.title,
-                                  style: AppTextStyles.normal400(
-                                    fontSize: 14,
-                                    color: AppColors.backgroundDark,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              'Created on ${DateFormat('dd MMMM, yyyy').format(topics.first.materials.first.createdAt)} · ${DateFormat('hh:mma').format(topics.first.materials.first.createdAt).toLowerCase()}',
-                              style: AppTextStyles.normal400(
-                                fontSize: 12,
-                                color: Colors.grey,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            if (topics.isNotEmpty)
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 16.0),
-                    child: Text(
-                      topics.first.name,
-                      style: AppTextStyles.normal600(
-                        fontSize: 18,
-                        color: AppColors.backgroundDark,
-                      ),
-                    ),
-                  ),
-                  _buildTopicItem(
-                    'What is Punctuality?',
-                    '25 June, 2015 · 08:52am',
-                    Icons.help_outline,
-                  ),
-                  _buildTopicItem(
-                    'First C.A',
-                    '25 June, 2015 · 08:52am',
-                    Icons.quiz_outlined,
-                  ),
-                  _buildTopicItem(
-                    'Assignment',
-                    '25 June, 2015 · 08:52am',
-                    Icons.assignment_outlined,
-                  ),
-                  _buildTopicItem(
-                    'Second C.A',
-                    '25 June, 2015 · 08:52am',
-                    Icons.quiz_outlined,
-                  ),
-                ],
-              ),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildTopicItem(String title, String timestamp, IconData icon) {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 12.0),
-      child: Row(
-        children: [
-          Container(
-            width: 40,
-            height: 40,
-            decoration: const BoxDecoration(
-              color: AppColors.eLearningBtnColor1,
-              shape: BoxShape.circle,
-            ),
-            child: Icon(
-              icon,
-              color: Colors.white,
-              size: 20,
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: AppTextStyles.normal500(
-                    fontSize: 14,
-                    color: AppColors.backgroundDark,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  'Created on $timestamp',
-                  style: AppTextStyles.normal400(
-                    fontSize: 12,
-                    color: Colors.grey,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildForumContent() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-      child: Column(
-        children: [
-          Container(
-            height: 95,
-            width: MediaQuery.of(context).size.width,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(10),
-              color: Colors.transparent,
-            ),
-            child: Stack(
-              fit: StackFit.expand,
-              children: [
-                SvgPicture.asset(
-                  _currentSyllabus!['backgroundImagePath'],
-                  width: MediaQuery.of(context).size.width,
-                  height: 95,
-                  fit: BoxFit.cover,
-                ),
-                Positioned.fill(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 12.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          _currentSyllabus!['title'],
-                          style: AppTextStyles.normal700(
-                            fontSize: 18,
-                            color: AppColors.backgroundLight,
-                          ),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        const SizedBox(height: 5),
-                        Text(
-                          'Class: ${_currentSyllabus!['selectedClass']}',
-                          style: AppTextStyles.normal500(
-                            fontSize: 14,
-                            color: AppColors.backgroundLight,
-                          ),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        Text(
-                          'Teacher: ${_currentSyllabus!['selectedTeacher']}',
-                          style: AppTextStyles.normal600(
-                            fontSize: 12,
-                            color: AppColors.backgroundLight,
-                          ),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 16),
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              border: Border.all(color: Colors.grey.shade300),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Row(
-              children: [
-                CircleAvatar(
-                  backgroundColor: Colors.grey.shade200,
-                  child: const Icon(Icons.person_outline, color: Colors.grey),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: TextField(
-                    decoration: InputDecoration(
-                      hintText: 'Share with your class...',
-                      border: InputBorder.none,
-                      hintStyle: AppTextStyles.normal400(
-                        fontSize: 14,
-                        color: Colors.grey,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 16),
-          Expanded(
-            child: ListView(
-              children: [
-                _buildForumPost(
-                  title: topics.isNotEmpty
-                      ? topics.first.name
-                      : "What is Punctuality?",
-                  date: "25 June, 2015",
-                  time: "08:52am",
-                  isTopicPost: true,
-                ),
-                ..._buildComments(),
-              ],
-            ),
-          ),
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              border: Border(
-                top: BorderSide(color: Colors.grey.shade300),
-              ),
-            ),
-            child: Row(
-              children: [
-                CircleAvatar(
-                  backgroundColor: Colors.grey.shade200,
-                  child: const Icon(Icons.person_outline, color: Colors.grey),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: TextField(
-                    decoration: InputDecoration(
-                      hintText: 'Add a comment...',
-                      border: InputBorder.none,
-                      hintStyle: AppTextStyles.normal400(
-                        fontSize: 14,
-                        color: Colors.grey,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildForumPost({
-    required String title,
-    required String date,
-    required String time,
-    bool isTopicPost = false,
-  }) {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 12),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              isTopicPost
-                  ? Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: AppColors.eLearningBtnColor1,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: const Icon(
-                        Icons.description,
-                        color: Colors.white,
-                        size: 20,
-                      ),
-                    )
-                  : CircleAvatar(
-                      backgroundColor: Colors.grey.shade200,
-                      child: const Icon(Icons.person_outline, color: Colors.grey),
-                    ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: AppTextStyles.normal600(
-                        fontSize: 16,
-                        color: AppColors.backgroundDark,
-                      ),
-                    ),
-                    Text(
-                      '$date · $time',
-                      style: AppTextStyles.normal400(
-                        fontSize: 12,
-                        color: Colors.grey,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  List<Widget> _buildComments() {
-    return [
-      _buildComment(
-        name: "Tochukwu Dennis",
-        content: "This is a mock data showing the info details of a post. This is a mock data sh",
-        date: "03 Jan",
-      ),
-      _buildComment(
-        name: "Tochukwu Dennis",
-        content: "This is a mock data showing the info details of a post. This is a mock data sh",
-        date: "03 Jan",
-      ),
-    ];
-  }
-
-  Widget _buildComment({
-    required String name,
-    required String content,
-    required String date,
-  }) {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(48, 12, 0, 12),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              CircleAvatar(
-                backgroundColor: Colors.grey.shade200,
-                radius: 16,
-                child: const Icon(Icons.person_outline, color: Colors.grey, size: 20),
-              ),
-              const SizedBox(width: 8),
-              Text(
-                name,
-                style: AppTextStyles.normal600(
-                  fontSize: 14,
-                  color: AppColors.backgroundDark,
-                ),
-              ),
-              const SizedBox(width: 8),
-              Text(
-                date,
-                style: AppTextStyles.normal400(
-                  fontSize: 12,
-                  color: Colors.grey,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Padding(
-            padding: const EdgeInsets.only(left: 40),
-            child: Text(
-              content,
-              style: AppTextStyles.normal400(
-                fontSize: 14,
-                color: AppColors.backgroundDark,
-              ),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.only(left: 40, top: 8),
-            child: Row(
-              children: [
-                TextButton.icon(
-                  onPressed: () {},
-                  icon: const Icon(Icons.favorite_border, size: 16),
-                  label: Text(
-                    'Like',
-                    style: AppTextStyles.normal400(
-                      fontSize: 12,
-                      color: Colors.grey,
-                    ),
-                  ),
-                ),
-                TextButton(
-                  onPressed: () {},
-                  child: Text(
-                    'Reply',
-                    style: AppTextStyles.normal400(
-                      fontSize: 12,
-                      color: Colors.grey,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
+      ],
     );
   }
 }

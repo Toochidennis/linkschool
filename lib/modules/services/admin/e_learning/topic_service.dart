@@ -45,46 +45,26 @@ class TopicService {
       _apiService.setAuthToken(token);
       print('TopicService: Token set, making API call');
 
-      final response = await _apiService.get<List<Topic>>(
-        endpoint: 'portal/elearning/topic/$syllabusId',
-        queryParams: {'_db': dbName},
-        fromJson: (json) {
-          print('TopicService: Raw JSON response: ${const JsonEncoder.withIndent('  ').convert(json)}');
-          
-          if (json['success'] == true) {
-            final responseData = json['response'];
-            if (responseData is List) {
-              return responseData
-                  .where((item) => item != null)
-                  .map((topicJson) {
-                    try {
-                      return Topic.fromJson(topicJson as Map<String, dynamic>);
-                    } catch (e) {
-                      print('TopicService: Error parsing topic: $e');
-                      return null;
-                    }
-                  })
-                  .where((topic) => topic != null)
-                  .cast<Topic>()
-                  .toList();
-            } else {
-              print('TopicService: Response data is not a list: $responseData');
-              return <Topic>[];
-            }
-          } else {
-            final message = json['message'] ?? 'Unknown error';
-            print('TopicService: API returned success=false: $message');
-            throw Exception('Failed to load topics: $message');
-          }
-        },
-      );
+    final response = await _apiService.get<List<Topic>>(
+      endpoint: 'portal/elearning/syllabus/$syllabusId/topics',
+      queryParams: {'_db': dbName},
+      fromJson: (json) {
+        print('Raw JSON response: ${const JsonEncoder.withIndent('  ').convert(json)}');
+        if (json['success'] == true && json['response'] is List) {
+          return (json['response'] as List)
+              .map((topicJson) => Topic.fromJson(topicJson as Map<String, dynamic>))
+              .toList();
+        }
+        throw Exception('Failed to load topics: ${json['message'] ?? 'Unknown error'}');
+      },
+    );
 
-      print('TopicService: API Response: status=${response.statusCode}, success=${response.success}');
-      
-      if (!response.success) {
-        print('TopicService: Failed to fetch topics: ${response.message}');
-        throw Exception(response.message);
-      }
+    print('API Response: status=${response.statusCode}, message=${response.message}, data=${response.data != null}');
+
+    if (!response.success) {
+      print('Failed to fetch topics: ${response.message}');
+      throw Exception(response.message);
+    }
 
       final topics = response.data ?? [];
       print('TopicService: Successfully fetched ${topics.length} topics');
@@ -158,10 +138,10 @@ class TopicService {
 
       print('TopicService: Create topic request body: ${const JsonEncoder.withIndent('  ').convert(requestBody)}');
 
-      final response = await _apiService.post<Map<String, dynamic>>(
-        endpoint: 'portal/elearning/topic',
-        body: requestBody,
-      );
+    final response = await _apiService.post<Map<String, dynamic>>(
+      endpoint: 'portal/elearning/topics',
+      body: requestBody,
+    );
 
       if (!response.success) {
         print('TopicService: Failed to create topic: ${response.message}');

@@ -34,6 +34,7 @@ import 'package:linkschool/modules/providers/explore/exam_provider.dart';
 import 'package:linkschool/modules/providers/explore/for_you_provider.dart';
 import 'package:linkschool/modules/providers/explore/home/news_provider.dart';
 import 'package:linkschool/modules/providers/explore/subject_provider.dart';
+import 'package:linkschool/modules/providers/staff/syllabus_provider.dart';
 import 'package:linkschool/modules/services/admin/e_learning/activity_service.dart';
 import 'package:linkschool/modules/services/admin/payment/vendor_service.dart';
 import 'package:linkschool/modules/services/explore/cbt_service.dart';
@@ -102,15 +103,14 @@ Future<void> main() async {
             ChangeNotifierProvider(create: (_) => OverviewProvider( locator<OverviewService>())),
 
         // StudentProvider from service locator
-        
         ChangeNotifierProvider(create: (_) => locator<StudentProvider>()),
         ChangeNotifierProvider(create: (_) => locator<AttendanceProvider>()),
         ChangeNotifierProvider(create: (_) => CourseResultProvider()),
         ChangeNotifierProvider(create: (_) => ViewCourseResultProvider()),
-        ChangeNotifierProvider(create: (_) => locator<PerformanceProvider>()),
-        ChangeNotifierProvider(create: (_) => locator<AccountProvider>()),
-        ChangeNotifierProvider(create: (_) => locator<FeeProvider>()),
-        Provider(create: (_) => locator<VendorService>()),
+
+          // StaffProvider  from service locator
+        ChangeNotifierProvider(create: (_) => locator<StaffSyllabusProvider>()),
+
       ],
       child: const MyApp(),
     ),
