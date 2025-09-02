@@ -64,7 +64,7 @@ Future<List<Topic>> FetchTopic({required int syllabusId}) async {
 
 
     final response = await _apiService.get<List<Topic>>(
-      endpoint: 'portal/elearning/topic/$syllabusId',
+      endpoint: 'portal/elearning/syllabus/$syllabusId/topics',
       queryParams: {'_db': dbName},
       fromJson: (json) {
         print('Raw JSON response: ${const JsonEncoder.withIndent('  ').convert(json)}');
@@ -140,7 +140,7 @@ Future<List<Topic>> FetchTopic({required int syllabusId}) async {
     print('Request Body: $requestBody');
 
     final response = await _apiService.post<Map<String, dynamic>>(
-      endpoint: 'portal/elearning/topic',
+      endpoint: 'portal/elearning/topics',
       body: requestBody,
     );
 

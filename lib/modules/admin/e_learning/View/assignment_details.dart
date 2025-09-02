@@ -485,11 +485,8 @@ Widget _buildAttachmentItem(AttachmentItem attachment) {
       height: 100,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(8.0),
-        border: Border.all(
-          color: Colors.blue,
-          width: 2.0,
-        ),
-        color: Colors.blue.shade100,
+       
+        color:  Colors.white,
       ),
       child: Column(
         children: [
@@ -497,7 +494,7 @@ Widget _buildAttachmentItem(AttachmentItem attachment) {
             flex: 2,
             child: Container(
               decoration: BoxDecoration(
-             color: AppColors.bgXplore3,
+             color:Colors.blue,
                 borderRadius: BorderRadius.circular(8.0),
               ),
             
@@ -698,26 +695,29 @@ Widget _buildCommentItem(Comment comment) {
 
   Widget _buildCommentInput() {
     final provider = Provider.of<CommentProvider>(context, listen: false);
-    return Row(
-      children: [
-        Expanded(
-          child: TextField(
-            controller: _commentController,
-            focusNode: _commentFocusNode,
-            decoration: const InputDecoration(
-              hintText: 'Type your comment...',
-              border: OutlineInputBorder(),
+    return Padding(
+       padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        children: [
+          Expanded(
+            child: TextField(
+              controller: _commentController,
+              focusNode: _commentFocusNode,
+              decoration: const InputDecoration(
+                hintText: 'Type your comment...',
+                border: OutlineInputBorder(),
+              ),
             ),
           ),
-        ),
-        provider.isLoading
-            ? const CircularProgressIndicator()
-            : IconButton(
-                icon: const Icon(Icons.send),
-                onPressed: _addComment,
-                color: AppColors.paymentTxtColor1,
-              ),
-      ],
+          provider.isLoading
+              ? const CircularProgressIndicator()
+              : IconButton(
+                  icon: const Icon(Icons.send),
+                  onPressed: _addComment,
+                  color: AppColors.paymentTxtColor1,
+                ),
+        ],
+      ),
     );
   }
 

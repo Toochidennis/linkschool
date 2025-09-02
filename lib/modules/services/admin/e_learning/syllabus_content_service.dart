@@ -8,7 +8,7 @@ class SyllabusContentService {
   Future<ApiResponse<Map<String, dynamic>>> getSyllabusContents(int syllabusId, String dbName) async {
     try {
       final response = await _apiService.get<Map<String, dynamic>>(
-        endpoint: 'portal/elearning/syllabus/contents/$syllabusId',
+        endpoint: 'portal/elearning/syllabus/$syllabusId/contents',
         queryParams: {
           '_db': dbName,
         },

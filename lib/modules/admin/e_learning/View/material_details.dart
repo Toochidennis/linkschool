@@ -66,7 +66,9 @@ class _AdminMaterialDetailsScreenState extends State<AdminMaterialDetailsScreen>
    void initState() {
   super.initState();
   _loadUserData();
-  if (mounted) setState(() {});
+  if (mounted) setState(() {
+
+  });
   _tabController = TabController(length: 2, vsync: this);
   locator<CommentProvider>().fetchComments(widget.itemId.toString());
   _scrollController.addListener(() {
@@ -240,7 +242,7 @@ void _handleTabChange() {
             child: AnimatedPadding(
               duration: const Duration(milliseconds: 300),
               padding: EdgeInsets.only(
-                bottom: MediaQuery.of(context).viewInsets.bottom,
+                bottom: MediaQuery.of(context).viewInsets.bottom ,
                 left: 8.0,
                 right: 8.0,
                 top: 8.0,
@@ -404,7 +406,7 @@ void _handleTabChange() {
       (attachment.fileName?.toLowerCase().endsWith('.png') ?? false) ||
       (attachment.fileName?.toLowerCase().endsWith('.gif') ?? false) ||
       (attachment.iconPath?.contains('material.svg') ?? false) ||
-      (attachment.iconPath?.contains('photo') ?? false);
+      (attachment.iconPath?.contains('photo') ?? false) || (attachment.iconPath?.contains('image') ?? false);
 
   if (isImage) {
     final imageUrl = "https://linkskool.net/${attachment.fileName ?? ''}";
@@ -447,7 +449,7 @@ void _handleTabChange() {
           color: Colors.blue,
           width: 2.0,
         ),
-        color: Colors.blue.shade100,
+        color: Colors.white,
       ),
       child: Column(
         children: [
@@ -560,26 +562,29 @@ Widget _buildCommentSection() {
 
   Widget _buildCommentInput() {
     final provider = Provider.of<CommentProvider>(context, listen: false);
-    return Row(
-      children: [
-        Expanded(
-          child: TextField(
-            controller: _commentController,
-         focusNode: _commentFocusNode,
-            decoration: const InputDecoration(
-              hintText: 'Type your comment...',
-              border: OutlineInputBorder(),
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        children: [
+          Expanded(
+            child: TextField(
+              controller: _commentController,
+           focusNode: _commentFocusNode,
+              decoration: const InputDecoration(
+                hintText: 'Type your comment...',
+                border: OutlineInputBorder(),
+              ),
             ),
           ),
-        ),
-        provider.isLoading
-            ? const CircularProgressIndicator()
-            : IconButton(
-                icon: const Icon(Icons.send),
-                onPressed: _addComment,
-                color: AppColors.paymentTxtColor1,
-              ),
-      ],
+          provider.isLoading
+              ? const CircularProgressIndicator()
+              : IconButton(
+                  icon: const Icon(Icons.send),
+                  onPressed: _addComment,
+                  color: AppColors.paymentTxtColor1,
+                ),
+        ],
+      ),
     );
   }
 

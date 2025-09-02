@@ -17,6 +17,7 @@ import 'package:linkschool/modules/providers/admin/e_learning/topic_provider.dar
 
 import 'package:linkschool/modules/providers/admin/grade_provider.dart';
 import 'package:linkschool/modules/providers/admin/skills_behavior_table_provider.dart';
+import 'package:linkschool/modules/providers/staff/syllabus_provider.dart';
 import 'package:linkschool/modules/services/admin/attendance_service.dart';
 import 'package:linkschool/modules/services/admin/e_learning/activity_service.dart';
 import 'package:linkschool/modules/services/admin/e_learning/assignment_service.dart';
@@ -39,6 +40,7 @@ import 'package:linkschool/modules/services/admin/course_registration_service.da
 import 'package:linkschool/modules/services/admin/assessment_service.dart';
 import 'package:linkschool/modules/providers/admin/student_provider.dart';
 import 'package:linkschool/modules/services/admin/behaviour_service.dart';
+import 'package:linkschool/modules/services/staff/syllabus_service.dart';
 
 
 final GetIt locator = GetIt.instance;
@@ -206,5 +208,13 @@ locator.registerLazySingleton<DeleteSyllabusProvider>(() => DeleteSyllabusProvid
   // Register AttendanceProvider
   locator.registerLazySingleton<AttendanceProvider>(
     () => AttendanceProvider()
+  );
+
+  //Register Student Provider and service api 
+    locator.registerLazySingleton<StaffSyllabusService>(
+    () => StaffSyllabusService(locator<ApiService>())
+  );
+  locator.registerLazySingleton<StaffSyllabusProvider>(
+    () => StaffSyllabusProvider(locator<StaffSyllabusService>())
   );
 }

@@ -14,6 +14,7 @@ import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/model/e-learning/question_model.dart';
 import 'package:linkschool/modules/providers/admin/e_learning/delete_question.dart';
 import 'package:linkschool/modules/providers/admin/e_learning/quiz_provider.dart';
+import 'package:linkschool/modules/providers/admin/e_learning/syllabus_content_provider.dart';
 import 'package:linkschool/modules/services/api/service_locator.dart';
 import 'package:linkschool/modules/staff/e_learning/form_classes/edit_staff_skill_behaviour_screen.dart';
 import 'package:provider/provider.dart';
@@ -28,6 +29,7 @@ class ViewQuestionScreen extends StatefulWidget {
   final syllabusClasses;
   final List<Map<String, dynamic>>? questions;
   final bool editMode;
+  final VoidCallback? onSaveFlag;
   const ViewQuestionScreen({
     super.key,
     required this.question,
@@ -36,6 +38,7 @@ class ViewQuestionScreen extends StatefulWidget {
     this.syllabusClasses,
     this.questions,
     this.editMode = false,
+    this.onSaveFlag
   });
 
   @override
@@ -316,6 +319,7 @@ void _initializeQuestions() {
 
  Future<void> _saveQuestions() async {
   setState(() {
+    
     List<Map<String, dynamic>> updatedQuestions = [];
     for (var question in createdQuestions) {
       final questionType = question['type'];
@@ -539,10 +543,11 @@ void _initializeQuestions() {
   try {
     // Debug: Print the assessment to check the structure
   //  print('Assessment JSON: ${jsonEncode(assessment)}');
-
+  final quizProvider = Provider.of<QuizProvider>(context, listen: false);
       print('Updating existing quiz with ID: ${widget.question.id}');
     if (widget.editMode == true) {
       print('Updated assessment: ${jsonEncode(Updatedassessment)}');
+      
       await quizProvider.updateTest(Updatedassessment);
       CustomToaster.toastSuccess(context, "Success", "Questions updated successfully");
     } else {
@@ -554,7 +559,7 @@ void _initializeQuestions() {
     });
     print('Quiz posted!');
     if (mounted) {
-      
+      widget.onSaveFlag?.call();
       Navigator.of(context).popUntil(ModalRoute.withName('/empty_subject'));
     }
   } catch (e) {
