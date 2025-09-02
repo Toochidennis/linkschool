@@ -1,25 +1,81 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:hive/hive.dart';
+import 'package:linkschool/modules/student/elearning/assignment_score_view_screen.dart';
+import 'package:linkschool/modules/student/elearning/material_detail_screen.dart';
+import 'package:linkschool/modules/student/elearning/quiz_intro_page.dart';
+import 'package:linkschool/modules/auth/model/user.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/constants.dart';
+import 'package:linkschool/modules/providers/student/elearningcontent_provider.dart';
 import 'package:linkschool/modules/student/elearning/assignment_detail_screen.dart';
 import 'package:linkschool/modules/student/elearning/material_screen.dart';
+import 'package:provider/provider.dart';
+
+import '../../model/student/dashboard_model.dart';
+import '../../model/student/elearningcontent_model.dart';
 
 class CourseContentScreen extends StatefulWidget {
-  const CourseContentScreen({super.key});
 
+  final DashboardData dashboardData;
+  final String courseTitle;
+
+  const CourseContentScreen({super.key, required this.dashboardData,required this.courseTitle});
   @override
   State<CourseContentScreen> createState() => _CourseContentScreenState();
 }
 
 class _CourseContentScreenState extends State<CourseContentScreen> {
   bool _isPunctualityExpanded = false;
-  bool _isProductionExpanded = false;
-  bool _isCapitalismExpanded = false;
-  bool _isSocialismExpanded = false;
+
+  List<ElearningContentData>? elearningContentData;
+  bool isLoading = true;
+
+  void initState() {
+    super.initState();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final elearningcontentprovider = Provider.of<ElearningContentProvider>(
+          context, listen: false);
+      elearningcontentprovider.fetchElearningContentData();
+    });
+    fetchElearningContentData();
+
+  }
+  String ellipsize(String? text, [int maxLength = 44]) {
+    if (text == null) return '';
+    return text.length <= maxLength ? text : '${text.substring(0, maxLength).trim()}...';
+  }
+  Future<void> fetchElearningContentData() async {
+    final provider = Provider.of<ElearningContentProvider>(context, listen: false);
+    final data = await provider.fetchElearningContentData(
+    );
+
+    setState(() {
+      elearningContentData = data;
+      isLoading = false;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
+    if ( elearningContentData == null) {
+      return const Scaffold(
+        body: Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
+
+
+    String termString = getTermString(getuserdata()['settings']['term']);
+    String sessionString = deduceSession(widget.dashboardData.recentActivities.last.datePosted);
+
+    AvailableCourse  selectedCourse = widget.dashboardData.availableCourses.firstWhere(
+      (course) => course.courseName.toLowerCase() == widget.courseTitle.toLowerCase(),
+);
     return SingleChildScrollView(
       child: Container(
         constraints:
@@ -30,43 +86,152 @@ class _CourseContentScreenState extends State<CourseContentScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              buildHeader(),
+              buildHeader(selectedCourse,sessionString,termString),
               const SizedBox(height: 16),
-              const ContentRow(
-                iconPath: 'assets/icons/student/quiz_icon.svg',
-                title: 'Quiz: Human Rights',
-                subtitle: 'Created on 25 June, 2015 08:52am',
-                titleColor: AppColors.paymentTxtColor1,
+
+              Column(
+                children: (elearningContentData ?? [])
+                    .where((e) => e.type.toLowerCase() == 'no topic')
+                    .map((e) => buildWithNoTopicSection(e
+                ))
+                    .toList(),
               ),
-              GestureDetector(
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => AssignmentDetailsScreen(),
-                    ),
-                  );
-                },
-                child: const ContentRow(
-                  iconPath: 'assets/icons/student/assignment_icon.svg',
-                  title: 'Assignment: Honesty',
-                  subtitle: 'Created on 25 June, 2015 08:52am',
-                  titleColor: AppColors.paymentTxtColor1,
-                ),
-              ),
-              const SizedBox(height: 24),
-              buildPunctualitySection(),
-              buildProductionSection(),
-              buildCapitalismSection(),
-              buildPubertySection(),
+              Column(
+                children: (elearningContentData ?? [])
+                    .where((e) => e.type.toLowerCase() != 'no topic')
+                    .map((e) => buildWithTopicSection(e
+                ))
+                    .toList(),
+              )
+
+
             ],
           ),
         ),
       ),
     );
   }
+  String deduceSession(String datePosted) {
+    DateTime date = DateTime.parse(datePosted);
+    int year = date.year;
 
-  Widget buildPunctualitySection() {
+    // If before September, session started the previous year
+    if (date.month < 9) {
+      return "${year - 1}/${year} Session";
+    } else {
+      return "${year}/${year + 1} Session";
+    }
+  }
+  String getTermString(int term) {
+    return {
+      1: "1st",
+      2: "2nd",
+      3: "3rd",
+    }[term] ?? "Unknown";
+  }
+  Widget buildWithNoTopicSection(ElearningContentData e) {
+    return              Column(
+      children: [
+        // Row 1: What is Punctuality
+
+        const SizedBox(height: 16),
+        ...e.children.map<Widget>((child) {
+          // If it's a quiz with settings
+          if (child.settings!=null) {
+            final settings = child.settings;
+            return
+              buildContentRowWithIconAndProgress(
+                  iconPath: 'assets/icons/student/quiz_icon.svg',
+
+                  title: settings?.title ?? "No title",
+                  description: ellipsize(settings?.description) ?? "No description",
+                  progressBarPercentage: 75,
+                  onTap:(){
+                    Navigator.push(
+                      context,MaterialPageRoute(
+                      builder: (context) => QuizIntroPage(childContent: child,),),
+                    );
+                  }
+              );
+          }
+          else if (child.type == 'material') {
+            return buildContentRowWithIconAndProgress(
+                iconPath: 'assets/icons/student/note_icon.svg',
+
+                title: child?.title ?? "No title",
+                description: ellipsize(child?.description) ?? "No description",
+                progressBarPercentage: 75,
+                onTap:(){
+                  Navigator.push(
+                    context,MaterialPageRoute(
+                    builder: (context) => MaterialDetailScreen(childContent: child,),),
+                  );
+                }
+            );
+          } else if (child.type=="assignment") {
+            return buildContentRowWithIconAndProgress(
+                iconPath: 'assets/icons/student/assignment_icon.svg',
+
+                title: child?.title ?? "No title",
+                description: ellipsize(child?.description) ?? "No description",
+                progressBarPercentage: 75,
+                onTap: () {
+                  final userBox = Hive.box('userData');
+                  final List<dynamic> assignmentssubmitted = userBox.get('assignments', defaultValue: []);
+                  final int? assignmentId = child.id;
+
+                  if (assignmentssubmitted.contains(assignmentId)) {
+                    Navigator.push(
+                      context,MaterialPageRoute(
+                      builder: (context) => AssignmentScorePage(childContent: child,year:int.parse(getuserdata()['settings']['year']), term:getuserdata()['settings']['term'], attachedMaterials: [""],),),
+                    );
+                  } else {
+                    Navigator.push(
+                      context,MaterialPageRoute(
+                      builder: (context) => AssignmentDetailsScreen(childContent: child, title: e.title, id: e.id ?? 0),),
+                    );
+                  }
+                }
+
+            );
+          } else {
+            return SizedBox.shrink(); // If neither condition is met
+          }
+        }).toList(),
+
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+
+            if (e.title == "title" &&
+                e.children.any((child) => child.settings?.type == "assignment")) ...[
+              const SizedBox(height: 16),
+              Padding(
+                padding: const EdgeInsets.only(bottom: 16.0),
+                child: buildContentRowWithIconAndProgress(
+                  iconPath: 'assets/icons/student/loading_icon.svg',
+                  title: 'Assignment',
+                  description: 'Due date: 25 June, 2015 08:52am',
+                  progressBarPercentage: 30, // Adjust this value as required
+                  onTap: () {
+                    // Handle tap
+                  },
+                ),
+              ),
+            ]
+
+          ],
+        ),
+
+        const SizedBox(height: 16),
+        // Row 3: First C.A
+
+      ],
+    );
+
+  }
+
+  Widget buildWithTopicSection(ElearningContentData e) {
     return AnimatedSize(
       duration: const Duration(milliseconds: 300),
       curve: Curves.easeInOut,
@@ -85,10 +250,10 @@ class _CourseContentScreenState extends State<CourseContentScreen> {
                   const EdgeInsets.symmetric(vertical: 8.0, horizontal: 4.0),
               child: Row(
                 children: [
-                  const Text(
-                    'Punctuality',
+                   Text(
+                    e.title,
                     style: TextStyle(
-                      fontSize: 16,
+                      fontSize: 20,
                       fontWeight: FontWeight.bold,
                       color: AppColors.paymentTxtColor1,
                     ),
@@ -115,54 +280,91 @@ class _CourseContentScreenState extends State<CourseContentScreen> {
           // Dropdown Content
           if (_isPunctualityExpanded)
             Padding(
-              padding: const EdgeInsets.symmetric(vertical: 16.0),
-              child: Column(
+              padding: const EdgeInsets.symmetric(vertical: 10.0),
+              child:
+              Column(
                 children: [
                   // Row 1: What is Punctuality
-                  buildContentRowWithIconAndProgress(
-                    iconPath: 'assets/icons/student/title_icon.svg',
-                    title: 'Continue Reading',
-                    description:
-                        'What is Punctuality? \n...trbfbft qwvohcujs hqouchsjas qjbg...',
-                    progressBarPercentage: 75,
-                    onTap: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => MaterialScreen(),
+
+                  ...e.children.map<Widget>((child) {
+                    // If it's a quiz with settings
+                    if (child.settings!=null) {
+                      final settings = child.settings;
+                      return
+                      buildContentRowWithIconAndProgress(
+                        iconPath: 'assets/icons/student/quiz_icon.svg',
+
+                        title: settings?.title ?? "No title",
+                        description: ellipsize(settings?.description) ?? "No description",
+                        progressBarPercentage: 75,
+                        onTap:(){
+                          Navigator.push(
+                            context,MaterialPageRoute(
+                            builder: (context) => QuizIntroPage(childContent: child,),),
+                          );
+                        }
+                      );
+                    }
+                    else if (child.type == 'material') {
+                      return buildContentRowWithIconAndProgress(
+                          iconPath: 'assets/icons/student/note_icon.svg',
+
+                          title: child?.title ?? "No title",
+                          description: ellipsize(child?.description) ?? "No description",
+                          progressBarPercentage: 75,
+                          onTap:(){
+                            Navigator.push(
+                              context,MaterialPageRoute(
+                              builder: (context) => MaterialDetailScreen(childContent: child,),),
+                            );
+                          }
+                      );
+                    } else if (child.type=="assignment") {
+                      return buildContentRowWithIconAndProgress(
+                          iconPath: 'assets/icons/student/assignment_icon.svg',
+
+                          title: child?.title ?? "No title",
+                          description: ellipsize(child?.description) ?? "No description",
+                          progressBarPercentage: 75,
+                          onTap:(){
+                            Navigator.push(
+                              context,MaterialPageRoute(
+                              builder: (context) => AssignmentDetailsScreen(childContent: child, title: e.title, id: e.id!),),
+                            );
+                          }
+                      );
+                    } else {
+                      return SizedBox.shrink(); // If neither condition is met
+                    }
+                  }).toList(),
+
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+
+                    if (e.title == "title" &&
+                        e.children.any((child) => child.settings?.type == "assignment")) ...[
+                      const SizedBox(height: 16),
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 16.0),
+                        child: buildContentRowWithIconAndProgress(
+                          iconPath: 'assets/icons/student/loading_icon.svg',
+                          title: 'Assignment',
+                          description: 'Due date: 25 June, 2015 08:52am',
+                          progressBarPercentage: 30, // Adjust this value as required
+                          onTap: () {
+                            // Handle tap
+                          },
+                        ),
                       ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 16.0),
-                    child: buildContentRowWithIconAndProgress(
-                      iconPath: 'assets/icons/student/loading_icon.svg',
-                      title: 'Assignment',
-                      description: 'Due date: 25 June, 2015 08:52am',
-                      progressBarPercentage:
-                          30, // Adjust this value as required
-                      onTap: () {
-                        // Navigate or handle tap for Assignment row
-                      },
-                    ),
-                  ),
+                    ]
+
+                  ],
+                ),
 
                   const SizedBox(height: 16),
                   // Row 3: First C.A
-                  buildContentRowWithSubtitle(
-                    'assets/icons/student/check_icon.svg',
-                    'First C.A',
-                    'Created on 25 June, 2015 08:52am',
-                  ),
-                  const SizedBox(height: 16),
-                  // Row 4: Second C.A
-                  buildContentRowWithBadge(
-                    'assets/icons/student/check_icon.svg',
-                    'Second C.A',
-                    'Created on 25 June, 2015 08:52am',
-                    badgeText: 'Submitted',
-                    badgeColor: AppColors.studentCtnColor5,
-                  ),
+
                 ],
               ),
             ),
@@ -171,322 +373,18 @@ class _CourseContentScreenState extends State<CourseContentScreen> {
     );
   }
 
-  Widget buildProductionSection() {
-    return AnimatedSize(
-      duration: const Duration(milliseconds: 300),
-      curve: Curves.easeInOut,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Dropdown Header
-          GestureDetector(
-            onTap: () {
-              setState(() {
-                _isProductionExpanded = !_isProductionExpanded;
-              });
-            },
-            child: Container(
-              padding:
-                  const EdgeInsets.symmetric(vertical: 8.0, horizontal: 4.0),
-              child: Row(
-                children: [
-                  const Text(
-                    'Production',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.paymentTxtColor1,
-                    ),
-                  ),
-                  const Spacer(),
-                  // Expand/collapse arrow
-                  RotatedBox(
-                    quarterTurns: _isProductionExpanded ? 2 : 0,
-                    child: SvgPicture.asset(
-                      'assets/icons/student/dropdown_icon.svg',
-                      height: 24,
-                      width: 24,
-                      colorFilter: const ColorFilter.mode(
-                        AppColors.paymentTxtColor1,
-                        BlendMode.srcIn,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          Divider(color: Colors.grey.shade400),
-          // Dropdown Content
-          if (_isProductionExpanded)
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 16.0),
-              child: Column(
-                children: [
-                  // Row 1: What is Punctuality
-                  buildContentRowWithIconAndProgress(
-                    iconPath: 'assets/icons/student/title_icon.svg',
-                    title: 'Continue Reading',
-                    description:
-                        'What is Production? \n...trbfbft qwvohcujs hqouchsjas qjbg...',
-                    progressBarPercentage: 75,
-                    onTap: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => MaterialScreen(),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 16.0),
-                    child: buildContentRowWithIconAndProgress(
-                      iconPath: 'assets/icons/student/loading_icon.svg',
-                      title: 'Assignment',
-                      description: 'Due date: 25 June, 2015 08:52am',
-                      progressBarPercentage:
-                          75, // Adjust this value as required
-                      onTap: () {
-                        // Navigate or handle tap for Assignment row
-                      },
-                    ),
-                  ),
-
-                  const SizedBox(height: 16),
-                  // Row 3: First C.A
-                  buildContentRowWithSubtitle(
-                    'assets/icons/student/check_icon.svg',
-                    'First C.A',
-                    'Created on 25 June, 2015 08:52am',
-                  ),
-                  const SizedBox(height: 16),
-                  // Row 4: Second C.A
-                  buildContentRowWithBadge(
-                    'assets/icons/student/check_icon.svg',
-                    'Second C.A',
-                    'Created on 25 June, 2015 08:52am',
-                    badgeText: 'Submitted',
-                    badgeColor: AppColors.studentCtnColor5,
-                  ),
-                ],
-              ),
-            ),
-        ],
-      ),
-    );
+  getuserdata(){
+    final userBox = Hive.box('userData');
+    final storedUserData =
+        userBox.get('userData') ?? userBox.get('loginResponse');
+    final processedData = storedUserData is String
+        ? json.decode(storedUserData)
+        : storedUserData;
+    final response = processedData['response'] ?? processedData;
+    final data = response['data'] ?? response;
+    return data;
   }
-
-  Widget buildCapitalismSection() {
-    return AnimatedSize(
-      duration: const Duration(milliseconds: 300),
-      curve: Curves.easeInOut,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Dropdown Header
-          GestureDetector(
-            onTap: () {
-              setState(() {
-                _isCapitalismExpanded = !_isCapitalismExpanded;
-              });
-            },
-            child: Container(
-              padding:
-                  const EdgeInsets.symmetric(vertical: 8.0, horizontal: 4.0),
-              child: Row(
-                children: [
-                  const Text(
-                    'Capitalism',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.paymentTxtColor1,
-                    ),
-                  ),
-                  const Spacer(),
-                  // Expand/collapse arrow
-                  RotatedBox(
-                    quarterTurns: _isCapitalismExpanded ? 2 : 0,
-                    child: SvgPicture.asset(
-                      'assets/icons/student/dropdown_icon.svg',
-                      height: 24,
-                      width: 24,
-                      colorFilter: const ColorFilter.mode(
-                        AppColors.paymentTxtColor1,
-                        BlendMode.srcIn,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          Divider(color: Colors.grey.shade400),
-          // Dropdown Content
-          if (_isCapitalismExpanded)
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 16.0),
-              child: Column(
-                children: [
-                  // Row 1: What is Punctuality
-                  buildContentRowWithIconAndProgress(
-                    iconPath: 'assets/icons/student/title_icon.svg',
-                    title: 'Continue Reading',
-                    description:
-                        'What is Capitalism? \n...trbfbft qwvohcujs hqouchsjas qjbg...',
-                    progressBarPercentage: 75,
-                    onTap: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => MaterialScreen(),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 16.0),
-                    child: buildContentRowWithIconAndProgress(
-                      iconPath: 'assets/icons/student/loading_icon.svg',
-                      title: 'Assignment',
-                      description: 'Due date: 25 June, 2015 08:52am',
-                      progressBarPercentage:
-                          75, // Adjust this value as required
-                      onTap: () {
-                        // Navigate or handle tap for Assignment row
-                      },
-                    ),
-                  ),
-
-                  const SizedBox(height: 16),
-                  // Row 3: First C.A
-                  buildContentRowWithSubtitle(
-                    'assets/icons/student/check_icon.svg',
-                    'First C.A',
-                    'Created on 25 June, 2015 08:52am',
-                  ),
-                  const SizedBox(height: 16),
-                  // Row 4: Second C.A
-                  buildContentRowWithBadge(
-                    'assets/icons/student/check_icon.svg',
-                    'Second C.A',
-                    'Created on 25 June, 2015 08:52am',
-                    badgeText: 'Submitted',
-                    badgeColor: AppColors.studentCtnColor5,
-                  ),
-                ],
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-
-  Widget buildPubertySection() {
-    return AnimatedSize(
-      duration: const Duration(milliseconds: 300),
-      curve: Curves.easeInOut,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Dropdown Header
-          GestureDetector(
-            onTap: () {
-              setState(() {
-                _isSocialismExpanded = !_isSocialismExpanded;
-              });
-            },
-            child: Container(
-              padding:
-                  const EdgeInsets.symmetric(vertical: 8.0, horizontal: 4.0),
-              child: Row(
-                children: [
-                  const Text(
-                    'Socialism',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.paymentTxtColor1,
-                    ),
-                  ),
-                  const Spacer(),
-                  // Expand/collapse arrow
-                  RotatedBox(
-                    quarterTurns: _isSocialismExpanded ? 2 : 0,
-                    child: SvgPicture.asset(
-                      'assets/icons/student/dropdown_icon.svg',
-                      height: 24,
-                      width: 24,
-                      colorFilter: const ColorFilter.mode(
-                        AppColors.paymentTxtColor1,
-                        BlendMode.srcIn,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          Divider(color: Colors.grey.shade400),
-          // Dropdown Content
-          if (_isSocialismExpanded)
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 16.0),
-              child: Column(
-                children: [
-                  // Row 1: What is Punctuality
-                  buildContentRowWithIconAndProgress(
-                    iconPath: 'assets/icons/student/title_icon.svg',
-                    title: 'Continue Reading',
-                    description:
-                        'What is Socialism? \n...trbfbft qwvohcujs hqouchsjas qjbg...',
-                    progressBarPercentage: 75,
-                    onTap: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => MaterialScreen(),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 16.0),
-                    child: buildContentRowWithIconAndProgress(
-                      iconPath: 'assets/icons/student/loading_icon.svg',
-                      title: 'Assignment',
-                      description: 'Due date: 25 June, 2015 08:52am',
-                      progressBarPercentage:
-                          75, // Adjust this value as required
-                      onTap: () {
-                        // Navigate or handle tap for Assignment row
-                      },
-                    ),
-                  ),
-
-                  const SizedBox(height: 16),
-                  // Row 3: First C.A
-                  buildContentRowWithSubtitle(
-                    'assets/icons/student/check_icon.svg',
-                    'First C.A',
-                    'Created on 25 June, 2015 08:52am',
-                  ),
-                  const SizedBox(height: 16),
-                  // Row 4: Second C.A
-                  buildContentRowWithBadge(
-                    'assets/icons/student/check_icon.svg',
-                    'Second C.A',
-                    'Created on 25 June, 2015 08:52am',
-                    badgeText: 'Submitted',
-                    badgeColor: AppColors.studentCtnColor5,
-                  ),
-                ],
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-
-  Widget buildHeader() {
+  Widget buildHeader(AvailableCourse availableCourse, String session, String term) {
     return SizedBox(
       width: MediaQuery.of(context).size.width,
       child: ClipRRect(
@@ -499,14 +397,14 @@ class _CourseContentScreenState extends State<CourseContentScreen> {
                 fit: BoxFit.cover,
               ),
             ),
-            const Padding(
+             Padding(
               padding: EdgeInsets.all(16.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Text(
-                    'Agricultural Science',
+                    availableCourse.courseName,
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: 18,
@@ -514,14 +412,14 @@ class _CourseContentScreenState extends State<CourseContentScreen> {
                     ),
                   ),
                   Text(
-                    '2018/2019 Session',
+                    session,
                     style: TextStyle(
                       color: Colors.white70,
                       fontSize: 14,
                     ),
                   ),
                   Text(
-                    'First Term',
+                    '${term} Term',
                     style: TextStyle(
                       color: Colors.white70,
                       fontSize: 12,
@@ -680,49 +578,52 @@ class _CourseContentScreenState extends State<CourseContentScreen> {
   }) {
     return GestureDetector(
       onTap: onTap,
-      child: Row(
-        children: [
-          // SVG Icon
-          SvgPicture.asset(
-            iconPath,
-            height: 32,
-            width: 32,
-          ),
-          const SizedBox(width: 12),
-          // Main Content
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Title (e.g., "Continue Reading")
-                Text(
-                  title,
-                  style: const TextStyle(
-                    color: AppColors.paymentTxtColor1,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 14,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                // Description Text
-                Text(
-                  description,
-                  style: const TextStyle(
-                    color: Colors.black,
-                    fontSize: 14,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                // Progress Bar
-                LinearProgressIndicator(
-                  value: progressBarPercentage / 100,
-                  backgroundColor: Colors.grey[300],
-                  valueColor: const AlwaysStoppedAnimation<Color>(Colors.blue),
-                ),
-              ],
+      child: Center(
+        child: Row(
+          children: [
+            // SVG Icon
+            SvgPicture.asset(
+              iconPath,
+              height: 45,
+              width: 45,
             ),
-          ),
-        ],
+            const SizedBox(width: 12),
+            // Main Content
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Title (e.g., "Continue Reading")
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      color: AppColors.paymentTxtColor1,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 12,
+                    ),
+                  ),
+                  // Description Text
+                  Text(
+                    description,
+                    style: const TextStyle(
+                      color: Colors.black,
+                      fontSize: 12,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  // Progress Bar
+                  LinearProgressIndicator(
+                    value: progressBarPercentage / 100,
+                    backgroundColor: Colors.grey[300],
+                    valueColor: const AlwaysStoppedAnimation<Color>(Colors.blue),
+                  ),
+                  const SizedBox(height: 15),
+
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

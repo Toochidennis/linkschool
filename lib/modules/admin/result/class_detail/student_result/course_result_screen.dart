@@ -243,7 +243,7 @@ class _CourseResultScreenState extends State<CourseResultScreen> {
       final shortName =
           courseName.length > 5 ? courseName.substring(0, 5) : courseName;
       return SideTitleWidget(
-        meta: meta,
+        axisSide: meta.axisSide, // pass just this instead of `meta`
         space: 4.0,
         child: Text(
           shortName,
@@ -280,7 +280,7 @@ class _CourseResultScreenState extends State<CourseResultScreen> {
         return Container();
     }
     return SideTitleWidget(
-      meta: meta,
+      axisSide: meta.axisSide, // pass just this instead of `meta`
       space: 8,
       child: Text(text, style: style, textAlign: TextAlign.right),
     );

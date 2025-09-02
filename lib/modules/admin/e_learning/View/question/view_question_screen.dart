@@ -2037,7 +2037,7 @@ String _formatDuration(Duration duration) {
   }
 }
 }
-
+/*
 class AttachmentItem {
   final String content;
   final String iconPath;
@@ -2048,7 +2048,7 @@ class AttachmentItem {
     required this.iconPath,
     this.base64Content,
   });
-}
+}*/
 
 
 // import 'package:flutter/material.dart';

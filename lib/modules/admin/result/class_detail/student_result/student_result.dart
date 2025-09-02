@@ -503,8 +503,8 @@ class StudentResultScreen extends StatelessWidget {
     }
     return SideTitleWidget(
       space: 4.0,
-      meta: meta,
-      child: Text(
+      axisSide: meta.axisSide, // pass just this instead of `meta`
+        child: Text(
         text,
         style: AppTextStyles.normal400(fontSize: 12, color: Colors.black),
       ),

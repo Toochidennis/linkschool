@@ -3,12 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:hive/hive.dart';
 import 'package:intl/intl.dart';
-import 'package:linkschool/modules/admin/e_learning/View/assignment_details.dart';
-import 'package:linkschool/modules/admin/e_learning/View/material_details.dart';
-import 'package:linkschool/modules/admin/e_learning/View/question/view_question_screen.dart' hide AttachmentItem;
 import 'package:linkschool/modules/admin/e_learning/View/quiz/quiz_screen.dart';
-import 'package:linkschool/modules/admin/e_learning/add_material_screen.dart'
-    hide AttachmentItem;
+import 'package:linkschool/modules/admin/e_learning/add_material_screen.dart'hide AttachmentItem;
 import 'package:linkschool/modules/admin/e_learning/admin_assignment_screen.dart';
 import 'package:linkschool/modules/admin/e_learning/create_topic_screen.dart';
 import 'package:linkschool/modules/admin/e_learning/question_screen.dart';
@@ -35,6 +31,7 @@ import 'package:linkschool/modules/model/e-learning/material_model.dart'
 import 'package:linkschool/modules/services/api/service_locator.dart';
 import '../../common/widgets/portal/attachmentItem.dart';
 import '../../model/explore/home/exam_model.dart';
+import 'package:linkschool/modules/admin/e_learning/View/assignment_details.dart';
 import '../../providers/admin/e_learning/syllabus_content_provider.dart';
 
 class EmptySubjectScreen extends StatefulWidget {
@@ -152,7 +149,55 @@ class _EmptySubjectScreenState extends State<EmptySubjectScreen>
     }
   }
 
- 
+  void _processContents(List<Map<String, dynamic>> contents) {
+    final topics = <TopicContent>[];
+    final noTopicItems = <SyllabusContentItem>[];
+
+    for (final content in contents) {
+      if (content['type'] == 'topic') {
+        final children = content['children'] as List<dynamic>? ?? [];
+        final topicChildren = <SyllabusContentItem>[];
+        for (final child in children) {
+          if (child is Map<String, dynamic> && child.containsKey('settings')) {
+            final settings = child['settings'] as Map<String, dynamic>;
+            topicChildren.add(SyllabusContentItem.fromJson({
+              ...settings,
+              'questions': child['questions'] ?? [],
+            }));
+          } else {
+            topicChildren.add(
+                SyllabusContentItem.fromJson(child as Map<String, dynamic>));
+          }
+        }
+        topics.add(TopicContent(
+          id: content['id'],
+          name: content['title'] ?? '',
+          type: content['type'] ?? '',
+          children: topicChildren,
+        ));
+      } else if (content['type'] == 'no topic') {
+        final children = content['children'] as List<dynamic>? ?? [];
+        for (final child in children) {
+          if (child is Map<String, dynamic> && child.containsKey('settings')) {
+            final settings = child['settings'] as Map<String, dynamic>;
+            noTopicItems.add(SyllabusContentItem.fromJson({
+              ...settings,
+              'questions': child['questions'] ?? [],
+            }));
+          } else {
+            noTopicItems.add(
+                SyllabusContentItem.fromJson(child as Map<String, dynamic>));
+          }
+        }
+      }
+    }
+
+    setState(() {
+      _topics = topics;
+      _noTopicItems = noTopicItems;
+    });
+  }
+
   void _showCreateOptionsBottomSheet(BuildContext context) {
     showModalBottomSheet(
       context: context,
@@ -245,7 +290,7 @@ class _EmptySubjectScreenState extends State<EmptySubjectScreen>
               context,
               MaterialPageRoute(
                 builder: (context) => QuestionScreen(
-                  
+                  // Use QuestionScreen instead of StaffQuestionScreen
                   classId: widget.classId,
                   syllabusId: widget.syllabusId!,
                   courseId: widget.courseId,
@@ -266,8 +311,6 @@ class _EmptySubjectScreenState extends State<EmptySubjectScreen>
                 builder: (BuildContext context) => CreateTopicScreen(
                   syllabusId: widget.syllabusId,
                   courseId: widget.courseId,
-
-                  courseName: widget.courseName,
                   levelId: widget.levelId,
                   classId: widget.classId,
                 ),
@@ -521,194 +564,76 @@ class _EmptySubjectScreenState extends State<EmptySubjectScreen>
     return 'N/A';
   }
 
-// Replace your existing _buildTopicSection method with this simplified version:
-Widget _buildTopicSection(TopicContent topic) {
-  return Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      Row(
-        children: [
-          Expanded(
-            child: Text(
+  Widget _buildTopicSection(TopicContent topic) {
+    if (topic.children.isEmpty) return const SizedBox.shrink();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 16),
+          child: Row(children: [
+            Text(
               topic.name,
               style: AppTextStyles.normal600(
                 fontSize: 18,
                 color: AppColors.backgroundDark,
               ),
             ),
-          ),
-          PopupMenuButton<String>(
-            icon: const Icon(
-              Icons.more_vert,
-              color: AppColors.paymentTxtColor1,
-            ),
-            onSelected: (String result) {
-              switch (result) {
-                case 'edit':
-                  _handleEditTopic(topic);
-                  break;
-                case 'delete':
-                  _handleTopicDelete(topic);
-                  break;
-              }
-            },
-            itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
-              const PopupMenuItem<String>(
-                value: 'edit',
-                child: Row(
-                  children: [
-                    Icon(Icons.edit, size: 16),
-                    SizedBox(width: 8),
-                    Text('Edit'),
-                  ],
-                ),
-              ),
-              const PopupMenuItem<String>(
-                value: 'delete',
-                child: Row(
-                  children: [
-                    Icon(Icons.delete, size: 16, color: Colors.red),
-                    SizedBox(width: 8),
-                    Text('Delete', style: TextStyle(color: Colors.red)),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-      // Display children if they exist, otherwise show nothing (but topic title is still shown above)
-      ...topic.children.map((item) => _buildTopicItem(
-        item.title,
-        item.datePosted != null
-            ? _formatDate(DateTime.parse(item.datePosted!))
-            : 'No date',
-        _getIconForType(item.type),
-        item,
-      )),
-    ],
-  );
-}
+            //   PopupMenuButton<String>(
+            //   icon: const Icon(
+            //     Icons.more_vert,
+            //     color: AppColors.paymentTxtColor1,
+            //   ),
+            //   onSelected: (String result) {
+            //     switch (result) {
+            //       case 'edit':
+            //         _handleEditItem(item);
+            //         break;
+            //       case 'delete':
+            //         // Handle delete functionality
+            //         //  _showDeleteConfirmation(item);
+            //         break;
+            //     }
+            //   },
+            //   itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
+            //     const PopupMenuItem<String>(
+            //       value: 'edit',
+            //       child: Row(
+            //         children: [
+            //           Icon(Icons.edit, size: 16),
+            //           SizedBox(width: 8),
+            //           Text('Edit'),
+            //         ],
+            //       ),
+            //     ),
+            //     const PopupMenuItem<String>(
+            //       value: 'delete',
+            //       child: Row(
+            //         children: [
+            //           Icon(Icons.delete, size: 16, color: Colors.red),
+            //           SizedBox(width: 8),
+            //           Text('Delete', style: TextStyle(color: Colors.red)),
+            //         ],
+            //       ),
+            //     ),
+            //   ],
+            // ),
 
-  // Replace your _handleEditTopic method with this improved version:
-
-void _handleEditTopic(TopicContent topic) {
-  print('Editing topic: ${topic.name}, ID: ${topic.id}'); // Debug log
-  
-  // Ensure we have valid topic data
-  if (topic.id == null || topic.id.toString().isEmpty) {
-    CustomToaster.toastError(context, 'Error', 'Topic ID is missing or invalid');
-    return;
+            
+          ]),
+        ),
+        ...topic.children.map((item) => _buildTopicItem(
+              item.title,
+              item.datePosted != null
+                  ? _formatDate(DateTime.parse(item.datePosted!))
+                  : 'No date',
+              _getIconForType(item.type),
+              item,
+            )),
+      ],
+    );
   }
-
-  // Create a more complete topic object for editing
-  final topicToEdit = TopicContent(
-    id: topic.id,
-    name: topic.name,
-    type: topic.type,
-    children: topic.children,
-  );
-
-  print('Passing topic to edit screen: ${topicToEdit.name}'); // Debug log
-
-  Navigator.push(
-    context,
-    MaterialPageRoute(
-      fullscreenDialog: true,
-      builder: (BuildContext context) => CreateTopicScreen(
-        syllabusId: widget.syllabusId,
-        courseId: widget.courseId,
-        levelId: widget.levelId,
-        classId: widget.classId,
-        editMode: true,
-        topicToEdit: topicToEdit,
-        // Add callback to refresh content after edit
-       
-      ),
-    ),
-  ).then((_) {
-    // Refresh content when returning from edit screen
-    _loadSyllabusContents();
-  });
-}
-
-// Also update your _processContents method to ensure topic data is properly structured:
-void _processContents(List<Map<String, dynamic>> contents) {
-  _topics = [];
-  _noTopicItems = [];
-
-  // First, collect all topics
-  Map<int, TopicContent> topicMap = {};
-  for (var content in contents) {
-    if (content['type'] == 'topic') {
-      final topicId = content['id'] != null
-          ? int.tryParse(content['id'].toString()) ?? 0
-          : 0;
-      final topicName = content['title']?.toString() ?? 'Untitled';
-      final topicChildren = <SyllabusContentItem>[];
-      
-      for (var child in content['children'] ?? []) {
-        if (child is Map<String, dynamic> && child.containsKey('settings')) {
-          final settings = child['settings'] as Map<String, dynamic>;
-          topicChildren.add(SyllabusContentItem.fromJson({
-            ...settings,
-            'questions': child['questions'] ?? [],
-          }));
-        } else {
-          topicChildren.add(SyllabusContentItem.fromJson(child as Map<String, dynamic>));
-        }
-      }
-      
-      topicMap[topicId] = TopicContent(
-        id: topicId,
-        name: topicName,
-        type: content['type']?.toString() ?? '',
-        children: topicChildren,
-      );
-      _debugTopicData(topicMap[topicId]!);
-    }
-  }
-
-  // Process non-topic items and reassign based on topic_id
-  for (var content in contents) {
-    if (content['type'] != 'topic') {
-      for (var child in content['children'] ?? []) {
-        SyllabusContentItem item;
-        if (child is Map<String, dynamic> && child.containsKey('settings')) {
-          final settings = child['settings'] as Map<String, dynamic>;
-          item = SyllabusContentItem.fromJson({
-            ...settings,
-            'questions': child['questions'] ?? [],
-          });
-        } else {
-          item = SyllabusContentItem.fromJson(child as Map<String, dynamic>);
-        }
-
-        // Check if item has a valid topic_id and reassign to the correct topic
-        final topicId = item.topicId ?? 0;
-        if (topicId != 0 && topicMap.containsKey(topicId)) {
-          topicMap[topicId]!.children.add(item);
-          print('Reassigned item ${item.id} to topic $topicId');
-        } else {
-          _noTopicItems.add(item);
-        }
-      }
-    }
-  }
-
-  _topics = topicMap.values.toList();
-  setState(() {});
-}
-
-
-void _debugTopicData(TopicContent topic) {
-
-  for (int i = 0; i < topic.children.length; i++) {
-    final child = topic.children[i];
-    print('Child $i: ${child.title} (${child.type})');
-  }
-  print('========================');
-}
 
   Widget _buildContentItem(SyllabusContentItem item) {
     return InkWell(
@@ -829,14 +754,14 @@ void _debugTopicData(TopicContent topic) {
            Container(
               width: 40,
               height: 40,
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: AppColors.eLearningBtnColor1.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: SvgPicture.asset(
-                _getIconPathForType(item.type),
+              decoration: const BoxDecoration(
                 color: AppColors.eLearningBtnColor1,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                icon,
+                color: Colors.white,
+                size: 20,
               ),
             ),
             const SizedBox(width: 12),
@@ -983,37 +908,43 @@ print("Editing item: ${item.title}, ID: ${item.id}"); // Debug log
           );
           return;
         }
-       Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => ViewQuestionScreen(
-
-            question: Question(
-              id: item.id, 
-              title: item.title,
-              description: item.description,
-              selectedClass: item.classes.map((c) => c.name).join(', '),
-              startDate: item.startDate != null ? DateTime.parse(item.startDate!) : DateTime.now(),
-              endDate: item.endDate != null ? DateTime.parse(item.endDate!) : DateTime.now(),
-              topic: item.topic ?? 'No Topic',
-              duration: item.duration != null
-
-                  ? Duration(minutes: int.tryParse(item.duration.toString()) ?? 0)
-                  : Duration.zero,
-              marks: item.grade?.toString() ?? '0',
-              topicId: item.topicId,
-            ),
-            questiondata: questionData,
-         class_ids: item.classes.map((c) => {'id': c.id.toString(), 'name': c.name}).toList(),
-            syllabusClasses: item.classes.map((c) =>{'id': c.id.toString(), 'name': c.name}).join(', '),
-            questions: item.questions, 
-            editMode: true,
-            onSaveFlag: setRefreshFlag,
-          ),
-        ),
-      ).then((_) {
-        _loadSyllabusContents();
-      });
+        Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => QuestionScreen(
+                classId: widget.classId,
+                syllabusId: widget.syllabusId!,
+                courseId: widget.courseId,
+                levelId: widget.levelId,
+                courseName: widget.courseName,
+                onSave: (Question) {
+                  _loadSyllabusContents();
+                },
+                // Pass the item data for editing
+                editMode: true,
+                questionToEdit: Question(
+                  id: item.id, // Make sure your Question model has an id field
+                  title: item.title,
+                  description: item.description,
+                  selectedClass: item.classes.map((c) => c.name).join(', '),
+                  startDate: item.startDate != null
+                      ? DateTime.parse(item.startDate!)
+                      : DateTime.now(),
+                  endDate: item.endDate != null
+                      ? DateTime.parse(item.endDate!)
+                      : DateTime.now(),
+                      
+                  duration: item.duration != null
+                    ? Duration(minutes: int.tryParse(item.duration.toString()) ?? 0)
+                    : Duration.zero, 
+                  marks: item.grade ?? '0',
+                  topic: item.topic ?? 'No Topic',
+                ),
+                //   onSave: (question) {
+                //   _loadSyllabusContents();
+                // },
+              ),
+            ));
 
         break;
 
@@ -1330,45 +1261,31 @@ print("Editing item: ${item.title}, ID: ${item.id}"); // Debug log
                     : Duration.zero,
                 marks: item.grade?.toString() ?? '0',
               ),
-              
-            ),
-          ),
-        ).then((_) {
-          _loadSyllabusContents();
-        });
-        break;
-      case "material":
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) => AdminMaterialDetailsScreen (
-              itemId: item.id,
-              syllabusId: widget.syllabusId,
-              courseId: widget.courseId,
-              levelId: widget.levelId,
-              classId: widget.classId,
-              courseName: widget.courseName,
-              syllabusClasses: widget.syllabusClasses,
-              material: custom.Material(
-                title: item.title,
-                description: item.description,
-                selectedClass: item.classes.map((c) => c.name).join(', '),
-                startDate: item.startDate != null ? DateTime.parse(item.startDate!) : DateTime.now(),
-                endDate: item.endDate != null ? DateTime.parse(item.endDate!) : DateTime.now(),
-                topic: item.topic ?? 'No Topic',
-                attachments: attachments,
-                duration: item.duration != null
-                    ? Duration(minutes: int.tryParse(item.duration.toString()) ?? 0)
-                    : Duration.zero,
-                marks: item.grade?.toString() ?? '0',
+            )));
+
+            break;
+            case "material": 
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => StaffMaterialDetailsScreen(
+                  material: custom.Material(
+                    title: item.title,
+                    description: item.description,
+                    selectedClass: item.classes.map((c) => c.name).join(', '),
+                    startDate: item.startDate != null ? DateTime.parse(item.startDate!) : DateTime.now(),
+                    endDate: item.endDate != null ? DateTime.parse(item.endDate!) : DateTime.now(),
+                    topic: item.topic ?? 'No Topic',
+                    attachments: attachments,
+                    duration: item.duration != null
+                        ? Duration(minutes: int.tryParse(item.duration.toString()) ?? 0)
+                        : Duration.zero,
+                    marks: item.grade?.toString() ?? '0',
+                  ),
+                ),
               ),
-            ),
-          ),
-        ).then((_){
-          _loadSyllabusContents();
-        });
-        break;
-    }
+            );
+    };
   }
 
   String _formatDate(DateTime date) {

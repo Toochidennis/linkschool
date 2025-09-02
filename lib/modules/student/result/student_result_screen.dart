@@ -428,13 +428,14 @@ class _StudentResultScreenState extends State<StudentResultScreen> {
         break;
     }
     return SideTitleWidget(
+      axisSide: meta.axisSide, // pass just this instead of `meta`
       space: 4.0,
-      meta: meta,
       child: Text(
         text,
         style: AppTextStyles.normal400(fontSize: 12, color: Colors.black),
       ),
     );
+
   }
 }
 

@@ -215,7 +215,7 @@ class _PerformanceChartState extends State<PerformanceChart> {
     }
     final levelName = performanceData[index]['level_name'] ?? '';
     return SideTitleWidget(
-      meta: meta,
+      axisSide: meta.axisSide, // pass just this instead of `meta`
       space: 16,
       child: Text(
         levelName,
@@ -252,7 +252,7 @@ class _PerformanceChartState extends State<PerformanceChart> {
     }
 
     return SideTitleWidget(
-      meta: meta,
+      axisSide: meta.axisSide, // pass just this instead of `meta`
       space: 8,
       child: Text(
         text,

@@ -34,9 +34,10 @@ import 'package:linkschool/modules/providers/explore/exam_provider.dart';
 import 'package:linkschool/modules/providers/explore/for_you_provider.dart';
 import 'package:linkschool/modules/providers/explore/home/news_provider.dart';
 import 'package:linkschool/modules/providers/explore/subject_provider.dart';
-import 'package:linkschool/modules/providers/staff/syllabus_provider.dart';
-import 'package:linkschool/modules/services/admin/e_learning/activity_service.dart';
-import 'package:linkschool/modules/services/admin/payment/vendor_service.dart';
+import 'package:linkschool/modules/providers/student/elearningcontent_provider.dart';
+import 'package:linkschool/modules/providers/student/marked_assignment_provider.dart';
+import 'package:linkschool/modules/providers/student/streams_provider.dart';
+// import 'package:linkschool/modules/services/admin/e_learning/syllabus_content_service.dart';
 import 'package:linkschool/modules/services/explore/cbt_service.dart';
 import 'package:linkschool/routes/onboardingScreen.dart';
 import 'package:provider/provider.dart';
@@ -44,7 +45,9 @@ import 'package:linkschool/modules/services/api/service_locator.dart';
 import 'modules/providers/admin/registered_terms_provider.dart';
 import 'modules/providers/explore/game/game_provider.dart';
 import 'modules/providers/admin/grade_provider.dart';
-// import 'modules/services/admin/vendor_service.dart';
+import 'modules/providers/student/dashboard_provider.dart';
+// import 'modules/providers/student/comment_provider.dart';
+import 'modules/services/admin/e_learning/activity_service.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -107,9 +110,12 @@ Future<void> main() async {
         ChangeNotifierProvider(create: (_) => locator<AttendanceProvider>()),
         ChangeNotifierProvider(create: (_) => CourseResultProvider()),
         ChangeNotifierProvider(create: (_) => ViewCourseResultProvider()),
+        ChangeNotifierProvider(create: (_) => DashboardProvider()),
+        ChangeNotifierProvider(create: (_) => ElearningContentProvider()),
+        ChangeNotifierProvider(create: (_) => locator<StreamsProvider>()),
+        ChangeNotifierProvider(create: (_) => locator<MarkedAssignmentProvider>()),
 
-          // StaffProvider  from service locator
-        ChangeNotifierProvider(create: (_) => locator<StaffSyllabusProvider>()),
+        ChangeNotifierProvider(create: (_) => locator<CommentProvider>()),
 
       ],
       child: const MyApp(),

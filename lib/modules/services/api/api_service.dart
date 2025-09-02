@@ -4,6 +4,8 @@ import 'package:http/http.dart' as http;
 import 'package:hive/hive.dart';
 import 'dart:io';
 
+import '../../model/student/dashboard_model.dart';
+
 // Enum to define the available HTTP methods
 enum HttpMethod { GET, POST, PUT, DELETE, PATCH }
 
@@ -264,12 +266,13 @@ class ApiService {
       if (response.statusCode >= 200 && response.statusCode < 300) {
         final jsonResponse = json.decode(response.body) as Map<String, dynamic>;
         print('Decoded JSON response: $jsonResponse');
-        
+
         final apiResponse = ApiResponse<T>.fromJson(
           jsonResponse,
           parsedData: fromJson != null ? fromJson(jsonResponse) : null,
         );
-        
+
+
         return ApiResponse<T>(
           success: apiResponse.success,
           message: apiResponse.message,

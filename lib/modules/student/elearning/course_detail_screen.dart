@@ -1,25 +1,26 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
+import 'package:linkschool/modules/model/student/dashboard_model.dart';
+import 'package:linkschool/modules/model/student/elearningcontent_model.dart';
 import 'package:linkschool/modules/student/elearning/course_content_screen.dart';
 import 'package:linkschool/modules/student/elearning/forum_screen.dart';
 
 class CourseDetailScreen extends StatefulWidget {
+
   final String courseTitle;
-  const CourseDetailScreen({super.key, required this.courseTitle});
+  final DashboardData dashboardData;
+
+  const CourseDetailScreen({super.key, required this.courseTitle , required this.dashboardData});
 
   @override
   _CourseDetailScreenState createState() => _CourseDetailScreenState();
 }
 
 class _CourseDetailScreenState extends State<CourseDetailScreen> {
+
   int _selectedIndex = 0;
   late double opacity;
-
-  static final List<Widget> _screens = [
-    CourseContentScreen(),
-    ForumScreen(),
-  ];
 
   void _onItemTapped(int index) {
     setState(() {
@@ -29,6 +30,12 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
+
+    final List<Widget> _screens = [
+      CourseContentScreen(dashboardData:widget.dashboardData,courseTitle:widget.courseTitle),
+      ForumScreen(dashboardData:widget.dashboardData,courseTitle:widget.courseTitle),
+    ];
+
     final Brightness brightness = Theme.of(context).brightness;
     opacity = brightness == Brightness.light ? 0.1 : 0.15;
     return Scaffold(
