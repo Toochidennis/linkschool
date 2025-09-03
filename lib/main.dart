@@ -39,19 +39,15 @@ import 'package:linkschool/modules/providers/student/payment_provider.dart';
 import 'package:linkschool/modules/providers/student/payment_submission_provider.dart';
 import 'package:linkschool/modules/providers/student/marked_assignment_provider.dart';
 import 'package:linkschool/modules/providers/student/streams_provider.dart';
-// import 'package:linkschool/modules/services/admin/e_learning/syllabus_content_service.dart';
 import 'package:linkschool/modules/services/explore/cbt_service.dart';
 import 'package:linkschool/routes/onboardingScreen.dart';
 import 'package:provider/provider.dart';
 import 'package:linkschool/modules/services/api/service_locator.dart';
-import 'package:webview_flutter/webview_flutter.dart';
-import 'modules/providers/admin/e_learning/syllabus_content_provider.dart';
 import 'modules/providers/admin/registered_terms_provider.dart';
 import 'modules/providers/explore/game/game_provider.dart';
 import 'modules/providers/admin/grade_provider.dart';
 import 'modules/providers/student/dashboard_provider.dart';
-import 'package:webview_flutter_android/webview_flutter_android.dart';
-
+import 'package:linkschool/modules/services/admin/e_learning/activity_service.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -76,47 +72,65 @@ Future<void> main() async {
       statusBarBrightness: Brightness.dark,
     ),
   );
+  
   runApp(
     MultiProvider(
       providers: [
+        // Core providers
         ChangeNotifierProvider(create: (_) => locator<AuthProvider>()),
+        
+        // Explore providers
         ChangeNotifierProvider(create: (_) => NewsProvider()),
         ChangeNotifierProvider(create: (_) => SubjectProvider()),
         ChangeNotifierProvider(create: (_) => CBTProvider(CBTService())),
         ChangeNotifierProvider(create: (_) => GameProvider()),
         ChangeNotifierProvider(create: (_) => ExamProvider()),
         ChangeNotifierProvider(create: (_) => ForYouProvider()),
+        
+        // Admin E-Learning providers
         ChangeNotifierProvider(create: (_) => locator<SyllabusProvider>()),
         ChangeNotifierProvider(create: (_) => locator<SyllabusContentProvider>()),
+        ChangeNotifierProvider(create: (_) => locator<TopicProvider>()),
+        ChangeNotifierProvider(create: (_) => locator<MaterialProvider>()),
+        ChangeNotifierProvider(create: (_) => locator<AssignmentProvider>()),
+        ChangeNotifierProvider(create: (_) => locator<QuizProvider>()),
+        ChangeNotifierProvider(create: (_) => locator<DeleteSyllabusProvider>()),
+        ChangeNotifierProvider(create: (_) => locator<DeleteQuestionProvider>()),
+        ChangeNotifierProvider(create: (_) => locator<MarkAssignmentProvider>()),
+        ChangeNotifierProvider(create: (_) => locator<CommentProvider>()),
+        ChangeNotifierProvider(create: (_) => OverviewProvider(locator<OverviewService>())),
+        
+        // Admin core providers
         ChangeNotifierProvider(create: (_) => locator<GradeProvider>()),
-        ChangeNotifierProvider(create: (_) => locator<SkillsProvider>()),        
-        ChangeNotifierProvider(create: (_) => locator<SkillsBehaviorTableProvider>()),        
+        ChangeNotifierProvider(create: (_) => locator<SkillsProvider>()),
+        ChangeNotifierProvider(create: (_) => locator<SkillsBehaviorTableProvider>()),
+        ChangeNotifierProvider(create: (_) => locator<StudentProvider>()),
+        ChangeNotifierProvider(create: (_) => locator<AttendanceProvider>()),
+        ChangeNotifierProvider(create: (_) => locator<PerformanceProvider>()),
+        
+        // CRITICAL: Add the missing payment providers from service locator
+        ChangeNotifierProvider(create: (_) => locator<AccountProvider>()),
+        ChangeNotifierProvider(create: (_) => locator<FeeProvider>()),
+        
+        // Level, Class, Assessment, Term providers
         ChangeNotifierProvider(create: (_) => LevelProvider()),
         ChangeNotifierProvider(create: (_) => ClassProvider()),
         ChangeNotifierProvider(create: (_) => AssessmentProvider()),
         ChangeNotifierProvider(create: (_) => TermProvider()),
         ChangeNotifierProvider(create: (_) => RegisteredTermsProvider()),
         ChangeNotifierProvider(create: (_) => CourseRegistrationProvider()),
-        ChangeNotifierProvider(create: (_) => locator<TopicProvider>()),
-        ChangeNotifierProvider(create: (_) => locator<MaterialProvider>()),
-        ChangeNotifierProvider(create: (_) => locator<AssignmentProvider>()),
-        ChangeNotifierProvider(create: (_) => locator<QuizProvider>()),
-            ChangeNotifierProvider(create: (_) => locator<SyllabusContentProvider>()),
-            ChangeNotifierProvider(create: (_) => locator<DeleteSyllabusProvider>()),
-            ChangeNotifierProvider(create: (_) => locator<DeleteQuestionProvider>()),
-            ChangeNotifierProvider(create: (_) => locator<MarkAssignmentProvider>()),
-            ChangeNotifierProvider(create: (_) => locator<CommentProvider>()),
-            ChangeNotifierProvider(create: (_) => OverviewProvider( locator<OverviewService>())),
-
-        // StudentProvider from service locator
-        ChangeNotifierProvider(create: (_) => locator<StudentProvider>()),
-        ChangeNotifierProvider(create: (_) => locator<AttendanceProvider>()),
+        
+        // Course result providers
         ChangeNotifierProvider(create: (_) => CourseResultProvider()),
         ChangeNotifierProvider(create: (_) => ViewCourseResultProvider()),
+        
+        // Student providers
         ChangeNotifierProvider(create: (_) => DashboardProvider()),
         ChangeNotifierProvider(create: (_) => ElearningContentProvider()),
-        ChangeNotifierProvider(create: (_) =>locator< InvoiceProvider>()),
-        ChangeNotifierProvider(create: (_) =>locator< PaymentProvider>()),
+        ChangeNotifierProvider(create: (_) => locator<InvoiceProvider>()),
+        ChangeNotifierProvider(create: (_) => locator<PaymentProvider>()),
+        ChangeNotifierProvider(create: (_) => locator<StreamsProvider>()),
+        ChangeNotifierProvider(create: (_) => locator<MarkedAssignmentProvider>()),
       ],
       child: const MyApp(),
     ),
@@ -186,6 +200,9 @@ class _AppInitializerState extends State<AppInitializer> {
 
 
 
+
+
+
 // import 'package:flutter/material.dart';
 // import 'package:flutter/services.dart';
 // import 'package:hive_flutter/hive_flutter.dart';
@@ -197,7 +214,12 @@ class _AppInitializerState extends State<AppInitializer> {
 // import 'package:linkschool/modules/providers/admin/behaviour_provider.dart';
 // import 'package:linkschool/modules/providers/admin/class_provider.dart';
 // import 'package:linkschool/modules/providers/admin/course_registration_provider.dart';
+// import 'package:linkschool/modules/providers/admin/e_learning/activity_provider.dart';
 // import 'package:linkschool/modules/providers/admin/e_learning/assignment_provider.dart';
+// import 'package:linkschool/modules/providers/admin/e_learning/comment_provider.dart';
+// import 'package:linkschool/modules/providers/admin/e_learning/delete_question.dart';
+// import 'package:linkschool/modules/providers/admin/e_learning/delete_sylabus_content.dart';
+// import 'package:linkschool/modules/providers/admin/e_learning/mark_assignment_provider.dart';
 // import 'package:linkschool/modules/providers/admin/e_learning/material_provider.dart';
 // import 'package:linkschool/modules/providers/admin/e_learning/quiz_provider.dart';
 // import 'package:linkschool/modules/providers/admin/e_learning/syllabus_content_provider.dart';
@@ -217,13 +239,25 @@ class _AppInitializerState extends State<AppInitializer> {
 // import 'package:linkschool/modules/providers/explore/for_you_provider.dart';
 // import 'package:linkschool/modules/providers/explore/home/news_provider.dart';
 // import 'package:linkschool/modules/providers/explore/subject_provider.dart';
+// import 'package:linkschool/modules/providers/student/elearningcontent_provider.dart';
+// import 'package:linkschool/modules/providers/student/payment_provider.dart';
+// import 'package:linkschool/modules/providers/student/payment_submission_provider.dart';
+// import 'package:linkschool/modules/providers/student/marked_assignment_provider.dart';
+// import 'package:linkschool/modules/providers/student/streams_provider.dart';
+// // import 'package:linkschool/modules/services/admin/e_learning/syllabus_content_service.dart';
 // import 'package:linkschool/modules/services/explore/cbt_service.dart';
 // import 'package:linkschool/routes/onboardingScreen.dart';
 // import 'package:provider/provider.dart';
 // import 'package:linkschool/modules/services/api/service_locator.dart';
+// import 'package:webview_flutter/webview_flutter.dart';
+// import 'modules/providers/admin/e_learning/syllabus_content_provider.dart';
 // import 'modules/providers/admin/registered_terms_provider.dart';
 // import 'modules/providers/explore/game/game_provider.dart';
 // import 'modules/providers/admin/grade_provider.dart';
+// import 'modules/providers/student/dashboard_provider.dart';
+// import 'package:webview_flutter_android/webview_flutter_android.dart';
+// import 'package:linkschool/modules/services/admin/e_learning/activity_service.dart';
+
 
 // Future<void> main() async {
 //   WidgetsFlutterBinding.ensureInitialized();
@@ -248,7 +282,6 @@ class _AppInitializerState extends State<AppInitializer> {
 //       statusBarBrightness: Brightness.dark,
 //     ),
 //   );
-  
 //   runApp(
 //     MultiProvider(
 //       providers: [
@@ -274,18 +307,22 @@ class _AppInitializerState extends State<AppInitializer> {
 //         ChangeNotifierProvider(create: (_) => locator<MaterialProvider>()),
 //         ChangeNotifierProvider(create: (_) => locator<AssignmentProvider>()),
 //         ChangeNotifierProvider(create: (_) => locator<QuizProvider>()),
-//         ChangeNotifierProvider(create: (_) => locator<SyllabusContentProvider>()),
+//             ChangeNotifierProvider(create: (_) => locator<SyllabusContentProvider>()),
+//             ChangeNotifierProvider(create: (_) => locator<DeleteSyllabusProvider>()),
+//             ChangeNotifierProvider(create: (_) => locator<DeleteQuestionProvider>()),
+//             ChangeNotifierProvider(create: (_) => locator<MarkAssignmentProvider>()),
+//             ChangeNotifierProvider(create: (_) => locator<CommentProvider>()),
+//             ChangeNotifierProvider(create: (_) => OverviewProvider( locator<OverviewService>())),
+
 //         // StudentProvider from service locator
 //         ChangeNotifierProvider(create: (_) => locator<StudentProvider>()),
 //         ChangeNotifierProvider(create: (_) => locator<AttendanceProvider>()),
 //         ChangeNotifierProvider(create: (_) => CourseResultProvider()),
 //         ChangeNotifierProvider(create: (_) => ViewCourseResultProvider()),
-//         // Add PerformanceProvider from service locator
-//         ChangeNotifierProvider(create: (_) => locator<PerformanceProvider>()),
-//         // Add AccountProvider from service locator
-//         ChangeNotifierProvider(create: (_) => locator<AccountProvider>()),
-//         // Add FeeProvider from service locator
-//         ChangeNotifierProvider(create: (_) => locator<FeeProvider>()),
+//         ChangeNotifierProvider(create: (_) => DashboardProvider()),
+//         ChangeNotifierProvider(create: (_) => ElearningContentProvider()),
+//         ChangeNotifierProvider(create: (_) =>locator< InvoiceProvider>()),
+//         ChangeNotifierProvider(create: (_) =>locator< PaymentProvider>()),
 //       ],
 //       child: const MyApp(),
 //     ),
@@ -326,7 +363,6 @@ class _AppInitializerState extends State<AppInitializer> {
 
 //   Future<void> _initializeApp() async {
 //     try {
-//       // Initialize auth provider and check login status
 //       final authProvider = Provider.of<AuthProvider>(context, listen: false);
 //       await authProvider.checkLoginStatus();
 //     } catch (e) {

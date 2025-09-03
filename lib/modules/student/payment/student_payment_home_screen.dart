@@ -212,7 +212,9 @@ class _StudentPaymentHomeScreenState extends State<StudentPaymentHomeScreen>
                                         children: [
                                           const NairaSvgIcon(
                                             color: Colors.white,
-                                            size: 25,
+                                            // size:25
+                                          width: 16,
+                                            height: 16, 
                                           ),
                                           Text(
                                             _formatAmount(invoice.amount),
@@ -426,7 +428,8 @@ class PaymentHistoryItem extends StatelessWidget {
               children: [
                 const NairaSvgIcon(
                   color: AppColors.paymentTxtColor5,
-                  size: 16,
+                  width: 16,
+                  // size: 16,
                 ),
                 const SizedBox(width: 2),
                 Text(

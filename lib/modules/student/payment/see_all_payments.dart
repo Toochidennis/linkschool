@@ -242,7 +242,7 @@ class PaymentHistoryItem extends StatelessWidget {
             Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const NairaSvgIcon(color: AppColors.paymentTxtColor5, size: 16),
+                const NairaSvgIcon(color: AppColors.paymentTxtColor5, width: 16, height: 16,),
                 const SizedBox(width: 2),
                 Text(
                   _formatAmount(payment.amount),

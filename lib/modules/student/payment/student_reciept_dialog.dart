@@ -8,8 +8,10 @@ import 'package:linkschool/modules/common/widgets/portal/profile/naira_icon.dart
 import 'package:linkschool/modules/model/student/payment_model.dart';
 import 'package:dotted_line/dotted_line.dart';
 import 'package:pdf/pdf.dart';
-import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
+// import 'package:pdf/pdf.dart';
+import 'package:pdf/widgets.dart' as pw;
+// import 'package:printing/printing.dart';
 
 class StudentRecieptDialog extends StatefulWidget {
   final Payment payment;
@@ -159,7 +161,10 @@ class _StudentRecieptDialogState extends State<StudentRecieptDialog> {
                           Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              const NairaSvgIcon(color: Color(0xFF2F55DD), size: 25),
+                              const NairaSvgIcon(color: Color(0xFF2F55DD), 
+                              width: 16,
+                              // size: 25 
+                              ),
                               Text(
                                 _formatAmount(widget.payment.amount),
                                 style: AppTextStyles.normal700(

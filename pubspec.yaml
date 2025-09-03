@@ -3,12 +3,10 @@ description: "A new Flutter project."
 
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 
-
 version: 1.0.0+1
 
 environment:
   sdk: '>=3.3.0 <4.0.0'
-
 
 dependencies:
   flutter:
@@ -34,22 +32,9 @@ dependencies:
   jiffy: ^6.3.2
   skeletonizer: ^1.4.3
 
-  # shimmer: ^3.0.0
-
-
-
-
-  # xml: ^6.4.0
-  # shimmer: ^3.0.0
-  # shared_preferences: ^2.3.2
-  # flutter_charts: ^0.5.2
-
-
-
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.6
-  # charts_flutter: ^0.12.0
   community_charts_flutter: ^1.0.0
   provider: ^6.1.2
   foundation: ^0.0.5
@@ -59,7 +44,7 @@ dependencies:
   flutter_dotenv: ^5.2.1
   fluttertoast: ^8.2.12
   url_launcher: ^6.3.1
-  fl_chart: ^0.69.0  # or latest compatible version
+  fl_chart: ^0.69.0
   motion_toast: 2.11.0
   share_plus: ^10.1.4
   sqflite: ^2.4.1
@@ -68,8 +53,6 @@ dependencies:
   hive_flutter: ^1.1.0
   get_it: ^8.0.3
   dio: ^5.8.0+1
-
-
   animated_custom_dropdown: ^3.1.1
   flutter_swiper_view: ^1.1.8
   freezed_annotation: ^2.4.1
@@ -81,33 +64,20 @@ dependencies:
   pdf: ^3.10.4
   printing: ^5.14.2
   permission_handler: ^11.3.0
-  file_saver: ^0.3.1
-  #flutter_paystack: ^2.0.0
-  #paystack_flutter_sdk: ^0.0.1-alpha.2
-  
+  file_saver: ^0.2.14  # Changed from ^0.3.1 to ^0.2.14
   path_provider: ^2.1.5
   flutter_pdfview: ^1.4.1+1
-  
-  
- 
-
-  # freezed_annotation: ^3.0.0
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
-
   freezed: ^2.4.1
   flutter_lints: ^5.0.0
   json_serializable: ^6.9.5
   build_runner: ^2.4.15
 
-
 flutter:
-
-
   uses-material-design: true
-
 
   assets:
     - assets/icons/invoice.png
@@ -133,12 +103,6 @@ flutter:
     - assets/images/e-subject_detail/
     - assets/images/news-images/
     - assets/icons/exams/
-    # - assets/icons/home.svg
-    # - assets/icons/e-learning.svg
-    # - assets/icons/admission.svg
-    # - assets/icons/games.svg
-    # - assets/icons/cbt.svg
-
 
   fonts:
     - family: Urbanist

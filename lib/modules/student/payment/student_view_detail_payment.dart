@@ -2,6 +2,7 @@
 
 // StudentViewDetailPaymentDialog.dart
 
+import 'package:dotted_line/dotted_line.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:hive/hive.dart';
@@ -10,7 +11,7 @@ import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/common/widgets/portal/profile/naira_icon.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'package:dotted_line/dotted_line.dart';
+// import 'package:dotted_line/dotted_line.dart';
 
 import 'package:linkschool/modules/model/student/payment_model.dart';
 import 'package:linkschool/modules/providers/student/payment_submission_provider.dart';
@@ -369,7 +370,7 @@ class _StudentViewDetailPaymentDialogState
                                   children: [
                                     const NairaSvgIcon(
                                       color: AppColors.backgroundDark,
-                                      size: 13,
+                                      width: 13,
                                     ),
                                     const SizedBox(width: 4),
                                     Text(
@@ -405,7 +406,7 @@ class _StudentViewDetailPaymentDialogState
                             children: [
                               const NairaSvgIcon(
                                 color: AppColors.backgroundDark,
-                                size: 16,
+                                width: 16,
                               ),
                               const SizedBox(width: 4),
                               Text(
