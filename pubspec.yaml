@@ -29,11 +29,11 @@ dependencies:
   dropdown_flutter: 1.0.1
   flutter_chat_types: ^3.4.3
   flutter_chat_ui: ^1.6.4
-  uuid: ^3.0.6
+  uuid: ^4.5.1
   timezone: ^0.9.2
   jiffy: ^6.3.2
   skeletonizer: ^1.4.3
-  
+
   # shimmer: ^3.0.0
 
 
@@ -73,6 +73,18 @@ dependencies:
   animated_custom_dropdown: ^3.1.1
   flutter_swiper_view: ^1.1.8
   freezed_annotation: ^2.4.1
+  logger: ^2.6.1
+  webview_flutter: ^4.2.2
+  webview_flutter_android: ^3.10.0
+  dotted_line: ^3.2.3
+  open_file: ^3.5.10
+  pdf: ^3.10.4
+  printing: ^5.14.2
+  permission_handler: ^11.3.0
+  file_saver: ^0.3.1
+  #flutter_paystack: ^2.0.0
+  #paystack_flutter_sdk: ^0.0.1-alpha.2
+  
   path_provider: ^2.1.5
   flutter_pdfview: ^1.4.1+1
   
@@ -98,6 +110,8 @@ flutter:
 
 
   assets:
+    - assets/icons/invoice.png
+    - assets/icons/naira.png
     - .env
     - assets/icons/
     - assets/images/
@@ -140,3 +154,7 @@ flutter:
           weight: 600
         - asset: assets/fonts/urbanist/Urbanist-BoldItalic.ttf
           weight: 700
+        - asset: assets/fonts/Poppins/Poppins-Regular.ttf
+          weight: 800
+        - asset: assets/fonts/Roboto-Regular.ttf
+        - asset: assets/fonts/Roboto-Bold.ttf

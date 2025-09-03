@@ -6,7 +6,8 @@ import '../api/api_service.dart';
 import '../api/service_locator.dart';
 
 class DashboardService {
-  final ApiService _apiService = locator<ApiService>();
+  final ApiService _apiService;
+  DashboardService(this._apiService);
   getuserdata(){
     final userBox = Hive.box('userData');
     final storedUserData =
