@@ -19,8 +19,9 @@ import '../../services/api/service_locator.dart';
 class ForumScreen extends StatefulWidget {
   final DashboardData dashboardData;
   final String courseTitle;
+  final int syllabusid;
 
-  const ForumScreen({super.key, required this.dashboardData,required this.courseTitle});
+  const ForumScreen({super.key, required this.dashboardData,required this.courseTitle, required this.syllabusid});
 
 
   @override
@@ -86,7 +87,7 @@ class _ForumScreenState extends State<ForumScreen> {
   }
   Future<void> fetchStreams() async {
     final provider = Provider.of<StreamsProvider>(context, listen: false);
-    final data = await provider.fetchStreams(770);
+    final data = await provider.fetchStreams(widget.syllabusid);
 
     setState(() {
       streams = data;
