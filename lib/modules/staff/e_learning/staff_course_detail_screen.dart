@@ -11,6 +11,7 @@ import 'package:linkschool/modules/model/e-learning/syllabus_model.dart' as elMo
 import 'package:linkschool/modules/model/staff/syllabus_model.dart' as staffModel;
 import 'package:linkschool/modules/providers/admin/e_learning/delete_sylabus_content.dart';
 import 'package:linkschool/modules/providers/staff/syllabus_provider.dart';
+import 'package:linkschool/modules/staff/e_learning/empty_staff_subjectscreen.dart';
 import 'package:linkschool/modules/staff/e_learning/staff_create_syllabus_screen.dart';
 
 import 'package:provider/provider.dart';
@@ -47,7 +48,7 @@ class _StaffCourseDetailScreenState extends State<StaffCourseDetailScreen> with 
   String? creatorRole;
   String? academicYear;
   int? academicTerm;
-
+  String? _levelId;
   final List<String> _imagePaths = [
     'assets/images/result/bg_box1.svg',
     'assets/images/result/bg_box2.svg',
@@ -71,38 +72,52 @@ class _StaffCourseDetailScreenState extends State<StaffCourseDetailScreen> with 
     super.dispose();
   }
 
-  Future<void> _loadUserData() async {
-    try {
-      final userBox = Hive.box('userData');
-      final storedUserData = userBox.get('userData') ?? userBox.get('loginResponse');
+Future<void> _loadUserData() async {
+  try {
+    final userBox = Hive.box('userData');
+    final storedUserData = userBox.get('userData') ?? userBox.get('loginResponse');
 
-      if (storedUserData != null) {
-        final processedData = storedUserData is String
-            ? json.decode(storedUserData)
-            : storedUserData as Map<String, dynamic>;
+    if (storedUserData != null) {
+      final processedData = storedUserData is String
+          ? json.decode(storedUserData)
+          : storedUserData as Map<String, dynamic>;
 
-        final response = processedData['response'] ?? processedData;
-        final data = response['data'] ?? response;
-        final profile = data['profile'] ?? {};
-        final settings = data['settings'] ?? {};
+      final response = processedData['response'] ?? processedData;
+      final data = response['data'] ?? response;
 
-        setState(() {
-          creatorId = profile['staff_id'] as int?;
-          creatorName = profile['name']?.toString() ?? 'Unknown';
-          creatorRole = profile['role']?.toString();
-          academicTerm = settings['term'] != null
-              ? int.tryParse(settings['term'].toString())
-              : null;
-          academicYear = settings['year']?.toString();
-        });
+      final profile = data['profile'] ?? {};
+      final settings = data['settings'] ?? {};
+      final formClasses = (data['form_classes'] ?? []) as List;
 
-        print('Loaded user data: creatorId=$creatorId, creatorName=$creatorName, '
-            'creatorRole=$creatorRole, academicTerm=$academicTerm, academicYear=$academicYear');
-      }
-    } catch (e) {
-      print('Error loading user data: $e');
+      // grab first form class if available
+      final firstClass = formClasses.isNotEmpty ? formClasses.first : null;
+      final fallbackLevelId = firstClass?['level_id']?.toString();
+
+      setState(() {
+        creatorId = profile['staff_id'] as int?;
+        creatorName = profile['name']?.toString() ?? 'Unknown';
+        creatorRole = profile['role']?.toString();
+        academicTerm = settings['term'] != null
+            ? int.tryParse(settings['term'].toString())
+            : null;
+        academicYear = settings['year']?.toString();
+
+        // add levelId and term from your format
+        _levelId = fallbackLevelId ?? '';
+        
+      });
+
+      print('Loaded user data: '
+          'creatorId=$creatorId, creatorName=$creatorName, creatorRole=$creatorRole, '
+          'academicTerm=$academicTerm, academicYear=$academicYear, '
+          'levelId=$_levelId');
     }
+  } catch (e) {
+    print('Error loading user data: $e');
   }
+}
+
+
 
   Future<void> _loadSyllabuses() async {
     print("Loading syllabuses with courseId: ${widget.courseId}, classId: ${widget.classId}, levelId: ${widget.levelId}, classesList: ${widget.classesList}");
@@ -306,13 +321,13 @@ class _StaffCourseDetailScreenState extends State<StaffCourseDetailScreen> with 
           onTap: () => Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => EmptySubjectScreen(
+              builder: (context) => StaffEmptySubjectScreen(
                 syllabusId: _syllabusList[index]['id'] as int?,
                 syllabusClasses: _syllabusList[index]['classes'] as List<Map<String, dynamic>>,
                 classId: widget.classId,
                 courseId: widget.courseId,
-                levelId: widget.levelId,
-                authorName: _syllabusList[index]['author_name']?.toString() ?? '',
+                levelId:  _levelId,
+               // authorName: _syllabusList[index]['author_name']?.toString() ?? '',
                 courseName: widget.course_name,
                 term: _syllabusList[index]['term']?.toString() ?? '',
                 courseTitle: _syllabusList[index]['title']?.toString() ?? '',

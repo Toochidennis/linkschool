@@ -40,6 +40,7 @@ import 'package:linkschool/modules/services/admin/course_registration_service.da
 import 'package:linkschool/modules/services/admin/assessment_service.dart';
 import 'package:linkschool/modules/providers/admin/student_provider.dart';
 import 'package:linkschool/modules/services/admin/behaviour_service.dart';
+import 'package:linkschool/modules/services/staff/overview_service.dart';
 import 'package:linkschool/modules/services/staff/syllabus_service.dart';
 
 
@@ -210,7 +211,11 @@ locator.registerLazySingleton<DeleteSyllabusProvider>(() => DeleteSyllabusProvid
     () => AttendanceProvider()
   );
 
-  //Register Student Provider and service api 
+  //Register Staff Provider and service api 
+
+   locator.registerLazySingleton<StaffOverviewService>(()
+  => StaffOverviewService( locator<ApiService>()));
+
     locator.registerLazySingleton<StaffSyllabusService>(
     () => StaffSyllabusService(locator<ApiService>())
   );

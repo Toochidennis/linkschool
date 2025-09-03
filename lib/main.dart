@@ -32,10 +32,12 @@ import 'package:linkschool/modules/providers/explore/exam_provider.dart';
 import 'package:linkschool/modules/providers/explore/for_you_provider.dart';
 import 'package:linkschool/modules/providers/explore/home/news_provider.dart';
 import 'package:linkschool/modules/providers/explore/subject_provider.dart';
+import 'package:linkschool/modules/providers/staff/overview.dart';
 import 'package:linkschool/modules/providers/staff/syllabus_provider.dart';
 import 'package:linkschool/modules/services/admin/e_learning/activity_service.dart';
 import 'package:linkschool/modules/services/admin/e_learning/syllabus_service.dart';
 import 'package:linkschool/modules/services/explore/cbt_service.dart';
+import 'package:linkschool/modules/services/staff/overview_service.dart';
 import 'package:linkschool/routes/onboardingScreen.dart';
 import 'package:provider/provider.dart';
 import 'package:linkschool/modules/services/api/service_locator.dart';
@@ -106,6 +108,7 @@ Future<void> main() async {
 
           // StaffProvider  from service locator
         ChangeNotifierProvider(create: (_) => locator<StaffSyllabusProvider>()),
+         ChangeNotifierProvider(create: (_) => StaffOverviewProvider( locator<StaffOverviewService>())),
 
       ],
       child: const MyApp(),

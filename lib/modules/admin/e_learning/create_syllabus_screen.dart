@@ -57,14 +57,13 @@ void initState() {
   _descriptionController = TextEditingController(text: widget.syllabusData?['description'] ?? '');
   _backgroundImagePath = widget.syllabusData?['backgroundImagePath'] ?? 'assets/images/result/bg_box3.svg';
 
-  // Only load preselected class IDs when editing (i.e., syllabusData is not null)
+
   if (widget.syllabusData != null && widget.syllabusData!['classes'] != null) {
     final classIds = (widget.syllabusData!['classes'] as List<ClassModel>)
         .map((cls) => cls.id)
         .toList();
     Hive.box('userData').put('selectedClassIds', classIds);
   } else {
-    // When creating, ensure no class is pre-selected
     Hive.box('userData').put('selectedClassIds', []);
   }
 
