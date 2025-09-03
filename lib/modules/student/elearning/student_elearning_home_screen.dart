@@ -170,11 +170,11 @@ class_id: getuserdata()['profile']['class_id'], level_id: getuserdata()['profile
     );
   }
 
-  void _navigateToCourseDetail(String courseTitle, DashboardData dashboardata) {
+  void _navigateToCourseDetail(String courseTitle, DashboardData dashboardata, int syllabusid) {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => CourseDetailScreen(courseTitle: courseTitle, dashboardData: dashboardata),
+        builder: (context) => CourseDetailScreen(courseTitle: courseTitle, dashboardData: dashboardata, syllabusid:syllabusid),
       ),
     );
   }
@@ -476,7 +476,7 @@ final assessments=dashboardData!.recentQuizzes;
                   final svgBackground =
                       courseBackgrounds[index % courseBackgrounds.length];
                   return GestureDetector(
-                    onTap: () => _navigateToCourseDetail(course.courseName, dashboardData!),
+                    onTap: () => _navigateToCourseDetail(course.courseName, dashboardData!,course.syllabusId),
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(12.0),
                       child: Stack(

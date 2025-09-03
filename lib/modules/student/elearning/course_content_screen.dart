@@ -21,8 +21,9 @@ class CourseContentScreen extends StatefulWidget {
 
   final DashboardData dashboardData;
   final String courseTitle;
+  final int syllabusid;
 
-  const CourseContentScreen({super.key, required this.dashboardData,required this.courseTitle});
+  const CourseContentScreen({super.key, required this.dashboardData,required this.courseTitle, required this.syllabusid});
   @override
   State<CourseContentScreen> createState() => _CourseContentScreenState();
 }
@@ -39,7 +40,7 @@ class _CourseContentScreenState extends State<CourseContentScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final elearningcontentprovider = Provider.of<ElearningContentProvider>(
           context, listen: false);
-      elearningcontentprovider.fetchElearningContentData();
+      elearningcontentprovider.fetchElearningContentData(widget.syllabusid);
     });
     fetchElearningContentData();
 
@@ -50,7 +51,7 @@ class _CourseContentScreenState extends State<CourseContentScreen> {
   }
   Future<void> fetchElearningContentData() async {
     final provider = Provider.of<ElearningContentProvider>(context, listen: false);
-    final data = await provider.fetchElearningContentData(
+    final data = await provider.fetchElearningContentData(  widget.syllabusid
     );
 
     setState(() {

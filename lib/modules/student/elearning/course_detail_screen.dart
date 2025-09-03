@@ -10,8 +10,8 @@ class CourseDetailScreen extends StatefulWidget {
 
   final String courseTitle;
   final DashboardData dashboardData;
-
-  const CourseDetailScreen({super.key, required this.courseTitle , required this.dashboardData});
+final int syllabusid;
+  const CourseDetailScreen({super.key, required this.courseTitle , required this.dashboardData, required this.syllabusid});
 
   @override
   _CourseDetailScreenState createState() => _CourseDetailScreenState();
@@ -32,8 +32,8 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
   Widget build(BuildContext context) {
 
     final List<Widget> _screens = [
-      CourseContentScreen(dashboardData:widget.dashboardData,courseTitle:widget.courseTitle),
-      ForumScreen(dashboardData:widget.dashboardData,courseTitle:widget.courseTitle),
+      CourseContentScreen(dashboardData:widget.dashboardData,courseTitle:widget.courseTitle,syllabusid: widget.syllabusid,),
+      ForumScreen(dashboardData:widget.dashboardData,courseTitle:widget.courseTitle, syllabusid: widget.syllabusid),
     ];
 
     final Brightness brightness = Theme.of(context).brightness;

@@ -29,12 +29,12 @@ class ElearningContentProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  Future<List<ElearningContentData>?> fetchElearningContentData() async {
+  Future<List<ElearningContentData>?> fetchElearningContentData( int syllabusid) async {
     _setLoading(true);
     _setError(null);
 
     try {
-      final response = await _elearningContentService.getElearningContentData();
+      final response = await _elearningContentService.getElearningContentData(syllabusid);
       _elearningContentData = response;
       print("This is the response ${_elearningContentData}");
 

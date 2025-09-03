@@ -19,7 +19,7 @@ class ElearningContentService {
     final data = response['data'] ?? response;
     return data;
   }
-  Future<List<ElearningContentData>> getElearningContentData() async {
+  Future<List<ElearningContentData>> getElearningContentData(int syllabusid) async {
     try {
       final userBox = Hive.box('userData');
        final token = userBox.get('token');
@@ -32,12 +32,13 @@ class ElearningContentService {
       }
 
       _apiService.setAuthToken(token);
-      print(getuserdata()['settings']);
+     // print(getuserdata()['settings']);
       final response = await _apiService.get(
-        endpoint: 'portal/students/elearning/contents/770',
+        endpoint: 'portal/students/elearning/contents',
         queryParams: {
           '_db': dbName,
-          //add student id and year
+          'syllabus_id':syllabusid,
+          //add student id and syllabus id
         },
       );
 
