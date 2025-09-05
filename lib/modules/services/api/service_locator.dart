@@ -5,6 +5,7 @@ import 'package:linkschool/modules/auth/service/auth_service.dart';
 import 'package:linkschool/modules/providers/admin/attendance_provider.dart';
 import 'package:linkschool/modules/providers/admin/behaviour_provider.dart';
 import 'package:linkschool/modules/providers/admin/e_learning/activity_provider.dart';
+import 'package:linkschool/modules/providers/admin/e_learning/admin_comment_provider.dart';
 import 'package:linkschool/modules/providers/admin/e_learning/assignment_provider.dart';
 // import 'package:linkschool/modules/providers/admin/e_learning/comment_provider.dart';
 import 'package:linkschool/modules/providers/admin/e_learning/delete_question.dart';
@@ -24,7 +25,9 @@ import 'package:linkschool/modules/providers/student/payment_provider.dart';
 import 'package:linkschool/modules/providers/student/payment_submission_provider.dart';
 import 'package:linkschool/modules/services/admin/attendance_service.dart';
 import 'package:linkschool/modules/services/admin/e_learning/activity_service.dart';
+import 'package:linkschool/modules/services/admin/e_learning/admin_comment_service.dart';
 import 'package:linkschool/modules/services/admin/e_learning/assignment_service.dart';
+import 'package:linkschool/modules/services/admin/e_learning/marking_service.dart';
 
 import 'package:linkschool/modules/services/admin/e_learning/material_service.dart';
 import 'package:linkschool/modules/services/admin/e_learning/quiz_service.dart';
@@ -55,8 +58,8 @@ import 'package:linkschool/modules/services/student/marked_assignment_service.da
 // import 'package:linkschool/modules/services/student/marked_assignment_service.dart';
 // import 'package:linkschool/modules/services/student/streams_service.dart';
 
-import '../../providers/student/comment_provider.dart';
-import '../student/comment_service.dart';
+import '../../providers/student/student_comment_provider.dart';
+import '../student/student_comment_service.dart';
 import '../student/student_dasboard_service.dart';
 
 
@@ -181,25 +184,40 @@ void setupServiceLocator() {
   locator.registerLazySingleton<SyllabusProvider>(
     () => SyllabusProvider(locator<SyllabusService>())
   );
-  locator.registerLazySingleton<CommentService>(
-          () => CommentService(locator<ApiService>())
+  locator.registerLazySingleton<StudentCommentService>(
+          () => StudentCommentService(locator<ApiService>())
   );
 
-  locator.registerLazySingleton<CommentProvider>(
-          () => CommentProvider(locator<CommentService>())
+  locator.registerLazySingleton<StudentCommentProvider>(
+          () => StudentCommentProvider(locator<StudentCommentService>())
   );
+
+  locator.registerLazySingleton<AdminCommentService>(
+          () => AdminCommentService(locator<ApiService>())
+  );
+
+  locator.registerLazySingleton<AdminCommentProvider>(
+          () => AdminCommentProvider(locator<AdminCommentService>())
+  );  
 
   locator.registerLazySingleton<StreamsService>(
           () => StreamsService(locator<ApiService>())
   );
-  locator.registerLazySingleton<MarkedAssignmentService>(
-          () => MarkedAssignmentService(locator<ApiService>())
-  );
   locator.registerLazySingleton<StreamsProvider>(
           () => StreamsProvider(locator<StreamsService>())
   );
+  locator.registerLazySingleton<MarkedAssignmentService>(
+          () => MarkedAssignmentService(locator<ApiService>())
+  );
   locator.registerLazySingleton<MarkedAssignmentProvider>(
           () => MarkedAssignmentProvider(locator<MarkedAssignmentService>())
+  );
+
+  locator.registerLazySingleton<MarkingService>(
+          () => MarkingService(locator<ApiService>())
+  );
+  locator.registerLazySingleton<MarkAssignmentProvider>(
+          () => MarkAssignmentProvider(locator<MarkingService>())
   );
 
 

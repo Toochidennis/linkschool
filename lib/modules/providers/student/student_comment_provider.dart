@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:linkschool/modules/model/e-learning/comment_model.dart';
-import 'package:linkschool/modules/services/admin/e_learning/comment_service.dart';
 
-class CommentProvider with ChangeNotifier {
-  final CommentService _commentService;
-  List<Comment> comments = [];
-  
+import '../../model/student/comment_model.dart';
+import '../../services/student/student_comment_service.dart';
+
+class StudentCommentProvider with ChangeNotifier {
+  final StudentCommentService _commentService;
+  List<StudentComment> comments = [];
   bool isLoading = false;
   String? message;
   String? error;
@@ -13,7 +14,7 @@ class CommentProvider with ChangeNotifier {
   int currentPage = 1;
   bool hasNext = true;
   int limit = 10;
-  CommentProvider(this._commentService);
+  StudentCommentProvider(this._commentService);
 
   Future<void> fetchComments(String contentId, {bool loadMore = false}) async {
     if (!hasNext && loadMore) return;
@@ -34,7 +35,7 @@ class CommentProvider with ChangeNotifier {
         page: currentPage,
         limit: limit,
       );
-      final newComments = result['comments'] as List<Comment>;
+      final newComments = result['comments'] as List<StudentComment>;
       final meta = result['meta'] as Map<String, dynamic>;
 
       comments.addAll(newComments);
@@ -73,24 +74,6 @@ class CommentProvider with ChangeNotifier {
     message = null;
     try {
       await _commentService.updateComment(commentData, contentId);
-      message = "Comment updated successfully.";
-      return true;
-    } catch (e) {
-      error = "Failed to update comment: $e";
-      return false;
-    } finally {
-      isLoading = false;
-      notifyListeners();
-    }
-  }
-  Future<bool>DeleteComment(String commentId) async {
-    isLoading = true;
-    notifyListeners();
-    error = null;
-    message = null;
-    try {
-      await _commentService.deleteComment(commentId);
-       comments.removeWhere((c) => c.id.toString() == commentId);
       message = "Comment updated successfully.";
       return true;
     } catch (e) {

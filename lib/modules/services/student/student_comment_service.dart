@@ -3,9 +3,9 @@ import 'package:hive/hive.dart';
 import 'package:linkschool/modules/model/student/comment_model.dart';
 import 'package:linkschool/modules/services/api/api_service.dart';
 
-class CommentService {
+class StudentCommentService {
   final ApiService _apiService;
-  CommentService(this._apiService);
+  StudentCommentService(this._apiService);
 
   Future<Map<String, dynamic>> getComments({
     required String contentId,

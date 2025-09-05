@@ -18,7 +18,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../common/custom_toaster.dart';
 import '../../common/widgets/portal/attachmentItem.dart';
 import '../../model/student/elearningcontent_model.dart';
-import '../../providers/student/comment_provider.dart';
+import '../../providers/student/student_comment_provider.dart';
 import 'attachment_preview_screen.dart';
 
 class AssignmentDetailsScreen extends StatefulWidget {
@@ -323,7 +323,7 @@ class _AssignmentDetailsScreenState extends State<AssignmentDetailsScreen> {
   }
 
   Widget _buildCommentSection() {
-    return Consumer<CommentProvider>(
+    return Consumer<StudentCommentProvider>(
       builder: (context, commentProvider, child) {
         final commentList = commentProvider.comments;
         return Column(
@@ -436,7 +436,7 @@ class _AssignmentDetailsScreenState extends State<AssignmentDetailsScreen> {
   }
 
   Widget _buildCommentInput() {
-    final provider = Provider.of<CommentProvider>(context, listen: false);
+    final provider = Provider.of<StudentCommentProvider>(context, listen: false);
     return Row(
       children: [
         Expanded(
@@ -478,7 +478,7 @@ class _AssignmentDetailsScreenState extends State<AssignmentDetailsScreen> {
       try {
         print(" See o seee creator id ${creatorId}");
 //
-        final commentProvider = Provider.of<CommentProvider>(context, listen: false);
+        final commentProvider = Provider.of<StudentCommentProvider>(context, listen: false);
         final contentId = _editingComment?.id;
         if (_isEditing) {
           comment['content_id'];

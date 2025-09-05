@@ -11,7 +11,7 @@ import 'package:linkschool/modules/common/custom_toaster.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/model/e-learning/comment_model.dart';
 import 'package:linkschool/modules/model/e-learning/material_model.dart' as custom;
-import 'package:linkschool/modules/providers/admin/e_learning/comment_provider.dart';
+import 'package:linkschool/modules/providers/admin/e_learning/admin_comment_provider.dart';
 import 'package:linkschool/modules/providers/admin/e_learning/delete_sylabus_content.dart';
 import 'package:linkschool/modules/services/api/service_locator.dart';
 import 'package:provider/provider.dart';
@@ -64,14 +64,14 @@ class _StaffMaterialDetailsScreenState extends State<StaffMaterialDetailsScreen>
     super.initState();
     
     _tabController = TabController(length: 2, vsync: this);
-       locator<CommentProvider>().fetchComments(widget.itemId.toString());
+       locator<AdminCommentProvider>().fetchComments(widget.itemId.toString());
     _scrollController.addListener(() {
       if (_scrollController.position.pixels >=
               _scrollController.position.maxScrollExtent * 0.9 &&
-          !locator<CommentProvider>().isLoading &&
-          locator<CommentProvider>().hasNext) {
+          !locator<AdminCommentProvider>().isLoading &&
+          locator<AdminCommentProvider>().hasNext) {
         
-        Provider.of<CommentProvider>(context, listen: false)
+        Provider.of<AdminCommentProvider>(context, listen: false)
             .fetchComments(widget.itemId.toString());
       }
     });
@@ -442,7 +442,7 @@ class _StaffMaterialDetailsScreenState extends State<StaffMaterialDetailsScreen>
   }
 
 Widget _buildCommentSection() {
-  return Consumer<CommentProvider>(
+  return Consumer<AdminCommentProvider>(
     builder: (context, commentProvider, child) {
       final commentList = commentProvider.comments;
       return Column(
@@ -523,7 +523,7 @@ Widget _buildCommentSection() {
 
 
   Widget _buildCommentInput() {
-    final provider = Provider.of<CommentProvider>(context, listen: false);
+    final provider = Provider.of<AdminCommentProvider>(context, listen: false);
     return Row(
       children: [
         Expanded(
@@ -568,7 +568,7 @@ Widget _buildCommentSection() {
     "term": academicTerm,
 };
 try {
-        final commentProvider = Provider.of<CommentProvider>(context, listen: false);
+        final commentProvider = Provider.of<AdminCommentProvider>(context, listen: false);
       final success =  await commentProvider.createComment(comment,widget.itemId.toString());
         CustomToaster.toastSuccess(context, 'Success', 'Comment added successfully');
         await commentProvider.fetchComments(widget.itemId.toString());

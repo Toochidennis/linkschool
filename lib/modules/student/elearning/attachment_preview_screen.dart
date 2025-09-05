@@ -24,7 +24,7 @@ import '../../common/custom_toaster.dart';
 import '../../common/widgets/portal/attachmentItem.dart';
 import '../../model/student/comment_model.dart';
 import '../../model/student/elearningcontent_model.dart';
-import '../../providers/student/comment_provider.dart';
+import '../../providers/student/student_comment_provider.dart';
 import '../../services/api/service_locator.dart'; // Import the custom input
 
 
@@ -69,14 +69,14 @@ class _AttachmentPreviewScreenState extends State<AttachmentPreviewScreen> {
     void initState() {
       super.initState();
       _loadUserData();
-      locator<CommentProvider>().fetchComments(widget.childContent!.id.toString());
+      locator<StudentCommentProvider>().fetchComments(widget.childContent!.id.toString());
       _scrollController.addListener(() {
         if (_scrollController.position.pixels >=
             _scrollController.position.maxScrollExtent * 0.9 &&
-            !locator<CommentProvider>().isLoading &&
-            locator<CommentProvider>().hasNext) {
+            !locator<StudentCommentProvider>().isLoading &&
+            locator<StudentCommentProvider>().hasNext) {
 
-          Provider.of<CommentProvider>(context, listen: false)
+          Provider.of<StudentCommentProvider>(context, listen: false)
               .fetchComments(widget.childContent!.id.toString());
         }
       });
@@ -458,7 +458,7 @@ Future<void> _takePhoto() async {
     });
   }
   Widget _buildCommentSection() {
-    return Consumer<CommentProvider>(
+    return Consumer<StudentCommentProvider>(
       builder: (context, commentProvider, child) {
         final commentList = commentProvider.comments;
         return Column(
@@ -712,7 +712,7 @@ Future<void> _takePhoto() async {
 
 
     Widget _buildCommentInput() {
-      final provider = Provider.of<CommentProvider>(context, listen: false);
+      final provider = Provider.of<StudentCommentProvider>(context, listen: false);
       return Row(
         children: [
           Expanded(
@@ -753,7 +753,7 @@ Future<void> _takePhoto() async {
 
       try {
 //
-        final commentProvider = Provider.of<CommentProvider>(context, listen: false);
+        final commentProvider = Provider.of<StudentCommentProvider>(context, listen: false);
         final contentId = _editingComment?.id;
         if (_isEditing) {
           comment['content_id'];

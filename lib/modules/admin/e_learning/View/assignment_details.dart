@@ -12,7 +12,7 @@ import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/common/widgets/portal/quiz/quiz_resultscreen.dart';
 import 'package:linkschool/modules/model/e-learning/comment_model.dart';
 import 'package:linkschool/modules/model/e-learning/syllabus_content_model.dart';
-import 'package:linkschool/modules/providers/admin/e_learning/comment_provider.dart';
+import 'package:linkschool/modules/providers/admin/e_learning/admin_comment_provider.dart';
 import 'package:linkschool/modules/providers/admin/e_learning/delete_sylabus_content.dart';
 import 'package:linkschool/modules/providers/admin/e_learning/mark_assignment_provider.dart';
 import 'package:linkschool/modules/services/api/service_locator.dart';
@@ -61,13 +61,13 @@ class AdminAssignmentDetailsScreen extends StatefulWidget {
   _loadUserData();
   if (mounted) setState(() {});
   _tabController = TabController(length: 2, vsync: this);
-  locator<CommentProvider>().fetchComments(widget.itemId.toString());
+  locator<AdminCommentProvider>().fetchComments(widget.itemId.toString());
   _scrollController.addListener(() {
     if (_scrollController.position.pixels >=
             _scrollController.position.maxScrollExtent * 0.9 &&
-        !locator<CommentProvider>().isLoading &&
-        locator<CommentProvider>().hasNext) {
-      Provider.of<CommentProvider>(context, listen: false)
+        !locator<AdminCommentProvider>().isLoading &&
+        locator<AdminCommentProvider>().hasNext) {
+      Provider.of<AdminCommentProvider>(context, listen: false)
           .fetchComments(widget.itemId.toString());
     }
   });
@@ -526,7 +526,7 @@ Widget _buildAttachmentItem(AttachmentItem attachment) {
 
 
 Widget _buildCommentSection() {
-  return Consumer<CommentProvider>(
+  return Consumer<AdminCommentProvider>(
     builder: (context, commentProvider, child) {
       final commentList = commentProvider.comments;
       return Column(
@@ -694,7 +694,7 @@ Widget _buildCommentItem(Comment comment) {
 
 
   Widget _buildCommentInput() {
-    final provider = Provider.of<CommentProvider>(context, listen: false);
+    final provider = Provider.of<AdminCommentProvider>(context, listen: false);
     return Padding(
        padding: const EdgeInsets.only(bottom: 8),
       child: Row(
@@ -738,7 +738,7 @@ void _addComment([Map<String, dynamic>? updatedComment]) async {
     };
 
     try {
-      final commentProvider = Provider.of<CommentProvider>(context, listen: false);
+      final commentProvider = Provider.of<AdminCommentProvider>(context, listen: false);
       final contentId = _editingComment?.id;
       if (_isEditing) {
         comment['content_id'];
@@ -777,7 +777,7 @@ void _addComment([Map<String, dynamic>? updatedComment]) async {
   }
 }
 void _deleteComment(Comment comment)async{
-   final commentProvider = Provider.of<CommentProvider>(context, listen: false);
+   final commentProvider = Provider.of<AdminCommentProvider>(context, listen: false);
     print('Setting up delete for comment ID: ${comment.id}');
     final commentId = comment.id.toString() ?? "";
     try{

@@ -11,7 +11,7 @@ import 'package:linkschool/modules/providers/admin/class_provider.dart';
 import 'package:linkschool/modules/providers/admin/course_registration_provider.dart';
 import 'package:linkschool/modules/providers/admin/e_learning/activity_provider.dart';
 import 'package:linkschool/modules/providers/admin/e_learning/assignment_provider.dart';
-import 'package:linkschool/modules/providers/admin/e_learning/comment_provider.dart';
+import 'package:linkschool/modules/providers/admin/e_learning/admin_comment_provider.dart';
 import 'package:linkschool/modules/providers/admin/e_learning/delete_question.dart';
 import 'package:linkschool/modules/providers/admin/e_learning/delete_sylabus_content.dart';
 import 'package:linkschool/modules/providers/admin/e_learning/mark_assignment_provider.dart';
@@ -39,6 +39,7 @@ import 'package:linkschool/modules/providers/student/payment_provider.dart';
 import 'package:linkschool/modules/providers/student/payment_submission_provider.dart';
 import 'package:linkschool/modules/providers/student/marked_assignment_provider.dart';
 import 'package:linkschool/modules/providers/student/streams_provider.dart';
+import 'package:linkschool/modules/providers/student/student_comment_provider.dart';
 import 'package:linkschool/modules/services/explore/cbt_service.dart';
 import 'package:linkschool/routes/onboardingScreen.dart';
 import 'package:provider/provider.dart';
@@ -97,8 +98,9 @@ Future<void> main() async {
         ChangeNotifierProvider(create: (_) => locator<DeleteSyllabusProvider>()),
         ChangeNotifierProvider(create: (_) => locator<DeleteQuestionProvider>()),
         ChangeNotifierProvider(create: (_) => locator<MarkAssignmentProvider>()),
-        ChangeNotifierProvider(create: (_) => locator<CommentProvider>()),
         ChangeNotifierProvider(create: (_) => OverviewProvider(locator<OverviewService>())),
+        ChangeNotifierProvider(create: (_) => locator<AdminCommentProvider>()),
+        ChangeNotifierProvider(create: (_) => locator<StudentCommentProvider>()),
         
         // Admin core providers
         ChangeNotifierProvider(create: (_) => locator<GradeProvider>()),
