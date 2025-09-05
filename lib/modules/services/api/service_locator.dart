@@ -4,6 +4,7 @@ import 'package:linkschool/modules/auth/provider/auth_provider.dart';
 import 'package:linkschool/modules/auth/service/auth_service.dart';
 import 'package:linkschool/modules/providers/admin/attendance_provider.dart';
 import 'package:linkschool/modules/providers/admin/behaviour_provider.dart';
+import 'package:linkschool/modules/providers/admin/e_learning/activity_provider.dart';
 import 'package:linkschool/modules/providers/admin/e_learning/assignment_provider.dart';
 // import 'package:linkschool/modules/providers/admin/e_learning/comment_provider.dart';
 import 'package:linkschool/modules/providers/admin/e_learning/delete_question.dart';
@@ -16,10 +17,13 @@ import 'package:linkschool/modules/providers/admin/e_learning/syllabus_provider.
 import 'package:linkschool/modules/providers/admin/e_learning/topic_provider.dart';
 
 import 'package:linkschool/modules/providers/admin/grade_provider.dart';
+import 'package:linkschool/modules/providers/admin/payment/account_provider.dart';
+import 'package:linkschool/modules/providers/admin/payment/fee_provider.dart';
 import 'package:linkschool/modules/providers/admin/skills_behavior_table_provider.dart';
 import 'package:linkschool/modules/providers/student/payment_provider.dart';
 import 'package:linkschool/modules/providers/student/payment_submission_provider.dart';
 import 'package:linkschool/modules/services/admin/attendance_service.dart';
+import 'package:linkschool/modules/services/admin/e_learning/activity_service.dart';
 import 'package:linkschool/modules/services/admin/e_learning/assignment_service.dart';
 
 import 'package:linkschool/modules/services/admin/e_learning/material_service.dart';
@@ -27,6 +31,9 @@ import 'package:linkschool/modules/services/admin/e_learning/quiz_service.dart';
 import 'package:linkschool/modules/services/admin/e_learning/syllabus_content_service.dart';
 import 'package:linkschool/modules/services/admin/e_learning/syllabus_service.dart';
 import 'package:linkschool/modules/services/admin/e_learning/topic_service.dart';
+import 'package:linkschool/modules/services/admin/payment/account_service.dart';
+import 'package:linkschool/modules/services/admin/payment/fee_service.dart';
+import 'package:linkschool/modules/services/admin/payment/vendor_service.dart';
 
 import 'package:linkschool/modules/services/api/api_service.dart';
 import 'package:linkschool/modules/services/admin/class_service.dart';
@@ -144,17 +151,6 @@ void setupServiceLocator() {
 
   locator.registerFactory(() => SkillsBehaviorTableProvider(locator<ApiService>()));
 
- // Register TopicProvider with SkillService dependen
-  // locator.registerLazySingleton<TopicService>(
-  //   () => TopicService(locator<ApiService>())
-  // );
-
-
-  
-  // locator.registerLazySingleton<TopicProvider>(
-  //   () => TopicProvider(locator<TopicService>())
-  // );
-
   // Register StudentService with ApiService dependency
   locator.registerLazySingleton<StudentService>(
     () => StudentService(locator<ApiService>())
@@ -239,5 +235,36 @@ void setupServiceLocator() {
   // Register AttendanceProvider
   locator.registerLazySingleton<AttendanceProvider>(
     () => AttendanceProvider()
+  );
+
+    // Add OverviewService registration
+  locator.registerLazySingleton<OverviewService>(
+    () => OverviewService(locator<ApiService>())
+  );
+
+  // Add OverviewProvider registration
+  locator.registerLazySingleton<OverviewProvider>(
+    () => OverviewProvider(locator<OverviewService>())
+  );
+
+  // CRITICAL: Add missing Account services and providers
+  locator.registerLazySingleton<AccountService>(
+    () => AccountService(locator<ApiService>())
+  );
+  locator.registerLazySingleton<AccountProvider>(
+    () => AccountProvider(locator<AccountService>())
+  );
+
+  // CRITICAL: Add missing Fee services and providers
+  locator.registerLazySingleton<FeeService>(
+    () => FeeService(locator<ApiService>())
+  );
+  locator.registerLazySingleton<FeeProvider>(
+    () => FeeProvider(locator<FeeService>())
+  );
+
+  // CRITICAL: Add missing Vendor service
+  locator.registerLazySingleton<VendorService>(
+    () => VendorService(locator<ApiService>())
   );
 }
