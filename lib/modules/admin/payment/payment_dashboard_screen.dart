@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:hive/hive.dart';
 import 'package:linkschool/modules/admin/payment/transaction_receipt_screen.dart';
+import 'package:linkschool/modules/admin/payment/widget/transaction_history_screen.dart';
 
 import '../../common/app_colors.dart';
 import '../../common/constants.dart';
@@ -268,9 +269,17 @@ class _PaymentDashboardScreenState extends State<PaymentDashboardScreen> {
                                 Navigator.push(
                                   context,
                                   MaterialPageRoute(
-                                      builder: (context) =>
-                                          const ReportPaymentScreen()),
+                                    builder: (context) => TransactionHistoryScreen(
+                                      transactions: _dashboardData?.transactions ?? [],
+                                    ),
+                                  ),
                                 );
+                                // Navigator.push(
+                                //   context,
+                                //   MaterialPageRoute(
+                                //       builder: (context) =>
+                                //           const ReportPaymentScreen()),
+                                // );
                               },
                               child: const Text(
                                 'See all',
@@ -286,7 +295,7 @@ class _PaymentDashboardScreenState extends State<PaymentDashboardScreen> {
                         const SizedBox(height: 16),
                         if (_dashboardData?.transactions.isNotEmpty == true)
                           ..._dashboardData!.transactions
-                              .take(5)
+                              .take(10)
                               .map(
                                 (transaction) => _buildTransactionItem(
                                   transaction.name,
@@ -724,6 +733,8 @@ class _PaymentDashboardScreenState extends State<PaymentDashboardScreen> {
       ),
     );
   }
+}
+
 
   // Widget _buildTransactionItem(
   //     String name, String time, double amount, String grade) {
@@ -793,10 +804,6 @@ class _PaymentDashboardScreenState extends State<PaymentDashboardScreen> {
   //     ],
   //   );
   // }
-}
-
-
-
 
 
 

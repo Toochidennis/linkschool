@@ -15,17 +15,24 @@ class TransactionReceiptScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
+        leading: IconButton(
+          onPressed: () {
+            Navigator.of(context).pop();
+          },
+          icon: Image.asset(
+            'assets/icons/arrow_back.png',
+            color: AppColors.paymentTxtColor1,
+            width: 34.0,
+            height: 34.0,
+          ),
+        ),
         backgroundColor: Colors.white,
         elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
-          onPressed: () => Navigator.pop(context),
-        ),
         title: Text(
           'Receipt',
           style: AppTextStyles.normal600(
             fontSize: 18,
-            color: Colors.black,
+            color: AppColors.paymentTxtColor1,
           ),
         ),
         centerTitle: true,
@@ -85,7 +92,7 @@ class TransactionReceiptScreen extends StatelessWidget {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         const NairaSvgIcon(
-                          color: Color(0xFF2196F3),
+                          color: AppColors.paymentTxtColor1,
                           width: 20,
                           height: 20,
                         ),
@@ -96,7 +103,7 @@ class TransactionReceiptScreen extends StatelessWidget {
                             fontSize: 28,
                             fontWeight: FontWeight.bold,
                             color: transaction.type == 'receipts' 
-                                ? const Color(0xFF2196F3) 
+                                ? AppColors.paymentTxtColor1 
                                 : const Color(0xFFFF5722),
                           ),
                         ),
@@ -164,8 +171,8 @@ class TransactionReceiptScreen extends StatelessWidget {
                       icon: const Icon(Icons.share_outlined),
                       label: const Text('Share'),
                       style: OutlinedButton.styleFrom(
-                        foregroundColor: const Color(0xFF2196F3),
-                        side: const BorderSide(color: Color(0xFF2196F3)),
+                        foregroundColor: AppColors.paymentTxtColor1,
+                        side: const BorderSide(color: AppColors.paymentTxtColor1),
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8),
@@ -182,7 +189,7 @@ class TransactionReceiptScreen extends StatelessWidget {
                       icon: const Icon(Icons.download_outlined),
                       label: const Text('Download'),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF2196F3),
+                        backgroundColor: AppColors.paymentTxtColor1,
                         foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         shape: RoundedRectangleBorder(
