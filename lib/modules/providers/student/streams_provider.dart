@@ -26,7 +26,7 @@ class StreamsProvider with ChangeNotifier {
 
     try {
       final result = await _streamsService.getStreams(
-        syllabusid: syllabusid,
+        syllabusid: syllabusid, 
       );
 
     //  final newstreams = result as List<StreamsModel>;

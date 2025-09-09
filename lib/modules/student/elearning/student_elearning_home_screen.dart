@@ -269,42 +269,42 @@ final assessments=dashboardData!.recentQuizzes;
                                       ),
                                     ),
                                   ),
-                                  const SizedBox(width: 8),
                                   // Date Section in a Blue Container
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 8.0, vertical: 4.0),
-                                    decoration: BoxDecoration(
-                                      borderRadius: BorderRadius.circular(8.0),
-                                      color: AppColors
-                                          .paymentTxtColor1, // Blue background
+
+                                ],
+                              ),
+                            ),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 8.0, vertical: 4.0),
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(8.0),
+                                color: AppColors
+                                    .paymentTxtColor1, // Blue background
+                              ),
+                              child: Row(
+                                children: [
+                                  SvgPicture.asset(
+                                    'assets/icons/student/calender-icon.svg',
+                                    width: 16,
+                                    height: 16,
+                                    colorFilter: const ColorFilter.mode(
+                                      Colors.white,
+                                      BlendMode.srcIn,
                                     ),
-                                    child: Row(
-                                      children: [
-                                        SvgPicture.asset(
-                                          'assets/icons/student/calender-icon.svg',
-                                          width: 16,
-                                          height: 16,
-                                          colorFilter: const ColorFilter.mode(
-                                            Colors.white,
-                                            BlendMode.srcIn,
-                                          ),
-                                        ),
-                                        const SizedBox(width: 4),
-                                        Text(
-                                          assessment.datePosted,
-                                          style: const TextStyle(
-                                            color: Colors.white,
-                                            fontSize: 12,
-                                          ),
-                                        ),
-                                      ],
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    assessment.datePosted,
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 12,
                                     ),
                                   ),
                                 ],
                               ),
                             ),
-                            const SizedBox(height: 48),
+                            const SizedBox(height: 24),
                             // Bottom Section: Time, Classes, Duration
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceEvenly,

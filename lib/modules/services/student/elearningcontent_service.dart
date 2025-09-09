@@ -24,7 +24,6 @@ class ElearningContentService {
       final userBox = Hive.box('userData');
        final token = userBox.get('token');
       final syllabusid = userBox.get('syllabusid');
-      print(" This is the syllabis id ${syllabusid}");
       final dbName = userBox.get('_db') ?? 'aalmgzmy_linkskoo_practice';
 
       if (token == null) {
@@ -34,10 +33,9 @@ class ElearningContentService {
       _apiService.setAuthToken(token);
      // print(getuserdata()['settings']);
       final response = await _apiService.get(
-        endpoint: 'portal/students/elearning/contents',
+        endpoint: 'portal/elearning/syllabus/${syllabusid}/contents',
         queryParams: {
           '_db': dbName,
-          'syllabus_id':syllabusid,
           //add student id and syllabus id
         },
       );
@@ -48,7 +46,7 @@ class ElearningContentService {
         throw Exception("No dashboard data received.");
       }
 
-      final contentList = (data.rawData?['data'] as List<dynamic>?)
+      final contentList = (data.rawData?['response'] as List<dynamic>?)
           ?.map((e) => ElearningContentData.fromJson(e))
           .toList() ?? [];
       return contentList;
