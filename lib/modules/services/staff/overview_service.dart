@@ -7,7 +7,7 @@ class StaffOverviewService {
 
   StaffOverviewService(this._apiService);
 
-  Future<DashboardResponse> getOverview(String term, String year) async {
+  Future<DashboardResponse> getOverview(String term, String year ,String staffId) async {
     final userBox = Hive.box('userData');
     final loginData = userBox.get('userData') ?? userBox.get('loginResponse');
     final dbName = userBox.get('_db') ?? 'aalmgzmy_linkskoo_practice';
@@ -21,7 +21,7 @@ class StaffOverviewService {
 
     try {
       final response = await _apiService.get<Map<String, dynamic>>(
-        endpoint: 'portal/elearning/staff/38/overview',
+        endpoint: 'portal/elearning/staff/$staffId/overview',
         queryParams: {
           'year': year,
           'term': term,

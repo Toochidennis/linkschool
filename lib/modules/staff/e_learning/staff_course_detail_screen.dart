@@ -232,6 +232,7 @@ Future<void> _loadUserData() async {
       MaterialPageRoute(
         fullscreenDialog: true,
         builder: (BuildContext context) => StaffCreateSyllabusScreen(
+          classList:widget.classesList,
           classId: widget.classId,
           courseId: widget.courseId,
           levelId: widget.levelId,
@@ -322,6 +323,7 @@ Future<void> _loadUserData() async {
             context,
             MaterialPageRoute(
               builder: (context) => StaffEmptySubjectScreen(
+                classList:widget.classesList,
                 syllabusId: _syllabusList[index]['id'] as int?,
                 syllabusClasses: _syllabusList[index]['classes'] as List<Map<String, dynamic>>,
                 classId: widget.classId,

@@ -3,21 +3,25 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
 import 'package:intl/intl.dart';
+import 'package:linkschool/modules/admin/e_learning/View/mark_assignment.dart';
 import 'package:linkschool/modules/admin/e_learning/admin_assignment_screen.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/custom_toaster.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
+import 'package:linkschool/modules/common/widgets/portal/quiz/quiz_resultscreen.dart';
 import 'package:linkschool/modules/model/e-learning/comment_model.dart';
 import 'package:linkschool/modules/model/e-learning/syllabus_content_model.dart';
 import 'package:linkschool/modules/providers/admin/e_learning/comment_provider.dart';
 import 'package:linkschool/modules/providers/admin/e_learning/delete_sylabus_content.dart';
+import 'package:linkschool/modules/providers/admin/e_learning/mark_assignment_provider.dart';
 import 'package:linkschool/modules/services/api/service_locator.dart';
 import 'package:provider/provider.dart';
 import 'package:skeletonizer/skeletonizer.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:video_player/video_player.dart';
 
 import '../../../common/widgets/portal/attachmentItem.dart' show AttachmentItem;
-
 class StaffAssignmentDetailsScreen extends StatefulWidget {
   final Assignment assignment ;
   final int? syllabusId;
@@ -38,10 +42,13 @@ class StaffAssignmentDetailsScreen extends StatefulWidget {
  class _StaffAssignmentDetailsScreenState extends State<StaffAssignmentDetailsScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
+  final FocusNode _commentFocusNode = FocusNode();
   final TextEditingController _commentController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   List<Comment> comments = [];
   bool _isAddingComment = false;
+    bool _isEditing = false;
+  Comment? _editingComment;
   late double opacity;
   final String networkImage = 'https://img.freepik.com/free-vector/gradient-human-rights-day-background_52683-149974.jpg?t=st=1717832829~exp=1717833429~hmac=3e938edcacd7fef2a791b36c7d3decbf64248d9760dd7da0a304acee382b8a86';
  String? creatorName;
@@ -50,29 +57,44 @@ class StaffAssignmentDetailsScreen extends StatefulWidget {
   String? academicYear;
 
   @override
-  void initState() {
-    super.initState();
+ void initState() {
+  super.initState();
   _loadUserData();
-    _tabController = TabController(length: 2, vsync: this as TickerProvider);
-    locator<CommentProvider>().fetchComments(widget.itemId.toString());
-    _scrollController.addListener(() {
-      if (_scrollController.position.pixels >=
-              _scrollController.position.maxScrollExtent * 0.9 &&
-          !locator<CommentProvider>().isLoading &&
-          locator<CommentProvider>().hasNext) {
-        
-        Provider.of<CommentProvider>(context, listen: false)
-            .fetchComments(widget.itemId.toString());
-      }
-    });
+  if (mounted) setState(() {});
+  _tabController = TabController(length: 2, vsync: this);
+  locator<CommentProvider>().fetchComments(widget.itemId.toString());
+  _scrollController.addListener(() {
+    if (_scrollController.position.pixels >=
+            _scrollController.position.maxScrollExtent * 0.9 &&
+        !locator<CommentProvider>().isLoading &&
+        locator<CommentProvider>().hasNext) {
+      Provider.of<CommentProvider>(context, listen: false)
+          .fetchComments(widget.itemId.toString());
+    }
+  });
+  // Add listener to handle tab changes
+  _tabController.addListener(_handleTabChange);
+}
 
+void _handleTabChange() {
+  if (_tabController.indexIsChanging && mounted) {
+    setState(() {
+      // Reset comment input state when switching tabs
+      _isAddingComment = false;
+      _isEditing = false;
+      _editingComment = null;
+      _commentController.clear();
+      _commentFocusNode.unfocus();
+    });
   }
+}
 
   @override
   void dispose() {
     _tabController.dispose();
     _commentController.dispose();
     _scrollController.dispose();
+    _commentFocusNode.dispose();
     super.dispose();
   }
 
@@ -135,7 +157,7 @@ class StaffAssignmentDetailsScreen extends StatefulWidget {
             icon: const Icon(Icons.more_vert, color: AppColors.paymentTxtColor1),
             onSelected: (String result) {
               // final attachments = widget.assignment.attachments;
-              // print('${attachments}');
+       
 
                switch (result) {
                 case 'edit':
@@ -150,6 +172,7 @@ class StaffAssignmentDetailsScreen extends StatefulWidget {
               levelId: widget.levelId,
               courseName: widget.courseName,
               syllabusClasses: widget.syllabusClasses,
+              itemId:widget.itemId,
               editMode: true,
               assignmentToEdit: Assignment(
                 id: widget.assignment.id,
@@ -224,17 +247,53 @@ class StaffAssignmentDetailsScreen extends StatefulWidget {
         ),
       ),
       body: Container(
-        decoration: Constants.customBoxDecoration(context),
+       color: Colors.white,
         child: TabBarView(
           controller: _tabController,
           children: [
             _buildInstructionsTab(),
-            const Center(child: Text('Student work content')),
+
+            AnswersTabWidget(itemId: widget.itemId.toString(),)
           ],
         ),
       ),
-    );
-  }
+bottomNavigationBar: _tabController.index == 0
+        ? SafeArea(
+            child: AnimatedPadding(
+              duration: const Duration(milliseconds: 300),
+              padding: EdgeInsets.only(
+                bottom: MediaQuery.of(context).viewInsets.bottom,
+                left: 8.0,
+                right: 8.0,
+                top: 8.0,
+              ),
+              child: _isAddingComment
+                  ? _buildCommentInput()
+                  : InkWell(
+                      onTap: () {
+                        setState(() {
+                          _isAddingComment = true;
+                          // Ensure focus is requested after the state update
+                          WidgetsBinding.instance.addPostFrameCallback((_) {
+                            _commentFocusNode.requestFocus();
+                          });
+                        });
+                      },
+                      child: Padding(
+                        padding: const EdgeInsets.all(12.0),
+                        child: Text(
+                          'Add class comment',
+                          style: AppTextStyles.normal500(
+                              fontSize: 16.0, color: AppColors.paymentTxtColor1),
+                        ),
+                      ),
+                    ),
+            ),
+          )
+        : null,
+  );
+}
+
 
     Future<void> deleteAssignment(id) async {
                     try {
@@ -355,103 +414,329 @@ class StaffAssignmentDetailsScreen extends StatefulWidget {
     );
   }
 
-  Widget _buildAttachments() {
-    final attachments = widget.assignment.attachments;
-    if (attachments == null || attachments.isEmpty) {
-      return Center(child: Text('no attachment available'),);
-    }
-    
-    return Padding(
-      padding: const EdgeInsets.all(16.0),
-      child: Row(
-        children: List.generate(attachments.length, (index) {
-          return Expanded(
-            child: Padding(
-              padding: EdgeInsets.only(
-                  right: index < attachments.length - 1 ? 16.0 : 0),
-              child: _buildAttachmentItem(attachments[index]),
-            ),
-          );
-        }),
+Widget _buildAttachments() {
+  final attachments = widget.assignment.attachments;
+  if (attachments == null || attachments.isEmpty) {
+    return const Center(child: Text('No attachment available'));
+  }
+  return Padding(
+    padding: const EdgeInsets.all(16.0),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Attachments',
+          style: AppTextStyles.normal600(
+              fontSize: 18.0, color: AppColors.eLearningTxtColor1),
+        ),
+        const SizedBox(height: 12),
+        GridView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 2,
+            crossAxisSpacing: 12.0,
+            mainAxisSpacing: 12.0,
+            childAspectRatio: 1.2,
+          ),
+          itemCount: attachments.length,
+          itemBuilder: (context, index) {
+            return _buildAttachmentItem(attachments[index]);
+          },
+        ),
+      ],
+    ),
+  );
+}
+
+Widget _buildAttachmentItem(AttachmentItem attachment) {
+final rawFileName = attachment.fileName ?? 'Unknown file';
+final fileType = _getFileType(rawFileName);
+final fileUrl = "https://linkskool.net/$rawFileName";
+
+// Extract only the actual file name (remove the path)
+final fileName = rawFileName.split('/').last;
+  return GestureDetector(
+    onTap: () {
+      if (fileType == 'image' || fileType == 'video') {
+        _showFullScreenMedia(fileUrl, fileType);
+      } else {
+        // For all other files including PDF, open in external app
+        //fileUrl
+        if(fileType == 'pdf'){
+          _launchUrl(fileUrl);
+        } else {_launchUrl(fileName);
+      }}
+    },
+    child: Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(12.0),
+        border: Border.all(
+          color: _getFileColor(fileType).withOpacity(0.3),
+          width: 1.5,
+        ),
+        color: Colors.white,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.1),
+            spreadRadius: 1,
+            blurRadius: 3,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
-    );
+      child: Column(
+        children: [
+          Expanded(
+            flex: 3,
+            child: Container(
+              width: double.infinity,
+              decoration: BoxDecoration(
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(12.0),
+                  topRight: Radius.circular(12.0),
+                ),
+                color: _getFileColor(fileType).withOpacity(0.1),
+              ),
+              child: _buildPreviewContent(fileType, fileUrl, fileName),
+            ),
+          ),
+        if (fileType == "pdf" || fileType == "url") 
+  Expanded(
+    flex: 1,
+    child: Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 6.0),
+      child: Text(
+        fileName.length > 17 ? fileName.substring(0, 17) : fileName,
+        style: AppTextStyles.normal500(
+          fontSize: 14.0,
+          color: Colors.black,
+        ),
+        maxLines: 2,
+        overflow: TextOverflow.ellipsis,
+        textAlign: TextAlign.center,
+      ),
+    ),
+  ),
+
+        ],
+      ),
+    ),
+  );
+}
+
+ Future<void> _launchUrl(String url) async {
+    try {
+      final Uri uri = Uri.parse(url);
+      if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
+        CustomToaster.toastError(context, 'Error', 'Could not launch $url');
+      }
+    } catch (e) {
+      CustomToaster.toastError(context, 'Error', 'Invalid URL: $url');
+    }
   }
 
-  Widget _buildAttachmentItem(AttachmentItem attachment) {
-    // Detect image by file extension or type
-    final isImage = attachment.fileName!.toLowerCase().endsWith('.jpg') ||
-        attachment.fileName!.toLowerCase().endsWith('.jpeg') ||
-        attachment.fileName!.toLowerCase().endsWith('.png') ||
-        attachment.fileName!.toLowerCase().endsWith('.gif') ||
-        attachment.iconPath!.contains('svg') || 
-        attachment.iconPath!.contains('material.svg') ||
-        attachment.iconPath!.contains('photo');
-
-    if (isImage) {
-      // Build the full URL if needed
-      final imageUrl = "https://linkskool.net/${attachment.fileName}";
-      print('$imageUrl');
-      return Container(
-        decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(8.0),
-           border: Border.all(
-      color: Colors.blue, // Border color
-      width: 2.0,        // Border width
-    ),
-        ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(8),
-          
-          child: Image.network(
-            imageUrl,
-            fit: BoxFit.cover,
-            height: 100,
-            errorBuilder: (context, error, stackTrace) => Image.network(
-              networkImage,
-              fit: BoxFit.cover,
-              height: 100,
-            ),
+void _showFullScreenMedia(String url, String type) {
+    if (type == 'pdf') {
+      // For PDFs, directly open in external app since we removed native_pdf_renderer
+      _launchUrl(url);
+    } else {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => FullScreenMediaViewer(
+            url: url,
+            type: type,
+            fileName: url.split('/').last,
           ),
         ),
       );
-    } else {
-      // Not an image: show default image and file/link name
-      return Container(
-        height: 100,
-        color: Colors.blue.shade100,
-        child: Column(
+    }
+  }
+
+
+String _getFileType(String? fileName) {
+    if (fileName == null) return 'unknown';
+    final extension = fileName.toLowerCase().split('.').last;
+    if (['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'].contains(extension)) {
+      return 'image';
+    }
+    if (['mp4', 'avi', 'mov', 'wmv', 'flv', 'webm', 'm4v', '3gp'].contains(extension)) {
+      return 'video';
+    }
+if (['pdf','doc', 'docx', 'txt', 'rtf'].contains(extension)) {
+      return 'pdf';
+    }
+   
+    if (['.com', '.org', '.net', '.edu', 'http', 'https'].contains(extension) || fileName.startsWith('http')) {
+      return 'url';
+    }
+    if (['xls', 'xlsx', 'csv'].contains(extension)) {
+      return 'spreadsheet';
+    }
+    if (['ppt', 'pptx'].contains(extension)) {
+      return 'presentation';
+    }
+    if (['zip', 'rar', '7z', 'tar', 'gz'].contains(extension)) {
+      return 'archive';
+    }
+    return 'unknown';
+  }
+
+ Widget _buildPreviewContent(String fileType, String fileUrl, String fileName) {
+    switch (fileType) {
+      case 'image':
+        return ClipRRect(
+          borderRadius: const BorderRadius.only(
+            topLeft: Radius.circular(12.0),
+            topRight: Radius.circular(12.0),
+          ),
+          child: Image.network(
+            fileUrl,
+            fit: BoxFit.cover,
+            errorBuilder: (context, error, stackTrace) => Icon(
+              Icons.broken_image,
+              color: Colors.grey,
+              size: 40,
+            ),
+            loadingBuilder: (context, child, loadingProgress) {
+              if (loadingProgress == null) return child;
+              return Center(
+                child: CircularProgressIndicator(
+                  value: loadingProgress.expectedTotalBytes != null
+                      ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
+                      : null,
+                ),
+              );
+            },
+          ),
+        );
+      case 'video':
+        return Stack(
           children: [
-            Expanded(
-              flex: 2,
-              child: Image.network(
-                networkImage,
-                fit: BoxFit.cover,
-                width: double.infinity,
+            Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [Colors.blue.shade100, Colors.blue.shade200],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+              ),
+              child: Center(
+                child: Icon(
+                  Icons.play_circle_fill,
+                  size: 50,
+                  color: Colors.blue.shade600,
+                ),
               ),
             ),
-            Expanded(
-              flex: 2,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                child: Row(
-                  children: [
-                    const Icon(Icons.link, color: Colors.blue),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        attachment.fileName!,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ],
+            Positioned(
+              top: 8,
+              right: 8,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(
+                  color: Colors.black54,
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: const Text(
+                  'VIDEO',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 8,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
             ),
           ],
-        ),
-      );
+        );
+      case 'pdf':
+        return Stack(
+          children: [
+            Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [Colors.blue.shade100, Colors.blue.shade200],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+              ),
+              child: Center(
+                child: Icon(
+                  Icons.picture_as_pdf,
+                  size: 50,
+                  color: Colors.blue.shade600,
+                ),
+              ),
+            ),
+           
+          ],
+        );
+      case 'url':
+        return Center(
+          child: Icon(
+            Icons.link,
+            size: 40,
+            color: _getFileColor(fileType),
+          ),
+        );
+      default:
+        return Center(
+          child: Icon(
+            _getFileIcon(fileType),
+            size: 40,
+            color: _getFileColor(fileType),
+          ),
+        );
     }
   }
+
+  
+
+
+   IconData _getFileIcon(String fileType) {
+    switch (fileType) {
+      case 'image':
+        return Icons.image;
+      case 'video':
+        return Icons.video_library;
+      case 'pdf':
+        return Icons.picture_as_pdf;
+      case 'document':
+        return Icons.description;
+      case 'spreadsheet':
+        return Icons.table_chart;
+      case 'presentation':
+        return Icons.slideshow;
+      case 'archive':
+        return Icons.archive;
+      default:
+        return Icons.insert_drive_file;
+    }
+  }
+
+   Color _getFileColor(String fileType) {
+    switch (fileType) {
+      case 'image':
+        return Colors.blue[700]!;
+      case 'video':
+        return Colors.blue[700]!;
+      case 'pdf':
+        return Colors.blue[700]!;
+      case 'document':
+        return Colors.blue[700]!;
+      case 'spreadsheet':
+        return Colors.blue[700]!;
+      case 'presentation':
+        return Colors.blue[700]!;
+      case 'archive':
+        return Colors.blue[700]!;
+      default:
+        return Colors.blue[700]!;
+    }
+  }
+
 
 Widget _buildCommentSection() {
   return Consumer<CommentProvider>(
@@ -514,109 +799,178 @@ Widget _buildCommentSection() {
               ),
             _buildDivider(),
           ],
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: _isAddingComment
-                ? _buildCommentInput()
-                : InkWell(
-                    onTap: () => setState(() => _isAddingComment = true),
-                    child: Text(
-                      'Add class comment',
-                      style: AppTextStyles.normal500(
-                          fontSize: 16.0, color: AppColors.paymentTxtColor1),
-                    ),
-                  ),
-          ),
+        
         ],
       );
     },
   );
 }
 
-  Widget _buildCommentItem(Comment comment) {
-    return ListTile(
-      leading: CircleAvatar(
-        backgroundColor: AppColors.paymentTxtColor1,
-        child: Text(
-          comment.author[0].toUpperCase(),
-          style: AppTextStyles.normal500(
-              fontSize: 18, color: AppColors.backgroundLight),
-        ),
-      ),
-      title: Row(
-        children: [
-          Text(comment.author,
-              style: AppTextStyles.normal600(
-                  fontSize: 16.0, color: AppColors.backgroundDark)),
-          const SizedBox(width: 8),
-          Text(
-            DateFormat('d MMMM').format(comment.date),
-            style: AppTextStyles.normal400(fontSize: 14.0, color: Colors.grey),
-          ),
-        ],
-      ),
-      subtitle: Text(
-        comment.text,
-        style:
-            AppTextStyles.normal500(fontSize: 16, color: AppColors.text4Light),
-      ),
-    );
-  }
-
-  Widget _buildCommentInput() {
-    final provider = Provider.of<CommentProvider>(context, listen: false);
-    return Row(
+Widget _buildCommentItem(Comment comment) {
+  return Container(
+    margin: const EdgeInsets.symmetric(vertical: 8),
+    padding: const EdgeInsets.all(12),
+    decoration: BoxDecoration(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(12),
+      
+    ),
+    child: Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Expanded(
-          child: TextField(
-            controller: _commentController,
-            decoration: const InputDecoration(
-              hintText: 'Type your comment...',
-              border: OutlineInputBorder(),
+        CircleAvatar(
+          radius: 20,
+          backgroundColor: AppColors.paymentTxtColor1,
+          child: Text(
+            comment.author[0].toUpperCase(),
+            style: AppTextStyles.normal500(
+              fontSize: 16,
+              color: AppColors.backgroundLight,
             ),
           ),
         ),
-        provider.isLoading
-            ? const CircularProgressIndicator()
-            : IconButton(
-                icon: const Icon(Icons.send),
-                onPressed: _addComment,
-                color: AppColors.paymentTxtColor1,
+
+        const SizedBox(width: 12),
+
+        // Comment Content
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Header row: name + date + actions
+              Row(
+                mainAxisAlignment: MainAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: Row(
+                      children: [
+                        Text(
+                          comment.author,
+                          style: AppTextStyles.normal600(
+                            fontSize: 15,
+                            color: AppColors.backgroundDark,
+                          ),
+                        ),
+
+                        SizedBox(width:8,),
+                    
+                        Text(
+                      DateFormat('d MMM, HH:mm').format(comment.date),
+                      style: AppTextStyles.normal400(
+                        fontSize: 13,
+                        color: Colors.grey.shade600,
+                      ),
+                    ),
+                      ],
+                    ),
+                  ),
+                  
+
+                  // Popup menu button for actions
+                  PopupMenuButton<String>(
+                    icon: const Icon(Icons.more_vert, size: 20, color: AppColors.primaryLight,),
+                    onSelected: (value) {
+                      if (value == 'edit') {
+                        _editComment(comment);
+                      } else if (value == 'delete') {
+                        _deleteComment(comment);
+                      }
+                    },
+                    itemBuilder: (context) => [
+                      const PopupMenuItem(
+                        value: 'edit',
+                        child: Text('Edit'),
+                      ),
+                      const PopupMenuItem(
+                        value: 'delete',
+                        child: Text('Delete'),
+                      ),
+                    ],
+                  ),
+                ],
               ),
+
+              Text(
+                comment.text,
+                style: AppTextStyles.normal500(
+                  fontSize: 14,
+                  color: AppColors.text4Light,
+                ),
+              ),
+            ],
+          ),
+        ),
       ],
+    ),
+  );
+}
+
+
+  Widget _buildCommentInput() {
+    final provider = Provider.of<CommentProvider>(context, listen: false);
+    return Padding(
+       padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        children: [
+          Expanded(
+            child: TextField(
+              controller: _commentController,
+              focusNode: _commentFocusNode,
+              decoration: const InputDecoration(
+                hintText: 'Type your comment...',
+                border: OutlineInputBorder(),
+              ),
+            ),
+          ),
+          provider.isLoading
+              ? const CircularProgressIndicator()
+              : IconButton(
+                  icon: const Icon(Icons.send),
+                  onPressed: _addComment,
+                  color: AppColors.paymentTxtColor1,
+                ),
+        ],
+      ),
     );
   }
 
-  void _addComment() async {
-  
-    if (_commentController.text.isNotEmpty) {
-      final comment = {
+ 
+void _addComment([Map<String, dynamic>? updatedComment]) async {
+  if (_commentController.text.isNotEmpty) {
+    final comment = updatedComment ?? {
+      "content_title": widget.assignment.title,
+      "user_id": creatorId,
+      "user_name": creatorName,
+      "comment": _commentController.text,
+      "level_id": widget.levelId,
+      "course_id": widget.courseId,
+      "course_name": widget.courseName,
+      "term": academicTerm,
+         if (_isEditing == true && _editingComment != null)
+        "content_id": widget.itemId.toString() , 
+    };
 
-    "content_title": widget.assignment.title,
-
-    "user_id": creatorId.toString(),
-
-    "user_name": creatorName,
-
-    "comment": _commentController.text,
-
-    "level_id": widget.levelId,
-
-    "course_id": widget.courseId,
-
-    "course_name": widget.courseName,
-
-    "term": academicTerm,
-};
-try {
-        final commentProvider = Provider.of<CommentProvider>(context, listen: false);
-      final success =  await commentProvider.createComment(comment,widget.itemId.toString());
+    try {
+      final commentProvider = Provider.of<CommentProvider>(context, listen: false);
+      final contentId = _editingComment?.id;
+      if (_isEditing) {
+        comment['content_id'];
+        print("printed Comment $comment");
+        await commentProvider.UpdateComment(comment,contentId.toString());
+        CustomToaster.toastSuccess(context, 'Success', 'Comment updated successfully');
+      } else {
+      
+        await commentProvider.createComment(comment, widget.itemId.toString());
         CustomToaster.toastSuccess(context, 'Success', 'Comment added successfully');
-        await commentProvider.fetchComments(widget.itemId.toString());
-        setState(() {
-          
-          _isAddingComment = false;
-          _commentController.clear();
+      }
+
+      await commentProvider.fetchComments(widget.itemId.toString());
+      setState(() {
+        _isAddingComment = false;
+        _isEditing = false;
+        _editingComment = null;
+        _commentController.clear();
+        if (!_isEditing) {
           comments.add(Comment(
             author: creatorName ?? 'Unknown',
             date: DateTime.now(),
@@ -628,16 +982,629 @@ try {
             courseName: widget.courseName,
             term: academicTerm,
           ));
-        });
-      } catch (e) {
-        CustomToaster.toastError(context, 'Error', 'Failed to add comment');
-      }
-      
+        }
+      });
+    } catch (e) {
+      CustomToaster.toastError(context, 'Error', _isEditing ? 'Failed to update comment' : 'Failed to add comment');
+    }
+  }
+}
+void _deleteComment(Comment comment)async{
+   final commentProvider = Provider.of<CommentProvider>(context, listen: false);
+    print('Setting up delete for comment ID: ${comment.id}');
+    final commentId = comment.id.toString() ?? "";
+    try{
+       await commentProvider.DeleteComment(commentId);
+       CustomToaster.toastSuccess(context, 'Success', 'Comment updated successfully');
+  }catch(e){
+    CustomToaster.toastError(context, 'Error',  'Failed to delete comment');
+  }
    
+}
+
+ void _editComment(Comment comment) {
+  if(comment.text.isEmpty) {
+    CustomToaster.toastError(context, 'Error', 'Comment text cannot be empty');
+    return;
+  }
+  print('Setting up edit for comment ID: ${comment.id}');
+  
+   _editingComment = comment;
+  _commentController.text = comment.text;
+  final updatedComment = {
+    "content_title": widget.assignment.title,
+    "user_id": creatorId,
+    "user_name": creatorName,
+    "comment": _commentController.text,
+    "level_id": widget.levelId,
+    "course_id": widget.courseId,
+    "course_name": widget.courseName,
+    "term": academicTerm,
+    "comment_id": comment.id, // Assuming comment.id is the ID of the comment to update
+  };
+  print('Editing comment: ${updatedComment['comment']} with ID: ${comment.id}');
+
+  setState(() {
+    _isAddingComment = true;
+    _isEditing = true;
+    _commentFocusNode.requestFocus();
+  });
+
+  
+}
+}
+
+
+
+
+class AnswersTabWidget extends StatefulWidget {
+  final String itemId;
+  const AnswersTabWidget({
+    super.key,
+    required this.itemId,
+  });
+
+  @override
+  _AnswersTabWidgetState createState() => _AnswersTabWidgetState();
+}
+
+class _AnswersTabWidgetState extends State<AnswersTabWidget> {
+  String _selectedCategory = 'SUBMITTED';
+
+  @override
+  void initState() {
+    super.initState();
+    // Fetch assignments on init using the provider
+     if (mounted) setState(() {});
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final markProvider = Provider.of<MarkAssignmentProvider>(context, listen: false);
+      markProvider.fetchAssignment(widget.itemId);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Consumer<MarkAssignmentProvider>(
+      builder: (context, markProvider, _) {
+        final isLoading = markProvider.isLoading;
+        final error = markProvider.error;
+        final assignmentData = markProvider.assignmentData;
+
+      return Scaffold(
+  body: Container(
+     decoration: Constants.customBoxDecoration(context),
+    child: Column(
+      children: [
+        _buildNavigationRow(assignmentData),
+        Expanded(
+          child: isLoading
+              ? const Center(child: CircularProgressIndicator())
+              : error != null
+                  ? Center(
+                      child: Text(
+                        error,
+                        style: AppTextStyles.normal500(fontSize: 16, color: Colors.red),
+                      ),
+                    )
+                  : _selectedCategory == 'SUBMITTED'
+                      ? _buildSubmittedContent(assignmentData)
+                      : _buildListContent(_selectedCategory, assignmentData),
+        ),
+      ],
+    ),
+  ),
+  floatingActionButton: _selectedCategory == 'MARKED'
+      ? FloatingActionButton(
+        backgroundColor: AppColors.primaryLight,
+          onPressed: ()async {
+              try {
+    final provider = locator<MarkAssignmentProvider>();
+
+    // grab all marked assignments from your state
+    final markedAssignments = assignmentData!['marked'] ?? [];
+
+    for (var assignment in markedAssignments) {
+       final contentId = assignment['content_id'].toString();       // content id
+  final publish = assignment['published'].toString() ?? "";
+  print("llllllll$assignment");
+  print("llllllll$contentId");
+  print("llllllll$publish");
+
+      await provider.returnAssignment(
+      publish,
+      contentId
+      );
+
+        CustomToaster.toastSuccess(
+      context,
+      'Success',
+      'Marks published successfully',
+    );
+    }}catch(e){
+      print(e);
+          CustomToaster.toastError(
+      context,
+      'Success',
+      'Marks published $e',
+    
+    );
+    }
+    },
+          child: const Icon(Icons.publish,color: Colors.white,),
+        )
+      : null,
+);
+      },
+    );
+  }
+
+  Widget _buildNavigationRow(Map<String, dynamic>? assignmentData) {
+    return Padding(
+      padding: const EdgeInsets.all(8.0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: [
+          _buildNavigationContainer('SUBMITTED', assignmentData),
+          _buildNavigationContainer('UNMARKED', assignmentData),
+          _buildNavigationContainer('MARKED', assignmentData),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildNavigationContainer(String text, Map<String, dynamic>? assignmentData) {
+    bool isSelected = _selectedCategory == text;
+    int itemCount = _getItemCount(text, assignmentData);
+
+    return GestureDetector(
+      onTap: () => setState(() => _selectedCategory = text),
+      child: Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: Container(
+          width: 89,
+          height: 30,
+          decoration: BoxDecoration(
+            color: isSelected
+                ? const Color.fromRGBO(171, 190, 255, 1)
+                : const Color.fromRGBO(224, 224, 224, 1),
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Stack(
+            children: [
+              Center(
+                child: Text(
+                  text,
+                  style: TextStyle(
+                    color: isSelected ? AppColors.primaryLight : Colors.black,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+              if (!isSelected && itemCount > 0)
+                Positioned(
+                  right: 0,
+                  top: -4,
+                  child: Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: const BoxDecoration(
+                      color: Color.fromRGBO(244, 67, 54, 1),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Text(
+                      '$itemCount',
+                      style: const TextStyle(
+                          color: Color.fromRGBO(255, 255, 255, 1), fontSize: 10),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSubmittedContent(Map<String, dynamic>? assignmentData) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Expanded(
+          child: _buildListContent('SUBMITTED', assignmentData),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildListContent(String category, Map<String, dynamic>? assignmentData) {
+    if (assignmentData == null) {
+      return Center(
+        child: Text(
+          'No $category assignments',
+          style: AppTextStyles.normal500(fontSize: 16, color: AppColors.backgroundDark),
+        ),
+      );
+    }
+
+    List<dynamic> assignments = [];
+    switch (category) {
+      case 'SUBMITTED':
+        assignments = (assignmentData['submitted'] as List<dynamic>?) ?? [];
+        break;
+      case 'UNMARKED':
+        assignments = (assignmentData['unmarked'] as List<dynamic>?) ?? [];
+        break;
+      case 'MARKED':
+        assignments = (assignmentData['marked'] as List<dynamic>?) ?? [];
+        break;
+      default:
+        assignments = [];
+    }
+
+    if (assignments.isEmpty) {
+      return Center(
+        child: Text(
+          'No $category assignments',
+          style: AppTextStyles.normal500(fontSize: 16, color: AppColors.backgroundDark),
+        ),
+      );
+    }
+
+    return ListView.separated(
+      itemCount: assignments.length,
+      separatorBuilder: (context, index) => const Divider(),
+      itemBuilder: (context, index) {
+        var assignmentJson = assignments[index] as Map<String, dynamic>;
+
+        // Defensive extraction of fields from assignmentJson
+        final String studentName = assignmentJson['student_name']?.toString() ?? 'Unknown';
+        final String score = assignmentJson['score']?.toString() ?? '';
+        final String markingScore = assignmentJson['marking_score']?.toString() ?? '';
+        final List<dynamic> files = assignmentJson['files'] is List ? assignmentJson['files'] : [];
+        final String dateStr = assignmentJson['date']?.toString() ?? '';
+      final String Publish = assignmentJson['publish']?.toString() ?? '';
+        DateTime? date;
+        try {
+          date = DateTime.parse(dateStr);
+        } catch (_) {
+          date = null;
+        }
+
+        return GestureDetector(
+          onTap: () {
+            // Navigate to QuizResultsScreen with assignment data
+          if(category == 'MARKED') {
+            
+              CustomToaster.toastInfo(context, 'Info', 'This assignment has already been marked.');
+              return;
+          }
+            Navigator.push(
+  context,
+  MaterialPageRoute(
+    builder: (context) => AssignmentGradingScreen(
+      itemId: widget.itemId,
+      assignmentTitle: assignmentJson['assignment_title']?.toString() ?? 'yyyyy',
+      files: files,
+      maxScore: int.tryParse(markingScore) ?? 0,
+      studentName: studentName,
+      assignmentId: assignmentJson['id']?.toString() ?? '',
+      currentScore: int.tryParse(score) ?? 0,
+      turnedInAt: date ?? DateTime.now(),
+    ),
+  ),
+).then((value) {
+  setState(() {
+    final provider = Provider.of<MarkAssignmentProvider>(context, listen: false);
+    provider.fetchAssignment(widget.itemId); // refresh from provider
+  });
+});
+
+          },
+          child: ListTile(
+            leading: CircleAvatar(
+              backgroundColor: AppColors.primaryLight,
+              child: Text(
+                studentName.isNotEmpty ? studentName[0].toUpperCase() : '?',
+                style: AppTextStyles.normal500(fontSize: 16, color: AppColors.backgroundLight),
+              ),
+            ),
+            title: Text(
+              studentName,
+              style: AppTextStyles.normal600(fontSize: 16, color: Colors.black87),
+            ),
+            subtitle: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SizedBox(height: 2),
+                Text(
+                  'Score: ${score.isNotEmpty ? score : "N/A"}/${markingScore.isNotEmpty ? markingScore : "N/A"}',
+                  style: AppTextStyles.normal500(fontSize: 14, color: Colors.grey[600]!),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  'Files: ${files.length} attached',
+                  style: AppTextStyles.normal500(fontSize: 14, color: Colors.grey[600]!),
+                ),
+              ],
+            ),
+            trailing: Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  date != null ? DateFormat('MMM dd').format(date) : 'Invalid date',
+                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  date != null ? DateFormat('HH:mm').format(date) : '',
+                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  int _getItemCount(String category, Map<String, dynamic>? assignmentData) {
+    if (assignmentData == null) return 0;
+    switch (category) {
+      case 'SUBMITTED':
+        return (assignmentData['submitted'] as List<dynamic>?)?.length ?? 0;
+      case 'UNMARKED':
+        return (assignmentData['unmarked'] as List<dynamic>?)?.length ?? 0;
+      case 'MARKED':
+        return (assignmentData['marked'] as List<dynamic>?)?.length ?? 0;
+      default:
+        return 0;
     }
   }
 }
 
+
+
+
+class FullScreenMediaViewer extends StatefulWidget {
+  final String url;
+  final String type;
+  final String fileName;
+
+  const FullScreenMediaViewer({
+    Key? key,
+    required this.url,
+    required this.type,
+    required this.fileName,
+  }) : super(key: key);
+
+  @override
+  State<FullScreenMediaViewer> createState() => _FullScreenMediaViewerState();
+}
+
+class _FullScreenMediaViewerState extends State<FullScreenMediaViewer> {
+  VideoPlayerController? _videoController;
+  bool _isVideoInitialized = false;
+  bool _showControls = true;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.type == 'video') {
+      _initializeVideo();
+    }
+  }
+
+  Future<void> _initializeVideo() async {
+    try {
+      _videoController = VideoPlayerController.network(widget.url);
+      await _videoController!.initialize();
+      setState(() {
+        _isVideoInitialized = true;
+      });
+      _hideControlsAfterDelay();
+      _videoController!.addListener(() {
+        if (_videoController!.value.position == _videoController!.value.duration) {
+          setState(() {
+            _showControls = true;
+          });
+        }
+      });
+    } catch (e) {
+      print('Error initializing video: $e');
+    }
+  }
+
+  void _hideControlsAfterDelay() {
+    Future.delayed(const Duration(seconds: 3), () {
+      if (mounted && _videoController != null && _videoController!.value.isPlaying) {
+        setState(() {
+          _showControls = false;
+        });
+      }
+    });
+  }
+
+  void _toggleControls() {
+    setState(() {
+      _showControls = !_showControls;
+    });
+    if (_showControls && _videoController != null && _videoController!.value.isPlaying) {
+      _hideControlsAfterDelay();
+    }
+  }
+
+  @override
+  void dispose() {
+    _videoController?.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.black,
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.close, color: Colors.white),
+          onPressed: () => Navigator.pop(context),
+        ),
+        title: Text(
+          widget.fileName,
+          style: const TextStyle(color: Colors.white),
+          overflow: TextOverflow.ellipsis,
+        ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.download, color: Colors.white),
+            onPressed: () async {
+              try {
+                final Uri uri = Uri.parse(widget.url);
+                if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Could not download file')),
+                  );
+                }
+              } catch (e) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Download failed')),
+                );
+              }
+            },
+          ),
+        ],
+      ),
+      body: Center(
+        child: _buildMediaContent(),
+      ),
+    );
+  }
+
+  Widget _buildMediaContent() {
+    switch (widget.type) {
+      case 'image':
+        return InteractiveViewer(
+          panEnabled: true,
+          boundaryMargin: const EdgeInsets.all(20.0),
+          minScale: 0.5,
+          maxScale: 4.0,
+          child: Image.network(
+            widget.url,
+            fit: BoxFit.contain,
+            errorBuilder: (context, error, stackTrace) => const Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.broken_image,
+                    color: Colors.white,
+                    size: 64,
+                  ),
+                  SizedBox(height: 16),
+                  Text(
+                    'Failed to load image',
+                    style: TextStyle(color: Colors.white),
+                  ),
+                ],
+              ),
+            ),
+            loadingBuilder: (context, child, loadingProgress) {
+              if (loadingProgress == null) return child;
+              return Center(
+                child: CircularProgressIndicator(
+                  value: loadingProgress.expectedTotalBytes != null
+                      ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
+                      : null,
+                  color: Colors.white,
+                ),
+              );
+            },
+          ),
+        );
+      case 'video':
+        if (!_isVideoInitialized || _videoController == null) {
+          return const Center(
+            child: CircularProgressIndicator(color: Colors.white),
+          );
+        }
+        return GestureDetector(
+          onTap: _toggleControls,
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              AspectRatio(
+                aspectRatio: _videoController!.value.aspectRatio,
+                child: VideoPlayer(_videoController!),
+              ),
+              if (_showControls) ...[
+                Positioned(
+                  child: GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        if (_videoController!.value.isPlaying) {
+                          _videoController!.pause();
+                          _showControls = true;
+                        } else {
+                          _videoController!.play();
+                          _hideControlsAfterDelay();
+                        }
+                      });
+                    },
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Colors.black54,
+                        borderRadius: BorderRadius.circular(50),
+                      ),
+                      padding: const EdgeInsets.all(16),
+                      child: Icon(
+                        _videoController!.value.isPlaying ? Icons.pause : Icons.play_arrow,
+                        color: Colors.white,
+                        size: 50,
+                      ),
+                    ),
+                  ),
+                ),
+                Positioned(
+                  bottom: 50,
+                  left: 20,
+                  right: 20,
+                  child: VideoProgressIndicator(
+                    _videoController!,
+                    allowScrubbing: true,
+                    colors: const VideoProgressColors(
+                      playedColor: Colors.red,
+                      bufferedColor: Colors.grey,
+                      backgroundColor: Colors.white24,
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        );
+      default:
+        return const Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.insert_drive_file,
+                color: Colors.white,
+                size: 64,
+              ),
+              SizedBox(height: 16),
+              Text(
+                'Unsupported file type',
+                style: TextStyle(color: Colors.white),
+              ),
+            ],
+          ),
+        );
+    }
+  }
+}
 
 // import 'package:flutter/material.dart';
 // import 'package:intl/intl.dart';
@@ -1523,3 +2490,6 @@ try {
 //     }
 //   }
 // }
+
+
+

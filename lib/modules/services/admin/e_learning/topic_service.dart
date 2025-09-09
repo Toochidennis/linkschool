@@ -140,7 +140,7 @@ Future<List<Topic>> FetchTopic({required int syllabusId}) async {
     print('Request Body: $requestBody');
 
     final response = await _apiService.post<Map<String, dynamic>>(
-      endpoint: 'portal/elearning/topics',
+      endpoint: 'portal/elearning/topic',
       body: requestBody,
     );
 

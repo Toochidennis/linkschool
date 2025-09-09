@@ -76,106 +76,124 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
     }
   }
 
-  Future<void> _loadQuestions() async {
-    try {
-      if (widget.questions != null && widget.questions!.isNotEmpty) {
-        setState(() {
-          questions = widget.questions!.map((q) {
-            final String topic = q['topic'] ?? "General Knowledge";
-            final String questionText = q['question_text'] ?? '';
-            
-           final int questionGrade = int.tryParse(q['question_grade'].toString()) ?? 0;
+ Future<void> _loadQuestions() async {
+  try {
+    final prefs = await SharedPreferences.getInstance();
+    final String? savedQuestions = prefs.getString('preview_questions');
 
-            final List<dynamic> questionFiles =
-                q['question_files'] as List<dynamic>? ?? [];
+    if (savedQuestions != null && savedQuestions.isNotEmpty) {
+      final List<dynamic> questionsJson = jsonDecode(savedQuestions);
+      print('Loaded questions from SharedPreferences: $questionsJson');
+      setState(() {
+        questions = questionsJson.map((q) {
+          final String topic = q['topic'] ?? "General Knowledge";
+          final String questionText = q['question_text'] ?? '';
+          final int questionGrade = int.tryParse(q['question_grade'].toString()) ?? 0;
+          final List<dynamic> questionFiles = q['question_files'] as List<dynamic>? ?? [];
           final String? imagePath = questionFiles.isNotEmpty
-    ? questionFiles[0]['file_name'] as String?
-    : null;
+              ? questionFiles[0]['file_name'] as String?
+              : null;
+          final Map<String, dynamic>? correct = q['correct'] is List && (q['correct'] as List).isNotEmpty
+              ? (q['correct'] as List).first as Map<String, dynamic>?
+              : q['correct'] as Map<String, dynamic>?;
 
-            final Map<String, dynamic>? correct =
-                q['correct'] as Map<String, dynamic>?;
-
-            if (q['question_type'] == 'multiple_choice') {
-              final List<dynamic> options =
-                  q['options'] as List<dynamic>? ?? [];
-              return TextQuestion(
-                topic: topic,
-                questionGrade:questionGrade,
-                questionText: questionText,
-                imageUrl: imagePath,
-                options: options.map((opt) {
-                  final List<dynamic> optionFiles =
-                      opt['option_files'] as List<dynamic>? ?? [];
-                  return {
-                    'text': opt['text'] as String? ?? '',
-                    'imageUrl': optionFiles.isNotEmpty
-                        ? optionFiles[0]['file_name'] as String?
-                        : null,
-                    'order': opt['order'] as String?,
-                                      };
-                }).toList(),
-                correctAnswers: correct != null && correct['text'] != null
-                    ? [correct['text'] as String]
-                    : [],
-              );
-            } else {
-              // Handles 'short_answer'
-              return TypedAnswerQuestion(
-                topic: topic,
-                questionGrade:questionGrade,
-                questionText: questionText,
-                imageUrl: imagePath,
-                correctAnswer:
-                    correct != null ? correct['text'] as String? : null, 
-              );
-            }
-          }).toList();
-          _totalQuestions = questions.length;
-          // Initialize userAnswers with nulls for each question
-          userAnswers = List<dynamic>.filled(_totalQuestions, null, growable: false);
-        });
-      } else {
-        // Fallback for when no questions are passed
-        setState(() {
-          // questions = [
-          //   TextQuestion(
-          //     topic: "Anti-corruption in the world",
-          //     questionText: "What is the main reason for corruption in Nigeria?",
-          //     options: [
-          //       {'text': "Poverty", 'imageUrl': null},
-          //       {'text': "Lack of education", 'imageUrl': null},
-          //       {'text': "Weak institutions", 'imageUrl': null},
-          //       {'text': "Cultural norms", 'imageUrl': null},
-          //     ],
-          //     correctAnswers: ["Weak institutions"],
-          //   ),
-          //   ImageQuestion(
-          //     topic: "Geography",
-          //     questionText: "Which country does this flag belong to?",
-          //     imageUrl: "assets/images/e-learning/france_flag.png",
-          //     options: [
-          //       {'text': "France", 'imageUrl': null},
-          //       {'text': "Italy", 'imageUrl': null},
-          //       {'text': "Germany", 'imageUrl': null},
-          //       {'text': "Spain", 'imageUrl': null},
-          //     ],
-          //     correctAnswers: ["France"],
-          //   ),
-          //   TypedAnswerQuestion(
-          //     topic: "History",
-          //     questionText: "In which year did World War II end?",
-          //     imageUrl: "assets/images/e-learning/ww2.jpg",
-          //     correctAnswer: "1945",
-          //   ),
-          // ];
-          _totalQuestions = questions.length;
-          userAnswers = List<dynamic>.filled(_totalQuestions, null, growable: false);
-        });
-      }
-    } catch (e) {
-      debugPrint('Error loading questions: $e');
+          if (q['question_type'] == 'multiple_choice') {
+            final List<dynamic> options = q['options'] as List<dynamic>? ?? [];
+            return TextQuestion(
+              topic: topic,
+              questionGrade: questionGrade,
+              questionText: questionText,
+              imageUrl: imagePath,
+              options: options.map((opt) {
+                final List<dynamic> optionFiles = opt['option_files'] as List<dynamic>? ?? [];
+                return {
+                  'text': opt['text'] as String? ?? '',
+                  'imageUrl': optionFiles.isNotEmpty
+                      ? optionFiles[0]['file_name'] as String?
+                      : null,
+                  'order': opt['order']?.toString(),
+                };
+              }).toList(),
+              correctAnswers: correct != null && correct['text'] != null
+                  ? [correct['text'] as String]
+                  : [],
+            );
+          } else {
+            return TypedAnswerQuestion(
+              topic: topic,
+              questionGrade: questionGrade,
+              questionText: questionText,
+              imageUrl: imagePath,
+              correctAnswer: correct != null ? correct['text'] as String? : null,
+            );
+          }
+        }).toList();
+        _totalQuestions = questions.length;
+        userAnswers = List<dynamic>.filled(_totalQuestions, null, growable: false);
+      });
+    } else if (widget.questions != null && widget.questions!.isNotEmpty) {
+      print('Falling back to widget.questions: ${widget.questions}');
+      setState(() {
+        questions = widget.questions!.map((q) {
+          final String topic = q['topic'] ?? "General Knowledge";
+          final String questionText = q['question_text'] ?? '';
+          final int questionGrade = int.tryParse(q['question_grade'].toString()) ?? 0;
+          final List<dynamic> questionFiles = q['question_files'] as List<dynamic>? ?? [];
+          final String? imagePath = questionFiles.isNotEmpty
+              ? questionFiles[0]['file_name'] as String?
+              : null;
+          final Map<String, dynamic>? correct = q['correct'] as Map<String, dynamic>?;
+          if (q['question_type'] == 'multiple_choice') {
+            final List<dynamic> options = q['options'] as List<dynamic>? ?? [];
+            return TextQuestion(
+              topic: topic,
+              questionGrade: questionGrade,
+              questionText: questionText,
+              imageUrl: imagePath,
+              options: options.map((opt) {
+                final List<dynamic> optionFiles = opt['option_files'] as List<dynamic>? ?? [];
+                return {
+                  'text': opt['text'] as String? ?? '',
+                  'imageUrl': optionFiles.isNotEmpty
+                      ? optionFiles[0]['file_name'] as String?
+                      : null,
+                  'order': opt['order']?.toString(),
+                };
+              }).toList(),
+              correctAnswers: correct != null && correct['text'] != null
+                  ? [correct['text'] as String]
+                  : [],
+            );
+          } else {
+            return TypedAnswerQuestion(
+              topic: topic,
+              questionGrade: questionGrade,
+              questionText: questionText,
+              imageUrl: imagePath,
+              correctAnswer: correct != null ? correct['text'] as String? : null,
+            );
+          }
+        }).toList();
+        _totalQuestions = questions.length;
+        userAnswers = List<dynamic>.filled(_totalQuestions, null, growable: false);
+      });
+    } else {
+      print('No questions available');
+      setState(() {
+        questions = [];
+        _totalQuestions = questions.length;
+        userAnswers = List<dynamic>.filled(_totalQuestions, null, growable: false);
+      });
     }
+  } catch (e) {
+    print('Error loading questions: $e');
+    setState(() {
+      questions = [];
+      _totalQuestions = questions.length;
+      userAnswers = List<dynamic>.filled(_totalQuestions, null, growable: false);
+    });
   }
+}
 
   @override
   Widget build(BuildContext context) {
@@ -186,7 +204,13 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
       appBar: AppBar(
         backgroundColor: AppColors.eLearningBtnColor1,
         leading: IconButton(
-          onPressed: () => Navigator.of(context).pop(),
+          onPressed: () async {
+      // Clear SharedPreferences
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove('preview_questions');
+      // Navigate back
+      Navigator.of(context).pop();
+    },
           icon: Image.asset(
             'assets/icons/arrow_back.png',
             color: AppColors.backgroundLight,

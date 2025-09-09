@@ -22,8 +22,15 @@ import 'package:linkschool/modules/model/e-learning/question_model.dart';
 import 'package:linkschool/modules/model/e-learning/syllabus_content_model.dart';
 
 import 'package:linkschool/modules/providers/admin/e_learning/delete_sylabus_content.dart';
+import 'package:linkschool/modules/staff/e_learning/sub_screens/staff_add_material_screen.dart';
 
 import 'package:linkschool/modules/staff/e_learning/sub_screens/staff_assignment_screen.dart' hide Assignment;
+import 'package:linkschool/modules/staff/e_learning/sub_screens/staff_create_topic_screen.dart';
+import 'package:linkschool/modules/staff/e_learning/sub_screens/staff_question_screen.dart';
+import 'package:linkschool/modules/staff/e_learning/view/staff_assignment_details_screen.dart';
+import 'package:linkschool/modules/staff/e_learning/view/staff_material_details_screen.dart';
+import 'package:linkschool/modules/staff/e_learning/view/staff_quiz_screen.dart';
+import 'package:linkschool/modules/staff/e_learning/view/staffview_question.dart' hide AttachmentItem;
 
 import 'package:provider/provider.dart';
 import 'package:linkschool/modules/model/e-learning/material_model.dart' as custom;
@@ -34,6 +41,7 @@ import '../../providers/admin/e_learning/syllabus_content_provider.dart';
 
 class StaffEmptySubjectScreen extends StatefulWidget {
   final String? courseTitle;
+  final List<Map<String, dynamic>>? classList;
   final String? courseId;
   final String? levelId;
   final String? classId;
@@ -47,6 +55,7 @@ class StaffEmptySubjectScreen extends StatefulWidget {
     this.syllabusId,
     this.courseTitle,
     this.courseId,
+    this.classList,
     this.levelId,
     this.classId,
     this.courseName,
@@ -273,6 +282,7 @@ class _EmptySubjectScreenState extends State<StaffEmptySubjectScreen>
 
     return InkWell(
       onTap: () {
+        print("1233${widget.classList}");
         Navigator.pop(context);
         switch (text) {
           case 'Assignment':
@@ -280,6 +290,7 @@ class _EmptySubjectScreenState extends State<StaffEmptySubjectScreen>
               context,
               MaterialPageRoute(
                 builder: (context) => StaffAssignmentScreen(
+               
                   syllabusId: widget.syllabusId,
                   classId: widget.classId,
                   levelId: widget.levelId,
@@ -307,7 +318,8 @@ class _EmptySubjectScreenState extends State<StaffEmptySubjectScreen>
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (context) => QuestionScreen(
+                builder: (context) => StaffQuestionScreen(
+                   classes:widget.classList,
                   classId: widget.classId,
                   syllabusId: widget.syllabusId!,
                   courseId: widget.courseId,
@@ -325,7 +337,8 @@ class _EmptySubjectScreenState extends State<StaffEmptySubjectScreen>
               context,
               MaterialPageRoute(
                 fullscreenDialog: true,
-                builder: (BuildContext context) => CreateTopicScreen(
+                builder: (BuildContext context) => StaffCreateTopicScreen(
+                   classes:widget.classList,
                   syllabusId: widget.syllabusId,
                   courseId: widget.courseId,
                   courseName: widget.courseName,
@@ -334,13 +347,15 @@ class _EmptySubjectScreenState extends State<StaffEmptySubjectScreen>
                 ),
               ),
             );
+            print("bbbbbbbbb${widget.classId}");
             break;
           case 'Material':
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (_) => AddMaterialScreen(
-                  syllabusClasses: widget.syllabusClasses,
+                builder: (_) => StaffAddMaterialScreen(
+
+                  syllabusClasses:widget.syllabusClasses,
                   courseId: widget.courseId,
                   levelId: widget.levelId,
                   classId: widget.classId,
@@ -1219,7 +1234,7 @@ class _EmptySubjectScreenState extends State<StaffEmptySubjectScreen>
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => AdminAssignmentDetailsScreen(
+            builder: (context) => StaffAssignmentDetailsScreen(
               itemId: item.id,
               assignment: assignment,
               syllabusId: widget.syllabusId,
@@ -1274,13 +1289,13 @@ class _EmptySubjectScreenState extends State<StaffEmptySubjectScreen>
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => QuizScreen(
+            builder: (context) => StaffQuizScreen(
               questiondata: questionData,
               class_ids: item.classes
                   .map((c) => {'id': c.id.toString(), 'name': c.name})
                   .toList(),
-              syllabusClasses:
-                  item.classes.map((c) => {'id': c.id.toString(), 'name': c.name}).join(', '),
+              syllabusClasses:widget.syllabusClasses,
+                 
               questions: item.questions,
               correctAnswers: correctAnswers,
               question: Question(
@@ -1306,7 +1321,7 @@ class _EmptySubjectScreenState extends State<StaffEmptySubjectScreen>
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (_) => AdminMaterialDetailsScreen(
+            builder: (_) => StaffMaterialDetailsScreen(
               itemId: item.id,
               syllabusId: widget.syllabusId,
               courseId: widget.courseId,
@@ -1376,7 +1391,7 @@ class _EmptySubjectScreenState extends State<StaffEmptySubjectScreen>
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => AdminAssignmentScreen(
+            builder: (context) => StaffAssignmentScreen(
               syllabusId: widget.syllabusId,
               classId: widget.classId,
               courseId: widget.courseId,
@@ -1384,7 +1399,7 @@ class _EmptySubjectScreenState extends State<StaffEmptySubjectScreen>
               courseName: widget.courseName,
               syllabusClasses: widget.syllabusClasses,
               editMode: true,
-              assignmentToEdit: Assignment(
+              assignmentToEdit: AssignmentFormData(
                 id: item.id,
                 title: item.title,
                 description: item.description,
@@ -1417,7 +1432,7 @@ class _EmptySubjectScreenState extends State<StaffEmptySubjectScreen>
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => ViewQuestionScreen(
+            builder: (context) => StaffViewQuestionScreen(
               question: Question(
                 id: item.id,
                 title: item.title,
@@ -1440,8 +1455,7 @@ class _EmptySubjectScreenState extends State<StaffEmptySubjectScreen>
               class_ids: item.classes
                   .map((c) => {'id': c.id.toString(), 'name': c.name})
                   .toList(),
-              syllabusClasses:
-                  item.classes.map((c) => {'id': c.id.toString(), 'name': c.name}).join(', '),
+              syllabusClasses:widget.syllabusClasses,
               questions: item.questions,
               editMode: true,
               onSaveFlag: setRefreshFlag,
@@ -1455,7 +1469,7 @@ class _EmptySubjectScreenState extends State<StaffEmptySubjectScreen>
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => AddMaterialScreen(
+            builder: (context) => StaffAddMaterialScreen(
               syllabusClasses: widget.syllabusClasses,
               courseId: widget.courseId,
               levelId: widget.levelId,
@@ -1492,7 +1506,7 @@ class _EmptySubjectScreenState extends State<StaffEmptySubjectScreen>
           context,
           MaterialPageRoute(
             fullscreenDialog: true,
-            builder: (BuildContext context) => CreateTopicScreen(
+            builder: (BuildContext context) => StaffCreateTopicScreen(
               syllabusId: widget.syllabusId,
               courseId: widget.courseId,
               levelId: widget.levelId,
@@ -1592,12 +1606,12 @@ class _EmptySubjectScreenState extends State<StaffEmptySubjectScreen>
       children: topic.children,
     );
 
-    print('Passing topic to edit screen: ${topicToEdit.name}');
+    print('Passing ${topicToEdit.name} topic${topicToEdit.type} to edit screen: ${topicToEdit.children.length}');
     Navigator.push(
       context,
       MaterialPageRoute(
         fullscreenDialog: true,
-        builder: (BuildContext context) => CreateTopicScreen(
+        builder: (BuildContext context) => StaffCreateTopicScreen(
           syllabusId: widget.syllabusId,
           courseId: widget.courseId,
           levelId: widget.levelId,

@@ -60,7 +60,7 @@ class _StaffElearningScreenState extends State<StaffElearningScreen> {
 
      WidgetsBinding.instance.addPostFrameCallback((_) {
     final provider = Provider.of<StaffOverviewProvider>(context, listen: false);
-    provider.fetchOverview("3", "2025"); // pass term/year dynamically if you have them
+    // pass term/year dynamically if you have them
   });
     assessmentController = PageController(viewportFraction: 0.90);
     activityController = PageController(viewportFraction: 0.90);
@@ -128,7 +128,7 @@ class _StaffElearningScreenState extends State<StaffElearningScreen> {
     orElse: () => {'class_id': '', 'class_name': ''},
   );
 
-  print("Class Name: ${classData['class_name']}");
+  
 
   // Construct classesList
   final List<Map<String, dynamic>> classesList = [
@@ -137,7 +137,7 @@ class _StaffElearningScreenState extends State<StaffElearningScreen> {
       'name': classData['class_name']?.toString() ?? '',
     }
   ];
-
+      print("Class Name: $classesList");
   // Validate classesList
   if (classesList[0]['id'].isEmpty || classesList[0]['name'].isEmpty) {
     print("Warning: Invalid class data - id or name is empty");
@@ -187,7 +187,10 @@ Future<void> _loadUserData() async {
       final response = processedData['response'] ?? processedData;
       final data = response['data'] ?? response;
       final settings = data['settings'] ?? {};
+      final profile = data['profile'] ?? {};
+       final staffId = profile['staff_id']?.toString() ?? '';
       final term = settings['term']?.toString() ?? '';
+      final year = settings['year']?.toString() ?? '';
       final rawCourses = data['courses'] ?? [];
 
       // Build a simpler "levelsWithCourses"
@@ -209,6 +212,9 @@ Future<void> _loadUserData() async {
         levelsWithCourses = grouped;
         academicTerm = term;
       });
+
+      final provider = Provider.of<StaffOverviewProvider>(context, listen: false);
+       provider.fetchOverview(academicTerm, year ,staffId); 
 
       print("levelsWithCourses: $levelsWithCourses");
     }

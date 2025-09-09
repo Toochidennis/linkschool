@@ -4,6 +4,10 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:hive/hive.dart';
+import 'package:linkschool/modules/providers/admin/e_learning/assignment_provider.dart' as provider;
+
+
+
 import 'package:image_picker/image_picker.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:intl/intl.dart';
@@ -14,10 +18,11 @@ import 'package:linkschool/modules/common/buttons/custom_save_elevated_button.da
 import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/custom_toaster.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
-import 'package:linkschool/modules/common/widgets/portal/attachmentItem.dart';
-import 'package:linkschool/modules/common/widgets/portal/e_learning/select_classes_dialog.dart';
-import 'package:linkschool/modules/providers/admin/e_learning/assignment_provider.dart';
+import 'package:linkschool/modules/staff/e_learning/sub_screens/staff_select_topic.dart';
 import 'package:provider/provider.dart';
+import '../../../common/widgets/portal/attachmentItem.dart';
+
+
 
 
 
@@ -28,10 +33,10 @@ class StaffAssignmentScreen extends StatefulWidget {
   final String? courseName;
   final String? levelId;
   final int? syllabusId;
-  final syllabusClasses;
+  final List<Map<String,dynamic>>? syllabusClasses;
   final int? itemId;
   final bool editMode;
-  final Assignment? assignmentToEdit;
+  final AssignmentFormData? assignmentToEdit;
 
   const StaffAssignmentScreen({
     super.key,
@@ -99,6 +104,7 @@ class _StaffAssignmentScreenState extends State<StaffAssignmentScreen> {
   }
 
   Future<void> _loadUserData() async {
+    print('ffffffdata: ${widget.syllabusClasses}');
     try {
       final userBox = Hive.box('userData');
       final storedUserData = userBox.get('userData') ?? userBox.get('loginResponse');
@@ -120,6 +126,7 @@ class _StaffAssignmentScreenState extends State<StaffAssignmentScreen> {
       }
     } catch (e) {
       print('Error loading user data: $e');
+      print('ffffffdata: ${widget.syllabusClasses}');
     }
   }
 
@@ -216,31 +223,7 @@ class _StaffAssignmentScreenState extends State<StaffAssignmentScreen> {
                   ),
                 ),
                 const SizedBox(height: 32.0),
-                Text(
-                  'Select the learning group for this syllabus: *',
-                  style: AppTextStyles.normal600(fontSize: 16.0, color: Colors.black),
-                ),
-                const SizedBox(height: 16.0),
-                _buildGroupRow(
-                  context,
-                  iconPath: 'assets/icons/e_learning/people.svg',
-                  text: _selectedClass,
-                  onTap: () async {
-                    await Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (context) => SelectClassesDialog(
-                          onSave: (selectedClass) {
-                            setState(() {
-                              _selectedClass = selectedClass;
-                            });
-                          },
-                          levelId: widget.levelId,
-                          syllabusClasses: widget.syllabusClasses,
-                        ),
-                      ),
-                    );
-                  },
-                ),
+                
                 Padding(
                   padding: const EdgeInsets.only(bottom: 8.0),
                   child: _buildAttachmentsSection(),
@@ -784,7 +767,8 @@ class _StaffAssignmentScreenState extends State<StaffAssignmentScreen> {
     final result = await Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => SelectTopicScreen(
+        builder: (context) => StaffSelectTopicScreen(
+          classes:widget.syllabusClasses,
           callingScreen: '',
           syllabusId: widget.syllabusId,
           levelId: widget.levelId!,
@@ -817,10 +801,7 @@ class _StaffAssignmentScreenState extends State<StaffAssignmentScreen> {
       CustomToaster.toastError(context, 'Error', 'Please enter a description');
       return;
     }
-    if (_selectedClass == 'Select classes') {
-      CustomToaster.toastError(context, 'Error', 'Please select at least one class');
-      return;
-    }
+  
     if (_startDate == null || _endDate == null) {
       CustomToaster.toastError(context, 'Error', 'Please select both start and end dates');
       return;
@@ -835,7 +816,7 @@ class _StaffAssignmentScreenState extends State<StaffAssignmentScreen> {
     });
 
     try {
-            final assignmentProvider = Provider.of<AssignmentProvider>(context, listen: false);
+            final assignmentProvider = Provider.of<provider.AssignmentProvider>(context, listen: false);
       final userBox = Hive.box('userData');
       final storedUserData = userBox.get('userData') ?? userBox.get('loginResponse');
       final processedData = storedUserData is String
@@ -846,29 +827,30 @@ class _StaffAssignmentScreenState extends State<StaffAssignmentScreen> {
       final classes = data['classes'] ?? [];
       final selectedClassIds = userBox.get('selectedClassIds') ?? [];
 
-      final classIdList = selectedClassIds.map<Map<String, String>>((classId) {
-        final classIdStr = classId.toString();
-        final classData = classes.firstWhere(
-          (cls) => cls['id'].toString() == classIdStr,
-          orElse: () => {'id': classIdStr, 'class_name': 'Unknown'},
-        );
-        return {
-          'id': classIdStr,
-          'name': (classData['class_name']?.toString() ?? 'Unknown'),
-        };
-      }).toList();
+      final classIdList = selectedClassIds.map<Map<String, dynamic>>((classId) {
+  final classIdStr = classId.toString();
+  final classData = classes.firstWhere(
+    (cls) => cls['id'].toString() == classIdStr,
+    orElse: () => {'class_id': classIdStr, 'class_name': 'Unknown'},
+  );
+  return {
+    'class_id': classIdStr,
+    'class_name': (classData['class_name']?.toString() ?? 'Unknown'),
+  };
+}).toList();
 
-      if (classIdList.isEmpty && widget.classId != null) {
-        final classIdStr = widget.classId!;
-        final classData = classes.firstWhere(
-          (cls) => cls['id'].toString() == classIdStr,
-          orElse: () => {'id': classIdStr, 'class_name': _selectedClass},
-        );
-        classIdList.add({
-          'id': classIdStr,
-          'name': (classData['class_name']?.toString() ?? _selectedClass),
-        });
-      }
+
+    if (classIdList.isEmpty && widget.classId != null) {
+  final classIdStr = widget.classId!;
+  final classData = classes.firstWhere(
+    (cls) => cls['id'].toString() == classIdStr,
+    orElse: () => {'class_id': classIdStr, 'class_name': _selectedClass},
+  );
+  classIdList.add({
+    'class_id': classIdStr,
+    'class_name': (classData['class_name']?.toString() ?? _selectedClass),
+  });
+}
 
       final Map<String, dynamic> assignmentPayload = {
         'title': _titleController.text,
@@ -885,11 +867,11 @@ class _StaffAssignmentScreenState extends State<StaffAssignmentScreen> {
         'start_date': _formatDate(_startDate),
         'end_date': _formatDate(_endDate),
         'grade': _marks.replaceAll(RegExp(r'[^0-9]'), ''),
-        'classes': classIdList.isNotEmpty
-            ? classIdList
-            : [
-                {'id': '', 'name': ''},
-              ],
+        'classes':widget.syllabusClasses,
+    // ? classIdList
+    // : [
+    //     {'class_id': '', 'class_name': ''},
+    //   ],
         'files': _attachments.map((attachment) {
           return {
             'type': _getAttachmentType(attachment.iconPath!, attachment.fileName!),
@@ -961,7 +943,7 @@ String _getAttachmentType(String iconPath, String content) {
   }
 }
 
-class Assignment {
+class  AssignmentFormData  {
   final int? id;
   final String title;
   final String description;
@@ -972,7 +954,7 @@ class Assignment {
   final String marks;
   final DateTime createdAt;
 
-  Assignment({
+   AssignmentFormData ({
     this.id,
     required this.title,
     required this.description,
