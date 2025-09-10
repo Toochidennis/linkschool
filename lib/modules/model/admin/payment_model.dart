@@ -383,7 +383,6 @@ class Settings {
 }
 
 
-// Add this to modules/model/admin/payment_model.dart or create if not exists
 // IncomeReport Models
 
 class IncomeSummary {
@@ -407,7 +406,7 @@ class ChartPoint {
 }
 
 class IncomeTransaction {
-  final int id;
+  final String? id; // Changed to String? to handle '2025-09' format
   final String? reference;
   final String? regNo;
   final String? description;
@@ -426,7 +425,7 @@ class IncomeTransaction {
   final int? uniqueStudents;
 
   IncomeTransaction.fromJson(Map<String, dynamic> json)
-      : id = json['id'] as int,
+      : id = json['id']?.toString(), // Handle both int and String id
         reference = json['reference'],
         regNo = json['reg_no'],
         description = json['description'],
@@ -455,5 +454,7 @@ class IncomeReport {
   IncomeReport.fromJson(Map<String, dynamic> json)
       : summary = IncomeSummary.fromJson(json['summary']),
         chartData = (json['chart_data'] as List).map((e) => ChartPoint.fromJson(e.cast<String, dynamic>())).toList(),
-        transactions = (json['transactions'] as List).map((e) => IncomeTransaction.fromJson(e.cast<String, dynamic>())).toList();
+        transactions = (json['transactions'] as List)
+            .map((e) => IncomeTransaction.fromJson(e.cast<String, dynamic>()))
+            .toList();
 }

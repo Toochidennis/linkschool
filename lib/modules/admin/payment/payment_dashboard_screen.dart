@@ -17,7 +17,7 @@ import 'expenditure/expenditure_screen.dart';
 import 'receipt/generate_report/report_payment.dart';
 import 'receipt/payment_outstanding_screen.dart';
 import 'receipt/payment_received_screen.dart';
-import 'receipt/receipt_screen.dart';
+import 'receipt/receipt_screen.dart' hide Level, ClassModel;
 import 'settings/payment_setting_screen.dart';
 
 class PaymentDashboardScreen extends StatefulWidget {
