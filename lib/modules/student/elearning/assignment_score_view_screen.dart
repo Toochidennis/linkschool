@@ -7,6 +7,7 @@ import 'package:linkschool/modules/providers/student/marked_assignment_provider.
 import 'package:linkschool/modules/student/elearning/resubmit_modal.dart';
 import 'package:provider/provider.dart';
 
+import '../../common/app_colors.dart';
 import '../../model/student/elearningcontent_model.dart';
 
 class AssignmentScorePage extends StatefulWidget {
@@ -112,7 +113,13 @@ class _AssignmentScorePageState extends State<AssignmentScorePage> {
     if (isLoading || markedass== null) {
       return const Scaffold(
         body: Center(
-          child: CircularProgressIndicator(),
+          child: Column(mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+
+              CircularProgressIndicator(),
+              Text("Loading your marked assignment" ,style: TextStyle(color: AppColors.paymentBtnColor1),),
+            ],
+          ),
         ),
       );
     }

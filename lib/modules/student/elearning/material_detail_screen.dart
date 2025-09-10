@@ -126,6 +126,8 @@ class _MaterialDetailScreen extends State<MaterialDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
+    print("This is the content ${widget.childContent.contentFiles}");
+
     final Brightness brightness = Theme.of(context).brightness;
     opacity = brightness == Brightness.light ? 0.1 : 0.15;
     return Scaffold(
@@ -580,4 +582,5 @@ _buildCommentInput()
       child: Divider(color: Colors.grey.withOpacity(0.5)),
     );
   }
+
 }

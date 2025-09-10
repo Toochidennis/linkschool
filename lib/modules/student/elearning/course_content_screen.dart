@@ -12,6 +12,7 @@ import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/providers/student/elearningcontent_provider.dart';
 import 'package:linkschool/modules/student/elearning/assignment_detail_screen.dart';
 import 'package:linkschool/modules/student/elearning/material_screen.dart';
+import 'package:linkschool/modules/student/elearning/quiz_score_page.dart';
 import 'package:provider/provider.dart';
 
 import '../../model/student/dashboard_model.dart';
@@ -148,10 +149,22 @@ class _CourseContentScreenState extends State<CourseContentScreen> {
                   description: ellipsize(settings?.description) ?? "No description",
                   progressBarPercentage: 75,
                   onTap:(){
-                    Navigator.push(
-                      context,MaterialPageRoute(
-                      builder: (context) => QuizIntroPage(childContent: child,),),
-                    );
+                    final userBox = Hive.box('userData');
+                    final List<dynamic> quizzestaken = userBox.get('quizzes', defaultValue: []);
+                    final int? quizId = child.settings!.id;
+                    print("THe quiz id ${quizId}");
+                    if (quizzestaken.contains(quizId)) {
+                      Navigator.push(
+                        context,MaterialPageRoute(
+                        builder: (context) => QuizScorePage(childContent: child,year:int.parse(getuserdata()['settings']['year']), term:getuserdata()['settings']['term']),),
+                      );
+                    } else {
+                      Navigator.push(
+                        context,MaterialPageRoute(
+                        builder: (context) => QuizIntroPage(childContent: child,),),
+                      );
+                    }
+
                   }
               );
           }
@@ -299,10 +312,21 @@ class _CourseContentScreenState extends State<CourseContentScreen> {
                         description: ellipsize(settings?.description) ?? "No description",
                         progressBarPercentage: 75,
                         onTap:(){
-                          Navigator.push(
-                            context,MaterialPageRoute(
-                            builder: (context) => QuizIntroPage(childContent: child,),),
-                          );
+                          final userBox = Hive.box('userData');
+                          final List<dynamic> quizzestaken = userBox.get('quizzes', defaultValue: []);
+                          final int? quizId = child.settings!.id;
+                          print("THe quiz id ${quizId}");
+                          if (quizzestaken.contains(quizId)) {
+                            Navigator.push(
+                              context,MaterialPageRoute(
+                              builder: (context) => QuizScorePage(childContent: child,year:int.parse(getuserdata()['settings']['year']), term:getuserdata()['settings']['term']),),
+                            );
+                          } else {
+                            Navigator.push(
+                              context,MaterialPageRoute(
+                              builder: (context) => QuizIntroPage(childContent: child,),),
+                            );
+                          }
                         }
                       );
                     }
@@ -328,10 +352,20 @@ class _CourseContentScreenState extends State<CourseContentScreen> {
                           description: ellipsize(child?.description) ?? "No description",
                           progressBarPercentage: 75,
                           onTap:(){
-                            Navigator.push(
-                              context,MaterialPageRoute(
-                              builder: (context) => AssignmentDetailsScreen(childContent: child, title: e.title, id: e.id!),),
-                            );
+                            final userBox = Hive.box('userData');
+                            final List<dynamic> assignmentssubmitted = userBox.get('assignments', defaultValue: []);
+                            final int? assignmentId = child.id;
+                            if (assignmentssubmitted.contains(assignmentId)) {
+                              Navigator.push(
+                                context,MaterialPageRoute(
+                                builder: (context) => AssignmentScorePage(childContent: child,year:int.parse(getuserdata()['settings']['year']), term:getuserdata()['settings']['term'], attachedMaterials: [""],),),
+                              );
+                            } else {
+                              Navigator.push(
+                                context,MaterialPageRoute(
+                                builder: (context) => AssignmentDetailsScreen(childContent: child, title: e.title, id: e.id ?? 0),),
+                              );
+                            }
                           }
                       );
                     } else {

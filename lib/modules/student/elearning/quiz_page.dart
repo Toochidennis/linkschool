@@ -448,6 +448,7 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
                       (question as TextQuestion).correctAnswers.contains(value);
 
                   userAnswers[_currentQuestionIndex] = value;
+                  print("ansss ${userAnswers}");
                 });
               },
               activeColor: Colors.blue, // Radio color when selected
@@ -464,6 +465,8 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
             _isAnswered = value.isNotEmpty;
             _isCorrect = question.correctAnswer != null &&
                 value.trim().toLowerCase() == question.correctAnswer!.toLowerCase();
+            userAnswers[_currentQuestionIndex] = value;
+
           });
         },
         decoration: const InputDecoration(

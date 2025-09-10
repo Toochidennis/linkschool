@@ -287,6 +287,7 @@ class _AttachmentPreviewScreenState extends State<AttachmentPreviewScreen> {
                   bool success = await service.submitAssignment(AssignmentSubmission.fromJson(assignmentPayload));
 //
                   if (success) {
+
                     final userBox = Hive.box('userData');
                     final List<dynamic> assignmentssubmitted = userBox.get('assignments', defaultValue: []);
                     final int? assignmentId = widget.childContent!.id;
