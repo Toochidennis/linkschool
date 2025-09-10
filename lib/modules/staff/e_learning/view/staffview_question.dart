@@ -205,7 +205,7 @@ void _initializeQuestions() {
       'title': questionText,
       'grade': grade,
       'topic': q['topic'] ?? currentQuestion.topic,
-      'options': optionsData, // Fixed: Use properly structured options data
+      'options': optionsData, 
       'correct': q['correct'] ?? [],
       'imagePath': imagePath,
       'imageName': imageName,
@@ -822,14 +822,24 @@ Widget _buildBottomNavigation() {
             ),
             onPressed: () async {
               print('Navigating to AssessmentScreen with questions: $createdQuestions');
-              await _saveQuestionsToPrefs();
+              // Prepare merged questions for preview
+              List<Map<String, dynamic>> questionsToPreview = createdQuestions;
+              if (widget.editMode && (widget.questions != null && widget.questions!.isNotEmpty)) {
+                // Merge createdQuestions with widget.questions to ensure all questions are included
+                final existingQuestions = widget.questions!;
+                final existingIds = existingQuestions.map((q) => q['question_id']?.toString() ?? '').toSet();
+                final newQuestions = createdQuestions.where((q) => !existingIds.contains(q['question_id']?.toString() ?? '')).toList();
+                questionsToPreview = [...existingQuestions, ...newQuestions];
+              }
+              // Save merged questions to SharedPreferences for preview
+              await _saveQuestionsToPrefsForPreview(questionsToPreview);
               Navigator.push(
                 context,
                 MaterialPageRoute(
                   builder: (context) => AssessmentScreen(
                     timer: currentQuestion.duration,
                     duration: currentQuestion.duration,
-                    questions: createdQuestions, // Pass the full list
+                    questions: questionsToPreview, // Pass merged list
                     title: widget.questiondata['title'],
                     mark: widget.questiondata['marks']?.toString(),
                   ),
@@ -994,9 +1004,9 @@ Future<void> _saveQuestionsToPrefs() async {
 // Add this method to immediately save current questions to SharedPreferences
 Future<void> _saveCurrentQuestionsToPrefs() async {
   if (createdQuestions.isEmpty) return;
-  
+
   final prefs = await SharedPreferences.getInstance();
-  
+
   // Prepare questions data for serialization
   final questionsToSave = createdQuestions.map((q) {
     // Get current values from controllers
@@ -1004,7 +1014,7 @@ Future<void> _saveCurrentQuestionsToPrefs() async {
     final marksController = q['marksController'] as TextEditingController;
     final optionControllers = q['optionControllers'] as List<TextEditingController>;
     final correctAnswerController = q['correctAnswerController'] as TextEditingController?;
-    
+
     return {
       // Include question_id only in edit mode
       if (widget.editMode) 'question_id': q['question_id']?.toString() ?? '',
@@ -1039,7 +1049,7 @@ Future<void> _saveCurrentQuestionsToPrefs() async {
                 }
               : {'order': 0, 'text': ''}
           : {
-              'order': 0, 
+              'order': 0,
               'text': correctAnswerController?.text ?? ''
             },
       'question_files': q['imagePath'] != null
@@ -1053,10 +1063,41 @@ Future<void> _saveCurrentQuestionsToPrefs() async {
           : [],
     };
   }).toList();
-  
+
   // Save to SharedPreferences
   await prefs.setString('preview_questions', jsonEncode(questionsToSave));
   print('Saved ${questionsToSave.length} questions to SharedPreferences');
+}
+
+// Method to save questions to SharedPreferences for preview
+Future<void> _saveQuestionsToPrefsForPreview(List<Map<String, dynamic>> questionsToSave) async {
+  final prefs = await SharedPreferences.getInstance();
+
+  // Prepare questions data for serialization
+  final questionsData = questionsToSave.map((q) {
+    return {
+      'question_id': q['question_id']?.toString() ?? '',
+      'question_text': q['question_text'] ?? q['title'] ?? '',
+      'question_type': q['question_type'] ?? q['type'] ?? '',
+      'question_grade': q['question_grade']?.toString() ?? q['grade']?.toString() ?? '1',
+      'topic': q['topic'] ?? '',
+      'options': q['options'] ?? [],
+      'correct': q['correct'] ?? [],
+      'question_files': q['question_files'] ?? (q['imagePath'] != null
+          ? [
+              {
+                'file_name': q['imageName'] ?? '',
+                'file': q['imagePath'] ?? '',
+                'type': 'image',
+              }
+            ]
+          : []),
+    };
+  }).toList();
+
+  // Save to SharedPreferences
+  await prefs.setString('preview_questions', jsonEncode(questionsData));
+  print('Saved ${questionsData.length} questions to SharedPreferences for preview');
 }
 
 Widget _buildQuestionCard(

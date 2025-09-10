@@ -127,159 +127,170 @@ class _AdminAssignmentScreenState extends State<AdminAssignmentScreen> {
     final Brightness brightness = Theme.of(context).brightness;
     opacity = brightness == Brightness.light ? 0.1 : 0.15;
 
-    return Scaffold(
-      appBar: AppBar(
-        leading: IconButton(
-          onPressed: () => Navigator.of(context).pop(),
-          icon: Image.asset(
-            'assets/icons/arrow_back.png',
-            color: AppColors.primaryLight,
-            width: 34.0,
-            height: 34.0,
-          ),
-        ),
-        title: Text(
-          'Assignment',
-          style: AppTextStyles.normal600(
-            fontSize: 24.0,
-            color: AppColors.primaryLight,
-          ),
-        ),
-        backgroundColor: AppColors.backgroundLight,
-        flexibleSpace: FlexibleSpaceBar(
-          background: Stack(
-            children: [
-              Positioned.fill(
-                child: Opacity(
-                  opacity: opacity,
-                  child: Image.asset(
-                    'assets/images/background.png',
-                    fit: BoxFit.cover,
-                  ),
+    return WillPopScope(
+      onWillPop: () async {
+          FocusScope.of(context).unfocus();
+        return true;
+      },
+      child: GestureDetector(
+        onTap: () => FocusScope.of(context).unfocus(),
+        child: Scaffold(
+          appBar: AppBar(
+            leading: IconButton(
+              onPressed: () => Navigator.of(context).pop(),
+              icon: Image.asset(
+                'assets/icons/arrow_back.png',
+                color: AppColors.primaryLight,
+                width: 34.0,
+                height: 34.0,
+              ),
+            ),
+            title: Text(
+              'Assignment',
+              style: AppTextStyles.normal600(
+                fontSize: 24.0,
+                color: AppColors.primaryLight,
+              ),
+            ),
+            backgroundColor: AppColors.backgroundLight,
+            flexibleSpace: FlexibleSpaceBar(
+              background: Stack(
+                children: [
+                  Positioned.fill(
+                    child: Opacity(
+                      opacity: opacity,
+                      child: Image.asset(
+                        'assets/images/background.png',
+                        fit: BoxFit.cover,
+                      ),
+                    ),
+                  )
+                ],
+              ),
+            ),
+            actions: [
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                child: CustomSaveElevatedButton(
+                  onPressed: _saveAssignment,
+                  text: 'Save',
+                  isLoading: _isSaving,
                 ),
-              )
+              ),
             ],
           ),
-        ),
-        actions: [
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8.0),
-            child: CustomSaveElevatedButton(
-              onPressed: _saveAssignment,
-              text: 'Save',
-              isLoading: _isSaving,
-            ),
-          ),
-        ],
-      ),
-      body: Container(
-        decoration: Constants.customBoxDecoration(context),
-        child: Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Title:',
-                  style: AppTextStyles.normal600(fontSize: 16.0, color: Colors.black),
-                ),
-                const SizedBox(height: 8.0),
-                TextField(
-                  controller: _titleController,
-                  decoration: InputDecoration(
-                    hintText: 'e.g. Dying and bleaching',
-                    hintStyle: const TextStyle(color: Colors.grey),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8.0),
+          body: Container(
+            decoration: Constants.customBoxDecoration(context),
+            child: Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Title:',
+                      style: AppTextStyles.normal600(fontSize: 16.0, color: Colors.black),
                     ),
-                    contentPadding: const EdgeInsets.all(12.0),
-                  ),
-                ),
-                const SizedBox(height: 16.0),
-                Text(
-                  'Description:',
-                  style: AppTextStyles.normal600(fontSize: 16.0, color: Colors.black),
-                ),
-                const SizedBox(height: 8.0),
-                TextField(
-                  controller: _descriptionController,
-                  maxLines: 5,
-                  decoration: InputDecoration(
-                    hintText: 'Type here...',
-                    hintStyle: const TextStyle(color: Colors.grey),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8.0),
-                    ),
-                    contentPadding: const EdgeInsets.all(12.0),
-                  ),
-                ),
-                const SizedBox(height: 32.0),
-                Text(
-                  'Select the learning group for this syllabus: *',
-                  style: AppTextStyles.normal600(fontSize: 16.0, color: Colors.black),
-                ),
-                const SizedBox(height: 16.0),
-                _buildGroupRow(
-                  context,
-                  iconPath: 'assets/icons/e_learning/people.svg',
-                  text: _selectedClass,
-                  onTap: () async {
-                    await Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (context) => SelectClassesDialog(
-                          onSave: (selectedClass) {
-                            setState(() {
-                              _selectedClass = selectedClass;
-                            });
-                          },
-                          levelId: widget.levelId,
-                          syllabusClasses: widget.syllabusClasses,
+                    const SizedBox(height: 8.0),
+                    TextField(
+                      controller: _titleController,
+                      textCapitalization: TextCapitalization.sentences,
+                      decoration: InputDecoration(
+                        hintText: 'e.g. Dying and bleaching',
+                        hintStyle: const TextStyle(color: Colors.grey),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8.0),
                         ),
+                        contentPadding: const EdgeInsets.all(12.0),
                       ),
-                    );
-                  },
+                    ),
+                    const SizedBox(height: 16.0),
+                    Text(
+                      'Description:',
+                      style: AppTextStyles.normal600(fontSize: 16.0, color: Colors.black),
+                    ),
+                    const SizedBox(height: 8.0),
+                    TextField(
+                      controller: _descriptionController,
+                      maxLines: 5,
+                      textCapitalization: TextCapitalization.sentences,
+                      decoration: InputDecoration(
+                        hintText: 'Type here...',
+                        hintStyle: const TextStyle(color: Colors.grey),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8.0),
+                        ),
+                        contentPadding: const EdgeInsets.all(12.0),
+                      ),
+                    ),
+                    const SizedBox(height: 32.0),
+                    Text(
+                      'Select the learning group for this syllabus: *',
+                      style: AppTextStyles.normal600(fontSize: 16.0, color: Colors.black),
+                    ),
+                    const SizedBox(height: 16.0),
+                    _buildGroupRow(
+                      context,
+                      iconPath: 'assets/icons/e_learning/people.svg',
+                      text: _selectedClass,
+                      onTap: () async {
+                        await Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (context) => SelectClassesDialog(
+                              onSave: (selectedClass) {
+                                setState(() {
+                                  _selectedClass = selectedClass;
+                                });
+                              },
+                              levelId: widget.levelId,
+                              syllabusClasses: widget.syllabusClasses,
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 8.0),
+                      child: _buildAttachmentsSection(),
+                    ),
+                    Divider(color: Colors.grey.withOpacity(0.5)),
+                    Padding(
+                      padding: const EdgeInsets.only(top: 8.0),
+                      child: _buildGroupRow(
+                        context,
+                        iconPath: 'assets/icons/e_learning/mark.svg',
+                        text: _marks,
+                        showEditButton: true,
+                        onTap: _showMarksDialog,
+                      ),
+                    ),
+                    _buildGroupRow(
+                      context,
+                      iconPath: 'assets/icons/e_learning/calender.svg',
+                      text: 'Start: ${_formatDate(_startDate)}',
+                      showEditButton: true,
+                      isSelected: true,
+                      onTap: () => _showDatePicker(true),
+                    ),
+                    _buildGroupRow(
+                      context,
+                      iconPath: 'assets/icons/e_learning/calender.svg',
+                      text: 'Due: ${_formatDate(_endDate)}',
+                      showEditButton: true,
+                      isSelected: true,
+                      onTap: () => _showDatePicker(false),
+                    ),
+                    _buildGroupRow(
+                      context,
+                      iconPath: 'assets/icons/e_learning/clipboard.svg',
+                      text: _selectedTopic,
+                      showEditButton: true,
+                      isSelected: true,
+                      onTap: () => _selectTopic(),
+                    ),
+                  ],
                 ),
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 8.0),
-                  child: _buildAttachmentsSection(),
-                ),
-                Divider(color: Colors.grey.withOpacity(0.5)),
-                Padding(
-                  padding: const EdgeInsets.only(top: 8.0),
-                  child: _buildGroupRow(
-                    context,
-                    iconPath: 'assets/icons/e_learning/mark.svg',
-                    text: _marks,
-                    showEditButton: true,
-                    onTap: _showMarksDialog,
-                  ),
-                ),
-                _buildGroupRow(
-                  context,
-                  iconPath: 'assets/icons/e_learning/calender.svg',
-                  text: 'Start: ${_formatDate(_startDate)}',
-                  showEditButton: true,
-                  isSelected: true,
-                  onTap: () => _showDatePicker(true),
-                ),
-                _buildGroupRow(
-                  context,
-                  iconPath: 'assets/icons/e_learning/calender.svg',
-                  text: 'Due: ${_formatDate(_endDate)}',
-                  showEditButton: true,
-                  isSelected: true,
-                  onTap: () => _showDatePicker(false),
-                ),
-                _buildGroupRow(
-                  context,
-                  iconPath: 'assets/icons/e_learning/clipboard.svg',
-                  text: _selectedTopic,
-                  showEditButton: true,
-                  isSelected: true,
-                  onTap: () => _selectTopic(),
-                ),
-              ],
+              ),
             ),
           ),
         ),

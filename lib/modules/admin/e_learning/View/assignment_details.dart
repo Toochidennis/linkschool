@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
@@ -20,6 +21,7 @@ import 'package:provider/provider.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:video_player/video_player.dart';
+import 'package:video_thumbnail/video_thumbnail.dart';
 
 import '../../../common/widgets/portal/attachmentItem.dart' show AttachmentItem;
 
@@ -613,45 +615,7 @@ if (['pdf','doc', 'docx', 'txt', 'rtf'].contains(extension)) {
           ),
         );
       case 'video':
-        return Stack(
-          children: [
-            Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [Colors.blue.shade100, Colors.blue.shade200],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-              ),
-              child: Center(
-                child: Icon(
-                  Icons.play_circle_fill,
-                  size: 50,
-                  color: Colors.blue.shade600,
-                ),
-              ),
-            ),
-            Positioned(
-              top: 8,
-              right: 8,
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                decoration: BoxDecoration(
-                  color: Colors.black54,
-                  borderRadius: BorderRadius.circular(4),
-                ),
-                child: const Text(
-                  'VIDEO',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 8,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            ),
-          ],
-        );
+        return  VideoThumbnailWidget(url: fileUrl);
       case 'pdf':
         return Stack(
           children: [
@@ -1604,6 +1568,67 @@ class _FullScreenMediaViewerState extends State<FullScreenMediaViewer> {
           ),
         );
     }
+  }
+}
+
+
+
+class VideoThumbnailWidget extends StatefulWidget {
+  final String url;
+  const VideoThumbnailWidget({super.key, required this.url});
+
+  @override
+  State<VideoThumbnailWidget> createState() => _VideoThumbnailWidgetState();
+}
+
+class _VideoThumbnailWidgetState extends State<VideoThumbnailWidget> {
+  Uint8List? _thumbnail;
+
+  @override
+  void initState() {
+    super.initState();
+    _generateThumbnail();
+  }
+
+  Future<void> _generateThumbnail() async {
+    try {
+      final thumb = await VideoThumbnail.thumbnailData(
+        video: widget.url,
+        imageFormat: ImageFormat.PNG,
+        maxHeight: 200,
+        quality: 300,
+      );
+      if (mounted) setState(() => _thumbnail = thumb);
+    } catch (e) {
+      debugPrint("Error generating video thumbnail: $e");
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_thumbnail == null) {
+      return Container(
+        width: 100,
+        height: 140,
+        color: Colors.black12,
+        child: const Center(child: CircularProgressIndicator()),
+      );
+    }
+    return Stack(
+      alignment: Alignment.center,
+      children: [
+        ClipRRect(
+          borderRadius: BorderRadius.circular(8),
+          child: Image.memory(
+            _thumbnail!,
+            width:double.infinity,
+            height: 140,
+            fit: BoxFit.cover,
+          ),
+        ),
+        const Icon(Icons.play_circle_fill, color: Colors.white, size: 40),
+      ],
+    );
   }
 }
 
