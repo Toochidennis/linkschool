@@ -253,7 +253,6 @@ class _AttachmentPreviewScreenState extends State<AttachmentPreviewScreen> {
               const Spacer(), // This will push the remaining buttons to the bottom
 
               // Add work and Submit buttons
-              _buildAttachmentsSection(),
               const SizedBox(height: 8),
 
               // Change Submit to TextButton

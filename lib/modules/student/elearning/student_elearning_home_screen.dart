@@ -338,6 +338,27 @@ final assessments=dashboardData!.recentQuizzes;
                                   margin: const EdgeInsets.symmetric(
                                       horizontal: 16.0),
                                 ),
+                                Column(
+                                  children: [
+                                    Text(
+                                      'Classes',
+                                      style: TextStyle(
+                                        color: AppColors.backgroundLight,
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                    SizedBox(height: 4),
+                                    Text(
+                                      getuserdata()['profile']['class_name'],
+                                      style: TextStyle(
+                                        color: AppColors.backgroundLight,
+                                        fontSize: 14,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+
                                 // Classes
                                 // Vertical Divider
                                 Container(
@@ -346,6 +367,26 @@ final assessments=dashboardData!.recentQuizzes;
                                   color: Colors.white, // White line
                                   margin: const EdgeInsets.symmetric(
                                       horizontal: 16.0),
+                                ),
+                                Column(
+                                  children: [
+                                    Text(
+                                      'Time',
+                                      style: TextStyle(
+                                        color: AppColors.backgroundLight,
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                    SizedBox(height: 4),
+                                    Text(
+                                      "20 Minutes",
+                                      style: TextStyle(
+                                        color: AppColors.backgroundLight,
+                                        fontSize: 14,
+                                      ),
+                                    ),
+                                  ],
                                 ),
                                 // Duration
 
