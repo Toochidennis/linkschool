@@ -359,131 +359,6 @@ void _showLevelSelectionOverlay() {
     );
   }
 
-
-  // void _showLevelSelectionOverlay() {
-  //   showModalBottomSheet(
-  //     context: context,
-  //     isScrollControlled: true,
-  //     backgroundColor: AppColors.backgroundLight,
-  //     builder: (BuildContext context) {
-  //       return Padding(
-  //         padding: EdgeInsets.only(
-  //           bottom: MediaQuery.of(context).viewInsets.bottom,
-  //         ),
-  //         child: ConstrainedBox(
-  //           constraints: BoxConstraints(
-  //             maxHeight: MediaQuery.of(context).size.height * 0.4,
-  //           ),
-  //           child: Padding(
-  //             padding: const EdgeInsets.only(top: 16.0),
-  //             child: Column(
-  //               mainAxisSize: MainAxisSize.min,
-  //               children: [
-  //                 Text(
-  //                   'Select Level',
-  //                   style: AppTextStyles.normal600(
-  //                     fontSize: 20,
-  //                     color: const Color.fromRGBO(47, 85, 221, 1),
-  //                   ),
-  //                 ),
-  //                 const SizedBox(height: 24),
-  //                 Flexible(
-  //                   child: ListView.builder(
-  //                     itemCount: levelClassMap.keys.length,
-  //                     itemBuilder: (context, index) {
-  //                       String level = levelClassMap.keys.elementAt(index);
-  //                       return Padding(
-  //                         padding: const EdgeInsets.symmetric(
-  //                             horizontal: 24, vertical: 8),
-  //                         child: _buildSubjectButton(level),
-  //                       );
-  //                     },
-  //                   ),
-  //                 ),
-  //               ],
-  //             ),
-  //           ),
-  //         ),
-  //       );
-  //     },
-  //   );
-  // }
-
-
-  // void _showClassSelectionOverlay(String level) {
-  //   showModalBottomSheet(
-  //     context: context,
-  //     isScrollControlled: true,
-  //     backgroundColor: AppColors.backgroundLight,
-  //     builder: (BuildContext context) {
-  //       return Padding(
-  //         padding: EdgeInsets.only(
-  //           bottom: MediaQuery.of(context).viewInsets.bottom,
-  //         ),
-  //         child: ConstrainedBox(
-  //           constraints: BoxConstraints(
-  //             maxHeight: MediaQuery.of(context).size.height * 0.4,
-  //           ),
-  //           child: Padding(
-  //             padding: const EdgeInsets.only(top: 16.0),
-  //             child: Column(
-  //               children: [
-  //                 Padding(
-  //                   padding: const EdgeInsets.all(16.0),
-  //                   child: Text(
-  //                     'Select Class',
-  //                     style: AppTextStyles.normal600(
-  //                       fontSize: 20,
-  //                       color: const Color.fromRGBO(47, 85, 221, 1),
-  //                     ),
-  //                   ),
-  //                 ),
-  //                 const SizedBox(height: 24),
-  //                 Flexible(
-  //                   child: ListView.builder(
-  //                     itemCount: levelClassMap[level]?.length ?? 0,
-  //                     itemBuilder: (context, index) {
-  //                       String className = levelClassMap[level]![index];
-  //                       return Padding(
-  //                         padding: const EdgeInsets.symmetric(
-  //                             horizontal: 24, vertical: 8),
-  //                         child: _buildSubjectButton(className, isClass: true),
-  //                       );
-  //                     },
-  //                   ),
-  //                 ),
-  //               ],
-  //             ),
-  //           ),
-  //         ),
-  //       );
-  //     },
-  //   );
-  // }
-
-
-
-  // void _showStudentList(String className) {
-  //   // Simulated student data - replace with actual data fetch
-  //   List<String> students = [
-  //     'John ifeanyi',
-  //     'Amaka Smith',
-  //     'Mike Okoro',
-  //     'Sarah Uche',
-  //     'David Ugonna',
-  //   ];
-
-  //   Navigator.push(
-  //     context,
-  //     MaterialPageRoute(
-  //       builder: (context) => StudentListScreen(
-  //         className: className,
-  //         students: students,
-  //       ),
-  //     ),
-  //   );
-  // }
-
   Widget _buildAnimatedFAB() {
     final bool showLabels = _buttonAnimation.value == 1;
     return Column(
@@ -1528,3 +1403,130 @@ void _showLevelSelectionOverlay() {
     );
   }
 }
+
+
+
+
+  // void _showLevelSelectionOverlay() {
+  //   showModalBottomSheet(
+  //     context: context,
+  //     isScrollControlled: true,
+  //     backgroundColor: AppColors.backgroundLight,
+  //     builder: (BuildContext context) {
+  //       return Padding(
+  //         padding: EdgeInsets.only(
+  //           bottom: MediaQuery.of(context).viewInsets.bottom,
+  //         ),
+  //         child: ConstrainedBox(
+  //           constraints: BoxConstraints(
+  //             maxHeight: MediaQuery.of(context).size.height * 0.4,
+  //           ),
+  //           child: Padding(
+  //             padding: const EdgeInsets.only(top: 16.0),
+  //             child: Column(
+  //               mainAxisSize: MainAxisSize.min,
+  //               children: [
+  //                 Text(
+  //                   'Select Level',
+  //                   style: AppTextStyles.normal600(
+  //                     fontSize: 20,
+  //                     color: const Color.fromRGBO(47, 85, 221, 1),
+  //                   ),
+  //                 ),
+  //                 const SizedBox(height: 24),
+  //                 Flexible(
+  //                   child: ListView.builder(
+  //                     itemCount: levelClassMap.keys.length,
+  //                     itemBuilder: (context, index) {
+  //                       String level = levelClassMap.keys.elementAt(index);
+  //                       return Padding(
+  //                         padding: const EdgeInsets.symmetric(
+  //                             horizontal: 24, vertical: 8),
+  //                         child: _buildSubjectButton(level),
+  //                       );
+  //                     },
+  //                   ),
+  //                 ),
+  //               ],
+  //             ),
+  //           ),
+  //         ),
+  //       );
+  //     },
+  //   );
+  // }
+
+
+  // void _showClassSelectionOverlay(String level) {
+  //   showModalBottomSheet(
+  //     context: context,
+  //     isScrollControlled: true,
+  //     backgroundColor: AppColors.backgroundLight,
+  //     builder: (BuildContext context) {
+  //       return Padding(
+  //         padding: EdgeInsets.only(
+  //           bottom: MediaQuery.of(context).viewInsets.bottom,
+  //         ),
+  //         child: ConstrainedBox(
+  //           constraints: BoxConstraints(
+  //             maxHeight: MediaQuery.of(context).size.height * 0.4,
+  //           ),
+  //           child: Padding(
+  //             padding: const EdgeInsets.only(top: 16.0),
+  //             child: Column(
+  //               children: [
+  //                 Padding(
+  //                   padding: const EdgeInsets.all(16.0),
+  //                   child: Text(
+  //                     'Select Class',
+  //                     style: AppTextStyles.normal600(
+  //                       fontSize: 20,
+  //                       color: const Color.fromRGBO(47, 85, 221, 1),
+  //                     ),
+  //                   ),
+  //                 ),
+  //                 const SizedBox(height: 24),
+  //                 Flexible(
+  //                   child: ListView.builder(
+  //                     itemCount: levelClassMap[level]?.length ?? 0,
+  //                     itemBuilder: (context, index) {
+  //                       String className = levelClassMap[level]![index];
+  //                       return Padding(
+  //                         padding: const EdgeInsets.symmetric(
+  //                             horizontal: 24, vertical: 8),
+  //                         child: _buildSubjectButton(className, isClass: true),
+  //                       );
+  //                     },
+  //                   ),
+  //                 ),
+  //               ],
+  //             ),
+  //           ),
+  //         ),
+  //       );
+  //     },
+  //   );
+  // }
+
+
+
+  // void _showStudentList(String className) {
+  //   // Simulated student data - replace with actual data fetch
+  //   List<String> students = [
+  //     'John ifeanyi',
+  //     'Amaka Smith',
+  //     'Mike Okoro',
+  //     'Sarah Uche',
+  //     'David Ugonna',
+  //   ];
+
+  //   Navigator.push(
+  //     context,
+  //     MaterialPageRoute(
+  //       builder: (context) => StudentListScreen(
+  //         className: className,
+  //         students: students,
+  //       ),
+  //     ),
+  //   );
+  // }

@@ -381,3 +381,79 @@ class Settings {
     );
   }
 }
+
+
+// Add this to modules/model/admin/payment_model.dart or create if not exists
+// IncomeReport Models
+
+class IncomeSummary {
+  final double totalAmount;
+  final int totalTransactions;
+  final int uniqueStudents;
+
+  IncomeSummary.fromJson(Map<String, dynamic> json)
+      : totalAmount = (json['total_amount'] as num).toDouble(),
+        totalTransactions = json['total_transactions'] as int,
+        uniqueStudents = json['unique_students'] as int;
+}
+
+class ChartPoint {
+  final String x;
+  final double y;
+
+  ChartPoint.fromJson(Map<String, dynamic> json)
+      : x = json['x'] as String,
+        y = (json['y'] as num).toDouble();
+}
+
+class IncomeTransaction {
+  final int id;
+  final String? reference;
+  final String? regNo;
+  final String? description;
+  final String name;
+  final double? amount;
+  final String? date;
+  final String? year;
+  final int? term;
+  final int? levelId;
+  final int? classId;
+  final int? status;
+  final String? className;
+  final String? levelName;
+  final double? totalAmount;
+  final int? totalTransactions;
+  final int? uniqueStudents;
+
+  IncomeTransaction.fromJson(Map<String, dynamic> json)
+      : id = json['id'] as int,
+        reference = json['reference'],
+        regNo = json['reg_no'],
+        description = json['description'],
+        name = json['name'] as String,
+        amount = json['amount'] != null ? (json['amount'] as num).toDouble() : null,
+        date = json['date'],
+        year = json['year'],
+        term = json['term'],
+        levelId = json['level_id'],
+        classId = json['class_id'],
+        status = json['status'],
+        className = json['class_name'],
+        levelName = json['level_name'],
+        totalAmount = json['total_amount'] != null ? (json['total_amount'] as num).toDouble() : null,
+        totalTransactions = json['total_transactions'],
+        uniqueStudents = json['unique_students'];
+
+  bool get isAggregated => totalAmount != null;
+}
+
+class IncomeReport {
+  final IncomeSummary summary;
+  final List<ChartPoint> chartData;
+  final List<IncomeTransaction> transactions;
+
+  IncomeReport.fromJson(Map<String, dynamic> json)
+      : summary = IncomeSummary.fromJson(json['summary']),
+        chartData = (json['chart_data'] as List).map((e) => ChartPoint.fromJson(e.cast<String, dynamic>())).toList(),
+        transactions = (json['transactions'] as List).map((e) => IncomeTransaction.fromJson(e.cast<String, dynamic>())).toList();
+}

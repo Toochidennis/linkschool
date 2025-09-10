@@ -274,12 +274,6 @@ class _PaymentDashboardScreenState extends State<PaymentDashboardScreen> {
                                     ),
                                   ),
                                 );
-                                // Navigator.push(
-                                //   context,
-                                //   MaterialPageRoute(
-                                //       builder: (context) =>
-                                //           const ReportPaymentScreen()),
-                                // );
                               },
                               child: const Text(
                                 'See all',
@@ -310,22 +304,6 @@ class _PaymentDashboardScreenState extends State<PaymentDashboardScreen> {
                           const Center(
                             child: Text('No transactions available'),
                           ),
-                        // if (_dashboardData?.transactions.isNotEmpty == true)
-                        //   ..._dashboardData!.transactions
-                        //       .take(5)
-                        //       .map(
-                        //         (transaction) => _buildTransactionItem(
-                        //           transaction.name,
-                        //           transaction.date,
-                        //           transaction.amount,
-                        //           transaction.levelName,
-                        //         ),
-                        //       )
-                        //       .toList()
-                        // else
-                        //   const Center(
-                        //     child: Text('No transactions available'),
-                        //   ),
                       ],
                     ),
                   ),
