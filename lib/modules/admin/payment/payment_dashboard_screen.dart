@@ -250,7 +250,7 @@ class _PaymentDashboardScreenState extends State<PaymentDashboardScreen> {
                                   context,
                                   MaterialPageRoute(
                                       builder: (context) =>
-                                          const ExpenditureScreen()),
+                                           ExpenditureScreen()),
                                 );
                               },
                             )

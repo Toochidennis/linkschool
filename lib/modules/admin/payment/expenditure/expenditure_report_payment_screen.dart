@@ -97,13 +97,13 @@ class _ExpenditureReportPaymentScreenState extends State<ExpenditureReportPaymen
           ),
         ),
         actions: [
-          IconButton(
-            icon: SvgPicture.asset(
-              'assets/icons/profile/filter_icon.svg',
-              color: AppColors.paymentTxtColor1,
-            ),
-            onPressed: () => _showFilterOverlay(context),
-          ),
+          // IconButton(
+          //   icon: SvgPicture.asset(
+          //     'assets/icons/profile/filter_icon.svg',
+          //     color: AppColors.paymentTxtColor1,
+          //   ),
+          //   onPressed: () => _showFilterOverlay(context),
+          // ),
           TextButton(
             onPressed: () {
               // Handle download action with current filter params

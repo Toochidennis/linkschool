@@ -4,9 +4,7 @@ import 'package:flutter_svg/svg.dart';
 import 'package:hive/hive.dart';
 import 'package:intl/intl.dart';
 import 'package:linkschool/modules/admin/payment/expenditure/add_expenditure_screen.dart';
-import 'package:linkschool/modules/admin/payment/expenditure/expenditure_report_payment_screen.dart';
 import 'package:linkschool/modules/admin/payment/expenditure/expense_history.dart';
-import 'package:linkschool/modules/admin/payment/receipt/generate_report/report_payment.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/custom_toaster.dart';
@@ -26,18 +24,11 @@ class ExpenditureScreen extends StatefulWidget {
 
 class _ExpenditureScreenState extends State<ExpenditureScreen> with TickerProviderStateMixin {
   late double opacity;
-  late TabController _tabController;
-  int _currentTabIndex = 0;
-  DateTime _fromDate = DateTime.now();
-  DateTime _toDate = DateTime.now();
-  int _selectedReportType = 0;
-  String _selectedDateRange = 'Custom';
-  final String _selectedGrouping = 'Month';
-  String _selectedLevel = 'JSS1';
-  String _selectedClass = 'JSS1A';
   bool _isAmountHidden = false;
-  final VendorService _vendorService = locator<VendorService>();
-  final ExpenditureService _expenditureService = locator<ExpenditureService>();
+  bool _isExpanded = false;
+  late AnimationController _animationController;
+  late Animation<double> _animation;
+  late Animation<double> _buttonAnimation;
 
   // Server data state
   Map<String, dynamic>? _expenditureData;
@@ -45,35 +36,14 @@ class _ExpenditureScreenState extends State<ExpenditureScreen> with TickerProvid
   String _db = '';
 
   // Filter state
-  String _reportType = 'monthly';
-  String? _groupBy;
-  String? _customType;
-  String? _startDate;
-  String? _endDate;
-  Map<String, List<dynamic>> _filters = {};
-  List<Map<String, dynamic>> _vendors = [];
-  List<Map<String, dynamic>> _accounts = [];
+  Map<String, dynamic> _filterParams = {
+    'report_type': 'monthly',
+    'group_by': 'month',
+  };
 
-  final List<String> reportTypes = [
-    'Termly report',
-    'Session report',
-    'Monthly report',
-    'Class report',
-    'Level report'
-  ];
-  final List<String> dateRangeOptions = [
-    'Custom',
-    'Today',
-    'Yesterday',
-    'This Week',
-    'Last 7 days',
-    'Last 30 days'
-  ];
-
-  bool _isExpanded = false;
-  late AnimationController _animationController;
-  late Animation<double> _buttonAnimation;
-  late Animation<double> _animation;
+  List<String> xLabels = [];
+  Map<String, double> xIndexMap = {};
+  bool isDateFormat = false;
 
   final List<Map<String, dynamic>> _fabButtons = [
     {
@@ -88,13 +58,15 @@ class _ExpenditureScreenState extends State<ExpenditureScreen> with TickerProvid
     },
   ];
 
+  final VendorService _vendorService = locator<VendorService>();
+  final ExpenditureService _expenditureService = locator<ExpenditureService>();
+
   @override
   void initState() {
     super.initState();
     _initializeData();
     _fetchVendors();
     _fetchAccounts();
-    _tabController = TabController(length: 3, vsync: this);
     _animationController = AnimationController(
       duration: const Duration(milliseconds: 300),
       vsync: this,
@@ -112,7 +84,17 @@ class _ExpenditureScreenState extends State<ExpenditureScreen> with TickerProvid
         isScrollControlled: true,
         backgroundColor: Colors.transparent,
         builder: (BuildContext context) {
-          return _buildCustomOverlay();
+          return FilterOverlay(
+            initialParams: _filterParams,
+            onGenerate: (params) {
+              setState(() {
+                _filterParams = params;
+              });
+              _fetchExpenditureData();
+            },
+            vendors: _filterParams['vendors']?.cast<Map<String, dynamic>>() ?? [],
+            accounts: _filterParams['accounts']?.cast<Map<String, dynamic>>() ?? [],
+          );
         },
       );
     };
@@ -148,7 +130,7 @@ class _ExpenditureScreenState extends State<ExpenditureScreen> with TickerProvid
       final response = await _vendorService.fetchVendors();
       if (response.success && response.data != null) {
         setState(() {
-          _vendors = response.data!.map((vendor) => {
+          _filterParams['vendors'] = response.data!.map((vendor) => {
             'id': vendor.id,
             'vendor_name': vendor.vendorName,
           }).toList();
@@ -164,7 +146,7 @@ class _ExpenditureScreenState extends State<ExpenditureScreen> with TickerProvid
       final response = await locator<AccountService>().fetchAccounts();
       if (response.success && response.data != null && response.data!.data != null) {
         setState(() {
-          _accounts = response.data!.data.map((account) => {
+          _filterParams['accounts'] = response.data!.data.map((account) => {
             'id': account.id,
             'account_name': account.accountName,
           }).toList();
@@ -180,18 +162,21 @@ class _ExpenditureScreenState extends State<ExpenditureScreen> with TickerProvid
     setState(() => _isDataLoading = true);
     try {
       final payload = {
-        'report_type': _reportType,
+        'report_type': _filterParams['report_type'],
         '_db': _db,
-        if (_groupBy != null) 'group_by': _groupBy,
-        if (_customType != null) 'custom_type': _customType,
-        if (_startDate != null) 'start_date': _startDate,
-        if (_endDate != null) 'end_date': _endDate,
-        if (_filters.isNotEmpty) 'filters': _filters,
+        if (_filterParams['group_by'] != null) 'group_by': _filterParams['group_by'],
+        if (_filterParams['custom_type'] != null) 'custom_type': _filterParams['custom_type'],
+        if (_filterParams['start_date'] != null) 'start_date': _filterParams['start_date'],
+        if (_filterParams['end_date'] != null) 'end_date': _filterParams['end_date'],
+        if (_filterParams['filters']?.isNotEmpty == true) 'filters': _filterParams['filters'],
       };
+      print('Expenditure Payload: $payload');
       final response = await _expenditureService.generateReport(payload);
+      print('Expenditure Response: ${response.data}');
       if (response.success && response.data != null) {
         setState(() {
           _expenditureData = response.data;
+          _prepareChartData();
         });
       } else {
         CustomToaster.toastError(context, 'Error', response.message ?? 'Failed to load data');
@@ -203,20 +188,343 @@ class _ExpenditureScreenState extends State<ExpenditureScreen> with TickerProvid
     }
   }
 
-  void _onFromDateChanged(DateTime date) {
-    setState(() {
-      _fromDate = date;
-      _startDate = date.toIso8601String().split('T')[0];
-      _fetchExpenditureData();
-    });
+  void _prepareChartData() {
+    if (_expenditureData == null || _expenditureData!['chart_data'] == null) {
+      xLabels = [];
+      xIndexMap = {};
+      return;
+    }
+
+    final chartDataList = _expenditureData!['chart_data'] as List<dynamic>? ?? [];
+    xLabels = chartDataList.map((e) => (e as Map<String, dynamic>)['x']?.toString() ?? '').toSet().toList();
+
+    try {
+      xLabels.sort((a, b) => DateTime.parse(a).compareTo(DateTime.parse(b)));
+      isDateFormat = true;
+    } catch (e) {
+      xLabels.sort();
+      isDateFormat = false;
+    }
+
+    xIndexMap = {for (int i = 0; i < xLabels.length; i++) xLabels[i]: i.toDouble()};
   }
 
-  void _onToDateChanged(DateTime date) {
-    setState(() {
-      _toDate = date;
-      _endDate = date.toIso8601String().split('T')[0];
-      _fetchExpenditureData();
-    });
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final Brightness brightness = Theme.of(context).brightness;
+    opacity = brightness == Brightness.light ? 0.1 : 0.15;
+
+    final summary = _expenditureData?['summary'] ?? {};
+    final chartDataList = _expenditureData?['chart_data'] as List<dynamic>? ?? [];
+    final transactionsList = _expenditureData?['transactions'] as List<dynamic>? ?? [];
+
+    // Convert chartDataList to List<FlSpot>
+    final List<FlSpot> chartSpots = chartDataList.asMap().entries.map((entry) {
+      final index = entry.key;
+      final data = entry.value as Map<String, dynamic>;
+      final yValue = (data['y'] is int) ? (data['y'] as int).toDouble() : (data['y'] as double?) ?? 0.0;
+      return FlSpot(xIndexMap[data['x']] ?? index.toDouble(), yValue);
+    }).toList();
+
+    // Create labels for bottom axis based on dates
+    final List<String> dateLabels = chartDataList.map((data) {
+      final dateStr = (data as Map<String, dynamic>)['x']?.toString() ?? '';
+      if (isDateFormat) {
+        try {
+          final date = DateFormat('yyyy-MM-dd').parse(dateStr);
+          return DateFormat('MMM d').format(date);
+        } catch (e) {
+          return dateStr;
+        }
+      }
+      return dateStr;
+    }).toList();
+
+    return Scaffold(
+      appBar: AppBar(
+        leading: IconButton(
+          onPressed: () {
+            Navigator.of(context).pop();
+          },
+          icon: Image.asset(
+            'assets/icons/arrow_back.png',
+            color: AppColors.paymentTxtColor1,
+            width: 34.0,
+            height: 34.0,
+          ),
+        ),
+        title: Text(
+          'Expenditures',
+          style: AppTextStyles.normal600(
+            fontSize: 24.0,
+            color: AppColors.paymentTxtColor1,
+          ),
+        ),
+        backgroundColor: AppColors.backgroundLight,
+        centerTitle: true,
+        actions: [
+          IconButton(
+            onPressed: _isDataLoading
+                ? null
+                : () {
+                    showModalBottomSheet(
+                      context: context,
+                      isScrollControlled: true,
+                      backgroundColor: Colors.transparent,
+                      builder: (BuildContext context) {
+                        return FilterOverlay(
+                          initialParams: _filterParams,
+                          onGenerate: (params) {
+                            setState(() {
+                              _filterParams = params;
+                            });
+                            _fetchExpenditureData();
+                          },
+                          vendors: _filterParams['vendors']?.cast<Map<String, dynamic>>() ?? [],
+                          accounts: _filterParams['accounts']?.cast<Map<String, dynamic>>() ?? [],
+                        );
+                      },
+                    );
+                  },
+            icon: SvgPicture.asset(
+              'assets/icons/profile/filter_icon.svg',
+              color: _isDataLoading
+                  ? Colors.grey
+                  : const Color.fromRGBO(47, 85, 221, 1),
+            ),
+          ),
+        ],
+        flexibleSpace: FlexibleSpaceBar(
+          background: Stack(
+            children: [
+              Positioned.fill(
+                child: Opacity(
+                  opacity: opacity,
+                  child: Image.asset(
+                    'assets/images/background.png',
+                    fit: BoxFit.cover,
+                  ),
+                ),
+              )
+            ],
+          ),
+        ),
+      ),
+      body: Stack(
+        children: [
+          Container(
+            decoration: Constants.customBoxDecoration(context),
+            child: _isDataLoading
+                ? const Center(child: CircularProgressIndicator())
+                : _expenditureData == null
+                    ? const Center(child: Text('No data available'))
+                    : SingleChildScrollView(
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 16.0),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  GestureDetector(
+                                    onTap: _filterParams['report_type'] == 'monthly' ? _showMonthYearPicker : null,
+                                    child: Row(
+                                      children: [
+                                        Text(_isDataLoading
+                                            ? 'Loading...'
+                                            : _filterParams['start_date'] != null
+                                                ? DateFormat('MMMM yyyy').format(DateTime.parse(_filterParams['start_date']))
+                                                : 'September 2025'),
+                                        if (_filterParams['report_type'] == 'monthly') const Icon(Icons.arrow_drop_down),
+                                      ],
+                                    ),
+                                  ),
+                                  GestureDetector(
+                                    onTap: _filterParams['report_type'] == 'termly' || _filterParams['report_type'] == 'session' ? _showSessionTermPicker : null,
+                                    child: Row(
+                                      children: [
+                                        Text(_isDataLoading
+                                            ? 'Loading...'
+                                            : '${_filterParams['filters']?['sessions']?.isNotEmpty == true ? _filterParams['filters']['sessions'][0] : '2023'}/${(_filterParams['filters']?['sessions']?.isNotEmpty == true ? _filterParams['filters']['sessions'][0] + 1 : 2024)} ${_filterParams['filters']?['terms']?.isNotEmpty == true ? '${_filterParams['filters']['terms'][0]}rd Term' : '3rd Term'}'),
+                                        if (_filterParams['report_type'] == 'termly' || _filterParams['report_type'] == 'session') const Icon(Icons.arrow_drop_down),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 16),
+                              Container(
+                                width: double.infinity,
+                                height: 118,
+                                decoration: BoxDecoration(
+                                  color: const Color.fromRGBO(47, 85, 221, 1),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Padding(
+                                  padding: const EdgeInsets.all(16),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Row(
+                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          Row(
+                                            children: [
+                                              Text(
+                                                'Total Expenses',
+                                                style: AppTextStyles.normal600(fontSize: 14, color: AppColors.backgroundLight),
+                                              ),
+                                              IconButton(
+                                                icon: Icon(
+                                                  _isAmountHidden ? Icons.visibility : Icons.visibility_off,
+                                                  color: Colors.white,
+                                                  size: 20,
+                                                ),
+                                                onPressed: () {
+                                                  setState(() {
+                                                    _isAmountHidden = !_isAmountHidden;
+                                                  });
+                                                },
+                                              ),
+                                            ],
+                                          ),
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                            decoration: BoxDecoration(
+                                              color: const Color.fromRGBO(198, 210, 255, 1),
+                                              borderRadius: BorderRadius.circular(10),
+                                            ),
+                                            child: Text(
+                                              _isDataLoading ? 'Loading...' : '${summary['total_transactions'] ?? 0} payments',
+                                              style: AppTextStyles.normal500(fontSize: 12, color: AppColors.paymentTxtColor1),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      Text(
+                                        _isAmountHidden
+                                            ? '********'
+                                            : _isDataLoading
+                                                ? 'Loading...'
+                                                : '₦${(summary['total_amount'] as num?)?.toStringAsFixed(2) ?? '0.00'}',
+                                        style: AppTextStyles.normal700(fontSize: 24, color: AppColors.backgroundLight),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 16),
+                              SizedBox(
+                                height: 200,
+                                child: chartSpots.isEmpty
+                                    ? const Center(child: Text('No chart data available'))
+                                    : LineChart(
+                                        LineChartData(
+                                          gridData: const FlGridData(show: false),
+                                          titlesData: FlTitlesData(
+                                            bottomTitles: AxisTitles(
+                                              sideTitles: SideTitles(
+                                                showTitles: true,
+                                                reservedSize: 30,
+                                                getTitlesWidget: (value, meta) {
+                                                  final idx = value.toInt();
+                                                  if (idx < 0 || idx >= dateLabels.length) {
+                                                    return const Text('');
+                                                  }
+                                                  return Padding(
+                                                    padding: const EdgeInsets.only(top: 4),
+                                                    child: Text(dateLabels[idx], style: const TextStyle(fontSize: 10)),
+                                                  );
+                                                },
+                                              ),
+                                            ),
+                                            leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                                            topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                                            rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                                          ),
+                                          borderData: FlBorderData(show: false),
+                                          minX: 0,
+                                          maxX: chartSpots.isNotEmpty ? (chartSpots.length - 1).toDouble() : 2,
+                                          minY: 0,
+                                          maxY: chartSpots.isNotEmpty
+                                              ? chartSpots.map((spot) => spot.y).reduce((a, b) => a > b ? a : b) * 1.1
+                                              : 6000,
+                                          lineBarsData: [
+                                            LineChartBarData(
+                                              spots: chartSpots,
+                                              isCurved: true,
+                                              color: AppColors.videoColor4,
+                                              barWidth: 3,
+                                              dotData: const FlDotData(show: false),
+                                              belowBarData: BarAreaData(
+                                                show: true,
+                                                color: const Color.fromRGBO(47, 85, 221, 0.102),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                              ),
+                              const SizedBox(height: 16),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(
+                                    'Expense History',
+                                    style: AppTextStyles.normal600(fontSize: 18, color: AppColors.backgroundDark),
+                                  ),
+                                  GestureDetector(
+                                    onTap: () {
+                                      // Navigate to detailed report if needed
+                                    },
+                                    child: const Text(
+                                      'See all',
+                                      style: TextStyle(
+                                        decoration: TextDecoration.underline,
+                                        color: Color.fromRGBO(47, 85, 221, 1),
+                                        fontSize: 16.0,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 16),
+                              _isDataLoading
+                                  ? const Center(child: CircularProgressIndicator())
+                                  : transactionsList.isEmpty
+                                      ? const Center(child: Text('No transactions available'))
+                                      : Column(
+                                          children: transactionsList.take(5).map((transaction) {
+                                            return _buildExpenseHistoryItem(
+                                              transaction['name']?.toString() ?? 'Unknown',
+                                              (transaction['amount'] is int)
+                                                  ? (transaction['amount'] as int).toDouble()
+                                                  : (transaction['amount'] as double?) ?? 0.0,
+                                              transaction['account_name']?.toString() ?? 'Unknown Account',
+                                              transaction,
+                                            );
+                                          }).toList(),
+                                        ),
+                            ],
+                          ),
+                        ),
+                      ),
+          ),
+        ],
+      ),
+      floatingActionButton: AnimatedBuilder(
+        animation: _buttonAnimation,
+        builder: (context, child) => _buildAnimatedFAB(),
+      ),
+    );
   }
 
   void _showMonthYearPicker() {
@@ -248,12 +556,21 @@ class _ExpenditureScreenState extends State<ExpenditureScreen> with TickerProvid
                 ),
                 Expanded(
                   child: ListView(
-                    children: [
-                      _buildMonthYearItem('January 2023'),
-                      _buildMonthYearItem('February 2023'),
-                      _buildMonthYearItem('March 2023'),
-                      // Add more months dynamically if needed
-                    ],
+                    children: List.generate(12, (index) {
+                      final date = DateTime.now().subtract(Duration(days: 30 * index));
+                      return ListTile(
+                        title: Text(DateFormat('MMMM yyyy').format(date)),
+                        onTap: () {
+                          setState(() {
+                            _filterParams['start_date'] = DateFormat('yyyy-MM-dd').format(DateTime(date.year, date.month, 1));
+                            _filterParams['end_date'] = DateFormat('yyyy-MM-dd').format(DateTime(date.year, date.month + 1, 0));
+                            _filterParams['custom_type'] = 'this_month';
+                            _fetchExpenditureData();
+                          });
+                          Navigator.pop(context);
+                        },
+                      );
+                    }),
                   ),
                 ),
               ],
@@ -294,10 +611,62 @@ class _ExpenditureScreenState extends State<ExpenditureScreen> with TickerProvid
                 Expanded(
                   child: ListView(
                     children: [
-                      _buildSessionTermItem('2023/2024 1st Term'),
-                      _buildSessionTermItem('2023/2024 2nd Term'),
-                      _buildSessionTermItem('2023/2024 3rd Term'),
-                      _buildSessionTermItem('2022/2023 3rd Term'),
+                      ListTile(
+                        title: const Text('2023/2024 1st Term'),
+                        onTap: () {
+                          setState(() {
+                            _filterParams['filters'] = {
+                              ...?_filterParams['filters'],
+                              'sessions': [2023],
+                              'terms': [1],
+                            };
+                            _fetchExpenditureData();
+                          });
+                          Navigator.pop(context);
+                        },
+                      ),
+                      ListTile(
+                        title: const Text('2023/2024 2nd Term'),
+                        onTap: () {
+                          setState(() {
+                            _filterParams['filters'] = {
+                              ...?_filterParams['filters'],
+                              'sessions': [2023],
+                              'terms': [2],
+                            };
+                            _fetchExpenditureData();
+                          });
+                          Navigator.pop(context);
+                        },
+                      ),
+                      ListTile(
+                        title: const Text('2023/2024 3rd Term'),
+                        onTap: () {
+                          setState(() {
+                            _filterParams['filters'] = {
+                              ...?_filterParams['filters'],
+                              'sessions': [2023],
+                              'terms': [3],
+                            };
+                            _fetchExpenditureData();
+                          });
+                          Navigator.pop(context);
+                        },
+                      ),
+                      ListTile(
+                        title: const Text('2022/2023 3rd Term'),
+                        onTap: () {
+                          setState(() {
+                            _filterParams['filters'] = {
+                              ...?_filterParams['filters'],
+                              'sessions': [2022],
+                              'terms': [3],
+                            };
+                            _fetchExpenditureData();
+                          });
+                          Navigator.pop(context);
+                        },
+                      ),
                     ],
                   ),
                 ),
@@ -306,348 +675,6 @@ class _ExpenditureScreenState extends State<ExpenditureScreen> with TickerProvid
           ),
         );
       },
-    );
-  }
-
-  Widget _buildMonthYearItem(String text) {
-    return ListTile(
-      title: Text(text),
-      onTap: () {
-        // Update selected month/year
-        setState(() {
-          // Parse text to update state (customize as needed)
-        });
-        Navigator.pop(context);
-      },
-    );
-  }
-
-  Widget _buildSessionTermItem(String text) {
-    return ListTile(
-      title: Text(text),
-      onTap: () {
-        // Update selected session/term
-        setState(() {
-          // Parse text to update state (customize as needed)
-        });
-        Navigator.pop(context);
-      },
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final Brightness brightness = Theme.of(context).brightness;
-    opacity = brightness == Brightness.light ? 0.1 : 0.15;
-
-    final summary = _expenditureData?['summary'] ?? {};
-    final chartDataList = _expenditureData?['chart_data'] as List<dynamic>? ?? [];
-    final transactionsList = _expenditureData?['transactions'] as List<dynamic>? ?? [];
-
-    // Convert chartDataList to List<FlSpot>
-    final List<FlSpot> chartSpots = chartDataList.asMap().entries.map((entry) {
-      final index = entry.key;
-      final data = entry.value as Map<String, dynamic>;
-      final yValue = (data['y'] is int) ? (data['y'] as int).toDouble() : (data['y'] as double?) ?? 0.0;
-      // Use index as x-value since date strings can't be used directly
-      return FlSpot(index.toDouble(), yValue);
-    }).toList();
-
-    // Create labels for bottom axis based on dates
-    final List<String> dateLabels = chartDataList.map((data) {
-      final dateStr = (data as Map<String, dynamic>)['x']?.toString() ?? '';
-      try {
-        final date = DateFormat('yyyy-MM-dd').parse(dateStr);
-        return DateFormat('MMM d').format(date); // Format as "Sep 11"
-      } catch (e) {
-        return dateStr;
-      }
-    }).toList();
-
-    return Scaffold(
-      appBar: AppBar(
-        leading: IconButton(
-          onPressed: () {
-            Navigator.of(context).pop();
-          },
-          icon: Image.asset(
-            'assets/icons/arrow_back.png',
-            color: AppColors.paymentTxtColor1,
-            width: 34.0,
-            height: 34.0,
-          ),
-        ),
-        title: Text(
-          'Expenditures',
-          style: AppTextStyles.normal600(
-            fontSize: 24.0,
-            color: AppColors.paymentTxtColor1,
-          ),
-        ),
-        backgroundColor: AppColors.backgroundLight,
-        centerTitle: true,
-        actions: [
-          IconButton(
-            onPressed: _isDataLoading
-                ? null
-                : () {
-                    showModalBottomSheet(
-                      context: context,
-                      isScrollControlled: true,
-                      backgroundColor: Colors.transparent,
-                      builder: (BuildContext context) {
-                        return _buildCustomOverlay();
-                      },
-                    );
-                  },
-            icon: SvgPicture.asset(
-              'assets/icons/profile/filter_icon.svg',
-              color: _isDataLoading
-                  ? Colors.grey
-                  : const Color.fromRGBO(47, 85, 221, 1),
-            ),
-          ),
-        ],
-        flexibleSpace: FlexibleSpaceBar(
-          background: Stack(
-            children: [
-              Positioned.fill(
-                child: Opacity(
-                  opacity: opacity,
-                  child: Image.asset(
-                    'assets/images/background.png',
-                    fit: BoxFit.cover,
-                  ),
-                ),
-              )
-            ],
-          ),
-        ),
-      ),
-      body: Stack(
-        children: [
-          Container(
-            decoration: Constants.customBoxDecoration(context),
-            child: Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: SingleChildScrollView(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 16.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          GestureDetector(
-                            onTap: _showMonthYearPicker,
-                            child: Row(
-                              children: [
-                                Text(_isDataLoading ? 'Loading...' : 'February 2023'),
-                                const Icon(Icons.arrow_drop_down),
-                              ],
-                            ),
-                          ),
-                          GestureDetector(
-                            onTap: _showSessionTermPicker,
-                            child: Row(
-                              children: [
-                                Text(_isDataLoading ? 'Loading...' : '2023/2024 3rd Term'),
-                                const Icon(Icons.arrow_drop_down),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 16),
-                      Container(
-                        width: double.infinity,
-                        height: 118,
-                        decoration: BoxDecoration(
-                          color: const Color.fromRGBO(47, 85, 221, 1),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Padding(
-                          padding: const EdgeInsets.all(16),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Row(
-                                    children: [
-                                      Text(
-                                        'Total Expenses',
-                                        style: AppTextStyles.normal600(
-                                            fontSize: 14, color: AppColors.backgroundLight),
-                                      ),
-                                      IconButton(
-                                        icon: Icon(
-                                          _isAmountHidden ? Icons.visibility : Icons.visibility_off,
-                                          color: Colors.white,
-                                          size: 20,
-                                        ),
-                                        onPressed: () {
-                                          setState(() {
-                                            _isAmountHidden = !_isAmountHidden;
-                                          });
-                                        },
-                                      ),
-                                    ],
-                                  ),
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                    decoration: BoxDecoration(
-                                      color: const Color.fromRGBO(198, 210, 255, 1),
-                                      borderRadius: BorderRadius.circular(10),
-                                    ),
-                                    child: Text(
-                                      _isDataLoading
-                                          ? 'Loading...'
-                                          : '${summary['total_transactions'] ?? 0} payments',
-                                      style: AppTextStyles.normal500(
-                                          fontSize: 12, color: AppColors.paymentTxtColor1),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              Text(
-                                _isAmountHidden
-                                    ? '********'
-                                    : _isDataLoading
-                                        ? 'Loading...'
-                                        : '₦${summary['total_amount']?.toStringAsFixed(2) ?? '0.00'}',
-                                style: AppTextStyles.normal700(
-                                    fontSize: 24, color: AppColors.backgroundLight),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      SizedBox(
-                        height: 200,
-                        child: _isDataLoading
-                            ? const Center(child: CircularProgressIndicator())
-                            : chartSpots.isEmpty
-                                ? const Center(child: Text('No chart data available'))
-                                : LineChart(
-                                    LineChartData(
-                                      gridData: const FlGridData(show: false),
-                                      titlesData: FlTitlesData(
-                                        bottomTitles: AxisTitles(
-                                          sideTitles: SideTitles(
-                                            showTitles: true,
-                                            getTitlesWidget: (value, meta) {
-                                              final index = value.toInt();
-                                              if (index < 0 || index >= dateLabels.length) {
-                                                return const Text('');
-                                              }
-                                              return Text(
-                                                dateLabels[index],
-                                                style: const TextStyle(fontSize: 10),
-                                              );
-                                            },
-                                            reservedSize: 30,
-                                          ),
-                                        ),
-                                        leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                                        topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                                        rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                                      ),
-                                      borderData: FlBorderData(show: false),
-                                      minX: 0,
-                                      maxX: chartSpots.isNotEmpty ? (chartSpots.length - 1).toDouble() : 2,
-                                      minY: 0,
-                                      maxY: chartSpots.isNotEmpty
-                                          ? chartSpots.map((spot) => spot.y).reduce((a, b) => a > b ? a : b) * 1.1
-                                          : 6000,
-                                      lineBarsData: [
-                                        LineChartBarData(
-                                          spots: chartSpots,
-                                          isCurved: true,
-                                          color: AppColors.videoColor4,
-                                          barWidth: 3,
-                                          dotData: const FlDotData(show: false),
-                                          belowBarData: BarAreaData(
-                                            show: true,
-                                            color: const Color.fromRGBO(47, 85, 221, 0.102),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                      ),
-                      const SizedBox(height: 16),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            'Expense History',
-                            style: AppTextStyles.normal600(
-                                fontSize: 18, color: AppColors.backgroundDark),
-                          ),
-                          GestureDetector(
-                            onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => ExpenditureReportPaymentScreen(
-                                    initialParams: {
-                                      'report_type': _reportType,
-                                      'group_by': _groupBy,
-                                      'custom_type': _customType,
-                                      'start_date': _startDate,
-                                      'end_date': _endDate,
-                                      'filters': _filters,
-                                      '_db': _db,
-                                    },
-                                  ),
-                                ),
-                              );
-                            },
-                            child: const Text(
-                              'See all',
-                              style: TextStyle(
-                                decoration: TextDecoration.underline,
-                                color: Color.fromRGBO(47, 85, 221, 1),
-                                fontSize: 16.0,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 16),
-                      _isDataLoading
-                          ? const Center(child: CircularProgressIndicator())
-                          : transactionsList.isEmpty
-                              ? const Center(child: Text('No transactions available'))
-                              : Column(
-                                  children: transactionsList.take(5).map((transaction) {
-                                    return _buildExpenseHistoryItem(
-                                      transaction['name'] ?? 'Unknown',
-                                      (transaction['amount'] is int)
-                                          ? (transaction['amount'] as int).toDouble()
-                                          : (transaction['amount'] as double?) ?? 0.0,
-                                      transaction['account_name'] ?? 'Unknown Account',
-                                      transaction,
-                                    );
-                                  }).toList(),
-                                ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-      floatingActionButton: AnimatedBuilder(
-        animation: _buttonAnimation,
-        builder: (context, child) => _buildAnimatedFAB(),
-      ),
     );
   }
 
@@ -749,7 +776,7 @@ class _ExpenditureScreenState extends State<ExpenditureScreen> with TickerProvid
             style: AppTextStyles.normal600(fontSize: 18, color: AppColors.backgroundDark),
           ),
           subtitle: Text(
-            transaction['date'] ?? '07-03-2018  17:23',
+            transaction['date']?.toString() ?? '07-03-2018  17:23',
             style: AppTextStyles.normal500(fontSize: 12, color: AppColors.text10Light),
           ),
           trailing: Column(
@@ -771,382 +798,91 @@ class _ExpenditureScreenState extends State<ExpenditureScreen> with TickerProvid
       ),
     );
   }
+}
 
-  Widget _buildReportTypeTabRow(List<String> types) {
-    return Row(
-      children: types.map((type) {
-        int typeIndex = reportTypes.indexOf(type);
-        bool isSelected = _selectedReportType == typeIndex;
-        return Padding(
-          padding: const EdgeInsets.only(right: 12.0),
-          child: GestureDetector(
-            onTap: () {
-              setState(() {
-                _selectedReportType = typeIndex;
-                _reportType = typeIndex == 0
-                    ? 'termly'
-                    : typeIndex == 1
-                        ? 'session'
-                        : typeIndex == 2
-                            ? 'monthly'
-                            : typeIndex == 3
-                                ? 'class'
-                                : 'level';
-                _fetchExpenditureData();
-              });
-            },
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              decoration: BoxDecoration(
-                color: isSelected
-                    ? const Color.fromRGBO(228, 234, 255, 1)
-                    : const Color.fromRGBO(247, 247, 247, 1),
-                borderRadius: BorderRadius.circular(4),
-              ),
-              child: Text(
-                type,
-                style: TextStyle(
-                  color: isSelected
-                      ? const Color.fromRGBO(47, 85, 221, 1)
-                      : const Color.fromRGBO(65, 65, 65, 1),
-                  fontSize: 12,
-                ),
-              ),
-            ),
-          ),
-        );
-      }).toList(),
-    );
-  }
+class FilterOverlay extends StatefulWidget {
+  final Map<String, dynamic>? initialParams;
+  final Function(Map<String, dynamic>) onGenerate;
+  final List<Map<String, dynamic>> vendors;
+  final List<Map<String, dynamic>> accounts;
 
-  Widget _buildDateRangeTab() {
-    return Padding(
-      padding: const EdgeInsets.all(16.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildDateRangeOptions(),
-          const SizedBox(height: 20),
-          if (_selectedDateRange == 'Custom') _buildCustomDateRange(),
-        ],
-      ),
-    );
-  }
+  const FilterOverlay({
+    super.key,
+    this.initialParams,
+    required this.onGenerate,
+    required this.vendors,
+    required this.accounts,
+  });
 
-  Widget _buildDateRangeOptions() {
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: Row(
-        children: dateRangeOptions.map((option) {
-          return Padding(
-            padding: const EdgeInsets.only(right: 8.0),
-            child: GestureDetector(
-              onTap: () {
-                setState(() {
-                  _selectedDateRange = option;
-                  _customType = _mapDateRangeToCustomType(option);
-                  _fetchExpenditureData();
-                });
-              },
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(
-                  color: _selectedDateRange == option
-                      ? const Color.fromRGBO(47, 85, 221, 1)
-                      : const Color.fromRGBO(212, 222, 255, 1),
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Text(
-                  option,
-                  style: TextStyle(
-                    color: _selectedDateRange == option
-                        ? Colors.white
-                        : AppColors.paymentTxtColor1,
-                  ),
-                ),
-              ),
-            ),
+  @override
+  State<FilterOverlay> createState() => _FilterOverlayState();
+}
+
+class _FilterOverlayState extends State<FilterOverlay> {
+  String selectedReport = 'Monthly';
+  String selectedCustomType = 'This Month';
+  String selectedGrouping = 'Month';
+  DateTime fromDate = DateTime.now().subtract(const Duration(days: 30));
+  DateTime toDate = DateTime.now();
+  Map<String, List<dynamic>> selectedFilters = {};
+
+  final List<String> reportTypes = ['Termly', 'Session', 'Monthly', 'Custom'];
+  final List<String> customTypes = [
+    'Range',
+    'Today',
+    'Yesterday',
+    'This Week',
+    'Last Week',
+    'Last 30 Days',
+    'This Month',
+    'Last Month'
+  ];
+  final List<String> groupingOptions = ['Vendor', 'Account', 'Month'];
+  final List<String> filterByOptions = ['Vendors', 'Accounts', 'Sessions', 'Terms'];
+
+  bool get isCustom => selectedReport == 'Custom';
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.initialParams != null) {
+      selectedReport = (widget.initialParams!['report_type'] as String).capitalize();
+      if (widget.initialParams!.containsKey('group_by')) {
+        selectedGrouping = (widget.initialParams!['group_by'] as String).capitalize();
+      }
+      if (isCustom) {
+        if (widget.initialParams!.containsKey('custom_type')) {
+          String ctype = widget.initialParams!['custom_type'];
+          selectedCustomType = ctype.split('_').map((e) => e.capitalize()).join(' ');
+        }
+        if (widget.initialParams!.containsKey('start_date')) {
+          fromDate = DateTime.parse(widget.initialParams!['start_date']);
+        }
+        if (widget.initialParams!.containsKey('end_date')) {
+          toDate = DateTime.parse(widget.initialParams!['end_date']);
+        }
+        if (widget.initialParams!.containsKey('filters')) {
+          selectedFilters = Map.from(widget.initialParams!['filters']).map(
+            (key, value) => MapEntry(key, List<dynamic>.from(value)),
           );
-        }).toList(),
-      ),
-    );
-  }
-
-  String? _mapDateRangeToCustomType(String option) {
-    switch (option) {
-      case 'Today':
-        return 'today';
-      case 'Yesterday':
-        return 'yesterday';
-      case 'This Week':
-        return 'this_week';
-      case 'Last 7 days':
-        return 'last_week';
-      case 'Last 30 days':
-        return 'last_30_days';
-      default:
-        return null;
+        }
+      }
     }
+    print('Initial selectedFilters: $selectedFilters');
   }
 
-  Widget _buildCustomDateRange() {
-    return Column(
-      children: [
-        _buildDateInput('From:', _fromDate, _onFromDateChanged),
-        const SizedBox(height: 10),
-        _buildDateInput('To:', _toDate, _onToDateChanged),
-        const SizedBox(height: 20),
-      ],
-    );
-  }
-
-  Widget _buildDateInput(String label, DateTime selectedDate, Function(DateTime) onDateSelected) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(label),
-        const SizedBox(height: 5),
-        GestureDetector(
-          onTap: () async {
-            final DateTime? picked = await showDatePicker(
-              context: context,
-              initialDate: selectedDate,
-              firstDate: DateTime(2000),
-              lastDate: DateTime(2025),
-            );
-            if (picked != null) {
-              onDateSelected(picked);
-            }
-          },
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            decoration: BoxDecoration(
-              border: Border.all(color: Colors.grey),
-              borderRadius: BorderRadius.circular(4),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  '${selectedDate.day}-${selectedDate.month}-${selectedDate.year}',
-                  style: const TextStyle(fontSize: 16),
-                ),
-                const Icon(
-                  Icons.calendar_today,
-                  color: AppColors.paymentTxtColor1,
-                  size: 24,
-                ),
-              ],
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildGroupingTab() {
-    final groupingOptions = ['Vendor', 'Account', 'Month'];
-    return Padding(
-      padding: const EdgeInsets.all(16.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Group by:',
-            style: TextStyle(color: Colors.grey),
-          ),
-          const SizedBox(height: 10),
-          Wrap(
-            spacing: 8,
-            children: groupingOptions.map((option) {
-              bool isSelected = _groupBy == option.toLowerCase();
-              return GestureDetector(
-                onTap: () {
-                  setState(() {
-                    _groupBy = isSelected ? null : option.toLowerCase();
-                    _fetchExpenditureData();
-                  });
-                },
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: isSelected
-                        ? const Color.fromRGBO(47, 85, 221, 1)
-                        : const Color.fromRGBO(229, 229, 229, 1),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Text(
-                    option,
-                    style: TextStyle(
-                      color: isSelected ? Colors.white : Colors.black,
-                      fontSize: 14,
-                    ),
-                  ),
-                ),
-              );
-            }).toList(),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildFilterTab() {
-    return Padding(
-      padding: const EdgeInsets.all(16.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Filter by:',
-            style: TextStyle(color: Colors.grey),
-          ),
-          const SizedBox(height: 10),
-          _buildFilterButton('Vendors'),
-          const SizedBox(height: 12),
-          _buildFilterButton('Accounts'),
-          const SizedBox(height: 12),
-          _buildFilterButton('Sessions'),
-          const SizedBox(height: 12),
-          _buildFilterButton('Terms'),
-          const SizedBox(height: 12),
-          _buildFilterOption('Level', ['JSS1', 'JSS2', 'JSS3'], _selectedLevel, (value) {
-            setState(() {
-              _selectedLevel = value;
-            });
-          }),
-          const SizedBox(height: 10),
-          _buildFilterOption('Class', ['JSS1A', 'JSS1B', 'JSS1C'], _selectedClass, (value) {
-            setState(() {
-              _selectedClass = value;
-            });
-          }),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildFilterButton(String text) {
-    return GestureDetector(
-      onTap: () {
-        _showFilterBottomSheet(text.toLowerCase());
-      },
-      child: Container(
-        width: double.infinity,
-        height: 42,
-        decoration: BoxDecoration(
-          color: const Color.fromRGBO(229, 229, 229, 1),
-          borderRadius: BorderRadius.circular(6),
-        ),
-        child: Center(
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Padding(
-                padding: const EdgeInsets.only(left: 12.0),
-                child: Text('$text: ${_filters[text.toLowerCase()]?.length ?? 0} selected'),
-              ),
-              const Icon(Icons.arrow_drop_down),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  void _showFilterBottomSheet(String filterType) {
-    List<dynamic> items = [];
-    String title = '';
-    switch (filterType) {
-      case 'vendors':
-        title = 'Select Vendors';
-        items = _vendors;
-        break;
-      case 'accounts':
-        title = 'Select Accounts';
-        items = _accounts;
-        break;
-      case 'sessions':
-        title = 'Select Sessions';
-        final userBox = Hive.box('userData');
-        final currentYear = userBox.get('current_year') ?? 2025;
-        items = List.generate(currentYear - 1999 + 1, (index) {
-          final year = currentYear - index;
-          return {'id': year, 'name': '${year - 1}/$year'};
-        });
-        break;
-      case 'terms':
-        title = 'Select Terms';
-        items = [
-          {'id': 1, 'name': 'First Term'},
-          {'id': 2, 'name': 'Second Term'},
-          {'id': 3, 'name': 'Third Term'},
-        ];
-        break;
-    }
-
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      builder: (context) => MultiSelectBottomSheet(
-        title: title,
-        items: items,
-        selectedItems: _filters[filterType]?.map((e) => e.toString())?.toList() ?? [],
-        onSave: (selected) {
-          setState(() {
-            _filters[filterType] = selected;
-            _fetchExpenditureData();
-          });
-        },
-      ),
-    );
-  }
-
-  Widget _buildFilterOption(String label, List<String> options, String selectedValue, Function(String) onChanged) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(label),
-        const SizedBox(height: 5),
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.symmetric(horizontal: 12),
-          decoration: BoxDecoration(
-            color: const Color.fromRGBO(229, 229, 229, 1),
-            borderRadius: BorderRadius.circular(6),
-          ),
-          child: DropdownButton<String>(
-            value: selectedValue,
-            isExpanded: true,
-            underline: const SizedBox(),
-            onChanged: (String? newValue) {
-              if (newValue != null) {
-                onChanged(newValue);
-              }
-            },
-            items: options.map<DropdownMenuItem<String>>((String value) {
-              return DropdownMenuItem<String>(
-                value: value,
-                child: Text(value),
-              );
-            }).toList(),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildCustomOverlay() {
+  @override
+  Widget build(BuildContext context) {
+    print('Building FilterOverlay, selectedCustomType: $selectedCustomType');
     return GestureDetector(
       onTap: () => Navigator.pop(context),
       child: Container(
+        color: Colors.black54.withOpacity(0.5),
         child: GestureDetector(
           onTap: () {},
           child: Container(
             height: MediaQuery.of(context).size.height * 0.60,
-            margin: EdgeInsets.only(
-              top: MediaQuery.of(context).size.height * 0.2,
-            ),
+            margin: EdgeInsets.only(top: MediaQuery.of(context).size.height * 0.4),
             decoration: const BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
@@ -1154,84 +890,81 @@ class _ExpenditureScreenState extends State<ExpenditureScreen> with TickerProvid
             child: Column(
               children: [
                 Container(
-                  height: 120,
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                  height: 60,
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   child: SingleChildScrollView(
                     scrollDirection: Axis.horizontal,
-                    child: Column(
-                      children: [
-                        _buildReportTypeTabRow(reportTypes.sublist(0, 3)),
-                        const SizedBox(height: 8),
-                        _buildReportTypeTabRow(reportTypes.sublist(3, 5)),
-                      ],
+                    child: Row(
+                      children: reportTypes.map((type) {
+                        bool isSelected = selectedReport == type;
+                        return Padding(
+                          padding: const EdgeInsets.only(right: 8.0),
+                          child: GestureDetector(
+                            onTap: () {
+                              setState(() {
+                                selectedReport = type;
+                                selectedGrouping = '';
+                                selectedFilters = {};
+                                if (type != 'Custom') {
+                                  selectedCustomType = 'This Month';
+                                  fromDate = DateTime.now().subtract(const Duration(days: 30));
+                                  toDate = DateTime.now();
+                                }
+                              });
+                            },
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                              decoration: BoxDecoration(
+                                color: isSelected ? const Color.fromRGBO(228, 234, 255, 1) : const Color.fromRGBO(247, 247, 247, 1),
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: Text(
+                                type,
+                                style: TextStyle(
+                                  color: isSelected ? const Color.fromRGBO(47, 85, 221, 1) : const Color.fromRGBO(65, 65, 65, 1),
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ),
+                          ),
+                        );
+                      }).toList(),
                     ),
                   ),
                 ),
                 Expanded(
                   child: DefaultTabController(
-                    length: 3,
+                    length: isCustom ? 3 : 1,
                     child: Column(
                       children: [
-                        Container(
-                          decoration: BoxDecoration(
-                            color: Colors.grey[200],
-                          ),
-                          child: TabBar(
-                            onTap: (index) {
-                              setState(() {
-                                _currentTabIndex = index;
-                              });
-                            },
-                            tabs: const [
-                              Tab(text: 'Date Range'),
-                              Tab(text: 'Grouping'),
-                              Tab(text: 'Filter by'),
-                            ],
-                          ),
+                        TabBar(
+                          tabs: isCustom
+                              ? const [
+                                  Tab(text: 'Date Range'),
+                                  Tab(text: 'Grouping'),
+                                  Tab(text: 'Filter by'),
+                                ]
+                              : const [
+                                  Tab(text: 'Grouping'),
+                                ],
                         ),
                         Expanded(
                           child: TabBarView(
-                            children: [
-                              _buildDateRangeTab(),
-                              _buildGroupingTab(),
-                              _buildFilterTab(),
-                            ],
+                            children: isCustom
+                                ? [
+                                    _buildDateRangeTab(),
+                                    _buildGroupingTab(),
+                                    _buildFilterByTab(),
+                                  ]
+                                : [
+                                    _buildGroupingTab(),
+                                  ],
                           ),
                         ),
                         Container(
                           padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.grey.withOpacity(0.2),
-                                spreadRadius: 1,
-                                blurRadius: 4,
-                                offset: const Offset(0, -2),
-                              ),
-                            ],
-                          ),
                           child: ElevatedButton(
-                            onPressed: () {
-                              _fetchExpenditureData();
-                              Navigator.pop(context);
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => ReportPaymentScreen(
-                                    initialParams: {
-                                      'report_type': _reportType,
-                                      'group_by': _groupBy,
-                                      'custom_type': _customType,
-                                      'start_date': _startDate,
-                                      'end_date': _endDate,
-                                      'filters': _filters,
-                                      '_db': _db,
-                                    },
-                                  ),
-                                ),
-                              );
-                            },
+                            onPressed: _generateReport,
                             style: ElevatedButton.styleFrom(
                               backgroundColor: const Color.fromRGBO(47, 85, 221, 1),
                               minimumSize: const Size(double.infinity, 50),
@@ -1260,88 +993,394 @@ class _ExpenditureScreenState extends State<ExpenditureScreen> with TickerProvid
       ),
     );
   }
-}
 
-class MultiSelectBottomSheet extends StatefulWidget {
-  final String title;
-  final List<dynamic> items;
-  final List<String> selectedItems;
-  final Function(List<String>) onSave;
-
-  const MultiSelectBottomSheet({
-    super.key,
-    required this.title,
-    required this.items,
-    required this.selectedItems,
-    required this.onSave,
-  });
-
-  @override
-  State<MultiSelectBottomSheet> createState() => _MultiSelectBottomSheetState();
-}
-
-class _MultiSelectBottomSheetState extends State<MultiSelectBottomSheet> {
-  late List<String> _selectedItems;
-
-  @override
-  void initState() {
-    super.initState();
-    _selectedItems = List<String>.from(widget.selectedItems);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return DraggableScrollableSheet(
-      initialChildSize: 0.7,
-      maxChildSize: 0.9,
-      minChildSize: 0.5,
-      builder: (context, scrollController) => Container(
-        padding: const EdgeInsets.all(16.0),
+  Widget _buildDateRangeTab() {
+    print('Building DateRangeTab, selectedCustomType: $selectedCustomType');
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: SingleChildScrollView(
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              widget.title,
-              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 16),
-            Expanded(
-              child: ListView.builder(
-                controller: scrollController,
-                itemCount: widget.items.length,
-                itemBuilder: (context, index) {
-                  final item = widget.items[index];
-                  final id = item['id'].toString();
-                  final name = item['name'] ?? item['vendor_name'] ?? item['account_name'] ?? '';
-                  final isSelected = _selectedItems.contains(id);
-                  return CheckboxListTile(
-                    title: Text(name),
-                    value: isSelected,
-                    onChanged: (value) {
-                      setState(() {
-                        if (value == true) {
-                          _selectedItems.add(id);
-                        } else {
-                          _selectedItems.remove(id);
-                        }
-                      });
-                    },
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: customTypes.map((option) {
+                  bool isSelected = selectedCustomType == option;
+                  return Padding(
+                    padding: const EdgeInsets.only(right: 8.0),
+                    child: GestureDetector(
+                      onTap: () {
+                        setState(() {
+                          selectedCustomType = option;
+                          print('Selected custom type: $selectedCustomType');
+                        });
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: isSelected
+                              ? const Color.fromRGBO(47, 85, 221, 1)
+                              : const Color.fromRGBO(212, 222, 255, 1),
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: Text(
+                          option,
+                          style: TextStyle(
+                            color: isSelected ? Colors.white : AppColors.paymentTxtColor1,
+                          ),
+                        ),
+                      ),
+                    ),
                   );
-                },
+                }).toList(),
               ),
             ),
-            ElevatedButton(
-              onPressed: () {
-                widget.onSave(_selectedItems);
-                Navigator.pop(context);
-              },
-              child: const Text('Save'),
-            ),
+            if (selectedCustomType == 'Range') ...[
+              const SizedBox(height: 20),
+              _buildDatePicker('From', fromDate, (date) {
+                setState(() {
+                  fromDate = date;
+                  print('From date updated: $fromDate');
+                });
+              }),
+              const SizedBox(height: 10),
+              _buildDatePicker('To', toDate, (date) {
+                setState(() {
+                  toDate = date;
+                  print('To date updated: $toDate');
+                });
+              }),
+            ],
           ],
         ),
       ),
     );
   }
+
+  Widget _buildDatePicker(String label, DateTime date, Function(DateTime) onChanged) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label, style: AppTextStyles.normal600(fontSize: 16)),
+        const SizedBox(height: 5),
+        GestureDetector(
+          onTap: () async {
+            final picked = await showDatePicker(
+              context: context,
+              initialDate: date,
+              firstDate: DateTime(2000),
+              lastDate: DateTime(2030),
+              builder: (context, child) {
+                return Theme(
+                  data: Theme.of(context).copyWith(
+                    colorScheme: const ColorScheme.light(
+                      primary: Color.fromRGBO(47, 85, 221, 1),
+                      onPrimary: Colors.white,
+                      surface: Colors.white,
+                      onSurface: Colors.black,
+                    ),
+                    dialogBackgroundColor: Colors.white,
+                  ),
+                  child: child!,
+                );
+              },
+            );
+            if (picked != null) {
+              onChanged(picked);
+            }
+          },
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              border: Border.all(color: Colors.grey.shade300),
+              borderRadius: BorderRadius.circular(4),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  DateFormat('yyyy-MM-dd').format(date),
+                  style: AppTextStyles.normal500(fontSize: 14, color: Colors.black),
+                ),
+                const Icon(Icons.calendar_today, color: Color.fromRGBO(47, 85, 221, 1)),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildGroupingTab() {
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: Column(
+        children: groupingOptions.map((option) {
+          bool isSelected = selectedGrouping == option;
+          return GestureDetector(
+            onTap: () {
+              setState(() {
+                selectedGrouping = isSelected ? '' : option;
+                print('Selected grouping: $selectedGrouping');
+              });
+            },
+            child: Container(
+              width: double.infinity,
+              height: 42,
+              margin: const EdgeInsets.only(bottom: 10),
+              decoration: BoxDecoration(
+                color: isSelected ? const Color.fromRGBO(47, 85, 221, 1) : const Color.fromRGBO(229, 229, 229, 1),
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: Center(
+                child: Text(
+                  option,
+                  style: TextStyle(
+                    color: isSelected ? Colors.white : Colors.black,
+                    fontSize: 16,
+                  ),
+                ),
+              ),
+            ),
+          );
+        }).toList(),
+      ),
+    );
+  }
+
+  Widget _buildFilterByTab() {
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: Column(
+        children: filterByOptions.map((option) {
+          final count = selectedFilters[option.toLowerCase()]?.length ?? 0;
+          return GestureDetector(
+            onTap: () => _showFilterBottomSheet(option),
+            child: Container(
+              width: double.infinity,
+              height: 42,
+              margin: const EdgeInsets.only(bottom: 10),
+              decoration: BoxDecoration(
+                color: const Color.fromRGBO(229, 229, 229, 1),
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: Center(
+                child: Text(
+                  '$option: $count selected',
+                  style: AppTextStyles.normal500(fontSize: 16, color: Colors.black),
+                ),
+              ),
+            ),
+          );
+        }).toList(),
+      ),
+    );
+  }
+
+  void _showFilterBottomSheet(String option) {
+    List<Map<String, dynamic>> items = [];
+    switch (option.toLowerCase()) {
+      case 'vendors':
+        items = widget.vendors;
+        break;
+      case 'accounts':
+        items = widget.accounts;
+        break;
+      case 'sessions':
+        final userBox = Hive.box('userData');
+        final currentYear = userBox.get('current_year') ?? 2025;
+        items = List.generate(currentYear - 1999 + 1, (index) {
+          final year = currentYear - index;
+          return {'name': '${year - 1}/$year', 'value': year};
+        });
+        break;
+      case 'terms':
+        items = [
+          {'name': 'First Term', 'value': 1},
+          {'name': 'Second Term', 'value': 2},
+          {'name': 'Third Term', 'value': 3},
+        ];
+        break;
+    }
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: AppColors.backgroundLight,
+      builder: (context) {
+        return _buildSelectionBottomSheet(
+          title: 'Select $option',
+          items: items,
+          onItemSelected: (selectedValues) {
+            setState(() {
+              final key = option.toLowerCase();
+              selectedFilters[key] = selectedValues;
+              print('Updated selectedFilters for $key: $selectedValues');
+            });
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildSelectionBottomSheet({
+    required String title,
+    required List<Map<String, dynamic>> items,
+    required Function(List<dynamic>) onItemSelected,
+  }) {
+    return StatefulBuilder(
+      builder: (context, setModalState) {
+        final key = title.toLowerCase().contains('vendor')
+            ? 'vendors'
+            : title.toLowerCase().contains('account')
+                ? 'accounts'
+                : title.toLowerCase().contains('session')
+                    ? 'sessions'
+                    : 'terms';
+        final selectedValues = selectedFilters[key] != null
+            ? List<dynamic>.from(selectedFilters[key]!)
+            : <dynamic>[];
+
+        return Padding(
+          padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.5),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.only(top: 16.0),
+                  child: Text(
+                    title,
+                    style: AppTextStyles.normal600(fontSize: 20, color: const Color.fromRGBO(47, 85, 221, 1)),
+                  ),
+                ),
+                const SizedBox(height: 24),
+                Expanded(
+                  child: ListView.builder(
+                    itemCount: items.length,
+                    itemBuilder: (context, index) {
+                      final item = items[index];
+                      final value = item['value'] ?? item['id'];
+                      final name = item['name'] ?? item['vendor_name'] ?? item['account_name'] ?? 'Unknown';
+                      final isSelected = selectedValues.contains(value);
+                      return GestureDetector(
+                        onTap: () {
+                          setModalState(() {
+                            if (isSelected) {
+                              selectedValues.remove(value);
+                            } else {
+                              selectedValues.add(value);
+                            }
+                            print('Selected values in bottom sheet: $selectedValues');
+                          });
+                          setState(() {
+                            selectedFilters[key] = List<dynamic>.from(selectedValues);
+                            print('Updated selectedFilters in parent: $selectedFilters');
+                          });
+                        },
+                        child: Container(
+                          margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 16),
+                          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(8),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.grey.withOpacity(0.2),
+                                spreadRadius: 1,
+                                blurRadius: 3,
+                                offset: const Offset(0, 1),
+                              ),
+                            ],
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  name,
+                                  style: AppTextStyles.normal500(fontSize: 16, color: Colors.black),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                              if (isSelected)
+                                const Icon(Icons.check, color: Color.fromRGBO(47, 85, 221, 1)),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: ElevatedButton(
+                    onPressed: () {
+                      onItemSelected(selectedValues);
+                      Navigator.pop(context);
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color.fromRGBO(47, 85, 221, 1),
+                      minimumSize: const Size(double.infinity, 50),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      elevation: 2,
+                      shadowColor: Colors.grey.withOpacity(0.5),
+                    ),
+                    child: const Text(
+                      'Apply',
+                      style: TextStyle(color: Colors.white, fontSize: 18),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  void _generateReport() {
+    if (isCustom && selectedCustomType == 'Range' && fromDate.isAfter(toDate)) {
+      CustomToaster.toastError(context, 'Error', 'Start date cannot be after end date');
+      return;
+    }
+
+    Map<String, dynamic> params = {
+      'report_type': selectedReport.toLowerCase(),
+    };
+
+    if (selectedGrouping.isNotEmpty) {
+      params['group_by'] = selectedGrouping.toLowerCase();
+    }
+
+    if (isCustom) {
+      String ctype = selectedCustomType.toLowerCase().replaceAll(' ', '_');
+      params['custom_type'] = ctype;
+      if (ctype == 'range') {
+        params['start_date'] = DateFormat('yyyy-MM-dd').format(fromDate);
+        params['end_date'] = DateFormat('yyyy-MM-dd').format(toDate);
+      }
+      if (selectedFilters.isNotEmpty) {
+        params['filters'] = selectedFilters;
+      }
+    }
+
+    print('Generating report with params: $params');
+    widget.onGenerate(params);
+    Navigator.pop(context);
+  }
 }
+
+extension StringExtension on String {
+  String capitalize() {
+    if (isEmpty) return this;
+    return "${this[0].toUpperCase()}${substring(1).toLowerCase()}";
+  }
+}
+
 
 
 // import 'package:flutter/material.dart';
