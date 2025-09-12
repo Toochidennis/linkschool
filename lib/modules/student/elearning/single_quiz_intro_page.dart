@@ -169,7 +169,7 @@ class SingleQuizIntroPage extends StatelessWidget {
                           final List<dynamic> quizzesTaken = userBox.get('quizzes', defaultValue: []);
                           final int quizId = childContent!.settings!.id;
 
-                          if (!quizzesTaken.contains(quizId)) {
+                          if (quizzesTaken.contains(quizId)) {
                             showDialog(
                               context: context,
                               builder: (context) => AlertDialog(

@@ -549,7 +549,6 @@ class _SingleAssesmentScreenState extends State<SingleAssessmentScreen> {
   }
 
   Future<void> _submitQuiz() async {
-    print("Yesss s ${widget.questions.toString()}");
     final List<Map<String, dynamic>> answers = widget.questions!.asMap().entries.map((entry) {
       int index = entry.key;
       var q = entry.value;
@@ -561,7 +560,6 @@ class _SingleAssesmentScreenState extends State<SingleAssessmentScreen> {
         "type": q.questionType
       };
     }).toList();
-    print("Here are answers${answers}");
     QuizSubmissionService service = QuizSubmissionService();
     Map<String, dynamic> quizpayload = {
       "quiz_id": widget.childContent?.settings!.id,
@@ -633,6 +631,7 @@ class _SingleAssesmentScreenState extends State<SingleAssessmentScreen> {
       );
     }
     else{
+      //Error
       print("E no goooo ");
     }
 
