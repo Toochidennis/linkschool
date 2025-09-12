@@ -1,5 +1,3 @@
-// receipt_screen.dart
-
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter_svg/svg.dart';
@@ -15,8 +13,6 @@ import 'package:linkschool/modules/model/admin/payment_model.dart';
 import 'package:linkschool/modules/services/admin/payment/payment_service.dart';
 import 'package:linkschool/modules/services/api/api_service.dart';
 import 'package:linkschool/modules/services/api/service_locator.dart';
-// import 'package:linkschool/services/api/api_service.dart';
-// import 'package:linkschool/services/api/service_locator.dart';
 
 class ReceiptScreen extends StatefulWidget {
   const ReceiptScreen({super.key});
@@ -626,7 +622,7 @@ class FilterOverlay extends StatefulWidget {
 
 class _FilterOverlayState extends State<FilterOverlay> {
   String selectedReport = 'Monthly';
-  String selectedCustomType = 'This month';
+  String selectedCustomType = 'This Month';
   String selectedGrouping = '';
   DateTime fromDate = DateTime.now().subtract(const Duration(days: 30));
   DateTime toDate = DateTime.now();
@@ -637,11 +633,11 @@ class _FilterOverlayState extends State<FilterOverlay> {
     'Range',
     'Today',
     'Yesterday',
-    'This week',
-    'Last week',
-    'Last 30 days',
-    'This month',
-    'Last month'
+    'This Week',
+    'Last Week',
+    'Last 30 Days',
+    'This Month',
+    'Last Month'
   ];
   final List<String> groupingOptions = ['Level', 'Class', 'Month'];
   final List<String> filterByOptions = ['Session', 'Term', 'Class', 'Level'];
@@ -672,6 +668,7 @@ class _FilterOverlayState extends State<FilterOverlay> {
         }
       }
     }
+    print('Initial selectedFilters: $selectedFilters');
   }
 
   @override
@@ -732,6 +729,13 @@ class _FilterOverlayState extends State<FilterOverlay> {
                             onTap: () {
                               setState(() {
                                 selectedReport = type;
+                                selectedGrouping = '';
+                                selectedFilters = {};
+                                if (type != 'Custom') {
+                                  selectedCustomType = 'This Month';
+                                  fromDate = DateTime.now().subtract(const Duration(days: 30));
+                                  toDate = DateTime.now();
+                                }
                               });
                             },
                             child: Container(
@@ -817,48 +821,65 @@ class _FilterOverlayState extends State<FilterOverlay> {
   }
 
   Widget _buildDateRangeTab() {
+    print('Building DateRangeTab, selectedCustomType: $selectedCustomType');
     return Padding(
       padding: const EdgeInsets.all(16.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              children: customTypes.map((option) {
-                return Padding(
-                  padding: const EdgeInsets.only(right: 8.0),
-                  child: GestureDetector(
-                    onTap: () {
-                      setState(() {
-                        selectedCustomType = option;
-                      });
-                    },
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: selectedCustomType == option
-                            ? const Color.fromRGBO(47, 85, 221, 1)
-                            : const Color.fromRGBO(212, 222, 255, 1),
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: Text(
-                        option,
-                        style: TextStyle(
-                          color: selectedCustomType == option ? Colors.white : AppColors.paymentTxtColor1,
+      child: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: customTypes.map((option) {
+                  bool isSelected = selectedCustomType == option;
+                  return Padding(
+                    padding: const EdgeInsets.only(right: 8.0),
+                    child: GestureDetector(
+                      onTap: () {
+                        setState(() {
+                          selectedCustomType = option;
+                          print('Selected custom type: $selectedCustomType');
+                        });
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: isSelected
+                              ? const Color.fromRGBO(47, 85, 221, 1)
+                              : const Color.fromRGBO(212, 222, 255, 1),
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: Text(
+                          option,
+                          style: TextStyle(
+                            color: isSelected ? Colors.white : AppColors.paymentTxtColor1,
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                );
-              }).toList(),
+                  );
+                }).toList(),
+              ),
             ),
-          ),
-          if (selectedCustomType == 'Range') const SizedBox(height: 20),
-          if (selectedCustomType == 'Range') _buildDatePicker('From', fromDate, (date) => setState(() => fromDate = date)),
-          if (selectedCustomType == 'Range') const SizedBox(height: 10),
-          if (selectedCustomType == 'Range') _buildDatePicker('To', toDate, (date) => setState(() => toDate = date)),
-        ],
+            if (selectedCustomType == 'Range') ...[
+              const SizedBox(height: 20),
+              _buildDatePicker('From', fromDate, (date) {
+                setState(() {
+                  fromDate = date;
+                  print('From date updated: $fromDate');
+                });
+              }),
+              const SizedBox(height: 10),
+              _buildDatePicker('To', toDate, (date) {
+                setState(() {
+                  toDate = date;
+                  print('To date updated: $toDate');
+                });
+              }),
+            ],
+          ],
+        ),
       ),
     );
   }
@@ -867,7 +888,7 @@ class _FilterOverlayState extends State<FilterOverlay> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label),
+        Text(label, style: AppTextStyles.normal600(fontSize: 16)),
         const SizedBox(height: 5),
         GestureDetector(
           onTap: () async {
@@ -875,21 +896,40 @@ class _FilterOverlayState extends State<FilterOverlay> {
               context: context,
               initialDate: date,
               firstDate: DateTime(2000),
-              lastDate: DateTime(2100),
+              lastDate: DateTime(2030),
+              builder: (context, child) {
+                return Theme(
+                  data: Theme.of(context).copyWith(
+                    colorScheme: const ColorScheme.light(
+                      primary: Color.fromRGBO(47, 85, 221, 1),
+                      onPrimary: Colors.white,
+                      surface: Colors.white,
+                      onSurface: Colors.black,
+                    ),
+                    dialogBackgroundColor: Colors.white,
+                  ),
+                  child: child!,
+                );
+              },
             );
-            if (picked != null) onChanged(picked);
+            if (picked != null) {
+              onChanged(picked);
+            }
           },
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             decoration: BoxDecoration(
-              border: Border.all(color: Colors.grey),
+              border: Border.all(color: Colors.grey.shade300),
               borderRadius: BorderRadius.circular(4),
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(DateFormat('yyyy-MM-dd').format(date)),
-                const Icon(Icons.calendar_today),
+                Text(
+                  DateFormat('yyyy-MM-dd').format(date),
+                  style: AppTextStyles.normal500(fontSize: 14, color: Colors.black),
+                ),
+                const Icon(Icons.calendar_today, color: Color.fromRGBO(47, 85, 221, 1)),
               ],
             ),
           ),
@@ -908,6 +948,7 @@ class _FilterOverlayState extends State<FilterOverlay> {
             onTap: () {
               setState(() {
                 selectedGrouping = isSelected ? '' : option;
+                print('Selected grouping: $selectedGrouping');
               });
             },
             child: Container(
@@ -921,7 +962,10 @@ class _FilterOverlayState extends State<FilterOverlay> {
               child: Center(
                 child: Text(
                   option,
-                  style: TextStyle(color: isSelected ? Colors.white : Colors.black),
+                  style: TextStyle(
+                    color: isSelected ? Colors.white : Colors.black,
+                    fontSize: 16,
+                  ),
                 ),
               ),
             ),
@@ -936,6 +980,7 @@ class _FilterOverlayState extends State<FilterOverlay> {
       padding: const EdgeInsets.all(16.0),
       child: Column(
         children: filterByOptions.map((option) {
+          final count = selectedFilters[option.toLowerCase() + 's']?.length ?? 0;
           return GestureDetector(
             onTap: () => _showFilterBottomSheet(option),
             child: Container(
@@ -946,7 +991,12 @@ class _FilterOverlayState extends State<FilterOverlay> {
                 color: const Color.fromRGBO(229, 229, 229, 1),
                 borderRadius: BorderRadius.circular(6),
               ),
-              child: Center(child: Text(option)),
+              child: Center(
+                child: Text(
+                  '$option: $count selected',
+                  style: AppTextStyles.normal500(fontSize: 16, color: Colors.black),
+                ),
+              ),
             ),
           );
         }).toList(),
@@ -959,16 +1009,16 @@ class _FilterOverlayState extends State<FilterOverlay> {
     final userBox = Hive.box('userData');
     switch (option) {
       case 'Session':
-        final currentYear = int.tryParse(userBox.get('settings')!['year'].toString()) ?? DateTime.now().year;
+        final currentYear = int.tryParse(userBox.get('settings')?['year']?.toString() ?? '') ?? DateTime.now().year;
         for (int y = currentYear; y >= 2000; y--) {
           items.add({'name': '${y - 1}/$y', 'value': y});
         }
         break;
       case 'Term':
         items = [
-          {'name': 'First term', 'value': 1},
-          {'name': 'Second term', 'value': 2},
-          {'name': 'Third term', 'value': 3},
+          {'name': 'First Term', 'value': 1},
+          {'name': 'Second Term', 'value': 2},
+          {'name': 'Third Term', 'value': 3},
         ];
         break;
       case 'Class':
@@ -997,6 +1047,7 @@ class _FilterOverlayState extends State<FilterOverlay> {
               } else {
                 selectedFilters[key] = selectedValues;
               }
+              print('Updated selectedFilters for $key: $selectedValues');
             });
           },
         );
@@ -1011,7 +1062,6 @@ class _FilterOverlayState extends State<FilterOverlay> {
   }) {
     return StatefulBuilder(
       builder: (context, setModalState) {
-        Set<int> selectedValues = {};
         final key = title.toLowerCase().contains('session')
             ? 'sessions'
             : title.toLowerCase().contains('term')
@@ -1019,14 +1069,14 @@ class _FilterOverlayState extends State<FilterOverlay> {
                 : title.toLowerCase().contains('class')
                     ? 'classes'
                     : 'levels';
-        if (selectedFilters.containsKey(key)) {
-          selectedValues = Set<int>.from(selectedFilters[key]!);
-        }
+        final selectedValues = selectedFilters[key] != null
+            ? List<int>.from(selectedFilters[key]!)
+            : <int>[];
 
         return Padding(
           padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
           child: ConstrainedBox(
-            constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.4),
+            constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.5),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -1043,15 +1093,26 @@ class _FilterOverlayState extends State<FilterOverlay> {
                     itemCount: items.length,
                     itemBuilder: (context, index) {
                       final item = items[index];
-                      bool isSelected = selectedValues.contains(item['value']);
+                      final value = item['value'] as int;
+                      final name = item['name'] as String;
+                      final isSelected = selectedValues.contains(value);
                       return GestureDetector(
                         onTap: () {
                           setModalState(() {
                             if (isSelected) {
-                              selectedValues.remove(item['value']);
+                              selectedValues.remove(value);
                             } else {
-                              selectedValues.add(item['value']);
+                              selectedValues.add(value);
                             }
+                            print('Selected values in bottom sheet: $selectedValues');
+                          });
+                          setState(() {
+                            if (selectedValues.isEmpty) {
+                              selectedFilters.remove(key);
+                            } else {
+                              selectedFilters[key] = List<int>.from(selectedValues);
+                            }
+                            print('Updated selectedFilters in parent: $selectedFilters');
                           });
                         },
                         child: Container(
@@ -1072,8 +1133,15 @@ class _FilterOverlayState extends State<FilterOverlay> {
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Text(item['name']),
-                              if (isSelected) const Icon(Icons.check, color: Color.fromRGBO(47, 85, 221, 1)),
+                              Expanded(
+                                child: Text(
+                                  name,
+                                  style: AppTextStyles.normal500(fontSize: 16, color: Colors.black),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                              if (isSelected)
+                                const Icon(Icons.check, color: Color.fromRGBO(47, 85, 221, 1)),
                             ],
                           ),
                         ),
@@ -1085,7 +1153,7 @@ class _FilterOverlayState extends State<FilterOverlay> {
                   padding: const EdgeInsets.all(16.0),
                   child: ElevatedButton(
                     onPressed: () {
-                      onItemSelected(selectedValues.toList());
+                      onItemSelected(selectedValues);
                       Navigator.pop(context);
                     },
                     style: ElevatedButton.styleFrom(
@@ -1110,6 +1178,13 @@ class _FilterOverlayState extends State<FilterOverlay> {
   }
 
   void _generateReport() {
+    if (isCustom && selectedCustomType == 'Range' && fromDate.isAfter(toDate)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Start date cannot be after end date')),
+      );
+      return;
+    }
+
     Map<String, dynamic> params = {
       'report_type': selectedReport.toLowerCase(),
     };
@@ -1130,6 +1205,7 @@ class _FilterOverlayState extends State<FilterOverlay> {
       }
     }
 
+    print('Generating report with params: $params');
     widget.onGenerate(params);
     Navigator.pop(context);
   }
@@ -1155,9 +1231,6 @@ class ChartPoint {
         y = (json['y'] as num).toDouble();
 }
 
-
-
-
 class Level {
   final int id;
   final String levelName;
@@ -1180,6 +1253,7 @@ class ClassModel {
 
 extension StringCapitalize on String {
   String capitalize() {
+    if (isEmpty) return this;
     return "${this[0].toUpperCase()}${substring(1).toLowerCase()}";
   }
 }
@@ -1188,22 +1262,25 @@ extension StringCapitalize on String {
 
 
 
-// // ignore_for_file: prefer_const_literals_to_create_immutables, unused_element, deprecated_member_use
+// // receipt_screen.dart
+
 // import 'package:flutter/material.dart';
 // import 'package:fl_chart/fl_chart.dart';
 // import 'package:flutter_svg/svg.dart';
+// import 'package:hive/hive.dart';
+// import 'package:intl/intl.dart';
 // import 'package:linkschool/modules/common/app_colors.dart';
 // import 'package:linkschool/modules/common/constants.dart';
 // import 'package:linkschool/modules/common/text_styles.dart';
 // import 'package:linkschool/modules/common/widgets/portal/profile/naira_icon.dart';
 // import 'package:linkschool/modules/admin/payment/receipt/student_list_screen.dart';
 // import 'package:linkschool/modules/admin/payment/receipt/generate_report/report_payment.dart';
-
-// import '../../../model/admin/payment_model.dart';
-// import '../../../services/admin/payment/payment_service.dart';
-// import '../../../services/api/api_service.dart';
-// import '../../../services/api/service_locator.dart';
-
+// import 'package:linkschool/modules/model/admin/payment_model.dart';
+// import 'package:linkschool/modules/services/admin/payment/payment_service.dart';
+// import 'package:linkschool/modules/services/api/api_service.dart';
+// import 'package:linkschool/modules/services/api/service_locator.dart';
+// // import 'package:linkschool/services/api/api_service.dart';
+// // import 'package:linkschool/services/api/service_locator.dart';
 
 // class ReceiptScreen extends StatefulWidget {
 //   const ReceiptScreen({super.key});
@@ -1212,59 +1289,27 @@ extension StringCapitalize on String {
 //   State<ReceiptScreen> createState() => _ReceiptScreenState();
 // }
 
-// class _ReceiptScreenState extends State<ReceiptScreen>
-//     with TickerProviderStateMixin {
+// class _ReceiptScreenState extends State<ReceiptScreen> with TickerProviderStateMixin {
 //   late double opacity;
-//   // final bool _isOverlayVisible = false;
 //   int _currentTabIndex = 0;
-//   String _selectedDateRange = 'Custom';
-//   // final String _selectedGrouping = 'Month';
-//   String _selectedLevel = 'JSS1';
-//   String _selectedClass = 'JSS1A';
-//   DateTime _fromDate = DateTime.now();
-//   DateTime _toDate = DateTime.now();
 //   bool _isAmountHidden = false;
-
-//   late TabController _tabController;
-//   final List<String> reportTypes = [
-//     'Termly report',
-//     'Session report',
-//     'Monthly report',
-//     'Class report',
-//     'Level report',
-//     'Monthly report',
-//     'Class report',
-//     'Level report'
-//   ];
-//   final List<String> dateRangeOptions = [
-//     'Custom',
-//     'Today',
-//     'Yesterday',
-//     'This Week',
-//     'Last 7 days',
-//     'Last 30 days'
-//   ];
-
 //   bool _isExpanded = false;
 //   late AnimationController _animationController;
-//   late Animation<double> _buttonAnimation;
 //   late Animation<double> _animation;
-
-//   // new state variables for level and class selection
-//   String? selectedLevel;
-//   String? selectedClass;
-//   List<String> students = []; // Will hold students for selected class
-
-//   int _selectedReportType = 0;
+//   late Animation<double> _buttonAnimation;
 
 //   late PaymentService _paymentService;
-
-//   // Define level and class data
-//   final Map<String, List<String>> levelClassMap = {
-//     'JSS': ['JSS 1', 'JSS 2', 'JSS 3'],
-//     'SS': ['SS 1', 'SS 2', 'SS 3'],
-//     'BASIC': ['Basic 1', 'Basic 2', 'Basic 3', 'Basic 4', 'Basic 5'],
+//   IncomeReport? _report;
+//   bool _isLoading = true;
+//   Map<String, dynamic> _filterParams = {
+//     'report_type': 'monthly',
+//     'group_by': 'level'
 //   };
+
+//   List<String> xLabels = [];
+//   Map<String, double> xIndexMap = {};
+//   double maxY = 0;
+//   bool isDateFormat = false;
 
 //   final List<Map<String, dynamic>> _fabButtons = [
 //     {
@@ -1285,7 +1330,8 @@ extension StringCapitalize on String {
 
 //     final apiService = locator<ApiService>();
 //     _paymentService = PaymentService(apiService);
-//     _tabController = TabController(length: 3, vsync: this);
+
+//     // Initialize animation controller
 //     _animationController = AnimationController(
 //       duration: const Duration(milliseconds: 300),
 //       vsync: this,
@@ -1296,254 +1342,383 @@ extension StringCapitalize on String {
 //     );
 //     _buttonAnimation = Tween<double>(begin: 0, end: 1).animate(_animation);
 
-//     // Initialize FAB button actions
+//     // Set FAB button actions
 //     _fabButtons[0]['onPressed'] = () {
 //       showModalBottomSheet(
 //         context: context,
 //         isScrollControlled: true,
 //         backgroundColor: Colors.transparent,
 //         builder: (BuildContext context) {
-//           return _buildCustomOverlay();
+//           return FilterOverlay(
+//             initialParams: _filterParams,
+//             onGenerate: (params) {
+//               setState(() {
+//                 _filterParams = params;
+//               });
+//               _loadData();
+//             },
+//           );
 //         },
 //       );
 //     };
 
-//     // _fabButtons[1]['onPressed'] = _showAddReceiptBottomSheet;
-
-//     // Update the Add Receipt FAB action
 //     _fabButtons[1]['onPressed'] = _showLevelSelectionOverlay;
+
+//     _loadData();
 //   }
 
-//   void _onFromDateChanged(DateTime date) {
-//     setState(() {
-//       _fromDate = date;
-//     });
+//   Future<void> _loadData() async {
+//     setState(() => _isLoading = true);
+
+//     try {
+//       final userBox = Hive.box('userData');
+//       _filterParams['_db'] = userBox.get('_db');
+//       final report = await _paymentService.getIncomeReport(_filterParams);
+//       setState(() {
+//         _report = report;
+//         _prepareChartData();
+//         _isLoading = false;
+//       });
+//     } catch (e) {
+//       setState(() => _isLoading = false);
+//       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error loading report: $e')));
+//     }
 //   }
 
-//   void _onToDateChanged(DateTime date) {
-//     setState(() {
-//       _toDate = date;
-//     });
+//   void _prepareChartData() {
+//     if (_report == null) return;
+
+//     xLabels = _report!.chartData.map((e) => e.x).toSet().toList();
+
+//     try {
+//       xLabels.sort((a, b) => DateTime.parse(a).compareTo(DateTime.parse(b)));
+//       isDateFormat = true;
+//     } catch (e) {
+//       xLabels.sort();
+//       isDateFormat = false;
+//     }
+
+//     xIndexMap = {for (int i = 0; i < xLabels.length; i++) xLabels[i]: i.toDouble()};
+
+//     maxY = _report!.chartData.fold(0.0, (max, d) => d.y > max ? d.y : max) * 1.1;
 //   }
 
-//   void _showMonthYearFilterOverlay() {
-//     showModalBottomSheet(
-//       context: context,
-//       isScrollControlled: true,
-//       backgroundColor: AppColors.backgroundLight,
-//       builder: (BuildContext context) {
-//         return Padding(
-//           padding: EdgeInsets.only(
-//             bottom: MediaQuery.of(context).viewInsets.bottom,
+//   @override
+//   void dispose() {
+//     _animationController.dispose();
+//     super.dispose();
+//   }
+
+//   @override
+//   Widget build(BuildContext context) {
+//     final Brightness brightness = Theme.of(context).brightness;
+//     opacity = brightness == Brightness.light ? 0.1 : 0.15;
+//     return Scaffold(
+//       appBar: AppBar(
+//         leading: IconButton(
+//           onPressed: () {
+//             Navigator.of(context).pop();
+//           },
+//           icon: Image.asset(
+//             'assets/icons/arrow_back.png',
+//             color: AppColors.paymentTxtColor1,
+//             width: 34.0,
+//             height: 34.0,
 //           ),
-//           child: ConstrainedBox(
-//             constraints: BoxConstraints(
-//               maxHeight: MediaQuery.of(context).size.height * 0.4,
-//             ),
-//             child: Column(
-//               mainAxisSize: MainAxisSize.min,
-//               children: [
-//                 Padding(
-//                   padding: const EdgeInsets.all(16.0),
-//                   child: Text(
-//                     'Select Month and Year',
-//                     style: AppTextStyles.normal600(
-//                       fontSize: 20,
-//                       color: const Color.fromRGBO(47, 85, 221, 1),
-//                     ),
-//                   ),
-//                 ),
-//                 Expanded(
-//                   child: ListView(
-//                     children: [
-//                       _buildMonthYearItem('January 2023'),
-//                       _buildMonthYearItem('February 2023'),
-//                       _buildMonthYearItem('March 2023'),
-//                       // Add more months
-//                     ],
-//                   ),
-//                 ),
-//               ],
-//             ),
+//         ),
+//         title: Text(
+//           'Receipts',
+//           style: AppTextStyles.normal600(
+//             fontSize: 24.0,
+//             color: AppColors.paymentTxtColor1,
 //           ),
-//         );
-//       },
-//     );
-//   }
-
-//   void _showSessionTermFilterOverlay() {
-//     showModalBottomSheet(
-//       context: context,
-//       isScrollControlled: true,
-//       backgroundColor: AppColors.backgroundLight,
-//       builder: (BuildContext context) {
-//         return Padding(
-//           padding: EdgeInsets.only(
-//             bottom: MediaQuery.of(context).viewInsets.bottom,
-//           ),
-//           child: ConstrainedBox(
-//             constraints: BoxConstraints(
-//               maxHeight: MediaQuery.of(context).size.height * 0.4,
-//             ),
-//             child: Column(
-//               mainAxisSize: MainAxisSize.min,
-//               children: [
-//                 Padding(
-//                   padding: const EdgeInsets.all(16.0),
-//                   child: Text(
-//                     'Select Session and Term',
-//                     style: AppTextStyles.normal600(
-//                       fontSize: 20,
-//                       color: const Color.fromRGBO(47, 85, 221, 1),
-//                     ),
-//                   ),
-//                 ),
-//                 Expanded(
-//                   child: ListView(
-//                     children: [
-//                       _buildSessionTermItem('2023/2024 1st Term'),
-//                       _buildSessionTermItem('2023/2024 2nd Term'),
-//                       _buildSessionTermItem('2023/2024 3rd Term'),
-//                       _buildSessionTermItem('2022/2023 3rd Term'),
-//                     ],
-//                   ),
-//                 ),
-//               ],
+//         ),
+//         backgroundColor: AppColors.backgroundLight,
+//         centerTitle: true,
+//         actions: [
+//           IconButton(
+//             onPressed: () {
+//               showModalBottomSheet(
+//                 context: context,
+//                 isScrollControlled: true,
+//                 backgroundColor: Colors.transparent,
+//                 builder: (BuildContext context) {
+//                   return FilterOverlay(
+//                     initialParams: _filterParams,
+//                     onGenerate: (params) {
+//                       setState(() {
+//                         _filterParams = params;
+//                       });
+//                       _loadData();
+//                     },
+//                   );
+//                 },
+//               );
+//             },
+//             icon: SvgPicture.asset(
+//               'assets/icons/profile/filter_icon.svg',
+//               color: const Color.fromRGBO(47, 85, 221, 1),
 //             ),
 //           ),
-//         );
-//       },
-//     );
-//   }
-
-// void _showLevelSelectionOverlay() {
-//     final levels = _paymentService.getAvailableLevels();
-//     showModalBottomSheet(
-//       context: context,
-//       isScrollControlled: true,
-//       backgroundColor: AppColors.backgroundLight,
-//       builder: (BuildContext context) {
-//         return Padding(
-//           padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
-//           child: ConstrainedBox(
-//             constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.4),
-//             child: Padding(
-//               padding: const EdgeInsets.only(top: 16.0),
-//               child: Column(
-//                 mainAxisSize: MainAxisSize.min,
-//                 children: [
-//                   Text(
-//                     'Select Level',
-//                     style: AppTextStyles.normal600(fontSize: 20, color: const Color.fromRGBO(47, 85, 221, 1)),
+//         ],
+//         flexibleSpace: FlexibleSpaceBar(
+//           background: Stack(
+//             children: [
+//               Positioned.fill(
+//                 child: Opacity(
+//                   opacity: opacity,
+//                   child: Image.asset(
+//                     'assets/images/background.png',
+//                     fit: BoxFit.cover,
 //                   ),
-//                   const SizedBox(height: 24),
-//                   Flexible(
-//                     child: ListView.builder(
-//                       itemCount: levels.length,
-//                       itemBuilder: (context, index) {
-//                         final level = levels[index];
-//                         return Padding(
-//                           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
-//                           child: GestureDetector(
-//                             onTap: () {
-//                               Navigator.pop(context);
-//                               _showClassSelectionOverlay(level);
-//                             },
-//                             child: Container(
-//                               width: double.infinity,
-//                               padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
-//                               decoration: BoxDecoration(
-//                                 color: const Color.fromRGBO(47, 85, 221, 1),
-//                                 borderRadius: BorderRadius.circular(10),
+//                 ),
+//               )
+//             ],
+//           ),
+//         ),
+//       ),
+//       body: Stack(
+//         children: [
+//           Container(
+//             decoration: Constants.customBoxDecoration(context),
+//             child: _isLoading
+//                 ? const Center(child: CircularProgressIndicator())
+//                 : _report == null
+//                     ? const Center(child: Text('No data available'))
+//                     : SingleChildScrollView(
+//                         child: Padding(
+//                           padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 16.0),
+//                           child: Column(
+//                             crossAxisAlignment: CrossAxisAlignment.start,
+//                             children: [
+//                               Container(
+//                                 width: double.infinity,
+//                                 height: 115,
+//                                 decoration: BoxDecoration(
+//                                   color: const Color.fromRGBO(47, 85, 221, 1),
+//                                   borderRadius: BorderRadius.circular(8),
+//                                 ),
+//                                 child: Padding(
+//                                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+//                                   child: Column(
+//                                     crossAxisAlignment: CrossAxisAlignment.start,
+//                                     children: [
+//                                       Row(
+//                                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
+//                                         children: [
+//                                           Row(
+//                                             children: [
+//                                               Text(
+//                                                 'Total Amount Received',
+//                                                 style: AppTextStyles.normal600(
+//                                                     fontSize: 14, color: AppColors.backgroundLight),
+//                                               ),
+//                                               IconButton(
+//                                                 icon: Icon(
+//                                                   _isAmountHidden ? Icons.visibility : Icons.visibility_off,
+//                                                   color: Colors.white,
+//                                                   size: 20,
+//                                                 ),
+//                                                 onPressed: () {
+//                                                   setState(() {
+//                                                     _isAmountHidden = !_isAmountHidden;
+//                                                   });
+//                                                 },
+//                                               ),
+//                                             ],
+//                                           ),
+//                                           Container(
+//                                             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+//                                             decoration: BoxDecoration(
+//                                               color: const Color.fromRGBO(198, 210, 255, 1),
+//                                               borderRadius: BorderRadius.circular(10),
+//                                             ),
+//                                             child: Text(
+//                                               '${_report!.summary.totalTransactions} payments',
+//                                               style: AppTextStyles.normal500(
+//                                                   fontSize: 12, color: AppColors.paymentTxtColor1),
+//                                             ),
+//                                           ),
+//                                         ],
+//                                       ),
+//                                       Row(
+//                                         children: [
+//                                           const NairaSvgIcon(color: AppColors.backgroundLight),
+//                                           const SizedBox(width: 4),
+//                                           Text(
+//                                             _isAmountHidden
+//                                                 ? '********'
+//                                                 : _report!.summary.totalAmount.toStringAsFixed(2),
+//                                             style: AppTextStyles.normal700(
+//                                                 fontSize: 24, color: AppColors.backgroundLight),
+//                                           ),
+//                                         ],
+//                                       ),
+//                                     ],
+//                                   ),
+//                                 ),
 //                               ),
-//                               child: Text(
-//                                 level.levelName,
-//                                 style: AppTextStyles.normal500(fontSize: 18, color: AppColors.backgroundLight),
-//                                 textAlign: TextAlign.center,
+//                               const SizedBox(height: 16),
+//                               SizedBox(
+//                                 height: 200,
+//                                 child: LineChart(
+//                                   LineChartData(
+//                                     gridData: const FlGridData(show: false),
+//                                     titlesData: FlTitlesData(
+//                                       bottomTitles: AxisTitles(
+//                                         sideTitles: SideTitles(
+//                                           showTitles: true,
+//                                           reservedSize: 40,
+//                                           getTitlesWidget: (value, meta) {
+//                                             final idx = value.toInt();
+//                                             if (idx < 0 || idx >= xLabels.length) {
+//                                               return const Text('');
+//                                             }
+//                                             String title = xLabels[idx];
+//                                             if (isDateFormat) {
+//                                               try {
+//                                                 final date = DateTime.parse(title);
+//                                                 title = DateFormat('MMM yyyy').format(date);
+//                                               } catch (e) {
+//                                                 title = title.substring(5);
+//                                               }
+//                                             }
+//                                             return Padding(
+//                                               padding: const EdgeInsets.only(top: 4),
+//                                               child: Text(title, style: const TextStyle(fontSize: 10)),
+//                                             );
+//                                           },
+//                                         ),
+//                                       ),
+//                                       leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+//                                       topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+//                                       rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+//                                     ),
+//                                     borderData: FlBorderData(show: false),
+//                                     minX: 0,
+//                                     maxX: xLabels.length - 1,
+//                                     minY: 0,
+//                                     maxY: maxY,
+//                                     lineBarsData: [
+//                                       LineChartBarData(
+//                                         spots: _report!.chartData.map((d) => FlSpot(xIndexMap[d.x]!, d.y)).toList(),
+//                                         isCurved: true,
+//                                         color: const Color.fromRGBO(47, 85, 221, 1),
+//                                         barWidth: 3,
+//                                         dotData: const FlDotData(show: false),
+//                                         belowBarData: BarAreaData(
+//                                           show: true,
+//                                           color: const Color.fromRGBO(47, 85, 221, 0.102),
+//                                         ),
+//                                       ),
+//                                     ],
+//                                   ),
+//                                 ),
 //                               ),
-//                             ),
+//                               const SizedBox(height: 16),
+//                               Row(
+//                                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
+//                                 children: [
+//                                   Text('Payment History',
+//                                       style: AppTextStyles.normal600(fontSize: 18, color: AppColors.backgroundDark)),
+//                                   GestureDetector(
+//                                     onTap: () {
+//                                       Navigator.push(
+//                                         context,
+//                                         MaterialPageRoute(
+//                                           builder: (context) => ReportPaymentScreen(
+//                                             initialParams: _filterParams,
+//                                           ),
+//                                         ),
+//                                       );
+//                                     },
+//                                     child: const Text(
+//                                       'See all',
+//                                       style: TextStyle(
+//                                           decoration: TextDecoration.underline,
+//                                           color: Color.fromRGBO(47, 85, 221, 1),
+//                                           fontSize: 16.0),
+//                                     ),
+//                                   ),
+//                                 ],
+//                               ),
+//                               const SizedBox(height: 16.0),
+//                               ..._buildPaymentHistoryItems(),
+//                             ],
 //                           ),
-//                         );
-//                       },
-//                     ),
+//                         ),
+//                       ),
+//           ),
+//         ],
+//       ),
+//       floatingActionButton: _buildAnimatedFAB(),
+//     );
+//   }
+
+//   List<Widget> _buildPaymentHistoryItems() {
+//     if (_report == null || _report!.transactions.isEmpty) return [];
+
+//     List<IncomeTransaction> transactions = _report!.transactions.take(10).toList();
+
+//     if (transactions.first.isAggregated) {
+//       return transactions.map((trans) {
+//         return _buildPaymentHistoryItem(
+//           trans.name,
+//           trans.totalAmount!.toStringAsFixed(2),
+//         );
+//       }).toList();
+//     } else {
+//       // Group by level
+//       Map<String, double> levelSums = {};
+//       for (var trans in transactions) {
+//         String level = trans.levelName ?? 'Unknown';
+//         levelSums[level] = (levelSums[level] ?? 0) + (trans.amount ?? 0);
+//       }
+//       return levelSums.entries.take(10).map((entry) {
+//         return _buildPaymentHistoryItem(
+//           entry.key,
+//           entry.value.toStringAsFixed(2),
+//         );
+//       }).toList();
+//     }
+//   }
+
+//   Widget _buildPaymentHistoryItem(String title, String amount) {
+//     return GestureDetector(
+//       onTap: () {},
+//       child: Container(
+//         margin: const EdgeInsets.only(bottom: 8.0),
+//         decoration: BoxDecoration(
+//           border: Border.all(color: Colors.grey.shade300),
+//           borderRadius: BorderRadius.circular(8),
+//         ),
+//         child: Padding(
+//           padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 8.0),
+//           child: Row(
+//             mainAxisAlignment: MainAxisAlignment.spaceBetween,
+//             children: [
+//               Row(
+//                 children: [
+//                   SvgPicture.asset('assets/icons/profile/payment_icon.svg'),
+//                   const SizedBox(width: 8),
+//                   Text(
+//                     title,
+//                     style: AppTextStyles.normal600(fontSize: 18, color: AppColors.backgroundDark),
 //                   ),
 //                 ],
 //               ),
-//             ),
-//           ),
-//         );
-//       },
-//     );
-//   }
-
-//   void _showClassSelectionOverlay(Level level) {
-//     final classes = _paymentService.getClassesForLevel(level.id);
-//     showModalBottomSheet(
-//       context: context,
-//       isScrollControlled: true,
-//       backgroundColor: AppColors.backgroundLight,
-//       builder: (BuildContext context) {
-//         return Padding(
-//           padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
-//           child: ConstrainedBox(
-//             constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.4),
-//             child: Padding(
-//               padding: const EdgeInsets.only(top: 16.0),
-//               child: Column(
-//                 mainAxisSize: MainAxisSize.min,
+//               Row(
 //                 children: [
+//                   const NairaSvgIcon(color: AppColors.paymentTxtColor1),
+//                   const SizedBox(width: 4),
 //                   Text(
-//                     'Select Class',
-//                     style: AppTextStyles.normal600(fontSize: 20, color: const Color.fromRGBO(47, 85, 221, 1)),
-//                   ),
-//                   const SizedBox(height: 24),
-//                   Flexible(
-//                     child: ListView.builder(
-//                       itemCount: classes.length,
-//                       itemBuilder: (context, index) {
-//                         final classModel = classes[index];
-//                         return Padding(
-//                           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
-//                           child: GestureDetector(
-//                             onTap: () {
-//                               Navigator.pop(context);
-//                               _showStudentList(classModel);
-//                             },
-//                             child: Container(
-//                               width: double.infinity,
-//                               padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
-//                               decoration: BoxDecoration(
-//                                 color: const Color.fromRGBO(47, 85, 221, 1),
-//                                 borderRadius: BorderRadius.circular(10),
-//                               ),
-//                               child: Text(
-//                                 classModel.className,
-//                                 style: AppTextStyles.normal500(fontSize: 18, color: AppColors.backgroundLight),
-//                                 textAlign: TextAlign.center,
-//                               ),
-//                             ),
-//                           ),
-//                         );
-//                       },
-//                     ),
+//                     amount,
+//                     style: AppTextStyles.normal700(fontSize: 18, color: AppColors.paymentTxtColor1),
 //                   ),
 //                 ],
 //               ),
-//             ),
+//             ],
 //           ),
-//         );
-//       },
-//     );
-//   }
-
-//   void _showStudentList(ClassModel classModel) {
-//     Navigator.push(
-//       context,
-//       MaterialPageRoute(
-//         builder: (context) => StudentListScreen(
-//           levelId: classModel.levelId,
-//           classId: classModel.id,
-//           className: classModel.className,
 //         ),
 //       ),
 //     );
@@ -1566,20 +1741,14 @@ extension StringCapitalize on String {
 //                     Padding(
 //                       padding: const EdgeInsets.only(right: 8.0),
 //                       child: Container(
-//                         padding: const EdgeInsets.symmetric(
-//                           horizontal: 12.0,
-//                           vertical: 6.0,
-//                         ),
+//                         padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 6.0),
 //                         decoration: BoxDecoration(
 //                           color: const Color.fromRGBO(47, 85, 221, 1),
 //                           borderRadius: BorderRadius.circular(4.0),
 //                         ),
 //                         child: Text(
 //                           button['title'],
-//                           style: const TextStyle(
-//                             color: Colors.white,
-//                             fontSize: 14.0,
-//                           ),
+//                           style: const TextStyle(color: Colors.white, fontSize: 14.0),
 //                         ),
 //                       ),
 //                     ),
@@ -1621,537 +1790,269 @@ extension StringCapitalize on String {
 //     );
 //   }
 
-//   @override
-//   Widget build(BuildContext context) {
-//     final Brightness brightness = Theme.of(context).brightness;
-//     opacity = brightness == Brightness.light ? 0.1 : 0.15;
-//     return Scaffold(
-//       appBar: AppBar(
-//         leading: IconButton(
-//           onPressed: () {
-//             Navigator.of(context).pop();
-//           },
-//           icon: Image.asset(
-//             'assets/icons/arrow_back.png',
-//             color: AppColors.paymentTxtColor1,
-//             width: 34.0,
-//             height: 34.0,
-//           ),
-//         ),
-//         title: Text(
-//           'Receipts',
-//           style: AppTextStyles.normal600(
-//             fontSize: 24.0,
-//             color: AppColors.paymentTxtColor1,
-//           ),
-//         ),
-//         backgroundColor: AppColors.backgroundLight,
-//         centerTitle: true,
-//         actions: [
-//           TextButton(
-//             onPressed: () {
-//               showModalBottomSheet(
-//                 context: context,
-//                 isScrollControlled: true,
-//                 backgroundColor: Colors.transparent,
-//                 builder: (BuildContext context) {
-//                   return _buildCustomOverlay();
-//                 },
-//               );
-//             },
-//             child: SvgPicture.asset(
-//               'assets/icons/profile/filter_icon.svg',
-//               color: Color.fromRGBO(47, 85, 221, 1),
-//             ),
-//           ),
-//         ],
-//         flexibleSpace: FlexibleSpaceBar(
-//           background: Stack(
-//             children: [
-//               Positioned.fill(
-//                 child: Opacity(
-//                   opacity: opacity,
-//                   child: Image.asset(
-//                     'assets/images/background.png',
-//                     fit: BoxFit.cover,
-//                   ),
-//                 ),
-//               )
-//             ],
-//           ),
-//         ),
-//       ),
-//       body: Stack(
-//         children: [
-//           Container(
-//             decoration: Constants.customBoxDecoration(context),
-//             child: Padding(
-//               padding: const EdgeInsets.all(8.0),
-//               child: SingleChildScrollView(
-//                 child: Padding(
-//                   padding: const EdgeInsets.symmetric(
-//                       horizontal: 8.0, vertical: 16.0),
-//                   child: Column(
-//                     crossAxisAlignment: CrossAxisAlignment.start,
-//                     children: [
-//                       Row(
-//                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
-//                         children: [
-//                           GestureDetector(
-//                             onTap: _showMonthYearFilterOverlay,
-//                             child: Row(
-//                               children: [
-//                                 Text('February 2023'),
-//                                 Icon(Icons.arrow_drop_down),
-//                               ],
-//                             ),
-//                           ),
-//                           GestureDetector(
-//                             onTap: _showSessionTermFilterOverlay,
-//                             child: Row(
-//                               children: [
-//                                 Text('2023/2024 3rd Term'),
-//                                 Icon(Icons.arrow_drop_down),
-//                               ],
-//                             ),
-//                           ),
-//                         ],
-//                       ),
-//                       const SizedBox(height: 16),
-//                       Container(
-//                         width: double.infinity,
-//                         height: 115,
-//                         decoration: BoxDecoration(
-//                           color: const Color.fromRGBO(47, 85, 221, 1),
-//                           borderRadius: BorderRadius.circular(8),
-//                         ),
-//                         child: Padding(
-//                           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-//                           child: Column(
-//                             crossAxisAlignment: CrossAxisAlignment.start,
-//                             // mainAxisAlignment: MainAxisAlignment.spaceBetween,
-//                             children: [
-//                               Row(
-//                                 mainAxisAlignment:
-//                                     MainAxisAlignment.spaceBetween,
-//                                 children: [
-//                                   Row(
-//                                     children: [
-//                                       Text(
-//                                         'Total Amount Received',
-//                                         style: AppTextStyles.normal600(fontSize: 14, color: AppColors.backgroundLight),
-//                                       ),
-//                                       IconButton(
-//                                         icon: Icon(
-//                                           _isAmountHidden
-//                                               ? Icons.visibility
-//                                               : Icons.visibility_off,
-//                                           color: Colors.white,
-//                                           size: 20,
-//                                         ),
-//                                         onPressed: () {
-//                                           setState(() {
-//                                             _isAmountHidden = !_isAmountHidden;
-//                                           });
-//                                         },
-//                                       ),
-//                                     ],
-//                                   ),
-//                                   Container(
-//                                     padding:  const EdgeInsets.symmetric(
-//                                         horizontal: 8, vertical: 4),
-//                                     decoration: BoxDecoration(
-//                                       color: const Color.fromRGBO(
-//                                           198, 210, 255, 1),
-//                                       borderRadius: BorderRadius.circular(10),
-//                                     ),
-//                                     child:  Text('7 payments', style: AppTextStyles.normal500(fontSize: 12, color: AppColors.paymentTxtColor1),),
-//                                   ),
-//                                 ],
-//                               ),
-//                               Row(
-//                                 children: [
-//                                   const NairaSvgIcon(color: AppColors.backgroundLight),
-//                                   const SizedBox(width: 4),
-//                                   Text(
-//                                     _isAmountHidden ? '********' : '234,790.00',
-//                                     style: AppTextStyles.normal700(fontSize: 24, color: AppColors.backgroundLight),
-//                                   ),
-//                                 ],
-//                               ),
-//                             ],
-//                           ),
-//                         ),
-//                       ),
-//                       const SizedBox(height: 16),
-//                       SizedBox(
-//                         height: 200,
-//                         child: LineChart(
-//                           LineChartData(
-//                             gridData: const FlGridData(show: false),
-//                             titlesData: FlTitlesData(
-//                               bottomTitles: AxisTitles(
-//                                 sideTitles: SideTitles(
-//                                   showTitles: true,
-//                                   getTitlesWidget: (value, meta) {
-//                                     switch (value.toInt()) {
-//                                       case 0:
-//                                         return const Text('Basic');
-//                                       case 1:
-//                                         return const Text('JSS');
-//                                       case 2:
-//                                         return const Text('SSS');
-//                                       default:
-//                                         return const Text('');
-//                                     }
-//                                   },
-//                                 ),
-//                               ),
-//                               leftTitles: const AxisTitles(
-//                                   sideTitles: SideTitles(showTitles: false)),
-//                               topTitles: const AxisTitles(
-//                                   sideTitles: SideTitles(showTitles: false)),
-//                               rightTitles: const AxisTitles(
-//                                   sideTitles: SideTitles(showTitles: false)),
-//                             ),
-//                             borderData: FlBorderData(show: false),
-//                             minX: 0,
-//                             maxX: 2,
-//                             minY: 0,
-//                             maxY: 6,
-//                             lineBarsData: [
-//                               LineChartBarData(
-//                                 spots: [
-//                                   const FlSpot(0, 3),
-//                                   const FlSpot(1, 1),
-//                                   const FlSpot(2, 4),
-//                                 ],
-//                                 isCurved: true,
-//                                 color: const Color.fromRGBO(47, 85, 221, 1),
-//                                 barWidth: 3,
-//                                 dotData: const FlDotData(show: false),
-//                                 belowBarData: BarAreaData(
-//                                   show: true,
-//                                   color:
-//                                       const Color.fromRGBO(47, 85, 221, 0.102),
-//                                 ),
-//                               ),
-//                             ],
-//                           ),
-//                         ),
-//                       ),
-//                       const SizedBox(height: 16),
-//                       Row(
-//                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
-//                         children: [
-//                           Text('Payment History',
-//                               style: AppTextStyles.normal600(
-//                                   fontSize: 18,
-//                                   color: AppColors.backgroundDark)),
-//                           GestureDetector(
-//                             onTap: () {
-//                               // Navigate to the report_payment screen
-//                               Navigator.push(
-//                                 context,
-//                                 MaterialPageRoute(
-//                                     builder: (context) =>
-//                                         ReportPaymentScreen()),
-//                               );
-//                             },
-//                             child: const Text(
-//                               'See all',
-//                               style: TextStyle(
-//                                   decoration: TextDecoration.underline,
-//                                   color: Color.fromRGBO(47, 85, 221, 1),
-//                                   fontSize: 16.0),
-//                             ),
-//                           ),
-//                         ],
-//                       ),
-//                       const SizedBox(height: 16.0),
-//                       _buildPaymentHistoryItem(
-//                         'JSS 2',
-//                         '234,700.00',
-//                       ),
-//                       _buildPaymentHistoryItem(
-//                         'SS 2',
-//                         '189,500.00',
-//                       ),
-//                       _buildPaymentHistoryItem(
-//                         'JSS 3',
-//                         '276,300.00',
-//                       ),
-//                       _buildPaymentHistoryItem(
-//                         'SS 1',
-//                         '205,800.00',
-//                       ),
-//                       _buildPaymentHistoryItem('JSS 1', '298,100.00'),
-//                     ],
-//                   ),
-//                 ),
-//               ),
-//             ),
-//           ),
-//         ],
-//       ),
-//       floatingActionButton: AnimatedBuilder(
-//         animation: _buttonAnimation,
-//         builder: (context, child) => _buildAnimatedFAB(),
-//       ),
-//     );
-//   }
+//   void _showLevelSelectionOverlay() {
+//     final userBox = Hive.box('userData');
+//     final levels = (userBox.get('levels') as List<dynamic>)
+//         .map((e) => Level.fromJson(e))
+//         .toList();
 
-//   void _showAddReceiptBottomSheet() {
 //     showModalBottomSheet(
 //       context: context,
 //       isScrollControlled: true,
+//       backgroundColor: AppColors.backgroundLight,
 //       builder: (BuildContext context) {
-//         return Container(
-//           padding: EdgeInsets.only(
-//             bottom: MediaQuery.of(context).viewInsets.bottom,
-//             left: 16,
-//             right: 16,
-//             top: 16,
-//           ),
-//           child: Column(
-//             mainAxisSize: MainAxisSize.min,
-//             crossAxisAlignment: CrossAxisAlignment.start,
-//             children: [
-//               Row(
-//                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
-//                 children: [
-//                   Text(
-//                     'Add Receipt',
-//                     style: AppTextStyles.normal600(
-//                         fontSize: 20,
-//                         color: const Color.fromRGBO(47, 85, 221, 1)),
-//                   ),
-//                   IconButton(
-//                     icon: SvgPicture.asset(
-//                         'assets/icons/profile/cancel_receipt.svg'),
-//                     color: AppColors.bgGray,
-//                     onPressed: () => Navigator.pop(context),
-//                   ),
-//                 ],
-//               ),
-//               const SizedBox(height: 16),
-//               _buildInputField('Student name', 'Student name'),
-//               const SizedBox(height: 16),
-//               _buildInputField('Amount', 'Amount'),
-//               const SizedBox(height: 16),
-//               _buildInputField('Reference', 'Reference'),
-//               const SizedBox(height: 16),
-//               _buildDateInputField('Date'),
-//               const SizedBox(height: 24),
-//               SizedBox(
-//                 width: double.infinity,
-//                 child: ElevatedButton(
-//                   onPressed: () {
-//                     Navigator.pop(context);
-//                   },
-//                   style: ElevatedButton.styleFrom(
-//                     backgroundColor: const Color.fromRGBO(47, 85, 221, 1),
-//                     minimumSize: const Size(double.infinity, 50),
-//                     shape: RoundedRectangleBorder(
-//                         borderRadius: BorderRadius.circular(10.0)),
-//                   ),
-//                   child: Text(
-//                     'Record payment',
-//                     style: AppTextStyles.normal500(
-//                         fontSize: 18, color: AppColors.backgroundLight),
-//                   ),
-//                 ),
-//               ),
-//               const SizedBox(height: 16),
-//             ],
-//           ),
+//         return FilterOverlay(
+//           initialParams: _filterParams,
+//           onGenerate: (params) {
+//             setState(() {
+//               _filterParams = params;
+//             });
+//             _loadData();
+//           },
+//           title: 'Select Level',
+//           items: levels
+//               .map((level) => {
+//                     'name': level.levelName,
+//                     'value': level.id,
+//                   })
+//               .toList(),
 //         );
 //       },
 //     );
 //   }
 
-//   Widget _buildSubjectButton(String text, {bool isClass = false}) {
-//     return ElevatedButton(
-//       onPressed: () {
-//         Navigator.pop(context); // Close current overlay
-//         if (isClass) {
-//           _showStudentList(
-//               text as ClassModel); // Navigate to StudentListScreen for class selection
-//         } else {
-//           _showClassSelectionOverlay(
-//               text as Level); // Show class selection for level selection
-//         }
-//       },
-//       style: ElevatedButton.styleFrom(
-//         backgroundColor: Colors.white,
-//         elevation: 4,
-//         shape: RoundedRectangleBorder(
-//           borderRadius: BorderRadius.circular(8),
-//         ),
-//         padding: const EdgeInsets.symmetric(vertical: 16),
-//       ),
-//       child: Text(
-//         text,
-//         style: const TextStyle(fontSize: 16),
-//         textAlign: TextAlign.center,
-//       ),
-//     );
-//   }
+//   void _showClassSelectionOverlay(Level level) {
+//     final userBox = Hive.box('userData');
+//     final classes = (userBox.get('classes') as List<dynamic>)
+//         .map((e) => ClassModel.fromJson(e))
+//         .where((c) => c.levelId == level.id)
+//         .toList();
 
-//   Widget _buildInputField(String label, String hint) {
-//     return Column(
-//       crossAxisAlignment: CrossAxisAlignment.start,
-//       children: [
-//         Text(label,
-//             style: AppTextStyles.normal500(
-//                 fontSize: 16.0, color: AppColors.backgroundDark)),
-//         const SizedBox(height: 8),
-//         TextField(
-//           decoration: InputDecoration(
-//             hintText: hint,
-//             border: OutlineInputBorder(
-//               borderRadius: BorderRadius.circular(8),
-//             ),
-//           ),
-//         ),
-//       ],
-//     );
-//   }
-
-//   Widget _buildDateInputField(String label) {
-//     return Column(
-//       crossAxisAlignment: CrossAxisAlignment.start,
-//       children: [
-//         Text(label,
-//             style: AppTextStyles.normal500(
-//                 fontSize: 16, color: AppColors.backgroundDark)),
-//         const SizedBox(height: 8),
-//         GestureDetector(
-//           onTap: () async {
-//             final DateTime? picked = await showDatePicker(
-//               context: context,
-//               initialDate: DateTime.now(),
-//               firstDate: DateTime(2000),
-//               lastDate: DateTime(2025),
-//             );
-//             if (picked != null) {
-//               // Handle date selection
+//     showModalBottomSheet(
+//       context: context,
+//       isScrollControlled: true,
+//       backgroundColor: AppColors.backgroundLight,
+//       builder: (BuildContext context) {
+//         return FilterOverlay(
+//           initialParams: _filterParams,
+//           onGenerate: (params) {
+//             setState(() {
+//               _filterParams = params;
+//             });
+//             _loadData();
+//             if (classes.isNotEmpty) {
+//               _showStudentList(classes.firstWhere((c) => c.id == params['filters']['classes']?.first));
 //             }
 //           },
-//           child: Container(
-//             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 15),
-//             decoration: BoxDecoration(
-//               border: Border.all(color: Colors.grey),
-//               borderRadius: BorderRadius.circular(8),
-//             ),
-//             child: Row(
-//               mainAxisAlignment: MainAxisAlignment.spaceBetween,
-//               children: [
-//                 const Text('Select date'),
-//                 SvgPicture.asset('assets/icons/profile/calendar_icon.svg'),
-//               ],
-//             ),
-//           ),
-//         ),
-//       ],
+//           title: 'Select Class',
+//           items: classes
+//               .map((c) => {
+//                     'name': c.className,
+//                     'value': c.id,
+//                   })
+//               .toList(),
+//         );
+//       },
 //     );
 //   }
 
-//   Widget _buildCustomOverlay() {
+//   void _showStudentList(ClassModel classModel) {
+//     Navigator.push(
+//       context,
+//       MaterialPageRoute(
+//         builder: (context) => StudentListScreen(
+//           levelId: classModel.levelId,
+//           classId: classModel.id,
+//           className: classModel.className,
+//         ),
+//       ),
+//     );
+//   }
+// }
+
+// class FilterOverlay extends StatefulWidget {
+//   final Map<String, dynamic>? initialParams;
+//   final Function(Map<String, dynamic>) onGenerate;
+//   final String? title;
+//   final List<Map<String, dynamic>>? items;
+
+//   const FilterOverlay({
+//     super.key,
+//     this.initialParams,
+//     required this.onGenerate,
+//     this.title,
+//     this.items,
+//   });
+
+//   @override
+//   State<FilterOverlay> createState() => _FilterOverlayState();
+// }
+
+// class _FilterOverlayState extends State<FilterOverlay> {
+//   String selectedReport = 'Monthly';
+//   String selectedCustomType = 'This month';
+//   String selectedGrouping = '';
+//   DateTime fromDate = DateTime.now().subtract(const Duration(days: 30));
+//   DateTime toDate = DateTime.now();
+//   Map<String, List<int>> selectedFilters = {};
+
+//   final List<String> reportTypes = ['Termly', 'Session', 'Monthly', 'Custom'];
+//   final List<String> customTypes = [
+//     'Range',
+//     'Today',
+//     'Yesterday',
+//     'This week',
+//     'Last week',
+//     'Last 30 days',
+//     'This month',
+//     'Last month'
+//   ];
+//   final List<String> groupingOptions = ['Level', 'Class', 'Month'];
+//   final List<String> filterByOptions = ['Session', 'Term', 'Class', 'Level'];
+
+//   bool get isCustom => selectedReport == 'Custom';
+
+//   @override
+//   void initState() {
+//     super.initState();
+//     if (widget.initialParams != null) {
+//       selectedReport = (widget.initialParams!['report_type'] as String).capitalize();
+//       if (widget.initialParams!.containsKey('group_by')) {
+//         selectedGrouping = (widget.initialParams!['group_by'] as String).capitalize();
+//       }
+//       if (isCustom) {
+//         if (widget.initialParams!.containsKey('custom_type')) {
+//           String ctype = widget.initialParams!['custom_type'];
+//           selectedCustomType = ctype.split('_').map((e) => e.capitalize()).join(' ');
+//         }
+//         if (widget.initialParams!.containsKey('start_date')) {
+//           fromDate = DateTime.parse(widget.initialParams!['start_date']);
+//         }
+//         if (widget.initialParams!.containsKey('end_date')) {
+//           toDate = DateTime.parse(widget.initialParams!['end_date']);
+//         }
+//         if (widget.initialParams!.containsKey('filters')) {
+//           selectedFilters = Map.from(widget.initialParams!['filters']).map((key, value) => MapEntry(key, List<int>.from(value)));
+//         }
+//       }
+//     }
+//   }
+
+//   @override
+//   Widget build(BuildContext context) {
+//     if (widget.title != null && widget.items != null) {
+//       return _buildSelectionBottomSheet(
+//         title: widget.title!,
+//         items: widget.items!,
+//         onItemSelected: (selectedValues) {
+//           setState(() {
+//             final key = widget.title!.toLowerCase().contains('session')
+//                 ? 'sessions'
+//                 : widget.title!.toLowerCase().contains('term')
+//                     ? 'terms'
+//                     : widget.title!.toLowerCase().contains('class')
+//                         ? 'classes'
+//                         : 'levels';
+//             if (selectedValues.isEmpty) {
+//               selectedFilters.remove(key);
+//             } else {
+//               selectedFilters[key] = selectedValues;
+//             }
+//             widget.onGenerate({
+//               ...widget.initialParams ?? {},
+//               'filters': selectedFilters,
+//             });
+//           });
+//         },
+//       );
+//     }
+
 //     return GestureDetector(
 //       onTap: () => Navigator.pop(context),
 //       child: Container(
-//         // color: Colors.black54,
+//         color: Colors.black54.withOpacity(0.5),
 //         child: GestureDetector(
-//           onTap: () {}, // Prevents taps from propagating
+//           onTap: () {},
 //           child: Container(
 //             height: MediaQuery.of(context).size.height * 0.60,
-//             margin: EdgeInsets.only(
-//               top: MediaQuery.of(context).size.height * 0.2,
-//             ),
+//             margin: EdgeInsets.only(top: MediaQuery.of(context).size.height * 0.4),
 //             decoration: const BoxDecoration(
 //               color: Colors.white,
 //               borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
 //             ),
 //             child: Column(
 //               children: [
-
-//                 // Report Type TabBar
 //                 Container(
-//                   height: 120,
-//                   padding:
-//                       const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+//                   height: 60,
+//                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
 //                   child: SingleChildScrollView(
 //                     scrollDirection: Axis.horizontal,
-//                     child: Column(
-//                       // mainAxisAlignment: MainAxisAlignment.spaceAround,
-//                       children: [
-//                         _buildReportTypeTabRow(reportTypes.sublist(0, 5)),
-//                         SizedBox(height: 8),
-//                         _buildReportTypeTabRow(reportTypes.sublist(0, 5)),
-//                       ],
+//                     child: Row(
+//                       children: reportTypes.map((type) {
+//                         bool isSelected = selectedReport == type;
+//                         return Padding(
+//                           padding: const EdgeInsets.only(right: 8.0),
+//                           child: GestureDetector(
+//                             onTap: () {
+//                               setState(() {
+//                                 selectedReport = type;
+//                               });
+//                             },
+//                             child: Container(
+//                               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+//                               decoration: BoxDecoration(
+//                                 color: isSelected ? const Color.fromRGBO(228, 234, 255, 1) : const Color.fromRGBO(247, 247, 247, 1),
+//                                 borderRadius: BorderRadius.circular(4),
+//                               ),
+//                               child: Text(
+//                                 type,
+//                                 style: TextStyle(
+//                                   color: isSelected ? const Color.fromRGBO(47, 85, 221, 1) : const Color.fromRGBO(65, 65, 65, 1),
+//                                   fontSize: 14,
+//                                 ),
+//                               ),
+//                             ),
+//                           ),
+//                         );
+//                       }).toList(),
 //                     ),
 //                   ),
 //                 ),
-//                 // Main TabBar and Content
 //                 Expanded(
 //                   child: DefaultTabController(
-//                     length: 3,
+//                     length: isCustom ? 3 : 1,
 //                     child: Column(
 //                       children: [
-//                         Container(
-//                           decoration: BoxDecoration(
-//                             color: Colors.grey[200],
-//                           ),
-//                           child: TabBar(
-//                             onTap: (index) {
-//                               setState(() {
-//                                 _currentTabIndex = index;
-//                               });
-//                             },
-//                             tabs: const [
-//                               Tab(text: 'Date Range'),
-//                               Tab(text: 'Grouping'),
-//                               Tab(text: 'Filter by'),
-//                             ],
-//                           ),
+//                         TabBar(
+//                           tabs: isCustom
+//                               ? const [
+//                                   Tab(text: 'Date Range'),
+//                                   Tab(text: 'Grouping'),
+//                                   Tab(text: 'Filter by'),
+//                                 ]
+//                               : const [
+//                                   Tab(text: 'Grouping'),
+//                                 ],
 //                         ),
 //                         Expanded(
 //                           child: TabBarView(
-//                             children: [
-//                               _buildDateRangeTab(),
-//                               _buildGroupingTab(),
-//                               _buildFilterByTab(),
-//                             ],
+//                             children: isCustom
+//                                 ? [
+//                                     _buildDateRangeTab(),
+//                                     _buildGroupingTab(),
+//                                     _buildFilterByTab(),
+//                                   ]
+//                                 : [
+//                                     _buildGroupingTab(),
+//                                   ],
 //                           ),
 //                         ),
-//                         // Fixed Generate Report Button
 //                         Container(
 //                           padding: const EdgeInsets.all(16),
-//                           decoration: BoxDecoration(
-//                             color: Colors.white,
-//                             boxShadow: [
-//                               BoxShadow(
-//                                 color: Colors.grey.withOpacity(0.2),
-//                                 spreadRadius: 1,
-//                                 blurRadius: 4,
-//                                 offset: const Offset(0, -2),
-//                               ),
-//                             ],
-//                           ),
 //                           child: ElevatedButton(
-//                             onPressed: () {
-//                               Navigator.push(
-//                                 context,
-//                                 MaterialPageRoute(
-//                                   builder: (context) =>
-//                                       const ReportPaymentScreen(),
-//                                 ),
-//                               );
-//                             },
+//                             onPressed: _generateReport,
 //                             style: ElevatedButton.styleFrom(
-//                               backgroundColor:
-//                                   const Color.fromRGBO(47, 85, 221, 1),
+//                               backgroundColor: const Color.fromRGBO(47, 85, 221, 1),
 //                               minimumSize: const Size(double.infinity, 50),
 //                               shape: RoundedRectangleBorder(
 //                                 borderRadius: BorderRadius.circular(10.0),
@@ -2179,172 +2080,54 @@ extension StringCapitalize on String {
 //     );
 //   }
 
-//   Widget _buildReportTypeTab(String text, int index) {
-//     return SizedBox(
-//       height: 50,
-//       child: SingleChildScrollView(
-//         scrollDirection: Axis.horizontal,
-//         physics: const BouncingScrollPhysics(),
-//         child: Row(
-//           children: reportTypes.map((type) {
-//             int typeIndex = reportTypes.indexOf(type);
-//             bool isSelected = _selectedReportType == typeIndex;
-//             return Padding(
-//               padding: const EdgeInsets.only(right: 12.0),
-//               child: GestureDetector(
-//                 onTap: () {
-//                   setState(() {
-//                     _selectedReportType = typeIndex;
-//                   });
-//                 },
-//                 child: Container(
-//                   padding:
-//                       const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-//                   decoration: BoxDecoration(
-//                     color: isSelected
-//                         ? Color.fromRGBO(228, 234, 255, 1)
-//                         : Color.fromRGBO(247, 247, 247, 1),
-//                     borderRadius: BorderRadius.circular(4),
-//                   ),
-//                   child: Text(
-//                     type,
-//                     style: TextStyle(
-//                       color: isSelected
-//                           ? Color.fromRGBO(47, 85, 221, 1)
-//                           : Color.fromRGBO(65, 65, 65, 1),
-//                       fontSize: 12,
-//                     ),
-//                   ),
-//                 ),
-//               ),
-//             );
-//           }).toList(),
-//         ),
-//       ),
-//     );
-//   }
-
-//   Widget _buildFilterByTab() {
-//     return Padding(
-//       padding: const EdgeInsets.all(16.0),
-//       child: Column(
-//         crossAxisAlignment: CrossAxisAlignment.start,
-//         children: [
-//           _buildFilterButton('Session'),
-//           const SizedBox(height: 12),
-//           _buildFilterButton('Term'),
-//           const SizedBox(height: 12),
-//           _buildFilterButton('Class'),
-//           const SizedBox(height: 12),
-//           _buildFilterButton('Level'),
-//         ],
-//       ),
-//     );
-//   }
-
-//   Widget _buildFilterButton(String text) {
-//     return Container(
-//       width: double.infinity,
-//       height: 42,
-//       decoration: BoxDecoration(
-//         color: const Color.fromRGBO(229, 229, 229, 1),
-//         borderRadius: BorderRadius.circular(6),
-//       ),
-//       child: Center(
-//         child: Text(text),
-//       ),
-//     );
-//   }
-
-//   Widget _buildTabBar() {
-//     return TabBar(
-//       controller: _tabController,
-//       tabs: const [
-//         Tab(text: 'Date Range'),
-//         Tab(text: 'Grouping'),
-//         Tab(text: 'Filter'),
-//       ],
-//     );
-//   }
-
-//   Widget _buildTabContent() {
-//     switch (_currentTabIndex) {
-//       case 0:
-//         return _buildDateRangeTab();
-//       case 1:
-//         return _buildGroupingTab();
-//       case 2:
-//         return _buildFilterTab();
-//       default:
-//         return Container();
-//     }
-//   }
-
 //   Widget _buildDateRangeTab() {
 //     return Padding(
 //       padding: const EdgeInsets.all(16.0),
 //       child: Column(
 //         crossAxisAlignment: CrossAxisAlignment.start,
 //         children: [
-//           _buildDateRangeOptions(),
-//           const SizedBox(height: 20),
-//           if (_selectedDateRange == 'Custom') _buildCustomDateRange(),
+//           SingleChildScrollView(
+//             scrollDirection: Axis.horizontal,
+//             child: Row(
+//               children: customTypes.map((option) {
+//                 return Padding(
+//                   padding: const EdgeInsets.only(right: 8.0),
+//                   child: GestureDetector(
+//                     onTap: () {
+//                       setState(() {
+//                         selectedCustomType = option;
+//                       });
+//                     },
+//                     child: Container(
+//                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+//                       decoration: BoxDecoration(
+//                         color: selectedCustomType == option
+//                             ? const Color.fromRGBO(47, 85, 221, 1)
+//                             : const Color.fromRGBO(212, 222, 255, 1),
+//                         borderRadius: BorderRadius.circular(16),
+//                       ),
+//                       child: Text(
+//                         option,
+//                         style: TextStyle(
+//                           color: selectedCustomType == option ? Colors.white : AppColors.paymentTxtColor1,
+//                         ),
+//                       ),
+//                     ),
+//                   ),
+//                 );
+//               }).toList(),
+//             ),
+//           ),
+//           if (selectedCustomType == 'Range') const SizedBox(height: 20),
+//           if (selectedCustomType == 'Range') _buildDatePicker('From', fromDate, (date) => setState(() => fromDate = date)),
+//           if (selectedCustomType == 'Range') const SizedBox(height: 10),
+//           if (selectedCustomType == 'Range') _buildDatePicker('To', toDate, (date) => setState(() => toDate = date)),
 //         ],
 //       ),
 //     );
 //   }
 
-//   Widget _buildDateRangeOptions() {
-//     return SingleChildScrollView(
-//       scrollDirection: Axis.horizontal,
-//       child: Row(
-//         children: dateRangeOptions.map((option) {
-//           return Padding(
-//             padding: const EdgeInsets.only(right: 8.0),
-//             child: GestureDetector(
-//               onTap: () {
-//                 setState(() {
-//                   _selectedDateRange = option;
-//                 });
-//               },
-//               child: Container(
-//                 padding:
-//                     const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-//                 decoration: BoxDecoration(
-//                   color: _selectedDateRange == option
-//                       ? const Color.fromRGBO(47, 85, 221, 1)
-//                       : const Color.fromRGBO(212, 222, 255, 1),
-//                   borderRadius: BorderRadius.circular(16),
-//                 ),
-//                 child: Text(
-//                   option,
-//                   style: TextStyle(
-//                     color: _selectedDateRange == option
-//                         ? Colors.white
-//                         : AppColors.paymentTxtColor1,
-//                   ),
-//                 ),
-//               ),
-//             ),
-//           );
-//         }).toList(),
-//       ),
-//     );
-//   }
-
-//   Widget _buildCustomDateRange() {
-//     return Column(
-//       children: [
-//         _buildDateInput('From:', _fromDate, _onFromDateChanged),
-//         const SizedBox(height: 10),
-//         _buildDateInput('To:', _toDate, _onToDateChanged),
-//         const SizedBox(height: 20),
-//       ],
-//     );
-//   }
-
-//   Widget _buildDateInput(
-//       String label, DateTime selectedDate, Function(DateTime) onDateSelected) {
+//   Widget _buildDatePicker(String label, DateTime date, Function(DateTime) onChanged) {
 //     return Column(
 //       crossAxisAlignment: CrossAxisAlignment.start,
 //       children: [
@@ -2352,18 +2135,13 @@ extension StringCapitalize on String {
 //         const SizedBox(height: 5),
 //         GestureDetector(
 //           onTap: () async {
-//             final DateTime? picked = await showDatePicker(
+//             final picked = await showDatePicker(
 //               context: context,
-//               initialDate: selectedDate,
+//               initialDate: date,
 //               firstDate: DateTime(2000),
-//               lastDate: DateTime(2025),
+//               lastDate: DateTime(2100),
 //             );
-//             if (picked != null) {
-//               onDateSelected(picked);
-//               if (mounted) {
-//                 setState(() {});
-//               }
-//             }
+//             if (picked != null) onChanged(picked);
 //           },
 //           child: Container(
 //             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -2374,15 +2152,8 @@ extension StringCapitalize on String {
 //             child: Row(
 //               mainAxisAlignment: MainAxisAlignment.spaceBetween,
 //               children: [
-//                 Text(
-//                   '${selectedDate.day}-${selectedDate.month}-${selectedDate.year}',
-//                   style: const TextStyle(fontSize: 16),
-//                 ),
-//                 const Icon(
-//                   Icons.calendar_today,
-//                   color: AppColors.paymentTxtColor1,
-//                   size: 24,
-//                 ),
+//                 Text(DateFormat('yyyy-MM-dd').format(date)),
+//                 const Icon(Icons.calendar_today),
 //               ],
 //             ),
 //           ),
@@ -2395,201 +2166,285 @@ extension StringCapitalize on String {
 //     return Padding(
 //       padding: const EdgeInsets.all(16.0),
 //       child: Column(
-//         crossAxisAlignment: CrossAxisAlignment.start,
-//         children: [
-//           const Text(
-//             'Group by:',
-//             style: TextStyle(color: Colors.grey),
-//           ),
-//           const SizedBox(height: 10),
-//           _buildGroupingOption('Level'),
-//           _buildGroupingOption('Class'),
-//           _buildGroupingOption('Month'),
-//           // const SizedBox(height: 20),
-//         ],
-//       ),
-//     );
-//   }
-
-//   Widget _buildGroupingOption(String option) {
-//     return Container(
-//       width: double.infinity,
-//       height: 42,
-//       margin: const EdgeInsets.only(bottom: 10),
-//       decoration: BoxDecoration(
-//         color: const Color.fromRGBO(229, 229, 229, 1),
-//         borderRadius: BorderRadius.circular(6),
-//       ),
-//       child: Center(
-//         child: Text(option),
-//       ),
-//     );
-//   }
-
-//   Widget _buildFilterTab() {
-//     return Padding(
-//       padding: const EdgeInsets.all(16.0),
-//       child: Column(
-//         crossAxisAlignment: CrossAxisAlignment.start,
-//         children: [
-//           const Text(
-//             'Filter by:',
-//             style: TextStyle(color: Colors.grey),
-//           ),
-//           const SizedBox(height: 10),
-//           _buildFilterOption('Level', ['JSS1', 'JSS2', 'JSS3'], _selectedLevel,
-//               (value) {
-//             setState(() {
-//               _selectedLevel = value;
-//             });
-//           }),
-//           const SizedBox(height: 10),
-//           _buildFilterOption(
-//               'Class', ['JSS1A', 'JSS1B', 'JSS1C'], _selectedClass, (value) {
-//             setState(() {
-//               _selectedClass = value;
-//             });
-//           }),
-//           // const SizedBox(height: 20),
-//         ],
-//       ),
-//     );
-//   }
-
-//   Widget _buildFilterOption(String label, List<String> options,
-//       String selectedValue, Function(String) onChanged) {
-//     return Column(
-//       crossAxisAlignment: CrossAxisAlignment.start,
-//       children: [
-//         Text(label),
-//         const SizedBox(height: 5),
-//         Container(
-//           width: double.infinity,
-//           padding: const EdgeInsets.symmetric(horizontal: 12),
-//           decoration: BoxDecoration(
-//             color: const Color.fromRGBO(229, 229, 229, 1),
-//             borderRadius: BorderRadius.circular(6),
-//           ),
-//           child: DropdownButton<String>(
-//             value: selectedValue,
-//             isExpanded: true,
-//             underline: const SizedBox(),
-//             onChanged: (String? newValue) {
-//               if (newValue != null) {
-//                 onChanged(newValue);
-//               }
-//             },
-//             items: options.map<DropdownMenuItem<String>>((String value) {
-//               return DropdownMenuItem<String>(
-//                 value: value,
-//                 child: Text(value),
-//               );
-//             }).toList(),
-//           ),
-//         ),
-//       ],
-//     );
-//   }
-
-//   Widget _buildPaymentHistoryItem(
-//     String grade,
-//     String amount,
-//   ) {
-//     return GestureDetector(
-//       onTap: () {},
-//       child: Container(
-//         margin: const EdgeInsets.only(bottom: 8.0),
-//         decoration: BoxDecoration(
-//           border: Border.all(color: Colors.grey.shade300),
-//           borderRadius: BorderRadius.circular(8),
-//         ),
-//         child: Padding(
-//           padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 8.0),
-//           child: Row(
-//             mainAxisAlignment: MainAxisAlignment.spaceBetween,
-//             children: [
-//               Row(
-//                 children: [
-//                   SvgPicture.asset('assets/icons/profile/payment_icon.svg'),
-//                   const SizedBox(width: 8),
-//                   Text(
-//                     grade,
-//                     style: AppTextStyles.normal600(
-//                         fontSize: 18, color: AppColors.backgroundDark),
-//                   ),
-//                 ],
-//               ),
-//               Row(
-//                 children: [
-//                   NairaSvgIcon(color: AppColors.paymentTxtColor1,),
-//                   const SizedBox(width: 4),
-//                   Text(amount,
-//                       style: AppTextStyles.normal700(
-//                           fontSize: 18,
-//                           color: AppColors.paymentTxtColor1)),
-//                 ],
-//               ),
-//             ],
-//           ),
-//         ),
-//       ),
-//     );
-//   }
-
-//   Widget _buildReportTypeTabRow(List<String> types) {
-//     return Row(
-//       children: types.map((type) {
-//         int typeIndex = reportTypes.indexOf(type);
-//         bool isSelected = _selectedReportType == typeIndex;
-//         return Padding(
-//           padding: const EdgeInsets.only(right: 12.0),
-//           child: GestureDetector(
+//         children: groupingOptions.map((option) {
+//           bool isSelected = selectedGrouping == option;
+//           return GestureDetector(
 //             onTap: () {
 //               setState(() {
-//                 _selectedReportType = typeIndex;
+//                 selectedGrouping = isSelected ? '' : option;
 //               });
 //             },
 //             child: Container(
-//               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+//               width: double.infinity,
+//               height: 42,
+//               margin: const EdgeInsets.only(bottom: 10),
 //               decoration: BoxDecoration(
-//                 color: isSelected
-//                     ? Color.fromRGBO(228, 234, 255, 1)
-//                     : Color.fromRGBO(247, 247, 247, 1),
-//                 borderRadius: BorderRadius.circular(4),
+//                 color: isSelected ? const Color.fromRGBO(47, 85, 221, 1) : const Color.fromRGBO(229, 229, 229, 1),
+//                 borderRadius: BorderRadius.circular(6),
 //               ),
-//               child: Text(
-//                 type,
-//                 style: TextStyle(
-//                   color: isSelected
-//                       ? const Color.fromRGBO(47, 85, 221, 1)
-//                       : Color.fromRGBO(65, 65, 65, 1),
-//                   fontSize: 12,
+//               child: Center(
+//                 child: Text(
+//                   option,
+//                   style: TextStyle(color: isSelected ? Colors.white : Colors.black),
 //                 ),
 //               ),
 //             ),
+//           );
+//         }).toList(),
+//       ),
+//     );
+//   }
+
+//   Widget _buildFilterByTab() {
+//     return Padding(
+//       padding: const EdgeInsets.all(16.0),
+//       child: Column(
+//         children: filterByOptions.map((option) {
+//           return GestureDetector(
+//             onTap: () => _showFilterBottomSheet(option),
+//             child: Container(
+//               width: double.infinity,
+//               height: 42,
+//               margin: const EdgeInsets.only(bottom: 10),
+//               decoration: BoxDecoration(
+//                 color: const Color.fromRGBO(229, 229, 229, 1),
+//                 borderRadius: BorderRadius.circular(6),
+//               ),
+//               child: Center(child: Text(option)),
+//             ),
+//           );
+//         }).toList(),
+//       ),
+//     );
+//   }
+
+//   void _showFilterBottomSheet(String option) {
+//     List<Map<String, dynamic>> items = [];
+//     final userBox = Hive.box('userData');
+//     switch (option) {
+//       case 'Session':
+//         final currentYear = int.tryParse(userBox.get('settings')!['year'].toString()) ?? DateTime.now().year;
+//         for (int y = currentYear; y >= 2000; y--) {
+//           items.add({'name': '${y - 1}/$y', 'value': y});
+//         }
+//         break;
+//       case 'Term':
+//         items = [
+//           {'name': 'First term', 'value': 1},
+//           {'name': 'Second term', 'value': 2},
+//           {'name': 'Third term', 'value': 3},
+//         ];
+//         break;
+//       case 'Class':
+//         final classes = userBox.get('classes') as List<dynamic>? ?? [];
+//         items = classes.map((c) => {'name': c['class_name'], 'value': c['id']}).toList();
+//         break;
+//       case 'Level':
+//         final levels = userBox.get('levels') as List<dynamic>? ?? [];
+//         items = levels.map((l) => {'name': l['level_name'], 'value': l['id']}).toList();
+//         break;
+//     }
+
+//     showModalBottomSheet(
+//       context: context,
+//       isScrollControlled: true,
+//       backgroundColor: AppColors.backgroundLight,
+//       builder: (context) {
+//         return _buildSelectionBottomSheet(
+//           title: 'Select $option',
+//           items: items,
+//           onItemSelected: (selectedValues) {
+//             setState(() {
+//               final key = option.toLowerCase() + 's';
+//               if (selectedValues.isEmpty) {
+//                 selectedFilters.remove(key);
+//               } else {
+//                 selectedFilters[key] = selectedValues;
+//               }
+//             });
+//           },
+//         );
+//       },
+//     );
+//   }
+
+//   Widget _buildSelectionBottomSheet({
+//     required String title,
+//     required List<Map<String, dynamic>> items,
+//     required Function(List<int>) onItemSelected,
+//   }) {
+//     return StatefulBuilder(
+//       builder: (context, setModalState) {
+//         Set<int> selectedValues = {};
+//         final key = title.toLowerCase().contains('session')
+//             ? 'sessions'
+//             : title.toLowerCase().contains('term')
+//                 ? 'terms'
+//                 : title.toLowerCase().contains('class')
+//                     ? 'classes'
+//                     : 'levels';
+//         if (selectedFilters.containsKey(key)) {
+//           selectedValues = Set<int>.from(selectedFilters[key]!);
+//         }
+
+//         return Padding(
+//           padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+//           child: ConstrainedBox(
+//             constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.4),
+//             child: Column(
+//               mainAxisSize: MainAxisSize.min,
+//               children: [
+//                 Padding(
+//                   padding: const EdgeInsets.only(top: 16.0),
+//                   child: Text(
+//                     title,
+//                     style: AppTextStyles.normal600(fontSize: 20, color: const Color.fromRGBO(47, 85, 221, 1)),
+//                   ),
+//                 ),
+//                 const SizedBox(height: 24),
+//                 Expanded(
+//                   child: ListView.builder(
+//                     itemCount: items.length,
+//                     itemBuilder: (context, index) {
+//                       final item = items[index];
+//                       bool isSelected = selectedValues.contains(item['value']);
+//                       return GestureDetector(
+//                         onTap: () {
+//                           setModalState(() {
+//                             if (isSelected) {
+//                               selectedValues.remove(item['value']);
+//                             } else {
+//                               selectedValues.add(item['value']);
+//                             }
+//                           });
+//                         },
+//                         child: Container(
+//                           margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 16),
+//                           padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+//                           decoration: BoxDecoration(
+//                             color: Colors.white,
+//                             borderRadius: BorderRadius.circular(8),
+//                             boxShadow: [
+//                               BoxShadow(
+//                                 color: Colors.grey.withOpacity(0.2),
+//                                 spreadRadius: 1,
+//                                 blurRadius: 3,
+//                                 offset: const Offset(0, 1),
+//                               ),
+//                             ],
+//                           ),
+//                           child: Row(
+//                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
+//                             children: [
+//                               Text(item['name']),
+//                               if (isSelected) const Icon(Icons.check, color: Color.fromRGBO(47, 85, 221, 1)),
+//                             ],
+//                           ),
+//                         ),
+//                       );
+//                     },
+//                   ),
+//                 ),
+//                 Padding(
+//                   padding: const EdgeInsets.all(16.0),
+//                   child: ElevatedButton(
+//                     onPressed: () {
+//                       onItemSelected(selectedValues.toList());
+//                       Navigator.pop(context);
+//                     },
+//                     style: ElevatedButton.styleFrom(
+//                       backgroundColor: const Color.fromRGBO(47, 85, 221, 1),
+//                       minimumSize: const Size(double.infinity, 50),
+//                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+//                       elevation: 2,
+//                       shadowColor: Colors.grey.withOpacity(0.5),
+//                     ),
+//                     child: const Text(
+//                       'Apply',
+//                       style: TextStyle(color: Colors.white, fontSize: 18),
+//                     ),
+//                   ),
+//                 ),
+//               ],
+//             ),
 //           ),
 //         );
-//       }).toList(),
-//     );
-//   }
-
-//   Widget _buildMonthYearItem(String text) {
-//     return ListTile(
-//       title: Text(text),
-//       onTap: () {
-//         // Update selected month/year
-//         Navigator.pop(context);
 //       },
 //     );
 //   }
 
-//   Widget _buildSessionTermItem(String text) {
-//     return ListTile(
-//       title: Text(text),
-//       onTap: () {
-//         // Update selected session/term
-//         Navigator.pop(context);
-//       },
-//     );
+//   void _generateReport() {
+//     Map<String, dynamic> params = {
+//       'report_type': selectedReport.toLowerCase(),
+//     };
+
+//     if (selectedGrouping.isNotEmpty) {
+//       params['group_by'] = selectedGrouping.toLowerCase();
+//     }
+
+//     if (isCustom) {
+//       String ctype = selectedCustomType.toLowerCase().replaceAll(' ', '_');
+//       params['custom_type'] = ctype;
+//       if (ctype == 'range') {
+//         params['start_date'] = DateFormat('yyyy-MM-dd').format(fromDate);
+//         params['end_date'] = DateFormat('yyyy-MM-dd').format(toDate);
+//       }
+//       if (selectedFilters.isNotEmpty) {
+//         params['filters'] = selectedFilters;
+//       }
+//     }
+
+//     widget.onGenerate(params);
+//     Navigator.pop(context);
 //   }
 // }
+
+// class IncomeSummary {
+//   final double totalAmount;
+//   final int totalTransactions;
+//   final int uniqueStudents;
+
+//   IncomeSummary.fromJson(Map<String, dynamic> json)
+//       : totalAmount = (json['total_amount'] as num).toDouble(),
+//         totalTransactions = json['total_transactions'] as int,
+//         uniqueStudents = json['unique_students'] as int;
+// }
+
+// class ChartPoint {
+//   final String x;
+//   final double y;
+
+//   ChartPoint.fromJson(Map<String, dynamic> json)
+//       : x = json['x'] as String,
+//         y = (json['y'] as num).toDouble();
+// }
+
+
+
+
+// class Level {
+//   final int id;
+//   final String levelName;
+
+//   Level.fromJson(Map<String, dynamic> json)
+//       : id = json['id'] as int,
+//         levelName = json['level_name'] as String;
+// }
+
+// class ClassModel {
+//   final int id;
+//   final String className;
+//   final int levelId;
+
+//   ClassModel.fromJson(Map<String, dynamic> json)
+//       : id = json['id'] as int,
+//         className = json['class_name'] as String,
+//         levelId = json['level_id'] as int;
+// }
+
+// extension StringCapitalize on String {
+//   String capitalize() {
+//     return "${this[0].toUpperCase()}${substring(1).toLowerCase()}";
+//   }
+// }
+
