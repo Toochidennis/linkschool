@@ -39,6 +39,9 @@ class SingleElearningContentData {
   final List<ClassInfo> classes;
   final List<dynamic> contentFiles;
   final String datePosted;
+  final String start_date;
+  final String end_date;
+  final String grade;
   final Settings? settings;
   final List<Question> questions;
 
@@ -54,6 +57,9 @@ class SingleElearningContentData {
     required this.classes,
     required this.contentFiles,
     required this.datePosted,
+    required this.start_date,
+    required this.end_date,
+    required this.grade,
     this.settings,
     required this.questions,
   });
@@ -74,6 +80,10 @@ class SingleElearningContentData {
       rank: json['rank'] ?? 0,
       topicId: json['topic_id'] ?? 0,
       topic: json['topic'] ?? '',
+      start_date: json['start_date'] ?? '',
+      end_date: json['end_date'] ?? '',
+      grade: json['topic'] ?? "",
+
       classes: (json['classes'] as List?)
           ?.map((cls) => ClassInfo.fromJson(cls))
           .toList() ?? [],
@@ -110,6 +120,9 @@ class SingleElearningContentData {
       rank: settingsData?['rank'] ?? 0,
       topicId: settingsData?['topic_id'] ?? 0,
       topic: settingsData?['topic'] ?? '',
+      start_date: json['start_date'] ?? '',
+      end_date: json['end_date'] ?? '',
+      grade: json['topic'] ?? "",
       classes: settingsData?['classes'] != null
           ? (settingsData!['classes'] as List)
           .map((cls) => ClassInfo.fromJson(cls))
@@ -132,6 +145,9 @@ class SingleElearningContentData {
       'rank': rank,
       'topic_id': topicId,
       'topic': topic,
+      'start_date':start_date,
+      'end_date':end_date,
+      'grade':grade,
       'classes': classes.map((cls) => cls.toJson()).toList(),
       'content_files': contentFiles,
       'date_posted': datePosted,

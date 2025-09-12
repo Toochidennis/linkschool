@@ -11,6 +11,9 @@ import 'package:linkschool/modules/model/student/single_elearningcontentmodel.da
 import 'package:linkschool/modules/providers/student/single_elearningcontent_provider.dart';
 import 'package:linkschool/modules/student/elearning/course_detail_screen.dart';
 import 'package:linkschool/modules/student/elearning/quiz_score_page.dart';
+import 'package:linkschool/modules/student/elearning/single_assignment_detail_screen.dart';
+import 'package:linkschool/modules/student/elearning/single_assignment_score_view.dart';
+import 'package:linkschool/modules/student/elearning/single_material_detail_screen.dart';
 import 'package:linkschool/modules/student/elearning/single_quiz_intro_page.dart';
 import 'package:linkschool/modules/student/elearning/single_quiz_score_page.dart';
 import 'package:linkschool/modules/student/home/new_post_dialog.dart';
@@ -156,7 +159,6 @@ class _StudentElearningScreenState extends State<StudentElearningScreen> {
     final data = await provider.fetchElearningContentData(
       contentid
     );
-    print("Dem qs ${data!.questions}");
     setState(() {
       elearningContentData = data;
       isLoading = false;
@@ -476,54 +478,111 @@ final assessments=dashboardData!.recentQuizzes;
                   itemCount: activities?.length,
                   itemBuilder: (context, index) {
                     final activity = activities?[index];
-                    return Container(
-                      margin: const EdgeInsets.symmetric(horizontal: 8.0),
-                      child: Card(
-                        elevation: 4,
-                        margin: const EdgeInsets.symmetric(vertical: 8.0),
-                        child: Padding(
-                          padding: const EdgeInsets.all(8.0),
-                          child: Row(
-                            children: [
-                              CircleAvatar(
-                                backgroundImage:
-                                    AssetImage("Non rc"),
-                              ),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    RichText(
-                                      text: TextSpan(
-                                        style: const TextStyle(
-                                            color: Colors.black, fontSize: 14),
-                                        children: [
-                                          TextSpan(
-                                              text: '${activity?.createdBy} '),
-                                          TextSpan(
-                                              text: '${activity?.type} ',
-                                              style: const TextStyle(
-                                                  fontWeight:
-                                                      FontWeight.normal)),
-                                          TextSpan(
-                                              text: '${activity?.courseName}',
-                                              style: const TextStyle(
-                                                  fontWeight: FontWeight.bold)),
-                                        ],
-                                      ),
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      activity!.datePosted,
-                                      style: const TextStyle(
-                                          color: Colors.grey, fontSize: 12),
-                                    ),
-                                  ],
+                    return GestureDetector(
+                      onTap: () async {
+                        await fetchSingleElearning(activity.id);
+                        print("Assignment ${elearningContentData}");
+                        if (elearningContentData?.settings != null) {
+                          final userBox = Hive.box('userData');
+                          final List<dynamic> quizzestaken = userBox.get('quizzes', defaultValue: []);
+                          final int? quizId = elearningContentData?.settings!.id;
+                          if (quizzestaken.contains(quizId)) {
+                            Navigator.push(
+                              context,MaterialPageRoute(
+                              builder: (context) => SingleQuizScorePage(childContent: elearningContentData,year:int.parse(getuserdata()['settings']['year']), term:getuserdata()['settings']['term']),),
+                            );
+                          } else {
+                            Navigator.push(
+                              context,MaterialPageRoute(
+                              builder: (context) => SingleQuizIntroPage(childContent: elearningContentData,),),
+                            );
+                          }
+
+                        }
+                        else if (elearningContentData?.type == 'material') {
+                                Navigator.push(
+                                  context,MaterialPageRoute(
+                                  builder: (context) => SingleMaterialDetailScreen(childContent: elearningContentData,),),
+                                );
+                        }
+                        else if (elearningContentData?.type=="assignment") {
+
+
+                                final userBox = Hive.box('userData');
+                                final List<dynamic> assignmentssubmitted = userBox.get('assignments', defaultValue: []);
+                                final int? assignmentId = elearningContentData?.id;
+
+                                if (assignmentssubmitted.contains(assignmentId)) {
+                                  Navigator.push(
+                                    context,MaterialPageRoute(
+                                    builder: (context) => SingleAssignmentScorePage(childContent: elearningContentData,year:int.parse(getuserdata()['settings']['year']), term:getuserdata()['settings']['term'], attachedMaterials: [""],),),
+                                  );
+                                } else {
+                                  Navigator.push(
+                                    context,MaterialPageRoute(
+                                    builder: (context) => SingleAssignmentDetailsScreen(childContent: elearningContentData, title: elearningContentData?.title, id: elearningContentData?.id ?? 0),),
+                                  );
+                                }
+
+
+
+                        }
+
+                       else {
+                           SizedBox.shrink(); // If neither condition is met
+                        }
+
+
+                      },
+                      child: Container(
+                        margin: const EdgeInsets.symmetric(horizontal: 8.0),
+                        child: Card(
+                          elevation: 4,
+                          margin: const EdgeInsets.symmetric(vertical: 8.0),
+                          child: Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child: Row(
+                              children: [
+                                CircleAvatar(
+                                  backgroundImage:
+                                      AssetImage("Non rc"),
                                 ),
-                              ),
-                            ],
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      RichText(
+                                        text: TextSpan(
+                                          style: const TextStyle(
+                                              color: Colors.black, fontSize: 14),
+                                          children: [
+                                            TextSpan(
+                                                text: '${activity?.createdBy} '),
+                                            TextSpan(
+                                                text: '${activity?.type} ',
+                                                style: const TextStyle(
+                                                    fontWeight:
+                                                        FontWeight.normal)),
+                                            TextSpan(
+                                                text: '${activity?.courseName}',
+                                                style: const TextStyle(
+                                                    fontWeight: FontWeight.bold)),
+                                          ],
+                                        ),
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        activity!.datePosted,
+                                        style: const TextStyle(
+                                            color: Colors.grey, fontSize: 12),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                         ),
                       ),
