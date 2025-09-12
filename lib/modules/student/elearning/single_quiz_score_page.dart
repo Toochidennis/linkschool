@@ -2,22 +2,22 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
+import 'package:linkschool/modules/model/student/single_elearningcontentmodel.dart';
 import 'package:linkschool/modules/model/student/submitted_quiz_model.dart';
 import 'package:linkschool/modules/providers/student/marked_quiz_provider.dart';
 import 'package:linkschool/modules/student/elearning/resubmit_modal.dart';
 import 'package:provider/provider.dart';
 
 import '../../common/app_colors.dart';
-import '../../model/student/elearningcontent_model.dart';
 import '../../providers/student/marked_assignment_provider.dart';
 
-class QuizScorePage extends StatefulWidget {
+class SingleQuizScorePage extends StatefulWidget {
   final int year;
   final int term;
-  final ChildContent childContent;
+  final SingleElearningContentData? childContent;
 
 
-  const QuizScorePage({
+  const SingleQuizScorePage({
     Key? key,
     required this.childContent,
     required this.year,
@@ -26,10 +26,10 @@ class QuizScorePage extends StatefulWidget {
   }) : super(key: key);
 
   @override
-  State<QuizScorePage> createState() => _AssignmentScorePageState();
+  State<SingleQuizScorePage> createState() => _SingleQuizScorePageState();
 }
 
-class _AssignmentScorePageState extends State<QuizScorePage> {
+class _SingleQuizScorePageState extends State<SingleQuizScorePage> {
   MarkedQuizModel? markedquiz;
   int? academicTerm;
   int? academicYear;
@@ -74,7 +74,7 @@ class _AssignmentScorePageState extends State<QuizScorePage> {
 
   Future<void> fetchMarkedQuiz() async {
     final provider = Provider.of<MarkedQuizProvider>(context, listen: false);
-    final data = await provider.fetchMarkedQuiz(widget.childContent.settings!.id , widget.year , widget.term );
+    final data = await provider.fetchMarkedQuiz(widget.childContent!.settings!.id , widget.year , widget.term );
 
     setState(() {
       markedquiz = data;
@@ -99,8 +99,8 @@ class _AssignmentScorePageState extends State<QuizScorePage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.childContent.settings?.title ?? "No Title", style: TextStyle(color: Colors.white), ),
-        backgroundColor:  AppColors.paymentTxtColor1
+          title: Text(widget.childContent!.settings?.title ?? "No Title", style: TextStyle(color: Colors.white), ),
+          backgroundColor:  AppColors.paymentTxtColor1
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),

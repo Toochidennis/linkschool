@@ -44,7 +44,7 @@ class _AssignmentScorePageState extends State<AssignmentScorePage> {
     fetchMarkedAssignment();
     // Show the modal bottom sheet after the widget is built
  WidgetsBinding.instance.addPostFrameCallback((_) {
-      _showAttachedMaterials();
+    //  _showAttachedMaterials();
     });
   }
   Future<void> _loadUserData() async {

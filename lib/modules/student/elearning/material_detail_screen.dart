@@ -415,13 +415,22 @@ class _MaterialDetailScreen extends State<MaterialDetailScreen> {
     return Row(
       children: [
         Expanded(
-          child: TextField(
-            controller: _commentController,
-            focusNode: _commentFocusNode,
-            decoration: const InputDecoration(
-              hintText: 'Post a comment...',
-              border: InputBorder.none,             ),
-          ),
+          child:Container(
+            decoration: const BoxDecoration(
+              border: Border(
+                top: BorderSide(color: AppColors.paymentBtnColor1, width: 1.0),
+              ),
+            ),
+            child: TextField(
+              controller: _commentController,
+              focusNode: _commentFocusNode,
+              decoration: const InputDecoration(
+                hintText: 'Post a comment...',
+                border: InputBorder.none,
+              ),
+            ),
+          )
+
         ),
         IconButton(
           icon: const Icon(Icons.send),

@@ -6,7 +6,13 @@ import 'package:hive/hive.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/widgets/portal/student/student_customized_appbar.dart';
+import 'package:linkschool/modules/model/student/elearningcontent_model.dart';
+import 'package:linkschool/modules/model/student/single_elearningcontentmodel.dart';
+import 'package:linkschool/modules/providers/student/single_elearningcontent_provider.dart';
 import 'package:linkschool/modules/student/elearning/course_detail_screen.dart';
+import 'package:linkschool/modules/student/elearning/quiz_score_page.dart';
+import 'package:linkschool/modules/student/elearning/single_quiz_intro_page.dart';
+import 'package:linkschool/modules/student/elearning/single_quiz_score_page.dart';
 import 'package:linkschool/modules/student/home/new_post_dialog.dart';
 import 'package:provider/provider.dart';
 
@@ -23,6 +29,8 @@ class StudentElearningScreen extends StatefulWidget {
 
 class _StudentElearningScreenState extends State<StudentElearningScreen> {
   DashboardData? dashboardData;
+  SingleElearningContentData? elearningContentData;
+
   bool isLoading = true;
 
   int currentAssessmentIndex = 0;
@@ -89,7 +97,7 @@ class _StudentElearningScreenState extends State<StudentElearningScreen> {
 
       final dashboardProvider = Provider.of<DashboardProvider>(context, listen: false);
       dashboardProvider.fetchDashboardData(
-class_id: getuserdata()['profile']['class_id'], level_id: getuserdata()['profile']['level_id'], term: getuserdata()['settings']['term'],
+          class_id: getuserdata()['profile']['class_id'].toString(), level_id: getuserdata()['profile']['level_id'], term: getuserdata()['settings']['term'],
       );
 
 
@@ -142,6 +150,19 @@ class_id: getuserdata()['profile']['class_id'], level_id: getuserdata()['profile
     });
   }
 
+  Future<void> fetchSingleElearning(int contentid) async {
+
+    final provider = Provider.of<SingleelearningcontentProvider>(context, listen: false);
+    final data = await provider.fetchElearningContentData(
+      contentid
+    );
+    print("Dem qs ${data!.questions}");
+    setState(() {
+      elearningContentData = data;
+      isLoading = false;
+    });
+  }
+
   @override
   void dispose() {
     assessmentController.dispose();
@@ -183,7 +204,6 @@ class_id: getuserdata()['profile']['class_id'], level_id: getuserdata()['profile
 
   @override
   Widget build(BuildContext context) {
-
     if (isLoading || dashboardData == null) {
       return const Scaffold(
         body: Center(
@@ -228,171 +248,190 @@ final assessments=dashboardData!.recentQuizzes;
                   },
                   itemBuilder: (context, index) {
                     final assessment = assessments[index];
-                    return Container(
-                      margin: const EdgeInsets.symmetric(horizontal: 8.0),
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(12.0),
-                        color: AppColors.paymentTxtColor1,
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.1),
-                            blurRadius: 8,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
-                      ),
-                      child: Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            // Top Section: Subject and Date
-                            Container(
-                              padding: const EdgeInsets.all(8.0),
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(8.0),
-                                color: Colors
-                                    .white, // White container wrapping everything
-                              ),
-                              child: Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                children: [
-                                  // Subject and Title Section
-                                  Expanded(
-                                    child: Text(
-                                      '${assessment.title} ${assessment.courseName}',
-                                      style: const TextStyle(
-                                        color: Colors.black,
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                  ),
-                                  // Date Section in a Blue Container
-
-                                ],
-                              ),
-                            ),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 8.0, vertical: 4.0),
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(8.0),
-                                color: AppColors
-                                    .paymentTxtColor1, // Blue background
-                              ),
-                              child: Row(
-                                children: [
-                                  SvgPicture.asset(
-                                    'assets/icons/student/calender-icon.svg',
-                                    width: 16,
-                                    height: 16,
-                                    colorFilter: const ColorFilter.mode(
-                                      Colors.white,
-                                      BlendMode.srcIn,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 4),
-                                  Text(
-                                    assessment.datePosted,
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 12,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            const SizedBox(height: 24),
-                            // Bottom Section: Time, Classes, Duration
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                              children: [
-                                // Time
-                                 Column(
-                                  children: [
-                                    Text(
-                                      'Time',
-                                      style: TextStyle(
-                                        color: AppColors.backgroundLight,
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                    SizedBox(height: 4),
-                                    Text(
-                                      extractTime(assessment.datePosted),
-                                      style: TextStyle(
-                                        color: AppColors.backgroundLight,
-                                        fontSize: 14,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                // Vertical Divider
-                                Container(
-                                  height: 40,
-                                  width: 1,
-                                  color: Colors.white, // White line
-                                  margin: const EdgeInsets.symmetric(
-                                      horizontal: 16.0),
-                                ),
-                                Column(
-                                  children: [
-                                    Text(
-                                      'Classes',
-                                      style: TextStyle(
-                                        color: AppColors.backgroundLight,
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                    SizedBox(height: 4),
-                                    Text(
-                                      getuserdata()['profile']['class_name'],
-                                      style: TextStyle(
-                                        color: AppColors.backgroundLight,
-                                        fontSize: 14,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-
-                                // Classes
-                                // Vertical Divider
-                                Container(
-                                  height: 40,
-                                  width: 1,
-                                  color: Colors.white, // White line
-                                  margin: const EdgeInsets.symmetric(
-                                      horizontal: 16.0),
-                                ),
-                                Column(
-                                  children: [
-                                    Text(
-                                      'Time',
-                                      style: TextStyle(
-                                        color: AppColors.backgroundLight,
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                    SizedBox(height: 4),
-                                    Text(
-                                      "20 Minutes",
-                                      style: TextStyle(
-                                        color: AppColors.backgroundLight,
-                                        fontSize: 14,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                // Duration
-
-                              ],
+                    return GestureDetector(
+                      onTap: () async {
+                        await fetchSingleElearning(assessment.id);
+                        final userBox = Hive.box('userData');
+                        final List<dynamic> quizzestaken = userBox.get('quizzes', defaultValue: []);
+                       int? theid= elearningContentData?.id;
+                        if (quizzestaken.contains(theid)) {
+                          Navigator.push(
+                            context,MaterialPageRoute(
+                            builder: (context) => SingleQuizScorePage(childContent: elearningContentData,year:int.parse(getuserdata()['settings']['year']), term:getuserdata()['settings']['term']),),
+                          );
+                        } else {
+                          Navigator.push(
+                            context,MaterialPageRoute(
+                            builder: (context) => SingleQuizIntroPage(childContent: elearningContentData,),),
+                          );
+                        }
+                      },
+                      child: Container(
+                        margin: const EdgeInsets.symmetric(horizontal: 8.0),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(12.0),
+                          color: AppColors.paymentTxtColor1,
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.1),
+                              blurRadius: 8,
+                              offset: const Offset(0, 4),
                             ),
                           ],
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.all(16.0),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              // Top Section: Subject and Date
+                              Container(
+                                padding: const EdgeInsets.all(8.0),
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(8.0),
+                                  color: Colors
+                                      .white, // White container wrapping everything
+                                ),
+                                child: Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    // Subject and Title Section
+                                    Expanded(
+                                      child: Text(
+                                        '${assessment.title} ${assessment.courseName}',
+                                        style: const TextStyle(
+                                          color: Colors.black,
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+                                    // Date Section in a Blue Container
+
+                                  ],
+                                ),
+                              ),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 8.0, vertical: 4.0),
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(8.0),
+                                  color: AppColors
+                                      .paymentTxtColor1, // Blue background
+                                ),
+                                child: Row(
+                                  children: [
+                                    SvgPicture.asset(
+                                      'assets/icons/student/calender-icon.svg',
+                                      width: 16,
+                                      height: 16,
+                                      colorFilter: const ColorFilter.mode(
+                                        Colors.white,
+                                        BlendMode.srcIn,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      assessment.datePosted,
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 12,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(height: 24),
+                              // Bottom Section: Time, Classes, Duration
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                                children: [
+                                  // Time
+                                   Column(
+                                    children: [
+                                      Text(
+                                        'Time',
+                                        style: TextStyle(
+                                          color: AppColors.backgroundLight,
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                      SizedBox(height: 4),
+                                      Text(
+                                        extractTime(assessment.datePosted),
+                                        style: TextStyle(
+                                          color: AppColors.backgroundLight,
+                                          fontSize: 14,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  // Vertical Divider
+                                  Container(
+                                    height: 40,
+                                    width: 1,
+                                    color: Colors.white, // White line
+                                    margin: const EdgeInsets.symmetric(
+                                        horizontal: 16.0),
+                                  ),
+                                  Column(
+                                    children: [
+                                      Text(
+                                        'Classes',
+                                        style: TextStyle(
+                                          color: AppColors.backgroundLight,
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                      SizedBox(height: 4),
+                                      Text(
+                                        getuserdata()['profile']['class_name'],
+                                        style: TextStyle(
+                                          color: AppColors.backgroundLight,
+                                          fontSize: 14,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+
+                                  // Classes
+                                  // Vertical Divider
+                                  Container(
+                                    height: 40,
+                                    width: 1,
+                                    color: Colors.white, // White line
+                                    margin: const EdgeInsets.symmetric(
+                                        horizontal: 16.0),
+                                  ),
+                                  Column(
+                                    children: [
+                                      Text(
+                                        'Time',
+                                        style: TextStyle(
+                                          color: AppColors.backgroundLight,
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                      SizedBox(height: 4),
+                                      Text(
+                                        "20 Minutes",
+                                        style: TextStyle(
+                                          color: AppColors.backgroundLight,
+                                          fontSize: 14,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  // Duration
+
+                                ],
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     );

@@ -30,6 +30,7 @@ import 'package:linkschool/modules/providers/explore/subject_provider.dart';
 import 'package:linkschool/modules/providers/student/elearningcontent_provider.dart';
 import 'package:linkschool/modules/providers/student/marked_assignment_provider.dart';
 import 'package:linkschool/modules/providers/student/marked_quiz_provider.dart';
+import 'package:linkschool/modules/providers/student/single_elearningcontent_provider.dart';
 import 'package:linkschool/modules/providers/student/streams_provider.dart';
 import 'package:linkschool/modules/services/admin/e_learning/syllabus_content_service.dart';
 import 'package:linkschool/modules/services/explore/cbt_service.dart';
@@ -100,6 +101,7 @@ Future<void> main() async {
         ChangeNotifierProvider(create: (_) => ViewCourseResultProvider()),
         ChangeNotifierProvider(create: (_) => DashboardProvider()),
         ChangeNotifierProvider(create: (_) => ElearningContentProvider()),
+        ChangeNotifierProvider(create: (_) => SingleelearningcontentProvider()),
         ChangeNotifierProvider(create: (_) => locator<StreamsProvider>()),
         ChangeNotifierProvider(create: (_) => locator<MarkedAssignmentProvider>()),
         ChangeNotifierProvider(create: (_) => locator<MarkedQuizProvider>()),
