@@ -4,8 +4,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
-// import 'package:linkschool/modules/common/app_colors.dart';
-// import 'package:linkschool/modules/common/text_styles.dart';
+
 
 class StatisticsView extends StatelessWidget {
   const StatisticsView({super.key});

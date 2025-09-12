@@ -32,4 +32,12 @@ class ExpenditureService {
       },
     );
   }
+
+  Future<ApiResponse<Map<String, dynamic>>> generateReport(Map<String, dynamic> payload) async {
+    return await _apiService.post<Map<String, dynamic>>(
+      endpoint: 'portal/payments/expenditure/report/generate',
+      body: payload,
+      fromJson: (json) => Map<String, dynamic>.from(json['data'] ?? {}),
+    );
+  }
 }

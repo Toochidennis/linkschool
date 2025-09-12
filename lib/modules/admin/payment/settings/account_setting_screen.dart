@@ -5,8 +5,6 @@ import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/model/admin/account_model.dart';
 import 'package:linkschool/modules/providers/admin/payment/account_provider.dart';
-// import 'package:linkschool/modules/models/account_model.dart';
-// import 'package:linkschool/modules/providers/admin/account_provider.dart';
 import 'package:provider/provider.dart';
 
 class AccountSettingScreen extends StatefulWidget {

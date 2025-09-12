@@ -35,6 +35,7 @@ import 'package:linkschool/modules/services/admin/e_learning/syllabus_content_se
 import 'package:linkschool/modules/services/admin/e_learning/syllabus_service.dart';
 import 'package:linkschool/modules/services/admin/e_learning/topic_service.dart';
 import 'package:linkschool/modules/services/admin/payment/account_service.dart';
+import 'package:linkschool/modules/services/admin/payment/expenditure_service.dart';
 import 'package:linkschool/modules/services/admin/payment/fee_service.dart';
 import 'package:linkschool/modules/services/admin/payment/vendor_service.dart';
 
@@ -285,4 +286,9 @@ void setupServiceLocator() {
   locator.registerLazySingleton<VendorService>(
     () => VendorService(locator<ApiService>())
   );
+
+  // CRITICAL FIX: Add the missing ExpenditureService registration
+   locator.registerLazySingleton<ExpenditureService>(
+     () => ExpenditureService(locator<ApiService>())
+   );
 }

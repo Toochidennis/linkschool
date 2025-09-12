@@ -67,6 +67,7 @@ dependencies:
   file_saver: ^0.2.14  # Changed from ^0.3.1 to ^0.2.14
   path_provider: ^2.1.5
   flutter_pdfview: ^1.4.1+1
+  flutter_charts: ^0.5.2
 
 dev_dependencies:
   flutter_test:

@@ -9,12 +9,14 @@ class ExpenseHistoryScreen extends StatefulWidget {
   final String grade;
   final double amount;
   final String name;
+  final Map<String, dynamic> transaction;
 
   const ExpenseHistoryScreen({
     super.key,
     required this.grade,
     required this.amount,
     required this.name,
+    required this.transaction,
   });
 
   @override
@@ -97,8 +99,8 @@ class _ExpenseHistoryScreenState extends State<ExpenseHistoryScreen> {
               const SizedBox(height: 16),
               Expanded(
                 child: ListView.builder(
-                  itemCount: 5,
-                  itemBuilder: (context, index) => _buildStudentItem(context),
+                  itemCount: 1, // Single transaction for now
+                  itemBuilder: (context, index) => _buildTransactionItem(context),
                 ),
               ),
             ],
@@ -108,7 +110,7 @@ class _ExpenseHistoryScreenState extends State<ExpenseHistoryScreen> {
     );
   }
 
-  Widget _buildStudentItem(BuildContext context) {
+  Widget _buildTransactionItem(BuildContext context) {
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       decoration: BoxDecoration(
@@ -121,16 +123,21 @@ class _ExpenseHistoryScreenState extends State<ExpenseHistoryScreen> {
           widget.name,
           style: AppTextStyles.normal500(fontSize: 18, color: AppColors.backgroundDark),
         ),
+        subtitle: Text(
+          widget.transaction['date'] ?? '07-03-2018  17:23',
+          style: AppTextStyles.normal500(fontSize: 12, color: AppColors.text10Light),
+        ),
         trailing: Text(
-          '${widget.amount}',
-          style: AppTextStyles.normal700(fontSize: 18, color: const Color.fromRGBO(47, 85, 221, 1)),
+          '-${widget.amount.toStringAsFixed(2)}',
+          style: AppTextStyles.normal700(fontSize: 18, color: Colors.red),
         ),
         onTap: () => Navigator.push(
           context,
           MaterialPageRoute(
             builder: (context) => ExpenseHistoryDetail(
               studentName: widget.name,
-              amount: '${widget.amount}',
+              amount: widget.amount.toStringAsFixed(2),
+              transaction: widget.transaction,
             ),
           ),
         ),
@@ -138,7 +145,6 @@ class _ExpenseHistoryScreenState extends State<ExpenseHistoryScreen> {
     );
   }
 }
-
 
 
 // import 'package:flutter/material.dart';
