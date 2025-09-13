@@ -3,7 +3,6 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
 import 'package:intl/intl.dart';
-import 'package:linkschool/modules/model/student/single_elearningcontentmodel.dart';
 import 'package:linkschool/modules/model/student/submitted_quiz_model.dart';
 import 'package:linkschool/modules/student/elearning/pdf_reader.dart';
 import 'package:linkschool/modules/student/elearning/resubmit_modal.dart';
@@ -18,16 +17,17 @@ import '../../common/custom_toaster.dart';
 import '../../common/text_styles.dart';
 import '../../model/student/assignment_submissions_model.dart';
 import '../../model/student/comment_model.dart';
+import '../../model/student/elearningcontent_model.dart';
 import '../../providers/student/comment_provider.dart';
 import '../../providers/student/marked_quiz_provider.dart';
 
 
-class SingleQuizScoreView extends StatefulWidget {
+class QuizScoreView extends StatefulWidget {
   final int year;
   final int term;
-  final SingleElearningContentData? childContent;
+  final ChildContent childContent;
 
-  const SingleQuizScoreView({
+  const QuizScoreView({
     Key? key,
     required this.childContent,
     required this.year,
@@ -36,10 +36,10 @@ class SingleQuizScoreView extends StatefulWidget {
   }) : super(key: key);
 
   @override
-  State<SingleQuizScoreView> createState() => _SingleQuizScoreViewState();
+  State<QuizScoreView> createState() => _QuizScoreViewState();
 }
 
-class _SingleQuizScoreViewState extends State<SingleQuizScoreView> {
+class _QuizScoreViewState extends State<QuizScoreView> {
   MarkedQuizModel? markedquiz;
   int? academicTerm;
   int? academicYear;
@@ -87,7 +87,7 @@ class _SingleQuizScoreViewState extends State<SingleQuizScoreView> {
 
   Future<void> fetchMarkedQuiz() async {
     final provider = Provider.of<MarkedQuizProvider>(context, listen: false);
-    final data = await provider.fetchMarkedQuiz(widget.childContent?.settings!.id ?? 0 , widget.year , widget.term );
+    final data = await provider.fetchMarkedQuiz(widget.childContent.settings!.id , widget.year , widget.term );
 
     setState(() {
       markedquiz = data;
@@ -99,7 +99,7 @@ class _SingleQuizScoreViewState extends State<SingleQuizScoreView> {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) =>  AddCommentModal( childContent: widget.childContent,title: widget.childContent?.title ??"", id: widget.childContent?.id),
+      builder: (context) =>  AddCommentModal( childContent: widget.childContent,title: widget.childContent.title, id: widget.childContent.id),
     );
   }
 
@@ -190,7 +190,7 @@ class _SingleQuizScoreViewState extends State<SingleQuizScoreView> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  "Marked Quiz",
+                   "Marked Quiz",
                   style: TextStyle(
                     fontSize: 36,
                     fontWeight: FontWeight.w600,
@@ -243,7 +243,7 @@ class _SingleQuizScoreViewState extends State<SingleQuizScoreView> {
                     const SizedBox(height: 24),
 
                     // Questions & Answers
-                  ],
+                    ],
                 )
 
               ],
@@ -265,7 +265,7 @@ class _SingleQuizScoreViewState extends State<SingleQuizScoreView> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    widget.childContent?.description ?? "",
+                    widget.childContent.description ?? "",
                     style: TextStyle(
                       fontSize: 18,
                       color: Colors.black87,
@@ -378,10 +378,10 @@ class _SingleQuizScoreViewState extends State<SingleQuizScoreView> {
                             markedquiz?.answers.isNotEmpty == true
                                 ? markedquiz?.answers[0].question ??"No Q"
                                 : "No file",                            style: TextStyle(
-                            fontSize: 16,
-                            color: Colors.black87,
-                            fontWeight: FontWeight.w500,
-                          ),
+                              fontSize: 16,
+                              color: Colors.black87,
+                              fontWeight: FontWeight.w500,
+                            ),
                           ),
                         ),
                       ],
@@ -400,8 +400,8 @@ class _SingleQuizScoreViewState extends State<SingleQuizScoreView> {
 class YourWorkModal extends StatefulWidget {
   final int year;
   final int term;
-  final SingleElearningContentData? childContent;
-  final MarkedQuizModel? markedquiz;
+  final ChildContent childContent;
+final MarkedQuizModel? markedquiz;
   const YourWorkModal({
     Key? key,
     required this.childContent,
@@ -589,9 +589,9 @@ class _YourWorkModalState extends State<YourWorkModal> {
 
                         Column(
                           children: List.generate(
-                            widget.childContent?.contentFiles.length ?? 0,
+                            widget.childContent.contentFiles?.length ?? 0,
                                 (index) {
-                              final file = widget.childContent?.contentFiles![index];
+                              final file = widget.childContent.contentFiles![index];
 
                               return GestureDetector(
                                 onTap: () {
@@ -679,7 +679,7 @@ class AddCommentModal extends StatefulWidget {
   final String? courseName;
   final int? itemId;
   final List<Map<String, dynamic>>? syllabusClasses;
-  final SingleElearningContentData? childContent;
+  final ChildContent? childContent;
   final String ?title;
   final int? id;
 

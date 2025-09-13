@@ -576,7 +576,7 @@ class _MaterialDetailScreen extends State<MaterialDetailScreen> {
                   url: fileUrl,
                 ),
               ),
-            );;
+            );
           } else {_launchUrl(fileName);
           }}
       },

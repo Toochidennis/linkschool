@@ -3,8 +3,6 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
 import 'package:intl/intl.dart';
-import 'package:linkschool/modules/model/student/single_elearningcontentmodel.dart';
-import 'package:linkschool/modules/model/student/submitted_quiz_model.dart';
 import 'package:linkschool/modules/student/elearning/pdf_reader.dart';
 import 'package:linkschool/modules/student/elearning/resubmit_modal.dart';
 import 'package:provider/provider.dart';
@@ -18,29 +16,31 @@ import '../../common/custom_toaster.dart';
 import '../../common/text_styles.dart';
 import '../../model/student/assignment_submissions_model.dart';
 import '../../model/student/comment_model.dart';
+import '../../model/student/elearningcontent_model.dart';
 import '../../providers/student/comment_provider.dart';
-import '../../providers/student/marked_quiz_provider.dart';
 
 
-class SingleQuizScoreView extends StatefulWidget {
+class AssignmentScoreView extends StatefulWidget {
   final int year;
   final int term;
-  final SingleElearningContentData? childContent;
+  final List<String> attachedMaterials;
+  final ChildContent childContent;
 
-  const SingleQuizScoreView({
+  const AssignmentScoreView({
     Key? key,
     required this.childContent,
     required this.year,
     required this.term,
+    required this.attachedMaterials,
 
   }) : super(key: key);
 
   @override
-  State<SingleQuizScoreView> createState() => _SingleQuizScoreViewState();
+  State<AssignmentScoreView> createState() => _AssignmentScoreViewState();
 }
 
-class _SingleQuizScoreViewState extends State<SingleQuizScoreView> {
-  MarkedQuizModel? markedquiz;
+class _AssignmentScoreViewState extends State<AssignmentScoreView> {
+  MarkedAssignmentModel? markedass;
   int? academicTerm;
   int? academicYear;
   bool isLoading = true;
@@ -50,7 +50,7 @@ class _SingleQuizScoreViewState extends State<SingleQuizScoreView> {
   void initState() {
     super.initState();
     _loadUserData();
-    fetchMarkedQuiz();
+    fetchMarkedAssignment();
     // Show the modal bottom sheet after the widget is built
     WidgetsBinding.instance.addPostFrameCallback((_) {
       //  _showAttachedMaterials();
@@ -85,12 +85,36 @@ class _SingleQuizScoreViewState extends State<SingleQuizScoreView> {
   }
 
 
-  Future<void> fetchMarkedQuiz() async {
-    final provider = Provider.of<MarkedQuizProvider>(context, listen: false);
-    final data = await provider.fetchMarkedQuiz(widget.childContent?.settings!.id ?? 0 , widget.year , widget.term );
+  void _showAttachedMaterials() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      isDismissible: false,
+
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => DraggableScrollableSheet(
+        expand: false,
+        initialChildSize: 0.20,
+        minChildSize: 0.15,
+        maxChildSize: 0.6,
+        builder: (context, scrollController) {
+          return MaterialSheet(
+            attachedMaterials: markedass?.files ??[],
+            scrollController: scrollController,
+          );
+        },
+      ),
+    );
+  }
+  Future<void> fetchMarkedAssignment() async {
+    final provider = Provider.of<MarkedAssignmentProvider>(context, listen: false);
+    final data = await provider.fetchMarkedAssignment(widget.childContent.id!, widget.year , widget.term );
 
     setState(() {
-      markedquiz = data;
+      markedass = data;
       isLoading = false;
     });
   }
@@ -99,7 +123,7 @@ class _SingleQuizScoreViewState extends State<SingleQuizScoreView> {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) =>  AddCommentModal( childContent: widget.childContent,title: widget.childContent?.title ??"", id: widget.childContent?.id),
+      builder: (context) =>  AddCommentModal( childContent: widget.childContent,title: widget.childContent.title, id: widget.childContent.id),
     );
   }
 
@@ -108,7 +132,7 @@ class _SingleQuizScoreViewState extends State<SingleQuizScoreView> {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) =>  YourWorkModal(childContent: widget.childContent, year: widget.year, term: widget.term, markedquiz: markedquiz,),
+      builder: (context) =>  YourWorkModal(childContent: widget.childContent, year: widget.year, term: widget.term, attachedMaterials: widget.attachedMaterials,),
     );
   }
 
@@ -143,19 +167,6 @@ class _SingleQuizScoreViewState extends State<SingleQuizScoreView> {
 
   @override
   Widget build(BuildContext context) {
-    if (isLoading || markedquiz== null) {
-      return const Scaffold(
-        body:  Center(
-          child: Column(mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-
-              CircularProgressIndicator(),
-              Text("Loading your marked quiz" ,style: TextStyle(color: AppColors.paymentBtnColor1),),
-            ],
-          ),
-        ),
-      );
-    }
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F7),
       appBar: AppBar(
@@ -169,7 +180,7 @@ class _SingleQuizScoreViewState extends State<SingleQuizScoreView> {
           ),
           onPressed: () => Navigator.pop(context),
         ),
-        /*actions: [
+        actions: [
           IconButton(
             icon: const Icon(
               Icons.more_vert,
@@ -178,7 +189,7 @@ class _SingleQuizScoreViewState extends State<SingleQuizScoreView> {
             ),
             onPressed: () => _showOptionsMenu(context),
           ),
-        ],*/
+        ],
       ),
       body: Column(
         children: [
@@ -189,8 +200,8 @@ class _SingleQuizScoreViewState extends State<SingleQuizScoreView> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  "Marked Quiz",
+                 Text(
+                  widget.childContent.title?? "No Title",
                   style: TextStyle(
                     fontSize: 36,
                     fontWeight: FontWeight.w600,
@@ -198,8 +209,8 @@ class _SingleQuizScoreViewState extends State<SingleQuizScoreView> {
                   ),
                 ),
                 const SizedBox(height: 8),
-                Text(
-                  "${markedquiz?.score} Points"  "",
+                 Text(
+                  "${widget.childContent.grade} Points"  "",
                   style: TextStyle(
                     fontSize: 18,
                     color: Colors.grey,
@@ -207,45 +218,31 @@ class _SingleQuizScoreViewState extends State<SingleQuizScoreView> {
                   ),
                 ),
                 const SizedBox(height: 32),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Header
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                InkWell(
+                  onTap: () => _showAddCommentModal(context),
+                  borderRadius: BorderRadius.circular(8),
+                  child: const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 8),
+                    child: Row(
                       children: [
-                        const Text(
-                          'Your Quiz',
-                          style: TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.black,
-                          ),
+                        Icon(
+                          Icons.comment_outlined,
+                          color: Colors.blue,
+                          size: 24,
                         ),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                          decoration: BoxDecoration(
-                            color: Colors.blue.withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                          child: Text(
-                            "Score: ${markedquiz?.score }", // <-- quiz score
-                            style: const TextStyle(
-                              fontSize: 14,
-                              color: Colors.blue,
-                              fontWeight: FontWeight.w500,
-                            ),
+                        SizedBox(width: 12),
+                        Text(
+                          'Add class comment',
+                          style: TextStyle(
+                            fontSize: 16,
+                            color: Colors.blue,
+                            fontWeight: FontWeight.w500,
                           ),
                         ),
                       ],
                     ),
-
-                    const SizedBox(height: 24),
-
-                    // Questions & Answers
-                  ],
-                )
-
+                  ),
+                ),
               ],
             ),
           ),
@@ -265,7 +262,7 @@ class _SingleQuizScoreViewState extends State<SingleQuizScoreView> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    widget.childContent?.description ?? "",
+                    widget.childContent.description ?? "",
                     style: TextStyle(
                       fontSize: 18,
                       color: Colors.black87,
@@ -327,7 +324,7 @@ class _SingleQuizScoreViewState extends State<SingleQuizScoreView> {
                           borderRadius: BorderRadius.circular(16),
                         ),
                         child:  Text(
-                          markedquiz?.score ?? "",
+                          widget.childContent.grade ?? "",
                           style: TextStyle(
                             fontSize: 14,
                             color: Colors.grey,
@@ -373,15 +370,16 @@ class _SingleQuizScoreViewState extends State<SingleQuizScoreView> {
                           ),
                         ),
                         const SizedBox(width: 16),
-                        Expanded(
+                         Expanded(
                           child: Text(
-                            markedquiz?.answers.isNotEmpty == true
-                                ? markedquiz?.answers[0].question ??"No Q"
-                                : "No file",                            style: TextStyle(
-                            fontSize: 16,
-                            color: Colors.black87,
-                            fontWeight: FontWeight.w500,
-                          ),
+                            widget.childContent.contentFiles?.isNotEmpty == true
+                                ? widget.childContent.contentFiles![0].fileName
+                                : "No file",
+                            style: TextStyle(
+                              fontSize: 16,
+                              color: Colors.black87,
+                              fontWeight: FontWeight.w500,
+                            ),
                           ),
                         ),
                       ],
@@ -400,14 +398,15 @@ class _SingleQuizScoreViewState extends State<SingleQuizScoreView> {
 class YourWorkModal extends StatefulWidget {
   final int year;
   final int term;
-  final SingleElearningContentData? childContent;
-  final MarkedQuizModel? markedquiz;
+  final List<String> attachedMaterials;
+  final ChildContent childContent;
+
   const YourWorkModal({
     Key? key,
     required this.childContent,
     required this.year,
     required this.term,
-    required this.markedquiz
+    required this.attachedMaterials,
 
   }) : super(key: key);
 
@@ -438,27 +437,20 @@ class _YourWorkModalState extends State<YourWorkModal> {
           decoration: const BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.only(
-              topLeft: Radius.circular(24),
-              topRight: Radius.circular(24),
+              topLeft: Radius.circular(20),
+              topRight: Radius.circular(20),
             ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black26,
-                blurRadius: 12,
-                offset: Offset(0, -4),
-              ),
-            ],
           ),
           child: Column(
             children: [
-              // Modern handle bar
+              // Handle bar
               Container(
-                margin: const EdgeInsets.symmetric(vertical: 12),
-                width: 50,
-                height: 6,
+                margin: const EdgeInsets.only(top: 12),
+                width: 40,
+                height: 4,
                 decoration: BoxDecoration(
-                  color: Colors.grey.shade300,
-                  borderRadius: BorderRadius.circular(12),
+                  color: Colors.grey.withOpacity(0.3),
+                  borderRadius: BorderRadius.circular(2),
                 ),
               ),
 
@@ -471,192 +463,229 @@ class _YourWorkModalState extends State<YourWorkModal> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Header
+                        // Your work header
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             const Text(
-                              'Your Work',
+                              'Your work',
                               style: TextStyle(
-                                fontSize: 26,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.black87,
+                                fontSize: 24,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.black,
                               ),
                             ),
                             Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 14,
+                              padding:  EdgeInsets.symmetric(
+                                horizontal: 12,
                                 vertical: 6,
                               ),
                               decoration: BoxDecoration(
-                                color: Colors.blue.shade50,
-                                borderRadius: BorderRadius.circular(20),
+                                color: Colors.grey.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(16),
                               ),
-                              child: Text(
-                                widget.markedquiz?.score ?? "",
+                              child:  Text(
+                               widget.childContent.grade ?? "",
                                 style: TextStyle(
                                   fontSize: 14,
-                                  color: Colors.blue.shade600,
-                                  fontWeight: FontWeight.w600,
+                                  color: Colors.grey,
+                                  fontWeight: FontWeight.w500,
                                 ),
                               ),
                             ),
                           ],
                         ),
 
-                        const SizedBox(height: 28),
+                        const SizedBox(height: 32),
 
-                        // Quiz answers section
-                        Text(
-                          "Quiz Results",
+                        // Attachments section
+                        const Text(
+                          'Attachments',
                           style: TextStyle(
                             fontSize: 20,
                             fontWeight: FontWeight.w600,
-                            color: Colors.grey.shade800,
+                            color: Colors.black,
                           ),
                         ),
-                        const SizedBox(height: 16),
-
-                        Column(
-                          children: List.generate(widget.markedquiz?.answers.length ?? 0, (index) {
-                            final ans = widget.markedquiz!.answers[index];
-                            final isCorrect = ans.answer.trim().toLowerCase() ==
-                                ans.correct.trim().toLowerCase();
-
-                            return Container(
-                              width: double.infinity, // 👈 makes card full width
-                              margin: const EdgeInsets.only(bottom: 16),
-                              padding: const EdgeInsets.all(16),
-                              decoration: BoxDecoration(
-                                gradient: LinearGradient(
-                                  colors: isCorrect
-                                      ? [Colors.green.shade50, Colors.green.shade100]
-                                      : [Colors.red.shade50, Colors.red.shade100],
-                                  begin: Alignment.topLeft,
-                                  end: Alignment.bottomRight,
-                                ),
-                                borderRadius: BorderRadius.circular(16),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black12,
-                                    blurRadius: 6,
-                                    offset: const Offset(0, 3),
-                                  ),
-                                ],
-                              ),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    "Q${index + 1}: ${ans.question}",
-                                    style: const TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w600,
-                                      color: Colors.black87,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 8),
-                                  Text(
-                                    "Your Answer: ${ans.answer}",
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w500,
-                                      color: isCorrect
-                                          ? Colors.green.shade800
-                                          : Colors.red.shade800,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    "Correct Answer: ${ans.correct}",
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      fontStyle: FontStyle.italic,
-                                      color: Colors.grey.shade700,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            );
-                          }),
-                        ),
-
-                        const SizedBox(height: 28),
-
-                        // Attachments section
 
                         const SizedBox(height: 16),
 
+                        // File preview card
                         Column(
                           children: List.generate(
-                            widget.childContent?.contentFiles.length ?? 0,
+                            widget.childContent.contentFiles?.length ?? 0,
                                 (index) {
-                              final file = widget.childContent?.contentFiles![index];
+                              final file = widget.childContent.contentFiles![index];
 
                               return GestureDetector(
-                                onTap: () {
+                                onTap: (){
                                   final rawFileName = file.fileName ?? 'Unknown file';
                                   final fileType = _getFileType(rawFileName);
                                   final fileUrl = "https://linkskool.net/$rawFileName";
 
                                   final fileName = rawFileName.split('/').last;
-                                  if (fileType == 'pdf') {
+                                  if(fileType == 'pdf'){
                                     Navigator.push(
                                       context,
                                       MaterialPageRoute(
-                                        builder: (_) => PdfViewerPage(url: fileUrl),
+                                        builder: (_) => PdfViewerPage(
+                                          url: fileUrl,
+                                        ),
                                       ),
                                     );
                                   } else {
                                     _launchUrl(fileName);
                                   }
                                 },
-                                child: Container(
-                                  margin: const EdgeInsets.only(bottom: 16),
-                                  padding: const EdgeInsets.all(12),
-                                  decoration: BoxDecoration(
-                                    color: Colors.grey.shade100,
-                                    borderRadius: BorderRadius.circular(12),
-                                    border: Border.all(
-                                      color: Colors.grey.shade300,
-                                    ),
-                                  ),
-                                  child: Row(
-                                    children: [
-                                      Container(
-                                        width: 48,
-                                        height: 48,
-                                        decoration: BoxDecoration(
-                                          color: Colors.blue.shade50,
-                                          borderRadius: BorderRadius.circular(12),
-                                        ),
-                                        child: const Icon(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    // File preview container
+                                    Container(
+                                      width: double.infinity,
+                                      height: 120,
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFFE5E5E5),
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: const Center(
+                                        child: Icon(
                                           Icons.description,
-                                          size: 28,
-                                          color: Colors.blue,
+                                          size: 48,
+                                          color: Colors.grey,
                                         ),
                                       ),
-                                      const SizedBox(width: 12),
-                                      Expanded(
-                                        child: Text(
-                                          file.fileName ?? "Unknown file",
-                                          overflow: TextOverflow.ellipsis,
-                                          style: const TextStyle(
-                                            fontSize: 16,
-                                            color: Colors.black87,
-                                            fontWeight: FontWeight.w500,
+                                    ),
+
+                                    const SizedBox(height: 12),
+
+                                    // File name row
+                                    Row(
+                                      children: [
+                                        Container(
+                                          width: 24,
+                                          height: 24,
+                                          decoration: BoxDecoration(
+                                            color: Colors.grey.withOpacity(0.2),
+                                            borderRadius: BorderRadius.circular(4),
+                                          ),
+                                          child: const Icon(
+                                            Icons.description,
+                                            size: 16,
+                                            color: Colors.grey,
                                           ),
                                         ),
-                                      ),
-                                    ],
-                                  ),
+                                        const SizedBox(width: 8),
+                                        Expanded(
+                                          child: Text(
+                                            file.fileName ?? "Unknown file", // <-- dynamic file name
+                                            overflow: TextOverflow.ellipsis,
+                                            style: const TextStyle(
+                                              fontSize: 16,
+                                              color: Colors.black87,
+                                              fontWeight: FontWeight.w400,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+
+                                    const SizedBox(height: 20), // space before next file
+                                  ],
                                 ),
                               );
                             },
                           ),
                         ),
 
-                        const SizedBox(height: 40),
+                        const SizedBox(height: 48),
+
+                        // Private comments section
+                        const Text(
+                          'Private comments',
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.black,
+                          ),
+                        ),
+
+                        const SizedBox(height: 16),
+
+                        // Add comment input
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 12,
+                          ),
+                          decoration: BoxDecoration(
+                            border: Border.all(
+                              color: Colors.grey.withOpacity(0.3),
+                            ),
+                            borderRadius: BorderRadius.circular(24),
+                          ),
+                          child: const Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  'Add comment to STANLEY ANDE...',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    color: Colors.grey,
+                                  ),
+                                ),
+                              ),
+                              Icon(
+                                Icons.send,
+                                color: Colors.grey,
+                                size: 20,
+                              ),
+                            ],
+                          ),
+                        ),
+
+                        const SizedBox(height: 100),
+
+                        // Bottom section
+                        Column(
+                          children: [
+                            // Unsubmit button
+                            Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                              decoration: BoxDecoration(
+                                border: Border.all(
+                                  color: Colors.grey.withOpacity(0.3),
+                                ),
+                                borderRadius: BorderRadius.circular(24),
+                              ),
+                              child: const Center(
+                                child: Text(
+                                  'Unsubmit',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    color: Colors.grey,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ),
+                            ),
+
+                            const SizedBox(height: 16),
+
+                            // Status message
+                            const Text(
+                              'Your teacher is not accepting work at this time',
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Colors.grey,
+                                fontWeight: FontWeight.w400,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ],
+                        ),
                       ],
                     ),
                   ),
@@ -667,7 +696,6 @@ class _YourWorkModalState extends State<YourWorkModal> {
         );
       },
     );
-
   }
 }
 
@@ -679,7 +707,7 @@ class AddCommentModal extends StatefulWidget {
   final String? courseName;
   final int? itemId;
   final List<Map<String, dynamic>>? syllabusClasses;
-  final SingleElearningContentData? childContent;
+  final ChildContent? childContent;
   final String ?title;
   final int? id;
 

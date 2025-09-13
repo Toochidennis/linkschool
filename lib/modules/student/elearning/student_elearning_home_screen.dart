@@ -10,7 +10,6 @@ import 'package:linkschool/modules/model/student/elearningcontent_model.dart';
 import 'package:linkschool/modules/model/student/single_elearningcontentmodel.dart';
 import 'package:linkschool/modules/providers/student/single_elearningcontent_provider.dart';
 import 'package:linkschool/modules/student/elearning/course_detail_screen.dart';
-import 'package:linkschool/modules/student/elearning/quiz_score_page.dart';
 import 'package:linkschool/modules/student/elearning/single_assignment_detail_screen.dart';
 import 'package:linkschool/modules/student/elearning/single_assignment_score_view.dart';
 import 'package:linkschool/modules/student/elearning/single_material_detail_screen.dart';
@@ -259,7 +258,7 @@ final assessments=dashboardData!.recentQuizzes;
                         if (quizzestaken.contains(theid)) {
                           Navigator.push(
                             context,MaterialPageRoute(
-                            builder: (context) => SingleQuizScorePage(childContent: elearningContentData,year:int.parse(getuserdata()['settings']['year']), term:getuserdata()['settings']['term']),),
+                            builder: (context) => SingleQuizScoreView(childContent: elearningContentData,year:int.parse(getuserdata()['settings']['year']), term:getuserdata()['settings']['term']),),
                           );
                         } else {
                           Navigator.push(
@@ -481,7 +480,6 @@ final assessments=dashboardData!.recentQuizzes;
                     return GestureDetector(
                       onTap: () async {
                         await fetchSingleElearning(activity.id);
-                        print("Assignment ${elearningContentData}");
                         if (elearningContentData?.settings != null) {
                           final userBox = Hive.box('userData');
                           final List<dynamic> quizzestaken = userBox.get('quizzes', defaultValue: []);
@@ -489,7 +487,7 @@ final assessments=dashboardData!.recentQuizzes;
                           if (quizzestaken.contains(quizId)) {
                             Navigator.push(
                               context,MaterialPageRoute(
-                              builder: (context) => SingleQuizScorePage(childContent: elearningContentData,year:int.parse(getuserdata()['settings']['year']), term:getuserdata()['settings']['term']),),
+                              builder: (context) => SingleQuizScoreView(childContent: elearningContentData,year:int.parse(getuserdata()['settings']['year']), term:getuserdata()['settings']['term']),),
                             );
                           } else {
                             Navigator.push(
@@ -515,7 +513,7 @@ final assessments=dashboardData!.recentQuizzes;
                                 if (assignmentssubmitted.contains(assignmentId)) {
                                   Navigator.push(
                                     context,MaterialPageRoute(
-                                    builder: (context) => SingleAssignmentScorePage(childContent: elearningContentData,year:int.parse(getuserdata()['settings']['year']), term:getuserdata()['settings']['term'], attachedMaterials: [""],),),
+                                    builder: (context) => SingleAssignmentScoreView(childContent: elearningContentData,year:int.parse(getuserdata()['settings']['year']), term:getuserdata()['settings']['term'], attachedMaterials: [""],),),
                                   );
                                 } else {
                                   Navigator.push(
