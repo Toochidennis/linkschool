@@ -1459,6 +1459,9 @@ class _EmptySubjectScreenState extends State<StaffEmptySubjectScreen>
               questions: item.questions,
               editMode: true,
               onSaveFlag: setRefreshFlag,
+              onCreation: () {
+                _loadSyllabusContents();
+              },
             ),
           ),
         ).then((_) {

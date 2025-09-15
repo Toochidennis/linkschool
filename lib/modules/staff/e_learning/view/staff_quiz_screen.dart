@@ -91,7 +91,7 @@ class _StaffQuizScreenState extends State<StaffQuizScreen> {
           ),
         ),
       );
-            case 'Delete':
+            case 'delete':
             deleteAssignment(widget.question.id);
 
       }

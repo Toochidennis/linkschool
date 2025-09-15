@@ -14,6 +14,7 @@ import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/common/utils/duration_picker_dialog.dart';
 import 'package:linkschool/modules/common/widgets/portal/e_learning/select_classes_dialog.dart';
 import 'package:linkschool/modules/model/e-learning/question_model.dart';
+import 'package:linkschool/modules/staff/e_learning/view/staffview_question.dart';
 
 class StaffQuestionScreen extends StatefulWidget {
   final Function(Question) onSave;
@@ -286,7 +287,13 @@ _selectedTopicId = widget.question!.topicId;
       
           Navigator.of(context).push(
             MaterialPageRoute(
-              builder: (context) => ViewQuestionScreen(
+              builder: (context) => StaffViewQuestionScreen(
+                   onSaveFlag: (){
+                  widget.onSave?.call(question);
+                 },
+                 onCreation:(){
+                  widget.onSave?.call(question);
+                 } ,
                 questiondata: questionData,
                  questions: widget.questions,
                 class_ids:widget.classes,

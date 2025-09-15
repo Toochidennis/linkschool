@@ -22,7 +22,8 @@ import 'package:url_launcher/url_launcher.dart';
 class SubmissionFile {
   final String name;
   final String url;
-  SubmissionFile({required this.name, required this.url});
+ 
+  SubmissionFile({required this.name, required this.url,});
 }
 
 class AssignmentGradingScreen extends StatefulWidget {
@@ -34,6 +35,7 @@ class AssignmentGradingScreen extends StatefulWidget {
   final String assignmentId;         // backend id for this submission
   final List<dynamic> files;  // attachments
   final String itemId;              // assignment id
+  final VoidCallback? onGraded;      // callback when graded
   const AssignmentGradingScreen({
     super.key,
     required this.assignmentTitle,
@@ -43,6 +45,7 @@ class AssignmentGradingScreen extends StatefulWidget {
     required this.assignmentId,
     required this.files,
     this.currentScore, required this.itemId,
+    this.onGraded,
   });
 
   @override
@@ -213,6 +216,7 @@ class _AssignmentGradingScreenState extends State<AssignmentGradingScreen> {
     print('Returning submission id: ${widget.assignmentId}');
     print('Grader id: ${widget.assignmentId}, name: $_creatorName');
     CustomToaster.toastSuccess(context, 'Returned', 'Grade shared with student');
+    widget.onGraded?.call();
     Navigator.pop(context, true);
   } catch (e) {
     CustomToaster.toastError(context, 'Error', 'Could not return submission');

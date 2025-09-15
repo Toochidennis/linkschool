@@ -11,6 +11,7 @@ import 'package:linkschool/modules/providers/admin/e_learning/delete_sylabus_con
 import 'package:linkschool/modules/providers/admin/e_learning/mark_assignment_provider.dart';
 import 'package:linkschool/modules/providers/admin/e_learning/material_provider.dart';
 import 'package:linkschool/modules/providers/admin/e_learning/quiz_provider.dart';
+import 'package:linkschool/modules/providers/admin/e_learning/single_content_provider.dart';
 import 'package:linkschool/modules/providers/admin/e_learning/syllabus_content_provider.dart';
 import 'package:linkschool/modules/providers/admin/e_learning/syllabus_provider.dart';
 import 'package:linkschool/modules/providers/admin/e_learning/topic_provider.dart';
@@ -27,6 +28,7 @@ import 'package:linkschool/modules/services/admin/e_learning/delete_syllabus_con
 import 'package:linkschool/modules/services/admin/e_learning/marking_service.dart';
 import 'package:linkschool/modules/services/admin/e_learning/material_service.dart';
 import 'package:linkschool/modules/services/admin/e_learning/quiz_service.dart';
+import 'package:linkschool/modules/services/admin/e_learning/single-content_service.dart';
 import 'package:linkschool/modules/services/admin/e_learning/syllabus_content_service.dart';
 import 'package:linkschool/modules/services/admin/e_learning/syllabus_service.dart';
 import 'package:linkschool/modules/services/admin/e_learning/topic_service.dart';
@@ -221,5 +223,14 @@ locator.registerLazySingleton<DeleteSyllabusProvider>(() => DeleteSyllabusProvid
   );
   locator.registerLazySingleton<StaffSyllabusProvider>(
     () => StaffSyllabusProvider(locator<StaffSyllabusService>())
+  );
+
+  // Register SingleContentService with ApiService dependency
+  locator.registerLazySingleton<SingleAssessmentService>(
+    () => SingleAssessmentService()
+  );
+  // Register SingleContentProvider with SingleContentService dependency
+  locator.registerLazySingleton<SingleContentProvider>(
+    () => SingleContentProvider()
   );
 }

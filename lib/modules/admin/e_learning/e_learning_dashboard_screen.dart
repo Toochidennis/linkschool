@@ -3,19 +3,25 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:hive/hive.dart';
+import 'package:linkschool/modules/admin/e_learning/View/recent_activity_screen/recent_assignment.dart';
+
+import 'package:linkschool/modules/admin/e_learning/View/recent_activity_screen/recent_material.dart';
+import 'package:linkschool/modules/admin/e_learning/View/recent_activity_screen/recent_quiz.dart';
+
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/common/widgets/portal/result_dashboard/level_selection.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:linkschool/modules/model/e-learning/activity_model.dart';
+
 import 'package:linkschool/modules/providers/admin/e_learning/activity_provider.dart';
 
 import 'package:provider/provider.dart';
 
 class ELearningDashboardScreen extends StatefulWidget {
-  final PreferredSizeWidget appBar;
-  const ELearningDashboardScreen({super.key, required this.appBar});
+  final PreferredSizeWidget? appBar;
+  const ELearningDashboardScreen({super.key, this.appBar});
 
   @override
   State<ELearningDashboardScreen> createState() =>
@@ -209,14 +215,10 @@ SliverToBoxAdapter(
     );
   }
 
- Widget _buildTopContainers(OverviewProvider overviewProvider) {
-  // Provider data (typed objects)
+Widget _buildTopContainers(OverviewProvider overviewProvider) {
   final recentQuizzes = overviewProvider.recentQuizzes ?? [];
 
-  // If no provider data, fall back to hardcoded assessments
-  final displayAssessments = recentQuizzes.isNotEmpty
-      ? recentQuizzes
-      :[];
+  final displayAssessments = recentQuizzes.isNotEmpty ? recentQuizzes : [];
 
   if (displayAssessments.isEmpty) {
     return const Center(child: Text("No recent quizzes available"));
@@ -231,155 +233,170 @@ SliverToBoxAdapter(
             final index = entry.key;
             final assessment = entry.value;
 
-            String title, subject, date;
+            // normalized fields
+            String title = "Quiz";
+            String subject = "Subject";
+            String date = "";
+            String quizId = "";
 
             if (assessment is RecentQuizModel) {
               title = assessment.title;
               subject = assessment.courseName;
               date = assessment.datePosted;
-              
-            } else if (assessment is Map<String, String>) {
+              quizId = assessment.id.toString();
+            } else if (assessment is Map<String, dynamic>) {
               title = assessment['title'] ?? 'Quiz';
               subject = assessment['subject'] ?? 'Subject';
               date = assessment['date'] ?? '';
-            
-            } else {
-              title = 'Quiz';
-              subject = 'Subject';
-              date = '';
+              quizId = (assessment['id'] ?? '').toString();
             }
 
-            return Container(
-              margin: const EdgeInsets.symmetric(horizontal: 8.0),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(12.0),
-                color: _getAssessmentColor(index),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
-                    blurRadius: 8,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(8.0),
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(8.0),
-                        color: Colors.white,
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Expanded(
-                            child: Text(
-                              '$subject $title',
-                              style: const TextStyle(
-                                color: Colors.black,
-                                fontSize: 14,
-                                fontWeight: FontWeight.bold,
+            return GestureDetector(
+              onTap: () {
+                print("Tapped on quiz id: $quizId");
+                if (quizId.isNotEmpty) {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => RecentQuiz(quizId: quizId),
+                    ),
+                  );
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text("Invalid quiz id")),
+                  );
+                }
+              },
+              child: Container(
+                margin: const EdgeInsets.symmetric(horizontal: 8.0),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(12.0),
+                  color: _getAssessmentColor(index),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.1),
+                      blurRadius: 8,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8.0),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(8.0),
+                          color: Colors.white,
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Expanded(
+                              child: Text(
+                                '$subject $title',
+                                style: const TextStyle(
+                                  color: Colors.black,
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                                maxLines: 1,
                               ),
-                              overflow: TextOverflow.ellipsis,
-                              maxLines: 1,
                             ),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 8.0, vertical: 4.0),
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(8.0),
+                                color: AppColors.paymentTxtColor1,
+                              ),
+                              child: Row(
+                                children: [
+                                  SvgPicture.asset(
+                                    'assets/icons/student/calender-icon.svg',
+                                    width: 16,
+                                    height: 16,
+                                    colorFilter: const ColorFilter.mode(
+                                      Colors.white,
+                                      BlendMode.srcIn,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    date,
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 12,
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
+                                    maxLines: 1,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 48),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        children: [
+                          const Column(
+                            children: [
+                              Text("Time",
+                                  style: TextStyle(
+                                      color: AppColors.backgroundLight,
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.bold)),
+                              SizedBox(height: 4),
+                              Text("N/A",
+                                  style: TextStyle(
+                                      color: AppColors.backgroundLight,
+                                      fontSize: 14)),
+                            ],
                           ),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 8.0, vertical: 4.0),
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(8.0),
-                              color: AppColors.paymentTxtColor1,
-                            ),
-                            child: Row(
-                              children: [
-                                SvgPicture.asset(
-                                  'assets/icons/student/calender-icon.svg',
-                                  width: 16,
-                                  height: 16,
-                                  colorFilter: const ColorFilter.mode(
-                                    Colors.white,
-                                    BlendMode.srcIn,
-                                  ),
-                                ),
-                                const SizedBox(width: 4),
-                                Text(
-                                  date,
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 12,
-                                  ),
-                                  overflow: TextOverflow.ellipsis,
-                                  maxLines: 1,
-                                ),
-                              ],
-                            ),
+                          Container(height: 40, width: 1, color: Colors.white),
+                          Column(
+                            children: [
+                              const Text("Classes",
+                                  style: TextStyle(
+                                      color: AppColors.backgroundLight,
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.bold)),
+                              const SizedBox(height: 4),
+                              Text(
+                                assessment is RecentQuizModel &&
+                                        assessment.levelId.isNotEmpty
+                                    ? assessment.classes.map((c) => c.name).join(', ')
+                                    : "All Classes",
+                                style: const TextStyle(
+                                    color: AppColors.backgroundLight,
+                                    fontSize: 14),
+                              ),
+                            ],
+                          ),
+                          Container(height: 40, width: 1, color: Colors.white),
+                          const Column(
+                            children: [
+                              Text("Duration",
+                                  style: TextStyle(
+                                      color: AppColors.backgroundLight,
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.bold)),
+                              SizedBox(height: 4),
+                              Text("N/A",
+                                  style: TextStyle(
+                                      color: AppColors.backgroundLight,
+                                      fontSize: 14)),
+                            ],
                           ),
                         ],
                       ),
-                    ),
-                    const SizedBox(height: 48),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: [
-                        const Column(
-                          children: [
-                            Text("Time",
-                                style: TextStyle(
-                                    color: AppColors.backgroundLight,
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.bold)),
-                            SizedBox(height: 4),
-                            Text("N/A",
-                                style: TextStyle(
-                                    color: AppColors.backgroundLight,
-                                    fontSize: 14)),
-                          ],
-                        ),
-                        Container(height: 40, width: 1, color: Colors.white),
-                        Column(
-                          children: [
-                            const Text("Classes",
-                                style: TextStyle(
-                                    color: AppColors.backgroundLight,
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.bold)),
-                            const SizedBox(height: 4),
-                            Text(
-                              assessment is RecentQuizModel &&
-                                      assessment.levelId.isNotEmpty
-                                  ? assessment.classes
-                                      .map((c) => c.name)
-                                      .join(', ')
-                                  : "All Classes",
-                              style: const TextStyle(
-                                  color: AppColors.backgroundLight,
-                                  fontSize: 14),
-                            ),
-                          ],
-                        ),
-                        Container(height: 40, width: 1, color: Colors.white),
-                        const Column(
-                          children: [
-                            Text("Duration",
-                                style: TextStyle(
-                                    color: AppColors.backgroundLight,
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.bold)),
-                            SizedBox(height: 4),
-                            Text("N/A",
-                                style: TextStyle(
-                                    color: AppColors.backgroundLight,
-                                    fontSize: 14)),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             );
@@ -401,6 +418,7 @@ SliverToBoxAdapter(
     ),
   );
 }
+
 
 Widget _buildRecentActivity(OverviewProvider recentProvider) {
   final activities = recentProvider.recentActivities ?? [];
@@ -440,60 +458,95 @@ final displayActivities = activities
           itemBuilder: (context, index) {
             final activity = displayActivities[index];
 
-            return Container(
-              margin:
-                  const EdgeInsets.symmetric(horizontal: 8.0, vertical: 8.0),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(12.0),
-                color: Colors.white,
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.2),
-                    blurRadius: 12,
-                    spreadRadius: 2,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(12.0),
-                child: Row(
-                  children: [
-                    const CircleAvatar(
-                      backgroundImage:
-                          AssetImage("assets/images/student/avatar3.svg"),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          RichText(
-                            text: TextSpan(
-                              style: const TextStyle(
-                                  color: Colors.black, fontSize: 14),
-                              children: [
-                                TextSpan(text: "${activity.createdBy} "),
-                                TextSpan(
-                                    text: "${activity.type} ",
-                                    style: const TextStyle(
-                                        fontWeight: FontWeight.normal)),
-                                TextSpan(
-                                    text: activity.courseName,
-                                    style: const TextStyle(
-                                        fontWeight: FontWeight.bold)),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(activity.datePosted,
-                              style: const TextStyle(
-                                  color: Colors.grey, fontSize: 12)),
-                        ],
+            return GestureDetector(
+              onTap: () {
+                if (activity.type.toLowerCase() == 'material') {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => RecentMaterial(
+                      itemId: activity.id,
+                        syllabusId: activity.syllabusId,
+                        courseId: activity.courseId.toString(),
+                        levelId: activity.levelId,
+                       // classId: activity.classId,
+                        courseName: activity.courseName,
                       ),
                     ),
+                  );
+                } else if (activity.type.toLowerCase() == 'assignment') {
+                  print("navigating to assignment details for itemId: ${activity.id}");
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => RecentAssignment(
+                      
+                        itemId: activity.id,
+                        syllabusId: activity.syllabusId,
+                        courseId: activity.courseId.toString(),
+                        levelId: activity.levelId,
+                     
+                        courseName: activity.courseName,
+                      ),
+                    ),
+                  );
+                }
+              },
+              child: Container(
+                margin:
+                    const EdgeInsets.symmetric(horizontal: 8.0, vertical: 8.0),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(12.0),
+                  color: Colors.white,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.2),
+                      blurRadius: 12,
+                      spreadRadius: 2,
+                      offset: const Offset(0, 4),
+                    ),
                   ],
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(12.0),
+                  child: Row(
+                    children: [
+                      const CircleAvatar(
+                        backgroundImage:
+                            AssetImage("assets/images/student/avatar3.svg"),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            RichText(
+                              text: TextSpan(
+                                style: const TextStyle(
+                                    color: Colors.black, fontSize: 14),
+                                children: [
+                                  TextSpan(text: "${activity.createdBy} "),
+                                  TextSpan(
+                                      text: "${activity.type} ",
+                                      style: const TextStyle(
+                                          fontWeight: FontWeight.normal)),
+                                  TextSpan(
+                                      text: activity.courseName,
+                                      style: const TextStyle(
+                                          fontWeight: FontWeight.bold)),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(activity.datePosted,
+                                style: const TextStyle(
+                                    color: Colors.grey, fontSize: 12)),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             );

@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:chewie/chewie.dart';
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
 import 'package:intl/intl.dart';
@@ -8,6 +9,7 @@ import 'package:linkschool/modules/admin/e_learning/admin_assignment_screen.dart
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/custom_toaster.dart';
+import 'package:linkschool/modules/common/pdf_reader.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/model/e-learning/comment_model.dart';
 import 'package:linkschool/modules/model/e-learning/material_model.dart' as custom;
@@ -20,6 +22,7 @@ import 'package:skeletonizer/skeletonizer.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:video_player/video_player.dart';
 import 'package:http/http.dart' as http;
+import 'package:video_thumbnail/video_thumbnail.dart';
 import '../../../common/widgets/portal/attachmentItem.dart';
 
 class StaffMaterialDetailsScreen extends StatefulWidget {
@@ -482,7 +485,8 @@ if (['pdf','doc', 'docx', 'txt', 'rtf'].contains(extension)) {
   void _showFullScreenMedia(String url, String type) {
     if (type == 'pdf') {
       // For PDFs, directly open in external app since we removed native_pdf_renderer
-      _launchUrl(url);
+     // _launchUrl(url);
+     PdfViewerPage(url: url,);
     } else {
       Navigator.push(
         context,
@@ -512,7 +516,13 @@ final fileName = rawFileName.split('/').last;
         // For all other files including PDF, open in external app
         //fileUrl
         if(fileType == 'pdf'){
-          _launchUrl(fileUrl);
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => PdfViewerPage(url: fileUrl),
+            ),
+          );
+
         } else {_launchUrl(fileName);
       }}
     },
@@ -602,45 +612,32 @@ final fileName = rawFileName.split('/').last;
           ),
         );
       case 'video':
-        return Stack(
-          children: [
-            Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [Colors.blue.shade100, Colors.blue.shade200],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-              ),
-              child: Center(
-                child: Icon(
-                  Icons.play_circle_fill,
-                  size: 50,
-                  color: Colors.blue.shade600,
-                ),
-              ),
-            ),
-            Positioned(
-              top: 8,
-              right: 8,
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                decoration: BoxDecoration(
-                  color: Colors.black54,
-                  borderRadius: BorderRadius.circular(4),
-                ),
-                child: const Text(
-                  'VIDEO',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 8,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            ),
-          ],
-        );
+  return FutureBuilder<String?>(
+    future: VideoThumbnail.thumbnailFile(
+      video: fileUrl,
+      imageFormat: ImageFormat.PNG,
+      maxHeight: 200,
+      quality: 50,
+    ),
+    builder: (context, snapshot) {
+      if (snapshot.connectionState == ConnectionState.waiting) {
+        return const Center(child: CircularProgressIndicator());
+      }
+      if (snapshot.hasError || snapshot.data == null) {
+        return const Icon(Icons.videocam, size: 50, color: Colors.blue);
+      }
+      return Stack(
+        fit: StackFit.expand,
+        children: [
+          Image.file(File(snapshot.data!), fit: BoxFit.cover),
+          const Center(
+            child: Icon(Icons.play_circle_fill, size: 60, color: Colors.white),
+          ),
+        ],
+      );
+    },
+  );
+
       case 'pdf':
         return Stack(
           children: [
@@ -977,8 +974,7 @@ class FullScreenMediaViewer extends StatefulWidget {
 
 class _FullScreenMediaViewerState extends State<FullScreenMediaViewer> {
   VideoPlayerController? _videoController;
-  bool _isVideoInitialized = false;
-  bool _showControls = true;
+  ChewieController? _chewieController;
 
   @override
   void initState() {
@@ -989,47 +985,25 @@ class _FullScreenMediaViewerState extends State<FullScreenMediaViewer> {
   }
 
   Future<void> _initializeVideo() async {
-    try {
-      _videoController = VideoPlayerController.network(widget.url);
-      await _videoController!.initialize();
-      setState(() {
-        _isVideoInitialized = true;
-      });
-      _hideControlsAfterDelay();
-      _videoController!.addListener(() {
-        if (_videoController!.value.position == _videoController!.value.duration) {
-          setState(() {
-            _showControls = true;
-          });
-        }
-      });
-    } catch (e) {
-      print('Error initializing video: $e');
-    }
-  }
+    _videoController = VideoPlayerController.network(widget.url);
+    await _videoController!.initialize();
 
-  void _hideControlsAfterDelay() {
-    Future.delayed(const Duration(seconds: 3), () {
-      if (mounted && _videoController != null && _videoController!.value.isPlaying) {
-        setState(() {
-          _showControls = false;
-        });
-      }
-    });
-  }
+    _chewieController = ChewieController(
+      videoPlayerController: _videoController!,
+      autoPlay: true,
+      looping: false,
+      allowMuting: true,
+      allowPlaybackSpeedChanging: true,
+      aspectRatio: _videoController!.value.aspectRatio,
+    );
 
-  void _toggleControls() {
-    setState(() {
-      _showControls = !_showControls;
-    });
-    if (_showControls && _videoController != null && _videoController!.value.isPlaying) {
-      _hideControlsAfterDelay();
-    }
+    if (mounted) setState(() {});
   }
 
   @override
   void dispose() {
     _videoController?.dispose();
+    _chewieController?.dispose();
     super.dispose();
   }
 
@@ -1049,152 +1023,29 @@ class _FullScreenMediaViewerState extends State<FullScreenMediaViewer> {
           style: const TextStyle(color: Colors.white),
           overflow: TextOverflow.ellipsis,
         ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.download, color: Colors.white),
-            onPressed: () async {
-              try {
-                final Uri uri = Uri.parse(widget.url);
-                if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Could not download file')),
-                  );
-                }
-              } catch (e) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Download failed')),
-                );
-              }
-            },
-          ),
-        ],
       ),
       body: Center(
-        child: _buildMediaContent(),
+        child: widget.type == 'video'
+            ? (_chewieController != null &&
+                    _chewieController!.videoPlayerController.value.isInitialized)
+                ? Chewie(controller: _chewieController!)
+                : const CircularProgressIndicator(color: Colors.white)
+            : Image.network(
+                widget.url,
+                fit: BoxFit.contain,
+                errorBuilder: (context, error, stackTrace) => const Icon(
+                  Icons.broken_image,
+                  color: Colors.white,
+                  size: 100,
+                ),
+                loadingBuilder: (context, child, loadingProgress) {
+                  if (loadingProgress == null) return child;
+                  return const Center(
+                    child: CircularProgressIndicator(color: Colors.white),
+                  );
+                },
+              ),
       ),
     );
-  }
-
-  Widget _buildMediaContent() {
-    switch (widget.type) {
-      case 'image':
-        return InteractiveViewer(
-          panEnabled: true,
-          boundaryMargin: const EdgeInsets.all(20.0),
-          minScale: 0.5,
-          maxScale: 4.0,
-          child: Image.network(
-            widget.url,
-            fit: BoxFit.contain,
-            errorBuilder: (context, error, stackTrace) => const Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.broken_image,
-                    color: Colors.white,
-                    size: 64,
-                  ),
-                  SizedBox(height: 16),
-                  Text(
-                    'Failed to load image',
-                    style: TextStyle(color: Colors.white),
-                  ),
-                ],
-              ),
-            ),
-            loadingBuilder: (context, child, loadingProgress) {
-              if (loadingProgress == null) return child;
-              return Center(
-                child: CircularProgressIndicator(
-                  value: loadingProgress.expectedTotalBytes != null
-                      ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
-                      : null,
-                  color: Colors.white,
-                ),
-              );
-            },
-          ),
-        );
-      case 'video':
-        if (!_isVideoInitialized || _videoController == null) {
-          return const Center(
-            child: CircularProgressIndicator(color: Colors.white),
-          );
-        }
-        return GestureDetector(
-          onTap: _toggleControls,
-          child: Stack(
-            alignment: Alignment.center,
-            children: [
-              AspectRatio(
-                aspectRatio: _videoController!.value.aspectRatio,
-                child: VideoPlayer(_videoController!),
-              ),
-              if (_showControls) ...[
-                Positioned(
-                  child: GestureDetector(
-                    onTap: () {
-                      setState(() {
-                        if (_videoController!.value.isPlaying) {
-                          _videoController!.pause();
-                          _showControls = true;
-                        } else {
-                          _videoController!.play();
-                          _hideControlsAfterDelay();
-                        }
-                      });
-                    },
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: Colors.black54,
-                        borderRadius: BorderRadius.circular(50),
-                      ),
-                      padding: const EdgeInsets.all(16),
-                      child: Icon(
-                        _videoController!.value.isPlaying ? Icons.pause : Icons.play_arrow,
-                        color: Colors.white,
-                        size: 50,
-                      ),
-                    ),
-                  ),
-                ),
-                Positioned(
-                  bottom: 50,
-                  left: 20,
-                  right: 20,
-                  child: VideoProgressIndicator(
-                    _videoController!,
-                    allowScrubbing: true,
-                    colors: const VideoProgressColors(
-                      playedColor: Colors.red,
-                      bufferedColor: Colors.grey,
-                      backgroundColor: Colors.white24,
-                    ),
-                  ),
-                ),
-              ],
-            ],
-          ),
-        );
-      default:
-        return const Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                Icons.insert_drive_file,
-                color: Colors.white,
-                size: 64,
-              ),
-              SizedBox(height: 16),
-              Text(
-                'Unsupported file type',
-                style: TextStyle(color: Colors.white),
-              ),
-            ],
-          ),
-        );
-    }
   }
 }

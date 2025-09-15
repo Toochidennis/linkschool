@@ -53,9 +53,10 @@ class Student {
 class QuizResultsScreen extends StatefulWidget {
   final List<Student> students;
   final String contentId;
+  final VoidCallback? onGraded;
 
 
-  const QuizResultsScreen({Key? key, required this.students, required this.contentId}) : super(key: key);
+  const QuizResultsScreen({Key? key, required this.students, required this.contentId, this.onGraded}) : super(key: key);
 
   @override
   State<QuizResultsScreen> createState() => _QuizResultsScreenState();
@@ -233,6 +234,7 @@ class _QuizResultsScreenState extends State<QuizResultsScreen> {
     print('Returning submission id: ${widget.contentId}');
     //print('Grader id: ${widget.quizId}, name: ');
     CustomToaster.toastSuccess(context, 'Returned', 'Grade shared with student');
+    widget.onGraded?.call();
     Navigator.pop(context, true);
   } catch (e) {
     CustomToaster.toastError(context, 'Error', 'Could not return submission');

@@ -18,6 +18,7 @@ import 'package:linkschool/modules/providers/admin/e_learning/delete_sylabus_con
 import 'package:linkschool/modules/providers/admin/e_learning/mark_assignment_provider.dart';
 import 'package:linkschool/modules/providers/admin/e_learning/material_provider.dart';
 import 'package:linkschool/modules/providers/admin/e_learning/quiz_provider.dart';
+import 'package:linkschool/modules/providers/admin/e_learning/single_content_provider.dart';
 import 'package:linkschool/modules/providers/admin/e_learning/syllabus_content_provider.dart';
 import 'package:linkschool/modules/providers/admin/e_learning/syllabus_provider.dart';
 import 'package:linkschool/modules/providers/admin/course_result_provider.dart';
@@ -35,6 +36,7 @@ import 'package:linkschool/modules/providers/explore/subject_provider.dart';
 import 'package:linkschool/modules/providers/staff/overview.dart';
 import 'package:linkschool/modules/providers/staff/syllabus_provider.dart';
 import 'package:linkschool/modules/services/admin/e_learning/activity_service.dart';
+import 'package:linkschool/modules/services/admin/e_learning/single-content_service.dart';
 import 'package:linkschool/modules/services/admin/e_learning/syllabus_service.dart';
 import 'package:linkschool/modules/services/explore/cbt_service.dart';
 import 'package:linkschool/modules/services/staff/overview_service.dart';
@@ -109,6 +111,7 @@ Future<void> main() async {
           // StaffProvider  from service locator
         ChangeNotifierProvider(create: (_) => locator<StaffSyllabusProvider>()),
          ChangeNotifierProvider(create: (_) => StaffOverviewProvider( locator<StaffOverviewService>())),
+          ChangeNotifierProvider(create: (_) => SingleContentProvider()),
 
       ],
       child: const MyApp(),

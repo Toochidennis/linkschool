@@ -1,5 +1,6 @@
 // ignore_for_file: deprecated_member_use
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -15,30 +16,29 @@ import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/model/e-learning/question_model.dart';
 import 'package:linkschool/modules/model/e-learning/quiz_model.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'dart:convert';
 
-class AssessmentScreen extends StatefulWidget {
+class PreviewAssessment extends StatefulWidget {
   final Duration? timer;
   final Duration? duration;
   final List<Map<String, dynamic>>? questions;
   final String? mark;
   final String? title;
   final correctAnswer;
-  const AssessmentScreen({
+  const PreviewAssessment({
     super.key,
     this.timer,
     this.questions,
     this.duration,
     this.correctAnswer,
-     this.mark,
-     this.title
+    this.mark,
+    this.title
   });
 
   @override
-  _AssessmentScreenState createState() => _AssessmentScreenState();
+  _PreviewAssessmentState createState() => _PreviewAssessmentState();
 }
 
-class _AssessmentScreenState extends State<AssessmentScreen> {
+class _PreviewAssessmentState extends State<PreviewAssessment> {
   bool _isTimerStopped = false;
   int _currentQuestionIndex = 0;
   late int _totalQuestions;
@@ -47,11 +47,14 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
   bool _isAnswered = false;
   bool _isCorrect = false;
   late double opacity;
- dynamic _tempAnswer;
+  dynamic _tempAnswer;
+  bool _isEditMode = false;
+  String? _previewTitle;
+  Duration? _previewDuration;
 
   List<QuizQuestion> questions = [];
   List<dynamic> userAnswers = [];
-   final TextEditingController _textController = TextEditingController();
+  final TextEditingController _textController = TextEditingController();
 
   @override
   void initState() {
@@ -77,125 +80,214 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
   }
 
   Future<void> _loadQuestions() async {
-  try {
-    
-    final prefs = await SharedPreferences.getInstance();
-    final String? savedQuestions = prefs.getString('preview_questions');
-    
-    if (savedQuestions != null && savedQuestions.isNotEmpty) {
-      final List<dynamic> questionsJson = jsonDecode(savedQuestions);
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final String? savedQuestions = prefs.getString('preview_questions');
+      final String? savedTitle = prefs.getString('preview_title');
+      final String? savedDuration = prefs.getString('preview_duration');
+      final bool isEditMode = prefs.getBool('is_edit_mode') ?? false;
+      
       setState(() {
-        questions = questionsJson.map((q) {
-          final String topic = q['topic'] ?? "General Knowledge";
-          final String questionText = q['question_text'] ?? '';
-          final int questionGrade = int.tryParse(q['question_grade'].toString()) ?? 0;
-          final List<dynamic> questionFiles = q['question_files'] as List<dynamic>? ?? [];
-          final String? imagePath = questionFiles.isNotEmpty
-              ? questionFiles[0]['file_name'] as String?
-              : null;
-          final Map<String, dynamic>? correct = q['correct'] is List && (q['correct'] as List).isNotEmpty
-              ? (q['correct'] as List).first as Map<String, dynamic>?
-              : q['correct'] as Map<String, dynamic>?;
+        _isEditMode = isEditMode;
+        _previewTitle = savedTitle;
+        if (savedDuration != null) {
+          _previewDuration = Duration(seconds: int.tryParse(savedDuration) ?? 3600);
+        }
+      });
+      
+      if (savedQuestions != null && savedQuestions.isNotEmpty) {
+        final List<dynamic> questionsJson = jsonDecode(savedQuestions);
+        setState(() {
+          questions = questionsJson.map((q) {
+            final String topic = q['topic'] ?? "General Knowledge";
+            final String questionText = q['question_text'] ?? '';
+            final int questionGrade = int.tryParse(q['question_grade'].toString()) ?? 0;
+            final List<dynamic> questionFiles = q['question_files'] as List<dynamic>? ?? [];
+            
+            // Handle question image - check if it's base64 or file path
+            String? imagePath;
+            if (questionFiles.isNotEmpty) {
+              final file = questionFiles.first;
+              if (file['file'] != null && file['file'].toString().isNotEmpty) {
+                // Check if it's a base64 string (starts with data: or is pure base64)
+                String fileContent = file['file'].toString();
+                if (fileContent.startsWith('data:') || _isBase64(fileContent)) {
+                  // It's base64, use it directly for preview
+                  imagePath = fileContent.startsWith('data:') ? fileContent : 'data:image/jpeg;base64,$fileContent';
+                } else {
+                  // It's a file path, construct the URL
+                  imagePath = file['file_name']?.toString();
+                }
+              }
+            }
 
-          if (q['question_type'] == 'multiple_choice') {
-            final List<dynamic> options = q['options'] as List<dynamic>? ?? [];
-            return TextQuestion(
-              topic: topic,
-              questionGrade: questionGrade,
-              questionText: questionText,
-              imageUrl: imagePath,
-              options: options.map((opt) {
-                final List<dynamic> optionFiles = opt['option_files'] as List<dynamic>? ?? [];
-                return {
-                  'text': opt['text'] as String? ?? '',
-                  'imageUrl': optionFiles.isNotEmpty
-                      ? optionFiles[0]['file_name'] as String?
-                      : null,
-                  'order': opt['order']?.toString(),
-                };
-              }).toList(),
-              correctAnswers: correct != null && correct['text'] != null
-                  ? [correct['text'] as String]
-                  : [],
-            );
-          } else {
-            // Handles 'short_answer'
-            return TypedAnswerQuestion(
-              topic: topic,
-              questionGrade: questionGrade,
-              questionText: questionText,
-              imageUrl: imagePath,
-              correctAnswer: correct != null ? correct['text'] as String? : null,
-            );
-          }
-        }).toList();
-        _totalQuestions = questions.length;
-        userAnswers = List<dynamic>.filled(_totalQuestions, null, growable: false);
-      });
-    } else if (widget.questions != null && widget.questions!.isNotEmpty) {
-      // Fallback to widget.questions
-      setState(() {
-        questions = widget.questions!.map((q) {
-          final String topic = q['topic'] ?? "General Knowledge";
-          final String questionText = q['question_text'] ?? '';
-          final int questionGrade = int.tryParse(q['question_grade'].toString()) ?? 0;
-          final List<dynamic> questionFiles = q['question_files'] as List<dynamic>? ?? [];
-          final String? imagePath = questionFiles.isNotEmpty
-              ? questionFiles[0]['file_name'] as String?
-              : null;
-          final Map<String, dynamic>? correct = q['correct'] as Map<String, dynamic>?;
-          if (q['question_type'] == 'multiple_choice') {
-            final List<dynamic> options = q['options'] as List<dynamic>? ?? [];
-            return TextQuestion(
-              topic: topic,
-              questionGrade: questionGrade,
-              questionText: questionText,
-              imageUrl: imagePath,
-              options: options.map((opt) {
-                final List<dynamic> optionFiles = opt['option_files'] as List<dynamic>? ?? [];
-                return {
-                  'text': opt['text'] as String? ?? '',
-                  'imageUrl': optionFiles.isNotEmpty
-                      ? optionFiles[0]['file_name'] as String?
-                      : null,
-                  'order': opt['order']?.toString(),
-                };
-              }).toList(),
-              correctAnswers: correct != null && correct['text'] != null
-                  ? [correct['text'] as String]
-                  : [],
-            );
-          } else {
-            // Handles 'short_answer'
-            return TypedAnswerQuestion(
-              topic: topic,
-              questionGrade: questionGrade,
-              questionText: questionText,
-              imageUrl: imagePath,
-              correctAnswer: correct != null ? correct['text'] as String? : null,
-            );
-          }
-        }).toList();
-        _totalQuestions = questions.length;
-        userAnswers = List<dynamic>.filled(_totalQuestions, null, growable: false);
-      });
-    } else {
-      // Fallback for when no questions are available
+            final Map<String, dynamic>? correct = q['correct'] is List && (q['correct'] as List).isNotEmpty
+                ? (q['correct'] as List).first as Map<String, dynamic>?
+                : q['correct'] as Map<String, dynamic>?;
+
+            if (q['question_type'] == 'multiple_choice') {
+              final List<dynamic> options = q['options'] as List<dynamic>? ?? [];
+              return TextQuestion(
+                topic: topic,
+                questionGrade: questionGrade,
+                questionText: questionText,
+                imageUrl: imagePath,
+                options: options.map((opt) {
+                  final List<dynamic> optionFiles = opt['option_files'] as List<dynamic>? ?? [];
+                  String? optionImageUrl;
+                  
+                  if (optionFiles.isNotEmpty) {
+                    final optFile = optionFiles.first;
+                    if (optFile['file'] != null && optFile['file'].toString().isNotEmpty) {
+                      String fileContent = optFile['file'].toString();
+                      if (fileContent.startsWith('data:') || _isBase64(fileContent)) {
+                        optionImageUrl = fileContent.startsWith('data:') ? fileContent : 'data:image/jpeg;base64,$fileContent';
+                      } else {
+                        optionImageUrl = optFile['file_name']?.toString();
+                      }
+                    }
+                  }
+
+                  return {
+                    'text': opt['text'] as String? ?? '',
+                    'imageUrl': optionImageUrl,
+                    'order': opt['order']?.toString(),
+                  };
+                }).toList(),
+                correctAnswers: correct != null && correct['text'] != null
+                    ? [correct['text'] as String]
+                    : [],
+              );
+            } else {
+              // Handles 'short_answer'
+              return TypedAnswerQuestion(
+                topic: topic,
+                questionGrade: questionGrade,
+                questionText: questionText,
+                imageUrl: imagePath,
+                correctAnswer: correct != null ? correct['text'] as String? : null,
+              );
+            }
+          }).toList();
+          _totalQuestions = questions.length;
+          userAnswers = List<dynamic>.filled(_totalQuestions, null, growable: false);
+        });
+      } else if (widget.questions != null && widget.questions!.isNotEmpty) {
+        // Fallback to widget.questions
+        setState(() {
+          questions = widget.questions!.map((q) {
+            final String topic = q['topic'] ?? "General Knowledge";
+            final String questionText = q['question_text'] ?? '';
+            final int questionGrade = int.tryParse(q['question_grade'].toString()) ?? 0;
+            final List<dynamic> questionFiles = q['question_files'] as List<dynamic>? ?? [];
+            final String? imagePath = questionFiles.isNotEmpty
+                ? questionFiles[0]['file_name'] as String?
+                : null;
+            final Map<String, dynamic>? correct = q['correct'] as Map<String, dynamic>?;
+            
+            if (q['question_type'] == 'multiple_choice') {
+              final List<dynamic> options = q['options'] as List<dynamic>? ?? [];
+              return TextQuestion(
+                topic: topic,
+                questionGrade: questionGrade,
+                questionText: questionText,
+                imageUrl: imagePath,
+                options: options.map((opt) {
+                  final List<dynamic> optionFiles = opt['option_files'] as List<dynamic>? ?? [];
+                  return {
+                    'text': opt['text'] as String? ?? '',
+                    'imageUrl': optionFiles.isNotEmpty
+                        ? optionFiles[0]['file_name'] as String?
+                        : null,
+                    'order': opt['order']?.toString(),
+                  };
+                }).toList(),
+                correctAnswers: correct != null && correct['text'] != null
+                    ? [correct['text'] as String]
+                    : [],
+              );
+            } else {
+              // Handles 'short_answer'
+              return TypedAnswerQuestion(
+                topic: topic,
+                questionGrade: questionGrade,
+                questionText: questionText,
+                imageUrl: imagePath,
+                correctAnswer: correct != null ? correct['text'] as String? : null,
+              );
+            }
+          }).toList();
+          _totalQuestions = questions.length;
+          userAnswers = List<dynamic>.filled(_totalQuestions, null, growable: false);
+        });
+      } else {
+        // No questions available
+        setState(() {
+          questions = [];
+          _totalQuestions = 0;
+          userAnswers = [];
+        });
+      }
+    } catch (e) {
+      debugPrint('Error loading questions: $e');
       setState(() {
         questions = [];
-        _totalQuestions = questions.length;
-        userAnswers = List<dynamic>.filled(_totalQuestions, null, growable: false);
+        _totalQuestions = 0;
+        userAnswers = [];
       });
     }
-  } catch (e) {
-    debugPrint('Error loading questions: $e');
-    setState(() {
-      questions = [];
-      _totalQuestions = questions.length;
-      userAnswers = List<dynamic>.filled(_totalQuestions, null, growable: false);
-    });
   }
-}
+
+  // Helper method to check if a string is base64
+  bool _isBase64(String str) {
+    try {
+      base64Decode(str);
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  // Updated back button handler
+  Future<void> _handleBackPress() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('preview_questions');
+    await prefs.remove('preview_title');
+    await prefs.remove('preview_duration');
+    await prefs.remove('is_edit_mode');
+    Navigator.of(context).pop();
+  }
+
+  // Updated AppBar
+  AppBar _buildAppBar() {
+    String title = widget.title ?? _previewTitle ?? 'Assessment Preview';
+    if (_isEditMode && !title.contains('Edit')) {
+      title = 'Edit: $title';
+    }
+    
+    return AppBar(
+      backgroundColor: AppColors.eLearningBtnColor1,
+      leading: IconButton(
+        onPressed: _handleBackPress,
+        icon: Image.asset(
+          'assets/icons/arrow_back.png',
+          color: AppColors.backgroundLight,
+          width: 34.0,
+          height: 34.0,
+        ),
+      ),
+      title: Text(
+        title,
+        style: TextStyle(
+          color: Colors.white, 
+          fontSize: 20, 
+          fontWeight: FontWeight.w700, 
+          fontFamily: "urbanist"
+        ),
+      ),
+      elevation: 0,
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -203,35 +295,58 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
     opacity = brightness == Brightness.light ? 0.1 : 0.15;
     return Scaffold(
       backgroundColor: AppColors.eLearningBtnColor1,
-      appBar: AppBar(
-        backgroundColor: AppColors.eLearningBtnColor1,
-        leading: IconButton(
-          onPressed: () async {
-      // Clear SharedPreferences
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.remove('preview_questions');
-      // Navigate back
-      Navigator.of(context).pop();
-    },
-          icon: Image.asset(
-            'assets/icons/arrow_back.png',
-            color: AppColors.backgroundLight,
-            width: 34.0,
-            height: 34.0,
-          ),
-        ),
-        title:  Text(
-       widget.title ?? '2nd Continuous Assessment',
-          style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w700, fontFamily:"urbanist"),
-        ),
-        elevation: 0,
-      ),
+      appBar: _buildAppBar(),
       body: questions.isEmpty
-          ? const Center(child:Text("no Questions Available",style: TextStyle( color:Colors.white,fontSize: 20),))
+          ? Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    "No Questions Available",
+                    style: TextStyle(color: Colors.white, fontSize: 20),
+                  ),
+                  SizedBox(height: 8),
+                  if (_isEditMode)
+                    Container(
+                      padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: Colors.orange.withOpacity(0.3),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.orange),
+                      ),
+                      child: Text(
+                        "EDIT MODE",
+                        style: TextStyle(color: Colors.orange, fontSize: 14, fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                ],
+              ),
+            )
           : Padding(
               padding: const EdgeInsets.all(16.0),
               child: Column(
                 children: [
+                  if (_isEditMode)
+                    Container(
+                      margin: EdgeInsets.only(bottom: 8),
+                      padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: Colors.orange.withOpacity(0.3),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.orange),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.edit, color: Colors.orange, size: 16),
+                          SizedBox(width: 4),
+                          Text(
+                            "EDIT MODE",
+                            style: TextStyle(color: Colors.orange, fontSize: 12, fontWeight: FontWeight.bold),
+                          ),
+                        ],
+                      ),
+                    ),
                   _buildTimerRow(),
                   const SizedBox(height: 16),
                   _buildProgressSection(),
@@ -253,7 +368,7 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
           children: [
             const SizedBox(width: 8),
             TimerWidget(
-              initialSeconds: widget.duration?.inSeconds ?? 3600, // Default to 1 hour
+              initialSeconds: _previewDuration?.inSeconds ?? widget.duration?.inSeconds ?? 3600,
               onTimeUp: _submitQuiz,
             ),
           ],
@@ -299,120 +414,155 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
     });
   }
 
- Widget _buildProgressSection() {
-  // Count the number of answered questions (non-null entries in userAnswers)
-  int answeredQuestions = userAnswers.where((answer) => answer != null).length;
+  Widget _buildProgressSection() {
+    // Count the number of answered questions (non-null entries in userAnswers)
+    int answeredQuestions = userAnswers.where((answer) => answer != null).length;
 
-  return Container(
-    width: 400,
-    height: 65,
-    padding: const EdgeInsets.all(8),
-    decoration: BoxDecoration(
-      color: AppColors.eLearningContColor1,
-      borderRadius: BorderRadius.circular(8),
-    ),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Text('$answeredQuestions of $_totalQuestions',
-                style: const TextStyle(color: Colors.white, fontSize: 16)),
-            const SizedBox(width: 8),
-            const Text('Completed',
-                style: TextStyle(color: Colors.white, fontSize: 12)),
-          ],
-        ),
-        const SizedBox(height: 8),
-        ClipRRect(
-          borderRadius: BorderRadius.circular(64),
-          child: LinearProgressIndicator(
-            // Use answeredQuestions instead of _currentQuestionIndex
-            value: _totalQuestions > 0 ? answeredQuestions / _totalQuestions : 0,
-            backgroundColor: AppColors.eLearningContColor2,
-            valueColor: const AlwaysStoppedAnimation<Color>(
-                AppColors.eLearningContColor3),
-            minHeight: 8,
-          ),
-        ),
-      ],
-    ),
-  );
-}
-
-  Widget _buildQuestionCard() {
-    
-    final question = questions[_currentQuestionIndex];
-    final questionImage = question.imageUrl != null
-        ? NetworkImage("https://linkskool.net/${question.imageUrl}")
-        : null;
-
-    return SingleChildScrollView(
-      child: Container(
-          width: 400,
-        
-          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 16.0),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+    return Container(
+      width: 400,
+      height: 65,
+      padding: const EdgeInsets.all(8),
+      decoration: BoxDecoration(
+        color: AppColors.eLearningContColor1,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
             children: [
-              const SizedBox(height: 8),
-              if (question.imageUrl != null)
-            GestureDetector(
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => Scaffold(
-                      appBar: AppBar(
-                        backgroundColor: AppColors.eLearningBtnColor1,
-                        leading: IconButton(
-                          icon: const Icon(Icons.arrow_back, color: Colors.white),
-                          onPressed: () => Navigator.of(context).pop(),
-                        ),
-                      ),
-                      body: Center(
-                        child: Image.network(
-                          "https://linkskool.net/${question.imageUrl}",
-                          fit: BoxFit.cover,
-                          height: double.infinity,
-                          width: double.infinity,
-                          errorBuilder: (context, error, stackTrace) => Image.network(
-                            'https://img.freepik.com/free-vector/gradient-human-rights-day-background_52683-149974.jpg',
-                            fit: BoxFit.cover,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                );
-              },
-                  child: Image.network(
-                    "https://linkskool.net/${question.imageUrl}",
-                    height: 100,
-                    width: double.infinity,
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) => Image.network(
-                      'https://img.freepik.com/free-vector/gradient-human-rights-day-background_52683-149974.jpg',
-                      height: 100,
-                      width: double.infinity,
-                      fit: BoxFit.cover,
-                    ),
-                  ),
-                ),
-              const SizedBox(height: 8),
-              Text(question.questionText[0].toUpperCase() + question.questionText.substring(1),style:TextStyle(fontSize: 23),),
-              const SizedBox(height: 16),
-              _buildOptions(question),
+              Text('$answeredQuestions of $_totalQuestions',
+                  style: const TextStyle(color: Colors.white, fontSize: 16)),
+              const SizedBox(width: 8),
+              const Text('Completed',
+                  style: TextStyle(color: Colors.white, fontSize: 12)),
             ],
           ),
-        ),
-    
+          const SizedBox(height: 8),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(64),
+            child: LinearProgressIndicator(
+              // Use answeredQuestions instead of _currentQuestionIndex
+              value: _totalQuestions > 0 ? answeredQuestions / _totalQuestions : 0,
+              backgroundColor: AppColors.eLearningContColor2,
+              valueColor: const AlwaysStoppedAnimation<Color>(
+                  AppColors.eLearningContColor3),
+              minHeight: 8,
+            ),
+          ),
+        ],
+      ),
     );
+  }
+
+  Widget _buildQuestionCard() {
+    final question = questions[_currentQuestionIndex];
     
+    return SingleChildScrollView(
+      child: Container(
+        width: 400,
+        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 16.0),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const SizedBox(height: 8),
+            if (question.imageUrl != null)
+              GestureDetector(
+                onTap: () => _showFullScreenImage(question.imageUrl!),
+                child: _buildQuestionImage(question.imageUrl!),
+              ),
+            const SizedBox(height: 8),
+            Text(
+              question.questionText.isNotEmpty 
+                  ? question.questionText[0].toUpperCase() + question.questionText.substring(1)
+                  : "Question",
+              style: TextStyle(fontSize: 23),
+            ),
+            const SizedBox(height: 16),
+            _buildOptions(question),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildQuestionImage(String imageUrl) {
+    if (imageUrl.startsWith('data:')) {
+      // Base64 image
+      final base64String = imageUrl.split(',').last;
+      return Image.memory(
+        base64Decode(base64String),
+        height: 100,
+        width: double.infinity,
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) => _buildErrorImage(),
+      );
+    } else {
+      // Network image
+      return Image.network(
+        "https://linkskool.net/$imageUrl",
+        height: 100,
+        width: double.infinity,
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) => _buildErrorImage(),
+      );
+    }
+  }
+
+  Widget _buildErrorImage() {
+    return Container(
+      height: 100,
+      width: double.infinity,
+      color: Colors.grey[300],
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.broken_image, color: Colors.grey[600], size: 40),
+          Text(
+            'Image not available',
+            style: TextStyle(color: Colors.grey[600], fontSize: 12),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showFullScreenImage(String imageUrl) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => Scaffold(
+          appBar: AppBar(
+            backgroundColor: AppColors.eLearningBtnColor1,
+            leading: IconButton(
+              icon: const Icon(Icons.arrow_back, color: Colors.white),
+              onPressed: () => Navigator.of(context).pop(),
+            ),
+          ),
+          body: Center(
+            child: imageUrl.startsWith('data:')
+                ? Image.memory(
+                    base64Decode(imageUrl.split(',').last),
+                    fit: BoxFit.cover,
+                    height: double.infinity,
+                    width: double.infinity,
+                    errorBuilder: (context, error, stackTrace) => _buildErrorImage(),
+                  )
+                : Image.network(
+                    "https://linkskool.net/$imageUrl",
+                    fit: BoxFit.cover,
+                    height: double.infinity,
+                    width: double.infinity,
+                    errorBuilder: (context, error, stackTrace) => _buildErrorImage(),
+                  ),
+          ),
+        ),
+      ),
+    );
   }
 
 Widget _buildOptions(QuizQuestion question) {
@@ -772,7 +922,8 @@ int totalScore = 0;
     MaterialPageRoute(
       builder: (context) => PreviewQuizAssessmentScreen(
         userAnswer: processedAnswers,
-        question: questions,
+        question:[],
+      
         correctAnswers: processedCorrectAnswers,
         mark:totalScore.toString(),
         duration: widget.duration,

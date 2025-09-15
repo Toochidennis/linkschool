@@ -12,6 +12,7 @@ import 'package:provider/provider.dart';
 // import 'package:linkschool/modules/admin_portal/result/behaviour_settings_screen.dart';
 
 
+
 class SelectTopicScreen extends StatefulWidget {
   final String callingScreen;
   final VoidCallback? onTopicCreated;
@@ -19,6 +20,7 @@ class SelectTopicScreen extends StatefulWidget {
   final int? syllabusId;
   final courseId;
   final courseName;
+  final int? preSelectedTopicId; // Add this parameter
 
   const SelectTopicScreen({
     super.key,
@@ -27,7 +29,8 @@ class SelectTopicScreen extends StatefulWidget {
     this.levelId,
     this.syllabusId,
     this.courseId,
-    this.courseName
+    this.courseName,
+    this.preSelectedTopicId, // Add this parameter
   });
 
   @override

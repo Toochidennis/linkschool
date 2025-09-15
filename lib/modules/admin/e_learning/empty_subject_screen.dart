@@ -47,6 +47,7 @@ class EmptySubjectScreen extends StatefulWidget {
   final int? syllabusId;
   final String? authorName;
   final List<Map<String, dynamic>>? syllabusClasses;
+ 
 
   const EmptySubjectScreen({
     super.key,
@@ -58,6 +59,7 @@ class EmptySubjectScreen extends StatefulWidget {
     this.courseName,
     this.term,
     this.syllabusClasses, this.authorName,
+ 
   });
 
   @override
@@ -962,6 +964,7 @@ print("Editing item: ${item.title}, ID: ${item.id}"); // Debug log
                     ? DateTime.parse(item.endDate!)
                     : DateTime.now(),
                 topic: item.topic ?? 'No Topic',
+                topicId: item.topicId.toString(),
                 marks: item.grade ?? '0',
               ),
               onSave: (assignment) {
@@ -1009,6 +1012,9 @@ print("Editing item: ${item.title}, ID: ${item.id}"); // Debug log
             questions: item.questions, 
             editMode: true,
             onSaveFlag: setRefreshFlag,
+            onCreation: () {
+              _loadSyllabusContents();
+            },
           ),
         ),
       ).then((_) {
@@ -1035,6 +1041,7 @@ print("Editing item: ${item.title}, ID: ${item.id}"); // Debug log
                 title: item.title,
                 description: item.description,
                 topic: item.topic ?? 'No Topic',
+                topicId: item.topicId.toString(),
                 attachments: attachments,
                 selectedClass: item.classes.map((c) => c.name).join(', '),
                 startDate: item.startDate != null ? DateTime.parse(item.startDate!) : DateTime.now(),

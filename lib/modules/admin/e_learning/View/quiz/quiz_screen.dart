@@ -92,8 +92,8 @@ class _QuizScreenState extends State<QuizScreen> {
           ),
         ),
       );
-            case 'Delete':
-            deleteAssignment(widget.question.id);
+            case 'delete':
+            deleteQuiz(widget.question.id);
 
       }
 
@@ -161,14 +161,15 @@ class _QuizScreenState extends State<QuizScreen> {
     );
   }
 
-      Future<void> deleteAssignment(id) async {
+      Future<void> deleteQuiz(id) async {
+       
                     try {
                    final provider =locator<DeleteSyllabusProvider>();
-                   await provider.deleteAssignment(widget.question.id.toString());
-                   CustomToaster.toastSuccess(context, 'Success', 'Assignment deleted successfully');
+                   await provider.DeleteQuiz(widget.question.id.toString());
+                   CustomToaster.toastSuccess(context, 'Success', 'quiz deleted successfully');
                    Navigator.of(context).pop();
                   } catch (e) {
-                    print('Error deleting assignment: $e');
+                    print('Error deleting question: $e');
                   }
                   }
 
@@ -194,7 +195,7 @@ class _QuizScreenState extends State<QuizScreen> {
           onPressed: () {
             // Navigate to the assessment screen
             print("SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS ${widget.correctAnswers}");
-            print("https://linkskool.net/${widget.questions}");
+            print("quiz duration ${widget.question.duration}");
         
             Navigator.push(
               context,

@@ -60,7 +60,7 @@ class _AdminAssignmentScreenState extends State<AdminAssignmentScreen> {
   DateTime _endDate = DateTime.now().add(const Duration(days: 1));
   String _selectedTopic = 'No Topic';
   int? _selectedTopicId;
-  String _marks = '0 marks';
+  String _marks = ' marks';
   late double opacity;
   int? creatorId;
   String? creatorName;
@@ -82,9 +82,12 @@ class _AdminAssignmentScreenState extends State<AdminAssignmentScreen> {
       final assignment = widget.assignmentToEdit!;
       _titleController.text = assignment.title;
       _descriptionController.text = assignment.description;
-      _marksController.text = assignment.marks;
+      _marks = '${assignment.marks} marks';
+      _marksController.text = assignment.marks.toString();
+      print("markssssssssssssss ${assignment.marks}");
       _endDate = assignment.dueDate;
       _selectedTopic = assignment.topic;
+      _selectedTopicId = int.tryParse(assignment.topicId ?? "");
       _selectedClass = assignment.selectedClass;
 
       _attachments = assignment.attachments.map((attachment) => AttachmentItem(
@@ -979,6 +982,7 @@ class Assignment {
   final List<AttachmentItem> attachments;
   final DateTime dueDate;
   final String topic;
+  final String? topicId;
   final String marks;
   final DateTime createdAt;
 
@@ -992,6 +996,7 @@ class Assignment {
     required this.topic,
     required this.marks,
     DateTime? createdAt,
+    this.topicId,
   }) : createdAt = createdAt ?? DateTime.now();
 }
 

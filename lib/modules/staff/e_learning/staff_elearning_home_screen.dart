@@ -3,11 +3,15 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:hive/hive.dart';
+import 'package:linkschool/modules/admin/e_learning/View/recent_activity_screen/recent_quiz.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/custom_toaster.dart';
 import 'package:linkschool/modules/common/widgets/portal/student/student_customized_appbar.dart';
 import 'package:linkschool/modules/providers/staff/overview.dart';
+import 'package:linkschool/modules/staff/e_learning/recent_activity_screen/recent_assignment.dart';
+import 'package:linkschool/modules/staff/e_learning/recent_activity_screen/recent_material.dart';
+import 'package:linkschool/modules/staff/e_learning/recent_activity_screen/recent_quiz.dart';
 import 'package:linkschool/modules/staff/e_learning/staff_course_detail_screen.dart';
 import 'package:linkschool/modules/student/home/new_post_dialog.dart';
 import 'package:carousel_slider/carousel_slider.dart';
@@ -251,155 +255,167 @@ Future<void> _loadUserData() async {
       ? const Center(child: Text("No quizzes available"))
       : CarouselSlider(
                 items:provider.recentQuizzes.map((quiz) {
-  return Container(
-    margin: const EdgeInsets.symmetric(horizontal: 8.0),
-    decoration: BoxDecoration(
-      borderRadius: BorderRadius.circular(12.0),
-      color: AppColors.paymentTxtColor1,
-      boxShadow: [
-        BoxShadow(
-          color: Colors.black.withOpacity(0.1),
-          blurRadius: 8,
-          offset: const Offset(0, 4),
+  return GestureDetector(
+    onTap: () {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => StaffRecentQuiz(
+           quizId: quiz.id.toString(),
+          ),
         ),
-      ],
-    ),
-    child: Padding(
-      padding: const EdgeInsets.all(16.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(8.0),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(8.0),
-              color: Colors.white,
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Expanded(
-                  child: Text(
-                    '${quiz.courseName} ${quiz.title}',
-                    style: const TextStyle(
-                      color: Colors.black,
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
+      );
+    },
+    child: Container(
+      margin: const EdgeInsets.symmetric(horizontal: 8.0),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(12.0),
+        color: AppColors.paymentTxtColor1,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 8,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8.0),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(8.0),
+                color: Colors.white,
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(
+                    child: Text(
+                      '${quiz.courseName} ${quiz.title}',
+                      style: const TextStyle(
+                        color: Colors.black,
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 8.0, vertical: 4.0),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(8.0),
+                      color: AppColors.paymentTxtColor1,
+                    ),
+                    child: Row(
+                      children: [
+                        SvgPicture.asset(
+                          'assets/icons/student/calender-icon.svg',
+                          width: 16,
+                          height: 16,
+                          colorFilter: const ColorFilter.mode(
+                            Colors.white,
+                            BlendMode.srcIn,
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          quiz.datePosted,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 48),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                const Column(
+                  children: [
+                    Text(
+                      'Time',
+                      style: TextStyle(
+                        color: AppColors.backgroundLight,
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    SizedBox(height: 4),
+                    Text(
+                      '08:00 AM', // TODO: replace if backend gives exact time
+                      style: TextStyle(
+                        color: AppColors.backgroundLight,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ],
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 8.0, vertical: 4.0),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(8.0),
-                    color: AppColors.paymentTxtColor1,
-                  ),
-                  child: Row(
-                    children: [
-                      SvgPicture.asset(
-                        'assets/icons/student/calender-icon.svg',
-                        width: 16,
-                        height: 16,
-                        colorFilter: const ColorFilter.mode(
-                          Colors.white,
-                          BlendMode.srcIn,
-                        ),
+                  height: 40,
+                  width: 1,
+                  color: Colors.white,
+                  margin: const EdgeInsets.symmetric(horizontal: 8.0),
+                ),
+                Column(
+                  children: [
+                    const Text(
+                      'Classes',
+                      style: TextStyle(
+                        color: AppColors.backgroundLight,
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
                       ),
-                      const SizedBox(width: 4),
-                      Text(
-                        quiz.datePosted,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 12,
-                        ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      quiz.classes.map((c) => c.name).join(", "),
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        color: AppColors.backgroundLight,
+                        fontSize: 14,
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
+                ),
+                Container(
+                  height: 40,
+                  width: 1,
+                  color: Colors.white,
+                  margin: const EdgeInsets.symmetric(horizontal: 8.0),
+                ),
+                const Column(
+                  children: [
+                    Text(
+                      'Duration',
+                      style: TextStyle(
+                        color: AppColors.backgroundLight,
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    SizedBox(height: 4),
+                    Text(
+                      '2h 30m', // TODO: replace if backend provides duration
+                      style: TextStyle(
+                        color: AppColors.backgroundLight,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
-          ),
-          const SizedBox(height: 48),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              const Column(
-                children: [
-                  Text(
-                    'Time',
-                    style: TextStyle(
-                      color: AppColors.backgroundLight,
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  SizedBox(height: 4),
-                  Text(
-                    '08:00 AM', // TODO: replace if backend gives exact time
-                    style: TextStyle(
-                      color: AppColors.backgroundLight,
-                      fontSize: 14,
-                    ),
-                  ),
-                ],
-              ),
-              Container(
-                height: 40,
-                width: 1,
-                color: Colors.white,
-                margin: const EdgeInsets.symmetric(horizontal: 8.0),
-              ),
-              Column(
-                children: [
-                  const Text(
-                    'Classes',
-                    style: TextStyle(
-                      color: AppColors.backgroundLight,
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    quiz.classes.map((c) => c.name).join(", "),
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      color: AppColors.backgroundLight,
-                      fontSize: 14,
-                    ),
-                  ),
-                ],
-              ),
-              Container(
-                height: 40,
-                width: 1,
-                color: Colors.white,
-                margin: const EdgeInsets.symmetric(horizontal: 8.0),
-              ),
-              const Column(
-                children: [
-                  Text(
-                    'Duration',
-                    style: TextStyle(
-                      color: AppColors.backgroundLight,
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  SizedBox(height: 4),
-                  Text(
-                    '2h 30m', // TODO: replace if backend provides duration
-                    style: TextStyle(
-                      color: AppColors.backgroundLight,
-                      fontSize: 14,
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ],
+          ],
+        ),
       ),
     ),
   );
@@ -438,43 +454,148 @@ Future<void> _loadUserData() async {
                   ),
                 ),
               ),
-              const SizedBox(height: 24),
-              const Padding(
-                padding: EdgeInsets.only(left: 8.0),
-                child: Text(
-                  'Recent activity',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                ),
-              ),
+             
               const SizedBox(height: 16),
            Consumer<StaffOverviewProvider>(
   builder: (context, provider, child) {
-    return           provider.isLoading
-  ? const Center(
-      child: CircularProgressIndicator(),
-    )
-  : provider.recentQuizzes.isEmpty
-      ? const Center(child: Text("No Activities available"))
-      :SizedBox(
-      height: 110,
-      child: PageView.builder(
-        controller: activityController,
-        itemCount: provider.recentActivities.length,
-        itemBuilder: (context, index) {
-          final activity = provider.recentActivities[index];
-          return Card(
-            elevation: 4,
-            margin: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 8.0),
-            child: ListTile(
-              title: Text(activity.title),
-              subtitle: Text("${activity.createdBy} • ${activity.datePosted}"),
-            ),
-          );
-        },
-      ),
+    final activities = provider.recentActivities;
+
+    if (provider.isLoading && activities.isEmpty) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    // filter out incomplete activity objects
+    final displayActivities = activities
+        .where((activity) =>
+            activity.createdBy.isNotEmpty &&
+            activity.type.isNotEmpty &&
+            activity.courseName.isNotEmpty &&
+            activity.datePosted.isNotEmpty)
+        .toList();
+
+    if (displayActivities.isEmpty) {
+      return const Center(child: Text("No recent activities available"));
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Padding(
+          padding: EdgeInsets.symmetric(horizontal: 16),
+          child: Text(
+            "Recent activity",
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+          ),
+        ),
+        const SizedBox(height: 16),
+        SizedBox(
+          height: 110,
+          child: PageView.builder(
+            controller: activityController,
+            itemCount: displayActivities.length,
+            itemBuilder: (context, index) {
+              final activity = displayActivities[index];
+
+              return GestureDetector(
+                onTap: () {
+                  if (activity.type.toLowerCase() == 'material') {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => StaffRecentMaterial(
+                          itemId: activity.id,
+                          syllabusId: activity.syllabusId,
+                          courseId: activity.courseId.toString(),
+                          levelId: activity.levelId,
+                          courseName: activity.courseName,
+                        ),
+                      ),
+                    );
+                  } else if (activity.type.toLowerCase() == 'assignment') {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => StaffRecentAssignment(
+                          itemId: activity.id,
+                          syllabusId: activity.syllabusId,
+                          courseId: activity.courseId.toString(),
+                          levelId: activity.levelId,
+                          courseName: activity.courseName,
+                          // if it’s the Assignment model
+                        ),
+                      ),
+                    );
+                  }
+                },
+                child: Container(
+                  margin:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(12),
+                    color: Colors.white,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.2),
+                        blurRadius: 12,
+                        spreadRadius: 2,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(12.0),
+                    child: Row(
+                      children: [
+                        const CircleAvatar(
+                          radius: 20,
+                          backgroundImage:
+                              AssetImage("assets/images/student/avatar3.png"),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              RichText(
+                                text: TextSpan(
+                                  style: const TextStyle(
+                                      color: Colors.black, fontSize: 14),
+                                  children: [
+                                    TextSpan(text: "${activity.createdBy} "),
+                                    TextSpan(
+                                        text: "${activity.type} ",
+                                        style: const TextStyle(
+                                            fontWeight: FontWeight.normal)),
+                                    TextSpan(
+                                        text: activity.courseName,
+                                        style: const TextStyle(
+                                            fontWeight: FontWeight.bold)),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                activity.datePosted,
+                                style: const TextStyle(
+                                    color: Colors.grey, fontSize: 12),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+      ],
     );
   },
 ),
+
               const SizedBox(height: 24),
               const Padding(
                 padding: EdgeInsets.only(left: 8.0),

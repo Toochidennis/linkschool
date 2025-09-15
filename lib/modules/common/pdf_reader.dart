@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_pdfview/flutter_pdfview.dart';
 import 'package:http/http.dart' as http;
+import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:path_provider/path_provider.dart';
 
 class PdfViewerPage extends StatefulWidget {
@@ -16,6 +17,7 @@ class PdfViewerPage extends StatefulWidget {
 class _PdfViewerPageState extends State<PdfViewerPage> {
   String? localPath;
   bool loading = true;
+  
 
   @override
   void initState() {
@@ -48,17 +50,34 @@ class _PdfViewerPageState extends State<PdfViewerPage> {
 
   @override
   Widget build(BuildContext context) {
+        final isDark = MediaQuery.of(context).platformBrightness;
+
     return Scaffold(
-      appBar: AppBar(title: const Text("PDF Preview")),
+      appBar: AppBar(
+        automaticallyImplyLeading: false,
+        leading: IconButton(
+          onPressed: () => Navigator.of(context).pop(),
+          icon: Image.asset(
+            'assets/icons/arrow_back.png',
+            color: Colors.white,
+            width: 34.0,
+            height: 34.0,
+          ),
+        ),
+        backgroundColor:AppColors.primaryLight,
+        title: const Text("PDF Preview",style: TextStyle(color: Colors.white),)),
       body: loading
-          ? const Center(child: CircularProgressIndicator())
+          ? const Center(child: CircularProgressIndicator( color: AppColors.primaryLight,))
           : localPath == null
               ? const Center(child: Text("Failed to load PDF"))
               : PDFView(
                   filePath: localPath!,
-                  swipeHorizontal: true,
+                  swipeHorizontal:false,
                   autoSpacing: false,
                   pageFling: true,
+                  fitEachPage: true,
+                  nightMode:isDark == Brightness.dark ?true : false,
+                  fitPolicy: FitPolicy.BOTH,
                 ),
     );
   }

@@ -12,10 +12,13 @@ import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/custom_toaster.dart';
 import 'package:linkschool/modules/common/pdf_reader.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
+import 'package:linkschool/modules/common/widgets/portal/attachmentItem.dart';
 import 'package:linkschool/modules/model/e-learning/comment_model.dart';
 import 'package:linkschool/modules/model/e-learning/material_model.dart' as custom;
+import 'package:linkschool/modules/model/e-learning/single_content_model.dart';
 import 'package:linkschool/modules/providers/admin/e_learning/comment_provider.dart';
 import 'package:linkschool/modules/providers/admin/e_learning/delete_sylabus_content.dart';
+import 'package:linkschool/modules/providers/admin/e_learning/single_content_provider.dart';
 import 'package:linkschool/modules/services/api/service_locator.dart';
 import 'package:linkschool/modules/staff/e_learning/sub_screens/staff_add_material_screen.dart';
 import 'package:provider/provider.dart';
@@ -24,10 +27,9 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:video_player/video_player.dart';
 import 'package:http/http.dart' as http;
 import 'package:video_thumbnail/video_thumbnail.dart';
-import '../../../common/widgets/portal/attachmentItem.dart';
 
-class AdminMaterialDetailsScreen extends StatefulWidget {
-  final custom.Material material;
+
+class StaffRecentMaterial extends StatefulWidget {
   final int? syllabusId;
   final String? courseId;
   final String? levelId;
@@ -36,9 +38,8 @@ class AdminMaterialDetailsScreen extends StatefulWidget {
   final int? itemId;
   final List<Map<String, dynamic>>? syllabusClasses;
 
-  const AdminMaterialDetailsScreen({
+  const StaffRecentMaterial({
     super.key,
-    required this.material,
     this.syllabusId,
     this.courseId,
     this.levelId,
@@ -49,10 +50,10 @@ class AdminMaterialDetailsScreen extends StatefulWidget {
   });
 
   @override
-  _AdminMaterialDetailsScreenState createState() => _AdminMaterialDetailsScreenState();
+  _StaffRecentMaterialState createState() => _StaffRecentMaterialState();
 }
 
-class _AdminMaterialDetailsScreenState extends State<AdminMaterialDetailsScreen>
+class _StaffRecentMaterialState extends State<StaffRecentMaterial>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
   final TextEditingController _commentController = TextEditingController();
@@ -63,17 +64,21 @@ class _AdminMaterialDetailsScreenState extends State<AdminMaterialDetailsScreen>
   bool _isEditing = false;
   Comment? _editingComment;
   late double opacity;
-  final String networkImage = 'https://img.freepik.com/free-vector/gradient-human-rights-day-background_52683-149974.jpg?t=st=1717832829~exp=1717833429~hmac=3e938edcacd7fef2a791b36c7d3decbf64248d9760dd7da0a304acee382b8a86';
+  final String networkImage =
+      'https://img.freepik.com/free-vector/gradient-human-rights-day-background_52683-149974.jpg?t=st=1717832829~exp=1717833429~hmac=3e938edcacd7fef2a791b36c7d3decbf64248d9760dd7da0a304acee382b8a86';
   String? creatorName;
   int? creatorId;
   int? academicTerm;
   String? academicYear;
+  AssessmentContentItem? materialData; // Store fetched material
+  bool isLoading = true; // Track loading state
+  String? errorMessage; // Track error message
 
   @override
   void initState() {
     super.initState();
     _loadUserData();
-    if (mounted) setState(() {});
+    _fetchMaterialData(); // Fetch material data using itemId
     _tabController = TabController(length: 2, vsync: this);
     locator<CommentProvider>().fetchComments(widget.itemId.toString());
     _scrollController.addListener(() {
@@ -99,6 +104,43 @@ class _AdminMaterialDetailsScreenState extends State<AdminMaterialDetailsScreen>
       });
     }
   }
+
+  Future<void> _fetchMaterialData() async {
+  if (widget.itemId == null) {
+    setState(() {
+      isLoading = false;
+      errorMessage = 'No material ID provided';
+    });
+    print('Error: No itemId provided');
+    return;
+  }
+
+  try {
+    final singleContentProvider =
+        Provider.of<SingleContentProvider>(context, listen: false);
+    print('Fetching material for ID: ${widget.itemId}');
+    final content = await singleContentProvider.fetchMaterial(widget.itemId!);
+    if (content == null) {
+      setState(() {
+        isLoading = false;
+        errorMessage = singleContentProvider.errorMessage ?? 'Failed to load material';
+      });
+      print('Error: ${singleContentProvider.errorMessage}');
+      return;
+    }
+    setState(() {
+      materialData = content;
+      isLoading = false;
+    });
+    print('Fetched material: ${materialData?.title}');
+  } catch (e) {
+    setState(() {
+      isLoading = false;
+      errorMessage = 'Error fetching material: $e';
+    });
+    print('Error fetching material: $e');
+  }
+}
 
   @override
   void dispose() {
@@ -159,58 +201,6 @@ class _AdminMaterialDetailsScreenState extends State<AdminMaterialDetailsScreen>
             color: AppColors.paymentTxtColor1,
           ),
         ),
-        actions: [
-          PopupMenuButton<String>(
-            icon: const Icon(Icons.more_vert, color: AppColors.paymentTxtColor1),
-            onSelected: (String result) {
-              print('mmmmmmmmmmmmmmmm ${widget.material.title}');
-              switch (result) {
-                case 'edit':
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => StaffAddMaterialScreen(
-                        itemId: widget.itemId,
-                        syllabusId: widget.syllabusId,
-                        courseId: widget.courseId,
-                        levelId: widget.levelId,
-                        classId: widget.classId,
-                        courseName: widget.courseName,
-                        editMode: true,
-                        syllabusClasses: widget.syllabusClasses,
-                        materialToEdit: custom.Material(
-                          title: widget.material.title,
-                          description: widget.material.description,
-                          selectedClass: widget.material.selectedClass,
-                          startDate: widget.material.startDate,
-                          endDate: widget.material.endDate,
-                          topic: widget.material.topic,
-                          attachments: widget.material.attachments,
-                          duration: widget.material.duration,
-                          marks: widget.material.marks,
-                        ),
-                        onSave: (material) {},
-                      ),
-                    ),
-                  );
-                  break;
-                case 'delete':
-                  deleteMaterial(widget.itemId);
-                  break;
-              }
-            },
-            itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
-              const PopupMenuItem<String>(
-                value: 'edit',
-                child: Text('Edit'),
-              ),
-              const PopupMenuItem<String>(
-                value: 'delete',
-                child: Text('Delete'),
-              ),
-            ],
-          ),
-        ],
         backgroundColor: AppColors.backgroundLight,
         flexibleSpace: FlexibleSpaceBar(
           background: Stack(
@@ -228,43 +218,49 @@ class _AdminMaterialDetailsScreenState extends State<AdminMaterialDetailsScreen>
           ),
         ),
       ),
-      body: Container(
-        color: Colors.white,
-        child: _buildInstructionsTab(),
-      ),
-      bottomNavigationBar: _tabController.index == 0
-          ? SafeArea(
-              child: AnimatedPadding(
-                duration: const Duration(milliseconds: 300),
-                padding: EdgeInsets.only(
-                  bottom: MediaQuery.of(context).viewInsets.bottom,
-                  left: 8.0,
-                  right: 8.0,
-                  top: 8.0,
+      body: isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : errorMessage != null
+              ? Center(child: Text(errorMessage!, style: const TextStyle(color: Colors.red)))
+              : Container(
+                  color: Colors.white,
+                  child: _buildInstructionsTab(),
                 ),
-                child: _isAddingComment
-                    ? _buildCommentInput()
-                    : InkWell(
-                        onTap: () {
-                          setState(() {
-                            _isAddingComment = true;
-                            WidgetsBinding.instance.addPostFrameCallback((_) {
-                              _commentFocusNode.requestFocus();
-                            });
-                          });
-                        },
-                        child: Padding(
-                          padding: const EdgeInsets.all(12.0),
-                          child: Text(
-                            'Add class comment',
-                            style: AppTextStyles.normal500(
-                                fontSize: 16.0, color: AppColors.paymentTxtColor1),
+      bottomNavigationBar: isLoading || errorMessage != null
+          ? null
+          : _tabController.index == 0
+              ? SafeArea(
+                  child: AnimatedPadding(
+                    duration: const Duration(milliseconds: 300),
+                    padding: EdgeInsets.only(
+                      bottom: MediaQuery.of(context).viewInsets.bottom,
+                      left: 8.0,
+                      right: 8.0,
+                      top: 8.0,
+                    ),
+                    child: _isAddingComment
+                        ? _buildCommentInput()
+                        : InkWell(
+                            onTap: () {
+                              setState(() {
+                                _isAddingComment = true;
+                                WidgetsBinding.instance.addPostFrameCallback((_) {
+                                  _commentFocusNode.requestFocus();
+                                });
+                              });
+                            },
+                            child: Padding(
+                              padding: const EdgeInsets.all(12.0),
+                              child: Text(
+                                'Add class comment',
+                                style: AppTextStyles.normal500(
+                                    fontSize: 16.0, color: AppColors.paymentTxtColor1),
+                              ),
+                            ),
                           ),
-                        ),
-                      ),
-              ),
-            )
-          : null,
+                  ),
+                )
+              : null,
     );
   }
 
@@ -276,6 +272,7 @@ class _AdminMaterialDetailsScreenState extends State<AdminMaterialDetailsScreen>
       Navigator.of(context).pop();
     } catch (e) {
       print('Error deleting material: $e');
+      CustomToaster.toastError(context, 'Error', 'Failed to delete material: $e');
     }
   }
 
@@ -317,7 +314,10 @@ class _AdminMaterialDetailsScreenState extends State<AdminMaterialDetailsScreen>
                 fontSize: 16.0, color: AppColors.eLearningTxtColor1),
           ),
           Text(
-            DateFormat('E, dd MMM yyyy (hh:mm a)').format(widget.material.endDate),
+            materialData!.endDate != null
+                ? DateFormat('E, dd MMM yyyy (hh:mm a)')
+                    .format(DateTime.parse(materialData!.endDate!))
+                : 'No due date',
             style: AppTextStyles.normal500(fontSize: 16.0, color: Colors.black),
           ),
         ],
@@ -336,7 +336,7 @@ class _AdminMaterialDetailsScreenState extends State<AdminMaterialDetailsScreen>
       child: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Text(
-          widget.material.title,
+          materialData!.title ?? 'No Title',
           style: AppTextStyles.normal600(
             fontSize: 20.0,
             color: AppColors.paymentTxtColor1,
@@ -358,7 +358,7 @@ class _AdminMaterialDetailsScreenState extends State<AdminMaterialDetailsScreen>
           ),
           Expanded(
             child: Text(
-              widget.material.description,
+              materialData!.description ?? 'No Description',
               style: AppTextStyles.normal500(fontSize: 16.0, color: Colors.black),
             ),
           ),
@@ -367,40 +367,51 @@ class _AdminMaterialDetailsScreenState extends State<AdminMaterialDetailsScreen>
     );
   }
 
- Widget _buildAttachments() {
-  final attachments = widget.material.attachments;
-  if (attachments == null || attachments.isEmpty) {
-    return const Center(child: Text('No attachment available'));
-  }
-  return Padding(
-    padding: const EdgeInsets.all(16.0),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Attachments',
-          style: AppTextStyles.normal600(
-              fontSize: 18.0, color: AppColors.eLearningTxtColor1),
-        ),
-        const SizedBox(height: 12),
-        GridView.builder(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 2,
-            crossAxisSpacing: 12.0,
-            mainAxisSpacing: 12.0,
-            childAspectRatio: 1.2,
+  Widget _buildAttachments() {
+    final attachments = (materialData!.contentFiles ?? []).map((file) {
+      return AttachmentItem(
+        fileName: file.fileName ?? 'Unknown File',
+        iconPath: (file.type == 'image' || file.type == 'photo' || file.type == 'video')
+            ? 'assets/icons/e_learning/material.svg'
+            : 'assets/icons/e_learning/link.svg',
+        fileContent: file.file?.isNotEmpty ?? false
+            ? file.file!
+            : 'https://linkskoo.net/${file.fileName ?? 'unknown'}',
+      );
+    }).toList();
+
+    if (attachments.isEmpty) {
+      return const Center(child: Text('No attachment available'));
+    }
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Attachments',
+            style: AppTextStyles.normal600(
+                fontSize: 18.0, color: AppColors.eLearningTxtColor1),
           ),
-          itemCount: attachments.length,
-          itemBuilder: (context, index) {
-            return _buildAttachmentItem(attachments[index]);
-          },
-        ),
-      ],
-    ),
-  );
-}
+          const SizedBox(height: 12),
+          GridView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              crossAxisSpacing: 12.0,
+              mainAxisSpacing: 12.0,
+              childAspectRatio: 1.2,
+            ),
+            itemCount: attachments.length,
+            itemBuilder: (context, index) {
+              return _buildAttachmentItem(attachments[index]);
+            },
+          ),
+        ],
+      ),
+    );
+  }
 
   String _getFileType(String? fileName) {
     if (fileName == null) return 'unknown';
@@ -411,11 +422,11 @@ class _AdminMaterialDetailsScreenState extends State<AdminMaterialDetailsScreen>
     if (['mp4', 'avi', 'mov', 'wmv', 'flv', 'webm', 'm4v', '3gp'].contains(extension)) {
       return 'video';
     }
-if (['pdf','doc', 'docx', 'txt', 'rtf'].contains(extension)) {
+    if (['pdf', 'doc', 'docx', 'txt', 'rtf'].contains(extension)) {
       return 'pdf';
     }
-   
-    if (['.com', '.org', '.net', '.edu', 'http', 'https'].contains(extension) || fileName.startsWith('http')) {
+    if (['.com', '.org', '.net', '.edu', 'http', 'https'].contains(extension) ||
+        fileName.startsWith('http')) {
       return 'url';
     }
     if (['xls', 'xlsx', 'csv'].contains(extension)) {
@@ -485,7 +496,6 @@ if (['pdf','doc', 'docx', 'txt', 'rtf'].contains(extension)) {
 
   void _showFullScreenMedia(String url, String type) {
     if (type == 'pdf') {
-      // For PDFs, directly open in external app since we removed native_pdf_renderer
       _launchUrl(url);
     } else {
       Navigator.push(
@@ -501,86 +511,83 @@ if (['pdf','doc', 'docx', 'txt', 'rtf'].contains(extension)) {
     }
   }
 
-Widget _buildAttachmentItem(AttachmentItem attachment) {
-final rawFileName = attachment.fileName ?? 'Unknown file';
-final fileType = _getFileType(rawFileName);
-final fileUrl = "https://linkskool.net/$rawFileName";
-
-// Extract only the actual file name (remove the path)
-final fileName = rawFileName.split('/').last;
-  return GestureDetector(
-    onTap: () {
-      if (fileType == 'image' || fileType == 'video') {
-        _showFullScreenMedia(fileUrl, fileType);
-      } else {
-        // For all other files including PDF, open in external app
-        //fileUrl
-        if(fileType == 'pdf'){
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => PdfViewerPage(url: fileUrl),
-          ),
-        );
-        } else {_launchUrl(fileName);
-      }}
-    },
-    child: Container(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(12.0),
-        border: Border.all(
-          color: _getFileColor(fileType).withOpacity(0.3),
-          width: 1.5,
-        ),
-        color: Colors.white,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
-            spreadRadius: 1,
-            blurRadius: 3,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          Expanded(
-            flex: 3,
-            child: Container(
-              width: double.infinity,
-              decoration: BoxDecoration(
-                borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(12.0),
-                  topRight: Radius.circular(12.0),
-                ),
-                color: _getFileColor(fileType).withOpacity(0.1),
+  Widget _buildAttachmentItem(AttachmentItem attachment) {
+    final rawFileName = attachment.fileName ?? 'Unknown file';
+    final fileType = _getFileType(rawFileName);
+    final fileUrl = "https://linkskool.net/$rawFileName";
+    final fileName = rawFileName.split('/').last;
+    return GestureDetector(
+      onTap: () {
+        if (fileType == 'image' || fileType == 'video') {
+          _showFullScreenMedia(fileUrl, fileType);
+        } else {
+          if (fileType == 'pdf') {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => PdfViewerPage(url: fileUrl),
               ),
-              child: _buildPreviewContent(fileType, fileUrl, fileName),
-            ),
+            );
+          } else {
+            _launchUrl(fileName);
+          }
+        }
+      },
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(12.0),
+          border: Border.all(
+            color: _getFileColor(fileType).withOpacity(0.3),
+            width: 1.5,
           ),
-        if (fileType == "pdf" || fileType == "url") 
-  Expanded(
-    flex: 1,
-    child: Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 6.0),
-      child: Text(
-        fileName.length > 17 ? fileName.substring(0, 17) : fileName,
-        style: AppTextStyles.normal500(
-          fontSize: 14.0,
-          color: Colors.black,
+          color: Colors.white,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.withOpacity(0.1),
+              spreadRadius: 1,
+              blurRadius: 3,
+              offset: const Offset(0, 2),
+            ),
+          ],
         ),
-        maxLines: 2,
-        overflow: TextOverflow.ellipsis,
-        textAlign: TextAlign.center,
+        child: Column(
+          children: [
+            Expanded(
+              flex: 3,
+              child: Container(
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(12.0),
+                    topRight: Radius.circular(12.0),
+                  ),
+                  color: _getFileColor(fileType).withOpacity(0.1),
+                ),
+                child: _buildPreviewContent(fileType, fileUrl, fileName),
+              ),
+            ),
+            if (fileType == "pdf" || fileType == "url")
+              Expanded(
+                flex: 1,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 6.0),
+                  child: Text(
+                    fileName.length > 17 ? fileName.substring(0, 17) : fileName,
+                    style: AppTextStyles.normal500(
+                      fontSize: 14.0,
+                      color: Colors.black,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+              ),
+          ],
+        ),
       ),
-    ),
-  ),
-
-        ],
-      ),
-    ),
-  );
-}
+    );
+  }
 
   Widget _buildPreviewContent(String fileType, String fileUrl, String fileName) {
     switch (fileType) {
@@ -603,41 +610,40 @@ final fileName = rawFileName.split('/').last;
               return Center(
                 child: CircularProgressIndicator(
                   value: loadingProgress.expectedTotalBytes != null
-                      ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
+                      ? loadingProgress.cumulativeBytesLoaded /
+                          loadingProgress.expectedTotalBytes!
                       : null,
                 ),
               );
             },
           ),
         );
-
-        case 'video':
-  return FutureBuilder<String?>(
-    future: VideoThumbnail.thumbnailFile(
-      video: fileUrl,
-      imageFormat: ImageFormat.PNG,
-      maxHeight: 200,
-      quality: 50,
-    ),
-    builder: (context, snapshot) {
-      if (snapshot.connectionState == ConnectionState.waiting) {
-        return const Center(child: CircularProgressIndicator());
-      }
-      if (snapshot.hasError || snapshot.data == null) {
-        return const Icon(Icons.videocam, size: 50, color: Colors.blue);
-      }
-      return Stack(
-        fit: StackFit.expand,
-        children: [
-          Image.file(File(snapshot.data!), fit: BoxFit.cover),
-          const Center(
-            child: Icon(Icons.play_circle_fill, size: 60, color: Colors.white),
+      case 'video':
+        return FutureBuilder<String?>(
+          future: VideoThumbnail.thumbnailFile(
+            video: fileUrl,
+            imageFormat: ImageFormat.PNG,
+            maxHeight: 200,
+            quality: 50,
           ),
-        ],
-      );
-    },
-  );
-
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(child: CircularProgressIndicator());
+            }
+            if (snapshot.hasError || snapshot.data == null) {
+              return const Icon(Icons.videocam, size: 50, color: Colors.blue);
+            }
+            return Stack(
+              fit: StackFit.expand,
+              children: [
+                Image.file(File(snapshot.data!), fit: BoxFit.cover),
+                const Center(
+                  child: Icon(Icons.play_circle_fill, size: 60, color: Colors.white),
+                ),
+              ],
+            );
+          },
+        );
       case 'pdf':
         return Stack(
           children: [
@@ -657,7 +663,6 @@ final fileName = rawFileName.split('/').last;
                 ),
               ),
             ),
-           
           ],
         );
       case 'url':
@@ -865,7 +870,7 @@ final fileName = rawFileName.split('/').last;
   void _addComment([Map<String, dynamic>? updatedComment]) async {
     if (_commentController.text.isNotEmpty) {
       final comment = updatedComment ?? {
-        "content_title": widget.material.title,
+        "content_title": materialData!.title ?? 'No Title',
         "user_id": creatorId,
         "user_name": creatorName,
         "comment": _commentController.text,
@@ -899,7 +904,7 @@ final fileName = rawFileName.split('/').last;
               author: creatorName ?? 'Unknown',
               date: DateTime.now(),
               text: _commentController.text,
-              contentTitle: widget.material.title,
+              contentTitle: materialData!.title ?? 'No Title',
               userId: creatorId,
               levelId: widget.levelId,
               courseId: widget.courseId,
@@ -935,7 +940,7 @@ final fileName = rawFileName.split('/').last;
     _editingComment = comment;
     _commentController.text = comment.text;
     final updatedComment = {
-      "content_title": widget.material.title,
+      "content_title": materialData!.title ?? 'No Title',
       "user_id": creatorId,
       "user_name": creatorName,
       "comment": _commentController.text,
@@ -954,9 +959,6 @@ final fileName = rawFileName.split('/').last;
     print('Edit setup complete. _isEditing: $_isEditing, _editingComment.id: ${_editingComment?.id}');
   }
 }
-
-// Full Screen Media Viewer (only for images and videos now)
-
 
 class FullScreenMediaViewer extends StatefulWidget {
   final String url;
@@ -1100,7 +1102,7 @@ class _VideoThumbnailWidgetState extends State<VideoThumbnailWidget> {
           borderRadius: BorderRadius.circular(8),
           child: Image.memory(
             _thumbnail!,
-            width:double.infinity,
+            width: double.infinity,
             height: 140,
             fit: BoxFit.cover,
           ),

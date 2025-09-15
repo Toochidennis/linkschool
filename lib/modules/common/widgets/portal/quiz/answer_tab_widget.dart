@@ -226,7 +226,14 @@ class _AnswersTabWidgetState extends State<AnswersTabWidget> {
   Navigator.push(
     context,
     MaterialPageRoute(
-      builder: (context) => QuizResultsScreen(students: students, contentId:id),
+      builder: (context) => QuizResultsScreen(
+        students: students,
+         contentId:id,
+         onGraded: () {
+           final provider = Provider.of<MarkAssignmentProvider>(context, listen: false);
+    provider.fetchQuiz(widget.itemId);
+         },
+         ),
     ),
   ).then((_) {
     final provider = Provider.of<MarkAssignmentProvider>(context, listen: false);

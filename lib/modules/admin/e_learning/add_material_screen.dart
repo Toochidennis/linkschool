@@ -85,7 +85,8 @@ class _AddMaterialScreenState extends State<AddMaterialScreen> {
       _descriptionController.text = material.description;
       _selectedClass = material.selectedClass;
       _selectedTopic = material.topic;
-      
+      _selectedTopicId = int.parse(material.topicId ?? '');
+
       // Updated to match AdminAssignmentScreen structure
       _attachments = material.attachments?.map((attachment) => AttachmentItem(
         fileName: attachment.fileName,
@@ -700,27 +701,42 @@ class _AddMaterialScreenState extends State<AddMaterialScreen> {
     });
   }
 
-  void _selectTopic() async {
-    final result = await Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => SelectTopicScreen(
-          levelId: widget.levelId!,
-          syllabusId: widget.syllabusId,
-          courseName: widget.courseName,
-          courseId: widget.courseId,
-          callingScreen: '',
-        ),
+ void _selectTopic() async {
+  final result = await Navigator.push(
+    context,
+    MaterialPageRoute(
+      builder: (context) => SelectTopicScreen(
+        levelId: widget.levelId!,
+        syllabusId: widget.syllabusId,
+        courseName: widget.courseName,
+        courseId: widget.courseId,
+        callingScreen: '',
+        // Pass current selected topic ID to maintain selection
+        preSelectedTopicId: _selectedTopicId,
       ),
-    );
-    if (result != null && result is Map) {
-      setState(() {
-        _selectedTopic = result['topicName'] ?? 'No Topic';
-        _selectedTopicId = result['topicId'];
-      });
-    }
+    ),
+  );
+  
+  if (result != null && result is Map) {
+    setState(() {
+      // Only update if we actually got a result
+      final topicName = result['topicName'];
+      final topicId = result['topicId'];
+      
+      // If topicName is null or empty, keep the current selection
+      if (topicName != null && topicName.isNotEmpty) {
+        _selectedTopic = topicName;
+        _selectedTopicId = topicId;
+      }
+      // If result is empty or null, maintain current selection
+    });
+    
+    print('Topic selection result: ${result['topicName']} (ID: ${result['topicId']})');
+  } else {
+    // If no result (user cancelled), maintain current selection
+    print('No topic selection result - maintaining current topic: $_selectedTopic');
   }
-
+}
   void _addMaterial() async {
     // Validation
     if (_titleController.text.isEmpty) {
