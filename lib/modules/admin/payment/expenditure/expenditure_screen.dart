@@ -4,6 +4,7 @@ import 'package:flutter_svg/svg.dart';
 import 'package:hive/hive.dart';
 import 'package:intl/intl.dart';
 import 'package:linkschool/modules/admin/payment/expenditure/add_expenditure_screen.dart';
+import 'package:linkschool/modules/admin/payment/expenditure/expenditure_report_payment_screen.dart';
 import 'package:linkschool/modules/admin/payment/expenditure/expense_history.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/constants.dart';
@@ -483,7 +484,12 @@ class _ExpenditureScreenState extends State<ExpenditureScreen> with TickerProvid
                                   ),
                                   GestureDetector(
                                     onTap: () {
-                                      // Navigate to detailed report if needed
+                                      Navigator.push( 
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) => ExpenditureReportPaymentScreen()
+                                        ),
+                                      );
                                     },
                                     child: const Text(
                                       'See all',

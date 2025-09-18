@@ -22,7 +22,7 @@ class _ReportPaymentScreenState extends State<ReportPaymentScreen> {
 
   final List<Widget> _screens = const [
     TransactionsView(),
-    StatisticsView(),
+    ReceiptStatisticsView(),
   ];
 
   @override

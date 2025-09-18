@@ -37,6 +37,7 @@ import 'package:linkschool/modules/services/admin/e_learning/topic_service.dart'
 import 'package:linkschool/modules/services/admin/payment/account_service.dart';
 import 'package:linkschool/modules/services/admin/payment/expenditure_service.dart';
 import 'package:linkschool/modules/services/admin/payment/fee_service.dart';
+import 'package:linkschool/modules/services/admin/payment/payment_service.dart';
 import 'package:linkschool/modules/services/admin/payment/vendor_service.dart';
 
 import 'package:linkschool/modules/services/api/api_service.dart';
@@ -63,37 +64,28 @@ import '../../providers/student/student_comment_provider.dart';
 import '../student/student_comment_service.dart';
 import '../student/student_dasboard_service.dart';
 
-
 final GetIt locator = GetIt.instance;
 
 void setupServiceLocator() {
   // // Initialize API Service with proper configuration
   locator.registerLazySingleton<ApiService>(() => ApiService(
-    baseUrl: dotenv.env['API_BASE_URL'],
-    apiKey: dotenv.env['API_KEY'],
-  ));
+        baseUrl: dotenv.env['API_BASE_URL'],
+        apiKey: dotenv.env['API_KEY'],
+      ));
 
   // Register paymentServices with ApiService dependency
-  locator.registerLazySingleton< PaymentSubmissionService>(
-    () =>  PaymentSubmissionService(locator<ApiService>())
-  );
+  locator.registerLazySingleton<PaymentSubmissionService>(
+      () => PaymentSubmissionService(locator<ApiService>()));
   // Register InvoiceProvider with InvoiceService dependency
   locator.registerLazySingleton<PaymentProvider>(
-    () => PaymentProvider(locator< PaymentSubmissionService>() )
-  );
+      () => PaymentProvider(locator<PaymentSubmissionService>()));
 
-  
- 
-
-  
   // Register paymentServices with ApiService dependency
   locator.registerLazySingleton<InvoiceService>(
-    () => InvoiceService(locator<ApiService>())
-  );
+      () => InvoiceService(locator<ApiService>()));
   // Register InvoiceProvider with InvoiceService dependency
   locator.registerLazySingleton<InvoiceProvider>(
-    () => InvoiceProvider(locator<InvoiceService>())
-  );
+      () => InvoiceProvider(locator<InvoiceService>()));
 
   // Register SyllabusContentService with ApiService dependency
   locator.registerLazySingleton<SyllabusContentService>(
@@ -112,7 +104,7 @@ void setupServiceLocator() {
   locator.registerLazySingleton<QuizProvider>(
     () => QuizProvider(locator<QuizService>()),
   );
-  
+
 // Register AssignmentService with ApiService dependency
   locator.registerLazySingleton<AssignmentService>(
     () => AssignmentService(locator<ApiService>()),
@@ -134,161 +126,128 @@ void setupServiceLocator() {
 
   // Register MaterialService with ApiService dependency
   locator.registerLazySingleton<MaterialService>(
-    () => MaterialService(locator<ApiService>())
-  );
-
+      () => MaterialService(locator<ApiService>()));
 
   locator.registerLazySingleton<MaterialProvider>(
-    () => MaterialProvider(locator<MaterialService>())
-  );
-
+      () => MaterialProvider(locator<MaterialService>()));
 
   // Register SkillService with ApiService dependency
   // Register SkillService with ApiService dependency
   locator.registerLazySingleton<SkillService>(
-    () => SkillService(locator<ApiService>())
-  );
- 
-  locator.registerLazySingleton<SkillsProvider>(
-    () => SkillsProvider(locator<SkillService>())
-  );
+      () => SkillService(locator<ApiService>()));
 
-  locator.registerFactory(() => SkillsBehaviorTableProvider(locator<ApiService>()));
+  locator.registerLazySingleton<SkillsProvider>(
+      () => SkillsProvider(locator<SkillService>()));
+
+  locator.registerFactory(
+      () => SkillsBehaviorTableProvider(locator<ApiService>()));
 
   // Register StudentService with ApiService dependency
   locator.registerLazySingleton<StudentService>(
-    () => StudentService(locator<ApiService>())
-  );
-
+      () => StudentService(locator<ApiService>()));
 
   locator.registerLazySingleton<StudentProvider>(
-    () => StudentProvider(locator<StudentService>())
-  );
+      () => StudentProvider(locator<StudentService>()));
 
   // Register GradeService with ApiService dependency
   locator.registerLazySingleton<GradeService>(
-    () => GradeService(locator<ApiService>())
-  );
+      () => GradeService(locator<ApiService>()));
 
   // Register GradeProvider with GradeService dependency
   locator.registerLazySingleton<GradeProvider>(
-    () => GradeProvider(locator<GradeService>())
-  );
+      () => GradeProvider(locator<GradeService>()));
 
   locator.registerLazySingleton<SyllabusService>(
     () => SyllabusService(locator<ApiService>()),
   );
-  locator.registerLazySingleton<DashboardService>(()
-  => DashboardService(locator<ApiService>()));
-  locator.registerLazySingleton<ElearningContentService>(()
-  => ElearningContentService());
+  locator.registerLazySingleton<DashboardService>(
+      () => DashboardService(locator<ApiService>()));
+  locator.registerLazySingleton<ElearningContentService>(
+      () => ElearningContentService());
   locator.registerLazySingleton<SyllabusProvider>(
-    () => SyllabusProvider(locator<SyllabusService>())
-  );
+      () => SyllabusProvider(locator<SyllabusService>()));
   locator.registerLazySingleton<StudentCommentService>(
-          () => StudentCommentService(locator<ApiService>())
-  );
+      () => StudentCommentService(locator<ApiService>()));
 
   locator.registerLazySingleton<StudentCommentProvider>(
-          () => StudentCommentProvider(locator<StudentCommentService>())
-  );
+      () => StudentCommentProvider(locator<StudentCommentService>()));
 
   locator.registerLazySingleton<AdminCommentService>(
-          () => AdminCommentService(locator<ApiService>())
-  );
+      () => AdminCommentService(locator<ApiService>()));
 
   locator.registerLazySingleton<AdminCommentProvider>(
-          () => AdminCommentProvider(locator<AdminCommentService>())
-  );  
+      () => AdminCommentProvider(locator<AdminCommentService>()));
 
   locator.registerLazySingleton<StreamsService>(
-          () => StreamsService(locator<ApiService>())
-  );
+      () => StreamsService(locator<ApiService>()));
   locator.registerLazySingleton<StreamsProvider>(
-          () => StreamsProvider(locator<StreamsService>())
-  );
+      () => StreamsProvider(locator<StreamsService>()));
   locator.registerLazySingleton<MarkedAssignmentService>(
-          () => MarkedAssignmentService(locator<ApiService>())
-  );
+      () => MarkedAssignmentService(locator<ApiService>()));
   locator.registerLazySingleton<MarkedAssignmentProvider>(
-          () => MarkedAssignmentProvider(locator<MarkedAssignmentService>())
-  );
+      () => MarkedAssignmentProvider(locator<MarkedAssignmentService>()));
 
   locator.registerLazySingleton<MarkingService>(
-          () => MarkingService(locator<ApiService>())
-  );
+      () => MarkingService(locator<ApiService>()));
   locator.registerLazySingleton<MarkAssignmentProvider>(
-          () => MarkAssignmentProvider(locator<MarkingService>())
-  );
-
+      () => MarkAssignmentProvider(locator<MarkingService>()));
 
   locator.registerLazySingleton<ClassService>(() => ClassService());
   locator.registerLazySingleton<LevelService>(() => LevelService());
   // locator.registerLazySingleton<TermService>(() => TermService());
-    // Register TermService with ApiService dependency
+  // Register TermService with ApiService dependency
   locator.registerLazySingleton<TermService>(() {
     final service = TermService();
     service.apiService = locator<ApiService>();
     return service;
   });
 
-
- // Register AuthService
+  // Register AuthService
   locator.registerLazySingleton<AuthService>(() => AuthService());
 
   // Register AuthProvider with AuthService dependency
-  locator.registerLazySingleton<AuthProvider>(
-    () => AuthProvider()
-  );
+  locator.registerLazySingleton<AuthProvider>(() => AuthProvider());
 
-    // Register the missing services
-  locator.registerLazySingleton<CourseRegistrationService>(() => CourseRegistrationService());
+  // Register the missing services
+  locator.registerLazySingleton<CourseRegistrationService>(
+      () => CourseRegistrationService());
   locator.registerLazySingleton<AssessmentService>(() => AssessmentService());
-
 
   // Register AttendanceService
   locator.registerLazySingleton<AttendanceService>(
-    () => AttendanceService(locator<ApiService>())
-  );
+      () => AttendanceService(locator<ApiService>()));
 
   // Register AttendanceProvider
-  locator.registerLazySingleton<AttendanceProvider>(
-    () => AttendanceProvider()
-  );
+  locator.registerLazySingleton<AttendanceProvider>(() => AttendanceProvider());
 
-    // Add OverviewService registration
+  // Add OverviewService registration
   locator.registerLazySingleton<OverviewService>(
-    () => OverviewService(locator<ApiService>())
-  );
+      () => OverviewService(locator<ApiService>()));
 
   // Add OverviewProvider registration
   locator.registerLazySingleton<OverviewProvider>(
-    () => OverviewProvider(locator<OverviewService>())
-  );
+      () => OverviewProvider(locator<OverviewService>()));
 
   // CRITICAL: Add missing Account services and providers
   locator.registerLazySingleton<AccountService>(
-    () => AccountService(locator<ApiService>())
-  );
+      () => AccountService(locator<ApiService>()));
   locator.registerLazySingleton<AccountProvider>(
-    () => AccountProvider(locator<AccountService>())
-  );
+      () => AccountProvider(locator<AccountService>()));
 
   // CRITICAL: Add missing Fee services and providers
   locator.registerLazySingleton<FeeService>(
-    () => FeeService(locator<ApiService>())
-  );
+      () => FeeService(locator<ApiService>()));
   locator.registerLazySingleton<FeeProvider>(
-    () => FeeProvider(locator<FeeService>())
-  );
+      () => FeeProvider(locator<FeeService>()));
 
   // CRITICAL: Add missing Vendor service
   locator.registerLazySingleton<VendorService>(
-    () => VendorService(locator<ApiService>())
-  );
+      () => VendorService(locator<ApiService>()));
 
   // CRITICAL FIX: Add the missing ExpenditureService registration
-   locator.registerLazySingleton<ExpenditureService>(
-     () => ExpenditureService(locator<ApiService>())
-   );
+  locator.registerLazySingleton<ExpenditureService>(
+      () => ExpenditureService(locator<ApiService>()));
+
+  locator.registerLazySingleton<PaymentService>(
+      () => PaymentService(locator<ApiService>()));
 }
