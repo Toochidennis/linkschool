@@ -291,6 +291,12 @@ _selectedTopicId = widget.question!.topicId;
               builder: (context) => ViewQuestionScreen(
                 questiondata: questionData,
                  questions: widget.questions,
+                 onSaveFlag: (){
+                  widget.onSave?.call(question);
+                 },
+                 onCreation:(){
+                  widget.onSave?.call(question);
+                 } ,
                 class_ids: classIdList.isNotEmpty ? classIdList : [{'id': '', 'name': ''}],
                 question: question),
             ),

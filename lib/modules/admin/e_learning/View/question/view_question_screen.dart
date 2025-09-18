@@ -4,6 +4,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:hive/hive.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:linkschool/modules/admin/e_learning/View/question/assessment_screen.dart';
+import 'package:linkschool/modules/admin/e_learning/View/question/preview_assessment.dart';
 import 'package:linkschool/modules/admin/e_learning/View/quiz/quiz_screen.dart';
 import 'package:linkschool/modules/admin/e_learning/empty_subject_screen.dart';
 import 'package:linkschool/modules/admin/e_learning/question_screen.dart';
@@ -31,6 +32,7 @@ class ViewQuestionScreen extends StatefulWidget {
   final List<Map<String, dynamic>>? questions;
   final bool editMode;
   final VoidCallback? onSaveFlag;
+   final VoidCallback? onCreation;
   const ViewQuestionScreen({
     super.key,
     required this.question,
@@ -39,7 +41,8 @@ class ViewQuestionScreen extends StatefulWidget {
     this.syllabusClasses,
     this.questions,
     this.editMode = false,
-    this.onSaveFlag
+    this.onSaveFlag,
+    this.onCreation
   });
 
   @override
@@ -324,7 +327,7 @@ void _initializeQuestions() {
     List<Map<String, dynamic>> updatedQuestions = [];
     for (var question in createdQuestions) {
       final questionType = question['type'];
-      final questionId = question['question_id'] ?? '';
+      final questionId = question['question_id'] ?? 0;
       final questionController = question['questionController'] as TextEditingController;
       final marksController = question['marksController'] as TextEditingController;
       final optionControllers = question['optionControllers'] as List<TextEditingController>;
@@ -337,7 +340,7 @@ void _initializeQuestions() {
         'title': questionController.text,
         'grade': marksController.text.isNotEmpty ? marksController.text : '1',
         'topic': currentQuestion.topic,
-        'question_id': questionId,
+        'question_id': questionId ?? 0,
         'options': questionType == 'multiple_choice'
             ? optionControllers.asMap().entries.map((e) => {
                   'order': e.key,
@@ -513,13 +516,13 @@ void _initializeQuestions() {
       correct = q['correct'];
     }
 
-    // Debug print to verify question_id exists
+    
 
     
     return {
-      'question_id': q['question_id'], // Ensure this is included
+      'question_id': q['question_id'] ?? "0", // Ensure this is included
       'question_text': q['title'] ?? '',
-      'question_grade': q['grade'] ?? '1',
+      'question_grade': q['grade'] ?? '',
       'question_type': q['type'],
       'question_files': q['imagePath'] != null
           ? [
@@ -543,16 +546,18 @@ void _initializeQuestions() {
 
   try {
     // Debug: Print the assessment to check the structure
-  //  print('Assessment JSON: ${jsonEncode(assessment)}');
+    print('Assessment JSON: ${jsonEncode(assessment)}');
   final quizProvider = Provider.of<QuizProvider>(context, listen: false);
       print('Updating existing quiz with ID: ${widget.question.id}');
     if (widget.editMode == true) {
       print('Updated assessment: ${jsonEncode(Updatedassessment)}');
       
       await quizProvider.updateTest(Updatedassessment);
+          widget.onCreation?.call();
       CustomToaster.toastSuccess(context, "Success", "Questions updated successfully");
     } else {
       await quizProvider.addTest(assessment);
+          widget.onCreation?.call();
       CustomToaster.toastSuccess(context, "Success", "Questions saved successfully");
     }
     setState(() {
@@ -561,6 +566,7 @@ void _initializeQuestions() {
     print('Quiz posted!');
     if (mounted) {
       widget.onSaveFlag?.call();
+      widget.onCreation?.call();
       Navigator.of(context).popUntil(ModalRoute.withName('/empty_subject'));
     }
   } catch (e) {
@@ -573,153 +579,6 @@ void _initializeQuestions() {
     });
   }
 }
-
-//  Future<void> _saveQuestions() async {
-//   setState(() {
-//     List<Map<String, dynamic>> updatedQuestions = [];
-//     for (var question in createdQuestions) {
-//       final questionType = question['type'];
-//       final questionController = question['questionController'] as TextEditingController;
-//       final marksController = question['marksController'] as TextEditingController;
-//       final optionControllers = question['optionControllers'] as List<TextEditingController>;
-//       final correctOptions = question['correctOptions'] as List<int>;
-//       final imagePath = question['imagePath'] as String?;
-//       final correctAnswerController = question['correctAnswerController'] as TextEditingController?;
-//       updatedQuestions.add({
-//         'type': questionType,
-//         'title': questionController.text,
-//         'grade': marksController.text.isNotEmpty ? marksController.text : '1',
-//         'topic': currentQuestion.topic,
-//         'options': questionType == 'multiple_choice'
-//             ? optionControllers.asMap().entries.map((e) => {
-//                   'order': e.key,
-//                   'text': e.value.text,
-//                   'options_file': question['options'][e.key]['options_file'],
-//                 }).toList()
-//             : [],
-//         'correct': questionType == 'multiple_choice'
-//             ? correctOptions.map((i) => {
-//                   'order': i,
-//                   'text': optionControllers[i].text,
-//                 }).toList()
-//             : [
-//                 {'order': 0, 'text': correctAnswerController?.text ?? ''}
-//               ],
-//         'imagePath': imagePath,
-//         'imageName': question['imageName'],
-//         'questionController': questionController,
-//         'marksController': marksController,
-//         'optionControllers': optionControllers,
-//         'correctOptions': correctOptions,
-//         'correctAnswerController': correctAnswerController,
-//         'isExpanded': question['isExpanded'] ?? false,
-//         'widget': _buildQuestionCard(
-//           questionType,
-//           questionController,
-//           marksController,
-//           optionControllers,
-//           correctOptions,
-//           correctAnswerController,
-//           question['isExpanded'] ?? false,
-//         ),
-//       });
-//     }
-//     createdQuestions = updatedQuestions;
-//   });
-
-//   final quizProvider = Provider.of<QuizProvider>(context, listen: false);
-
-
-//   final assessment = {
-//     'setting': {
-//       'title': widget.questiondata['title'],
-//       'description': widget.questiondata['description'],
-//       'classes': widget.class_ids,
-//       "course_name": widget.questiondata['course_name'],
-//       "level_id": widget.questiondata['level_id'],
-//       'duration': currentQuestion.duration,
-//       'start_date': widget.questiondata['start_date'],
-//       'end_date': widget.questiondata['end_date'],
-//       'topic': widget.questiondata['topic'] ,
-//       "creator_id": widget.questiondata['creator_id'],
-//       'creator_name': widget.questiondata['creator_name'],
-//       'course_id': widget.questiondata['course_id'],
-//       "term": widget.questiondata['term'],
-//       'marks': widget.questiondata['marks'],
-//       'syllabus_id': widget.questiondata['syllabus_id'],
-//       'topic_id': widget.questiondata['topic_id'],
-//     },
-//     'questions': createdQuestions.map((q) {
-//       List<Map<String, dynamic>> options = [];
-//       if (q['options'] != null) {
-//         options = (q['options'] as List).map<Map<String, dynamic>>((opt) {
-//           return {
-//             'order': opt['order'],
-//             'text': opt['text'],
-//             'option_files': opt['options_file'] != null
-//                 ? [{
-//                     'file_name': opt['options_file']['file_name'],
-//                     'old_file_name': opt['options_file']['file_name'],
-//                     'type': 'image',
-//                     'file': opt['options_file']['base64'],
-//                   }]
-//                 : [],
-//           };
-//         }).toList();
-//       }
-
-//       dynamic correct;
-//       if (q['correct'] is List && (q['correct'] as List).isNotEmpty) {
-//         correct = (q['correct'] as List).first;
-//       } else if (q['correct'] is Map) {
-//         correct = q['correct'];
-//       } else {
-//         correct = {};
-//       }
-
-//       return {
-//         'question_text': q['title'],
-//         'question_grade': q['grade'],
-//         'question_type': q['type'],
-//         'question_files': q['imagePath'] != null
-//             ? [
-//                 {
-//                   'file_name': q['imageName'] ?? 'question_${q['type']}_${createdQuestions.indexOf(q)}.jpg',
-//                   'old_file_name': q['imageName'] ?? 'question_${q['type']}_${createdQuestions.indexOf(q)}.jpg',
-//                   'type': 'image',
-//                   'file': q['imagePath'],
-//                 }
-//               ]
-//             : [],
-//         'options': options,
-//         'correct': correct,
-//       };
-//     }).toList(),
-//   };
-// setState(() {
-//     _isSaving = true;
-//   });
-//   try {
-//     await quizProvider.addTest(assessment);
-//     setState(() {
-//       showSaveButton = false; 
-//     });
-//     print('Quiz posted!');
-//     if (mounted) {
-//       CustomToaster.toastSuccess(context, "Success", "Questions saved successfully");
-//       Navigator.of(context)
-//                 .popUntil(ModalRoute.withName('/empty_subject'));
-//     }
-//   } catch (e) {
-//     print('Error posting quiz: $e');
-//     CustomToaster.toastError(context, "Error", "Error saving questions: $e");
-//   }finally {
-//     setState(() {
-//       _isSaving = false;
-//     });
-//   }
-// }
-
 
 
   Widget _buildSavedQuestionRow(
@@ -965,10 +824,14 @@ void _initializeQuestions() {
                 ),
               ),
               onPressed: () {
+                _SaveToPrefs();
+                  print('Created Questions: $createdQuestions');
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                      builder: (context) => AssessmentScreen(
+                    
+                      builder: (context) => PreviewAssessment(
+                        
                             timer: currentQuestion.duration,
                           )),
                 );
@@ -991,6 +854,94 @@ void _initializeQuestions() {
       ),
     );
   }
+
+  // Updated _SaveToPrefs method in ViewQuestionScreen
+void _SaveToPrefs() async {
+  SharedPreferences prefs = await SharedPreferences.getInstance();
+  
+  try {
+    // Convert questions to a format suitable for SharedPreferences
+    List<Map<String, dynamic>> questionsForPreview = createdQuestions.map((q) {
+      final questionController = q['questionController'] as TextEditingController;
+      final marksController = q['marksController'] as TextEditingController;
+      final optionControllers = q['optionControllers'] as List<TextEditingController>;
+      final correctOptions = q['correctOptions'] as List<int>;
+      final correctAnswerController = q['correctAnswerController'] as TextEditingController?;
+      
+      // Handle options for multiple choice
+      List<Map<String, dynamic>> options = [];
+      if (q['type'] == 'multiple_choice' && q['options'] != null) {
+        options = (q['options'] as List).map<Map<String, dynamic>>((opt) {
+          Map<String, dynamic>? optionFile = opt['options_file'];
+          
+          return {
+            'order': opt['order'],
+            'text': opt['text'] ?? '',
+            'option_files': optionFile != null
+                ? [{
+                    'file_name': optionFile['file_name'] ?? '',
+                    'old_file_name': '',
+                    'type': 'image',
+                    'file': optionFile['base64'] ?? '',
+                  }]
+                : [],
+          };
+        }).toList();
+      }
+
+      // Handle correct answer
+      dynamic correct = {};
+      if (q['type'] == 'multiple_choice') {
+        if (correctOptions.isNotEmpty && correctOptions.first < optionControllers.length) {
+          correct = {
+            'order': correctOptions.first,
+            'text': optionControllers[correctOptions.first].text,
+          };
+        }
+      } else {
+        // Short answer
+        correct = {
+          'order': 0,
+          'text': correctAnswerController?.text ?? '',
+        };
+      }
+
+      return {
+        'question_id': q['question_id'] ?? '0',
+        'question_text': questionController.text,
+        'question_grade': marksController.text.isNotEmpty ? marksController.text : '1',
+        'question_type': q['type'],
+        'question_files': q['imagePath'] != null
+            ? [
+                {
+                  'file_name': q['imageName'] ?? '',
+                  'old_file_name': '',
+                  'type': 'image',
+                  'file': q['imagePath'],
+                }
+              ]
+            : [],
+        'options': options,
+        'correct': correct,
+        'topic': q['topic'] ?? currentQuestion.topic,
+      };
+    }).toList();
+
+    // Save questions to SharedPreferences
+    String questionsJson = jsonEncode(questionsForPreview);
+    await prefs.setString('preview_questions', questionsJson);
+    
+    // Save additional metadata
+    await prefs.setString('preview_title', widget.questiondata['title'] ?? 'Assessment');
+    await prefs.setString('preview_duration', currentQuestion.duration.inSeconds.toString());
+    await prefs.setBool('is_edit_mode', widget.editMode);
+    
+    print('Questions saved to SharedPreferences successfully');
+  } catch (e) {
+    print('Error saving questions to SharedPreferences: $e');
+    CustomToaster.toastError(context, "Error", "Failed to save questions for preview");
+  }
+}
 
   void _showQuestionTypeOverlay(BuildContext context) {
     showModalBottomSheet(
@@ -1446,7 +1397,8 @@ Widget _buildQuestionCard(
                     onPressed: () {
                       _duplicateQuestion(index);
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Question copied')),
+                        
+                        const SnackBar(content: Text('Question copied'),backgroundColor: Colors.green,),
                       );
                     },
                   ),
@@ -1603,9 +1555,7 @@ void _showDeleteQuestionDialog(BuildContext context, int questionIndex) {
 
 void _deleteQuestionFromList(int questionIndex) async {
     if (questionIndex < 0 || questionIndex >= createdQuestions.length) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Error: Invalid question index')),
-      );
+      CustomToaster.toastError(context, "Error", "invalid question index");
       return;
     }
 

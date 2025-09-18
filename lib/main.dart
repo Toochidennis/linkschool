@@ -17,6 +17,7 @@ import 'package:linkschool/modules/providers/admin/e_learning/delete_sylabus_con
 import 'package:linkschool/modules/providers/admin/e_learning/mark_assignment_provider.dart';
 import 'package:linkschool/modules/providers/admin/e_learning/material_provider.dart';
 import 'package:linkschool/modules/providers/admin/e_learning/quiz_provider.dart';
+import 'package:linkschool/modules/providers/admin/e_learning/single_content_provider.dart';
 import 'package:linkschool/modules/providers/admin/e_learning/syllabus_content_provider.dart';
 import 'package:linkschool/modules/providers/admin/e_learning/syllabus_provider.dart';
 import 'package:linkschool/modules/providers/admin/course_result_provider.dart';
@@ -34,13 +35,17 @@ import 'package:linkschool/modules/providers/explore/exam_provider.dart';
 import 'package:linkschool/modules/providers/explore/for_you_provider.dart';
 import 'package:linkschool/modules/providers/explore/home/news_provider.dart';
 import 'package:linkschool/modules/providers/explore/subject_provider.dart';
+import 'package:linkschool/modules/providers/staff/syllabus_provider.dart';
+// import 'package:linkschool/modules/providers/staff/overview.dart';
 import 'package:linkschool/modules/providers/student/elearningcontent_provider.dart';
 import 'package:linkschool/modules/providers/student/payment_provider.dart';
 import 'package:linkschool/modules/providers/student/payment_submission_provider.dart';
+import 'package:linkschool/modules/services/admin/e_learning/single-content_service.dart';
 import 'package:linkschool/modules/providers/student/marked_assignment_provider.dart';
 import 'package:linkschool/modules/providers/student/streams_provider.dart';
 import 'package:linkschool/modules/providers/student/student_comment_provider.dart';
 import 'package:linkschool/modules/services/explore/cbt_service.dart';
+import 'package:linkschool/modules/services/staff/overview_service.dart';
 import 'package:linkschool/routes/onboardingScreen.dart';
 import 'package:provider/provider.dart';
 import 'package:linkschool/modules/services/api/service_locator.dart';
@@ -125,14 +130,10 @@ Future<void> main() async {
         // Course result providers
         ChangeNotifierProvider(create: (_) => CourseResultProvider()),
         ChangeNotifierProvider(create: (_) => ViewCourseResultProvider()),
-        
-        // Student providers
-        ChangeNotifierProvider(create: (_) => DashboardProvider()),
-        ChangeNotifierProvider(create: (_) => ElearningContentProvider()),
-        ChangeNotifierProvider(create: (_) => locator<InvoiceProvider>()),
-        ChangeNotifierProvider(create: (_) => locator<PaymentProvider>()),
-        ChangeNotifierProvider(create: (_) => locator<StreamsProvider>()),
-        ChangeNotifierProvider(create: (_) => locator<MarkedAssignmentProvider>()),
+
+          // StaffProvider  from service locator
+        ChangeNotifierProvider(create: (_) => locator<StaffSyllabusProvider>()),
+
       ],
       child: const MyApp(),
     ),

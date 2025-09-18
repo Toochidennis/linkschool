@@ -22,7 +22,8 @@ import 'package:url_launcher/url_launcher.dart';
 class SubmissionFile {
   final String name;
   final String url;
-  SubmissionFile({required this.name, required this.url});
+ 
+  SubmissionFile({required this.name, required this.url,});
 }
 
 class AssignmentGradingScreen extends StatefulWidget {
@@ -34,6 +35,7 @@ class AssignmentGradingScreen extends StatefulWidget {
   final String assignmentId;         // backend id for this submission
   final List<dynamic> files;  // attachments
   final String itemId;              // assignment id
+  final VoidCallback? onGraded;      // callback when graded
   const AssignmentGradingScreen({
     super.key,
     required this.assignmentTitle,
@@ -43,6 +45,7 @@ class AssignmentGradingScreen extends StatefulWidget {
     required this.assignmentId,
     required this.files,
     this.currentScore, required this.itemId,
+    this.onGraded,
   });
 
   @override
@@ -213,6 +216,7 @@ class _AssignmentGradingScreenState extends State<AssignmentGradingScreen> {
     print('Returning submission id: ${widget.assignmentId}');
     print('Grader id: ${widget.assignmentId}, name: $_creatorName');
     CustomToaster.toastSuccess(context, 'Returned', 'Grade shared with student');
+    widget.onGraded?.call();
     Navigator.pop(context, true);
   } catch (e) {
     CustomToaster.toastError(context, 'Error', 'Could not return submission');
@@ -391,7 +395,8 @@ class _SubmissionPreview extends StatelessWidget {
                   ),
                   const SizedBox(height: 6),
                   Text(
-                    name,
+                    name.split('/').last,
+
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     textAlign: TextAlign.center,
@@ -478,40 +483,43 @@ class _GradeBox extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return Container(
-      height: 44,
-      padding: const EdgeInsets.symmetric(horizontal: 12),
-      decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF17191E) : Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.white10),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          SizedBox(
-            width: 54,
-            child: TextField(
-              controller: controller,
-              keyboardType: TextInputType.number,
-              onChanged: onChanged, // don’t clamp/modify here
-              decoration: const InputDecoration(
-                border: InputBorder.none,
-                // Remove hintText: '00' or similar, so user sees what they type
-              ),
-              style: AppTextStyles.normal600(
-                fontSize: 16,
-                color: isDark ? Colors.white : Colors.black,
-              ),
-              textAlign: TextAlign.center,
-              focusNode: focusNode,
-            ),
-          ),
-          Text('/', style: AppTextStyles.normal600(fontSize: 16, color: Colors.grey)),
-          Text(maxScore.toString(),
-              style: AppTextStyles.normal600(fontSize: 16, color: Colors.grey)),
-        ],
-      ),
-    );
+   return Container(
+     height: 44,
+     padding: const EdgeInsets.symmetric(horizontal: 12),
+     decoration: BoxDecoration(
+       color: isDark ? const Color(0xFF17191E) : Colors.white,
+       borderRadius: BorderRadius.circular(12),
+       border: Border.all(
+         color: focusNode?.hasFocus == true 
+             ? Colors.blue 
+             : (isDark ? Colors.grey.shade700 : Colors.grey.shade400),
+         width: 1.5,
+       ),
+     ),
+     child: Row(
+       mainAxisSize: MainAxisSize.min,
+       children: [
+         SizedBox(
+          width: 180,
+           child: TextField(
+             controller: controller,
+             keyboardType: TextInputType.number,
+             onChanged: onChanged,
+             decoration: const InputDecoration(border: InputBorder.none),
+             style: AppTextStyles.normal600(
+               fontSize: 16,
+               color: isDark ? Colors.white : Colors.black,
+             ),
+             textAlign: TextAlign.center,
+             focusNode: focusNode,
+           ),
+         ),
+         Text('/', style: AppTextStyles.normal600(fontSize: 16, color: Colors.grey)),
+         Text(maxScore.toString(),
+             style: AppTextStyles.normal600(fontSize: 16, color: Colors.grey)),
+       ],
+     ),
+   );
+
   }
 }

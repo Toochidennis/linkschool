@@ -11,6 +11,7 @@ import 'package:provider/provider.dart';
 
 class StaffCreateSyllabusScreen extends StatefulWidget {
   final Map<String, dynamic>? syllabusData;
+  final List <Map<String,dynamic>>? classList;
   final String? courseId;
   final String? classId;
   final String? levelId;
@@ -24,6 +25,7 @@ class StaffCreateSyllabusScreen extends StatefulWidget {
     this.classId,
     this.levelId,
     this.courseName,
+    this.classList,
     this.className,
   });
 
@@ -152,7 +154,7 @@ Future<void> _loadUserData() async {
             'term': academicTerm?.toString() ?? '1',
             'levelId': levelId,
             'syllabusId': syllabusId,
-            'classes': _classes,
+            'classes':widget.classList,
           };
           print('Update Syllabus Data: $updateData');
           await syllabusProvider.updateSyllabus(

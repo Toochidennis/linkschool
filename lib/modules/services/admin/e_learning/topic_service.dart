@@ -139,7 +139,7 @@ class TopicService {
       print('TopicService: Create topic request body: ${const JsonEncoder.withIndent('  ').convert(requestBody)}');
 
     final response = await _apiService.post<Map<String, dynamic>>(
-      endpoint: 'portal/elearning/topics',
+      endpoint: 'portal/elearning/topic',
       body: requestBody,
     );
 

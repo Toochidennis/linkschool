@@ -1,5 +1,8 @@
 import 'dart:convert';
+import 'dart:io';
+import 'dart:typed_data';
 
+import 'package:chewie/chewie.dart';
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
 import 'package:intl/intl.dart';
@@ -8,16 +11,21 @@ import 'package:linkschool/modules/admin/e_learning/admin_assignment_screen.dart
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/custom_toaster.dart';
+import 'package:linkschool/modules/common/pdf_reader.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/common/widgets/portal/quiz/quiz_resultscreen.dart';
 import 'package:linkschool/modules/model/e-learning/comment_model.dart';
 import 'package:linkschool/modules/model/e-learning/syllabus_content_model.dart';
 import 'package:linkschool/modules/providers/admin/e_learning/admin_comment_provider.dart';
+import 'package:linkschool/modules/providers/admin/e_learning/comment_provider.dart';
 import 'package:linkschool/modules/providers/admin/e_learning/delete_sylabus_content.dart';
 import 'package:linkschool/modules/providers/admin/e_learning/mark_assignment_provider.dart';
 import 'package:linkschool/modules/services/api/service_locator.dart';
 import 'package:provider/provider.dart';
 import 'package:skeletonizer/skeletonizer.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:video_player/video_player.dart';
+import 'package:video_thumbnail/video_thumbnail.dart';
 
 import '../../../common/widgets/portal/attachmentItem.dart' show AttachmentItem;
 
@@ -418,111 +426,311 @@ Widget _buildAttachments() {
   if (attachments == null || attachments.isEmpty) {
     return const Center(child: Text('No attachment available'));
   }
-
   return Padding(
     padding: const EdgeInsets.all(16.0),
-    child: Row(
-      children: List.generate(attachments.length, (index) {
-        return Expanded(
-          child: Padding(
-            padding: EdgeInsets.only(
-                right: index < attachments.length - 1 ? 16.0 : 0),
-            child: _buildAttachmentItem(attachments[index]),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Attachments',
+          style: AppTextStyles.normal600(
+              fontSize: 18.0, color: AppColors.eLearningTxtColor1),
+        ),
+        const SizedBox(height: 12),
+        GridView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 2,
+            crossAxisSpacing: 12.0,
+            mainAxisSpacing: 12.0,
+            childAspectRatio: 1.2,
           ),
-        );
-      }),
+          itemCount: attachments.length,
+          itemBuilder: (context, index) {
+            return _buildAttachmentItem(attachments[index]);
+          },
+        ),
+      ],
     ),
   );
 }
 
 Widget _buildAttachmentItem(AttachmentItem attachment) {
-  // Safe image detection
-  final isImage = (attachment.fileName?.toLowerCase().endsWith('.jpg') ?? false) ||
-      (attachment.fileName?.toLowerCase().endsWith('.jpeg') ?? false) ||
-      (attachment.fileName?.toLowerCase().endsWith('.png') ?? false) ||
-      (attachment.fileName?.toLowerCase().endsWith('.gif') ?? false) ||
-      (attachment.iconPath?.contains('material.svg') ?? false) ||
-      (attachment.iconPath?.contains('photo') ?? false);
+final rawFileName = attachment.fileName ?? 'Unknown file';
+final fileType = _getFileType(rawFileName);
+final fileUrl = "https://linkskool.net/$rawFileName";
 
-// var ispdf =attachment.fileName.toLowerCase().endsWith('.pdf') ??;
-  if (isImage) {
-    final imageUrl = "https://linkskool.net/${attachment.fileName ?? ''}";
-
-    return Container(
+// Extract only the actual file name (remove the path)
+final fileName = rawFileName.split('/').last;
+  return GestureDetector(
+    onTap: () {
+      if (fileType == 'image' || fileType == 'video') {
+        _showFullScreenMedia(fileUrl, fileType);
+      } else {
+        // For all other files including PDF, open in external app
+        //fileUrl
+        if(fileType == 'pdf'){
+        Navigator.push(context, MaterialPageRoute(builder: (context) => PdfViewerPage(url: fileUrl),),);
+        } else {_launchUrl(fileName);
+      }}
+    },
+    child: Container(
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(8.0),
+        borderRadius: BorderRadius.circular(12.0),
         border: Border.all(
-          color: Colors.blue,
-          width: 2.0,
+          color: _getFileColor(fileType).withOpacity(0.3),
+          width: 1.5,
         ),
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(8),
-        child: Image.network(
-          imageUrl,
-          fit: BoxFit.cover,
-          height: 100, // keep the larger preview from the first snippet
-          errorBuilder: (context, error, stackTrace) => Container(
-            height: 100,
-            color: Colors.grey.shade200,
-            child: const Center(
-              child: Icon(
-                Icons.broken_image,
-                color: Colors.grey,
-                size: 40,
-              ),
-            ),
+        color: Colors.white,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.1),
+            spreadRadius: 1,
+            blurRadius: 3,
+            offset: const Offset(0, 2),
           ),
-        ),
-      ),
-    );}
-  // }else if(ispdf){
-
-  // }
-  else {
-    // Not an image: show placeholder and file/link name
-    return Container(
-      height: 100,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(8.0),
-       
-        color:  Colors.white,
+        ],
       ),
       child: Column(
         children: [
           Expanded(
-            flex: 2,
+            flex: 3,
             child: Container(
+              width: double.infinity,
               decoration: BoxDecoration(
-             color:Colors.blue,
-                borderRadius: BorderRadius.circular(8.0),
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(12.0),
+                  topRight: Radius.circular(12.0),
+                ),
+                color: _getFileColor(fileType).withOpacity(0.1),
               ),
-            
+              child: _buildPreviewContent(fileType, fileUrl, fileName),
             ),
           ),
-          Expanded(
-            flex: 2,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8.0),
-              child: Row(
-                children: [
-                  const Icon(Icons.link, color: Colors.blue),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      attachment.fileName ?? 'Unknown file',
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
+        if (fileType == "pdf" || fileType == "url") 
+  Expanded(
+    flex: 1,
+    child: Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 6.0),
+      child: Text(
+        fileName.length > 17 ? fileName.substring(0, 17) : fileName,
+        style: AppTextStyles.normal500(
+          fontSize: 14.0,
+          color: Colors.black,
+        ),
+        maxLines: 2,
+        overflow: TextOverflow.ellipsis,
+        textAlign: TextAlign.center,
+      ),
+    ),
+  ),
+
         ],
       ),
-    );
-  }
+    ),
+  );
 }
+
+ Future<void> _launchUrl(String url) async {
+    try {
+      final Uri uri = Uri.parse(url);
+      if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
+        CustomToaster.toastError(context, 'Error', 'Could not launch $url');
+      }
+    } catch (e) {
+      CustomToaster.toastError(context, 'Error', 'Invalid URL: $url');
+    }
+  }
+
+void _showFullScreenMedia(String url, String type) {
+    if (type == 'pdf') {
+      // For PDFs, directly open in external app since we removed native_pdf_renderer
+      _launchUrl(url);
+    } else {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => FullScreenMediaViewer(
+            url: url,
+            type: type,
+            fileName: url.split('/').last,
+          ),
+        ),
+      );
+    }
+  }
+
+
+String _getFileType(String? fileName) {
+    if (fileName == null) return 'unknown';
+    final extension = fileName.toLowerCase().split('.').last;
+    if (['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'].contains(extension)) {
+      return 'image';
+    }
+    if (['mp4', 'avi', 'mov', 'wmv', 'flv', 'webm', 'm4v', '3gp'].contains(extension)) {
+      return 'video';
+    }
+if (['pdf','doc', 'docx', 'txt', 'rtf'].contains(extension)) {
+      return 'pdf';
+    }
+   
+    if (['.com', '.org', '.net', '.edu', 'http', 'https'].contains(extension) || fileName.startsWith('http')) {
+      return 'url';
+    }
+    if (['xls', 'xlsx', 'csv'].contains(extension)) {
+      return 'spreadsheet';
+    }
+    if (['ppt', 'pptx'].contains(extension)) {
+      return 'presentation';
+    }
+    if (['zip', 'rar', '7z', 'tar', 'gz'].contains(extension)) {
+      return 'archive';
+    }
+    return 'unknown';
+  }
+
+ Widget _buildPreviewContent(String fileType, String fileUrl, String fileName) {
+    switch (fileType) {
+      case 'image':
+        return ClipRRect(
+          borderRadius: const BorderRadius.only(
+            topLeft: Radius.circular(12.0),
+            topRight: Radius.circular(12.0),
+          ),
+          child: Image.network(
+            fileUrl,
+            fit: BoxFit.cover,
+            errorBuilder: (context, error, stackTrace) => Icon(
+              Icons.broken_image,
+              color: Colors.grey,
+              size: 40,
+            ),
+            loadingBuilder: (context, child, loadingProgress) {
+              if (loadingProgress == null) return child;
+              return Center(
+                child: CircularProgressIndicator(
+                  value: loadingProgress.expectedTotalBytes != null
+                      ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
+                      : null,
+                ),
+              );
+            },
+          ),
+        );
+      
+       case 'video':
+  return FutureBuilder<String?>(
+    future: VideoThumbnail.thumbnailFile(
+      video: fileUrl,
+      imageFormat: ImageFormat.PNG,
+      maxHeight: 200,
+      quality: 50,
+    ),
+    builder: (context, snapshot) {
+      if (snapshot.connectionState == ConnectionState.waiting) {
+        return const Center(child: CircularProgressIndicator());
+      }
+      if (snapshot.hasError || snapshot.data == null) {
+        return const Icon(Icons.videocam, size: 50, color: Colors.blue);
+      }
+      return Stack(
+        fit: StackFit.expand,
+        children: [
+          Image.file(File(snapshot.data!), fit: BoxFit.cover),
+          const Center(
+            child: Icon(Icons.play_circle_fill, size: 60, color: Colors.white),
+          ),
+        ],
+      );
+    },
+  );
+
+      case 'pdf':
+        return Stack(
+          children: [
+            Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [Colors.blue.shade100, Colors.blue.shade200],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+              ),
+              child: Center(
+                child: Icon(
+                  Icons.picture_as_pdf,
+                  size: 50,
+                  color: Colors.blue.shade600,
+                ),
+              ),
+            ),
+           
+          ],
+        );
+      case 'url':
+        return Center(
+          child: Icon(
+            Icons.link,
+            size: 40,
+            color: _getFileColor(fileType),
+          ),
+        );
+      default:
+        return Center(
+          child: Icon(
+            _getFileIcon(fileType),
+            size: 40,
+            color: _getFileColor(fileType),
+          ),
+        );
+    }
+  }
+
+  
+
+
+   IconData _getFileIcon(String fileType) {
+    switch (fileType) {
+      case 'image':
+        return Icons.image;
+      case 'video':
+        return Icons.video_library;
+      case 'pdf':
+        return Icons.picture_as_pdf;
+      case 'document':
+        return Icons.description;
+      case 'spreadsheet':
+        return Icons.table_chart;
+      case 'presentation':
+        return Icons.slideshow;
+      case 'archive':
+        return Icons.archive;
+      default:
+        return Icons.insert_drive_file;
+    }
+  }
+
+   Color _getFileColor(String fileType) {
+    switch (fileType) {
+      case 'image':
+        return Colors.blue[700]!;
+      case 'video':
+        return Colors.blue[700]!;
+      case 'pdf':
+        return Colors.blue[700]!;
+      case 'document':
+        return Colors.blue[700]!;
+      case 'spreadsheet':
+        return Colors.blue[700]!;
+      case 'presentation':
+        return Colors.blue[700]!;
+      case 'archive':
+        return Colors.blue[700]!;
+      default:
+        return Colors.blue[700]!;
+    }
+  }
 
 
 Widget _buildCommentSection() {
@@ -893,9 +1101,7 @@ class _AnswersTabWidgetState extends State<AnswersTabWidget> {
     for (var assignment in markedAssignments) {
        final contentId = assignment['content_id'].toString();       // content id
   final publish = assignment['published'].toString() ?? "";
-  print("llllllll$assignment");
-  print("llllllll$contentId");
-  print("llllllll$publish");
+ 
 
       await provider.returnAssignment(
       publish,
@@ -1077,6 +1283,12 @@ class _AnswersTabWidgetState extends State<AnswersTabWidget> {
       assignmentId: assignmentJson['id']?.toString() ?? '',
       currentScore: int.tryParse(score) ?? 0,
       turnedInAt: date ?? DateTime.now(),
+      onGraded: (){
+        final provider = Provider.of<MarkAssignmentProvider>(context, listen: false);
+        provider.fetchAssignment(widget.itemId); // refresh from provider
+        final commentProvider = Provider.of<CommentProvider>(context, listen: false);
+  commentProvider.fetchComments(widget.itemId);
+      },
     ),
   ),
 ).then((value) {
@@ -1147,6 +1359,162 @@ class _AnswersTabWidgetState extends State<AnswersTabWidget> {
       default:
         return 0;
     }
+  }
+}
+
+
+
+class FullScreenMediaViewer extends StatefulWidget {
+  final String url;
+  final String type;
+  final String fileName;
+
+  const FullScreenMediaViewer({
+    Key? key,
+    required this.url,
+    required this.type,
+    required this.fileName,
+  }) : super(key: key);
+
+  @override
+  State<FullScreenMediaViewer> createState() => _FullScreenMediaViewerState();
+}
+
+class _FullScreenMediaViewerState extends State<FullScreenMediaViewer> {
+  VideoPlayerController? _videoController;
+  ChewieController? _chewieController;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.type == 'video') {
+      _initializeVideo();
+    }
+  }
+
+  Future<void> _initializeVideo() async {
+    _videoController = VideoPlayerController.network(widget.url);
+    await _videoController!.initialize();
+
+    _chewieController = ChewieController(
+      videoPlayerController: _videoController!,
+      autoPlay: true,
+      looping: false,
+      allowMuting: true,
+      allowPlaybackSpeedChanging: true,
+      aspectRatio: _videoController!.value.aspectRatio,
+    );
+
+    if (mounted) setState(() {});
+  }
+
+  @override
+  void dispose() {
+    _videoController?.dispose();
+    _chewieController?.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.black,
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.close, color: Colors.white),
+          onPressed: () => Navigator.pop(context),
+        ),
+        title: Text(
+          widget.fileName,
+          style: const TextStyle(color: Colors.white),
+          overflow: TextOverflow.ellipsis,
+        ),
+      ),
+      body: Center(
+        child: widget.type == 'video'
+            ? (_chewieController != null &&
+                    _chewieController!.videoPlayerController.value.isInitialized)
+                ? Chewie(controller: _chewieController!)
+                : const CircularProgressIndicator(color: Colors.white)
+            : Image.network(
+                widget.url,
+                fit: BoxFit.contain,
+                errorBuilder: (context, error, stackTrace) => const Icon(
+                  Icons.broken_image,
+                  color: Colors.white,
+                  size: 100,
+                ),
+                loadingBuilder: (context, child, loadingProgress) {
+                  if (loadingProgress == null) return child;
+                  return const Center(
+                    child: CircularProgressIndicator(color: Colors.white),
+                  );
+                },
+              ),
+      ),
+    );
+  }
+}
+
+
+class VideoThumbnailWidget extends StatefulWidget {
+  final String url;
+  const VideoThumbnailWidget({super.key, required this.url});
+
+  @override
+  State<VideoThumbnailWidget> createState() => _VideoThumbnailWidgetState();
+}
+
+class _VideoThumbnailWidgetState extends State<VideoThumbnailWidget> {
+  Uint8List? _thumbnail;
+
+  @override
+  void initState() {
+    super.initState();
+    _generateThumbnail();
+  }
+
+  Future<void> _generateThumbnail() async {
+    try {
+      final thumb = await VideoThumbnail.thumbnailData(
+        video: widget.url,
+        imageFormat: ImageFormat.PNG,
+        maxHeight: 200,
+        quality: 300,
+      );
+      if (mounted) setState(() => _thumbnail = thumb);
+    } catch (e) {
+      debugPrint("Error generating video thumbnail: $e");
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_thumbnail == null) {
+      return Container(
+        width: 100,
+        height: 140,
+        color: Colors.black12,
+        child: const Center(child: CircularProgressIndicator()),
+      );
+    }
+    return Stack(
+      alignment: Alignment.center,
+      children: [
+        ClipRRect(
+          borderRadius: BorderRadius.circular(8),
+          child: Image.memory(
+            _thumbnail!,
+            width:double.infinity,
+            height: 140,
+            fit: BoxFit.cover,
+          ),
+        ),
+        const Icon(Icons.play_circle_fill, color: Colors.white, size: 40),
+      ],
+    );
   }
 }
 

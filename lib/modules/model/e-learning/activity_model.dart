@@ -21,21 +21,21 @@ class ClassModel {
 
 class RecentQuizModel {
   final int id;
-  final int syllabusId;
-  final int courseId;
+  final int? syllabusId; // Made nullable
+  final int? courseId; // Made nullable
   final String title;
   final String courseName;
   final String levelId;
   final List<ClassModel> classes;
   final String type;
-  final int outline;
+  final int outline; // Kept for now, with default value
   final String createdBy;
   final String datePosted;
 
   RecentQuizModel({
     required this.id,
-    required this.syllabusId,
-    required this.courseId,
+    this.syllabusId, // Nullable
+    this.courseId, // Nullable
     required this.title,
     required this.courseName,
     required this.levelId,
@@ -48,27 +48,27 @@ class RecentQuizModel {
 
   factory RecentQuizModel.fromJson(Map<String, dynamic> json) {
     return RecentQuizModel(
-      id: json['id'],
-      syllabusId: json['syllabus_id'],
-      courseId: json['course_id'],
+      id: json['id'] ?? 0, // Provide default if null
+      syllabusId: json['syllabus_id'], // Nullable, no need for default
+      courseId: json['course_id'], // Nullable, no need for default
       title: json['title'] ?? '',
       courseName: json['course_name'] ?? '',
       levelId: json['level_id'].toString(),
-      classes: (json['classes'] as List<dynamic>)
-          .map((e) => ClassModel.fromJson(e))
-          .toList(),
+      classes: (json['classes'] as List<dynamic>?)
+              ?.map((e) => ClassModel.fromJson(e))
+              .toList() ??
+          [],
       type: json['type'] ?? '',
-      outline: json['outline'],
+      outline: json['outline'] ?? 0, // Default to 0 since field is missing
       createdBy: json['created_by'] ?? '',
       datePosted: json['date_posted'] ?? '',
     );
   }
 }
-
 class RecentActivityModel {
   final int id;
-  final int syllabusId;
-  final int courseId;
+  final int? syllabusId; // Made nullable
+  final int? courseId; // Made nullable
   final String levelId;
   final String title;
   final String comment;
@@ -80,8 +80,8 @@ class RecentActivityModel {
 
   RecentActivityModel({
     required this.id,
-    required this.syllabusId,
-    required this.courseId,
+    this.syllabusId, // Nullable
+    this.courseId, // Nullable
     required this.levelId,
     required this.title,
     required this.comment,
@@ -94,16 +94,17 @@ class RecentActivityModel {
 
   factory RecentActivityModel.fromJson(Map<String, dynamic> json) {
     return RecentActivityModel(
-      id: json['id'],
-      syllabusId: json['syllabus_id'],
-      courseId: json['course_id'],
+      id: json['id'] ?? 0, // Provide default if null
+      syllabusId: json['syllabus_id'], // Nullable, no need for default
+      courseId: json['course_id'], // Nullable, no need for default
       levelId: json['level_id'].toString(),
       title: json['title'] ?? '',
       comment: json['comment'] ?? '',
       type: json['type'] ?? '',
-      classes: (json['classes'] as List<dynamic>)
-          .map((e) => ClassModel.fromJson(e))
-          .toList(),
+      classes: (json['classes'] as List<dynamic>?)
+              ?.map((e) => ClassModel.fromJson(e))
+              .toList() ??
+          [],
       courseName: json['course_name'] ?? '',
       createdBy: json['created_by'] ?? '',
       datePosted: json['date_posted'] ?? '',

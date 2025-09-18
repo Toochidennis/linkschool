@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:hive/hive.dart';
 import 'package:intl/intl.dart';
+import 'package:linkschool/modules/admin/e_learning/View/question/view_question_screen.dart';
 import 'package:linkschool/modules/admin/e_learning/View/quiz/quiz_screen.dart';
 import 'package:linkschool/modules/admin/e_learning/add_material_screen.dart'hide AttachmentItem;
 import 'package:linkschool/modules/admin/e_learning/admin_assignment_screen.dart';
@@ -44,6 +45,7 @@ class EmptySubjectScreen extends StatefulWidget {
   final int? syllabusId;
   final String? authorName;
   final List<Map<String, dynamic>>? syllabusClasses;
+ 
 
   const EmptySubjectScreen({
     super.key,
@@ -55,6 +57,7 @@ class EmptySubjectScreen extends StatefulWidget {
     this.courseName,
     this.term,
     this.syllabusClasses, this.authorName,
+ 
   });
 
   @override
@@ -887,6 +890,7 @@ print("Editing item: ${item.title}, ID: ${item.id}"); // Debug log
                     ? DateTime.parse(item.endDate!)
                     : DateTime.now(),
                 topic: item.topic ?? 'No Topic',
+                topicId: item.topicId.toString(),
                 marks: item.grade ?? '0',
               ),
               onSave: (assignment) {
@@ -908,43 +912,40 @@ print("Editing item: ${item.title}, ID: ${item.id}"); // Debug log
           );
           return;
         }
-        Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => QuestionScreen(
-                classId: widget.classId,
-                syllabusId: widget.syllabusId!,
-                courseId: widget.courseId,
-                levelId: widget.levelId,
-                courseName: widget.courseName,
-                onSave: (Question) {
-                  _loadSyllabusContents();
-                },
-                // Pass the item data for editing
-                editMode: true,
-                questionToEdit: Question(
-                  id: item.id, // Make sure your Question model has an id field
-                  title: item.title,
-                  description: item.description,
-                  selectedClass: item.classes.map((c) => c.name).join(', '),
-                  startDate: item.startDate != null
-                      ? DateTime.parse(item.startDate!)
-                      : DateTime.now(),
-                  endDate: item.endDate != null
-                      ? DateTime.parse(item.endDate!)
-                      : DateTime.now(),
-                      
-                  duration: item.duration != null
-                    ? Duration(minutes: int.tryParse(item.duration.toString()) ?? 0)
-                    : Duration.zero, 
-                  marks: item.grade ?? '0',
-                  topic: item.topic ?? 'No Topic',
-                ),
-                //   onSave: (question) {
-                //   _loadSyllabusContents();
-                // },
-              ),
-            ));
+       Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => ViewQuestionScreen(
+
+            question: Question(
+              id: item.id, 
+              title: item.title,
+              description: item.description,
+              selectedClass: item.classes.map((c) => c.name).join(', '),
+              startDate: item.startDate != null ? DateTime.parse(item.startDate!) : DateTime.now(),
+              endDate: item.endDate != null ? DateTime.parse(item.endDate!) : DateTime.now(),
+              topic: item.topic ?? 'No Topic',
+              duration: item.duration != null
+
+                  ? Duration(minutes: int.tryParse(item.duration.toString()) ?? 0)
+                  : Duration.zero,
+              marks: item.grade?.toString() ?? '0',
+              topicId: item.topicId,
+            ),
+            questiondata: questionData,
+         class_ids: item.classes.map((c) => {'id': c.id.toString(), 'name': c.name}).toList(),
+            syllabusClasses: item.classes.map((c) =>{'id': c.id.toString(), 'name': c.name}).join(', '),
+            questions: item.questions, 
+            editMode: true,
+            onSaveFlag: setRefreshFlag,
+            onCreation: () {
+              _loadSyllabusContents();
+            },
+          ),
+        ),
+      ).then((_) {
+        _loadSyllabusContents();
+      });
 
         break;
 
@@ -966,6 +967,7 @@ print("Editing item: ${item.title}, ID: ${item.id}"); // Debug log
                 title: item.title,
                 description: item.description,
                 topic: item.topic ?? 'No Topic',
+                topicId: item.topicId.toString(),
                 attachments: attachments,
                 selectedClass: item.classes.map((c) => c.name).join(', '),
                 startDate: item.startDate != null ? DateTime.parse(item.startDate!) : DateTime.now(),

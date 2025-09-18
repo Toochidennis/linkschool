@@ -13,6 +13,7 @@ import 'package:linkschool/modules/providers/admin/e_learning/delete_sylabus_con
 import 'package:linkschool/modules/providers/admin/e_learning/mark_assignment_provider.dart';
 import 'package:linkschool/modules/providers/admin/e_learning/material_provider.dart';
 import 'package:linkschool/modules/providers/admin/e_learning/quiz_provider.dart';
+import 'package:linkschool/modules/providers/admin/e_learning/single_content_provider.dart';
 import 'package:linkschool/modules/providers/admin/e_learning/syllabus_content_provider.dart';
 import 'package:linkschool/modules/providers/admin/e_learning/syllabus_provider.dart';
 import 'package:linkschool/modules/providers/admin/e_learning/topic_provider.dart';
@@ -21,6 +22,7 @@ import 'package:linkschool/modules/providers/admin/grade_provider.dart';
 import 'package:linkschool/modules/providers/admin/payment/account_provider.dart';
 import 'package:linkschool/modules/providers/admin/payment/fee_provider.dart';
 import 'package:linkschool/modules/providers/admin/skills_behavior_table_provider.dart';
+import 'package:linkschool/modules/providers/staff/syllabus_provider.dart';
 import 'package:linkschool/modules/providers/student/payment_provider.dart';
 import 'package:linkschool/modules/providers/student/payment_submission_provider.dart';
 import 'package:linkschool/modules/services/admin/attendance_service.dart';
@@ -31,6 +33,7 @@ import 'package:linkschool/modules/services/admin/e_learning/marking_service.dar
 
 import 'package:linkschool/modules/services/admin/e_learning/material_service.dart';
 import 'package:linkschool/modules/services/admin/e_learning/quiz_service.dart';
+import 'package:linkschool/modules/services/admin/e_learning/single-content_service.dart';
 import 'package:linkschool/modules/services/admin/e_learning/syllabus_content_service.dart';
 import 'package:linkschool/modules/services/admin/e_learning/syllabus_service.dart';
 import 'package:linkschool/modules/services/admin/e_learning/topic_service.dart';
@@ -50,6 +53,8 @@ import 'package:linkschool/modules/services/admin/course_registration_service.da
 import 'package:linkschool/modules/services/admin/assessment_service.dart';
 import 'package:linkschool/modules/providers/admin/student_provider.dart';
 import 'package:linkschool/modules/services/admin/behaviour_service.dart';
+import 'package:linkschool/modules/services/staff/overview_service.dart';
+import 'package:linkschool/modules/services/staff/syllabus_service.dart';
 import 'package:linkschool/modules/services/student/elearningcontent_service.dart';
 import 'package:linkschool/modules/services/student/payment_services.dart';
 import 'package:linkschool/modules/services/student/payment_submission_services.dart';
@@ -219,34 +224,24 @@ void setupServiceLocator() {
   // Register AttendanceProvider
   locator.registerLazySingleton<AttendanceProvider>(() => AttendanceProvider());
 
-  // Add OverviewService registration
-  locator.registerLazySingleton<OverviewService>(
-      () => OverviewService(locator<ApiService>()));
+  //Register Staff Provider and service api 
 
-  // Add OverviewProvider registration
-  locator.registerLazySingleton<OverviewProvider>(
-      () => OverviewProvider(locator<OverviewService>()));
+   locator.registerLazySingleton<StaffOverviewService>(()
+  => StaffOverviewService( locator<ApiService>()));
 
-  // CRITICAL: Add missing Account services and providers
-  locator.registerLazySingleton<AccountService>(
-      () => AccountService(locator<ApiService>()));
-  locator.registerLazySingleton<AccountProvider>(
-      () => AccountProvider(locator<AccountService>()));
+    locator.registerLazySingleton<StaffSyllabusService>(
+    () => StaffSyllabusService(locator<ApiService>())
+  );
+  locator.registerLazySingleton<StaffSyllabusProvider>(
+    () => StaffSyllabusProvider(locator<StaffSyllabusService>())
+  );
 
-  // CRITICAL: Add missing Fee services and providers
-  locator.registerLazySingleton<FeeService>(
-      () => FeeService(locator<ApiService>()));
-  locator.registerLazySingleton<FeeProvider>(
-      () => FeeProvider(locator<FeeService>()));
-
-  // CRITICAL: Add missing Vendor service
-  locator.registerLazySingleton<VendorService>(
-      () => VendorService(locator<ApiService>()));
-
-  // CRITICAL FIX: Add the missing ExpenditureService registration
-  locator.registerLazySingleton<ExpenditureService>(
-      () => ExpenditureService(locator<ApiService>()));
-
-  locator.registerLazySingleton<PaymentService>(
-      () => PaymentService(locator<ApiService>()));
+  // Register SingleContentService with ApiService dependency
+  locator.registerLazySingleton<SingleAssessmentService>(
+    () => SingleAssessmentService()
+  );
+  // Register SingleContentProvider with SingleContentService dependency
+  locator.registerLazySingleton<SingleContentProvider>(
+    () => SingleContentProvider()
+  );
 }
