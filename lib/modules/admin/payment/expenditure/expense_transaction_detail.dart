@@ -5,6 +5,8 @@ import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/admin/payment/expenditure/expense_download_receipt_screen.dart';
 import 'package:linkschool/modules/admin/payment/expenditure/expense_share_reciept_screen.dart';
+import 'package:linkschool/modules/common/widgets/portal/profile/naira_icon.dart';
+// import 'package:linkschool/lib/widgets/naira_svg_icon.dart';
 
 class ExpenseTransactionDetail extends StatefulWidget {
   final String amount;
@@ -155,12 +157,23 @@ class _ExpenseTransactionDetailState extends State<ExpenseTransactionDetail> {
                 ),
               ),
               const SizedBox(height: 8.0),
-              Text(
-                '₦${widget.amount}',
-                style: AppTextStyles.normal700(
-                  fontSize: 26,
-                  color: AppColors.paymentTxtColor1,
-                ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const NairaSvgIcon(
+                    width: 20.0,
+                    height: 20.0,
+                    color: Color.fromRGBO(47, 85, 221, 1),
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    widget.amount,
+                    style: AppTextStyles.normal700(
+                      fontSize: 26,
+                      color: AppColors.paymentTxtColor1,
+                    ),
+                  ),
+                ],
               ),
               const SizedBox(height: 8.0),
               Text(
@@ -232,6 +245,7 @@ class _ExpenseTransactionDetailState extends State<ExpenseTransactionDetail> {
     );
   }
 }
+
 
 
 

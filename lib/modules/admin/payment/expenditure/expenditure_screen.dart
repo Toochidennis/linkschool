@@ -10,11 +10,13 @@ import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/custom_toaster.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
+import 'package:linkschool/modules/common/widgets/portal/profile/naira_icon.dart';
 import 'package:linkschool/modules/model/admin/vendor/vendor_model.dart';
 import 'package:linkschool/modules/services/admin/payment/account_service.dart';
 import 'package:linkschool/modules/services/admin/payment/vendor_service.dart';
 import 'package:linkschool/modules/services/admin/payment/expenditure_service.dart';
 import 'package:linkschool/modules/services/api/service_locator.dart';
+// import 'package:linkschool/lib/widgets/naira_svg_icon.dart';
 
 class ExpenditureScreen extends StatefulWidget {
   const ExpenditureScreen({super.key});
@@ -410,13 +412,25 @@ class _ExpenditureScreenState extends State<ExpenditureScreen> with TickerProvid
                                           ),
                                         ],
                                       ),
-                                      Text(
-                                        _isAmountHidden
-                                            ? '********'
-                                            : _isDataLoading
-                                                ? 'Loading...'
-                                                : '₦${(summary['total_amount'] as num?)?.toStringAsFixed(2) ?? '0.00'}',
-                                        style: AppTextStyles.normal700(fontSize: 24, color: AppColors.backgroundLight),
+                                      Row(
+                                        children: [
+                                          if (!_isAmountHidden) ...[
+                                            const NairaSvgIcon(
+                                              width: 20.0,
+                                              height: 20.0,
+                                              color: Colors.white,
+                                            ),
+                                            const SizedBox(width: 4),
+                                          ],
+                                          Text(
+                                            _isAmountHidden
+                                                ? '********'
+                                                : _isDataLoading
+                                                    ? 'Loading...'
+                                                    : '${(summary['total_amount'] as num?)?.toStringAsFixed(2) ?? '0.00'}',
+                                            style: AppTextStyles.normal700(fontSize: 24, color: AppColors.backgroundLight),
+                                          ),
+                                        ],
                                       ),
                                     ],
                                   ),
@@ -789,9 +803,24 @@ class _ExpenditureScreenState extends State<ExpenditureScreen> with TickerProvid
             crossAxisAlignment: CrossAxisAlignment.end,
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Text(
-                '-₦${amount.toStringAsFixed(2)}',
-                style: AppTextStyles.normal700(fontSize: 18, color: Colors.red),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text(
+                    '-',
+                    style: TextStyle(fontSize: 18, color: Colors.red, fontWeight: FontWeight.w700),
+                  ),
+                  const NairaSvgIcon(
+                    width: 14.0,
+                    height: 14.0,
+                    color: Colors.red,
+                  ),
+                  const SizedBox(width: 2),
+                  Text(
+                    amount.toStringAsFixed(2),
+                    style: AppTextStyles.normal700(fontSize: 18, color: Colors.red),
+                  ),
+                ],
               ),
               const SizedBox(height: 4),
               Text(

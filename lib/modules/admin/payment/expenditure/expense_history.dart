@@ -4,6 +4,8 @@ import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/admin/payment/expenditure/expense_history_detail.dart';
+import 'package:linkschool/modules/common/widgets/portal/profile/naira_icon.dart';
+// import 'package:linkschool/lib/widgets/naira_svg_icon.dart';
 
 class ExpenseHistoryScreen extends StatefulWidget {
   final String grade;
@@ -127,9 +129,24 @@ class _ExpenseHistoryScreenState extends State<ExpenseHistoryScreen> {
           widget.transaction['date'] ?? '07-03-2018  17:23',
           style: AppTextStyles.normal500(fontSize: 12, color: AppColors.text10Light),
         ),
-        trailing: Text(
-          '-${widget.amount.toStringAsFixed(2)}',
-          style: AppTextStyles.normal700(fontSize: 18, color: Colors.red),
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text(
+              '-',
+              style: TextStyle(fontSize: 18, color: Colors.red, fontWeight: FontWeight.w700),
+            ),
+            const NairaSvgIcon(
+              width: 14.0,
+              height: 14.0,
+              color: Colors.red,
+            ),
+            const SizedBox(width: 2),
+            Text(
+              widget.amount.toStringAsFixed(2),
+              style: AppTextStyles.normal700(fontSize: 18, color: Colors.red),
+            ),
+          ],
         ),
         onTap: () => Navigator.push(
           context,

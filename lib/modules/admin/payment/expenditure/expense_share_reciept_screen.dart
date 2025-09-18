@@ -3,6 +3,8 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/custom_dash_line.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
+import 'package:linkschool/modules/common/widgets/portal/profile/naira_icon.dart';
+// import 'package:linkschool/lib/widgets/naira_svg_icon.dart';
 
 class ExpenseShareRecieptScreen extends StatefulWidget {
   final String amount;
@@ -83,12 +85,23 @@ class _ExpenseShareRecieptScreenState extends State<ExpenseShareRecieptScreen> {
                           ),
                         ),
                         const SizedBox(height: 16.0),
-                        Text(
-                          '₦${widget.amount}',
-                          style: AppTextStyles.normal700(
-                            fontSize: 26,
-                            color: AppColors.paymentTxtColor1,
-                          ),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const NairaSvgIcon(
+                              width: 20.0,
+                              height: 20.0,
+                              color: Color.fromRGBO(47, 85, 221, 1),
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              widget.amount,
+                              style: AppTextStyles.normal700(
+                                fontSize: 26,
+                                color: AppColors.paymentTxtColor1,
+                              ),
+                            ),
+                          ],
                         ),
                         const SizedBox(height: 16.0),
                         CustomPaint(

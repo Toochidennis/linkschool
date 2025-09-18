@@ -7,9 +7,11 @@ import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/custom_toaster.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
+import 'package:linkschool/modules/common/widgets/portal/profile/naira_icon.dart';
 import 'package:linkschool/modules/services/admin/payment/payment_service.dart';
 import 'package:linkschool/modules/services/api/service_locator.dart';
 import 'package:linkschool/modules/model/admin/payment_model.dart';
+// import 'package:linkschool/lib/widgets/naira_svg_icon.dart';
 
 class ReceiptStatisticsView extends StatefulWidget {
   final Map<String, dynamic>? initialParams;
@@ -387,9 +389,20 @@ class _ReceiptStatisticsViewState extends State<ReceiptStatisticsView> {
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
                                 const Text('Total Amount:'),
-                                Text(
-                                  '₦${summary.totalAmount.toStringAsFixed(2)}',
-                                  style: const TextStyle(fontWeight: FontWeight.w600),
+                                Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const NairaSvgIcon(
+                                      width: 12.0,
+                                      height: 12.0,
+                                      color: Colors.black,
+                                    ),
+                                    const SizedBox(width: 2),
+                                    Text(
+                                      summary.totalAmount.toStringAsFixed(2),
+                                      style: const TextStyle(fontWeight: FontWeight.w600),
+                                    ),
+                                  ],
                                 ),
                               ],
                             ),
@@ -471,12 +484,23 @@ class _ReceiptStatisticsViewState extends State<ReceiptStatisticsView> {
                                             ),
                                           ),
                                         ),
-                                        Text(
-                                          '₦${displayAmount.toStringAsFixed(2)}',
-                                          style: const TextStyle(
-                                            fontSize: 14,
-                                            fontWeight: FontWeight.w600,
-                                          ),
+                                        Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            const NairaSvgIcon(
+                                              width: 12.0,
+                                              height: 12.0,
+                                              color: Colors.black,
+                                            ),
+                                            const SizedBox(width: 2),
+                                            Text(
+                                              displayAmount.toStringAsFixed(2),
+                                              style: const TextStyle(
+                                                fontSize: 14,
+                                                fontWeight: FontWeight.w600,
+                                              ),
+                                            ),
+                                          ],
                                         ),
                                       ],
                                     ),
