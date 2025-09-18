@@ -83,48 +83,48 @@ class _ExpenseTransactionViewState extends State<ExpenseTransactionView> {
                     ),
                   ),
                 ),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Expanded(
-                        child: GestureDetector(
-                          onTap: () {
-                            // Handle date picker
-                          },
-                          child: Container(
-                            padding: const EdgeInsets.all(12),
-                            child: const Row(
-                              children: [
-                                Text('February 2023'),
-                                Icon(Icons.arrow_drop_down),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: GestureDetector(
-                          onTap: () {
-                            // Handle session picker
-                          },
-                          child: Container(
-                            padding: const EdgeInsets.all(12),
-                            child: const Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Text('2023/2024 3rd Term'),
-                                Icon(Icons.arrow_drop_down),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+                // Padding(
+                //   padding: const EdgeInsets.symmetric(horizontal: 16),
+                //   child: Row(
+                //     mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                //     children: [
+                //       Expanded(
+                //         child: GestureDetector(
+                //           onTap: () {
+                //             // Handle date picker
+                //           },
+                //           child: Container(
+                //             padding: const EdgeInsets.all(12),
+                //             child: const Row(
+                //               children: [
+                //                 Text('February 2023'),
+                //                 Icon(Icons.arrow_drop_down),
+                //               ],
+                //             ),
+                //           ),
+                //         ),
+                //       ),
+                //       const SizedBox(width: 16),
+                //       Expanded(
+                //         child: GestureDetector(
+                //           onTap: () {
+                //             // Handle session picker
+                //           },
+                //           child: Container(
+                //             padding: const EdgeInsets.all(12),
+                //             child: const Row(
+                //               mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                //               children: [
+                //                 Text('2023/2024 3rd Term'),
+                //                 Icon(Icons.arrow_drop_down),
+                //               ],
+                //             ),
+                //           ),
+                //         ),
+                //       ),
+                //     ],
+                //   ),
+                // ),
                 Expanded(
                   child: transactions.isEmpty
                       ? const Center(child: Text('No transactions available'))

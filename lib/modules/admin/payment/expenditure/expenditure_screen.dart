@@ -333,35 +333,35 @@ class _ExpenditureScreenState extends State<ExpenditureScreen> with TickerProvid
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: [
-                                  GestureDetector(
-                                    onTap: _filterParams['report_type'] == 'monthly' ? _showMonthYearPicker : null,
-                                    child: Row(
-                                      children: [
-                                        Text(_isDataLoading
-                                            ? 'Loading...'
-                                            : _filterParams['start_date'] != null
-                                                ? DateFormat('MMMM yyyy').format(DateTime.parse(_filterParams['start_date']))
-                                                : 'September 2025'),
-                                        if (_filterParams['report_type'] == 'monthly') const Icon(Icons.arrow_drop_down),
-                                      ],
-                                    ),
-                                  ),
-                                  GestureDetector(
-                                    onTap: _filterParams['report_type'] == 'termly' || _filterParams['report_type'] == 'session' ? _showSessionTermPicker : null,
-                                    child: Row(
-                                      children: [
-                                        Text(_isDataLoading
-                                            ? 'Loading...'
-                                            : '${_filterParams['filters']?['sessions']?.isNotEmpty == true ? _filterParams['filters']['sessions'][0] : '2023'}/${(_filterParams['filters']?['sessions']?.isNotEmpty == true ? _filterParams['filters']['sessions'][0] + 1 : 2024)} ${_filterParams['filters']?['terms']?.isNotEmpty == true ? '${_filterParams['filters']['terms'][0]}rd Term' : '3rd Term'}'),
-                                        if (_filterParams['report_type'] == 'termly' || _filterParams['report_type'] == 'session') const Icon(Icons.arrow_drop_down),
-                                      ],
-                                    ),
-                                  ),
-                                ],
-                              ),
+                              // Row(
+                              //   mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              //   children: [
+                              //     GestureDetector(
+                              //       onTap: _filterParams['report_type'] == 'monthly' ? _showMonthYearPicker : null,
+                              //       child: Row(
+                              //         children: [
+                              //           Text(_isDataLoading
+                              //               ? 'Loading...'
+                              //               : _filterParams['start_date'] != null
+                              //                   ? DateFormat('MMMM yyyy').format(DateTime.parse(_filterParams['start_date']))
+                              //                   : 'September 2025'),
+                              //           if (_filterParams['report_type'] == 'monthly') const Icon(Icons.arrow_drop_down),
+                              //         ],
+                              //       ),
+                              //     ),
+                              //     GestureDetector(
+                              //       onTap: _filterParams['report_type'] == 'termly' || _filterParams['report_type'] == 'session' ? _showSessionTermPicker : null,
+                              //       child: Row(
+                              //         children: [
+                              //           Text(_isDataLoading
+                              //               ? 'Loading...'
+                              //               : '${_filterParams['filters']?['sessions']?.isNotEmpty == true ? _filterParams['filters']['sessions'][0] : '2023'}/${(_filterParams['filters']?['sessions']?.isNotEmpty == true ? _filterParams['filters']['sessions'][0] + 1 : 2024)} ${_filterParams['filters']?['terms']?.isNotEmpty == true ? '${_filterParams['filters']['terms'][0]}rd Term' : '3rd Term'}'),
+                              //           if (_filterParams['report_type'] == 'termly' || _filterParams['report_type'] == 'session') const Icon(Icons.arrow_drop_down),
+                              //         ],
+                              //       ),
+                              //     ),
+                              //   ],
+                              // ),
                               const SizedBox(height: 16),
                               Container(
                                 width: double.infinity,

@@ -118,101 +118,101 @@ class _ReceiptStatisticsViewState extends State<ReceiptStatisticsView> {
                   ),
 
                   // Date and Session Picker Row
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Expanded(
-                          child: GestureDetector(
-                            onTap: () async {
-                              final DateTime? picked = await showDatePicker(
-                                context: context,
-                                initialDate: DateTime.now(),
-                                firstDate: DateTime(2000),
-                                lastDate: DateTime(2025),
-                              );
-                              if (picked != null) {
-                                setState(() {
-                                  _filterParams['start_date'] = DateFormat('yyyy-MM-dd').format(picked);
-                                  _loadData();
-                                });
-                              }
-                            },
-                            child: Container(
-                              padding: const EdgeInsets.all(12),
-                              child: Row(
-                                children: [
-                                  Text(_filterParams['start_date'] ?? 'February 2023'),
-                                  const Icon(Icons.arrow_drop_down),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: GestureDetector(
-                            onTap: () {
-                              // Handle session picker
-                              showModalBottomSheet(
-                                context: context,
-                                isScrollControlled: true,
-                                backgroundColor: AppColors.backgroundLight,
-                                builder: (BuildContext context) {
-                                  return Padding(
-                                    padding: EdgeInsets.only(
-                                      bottom: MediaQuery.of(context).viewInsets.bottom,
-                                    ),
-                                    child: ConstrainedBox(
-                                      constraints: BoxConstraints(
-                                        maxHeight: MediaQuery.of(context).size.height * 0.4,
-                                      ),
-                                      child: Column(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          Padding(
-                                            padding: const EdgeInsets.all(16.0),
-                                            child: Text(
-                                              'Select Session and Term',
-                                              style: AppTextStyles.normal600(
-                                                fontSize: 20,
-                                                color: const Color.fromRGBO(47, 85, 221, 1),
-                                              ),
-                                            ),
-                                          ),
-                                          Expanded(
-                                            child: ListView(
-                                              children: [
-                                                _buildSessionTermItem('2023/2024 1st Term', 2023, 1),
-                                                _buildSessionTermItem('2023/2024 2nd Term', 2023, 2),
-                                                _buildSessionTermItem('2023/2024 3rd Term', 2023, 3),
-                                                _buildSessionTermItem('2022/2023 3rd Term', 2022, 3),
-                                              ],
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  );
-                                },
-                              );
-                            },
-                            child: Container(
-                              padding: const EdgeInsets.all(12),
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Text(_filterParams['session'] ?? '2023/2024 3rd Term'),
-                                  const Icon(Icons.arrow_drop_down),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
+                  // Padding(
+                  //   padding: const EdgeInsets.symmetric(horizontal: 16),
+                  //   child: Row(
+                  //     mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  //     children: [
+                  //       Expanded(
+                  //         child: GestureDetector(
+                  //           onTap: () async {
+                  //             final DateTime? picked = await showDatePicker(
+                  //               context: context,
+                  //               initialDate: DateTime.now(),
+                  //               firstDate: DateTime(2000),
+                  //               lastDate: DateTime(2025),
+                  //             );
+                  //             if (picked != null) {
+                  //               setState(() {
+                  //                 _filterParams['start_date'] = DateFormat('yyyy-MM-dd').format(picked);
+                  //                 _loadData();
+                  //               });
+                  //             }
+                  //           },
+                  //           child: Container(
+                  //             padding: const EdgeInsets.all(12),
+                  //             child: Row(
+                  //               children: [
+                  //                 Text(_filterParams['start_date'] ?? 'February 2023', style: const TextStyle(color: Colors.black)),
+                  //                 const Icon(Icons.arrow_drop_down),
+                  //               ],
+                  //             ),
+                  //           ),
+                  //         ),
+                  //       ),
+                  //       const SizedBox(width: 16),
+                  //       // Expanded(
+                  //       //   child: GestureDetector(
+                  //       //     onTap: () {
+                  //       //       // Handle session picker
+                  //       //       showModalBottomSheet(
+                  //       //         context: context,
+                  //       //         isScrollControlled: true,
+                  //       //         backgroundColor: AppColors.backgroundLight,
+                  //       //         builder: (BuildContext context) {
+                  //       //           return Padding(
+                  //       //             padding: EdgeInsets.only(
+                  //       //               bottom: MediaQuery.of(context).viewInsets.bottom,
+                  //       //             ),
+                  //       //             child: ConstrainedBox(
+                  //       //               constraints: BoxConstraints(
+                  //       //                 maxHeight: MediaQuery.of(context).size.height * 0.4,
+                  //       //               ),
+                  //       //               child: Column(
+                  //       //                 mainAxisSize: MainAxisSize.min,
+                  //       //                 children: [
+                  //       //                   Padding(
+                  //       //                     padding: const EdgeInsets.all(16.0),
+                  //       //                     child: Text(
+                  //       //                       'Select Session and Term',
+                  //       //                       style: AppTextStyles.normal600(
+                  //       //                         fontSize: 20,
+                  //       //                         color: const Color.fromRGBO(47, 85, 221, 1),
+                  //       //                       ),
+                  //       //                     ),
+                  //       //                   ),
+                  //       //                   Expanded(
+                  //       //                     child: ListView(
+                  //       //                       children: [
+                  //       //                         _buildSessionTermItem('2023/2024 1st Term', 2023, 1),
+                  //       //                         _buildSessionTermItem('2023/2024 2nd Term', 2023, 2),
+                  //       //                         _buildSessionTermItem('2023/2024 3rd Term', 2023, 3),
+                  //       //                         _buildSessionTermItem('2022/2023 3rd Term', 2022, 3),
+                  //       //                       ],
+                  //       //                     ),
+                  //       //                   ),
+                  //       //                 ],
+                  //       //               ),
+                  //       //             ),
+                  //       //           );
+                  //       //         },
+                  //       //       );
+                  //       //     },
+                  //       //     child: Container(
+                  //       //       padding: const EdgeInsets.all(12),
+                  //       //       child: Row(
+                  //       //         mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  //       //         children: [
+                  //       //           Text(_filterParams['session'] ?? '2023/2024 3rd Term'),
+                  //       //           const Icon(Icons.arrow_drop_down),
+                  //       //         ],
+                  //       //       ),
+                  //       //     ),
+                  //       //   ),
+                  //       // ),
+                  //     ],
+                  //   ),
+                  // ),
 
                   // Daily Payments Section
                   Padding(
@@ -225,13 +225,14 @@ class _ReceiptStatisticsViewState extends State<ReceiptStatisticsView> {
                           style: const TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w600,
+                            color: Colors.black,
                           ),
                         ),
                         const SizedBox(height: 16),
                         SizedBox(
                           height: 300,
                           child: dailyPayments.isEmpty
-                              ? const Center(child: Text('No chart data available'))
+                              ? const Center(child: Text('No chart data available', style: TextStyle(color: Colors.black)))
                               : BarChart(
                                   BarChartData(
                                     alignment: BarChartAlignment.spaceAround,
@@ -264,7 +265,7 @@ class _ReceiptStatisticsViewState extends State<ReceiptStatisticsView> {
                                               padding: const EdgeInsets.all(8.0),
                                               child: Text(
                                                 chartLabels[index],
-                                                style: const TextStyle(fontSize: 12),
+                                                style: const TextStyle(fontSize: 12, color: Colors.black),
                                               ),
                                             );
                                           },
@@ -277,7 +278,7 @@ class _ReceiptStatisticsViewState extends State<ReceiptStatisticsView> {
                                           getTitlesWidget: (value, meta) {
                                             return Text(
                                               '${(value / 1000).toInt()}k',
-                                              style: const TextStyle(fontSize: 12),
+                                              style: const TextStyle(fontSize: 12, color: Colors.black),
                                             );
                                           },
                                         ),
@@ -325,6 +326,7 @@ class _ReceiptStatisticsViewState extends State<ReceiptStatisticsView> {
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w600,
+                            color: Colors.black,
                           ),
                         ),
                         const SizedBox(height: 16),
@@ -382,13 +384,14 @@ class _ReceiptStatisticsViewState extends State<ReceiptStatisticsView> {
                               style: TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w600,
+                                color: Colors.black,
                               ),
                             ),
                             const SizedBox(height: 12),
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                const Text('Total Amount:'),
+                                const Text('Total Amount:', style: TextStyle(color: Colors.black)),
                                 Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
@@ -400,7 +403,7 @@ class _ReceiptStatisticsViewState extends State<ReceiptStatisticsView> {
                                     const SizedBox(width: 2),
                                     Text(
                                       summary.totalAmount.toStringAsFixed(2),
-                                      style: const TextStyle(fontWeight: FontWeight.w600),
+                                      style: const TextStyle(fontWeight: FontWeight.w600, color: Colors.black),
                                     ),
                                   ],
                                 ),
@@ -410,10 +413,10 @@ class _ReceiptStatisticsViewState extends State<ReceiptStatisticsView> {
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                const Text('Total Transactions:'),
+                                const Text('Total Transactions:', style: TextStyle(color: Colors.black)),
                                 Text(
                                   '${summary.totalTransactions}',
-                                  style: const TextStyle(fontWeight: FontWeight.w600),
+                                  style: const TextStyle(fontWeight: FontWeight.w600, color: Colors.black),
                                 ),
                               ],
                             ),
@@ -421,10 +424,10 @@ class _ReceiptStatisticsViewState extends State<ReceiptStatisticsView> {
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                const Text('Unique Students:'),
+                                const Text('Unique Students:', style: TextStyle(color: Colors.black)),
                                 Text(
                                   '${summary.uniqueStudents}',
-                                  style: const TextStyle(fontWeight: FontWeight.w600),
+                                  style: const TextStyle(fontWeight: FontWeight.w600, color: Colors.black),
                                 ),
                               ],
                             ),
@@ -444,6 +447,7 @@ class _ReceiptStatisticsViewState extends State<ReceiptStatisticsView> {
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w600,
+                            color: Colors.black,                            
                           ),
                         ),
                         const SizedBox(height: 16),
@@ -481,6 +485,7 @@ class _ReceiptStatisticsViewState extends State<ReceiptStatisticsView> {
                                             style: const TextStyle(
                                               fontSize: 14,
                                               fontWeight: FontWeight.w400,
+                                              color: Colors.black,
                                             ),
                                           ),
                                         ),
@@ -498,6 +503,7 @@ class _ReceiptStatisticsViewState extends State<ReceiptStatisticsView> {
                                               style: const TextStyle(
                                                 fontSize: 14,
                                                 fontWeight: FontWeight.w600,
+                                                color: Colors.black,
                                               ),
                                             ),
                                           ],
@@ -518,7 +524,7 @@ class _ReceiptStatisticsViewState extends State<ReceiptStatisticsView> {
 
   Widget _buildSessionTermItem(String text, int year, int term) {
     return ListTile(
-      title: Text(text),
+      title: Text(text, style: const TextStyle(color: Colors.black)),
       onTap: () {
         setState(() {
           _filterParams['session'] = '$year/${year + 1}';
@@ -530,6 +536,7 @@ class _ReceiptStatisticsViewState extends State<ReceiptStatisticsView> {
     );
   }
 }
+
 
 // Extension to capitalize strings
 extension StringExtension on String {
