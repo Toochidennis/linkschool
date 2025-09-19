@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
@@ -14,6 +15,8 @@ import 'package:linkschool/modules/student/elearning/pdf_reader.dart';
 import 'package:provider/provider.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:video_player/video_player.dart';
+import 'package:video_thumbnail/video_thumbnail.dart';
 
 import '../../common/custom_toaster.dart';
 import '../../common/widgets/portal/attachmentItem.dart';
@@ -49,6 +52,7 @@ class _AssignmentDetailsScreenState extends State<AssignmentDetailsScreen> {
   int? creatorId;
   int? academicTerm;
   String? academicYear;
+
 
   @override
   void dispose() {
@@ -98,9 +102,68 @@ class _AssignmentDetailsScreenState extends State<AssignmentDetailsScreen> {
     );
   }
 
+  Widget _buildInstructionsTab() {
+    return SingleChildScrollView(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildDueDate(),
+          _buildDescription(),
+
+          _buildSpecDivider(),
+
+          Text(
+            'Grade:${widget.childContent.grade} marks',
+            style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+          ),
+          _buildAttachments(),
+        ],
+      ),
+    );
+  }
+  Widget _buildDueDate() {
+    return Padding(
+      padding: const EdgeInsets.only(
+          top: 20.0, bottom: 16.0, right: 16.0, left: 16.0),
+      child: Row(
+        children: [
+          Text(
+            'Due: ',
+            style: AppTextStyles.normal600(
+                fontSize: 16.0, color: AppColors.eLearningTxtColor1),
+          ),
+          Text(
+              DateFormat('E, dd MMM yyyy (hh:mm a)').format(DateTime.parse(widget.childContent.endDate!))
+,
+              style: AppTextStyles.normal500(fontSize: 16.0, color: Colors.black),
+          ),
+        ],
+      ),
+    );
+  }
+  Widget _buildTitle() {
+    return Container(
+      width: double.infinity,
+      decoration: const BoxDecoration(
+
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Text(
+          widget.childContent.title!,
+          style: AppTextStyles.normal600(
+            fontSize: 20.0,
+            color: AppColors.paymentTxtColor1,
+          ),
+        ),
+      ),
+    );
+  }
+
 
   @override
   Widget build(BuildContext context) {
+
     final Brightness brightness = Theme.of(context).brightness;
     opacity = brightness == Brightness.light ? 0.1 : 0.15;
     return Scaffold(
@@ -140,165 +203,24 @@ class _AssignmentDetailsScreenState extends State<AssignmentDetailsScreen> {
           ),
         ),
       ),
-      body: Container(
-        decoration: Constants.customBoxDecoration(context),
-        child: Padding(
-          padding: const EdgeInsets.all(4.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Due: ${DateFormat("EEEE, d MMMM, y  h:mma").format(DateTime.parse(widget.childContent.endDate ?? ""))}',
-                style: TextStyle(color: Colors.black, fontSize: 14),
-              ),
-              const SizedBox(height: 16),
-              Text(
-                '${widget.childContent.description}',
-                style: TextStyle(fontSize: 16, color: Colors.black),
-              ),
-              const SizedBox(height: 12),
+      body:Container(
+        color: Colors.white,
+        child: _buildInstructionsTab(),
 
-              Divider(color: Colors.blue),
-              const SizedBox(height: 12),
-
-              Text(
-                'Grade:${widget.childContent.grade} marks',
-                style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 24),
-              // Attachment section
-              Row(
-                children: [
-                  Expanded(
-                    child: Container(
-                      child: Column(
-                        children: [
-                          ListView.builder(
-                            shrinkWrap: true,
-                            physics: const NeverScrollableScrollPhysics(),
-                            itemCount: widget.childContent.contentFiles?.length ?? 0,
-                            itemBuilder: (context, index) {
-                              final file = widget.childContent.contentFiles![index];
-                              if (file.type == "url") {
-                                // Case 1: URL → clickable link
-                                return Column(
-                                  children: [
-                                    Container(
-                                      height: 100, // Increased height to accommodate the layout
-                                      color: Colors.blue.shade100,
-                                      child: Center(
-                                        child: InkWell(
-                                          onTap: () async {
-                                            final uri = Uri.parse(file.file);
-                                            if (await canLaunchUrl(uri)) {
-                                              await launchUrl(uri, mode: LaunchMode.externalApplication);
-                                            }
-                                          },
-                                          child: Row(
-                                            children: [
-                                              Icon(Icons.link, color: Colors.blue),
-                                              SizedBox(width: 8,),
-                                              Text(
-                                                overflow: TextOverflow.ellipsis,
-                                                file.file,
-                                                style: const TextStyle(
-                                                  color: Colors.blue,
-                                                  decoration: TextDecoration.underline,
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                    const SizedBox(height: 10),
-
-                                  ],
-                                );
-                              }
-
-                              else if (file.type == "image" || file.type == "photo" ) {
-                                // Case 2: Image → render image
-                                return Column(
-                                  children: [
-                                    Padding(
-                                      padding: const EdgeInsets.only(bottom: 8.0),
-                                      child: Image.network(
-                                        "https://linkskool.net/${file.file}",
-                                        fit: BoxFit.cover,
-                                        width: double.infinity,
-                                        errorBuilder: (context, error, stackTrace) =>
-                                        const Text("Failed to load image"),
-                                      ),
-                                    ),
-                                    const SizedBox(height: 10),
-
-                                  ],
-                                );
-                              }
-                              else if (file.type == "pdf" ) {
-
-                                return Column(
-                                  children: [
-                                    IconButton(onPressed: (){
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (_) => PdfViewerPage(url:"https://linkskool.net/${file.fileName}"),
-                                        ),
-                                      );
-                                    }, icon:  Icon(Icons.picture_as_pdf, size: 36)),                                      const SizedBox(height: 10),
-                                    const SizedBox(height: 10),
-
-                                  ],
-                                );
-                              }
-                              else {
-                                // Case 3: Unknown type → show error
-                                return Column(
-                                  children: [
-                                    const Text(
-                                      "Error rendering content",
-                                      style: TextStyle(color: Colors.red),
-                                    ),
-                                    const SizedBox(height: 10),
-
-                                  ],
-                                );
-
-                              }
-                            },
-                          ),
-
-                        ],
-                      ),
-                    ),
-                  ),
-
-                ],
-              ),
-              const Spacer(),
-              const SizedBox(height: 12),
-
-              Divider(color: Colors.grey.shade300),
-              const SizedBox(height: 12),
-
-              ElevatedButton(
-                // onPressed: _showAttachmentOptions,
-                onPressed: _navigateToAttachmentPreview,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.eLearningBtnColor1,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  minimumSize: const Size(double.infinity, 50),
-                ),
-                child: const Text('Add work', style: TextStyle(fontSize: 16, color: AppColors.backgroundLight)),
-              ),
-            ],
-          ),
-        ),
       ),
+      bottomNavigationBar:  ElevatedButton(
+        // onPressed: _showAttachmentOptions,
+        onPressed: _navigateToAttachmentPreview,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: AppColors.eLearningBtnColor1,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8),
+          ),
+          minimumSize: const Size(double.infinity, 50),
+        ),
+        child: const Text('Add work', style: TextStyle(fontSize: 16, color: AppColors.backgroundLight)),
+      ),
+
     );
   }
 
@@ -522,9 +444,618 @@ class _AssignmentDetailsScreenState extends State<AssignmentDetailsScreen> {
       child: Divider(color: Colors.grey.withOpacity(0.5)),
     );
   }
+  Widget _buildSpecDivider() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+      child: Divider(  color: AppColors.paymentTxtColor1, thickness: 2.0),
+    );
+  }
+  Widget _buildDescription() {
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: Row(
+        children: [
+          Text(
+            '',
+            style: AppTextStyles.normal600(
+                fontSize: 16.0, color: AppColors.eLearningTxtColor1),
+          ),
+          Expanded(
+            child: Text(
+              widget.childContent.description!,
+              style: AppTextStyles.normal500(fontSize: 16.0, color: Colors.black),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAttachments() {
+    final attachments = widget.childContent.contentFiles;
+    if (attachments == null || attachments.isEmpty) {
+      return const Center(child: Text('No attachment available'));
+    }
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+
+          const SizedBox(height: 12),
+          GridView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              crossAxisSpacing: 12.0,
+              mainAxisSpacing: 12.0,
+              childAspectRatio: 1.2,
+            ),
+            itemCount: attachments.length,
+            itemBuilder: (context, index) {
+              return _buildAttachmentItem(attachments[index]);
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAttachmentItem(ContentFile attachment) {
+    final rawFileName = attachment.fileName ?? 'Unknown file';
+    final fileType = _getFileType(rawFileName);
+    final fileUrl = "https://linkskool.net/$rawFileName";
+
+// Extract only the actual file name (remove the path)
+    final fileName = rawFileName.split('/').last;
+    return GestureDetector(
+      onTap: () {
+        if (fileType == 'image' || fileType == 'video') {
+          _showFullScreenMedia(fileUrl, fileType);
+        } else {
+          // For all other files including PDF, open in external app
+          //fileUrl
+          if(fileType == 'pdf'){
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => PdfViewerPage(
+                  url: fileUrl,
+                ),
+              ),
+            );;
+          } else {_launchUrl(fileName);
+          }}
+      },
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(12.0),
+          border: Border.all(
+            color: _getFileColor(fileType).withOpacity(0.3),
+            width: 1.5,
+          ),
+          color: Colors.white,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.withOpacity(0.1),
+              spreadRadius: 1,
+              blurRadius: 3,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Column(
+          children: [
+            Expanded(
+              flex: 3,
+              child: Container(
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(12.0),
+                    topRight: Radius.circular(12.0),
+                  ),
+                  color: _getFileColor(fileType).withOpacity(0.1),
+                ),
+                child: _buildPreviewContent(fileType, fileUrl, fileName),
+              ),
+            ),
+            if (fileType == "pdf" || fileType == "url")
+              Expanded(
+                flex: 1,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 6.0),
+                  child: Text(
+                    fileName.length > 17 ? fileName.substring(0, 17) : fileName,
+                    style: AppTextStyles.normal500(
+                      fontSize: 14.0,
+                      color: Colors.black,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+              ),
+
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _launchUrl(String url) async {
+    try {
+      final Uri uri = Uri.parse(url);
+      if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
+        CustomToaster.toastError(context, 'Error', 'Could not launch $url');
+      }
+    } catch (e) {
+      CustomToaster.toastError(context, 'Error', 'Invalid URL: $url');
+    }
+  }
+
+  void _showFullScreenMedia(String url, String type) {
+    if (type == 'pdf') {
+      // For PDFs, directly open in external app since we removed native_pdf_renderer
+      _launchUrl(url);
+    } else {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => FullScreenMediaViewer(
+            url: url,
+            type: type,
+            fileName: url.split('/').last,
+          ),
+        ),
+      );
+    }
+  }
+
+
+  String _getFileType(String? fileName) {
+    if (fileName == null) return 'unknown';
+    final extension = fileName.toLowerCase().split('.').last;
+    if (['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'].contains(extension)) {
+      return 'image';
+    }
+    if (['mp4', 'avi', 'mov', 'wmv', 'flv', 'webm', 'm4v', '3gp'].contains(extension)) {
+      return 'video';
+    }
+    if (['pdf','doc', 'docx', 'txt', 'rtf'].contains(extension)) {
+      return 'pdf';
+    }
+
+    if (['.com', '.org', '.net', '.edu', 'http', 'https'].contains(extension) || fileName.startsWith('http')) {
+      return 'url';
+    }
+    if (['xls', 'xlsx', 'csv'].contains(extension)) {
+      return 'spreadsheet';
+    }
+    if (['ppt', 'pptx'].contains(extension)) {
+      return 'presentation';
+    }
+    if (['zip', 'rar', '7z', 'tar', 'gz'].contains(extension)) {
+      return 'archive';
+    }
+    return 'unknown';
+  }
+
+  Widget _buildPreviewContent(String fileType, String fileUrl, String fileName) {
+    switch (fileType) {
+      case 'image':
+        return ClipRRect(
+          borderRadius: const BorderRadius.only(
+            topLeft: Radius.circular(12.0),
+            topRight: Radius.circular(12.0),
+          ),
+          child: Image.network(
+            fileUrl,
+            fit: BoxFit.cover,
+            errorBuilder: (context, error, stackTrace) => Icon(
+              Icons.broken_image,
+              color: Colors.grey,
+              size: 40,
+            ),
+            loadingBuilder: (context, child, loadingProgress) {
+              if (loadingProgress == null) return child;
+              return Center(
+                child: CircularProgressIndicator(
+                  value: loadingProgress.expectedTotalBytes != null
+                      ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
+                      : null,
+                ),
+              );
+            },
+          ),
+        );
+      case 'video':
+        return  VideoThumbnailWidget(url: fileUrl);
+      case 'pdf':
+        return Stack(
+          children: [
+            Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [Colors.blue.shade100, Colors.blue.shade200],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+              ),
+              child: Center(
+                child: Icon(
+                  Icons.picture_as_pdf,
+                  size: 50,
+                  color: Colors.blue.shade600,
+                ),
+              ),
+            ),
+
+          ],
+        );
+      case 'url':
+        return Center(
+          child: Icon(
+            Icons.link,
+            size: 40,
+            color: _getFileColor(fileType),
+          ),
+        );
+      default:
+        return Center(
+          child: Icon(
+            _getFileIcon(fileType),
+            size: 40,
+            color: _getFileColor(fileType),
+          ),
+        );
+    }
+  }
+
+
+
+
+  IconData _getFileIcon(String fileType) {
+    switch (fileType) {
+      case 'image':
+        return Icons.image;
+      case 'video':
+        return Icons.video_library;
+      case 'pdf':
+        return Icons.picture_as_pdf;
+      case 'document':
+        return Icons.description;
+      case 'spreadsheet':
+        return Icons.table_chart;
+      case 'presentation':
+        return Icons.slideshow;
+      case 'archive':
+        return Icons.archive;
+      default:
+        return Icons.insert_drive_file;
+    }
+  }
+
+  Color _getFileColor(String fileType) {
+    switch (fileType) {
+      case 'image':
+        return Colors.blue[700]!;
+      case 'video':
+        return Colors.blue[700]!;
+      case 'pdf':
+        return Colors.blue[700]!;
+      case 'document':
+        return Colors.blue[700]!;
+      case 'spreadsheet':
+        return Colors.blue[700]!;
+      case 'presentation':
+        return Colors.blue[700]!;
+      case 'archive':
+        return Colors.blue[700]!;
+      default:
+        return Colors.blue[700]!;
+    }
+  }
 }
 
 
+class FullScreenMediaViewer extends StatefulWidget {
+  final String url;
+  final String type;
+  final String fileName;
 
+  const FullScreenMediaViewer({
+    Key? key,
+    required this.url,
+    required this.type,
+    required this.fileName,
+  }) : super(key: key);
 
+  @override
+  State<FullScreenMediaViewer> createState() => _FullScreenMediaViewerState();
+}
 
+class _FullScreenMediaViewerState extends State<FullScreenMediaViewer> {
+  VideoPlayerController? _videoController;
+  bool _isVideoInitialized = false;
+  bool _showControls = true;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.type == 'video') {
+      _initializeVideo();
+    }
+  }
+
+  Future<void> _initializeVideo() async {
+    try {
+      _videoController = VideoPlayerController.network(widget.url);
+      await _videoController!.initialize();
+      setState(() {
+        _isVideoInitialized = true;
+      });
+      _hideControlsAfterDelay();
+      _videoController!.addListener(() {
+        if (_videoController!.value.position == _videoController!.value.duration) {
+          setState(() {
+            _showControls = true;
+          });
+        }
+      });
+    } catch (e) {
+      print('Error initializing video: $e');
+    }
+  }
+
+  void _hideControlsAfterDelay() {
+    Future.delayed(const Duration(seconds: 3), () {
+      if (mounted && _videoController != null && _videoController!.value.isPlaying) {
+        setState(() {
+          _showControls = false;
+        });
+      }
+    });
+  }
+
+  void _toggleControls() {
+    setState(() {
+      _showControls = !_showControls;
+    });
+    if (_showControls && _videoController != null && _videoController!.value.isPlaying) {
+      _hideControlsAfterDelay();
+    }
+  }
+
+  @override
+  void dispose() {
+    _videoController?.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.black,
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.close, color: Colors.white),
+          onPressed: () => Navigator.pop(context),
+        ),
+        title: Text(
+          widget.fileName,
+          style: const TextStyle(color: Colors.white),
+          overflow: TextOverflow.ellipsis,
+        ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.download, color: Colors.white),
+            onPressed: () async {
+              try {
+                final Uri uri = Uri.parse(widget.url);
+                if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Could not download file')),
+                  );
+                }
+              } catch (e) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Download failed')),
+                );
+              }
+            },
+          ),
+        ],
+      ),
+      body: Center(
+        child: _buildMediaContent(),
+      ),
+    );
+  }
+
+  Widget _buildMediaContent() {
+    switch (widget.type) {
+      case 'image':
+        return InteractiveViewer(
+          panEnabled: true,
+          boundaryMargin: const EdgeInsets.all(20.0),
+          minScale: 0.5,
+          maxScale: 4.0,
+          child: Image.network(
+            widget.url,
+            fit: BoxFit.contain,
+            errorBuilder: (context, error, stackTrace) => const Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.broken_image,
+                    color: Colors.white,
+                    size: 64,
+                  ),
+                  SizedBox(height: 16),
+                  Text(
+                    'Failed to load image',
+                    style: TextStyle(color: Colors.white),
+                  ),
+                ],
+              ),
+            ),
+            loadingBuilder: (context, child, loadingProgress) {
+              if (loadingProgress == null) return child;
+              return Center(
+                child: CircularProgressIndicator(
+                  value: loadingProgress.expectedTotalBytes != null
+                      ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
+                      : null,
+                  color: Colors.white,
+                ),
+              );
+            },
+          ),
+        );
+      case 'video':
+        if (!_isVideoInitialized || _videoController == null) {
+          return const Center(
+            child: CircularProgressIndicator(color: Colors.white),
+          );
+        }
+        return GestureDetector(
+          onTap: _toggleControls,
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              AspectRatio(
+                aspectRatio: _videoController!.value.aspectRatio,
+                child: VideoPlayer(_videoController!),
+              ),
+              if (_showControls) ...[
+                Positioned(
+                  child: GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        if (_videoController!.value.isPlaying) {
+                          _videoController!.pause();
+                          _showControls = true;
+                        } else {
+                          _videoController!.play();
+                          _hideControlsAfterDelay();
+                        }
+                      });
+                    },
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Colors.black54,
+                        borderRadius: BorderRadius.circular(50),
+                      ),
+                      padding: const EdgeInsets.all(16),
+                      child: Icon(
+                        _videoController!.value.isPlaying ? Icons.pause : Icons.play_arrow,
+                        color: Colors.white,
+                        size: 50,
+                      ),
+                    ),
+                  ),
+                ),
+                Positioned(
+                  bottom: 50,
+                  left: 20,
+                  right: 20,
+                  child: VideoProgressIndicator(
+                    _videoController!,
+                    allowScrubbing: true,
+                    colors: const VideoProgressColors(
+                      playedColor: Colors.red,
+                      bufferedColor: Colors.grey,
+                      backgroundColor: Colors.white24,
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        );
+      default:
+        return const Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.insert_drive_file,
+                color: Colors.white,
+                size: 64,
+              ),
+              SizedBox(height: 16),
+              Text(
+                'Unsupported file type',
+                style: TextStyle(color: Colors.white),
+              ),
+            ],
+          ),
+        );
+    }
+  }
+}
+
+class VideoThumbnailWidget extends StatefulWidget {
+  final String url;
+  const VideoThumbnailWidget({super.key, required this.url});
+
+  @override
+  State<VideoThumbnailWidget> createState() => _VideoThumbnailWidgetState();
+}
+
+class _VideoThumbnailWidgetState extends State<VideoThumbnailWidget> {
+  Uint8List? _thumbnail;
+
+  @override
+  void initState() {
+    super.initState();
+    _generateThumbnail();
+  }
+
+  Future<void> _generateThumbnail() async {
+    try {
+      final thumb = await VideoThumbnail.thumbnailData(
+        video: widget.url,
+        imageFormat: ImageFormat.PNG,
+        maxHeight: 200,
+        quality: 300,
+      );
+      if (mounted) setState(() => _thumbnail = thumb);
+    } catch (e) {
+      debugPrint("Error generating video thumbnail: $e");
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_thumbnail == null) {
+      return Container(
+        width: 100,
+        height: 140,
+        color: Colors.black12,
+        child: const Center(child: CircularProgressIndicator()),
+      );
+    }
+    return Stack(
+      alignment: Alignment.center,
+      children: [
+        ClipRRect(
+          borderRadius: BorderRadius.circular(8),
+          child: Image.memory(
+            _thumbnail!,
+            width:double.infinity,
+            height: 140,
+            fit: BoxFit.cover,
+          ),
+        ),
+        const Icon(Icons.play_circle_fill, color: Colors.white, size: 40),
+      ],
+    );
+  }
+}

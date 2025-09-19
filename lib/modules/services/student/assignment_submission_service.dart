@@ -36,7 +36,7 @@ class AssignmentSubmissionService {
       print(submission.toJson());
 
     final response = await _apiService.post(
-      endpoint: 'portal/students/${273}/assignment-submissions',
+      endpoint: 'portal/students/${studentid}/assignment-submissions',
       body: submission.toJson(),
     );
 

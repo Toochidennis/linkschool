@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:hive/hive.dart';
+import 'package:intl/intl.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/model/student/dashboard_model.dart';
@@ -397,7 +398,10 @@ class _ForumScreenState extends State<ForumScreen> {
       ),
     );
   }
-
+  String formatDayMonth(String dateString) {
+    final date = DateTime.parse(dateString);
+    return DateFormat('dd MMM').format(date);
+  }
   Widget buildComment({
     required Color avatarColor,
     required String name,
@@ -409,8 +413,8 @@ class _ForumScreenState extends State<ForumScreen> {
       children: [
         CircleAvatar(
           backgroundColor: avatarColor,
-          radius: 16,
-          child:  Icon(Icons.person, size: 16, color: Colors.grey[600]),
+          radius: 14,
+          child:  Icon(Icons.person, size: 14, color: Colors.grey[600]),
         ),
         const SizedBox(width: 12),
         Expanded(
@@ -428,7 +432,7 @@ class _ForumScreenState extends State<ForumScreen> {
                   ),
                   const SizedBox(width: 8),
                   Text(
-                    date,
+                    formatDayMonth(date),
                     style: const TextStyle(
                       fontSize: 12,
                       color: Colors.grey,

@@ -5,8 +5,8 @@ import 'dart:convert';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
-import 'package:linkschool/modules/model/student/elearningcontent_model.dart';
 import 'package:linkschool/modules/model/student/quiz_submission_model.dart';
+import 'package:linkschool/modules/model/student/single_elearningcontentmodel.dart';
 import 'package:linkschool/modules/services/student/quiz_submission_service.dart';
 
 import '../../admin/e_learning/View/question/timer_widget.dart';
@@ -17,14 +17,14 @@ import '../../common/buttons/custom_outline_button..dart';
 import '../../common/constants.dart';
 import '../../common/text_styles.dart';
 
-class AssessmentScreen extends StatefulWidget {
+class SingleAssessmentScreen extends StatefulWidget {
   final Duration? timer;
   final Duration? duration;
   final String? quizTitle;
-final ChildContent? childContent;
+  final SingleElearningContentData? childContent;
   final List<Question>? questions;
   final correctAnswer;
-  const AssessmentScreen({
+  const SingleAssessmentScreen({
     super.key,
     this.timer,
     this.questions,
@@ -35,10 +35,10 @@ final ChildContent? childContent;
   });
 
   @override
-  _AssessmentScreenState createState() => _AssessmentScreenState();
+  _SingleAssesmentScreenState createState() => _SingleAssesmentScreenState();
 }
 
-class _AssessmentScreenState extends State<AssessmentScreen> {
+class _SingleAssesmentScreenState extends State<SingleAssessmentScreen> {
   bool _isTimerStopped = false;
   int _currentQuestionIndex = 0;
   late int _totalQuestions;
@@ -393,7 +393,7 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   if (option['imageUrl'] == null)
-                  Text(option['text'],style: TextStyle(fontWeight: FontWeight.w600),),
+                    Text(option['text'],style: TextStyle(fontWeight: FontWeight.w600),),
                   if (option['imageUrl'] != null)
 
                     GestureDetector(
@@ -549,7 +549,6 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
   }
 
   Future<void> _submitQuiz() async {
-    print("Yesss s ${widget.questions.toString()}");
     final List<Map<String, dynamic>> answers = widget.questions!.asMap().entries.map((entry) {
       int index = entry.key;
       var q = entry.value;
@@ -561,7 +560,6 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
         "type": q.questionType
       };
     }).toList();
-    print("Here are answers${answers}");
     QuizSubmissionService service = QuizSubmissionService();
     Map<String, dynamic> quizpayload = {
       "quiz_id": widget.childContent?.settings!.id,
@@ -633,6 +631,7 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
       );
     }
     else{
+      //Error
       print("E no goooo ");
     }
 

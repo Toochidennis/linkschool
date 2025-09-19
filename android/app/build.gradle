@@ -3,7 +3,7 @@ plugins {
     id "kotlin-android"
     id "dev.flutter.flutter-gradle-plugin"
 }
-//task-manager-fec98
+
 def localProperties = new Properties()
 def localPropertiesFile = rootProject.file('local.properties')
 if (localPropertiesFile.exists()) {
@@ -22,79 +22,118 @@ if (flutterVersionName == null) {
     flutterVersionName = '1.0'
 }
 
-    android {
-        namespace "com.digitaldream.linkskool.linkschool"
-        compileSdkVersion 35// Explicitly set to 35
-        ndkVersion flutter.ndkVersion
+android {
+    namespace "com.digitaldream.linkskool.linkschool"
+    compileSdkVersion 35  // Required by plugins
+    ndkVersion flutter.ndkVersion
 
-        compileOptions {
-            sourceCompatibility JavaVersion.VERSION_1_8
-            targetCompatibility JavaVersion.VERSION_1_8
-        }
-
-        kotlinOptions {
-            jvmTarget = '1.8'
-        }
-
-        sourceSets {
-            main.java.srcDirs += 'src/main/kotlin'
-        }
-
-        defaultConfig {
-            applicationId "com.digitaldream.linkskool.linkschool"
-            minSdkVersion 23 
-            targetSdkVersion 35 // Explicitly set to 35
-            versionCode flutterVersionCode.toInteger()
-            versionName flutterVersionName
-        }
-
-        buildTypes {
-            release {
-                signingConfig signingConfigs.debug
-            }
-        }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
     }
 
-// android {
-//     namespace "com.digitaldream.linkskool.linkschool"
-//     compileSdk flutter.compileSdkVersion
-//     ndkVersion flutter.ndkVersion
+    kotlinOptions {
+        jvmTarget = '1.8'
+    }
 
-//     compileOptions {
-//         sourceCompatibility JavaVersion.VERSION_1_8
-//         targetCompatibility JavaVersion.VERSION_1_8
-//     }
+    sourceSets {
+        main.java.srcDirs += 'src/main/kotlin'
+    }
 
-//     kotlinOptions {
-//         jvmTarget = '1.8'
-//     }
+    defaultConfig {
+        applicationId "com.digitaldream.linkskool.linkschool"
+        minSdkVersion 23 
+        targetSdkVersion 35  // Match compile SDK
+        versionCode flutterVersionCode.toInteger()
+        versionName flutterVersionName
+        multiDexEnabled true
+    }
 
-//     sourceSets {
-//         main.java.srcDirs += 'src/main/kotlin'
-//     }
-
-//     defaultConfig {
-//         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-//         applicationId "com.digitaldream.linkskool.linkschool"
-//         // You can update the following values to match your application needs.
-//         // For more information, see: https://docs.flutter.dev/deployment/android#reviewing-the-gradle-build-configuration.
-//         minSdkVersion flutter.minSdkVersion
-//         targetSdkVersion flutter.targetSdkVersion
-//         versionCode flutterVersionCode.toInteger()
-//         versionName flutterVersionName
-//     }
-
-//     buildTypes {
-//         release {
-//             // TODO: Add your own signing config for the release build.
-//             // Signing with the debug keys for now, so `flutter run --release` works.
-//             signingConfig signingConfigs.debug
-//         }
-//     }
-// }
+    buildTypes {
+        release {
+            // Remove this line to use unsigned APK for now
+            // signingConfig signingConfigs.debug
+            
+            minifyEnabled false
+            shrinkResources false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+        debug {
+            signingConfig signingConfigs.debug
+        }
+    }
+}
 
 flutter {
     source '../..'
 }
 
-dependencies {}
+dependencies {
+    implementation 'androidx.multidex:multidex:2.0.1'
+}
+
+
+
+
+// plugins {
+//     id "com.android.application"
+//     id "kotlin-android"
+//     id "dev.flutter.flutter-gradle-plugin"
+// }
+// //task-manager-fec98
+// def localProperties = new Properties()
+// def localPropertiesFile = rootProject.file('local.properties')
+// if (localPropertiesFile.exists()) {
+//     localPropertiesFile.withReader('UTF-8') { reader ->
+//         localProperties.load(reader)
+//     }
+// }
+
+// def flutterVersionCode = localProperties.getProperty('flutter.versionCode')
+// if (flutterVersionCode == null) {
+//     flutterVersionCode = '1'
+// }
+
+// def flutterVersionName = localProperties.getProperty('flutter.versionName')
+// if (flutterVersionName == null) {
+//     flutterVersionName = '1.0'
+// }
+
+//     android {
+//         namespace "com.digitaldream.linkskool.linkschool"
+//         compileSdkVersion 35// Explicitly set to 35
+//         ndkVersion flutter.ndkVersion
+
+//         compileOptions {
+//             sourceCompatibility JavaVersion.VERSION_1_8
+//             targetCompatibility JavaVersion.VERSION_1_8
+//         }
+
+//         kotlinOptions {
+//             jvmTarget = '1.8'
+//         }
+
+//         sourceSets {
+//             main.java.srcDirs += 'src/main/kotlin'
+//         }
+
+//         defaultConfig {
+//             applicationId "com.digitaldream.linkskool.linkschool"
+//             minSdkVersion 23 
+//             targetSdkVersion 35 // Explicitly set to 35
+//             versionCode flutterVersionCode.toInteger()
+//             versionName flutterVersionName
+//         }
+
+//         buildTypes {
+//             release {
+//                 signingConfig signingConfigs.debug
+//             }
+//         }
+//     }
+
+// flutter {
+//     source '../..'
+// }
+
+// dependencies {}

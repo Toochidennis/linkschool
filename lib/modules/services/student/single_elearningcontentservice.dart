@@ -2,11 +2,12 @@ import 'dart:convert';
 
 import 'package:hive/hive.dart';
 import 'package:linkschool/modules/model/student/elearningcontent_model.dart';
+import 'package:linkschool/modules/model/student/single_elearningcontentmodel.dart';
 import '../../model/student/dashboard_model.dart';
 import '../api/api_service.dart';
 import '../api/service_locator.dart';
 
-class ElearningContentService {
+class SingleElearningcontentservice {
   final ApiService _apiService = locator<ApiService>();
   getuserdata(){
     final userBox = Hive.box('userData');
@@ -19,21 +20,20 @@ class ElearningContentService {
     final data = response['data'] ?? response;
     return data;
   }
-  Future<List<ElearningContentData>> getElearningContentData(int syllabusid) async {
+  Future<SingleElearningContentData> getElearningContentData(int contentid) async {
     try {
       final userBox = Hive.box('userData');
-       final token = userBox.get('token');
-      final syllabusid = userBox.get('syllabusid');
-      final dbName = userBox.get('_db') ?? 'aalmgzmy_linkskoo_practice';
+      final token = userBox.get('token');
+      final dbName = userBox.get('_db')?? 'aalmgzmy_linkskoo_practice' ;
 
       if (token == null) {
         throw Exception("Authentication token is missing.");
       }
 
       _apiService.setAuthToken(token);
-     // print(getuserdata()['settings']);
+      // print(getuserdata()['settings']);
       final response = await _apiService.get(
-        endpoint: 'portal/elearning/syllabus/${syllabusid}/contents',
+        endpoint: 'portal/elearning/contents/${contentid}',
         queryParams: {
           '_db': dbName,
           //add student id and syllabus id
@@ -41,15 +41,14 @@ class ElearningContentService {
       );
 
       final data = response;
+      print("Dataaaa ${data.rawData?['response']}");
 
       if (data == null) {
         throw Exception("No dashboard data received.");
       }
 
-      final contentList = (data.rawData?['response'] as List<dynamic>?)
-          ?.map((e) => ElearningContentData.fromJson(e))
-          .toList() ?? [];
-      return contentList;
+
+      return SingleElearningContentData.fromJson(data.rawData?['response']);
     } catch (e) {
       // You can log this or use a crash reporting service like Sentry
       throw Exception('Failed to fetch dashboard data: $e');

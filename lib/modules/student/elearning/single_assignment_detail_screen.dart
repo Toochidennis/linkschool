@@ -7,42 +7,38 @@ import 'package:hive/hive.dart';
 import 'package:intl/intl.dart';
 import 'package:linkschool/modules/admin/e_learning/admin_assignment_screen.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
-import 'package:video_player/video_player.dart';
-import 'package:video_thumbnail/video_thumbnail.dart';
+import 'package:linkschool/modules/model/student/comment_model.dart';
 
 import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
-import 'package:linkschool/modules/student/elearning/attachment_preview_screen.dart';
+import 'package:linkschool/modules/model/student/single_elearningcontentmodel.dart';
 import 'package:linkschool/modules/student/elearning/pdf_reader.dart';
+import 'package:linkschool/modules/student/elearning/single_attachment_preview_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:video_player/video_player.dart';
+import 'package:video_thumbnail/video_thumbnail.dart';
 
 import '../../common/custom_toaster.dart';
 import '../../common/widgets/portal/attachmentItem.dart';
-import '../../common/widgets/portal/student/custom_input_field.dart';
-import '../../model/student/comment_model.dart';
-import '../../model/student/elearningcontent_model.dart';
 import '../../providers/student/student_comment_provider.dart';
-import '../../services/api/service_locator.dart';
+import 'attachment_preview_screen.dart';
 
-class MaterialDetailScreen extends StatefulWidget {
-  final int? syllabusId;
-  final String? courseId;
-  final String? levelId;
-  final String? classId;
-  final String? courseName;
-  final int? itemId;
-  final List<Map<String, dynamic>>? syllabusClasses;
-  final ChildContent childContent;
+class SingleAssignmentDetailsScreen extends StatefulWidget {
 
-  const MaterialDetailScreen({super.key, required this.childContent, this.syllabusId, this.courseId, this.levelId, this.classId, this.courseName, this.syllabusClasses, this.itemId});
+  final SingleElearningContentData? childContent;
+  final String? title;
+  final int? id;
+
+  const SingleAssignmentDetailsScreen({super.key, required this.childContent, required this.title, required this.id});
 
   @override
-  State<MaterialDetailScreen> createState() => _MaterialDetailScreen();
+  State<SingleAssignmentDetailsScreen> createState() => _SingleAssignmentDetailsScreenState();
 }
 
-class _MaterialDetailScreen extends State<MaterialDetailScreen> {
+class _SingleAssignmentDetailsScreenState extends State<SingleAssignmentDetailsScreen> {
+
   final TextEditingController _commentController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   List<StudentComment> comments = [];
@@ -52,30 +48,17 @@ class _MaterialDetailScreen extends State<MaterialDetailScreen> {
   late double opacity;
   final String networkImage = 'https://img.freepik.com/free-vector/gradient-human-rights-day-background_52683-149974.jpg?t=st=1717832829~exp=1717833429~hmac=3e938edcacd7fef2a791b36c7d3decbf64248d9760dd7da0a304acee382b8a86';
 
-
   final List<AttachmentItem> _attachments = [];
   String? creatorName;
   int? creatorId;
   int? academicTerm;
   String? academicYear;
-  final FocusNode _commentFocusNode = FocusNode();
+
 
   @override
-  void initState() {
-    super.initState();
-    _loadUserData();
-    locator<StudentCommentProvider>().fetchComments(widget.childContent.id.toString());
-    _scrollController.addListener(() {
-      if (_scrollController.position.pixels >=
-          _scrollController.position.maxScrollExtent * 0.9 &&
-          !locator<StudentCommentProvider>().isLoading &&
-          locator<StudentCommentProvider>().hasNext) {
-
-        Provider.of<StudentCommentProvider>(context, listen: false)
-            .fetchComments(widget.childContent.id.toString());
-      }
-    });
-
+  void dispose() {
+    _commentController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadUserData() async {
@@ -94,47 +77,67 @@ class _MaterialDetailScreen extends State<MaterialDetailScreen> {
         final settings = data['settings'] ?? {};
 
         setState(() {
-          creatorId = profile['id'] as int?;
+          creatorId = profile['staff_id'] as int?;
           creatorName = profile['name']?.toString();
           academicYear = settings['year']?.toString();
           academicTerm = settings['term'] as int?;
         });
       }
-
+      print('Creator ID: $creatorId');
+      print('Creator Name: $creatorName');
+      print('Academic Year: $academicYear');
+      print('Academic Term: $academicTerm');
     } catch (e) {
       print('Error loading user data: $e');
     }
 
   }
 
-  @override
-  void dispose() {
-    _commentController.dispose();
-    _scrollController.dispose();
-    _commentFocusNode.dispose();
-    super.dispose();
-  }
-
-
-
   void _navigateToAttachmentPreview() {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => AttachmentPreviewScreen(attachments: _attachments),
+
+        builder: (context) => SingleAttachmentPreviewScreen(attachments: _attachments, childContent: widget.childContent,title: widget.title, id: widget.id),
       ),
     );
   }
+
   Widget _buildInstructionsTab() {
     return SingleChildScrollView(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildTitle(),
+          _buildDueDate(),
           _buildDescription(),
+
+          _buildSpecDivider(),
+
+          Text(
+            'Grade:${widget.childContent?.grade} marks',
+            style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+          ),
           _buildAttachments(),
-          _buildDivider(),
-          _buildCommentSection(),
+        ],
+      ),
+    );
+  }
+  Widget _buildDueDate() {
+    return Padding(
+      padding: const EdgeInsets.only(
+          top: 20.0, bottom: 16.0, right: 16.0, left: 16.0),
+      child: Row(
+        children: [
+          Text(
+            'Due: ',
+            style: AppTextStyles.normal600(
+                fontSize: 16.0, color: AppColors.eLearningTxtColor1),
+          ),
+          Text(
+            DateFormat('E, dd MMM yyyy (hh:mm a)').format(DateTime.parse(widget.childContent?.end_date ?? ""))
+            ,
+            style: AppTextStyles.normal500(fontSize: 16.0, color: Colors.black),
+          ),
         ],
       ),
     );
@@ -143,14 +146,12 @@ class _MaterialDetailScreen extends State<MaterialDetailScreen> {
     return Container(
       width: double.infinity,
       decoration: const BoxDecoration(
-        border: Border(
-          bottom: BorderSide(color: AppColors.paymentTxtColor1, width: 2.0),
-        ),
+
       ),
       child: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Text(
-          widget.childContent.title!,
+          widget.childContent?.title ??"",
           style: AppTextStyles.normal600(
             fontSize: 20.0,
             color: AppColors.paymentTxtColor1,
@@ -159,6 +160,7 @@ class _MaterialDetailScreen extends State<MaterialDetailScreen> {
       ),
     );
   }
+
 
   @override
   Widget build(BuildContext context) {
@@ -179,7 +181,7 @@ class _MaterialDetailScreen extends State<MaterialDetailScreen> {
           ),
         ),
         title: Text(
-          'Material',
+          'Assignment',
           style: AppTextStyles.normal600(
             fontSize: 24.0,
             color: AppColors.eLearningBtnColor1,
@@ -202,39 +204,23 @@ class _MaterialDetailScreen extends State<MaterialDetailScreen> {
           ),
         ),
       ),
-      body:
-      Container(
+      body:Container(
         color: Colors.white,
         child: _buildInstructionsTab(),
 
       ),
-      bottomNavigationBar:  SafeArea(
-        child: AnimatedPadding(
-          duration: const Duration(milliseconds: 300),
-          padding: EdgeInsets.only(
-            bottom: MediaQuery.of(context).viewInsets.bottom,
-            left: 8.0,
-            right: 8.0,
-            top: 8.0,
+      bottomNavigationBar:  ElevatedButton(
+        // onPressed: _showAttachmentOptions,
+        onPressed: _navigateToAttachmentPreview,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: AppColors.eLearningBtnColor1,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8),
           ),
-          child: _isAddingComment
-              ? _buildCommentInput()
-              : InkWell(
-            onTap: () {
-              setState(() {
-                _isAddingComment = true;
-                WidgetsBinding.instance.addPostFrameCallback((_) {
-                  _commentFocusNode.requestFocus();
-                });
-              });
-            },
-            child: Padding(
-              padding: const EdgeInsets.all(12.0),
-              child: _buildCommentInput()
-            ),
-          ),
+          minimumSize: const Size(double.infinity, 50),
         ),
-      )
+        child: const Text('Add work', style: TextStyle(fontSize: 16, color: AppColors.backgroundLight)),
+      ),
 
     );
   }
@@ -258,6 +244,7 @@ class _MaterialDetailScreen extends State<MaterialDetailScreen> {
       ),
     );
   }
+
   Widget _buildCommentSection() {
     return Consumer<StudentCommentProvider>(
       builder: (context, commentProvider, child) {
@@ -317,95 +304,56 @@ class _MaterialDetailScreen extends State<MaterialDetailScreen> {
                     style: const TextStyle(color: Colors.red),
                   ),
                 ),
-            //  _buildDivider(),
+              _buildDivider(),
             ],
-
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: _isAddingComment
+                  ? _buildCommentInput()
+                  : InkWell(
+                onTap: () => setState(() => _isAddingComment = true),
+                child: Text(
+                  'Add class comment',
+                  style: AppTextStyles.normal500(
+                      fontSize: 16.0, color: AppColors.paymentTxtColor1),
+                ),
+              ),
+            ),
           ],
         );
       },
     );
   }
+
   Widget _buildCommentItem(StudentComment comment) {
-    return Container(
-      margin: const EdgeInsets.symmetric(vertical: 8),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 6,
-            offset: const Offset(0, 3),
+    return ListTile(
+      minTileHeight: 20,
+      leading: CircleAvatar(
+        backgroundColor: AppColors.paymentTxtColor1,
+        child: Text(
+          comment.author[0].toUpperCase(),
+          style: AppTextStyles.normal500(
+              fontSize: 18, color: AppColors.backgroundLight),
+        ),
+      ),
+      title: Row(
+        children: [
+          Text(comment.author,
+              style: AppTextStyles.normal600(
+                  fontSize: 16.0, color: AppColors.backgroundDark)),
+          const SizedBox(width: 8),
+          Text(
+            DateFormat('d MMMM').format(comment.date),
+            style: AppTextStyles.normal400(fontSize: 14.0, color: Colors.grey),
           ),
+
+
         ],
       ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          CircleAvatar(
-            radius: 20,
-            backgroundColor: AppColors.paymentTxtColor1,
-            child: Text(
-              comment.author[0].toUpperCase(),
-              style: AppTextStyles.normal500(
-                fontSize: 16,
-                color: AppColors.backgroundLight,
-              ),
-            ),
-          ),
-
-          const SizedBox(width: 12),
-
-          // Comment Content
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Header row: name + date + actions
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        comment.author,
-                        style: AppTextStyles.normal600(
-                          fontSize: 15,
-                          color: AppColors.backgroundDark,
-                        ),
-                      ),
-                    ),
-
-                  ],
-                ),
-
-                const SizedBox(height: 1),
-
-                // Comment text
-                Text(
-                  comment.text,
-                  style: AppTextStyles.normal500(
-                    fontSize: 14,
-                    color: AppColors.text4Light,
-                  ),
-                ),
-                Row(
-
-                  children: [
-                    Text(
-                      DateFormat('d MMM, HH:mm').format(comment.date),
-                      style: AppTextStyles.normal400(
-                        fontSize: 13,
-                        color: Colors.grey.shade600,
-                      ),
-                    ),
-
-
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ],
+      subtitle: Text(
+        comment.text,
+        style:
+        AppTextStyles.normal500(fontSize: 16, color: AppColors.text4Light),
       ),
     );
   }
@@ -415,24 +363,17 @@ class _MaterialDetailScreen extends State<MaterialDetailScreen> {
     return Row(
       children: [
         Expanded(
-          child:Container(
-            decoration: const BoxDecoration(
-              border: Border(
-                top: BorderSide(color: AppColors.paymentBtnColor1, width: 1.0),
-              ),
+          child: TextField(
+            controller: _commentController,
+            decoration: const InputDecoration(
+              hintText: 'Type your comment...',
+              border: OutlineInputBorder(),
             ),
-            child: TextField(
-              controller: _commentController,
-              focusNode: _commentFocusNode,
-              decoration: const InputDecoration(
-                hintText: 'Post a comment...',
-                border: InputBorder.none,
-              ),
-            ),
-          )
-
+          ),
         ),
-        IconButton(
+        provider.isLoading
+            ? const CircularProgressIndicator()
+            : IconButton(
           icon: const Icon(Icons.send),
           onPressed: _addComment,
           color: AppColors.paymentTxtColor1,
@@ -440,6 +381,7 @@ class _MaterialDetailScreen extends State<MaterialDetailScreen> {
       ],
     );
   }
+
 
   void _addComment([Map<String, dynamic>? updatedComment]) async {
     if (_commentController.text.isNotEmpty) {
@@ -465,12 +407,14 @@ class _MaterialDetailScreen extends State<MaterialDetailScreen> {
           comment['content_id'];
           print("printed Comment $comment");
           await commentProvider.UpdateComment(comment,contentId.toString());
+          CustomToaster.toastSuccess(context, 'Success', 'Comment updated successfully');
         } else {
 
-          await commentProvider.createComment(comment, widget.childContent!.id.toString());
+          await commentProvider.createComment(comment, widget.childContent?.id.toString() ??"");
+          CustomToaster.toastSuccess(context, 'Success', 'Comment added successfully');
         }
 
-        await commentProvider.fetchComments(widget.childContent!.id.toString());
+        await commentProvider.fetchComments(widget.childContent?.id.toString() ?? "");
         setState(() {
           _isAddingComment = false;
           _isEditing = false;
@@ -501,7 +445,12 @@ class _MaterialDetailScreen extends State<MaterialDetailScreen> {
       child: Divider(color: Colors.grey.withOpacity(0.5)),
     );
   }
-
+  Widget _buildSpecDivider() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+      child: Divider(  color: AppColors.paymentTxtColor1, thickness: 2.0),
+    );
+  }
   Widget _buildDescription() {
     return Padding(
       padding: const EdgeInsets.all(16.0),
@@ -514,7 +463,7 @@ class _MaterialDetailScreen extends State<MaterialDetailScreen> {
           ),
           Expanded(
             child: Text(
-              widget.childContent.description!,
+              widget.childContent?.description ??"",
               style: AppTextStyles.normal500(fontSize: 16.0, color: Colors.black),
             ),
           ),
@@ -524,7 +473,7 @@ class _MaterialDetailScreen extends State<MaterialDetailScreen> {
   }
 
   Widget _buildAttachments() {
-    final attachments = widget.childContent.contentFiles;
+    final attachments = widget.childContent?.contentFiles;
     if (attachments == null || attachments.isEmpty) {
       return const Center(child: Text('No attachment available'));
     }
@@ -554,8 +503,8 @@ class _MaterialDetailScreen extends State<MaterialDetailScreen> {
     );
   }
 
-  Widget _buildAttachmentItem(ContentFile attachment) {
-    final rawFileName = attachment.fileName ?? 'Unknown file';
+  Widget _buildAttachmentItem(dynamic attachment) {
+    final rawFileName = attachment["file_name"] ?? 'Unknown file';
     final fileType = _getFileType(rawFileName);
     final fileUrl = "https://linkskool.net/$rawFileName";
 
@@ -576,7 +525,7 @@ class _MaterialDetailScreen extends State<MaterialDetailScreen> {
                   url: fileUrl,
                 ),
               ),
-            );
+            );;
           } else {_launchUrl(fileName);
           }}
       },
@@ -810,7 +759,6 @@ class _MaterialDetailScreen extends State<MaterialDetailScreen> {
         return Colors.blue[700]!;
     }
   }
-
 }
 
 

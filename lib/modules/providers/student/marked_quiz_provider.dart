@@ -1,10 +1,12 @@
 
 import 'package:flutter/cupertino.dart';
 import 'package:linkschool/modules/model/student/streams_model.dart';
+import 'package:linkschool/modules/model/student/submitted_quiz_model.dart';
+import 'package:linkschool/modules/services/student/marked_quiz_service.dart';
 import 'package:linkschool/modules/services/student/streams_service.dart';
 
-class StreamsProvider with ChangeNotifier {
-  final StreamsService _streamsService;
+class MarkedQuizProvider with ChangeNotifier {
+  final MarkedQuizService _markedQuizService;
   List<StreamsModel> streams = [];
   bool isLoading = false;
   String? message;
@@ -13,9 +15,9 @@ class StreamsProvider with ChangeNotifier {
   int currentPage = 1;
   bool hasNext = true;
   int limit = 10;
-  StreamsProvider(this._streamsService);
+  MarkedQuizProvider(this._markedQuizService);
 
-  Future<Map<String, dynamic>?> fetchStreams(int syllabusid) async {
+  Future<MarkedQuizModel?> fetchMarkedQuiz(int contentid, int year, int term) async {
 
 
 
@@ -25,17 +27,15 @@ class StreamsProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      final result = await _streamsService.getStreams(
-        syllabusid: syllabusid, 
+      final result = await _markedQuizService.getMarkedQuiz(
+        term: term,
+        contentid: contentid,
+        year: year,
       );
 
-    //  final newstreams = result as List<StreamsModel>;
-
-    //  streams.addAll(newstreams);
-
+      print ("Quest ${result}");
       isLoading = false;
       notifyListeners();
-      print("Paint ${result}");
       return result;
     } catch (e) {
       isLoading = false;

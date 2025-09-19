@@ -7,6 +7,7 @@ import 'package:hive/hive.dart';
 import 'package:intl/intl.dart';
 import 'package:linkschool/modules/admin/e_learning/admin_assignment_screen.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
+import 'package:linkschool/modules/model/student/single_elearningcontentmodel.dart';
 import 'package:video_player/video_player.dart';
 import 'package:video_thumbnail/video_thumbnail.dart';
 
@@ -22,11 +23,10 @@ import '../../common/custom_toaster.dart';
 import '../../common/widgets/portal/attachmentItem.dart';
 import '../../common/widgets/portal/student/custom_input_field.dart';
 import '../../model/student/comment_model.dart';
-import '../../model/student/elearningcontent_model.dart';
 import '../../providers/student/student_comment_provider.dart';
 import '../../services/api/service_locator.dart';
 
-class MaterialDetailScreen extends StatefulWidget {
+class SingleMaterialDetailScreen extends StatefulWidget {
   final int? syllabusId;
   final String? courseId;
   final String? levelId;
@@ -34,15 +34,15 @@ class MaterialDetailScreen extends StatefulWidget {
   final String? courseName;
   final int? itemId;
   final List<Map<String, dynamic>>? syllabusClasses;
-  final ChildContent childContent;
+  final SingleElearningContentData? childContent;
 
-  const MaterialDetailScreen({super.key, required this.childContent, this.syllabusId, this.courseId, this.levelId, this.classId, this.courseName, this.syllabusClasses, this.itemId});
+  const SingleMaterialDetailScreen({super.key, required this.childContent, this.syllabusId, this.courseId, this.levelId, this.classId, this.courseName, this.syllabusClasses, this.itemId});
 
   @override
-  State<MaterialDetailScreen> createState() => _MaterialDetailScreen();
+  State<SingleMaterialDetailScreen> createState() => _SingleMaterialDetailScreen();
 }
 
-class _MaterialDetailScreen extends State<MaterialDetailScreen> {
+class _SingleMaterialDetailScreen extends State<SingleMaterialDetailScreen> {
   final TextEditingController _commentController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   List<StudentComment> comments = [];
@@ -64,7 +64,7 @@ class _MaterialDetailScreen extends State<MaterialDetailScreen> {
   void initState() {
     super.initState();
     _loadUserData();
-    locator<StudentCommentProvider>().fetchComments(widget.childContent.id.toString());
+    locator<StudentCommentProvider>().fetchComments(widget.childContent!.id.toString());
     _scrollController.addListener(() {
       if (_scrollController.position.pixels >=
           _scrollController.position.maxScrollExtent * 0.9 &&
@@ -72,7 +72,7 @@ class _MaterialDetailScreen extends State<MaterialDetailScreen> {
           locator<StudentCommentProvider>().hasNext) {
 
         Provider.of<StudentCommentProvider>(context, listen: false)
-            .fetchComments(widget.childContent.id.toString());
+            .fetchComments(widget.childContent!.id.toString());
       }
     });
 
@@ -150,7 +150,7 @@ class _MaterialDetailScreen extends State<MaterialDetailScreen> {
       child: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Text(
-          widget.childContent.title!,
+          widget.childContent?.title ?? "No Title",
           style: AppTextStyles.normal600(
             fontSize: 20.0,
             color: AppColors.paymentTxtColor1,
@@ -162,79 +162,91 @@ class _MaterialDetailScreen extends State<MaterialDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
-
-    final Brightness brightness = Theme.of(context).brightness;
-    opacity = brightness == Brightness.light ? 0.1 : 0.15;
-    return Scaffold(
-      appBar: AppBar(
-        leading: IconButton(
-          onPressed: () {
-            Navigator.of(context).pop();
-          },
-          icon: Image.asset(
-            'assets/icons/arrow_back.png',
-            color: AppColors.eLearningBtnColor1,
-            width: 34.0,
-            height: 34.0,
-          ),
-        ),
-        title: Text(
-          'Material',
-          style: AppTextStyles.normal600(
-            fontSize: 24.0,
-            color: AppColors.eLearningBtnColor1,
-          ),
-        ),
-        backgroundColor: AppColors.backgroundLight,
-        flexibleSpace: FlexibleSpaceBar(
-          background: Stack(
+    if (widget.childContent== null) {
+      return const Scaffold(
+        body:  Center(
+          child: Column(mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Positioned.fill(
-                child: Opacity(
-                  opacity: opacity,
-                  child: Image.asset(
-                    'assets/images/background.png',
-                    fit: BoxFit.cover,
-                  ),
-                ),
-              )
+
+              CircularProgressIndicator(),
+              Text("Loading your material" ,style: TextStyle(color: AppColors.paymentBtnColor1),),
             ],
           ),
         ),
-      ),
-      body:
-      Container(
-        color: Colors.white,
-        child: _buildInstructionsTab(),
-
-      ),
-      bottomNavigationBar:  SafeArea(
-        child: AnimatedPadding(
-          duration: const Duration(milliseconds: 300),
-          padding: EdgeInsets.only(
-            bottom: MediaQuery.of(context).viewInsets.bottom,
-            left: 8.0,
-            right: 8.0,
-            top: 8.0,
-          ),
-          child: _isAddingComment
-              ? _buildCommentInput()
-              : InkWell(
-            onTap: () {
-              setState(() {
-                _isAddingComment = true;
-                WidgetsBinding.instance.addPostFrameCallback((_) {
-                  _commentFocusNode.requestFocus();
-                });
-              });
+      );
+    }
+    final Brightness brightness = Theme.of(context).brightness;
+    opacity = brightness == Brightness.light ? 0.1 : 0.15;
+    return Scaffold(
+        appBar: AppBar(
+          leading: IconButton(
+            onPressed: () {
+              Navigator.of(context).pop();
             },
-            child: Padding(
-              padding: const EdgeInsets.all(12.0),
-              child: _buildCommentInput()
+            icon: Image.asset(
+              'assets/icons/arrow_back.png',
+              color: AppColors.eLearningBtnColor1,
+              width: 34.0,
+              height: 34.0,
+            ),
+          ),
+          title: Text(
+            'Material',
+            style: AppTextStyles.normal600(
+              fontSize: 24.0,
+              color: AppColors.eLearningBtnColor1,
+            ),
+          ),
+          backgroundColor: AppColors.backgroundLight,
+          flexibleSpace: FlexibleSpaceBar(
+            background: Stack(
+              children: [
+                Positioned.fill(
+                  child: Opacity(
+                    opacity: opacity,
+                    child: Image.asset(
+                      'assets/images/background.png',
+                      fit: BoxFit.cover,
+                    ),
+                  ),
+                )
+              ],
             ),
           ),
         ),
-      )
+        body:
+        Container(
+          color: Colors.white,
+          child: _buildInstructionsTab(),
+
+        ),
+        bottomNavigationBar:  SafeArea(
+          child: AnimatedPadding(
+            duration: const Duration(milliseconds: 300),
+            padding: EdgeInsets.only(
+              bottom: MediaQuery.of(context).viewInsets.bottom,
+              left: 8.0,
+              right: 8.0,
+              top: 8.0,
+            ),
+            child: _isAddingComment
+                ? _buildCommentInput()
+                : InkWell(
+              onTap: () {
+                setState(() {
+                  _isAddingComment = true;
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    _commentFocusNode.requestFocus();
+                  });
+                });
+              },
+              child: Padding(
+                  padding: const EdgeInsets.all(12.0),
+                  child: _buildCommentInput()
+              ),
+            ),
+          ),
+        )
 
     );
   }
@@ -317,7 +329,7 @@ class _MaterialDetailScreen extends State<MaterialDetailScreen> {
                     style: const TextStyle(color: Colors.red),
                   ),
                 ),
-            //  _buildDivider(),
+              //  _buildDivider(),
             ],
 
           ],
@@ -415,21 +427,21 @@ class _MaterialDetailScreen extends State<MaterialDetailScreen> {
     return Row(
       children: [
         Expanded(
-          child:Container(
-            decoration: const BoxDecoration(
-              border: Border(
-                top: BorderSide(color: AppColors.paymentBtnColor1, width: 1.0),
+            child:Container(
+              decoration: const BoxDecoration(
+                border: Border(
+                  top: BorderSide(color: AppColors.paymentBtnColor1, width: 1.0),
+                ),
               ),
-            ),
-            child: TextField(
-              controller: _commentController,
-              focusNode: _commentFocusNode,
-              decoration: const InputDecoration(
-                hintText: 'Post a comment...',
-                border: InputBorder.none,
+              child: TextField(
+                controller: _commentController,
+                focusNode: _commentFocusNode,
+                decoration: const InputDecoration(
+                  hintText: 'Post a comment...',
+                  border: InputBorder.none,
+                ),
               ),
-            ),
-          )
+            )
 
         ),
         IconButton(
@@ -514,7 +526,7 @@ class _MaterialDetailScreen extends State<MaterialDetailScreen> {
           ),
           Expanded(
             child: Text(
-              widget.childContent.description!,
+              widget.childContent!.description,
               style: AppTextStyles.normal500(fontSize: 16.0, color: Colors.black),
             ),
           ),
@@ -524,7 +536,7 @@ class _MaterialDetailScreen extends State<MaterialDetailScreen> {
   }
 
   Widget _buildAttachments() {
-    final attachments = widget.childContent.contentFiles;
+    final attachments = widget.childContent!.contentFiles;
     if (attachments == null || attachments.isEmpty) {
       return const Center(child: Text('No attachment available'));
     }
@@ -554,8 +566,9 @@ class _MaterialDetailScreen extends State<MaterialDetailScreen> {
     );
   }
 
-  Widget _buildAttachmentItem(ContentFile attachment) {
-    final rawFileName = attachment.fileName ?? 'Unknown file';
+  Widget _buildAttachmentItem(dynamic attachment) {
+    print("this is aaa${attachment['file_name']}");
+    final rawFileName = attachment['file_name'] ?? 'Unknown file';
     final fileType = _getFileType(rawFileName);
     final fileUrl = "https://linkskool.net/$rawFileName";
 
@@ -576,7 +589,7 @@ class _MaterialDetailScreen extends State<MaterialDetailScreen> {
                   url: fileUrl,
                 ),
               ),
-            );
+            );;
           } else {_launchUrl(fileName);
           }}
       },
