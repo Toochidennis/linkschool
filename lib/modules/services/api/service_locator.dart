@@ -301,5 +301,4 @@ void setupServiceLocator() {
   locator.registerLazySingleton<FeeProvider>(
     () => FeeProvider( locator<FeeService>()
   ));
-
 }

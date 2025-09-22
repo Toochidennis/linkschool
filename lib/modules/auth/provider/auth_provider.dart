@@ -45,10 +45,12 @@ class AuthProvider with ChangeNotifier {
           await userBox.put('settings', _settings);
         }
 
-        // Save login state and user details
+        // CRITICAL: Save login state and user details with explicit flags
         await userBox.put('isLoggedIn', true);
         await userBox.put('role', _user!.role);
         await userBox.put('token', _token);
+        await userBox.put('sessionValid', true); // Additional flag for session validation
+        await userBox.put('lastLoginTime', DateTime.now().millisecondsSinceEpoch);
 
         // Set the token on ApiService for future requests
         final apiService = locator<ApiService>();
@@ -91,11 +93,14 @@ class AuthProvider with ChangeNotifier {
           }
         }
 
-        // Store in SharedPreferences for cross-session persistence
+        // Store in SharedPreferences for additional persistence
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString('role', _user!.role);
         await prefs.setBool('isLoggedIn', true);
+        await prefs.setString('token', _token!);
+        await prefs.setBool('sessionValid', true);
 
+        print('Login successful - User role: ${_user!.role}');
         notifyListeners();
       } else {
         throw Exception(response.message);
@@ -106,29 +111,64 @@ class AuthProvider with ChangeNotifier {
   }
 
   Future<void> logout() async {
-    final userBox = Hive.box('userData');
-    await userBox.clear();
+    try {
+      // Clear Hive data
+      final userBox = Hive.box('userData');
+      await userBox.clear();
 
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.clear();
+      // Clear SharedPreferences
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.clear();
 
-    _user = null;
-    _token = null;
-    _isLoggedIn = false;
-    _settings = null;
+      // Clear ApiService token
+      final apiService = locator<ApiService>();
+      apiService.setAuthToken('');
 
-    notifyListeners();
+      // Reset state
+      _user = null;
+      _token = null;
+      _isLoggedIn = false;
+      _settings = null;
+
+      print('Logout successful');
+      notifyListeners();
+    } catch (e) {
+      print('Error during logout: $e');
+      // Even if there's an error, reset the state
+      _user = null;
+      _token = null;
+      _isLoggedIn = false;
+      _settings = null;
+      notifyListeners();
+    }
   }
 
   Future<void> checkLoginStatus() async {
     try {
+      print('Checking login status...');
+      
       final userBox = Hive.box('userData');
-      final isLoggedIn = userBox.get('isLoggedIn', defaultValue: false);
+      final prefs = await SharedPreferences.getInstance();
+      
+      // Check multiple sources for login status
+      final isLoggedInHive = userBox.get('isLoggedIn', defaultValue: false);
+      final isLoggedInPrefs = prefs.getBool('isLoggedIn') ?? false;
+      final sessionValid = userBox.get('sessionValid', defaultValue: false);
       final userData = userBox.get('userData');
-      final settings = userBox.get('settings');
       final token = userBox.get('token');
+      
+      print('Hive isLoggedIn: $isLoggedInHive');
+      print('Prefs isLoggedIn: $isLoggedInPrefs');
+      print('Session valid: $sessionValid');
+      print('Has userData: ${userData != null}');
+      print('Has token: ${token != null}');
 
-      if (isLoggedIn && userData != null && token != null) {
+      // Validate session integrity
+      if ((isLoggedInHive || isLoggedInPrefs) && 
+          sessionValid && 
+          userData != null && 
+          token != null) {
+        
         // Safely convert userData to Map<String, dynamic>
         Map<String, dynamic> userDataMap;
         if (userData is Map<String, dynamic>) {
@@ -137,7 +177,7 @@ class AuthProvider with ChangeNotifier {
           userDataMap = Map<String, dynamic>.from(userData);
         } else {
           print('Invalid userData format, clearing login status');
-          await logout();
+          await _clearCorruptedSession();
           return;
         }
 
@@ -150,33 +190,69 @@ class AuthProvider with ChangeNotifier {
           userDataContentMap = Map<String, dynamic>.from(userDataContent);
         } else {
           print('Invalid user data content format, clearing login status');
-          await logout();
+          await _clearCorruptedSession();
           return;
         }
 
-        _user = User.fromJson(userDataContentMap);
-        _token = token.toString();
-        _isLoggedIn = true;
+        // Restore user state
+        try {
+          _user = User.fromJson(userDataContentMap);
+          _token = token.toString();
+          _isLoggedIn = true;
 
-        // Set the token on ApiService for future requests
-        final apiService = locator<ApiService>();
-        apiService.setAuthToken(_token!);
+          // Set the token on ApiService for future requests
+          final apiService = locator<ApiService>();
+          apiService.setAuthToken(_token!);
 
-        // Handle settings safely
-        if (settings != null) {
-          if (settings is Map<String, dynamic>) {
-            _settings = settings;
-          } else if (settings is Map) {
-            _settings = Map<String, dynamic>.from(settings);
+          // Handle settings safely
+          final settings = userBox.get('settings');
+          if (settings != null) {
+            if (settings is Map<String, dynamic>) {
+              _settings = settings;
+            } else if (settings is Map) {
+              _settings = Map<String, dynamic>.from(settings);
+            }
           }
-        }
 
+          print('Session restored successfully - User: ${_user!.name}, Role: ${_user!.role}');
+          notifyListeners();
+          
+        } catch (e) {
+          print('Error restoring user from session data: $e');
+          await _clearCorruptedSession();
+        }
+        
+      } else {
+        print('No valid session found or session expired');
+        _isLoggedIn = false;
+        _user = null;
+        _token = null;
+        _settings = null;
         notifyListeners();
       }
     } catch (e) {
       print('Error checking login status: $e');
-      // Clear any corrupted data and reset login status
-      await logout();
+      await _clearCorruptedSession();
+    }
+  }
+
+  Future<void> _clearCorruptedSession() async {
+    try {
+      final userBox = Hive.box('userData');
+      await userBox.clear();
+
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.clear();
+
+      _user = null;
+      _token = null;
+      _isLoggedIn = false;
+      _settings = null;
+
+      print('Corrupted session cleared');
+      notifyListeners();
+    } catch (e) {
+      print('Error clearing corrupted session: $e');
     }
   }
 
@@ -346,8 +422,16 @@ class AuthProvider with ChangeNotifier {
     final userBox = Hive.box('userData');
     return userBox.get('role', defaultValue: '');
   }
-}
 
+  // Method to refresh session (call this periodically if needed)
+  Future<void> refreshSession() async {
+    if (_isLoggedIn && _token != null) {
+      final userBox = Hive.box('userData');
+      await userBox.put('lastLoginTime', DateTime.now().millisecondsSinceEpoch);
+      print('Session refreshed');
+    }
+  }
+}
 
 
 

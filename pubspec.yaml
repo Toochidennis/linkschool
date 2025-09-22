@@ -129,5 +129,5 @@ flutter:
           weight: 700
         - asset: assets/fonts/Poppins/Poppins-Regular.ttf
           weight: 800
-        - asset: assets/fonts/Roboto-Regular.ttf
-        - asset: assets/fonts/Roboto-Bold.ttf
+        # - asset: assets/fonts/Roboto-Regular.ttf
+        # - asset: assets/fonts/Roboto-Bold.ttf
