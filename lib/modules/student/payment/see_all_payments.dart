@@ -107,7 +107,6 @@ class _PaymentHistorySeeAllScreenState
                     ),
                   ),
                   const SizedBox(width: 8),
-
                   // Term filter
                   Expanded(
                     child: DropdownButtonFormField<String>(

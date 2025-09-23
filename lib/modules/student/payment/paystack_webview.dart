@@ -19,7 +19,7 @@ class PaystackWebView extends StatefulWidget {
   final String regNo;
   final String name;
   final int amount;
-  final List<Map<String, dynamic>> fees;
+  final List<Map<String, dynamic>> invoiceDetails;
   final int classId;
   final int levelId;
   final int year;
@@ -37,7 +37,7 @@ class PaystackWebView extends StatefulWidget {
     required this.regNo,
     required this.name,
     required this.amount,
-    required this.fees,
+    required this.invoiceDetails,
     required this.classId,
     required this.levelId,
     required this.year,
@@ -90,7 +90,7 @@ class _PaystackWebViewState extends State<PaystackWebView> {
         regNo: widget.regNo,
         name: widget.name,
         amount: widget.amount.toDouble(),
-        fees: widget.fees,
+        invoiceDetails: widget.invoiceDetails,
         classId: widget.classId,
         levelId: widget.levelId,
         year: widget.year,
@@ -105,18 +105,11 @@ class _PaystackWebViewState extends State<PaystackWebView> {
     }
   }
 Future<bool> _onWillPop() async {
-  await _postPaymentData();
-  Navigator.pushAndRemoveUntil(
-    context,
-    MaterialPageRoute(
-      builder: (_) => StudentPaymentHomeScreen(
-        logout: () {}, // pass your logout callback here
-      ),
-    ),
-    (route) => false, // removes all previous routes
-  );
-  return false; // prevent default pop
-}
+    await _postPaymentData();
+    Navigator.pop(context); // Pop PaystackWebView
+    Navigator.pop(context); // Pop ViewDetail to reach StudentPaymentHomeScreen
+    return false; // Prevent default pop
+  }
 
 
   @override
@@ -126,21 +119,14 @@ Future<bool> _onWillPop() async {
       child: Scaffold(
         appBar: AppBar(
           title: const Text('Complete Payment'),
-          leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () async {
-            await _postPaymentData();
-            Navigator.pushAndRemoveUntil(
-              context,
-              MaterialPageRoute(
-                builder: (_) => StudentPaymentHomeScreen(
-                  logout: () {}, // pass the same logout callback
-                ),
-              ),
-              (route) => false,
-            );
-          },
-        ),
+           leading: IconButton(
+            icon: const Icon(Icons.arrow_back),
+            onPressed: () async {
+              await _postPaymentData();
+              Navigator.pop(context); // Pop PaystackWebView
+              Navigator.pop(context); // Pop ViewDetail to reach StudentPaymentHomeScreen
+            },
+          ),
       ),
         body: WebViewWidget(controller: _controller),
         floatingActionButton: kDebugMode

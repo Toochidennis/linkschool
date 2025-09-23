@@ -242,7 +242,7 @@ class _StudentViewDetailPaymentDialogState
               regNo: user['registration_no'] ?? '',
               name: user['name'] ?? '',
               amount: _calculateSelectedTotal().toInt(),
-              fees: widget.invoice.details
+              invoiceDetails: widget.invoice.details
                   .asMap()
                   .entries
                   .where((entry) => _selectedFees[entry.key])

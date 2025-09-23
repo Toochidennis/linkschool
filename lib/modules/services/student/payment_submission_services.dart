@@ -31,7 +31,7 @@ class PaymentSubmissionService {
     required String regNo,
     required String name,
     required double amount,
-    required List<Map<String, dynamic>> fees,
+    required List<Map<String, dynamic>> invoiceDetails,
     required int classId,
     required int levelId,
     required int year,
@@ -52,10 +52,11 @@ class PaymentSubmissionService {
       'reg_no': regNo,
       'name': name,
       'amount': amount,
-      'fees': fees,
+      'invoice_details': invoiceDetails,
       'class_id': classId,
       'level_id': levelId,
       'year': year,
+     "type": "online",
       'term': term,
       '_db': 'aalmgzmy_linkskoo_practice',
       'email': email,
@@ -69,7 +70,7 @@ class PaymentSubmissionService {
         endpoint: 'portal/students/277/make-payment',
         body: paymentData,
       );
-
+      print("see me here oo $paymentData");
       print("Response Status Code: ${response.statusCode}");
 
       if (!response.success) {
