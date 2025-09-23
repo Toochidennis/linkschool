@@ -32,6 +32,7 @@ class ViewQuestionScreen extends StatefulWidget {
   final bool editMode;
   final VoidCallback? onSaveFlag;
    final VoidCallback? onCreation;
+  final String? source;
   const ViewQuestionScreen({
     super.key,
     required this.question,
@@ -41,7 +42,7 @@ class ViewQuestionScreen extends StatefulWidget {
     this.questions,
     this.editMode = false,
     this.onSaveFlag,
-    this.onCreation
+    this.onCreation, this.source
   });
 
   @override
@@ -259,8 +260,13 @@ void _initializeQuestions() {
       appBar: AppBar(
         leading: IconButton(
           onPressed: () {
-            Navigator.of(context)
-                .popUntil(ModalRoute.withName('/empty_subject'));
+            if (widget.source == 'empty_subject') {
+              Navigator.of(context).popUntil(ModalRoute.withName('/empty_subject'));
+            } else {
+              Navigator.of(context).pop();
+            }
+            // Navigator.of(context)
+            //     .popUntil(ModalRoute.withName('/empty_subject'));
           },
           icon: Image.asset(
             'assets/icons/arrow_back.png',
@@ -311,7 +317,42 @@ void _initializeQuestions() {
           child: Column(
             children: [
               _buildQuestionBackground(),
+             if (createdQuestions.isEmpty)
+              Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      SvgPicture.asset(
+                        'assets/images/e-learning/Student stress-amico.svg',
+                        width: 280,
+                        height: 280,
+                        placeholderBuilder: (context) => Image.asset(
+                          'assets/images/e-learning/Student stress-amico.svg',
+                          width: 150,
+                          height: 150,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+
+                      Text(
+                        'No Questions Available',
+                        style: AppTextStyles.normal600(
+                          fontSize: 18,
+                          color: AppColors.primaryLight,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                   
+                    ],
+                  ),
+                ),
+              )
+            else
               ...createdQuestions.map((question) => question['widget']),
+                
+            
             ],
           ),
         ),
@@ -566,7 +607,13 @@ void _initializeQuestions() {
     if (mounted) {
       widget.onSaveFlag?.call();
       widget.onCreation?.call();
+
+       if(widget.source == 'empty_subject') {
       Navigator.of(context).popUntil(ModalRoute.withName('/empty_subject'));
+    } else {
+      Navigator.of(context).pop();
+    }
+     
     }
   } catch (e) {
     print('Error posting quiz: $e');

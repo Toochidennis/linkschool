@@ -217,6 +217,94 @@ class _StaffRecentMaterialState extends State<StaffRecentMaterial>
             ],
           ),
         ),
+            actions: [
+          PopupMenuButton<String>(
+            icon: const Icon(Icons.more_vert, color: AppColors.paymentTxtColor1),
+            onSelected: (String result) {
+              
+              switch (result) {
+                
+                case 'edit':
+
+                print("itemId: ${widget.itemId}");
+print("syllabusId: ${widget.syllabusId}");
+print("courseId: ${widget.courseId}");
+print("levelId: ${widget.levelId}");
+print("classId: ${materialData}");
+print("courseName: ${widget.courseName}");
+print("syllabusClasses: ${widget.syllabusClasses}");
+
+print("title: ${materialData?.title}");
+print("description: ${materialData?.description}");
+print("classes: ${materialData?.classes}");
+print("startDate: ${materialData?.startDate}");
+print("endDate: ${materialData?.endDate}");
+print("topic: ${materialData?.topic}");
+print("contentFiles: ${materialData?.contentFiles}");
+print("duration: ${materialData?.duration}");
+print("topicId: ${materialData?.topicId}");
+print("grade: ${materialData?.grade}");
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => StaffAddMaterialScreen(
+                        itemId:widget.itemId,
+                        syllabusId: widget.syllabusId,
+                        courseId: widget.courseId,
+                        levelId: widget.levelId,
+                        classId: widget.classId,
+                        courseName: widget.courseName,
+                        editMode: true,
+                        syllabusClasses: widget.syllabusClasses,
+                        materialToEdit: custom.Material(
+                          title: materialData!.title,
+                          description: materialData!.description,
+                          selectedClass: materialData!.classes.map((c) => c.name).join(', '),
+                          startDate:DateTime.parse(materialData!.startDate!),
+
+                          endDate: DateTime.parse(materialData!.endDate!),
+                          topic: materialData!.topic ?? '',
+                          attachments: (materialData!.contentFiles ?? [])
+                              .map((file) => AttachmentItem(
+                                    fileName: file.fileName,
+                                    fileContent: file.file ?? '',
+                                    iconPath: (file.type == 'image' ||
+                                                file.type == 'photo' ||
+                                                file.type == 'video')
+                                            ? 'assets/icons/e_learning/material.svg'
+                                            : 'assets/icons/e_learning/link.svg',
+                                  ))
+                              .toList(),
+                          duration:  materialData!.duration != null
+    ? Duration(minutes: int.parse(materialData!.duration!))
+    : Duration.zero,
+topicId: materialData!.topicId.toString(),
+                          
+                         marks: materialData!.grade ?? "0",
+
+                        ),
+                        onSave: (material) {},
+                      ),
+                    ),
+                  );
+                  break;
+                case 'delete':
+                  deleteMaterial(widget.itemId);
+                  break;
+              }
+            },
+            itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
+              const PopupMenuItem<String>(
+                value: 'edit',
+                child: Text('Edit'),
+              ),
+              const PopupMenuItem<String>(
+                value: 'delete',
+                child: Text('Delete'),
+              ),
+            ],
+          ),
+        ],
       ),
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -1027,6 +1115,7 @@ class _FullScreenMediaViewerState extends State<FullScreenMediaViewer> {
           style: const TextStyle(color: Colors.white),
           overflow: TextOverflow.ellipsis,
         ),
+    
       ),
       body: Center(
         child: widget.type == 'video'

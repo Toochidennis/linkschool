@@ -18,6 +18,7 @@ import 'package:linkschool/modules/providers/admin/e_learning/topic_provider.dar
 
 import 'package:linkschool/modules/providers/admin/grade_provider.dart';
 import 'package:linkschool/modules/providers/admin/skills_behavior_table_provider.dart';
+import 'package:linkschool/modules/providers/staff/streams_provider.dart';
 import 'package:linkschool/modules/providers/staff/syllabus_provider.dart';
 import 'package:linkschool/modules/services/admin/attendance_service.dart';
 import 'package:linkschool/modules/services/admin/e_learning/activity_service.dart';
@@ -43,6 +44,7 @@ import 'package:linkschool/modules/services/admin/assessment_service.dart';
 import 'package:linkschool/modules/providers/admin/student_provider.dart';
 import 'package:linkschool/modules/services/admin/behaviour_service.dart';
 import 'package:linkschool/modules/services/staff/overview_service.dart';
+import 'package:linkschool/modules/services/staff/streams_service.dart';
 import 'package:linkschool/modules/services/staff/syllabus_service.dart';
 
 
@@ -233,4 +235,13 @@ locator.registerLazySingleton<DeleteSyllabusProvider>(() => DeleteSyllabusProvid
   locator.registerLazySingleton<SingleContentProvider>(
     () => SingleContentProvider()
   );
+
+
+    locator.registerLazySingleton<StaffStreamsProvider>(
+          () => StaffStreamsProvider(locator<StaffStreamsService>())
+  );
+  locator.registerLazySingleton<StaffStreamsService>(
+          () => StaffStreamsService(locator<ApiService>())
+  );
+
 }

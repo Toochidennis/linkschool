@@ -17,11 +17,18 @@ import '../../../../model/e-learning/question_model.dart';
 class QuizScreen extends StatefulWidget {
   final Question question;
   final List<Map<String, dynamic>>? questions;
-  final List<Map<String,dynamic>>? correctAnswers;
+  final List<Map<String, dynamic>>? correctAnswers;
   final Map<String, dynamic?>? questiondata;
   final List<Map<String, String>>? class_ids;
-  final  String? syllabusClasses;
-  const QuizScreen({super.key, required this.question, this.questions, this.correctAnswers,  this.questiondata, this.class_ids,  this.syllabusClasses});
+  final String? syllabusClasses;
+  const QuizScreen(
+      {super.key,
+      required this.question,
+      this.questions,
+      this.correctAnswers,
+      this.questiondata,
+      this.class_ids,
+      this.syllabusClasses});
 
   @override
   _QuizScreenState createState() => _QuizScreenState();
@@ -36,7 +43,7 @@ class _QuizScreenState extends State<QuizScreen> {
     final Brightness brightness = Theme.of(context).brightness;
     opacity = brightness == Brightness.light ? 0.1 : 0.15;
     return DefaultTabController(
-      length: 2, 
+      length: 2,
       child: Scaffold(
         appBar: AppBar(
           leading: IconButton(
@@ -59,44 +66,38 @@ class _QuizScreenState extends State<QuizScreen> {
             PopupMenuButton<String>(
               icon: const Icon(Icons.more_vert, color: AppColors.primaryLight),
               onSelected: (String result) {
-                   switch (result) {
-                case 'edit':
-              Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => ViewQuestionScreen(
-            
-            question: Question(
-              id: widget.question.id, // Pass the quiz ID
-              title: widget.question.title,
-              description: widget.question.description,
-              selectedClass: widget.question.selectedClass,
-              endDate: DateTime.now(),
-              startDate: DateTime.now(),
-            //  startDate:widget.question.startDate != null ? DateTime.parse(widget.question.startDate ?? {}) : DateTime.now(),
-             // endDate: widget.question.endDate != null ? DateTime.parse(widget.question.endDate!) : DateTime.now(),
-              topic: widget.question.topic ?? 'No Topic',
-              duration: widget.question.duration != null
+                switch (result) {
+                  case 'edit':
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => ViewQuestionScreen(
+                          question: Question(
+                            id: widget.question.id, // Pass the quiz ID
+                            title: widget.question.title,
+                            description: widget.question.description,
+                            selectedClass: widget.question.selectedClass,
+                            endDate: DateTime.now(),
+                            startDate: DateTime.now(),
+                            //  startDate:widget.question.startDate != null ? DateTime.parse(widget.question.startDate ?? {}) : DateTime.now(),
+                            // endDate: widget.question.endDate != null ? DateTime.parse(widget.question.endDate!) : DateTime.now(),
+                            topic: widget.question.topic ?? 'No Topic',
+                            duration: widget.question.duration,
 
-                  ? Duration(minutes: int.tryParse(widget.question.duration.toString()) ?? 0)
-                  : Duration.zero,
-              marks: widget.question.marks?.toString() ?? '0',
-              topicId: widget.question.topicId,
-            ),
-            questiondata:widget.questiondata ?? {},
-         class_ids: widget.class_ids,
-            syllabusClasses: widget.syllabusClasses,
-            questions: widget.questions, 
-            editMode: true,
-         
-          ),
-        ),
-      );
-            case 'delete':
-            deleteQuiz(widget.question.id);
-
-      }
-
+                            marks: widget.question.marks?.toString() ?? '0',
+                            topicId: widget.question.topicId,
+                          ),
+                          questiondata: widget.questiondata ?? {},
+                          class_ids: widget.class_ids,
+                          syllabusClasses: widget.syllabusClasses,
+                          questions: widget.questions,
+                          editMode: true,
+                        ),
+                      ),
+                    );
+                  case 'delete':
+                    deleteQuiz(widget.question.id);
+                }
               },
               itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
                 const PopupMenuItem<String>(
@@ -110,40 +111,40 @@ class _QuizScreenState extends State<QuizScreen> {
               ],
             ),
           ],
-        backgroundColor: AppColors.backgroundLight,
-        flexibleSpace: FlexibleSpaceBar(
-          background: Stack(
-            children: [
-              Positioned.fill(
-                child: Opacity(
-                  opacity: opacity,
-                  child: Image.asset(
-                    'assets/images/background.png',
-                    fit: BoxFit.cover,
+          backgroundColor: AppColors.backgroundLight,
+          flexibleSpace: FlexibleSpaceBar(
+            background: Stack(
+              children: [
+                Positioned.fill(
+                  child: Opacity(
+                    opacity: opacity,
+                    child: Image.asset(
+                      'assets/images/background.png',
+                      fit: BoxFit.cover,
+                    ),
                   ),
-                ),
-              )
-            ],
+                )
+              ],
+            ),
           ),
-        ),
           bottom: TabBar(
             // Move TabBar to AppBar's bottom
             // controller: _tabController,
-            tabs:  [
-            Tab(
-              child: Text(
-                'Questions',
-                style: AppTextStyles.normal600(
-                    fontSize: 18, color: AppColors.primaryLight),
+            tabs: [
+              Tab(
+                child: Text(
+                  'Questions',
+                  style: AppTextStyles.normal600(
+                      fontSize: 18, color: AppColors.primaryLight),
+                ),
               ),
-            ),
-            Tab(
-              child: Text(
-                'Answers',
-                style: AppTextStyles.normal600(
-                    fontSize: 18, color: AppColors.primaryLight),
+              Tab(
+                child: Text(
+                  'Answers',
+                  style: AppTextStyles.normal600(
+                      fontSize: 18, color: AppColors.primaryLight),
+                ),
               ),
-            ),
             ],
           ),
         ),
@@ -161,17 +162,17 @@ class _QuizScreenState extends State<QuizScreen> {
     );
   }
 
-      Future<void> deleteQuiz(id) async {
-       
-                    try {
-                   final provider =locator<DeleteSyllabusProvider>();
-                   await provider.DeleteQuiz(widget.question.id.toString());
-                   CustomToaster.toastSuccess(context, 'Success', 'quiz deleted successfully');
-                   Navigator.of(context).pop();
-                  } catch (e) {
-                    print('Error deleting question: $e');
-                  }
-                  }
+  Future<void> deleteQuiz(id) async {
+    try {
+      final provider = locator<DeleteSyllabusProvider>();
+      await provider.DeleteQuiz(widget.question.id.toString());
+      CustomToaster.toastSuccess(
+          context, 'Success', 'quiz deleted successfully');
+      Navigator.of(context).pop();
+    } catch (e) {
+      print('Error deleting question: $e');
+    }
+  }
 
   Widget _buildQuestionTab() {
     return ListView(
@@ -196,33 +197,33 @@ class _QuizScreenState extends State<QuizScreen> {
             // Navigate to the assessment screen
             print("SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS ${widget.correctAnswers}");
             print("quiz duration ${widget.question.duration}");
-        
+
             Navigator.push(
               context,
               MaterialPageRoute(
                 builder: (context) => AssessmentScreen(
-                  title:widget.question.title,
-                 duration: widget.question.duration,
-                  questions: widget.questions ?? [],
-                  mark:widget.question.marks,
-                  correctAnswer:widget.correctAnswers
-                ),
+                    title: widget.question.title,
+                    duration: widget.question.duration,
+                    questions: widget.questions ?? [],
+                    mark: widget.question.marks,
+                    correctAnswer: widget.correctAnswers),
               ),
             );
           },
           backgroundColor: AppColors.eLearningBtnColor1,
           text: 'Take Quiz',
-          textStyle: AppTextStyles.normal600(fontSize: 18, color: AppColors.backgroundLight),
+          textStyle: AppTextStyles.normal600(
+              fontSize: 18, color: AppColors.backgroundLight),
         ),
       ],
     );
   }
 
-Widget _buildAnswersTab() {
-  return AnswersTabWidget(
-  itemId: widget.question.id.toString(),
-  );
-}
+  Widget _buildAnswersTab() {
+    return AnswersTabWidget(
+      itemId: widget.question.id.toString(),
+    );
+  }
 
   Widget _buildInfoRow(String label, String value) {
     return Padding(
@@ -274,4 +275,3 @@ Widget _buildAnswersTab() {
     return '${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
   }
 }
-
