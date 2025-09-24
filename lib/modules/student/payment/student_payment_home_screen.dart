@@ -21,6 +21,7 @@ import 'dart:convert';
 final RouteObserver<PageRoute> routeObserver = RouteObserver<PageRoute>();
 
 class StudentPaymentHomeScreen extends StatefulWidget {
+  static const String routeName = '/student_payment_home';
   final VoidCallback logout;
 
   const StudentPaymentHomeScreen({
