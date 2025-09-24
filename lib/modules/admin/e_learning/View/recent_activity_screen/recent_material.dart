@@ -216,6 +216,97 @@ class _RecentMaterialState extends State<RecentMaterial>
             ],
           ),
         ),
+
+        actions: [
+          if (!isLoading && errorMessage == null)
+            PopupMenuButton<String>(
+              icon: const Icon(Icons.more_vert, color: AppColors.paymentTxtColor1),
+              onSelected: (String result) {
+                switch (result) {
+                  case 'edit':
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => AddMaterialScreen(
+                         onSave: (data) {
+  print(data);
+},
+
+                           editMode: true,
+                          syllabusId: widget.syllabusId,
+                          courseId: widget.courseId,
+                          levelId: widget.levelId,
+                          classId: widget.classId,
+                          courseName: widget.courseName,
+                          itemId: widget.itemId,
+                          materialToEdit: custom.Material(
+                            marks: '0',
+
+                            id: materialData?.id,
+                            title: materialData?.title ?? '',
+                            description: materialData?.description ?? '',
+                            startDate: materialData?.startDate != null
+                                ? DateTime.parse(materialData!.startDate!)
+                                : null ?? DateTime.now(),
+                            endDate: materialData?.endDate != null
+                                ? DateTime.parse(materialData!.endDate!)
+                                : null ?? DateTime.now(),
+                            topic: materialData?.topic ?? 'No Topic',
+                            duration: Duration(seconds: int.tryParse(materialData?.duration.toString() ?? '') ?? 0),
+
+                            topicId: materialData?.topicId.toString(),
+                            selectedClass: widget.classId ?? '',
+                           attachments:(materialData?.contentFiles ?? [])
+    .map((file) => AttachmentItem(
+          fileName: file.fileName,
+          iconPath: '',
+          fileContent: file.file,
+        ))
+    .toList(),
+                            
+
+                          ),
+                          syllabusClasses: widget.syllabusClasses,
+                        ),
+                      ),
+                    ).then((_) => _fetchMaterialData());
+                    break;
+                  case 'delete':
+                    showDialog(
+                      context: context,
+                      builder: (context) => AlertDialog(
+                        title: const Text('Confirm Deletion'),
+                        content: const Text('Are you sure you want to delete this material?'),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.of(context).pop(),
+                            child: const Text('Cancel'),
+                          ),
+                          TextButton(
+                            onPressed: () {
+                              Navigator.of(context).pop();
+                              deleteMaterial(widget.itemId);
+                            },
+                            child: const Text('Delete', style: TextStyle(color: Colors.red)),
+                          ),
+                        ],
+                      ),
+                    );
+                    break;
+                }
+              },
+              itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
+                const PopupMenuItem<String>(
+                  value: 'edit',
+                  child: Text('Edit'),
+                ),
+                const PopupMenuItem<String>(
+                  value: 'delete',
+                  child: Text('Delete'),
+                ),
+              ],
+            ),
+        ],
       ),
       body: isLoading
           ? const Center(child: CircularProgressIndicator())

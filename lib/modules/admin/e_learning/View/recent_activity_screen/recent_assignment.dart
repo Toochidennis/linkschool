@@ -208,6 +208,7 @@ class _RecentAssignmentState extends State<RecentAssignment> with SingleTickerPr
               onSelected: (String result) {
                 switch (result) {
                   case 'edit':
+                  print('Edit assignment123 ${assignmentData!.classes.map((c) => c.name).join(', ')}');
                     Navigator.push(
                       context,
                       MaterialPageRoute(
@@ -215,18 +216,19 @@ class _RecentAssignmentState extends State<RecentAssignment> with SingleTickerPr
                           syllabusId: widget.syllabusId,
                           classId: widget.classId,
                           courseId: widget.courseId,
+                          
                           levelId: widget.levelId,
                           courseName: widget.courseName,
-                          syllabusClasses: widget.syllabusClasses,
+                          syllabusClasses: widget.syllabusClasses ?? [],
                           itemId: widget.itemId,
                           editMode: true,
                           assignmentToEdit: Assignment(
                             id: assignmentData?.id ?? 0,
                             title: assignmentData?.title ?? '',
                             description: assignmentData?.description ?? '',
-                            selectedClass: assignmentData?.classes.isNotEmpty ?? false
-                                ? assignmentData!.classes.first.name
-                                : '',
+                             selectedClass: assignmentData?.classes.map((c) => c.name).join(', ') ?? '',
+
+
                             attachments: (assignmentData?.contentFiles ?? [])
                                 .map((file) => AttachmentItem(
                                       fileName: file.fileName,
@@ -242,6 +244,7 @@ class _RecentAssignmentState extends State<RecentAssignment> with SingleTickerPr
                                 : DateTime.now(),
                             topic: assignmentData?.topic ?? '',
                             marks: assignmentData?.grade ?? '',
+                            topicId: assignmentData?.topicId.toString(),
                           ),
                           onSave: (assignment) {
                             _fetchAssignmentData();

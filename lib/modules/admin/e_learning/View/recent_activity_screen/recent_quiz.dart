@@ -18,10 +18,18 @@ import 'package:provider/provider.dart';
 
 class RecentQuiz extends StatefulWidget {
   final String quizId;
-  
+  final String levelId;
+  final String syllabusId;
+  final String courseId;
+  final String courseName;
+
   const RecentQuiz({
     super.key, 
     required this.quizId,
+    required this.levelId,
+    required this.syllabusId,
+    required this.courseId,
+    required this.courseName,
   });
 
   @override
@@ -84,11 +92,11 @@ class _RecentQuizState extends State<RecentQuiz> {
     }
   }
 
-  void _prepareFormattedData() {
-    if (quizData == null) return;
+void _prepareFormattedData() {
+  if (quizData == null) return;
 
-    // Format questions for AssessmentScreen
-    questions = quizData!.questions.map((q) => {
+  questions = quizData!.questions.map((q) {
+    return {
       'question_id': q.questionId,
       'question_text': q.questionText,
       'question_type': q.questionType,
@@ -99,57 +107,67 @@ class _RecentQuizState extends State<RecentQuiz> {
         'order': opt.order,
         'option_files': opt.optionFiles.map((f) => f.toJson()).toList(),
       }).toList(),
-    }).toList();
-
-    // Format correct answers
-    correctAnswers = quizData!.questions.map((q) => {
-      'question_id': q.questionId.toString(),
-      'correct_answer': q.correct.text,
-      'correct_order': q.correct.order,
-    }).toList();
-
-    // Create Question model for edit screen
-    questionModel = Question(
-      id: quizData!.id ?? 0,
-      title: quizData!.title,
-      description: quizData!.description,
-      selectedClass: quizData!.classes.map((c) => c.name).join(', '),
-      endDate: quizData!.endDate != null 
-          ? DateTime.tryParse(quizData!.endDate!) ?? DateTime.now() 
-          : DateTime.now(),
-      startDate: quizData!.startDate != null 
-          ? DateTime.tryParse(quizData!.startDate!) ?? DateTime.now() 
-          : DateTime.now(),
-      topic: quizData!.topic ?? 'No Topic',
-      duration: quizData!.duration != null 
-          ? Duration(minutes: int.tryParse(quizData!.duration.toString()) ?? 0) 
-          : Duration.zero,
-      marks: quizData!.grade ?? '0',
-      topicId: quizData!.topicId,
-    );
-
-    // Format question data for edit screen
-    questiondata = {
-      'id': quizData!.id,
-      'title': quizData!.title,
-      'description': quizData!.description,
-      'duration': quizData!.duration,
-      'grade': quizData!.grade,
-      'start_date': quizData!.startDate,
-      'end_date': quizData!.endDate,
-      'type': quizData!.type,
-      'rank': quizData!.rank,
-      'topic_id': quizData!.topicId,
-      'topic': quizData!.topic,
-      'date_posted': quizData!.datePosted,
+      // 👇 include correct in the same structure you handle in _initializeQuestions
+      'correct': {
+        'text': q.correct.text,
+        'order': q.correct.order,
+      },
     };
+  }).toList();
 
-    // Format class IDs
-    classIds = quizData!.classes.map((c) => {
-      'id': c.id,
-      'name': c.name,
-    }).toList();
-  }
+  // Correct answers list (if you still want a flat structure for AssessmentScreen)
+  correctAnswers = quizData!.questions.map((q) => {
+    'question_id': q.questionId.toString(),
+    'correct_answer': q.correct.text,
+    'correct_order': q.correct.order,
+  }).toList();
+
+  // Build Question model for edit screen
+  questionModel = Question(
+    id: quizData!.id ?? 0,
+    title: quizData!.title,
+    description: quizData!.description,
+    selectedClass: quizData!.classes.map((c) => c.name).join(', '),
+    endDate: quizData!.endDate != null
+        ? DateTime.tryParse(quizData!.endDate!) ?? DateTime.now()
+        : DateTime.now(),
+    startDate: quizData!.startDate != null
+        ? DateTime.tryParse(quizData!.startDate!) ?? DateTime.now()
+        : DateTime.now(),
+    topic: quizData!.topic ?? 'No Topic',
+    duration: quizData!.duration != null
+        ? Duration(minutes: int.tryParse(quizData!.duration.toString()) ?? 0)
+        : Duration.zero,
+    marks: quizData!.grade ?? '0',
+    topicId: quizData!.topicId,
+  );
+
+  questiondata = {
+    'id': quizData!.id,
+    'title': quizData!.title,
+    'description': quizData!.description,
+    'duration': quizData!.duration,
+    'marks':0,
+    'start_date': quizData!.startDate,
+    'end_date': quizData!.endDate,
+    'type': quizData!.type,
+    'rank': quizData!.rank,
+    'topic_id': quizData!.topicId,
+    'topic': quizData!.topic,
+    'date_posted': quizData!.datePosted,
+    'course_name': widget.courseName,
+    'course_id': widget.courseId,
+    'level_id': widget.levelId,
+    'syllabus_id': widget.syllabusId,
+    'term': quizData!.id ?? 1,
+    'classes': quizData!.classes.map((c) => c.id).toList(),
+  };
+
+  classIds = quizData!.classes.map((c) => {
+    'id': c.id,
+    'name': c.name,
+  }).toList();
+}
 
   @override
   Widget build(BuildContext context) {
@@ -298,6 +316,7 @@ class _RecentQuizState extends State<RecentQuiz> {
           syllabusClasses: quizData!.classes.map((c) => c.name).join(', '),
           questions: questions!,
           editMode: true,
+           source: 'elearning',
         ),
       ),
     ).then((_) {

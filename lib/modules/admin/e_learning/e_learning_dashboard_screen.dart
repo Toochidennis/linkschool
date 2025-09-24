@@ -258,7 +258,12 @@ Widget _buildTopContainers(OverviewProvider overviewProvider) {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => RecentQuiz(quizId: quizId),
+                      builder: (context) => RecentQuiz(
+                          levelId: assessment is RecentQuizModel ? assessment.levelId : '',
+                          syllabusId: assessment is RecentQuizModel ? assessment.syllabusId.toString() : '',
+                          courseId: assessment is RecentQuizModel ? assessment.courseId.toString() : '',
+                          courseName: assessment is RecentQuizModel ? assessment.courseName : '',
+                        quizId: quizId),
                     ),
                   );
                 } else {

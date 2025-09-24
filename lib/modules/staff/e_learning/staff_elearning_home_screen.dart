@@ -261,6 +261,10 @@ Future<void> _loadUserData() async {
         context,
         MaterialPageRoute(
           builder: (context) => StaffRecentQuiz(
+            levelId: quiz.levelId,
+            syllabusId: quiz.syllabusId.toString(),
+            courseName: quiz.courseName,
+            courseId: quiz.courseId.toString(),
            quizId: quiz.id.toString(),
           ),
         ),

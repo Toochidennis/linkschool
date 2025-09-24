@@ -36,6 +36,7 @@ import 'package:linkschool/modules/providers/explore/for_you_provider.dart';
 import 'package:linkschool/modules/providers/explore/home/news_provider.dart';
 import 'package:linkschool/modules/providers/explore/subject_provider.dart';
 import 'package:linkschool/modules/providers/staff/overview.dart';
+import 'package:linkschool/modules/providers/staff/streams_provider.dart';
 import 'package:linkschool/modules/providers/staff/syllabus_provider.dart';
 import 'package:linkschool/modules/providers/student/elearningcontent_provider.dart';
 import 'package:linkschool/modules/providers/student/payment_provider.dart';
@@ -144,6 +145,7 @@ Future<void> main() async {
         ChangeNotifierProvider(create: (_) => locator<InvoiceProvider>()),
         ChangeNotifierProvider(create: (_) => locator<StudentResultProvider>()),
         ChangeNotifierProvider(create: (_) => locator<StaffOverviewProvider>()),
+                  ChangeNotifierProvider(create: (_) => locator<StaffStreamsProvider>()),
       ],
       child: const MyApp(),
     ),

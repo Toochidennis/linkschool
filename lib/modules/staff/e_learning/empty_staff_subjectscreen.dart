@@ -18,25 +18,27 @@ import 'package:linkschool/modules/common/buttons/custom_medium_elevated_button.
 import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/custom_toaster.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
+import 'package:linkschool/modules/model/e-learning/comment_model.dart';
 import 'package:linkschool/modules/model/e-learning/question_model.dart';
 import 'package:linkschool/modules/model/e-learning/syllabus_content_model.dart';
-
+import 'package:linkschool/modules/model/staff/streams_model.dart';
+import 'package:linkschool/modules/providers/admin/e_learning/comment_provider.dart';
 import 'package:linkschool/modules/providers/admin/e_learning/delete_sylabus_content.dart';
+import 'package:linkschool/modules/providers/staff/streams_provider.dart';
 import 'package:linkschool/modules/staff/e_learning/sub_screens/staff_add_material_screen.dart';
-
-import 'package:linkschool/modules/staff/e_learning/sub_screens/staff_assignment_screen.dart' hide Assignment;
+import 'package:linkschool/modules/staff/e_learning/sub_screens/staff_assignment_screen.dart'
+    hide Assignment;
 import 'package:linkschool/modules/staff/e_learning/sub_screens/staff_create_topic_screen.dart';
 import 'package:linkschool/modules/staff/e_learning/sub_screens/staff_question_screen.dart';
 import 'package:linkschool/modules/staff/e_learning/view/staff_assignment_details_screen.dart';
 import 'package:linkschool/modules/staff/e_learning/view/staff_material_details_screen.dart';
 import 'package:linkschool/modules/staff/e_learning/view/staff_quiz_screen.dart';
-import 'package:linkschool/modules/staff/e_learning/view/staffview_question.dart' hide AttachmentItem;
-
+import 'package:linkschool/modules/staff/e_learning/view/staffview_question.dart'
+    hide AttachmentItem;
+import 'package:linkschool/modules/services/api/service_locator.dart';
 import 'package:provider/provider.dart';
 import 'package:linkschool/modules/model/e-learning/material_model.dart' as custom;
-import 'package:linkschool/modules/services/api/service_locator.dart';
 import '../../common/widgets/portal/attachmentItem.dart';
-
 import '../../providers/admin/e_learning/syllabus_content_provider.dart';
 
 class StaffEmptySubjectScreen extends StatefulWidget {
@@ -74,41 +76,40 @@ class _EmptySubjectScreenState extends State<StaffEmptySubjectScreen>
   List<SyllabusContentItem> _noTopicItems = [];
   bool _shouldRefresh = false;
   int _currentIndex = 0;
-  bool _showCourseworkScreen = false;
-    static const String _courseworkIconPath = 'assets/icons/student/coursework_icon.svg';
+  static const String _courseworkIconPath = 'assets/icons/student/coursework_icon.svg';
   static const String _forumIconPath = 'assets/icons/student/forum_icon.svg';
+
+  // Forum-related fields
+  final Map<int, TextEditingController> _controllers = {};
+  final Map<int, FocusNode> _focusNodes = {};
+  Map<String, dynamic>? streams;
+  bool isLoading = true;
+  String? creatorName;
+  int? creatorId;
+  int? academicTerm;
+  String? academicYear;
+  List<Comment> comments = [];
+  bool _isAddingComment = true;
+  bool _isEditing = false;
+  Comment? _editingComment;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _initializeState();
-  }
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    _initializeState();
-  }
-
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed) {
-      _initializeState();
-    }
-  }
-
-  @override
-  void didUpdateWidget(StaffEmptySubjectScreen oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (_shouldRefresh) {
-      _loadSyllabusContents();
-      _shouldRefresh = false;
-    }
+    _loadUserData();
+    fetchStreams();
   }
 
   @override
   void dispose() {
+    for (final c in _controllers.values) {
+      c.dispose();
+    }
+    for (final f in _focusNodes.values) {
+      f.dispose();
+    }
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
@@ -118,6 +119,7 @@ class _EmptySubjectScreenState extends State<StaffEmptySubjectScreen>
       _topics = [];
       _noTopicItems = [];
       _shouldRefresh = false;
+      isLoading = true;
     });
     _loadSyllabusContents();
   }
@@ -126,6 +128,54 @@ class _EmptySubjectScreenState extends State<StaffEmptySubjectScreen>
     setState(() {
       _shouldRefresh = true;
     });
+  }
+
+ Future<void> _loadUserData() async {
+  try {
+    final userBox = Hive.box('userData');
+    final storedUserData =
+        userBox.get('userData') ?? userBox.get('loginResponse');
+
+    if (storedUserData != null) {
+      final processedData = storedUserData is String
+          ? json.decode(storedUserData)
+          : storedUserData as Map<String, dynamic>;
+
+      final response = processedData['response'] ?? processedData;
+      final data = response['data'] ?? response;
+
+      final profile = data['profile'] ?? {};
+      final settings = data['settings'] ?? {};
+
+      setState(() {
+        creatorId = profile['staff_id'] as int?; 
+        creatorName = profile['name']?.toString();
+        academicYear = settings['year']?.toString();
+        academicTerm = settings['term'] as int?;
+      });
+    }
+  } catch (e) {
+    print('Error loading user data: $e');
+    CustomToaster.toastError(context, 'Error', 'Failed to load user data');
+  }
+}
+
+
+  Future<void> fetchStreams() async {
+    final provider = locator<StaffStreamsProvider>();
+    try {
+      final data = await provider.fetchStreams(widget.syllabusId!);
+      setState(() {
+        streams = data;
+        isLoading = false;
+      });
+    } catch (e) {
+      print('Error fetching streams: $e');
+      CustomToaster.toastError(context, 'Error', 'Failed to load forum streams');
+      setState(() {
+        isLoading = false;
+      });
+    }
   }
 
   Future<void> _loadSyllabusContents() async {
@@ -162,7 +212,6 @@ class _EmptySubjectScreenState extends State<StaffEmptySubjectScreen>
     _noTopicItems = [];
     Map<int, TopicContent> topicMap = {};
 
-    // Process topics
     for (var content in contents) {
       if (content['type'] == 'topic') {
         final topicId = content['id'] != null
@@ -193,7 +242,6 @@ class _EmptySubjectScreenState extends State<StaffEmptySubjectScreen>
       }
     }
 
-    // Process non-topic items
     for (var content in contents) {
       if (content['type'] != 'topic') {
         for (var child in content['children'] ?? []) {
@@ -277,12 +325,8 @@ class _EmptySubjectScreenState extends State<StaffEmptySubjectScreen>
   }
 
   Widget _buildOptionRow(BuildContext context, String text, String iconPath) {
-    print(
-        "Adding new ${widget.courseId} syllabus with ${widget.term} levelId: ${widget.levelId}, course_name: ${widget.courseName}");
-
     return InkWell(
       onTap: () {
-        print("1233${widget.classList}");
         Navigator.pop(context);
         switch (text) {
           case 'Assignment':
@@ -290,7 +334,6 @@ class _EmptySubjectScreenState extends State<StaffEmptySubjectScreen>
               context,
               MaterialPageRoute(
                 builder: (context) => StaffAssignmentScreen(
-               
                   syllabusId: widget.syllabusId,
                   classId: widget.classId,
                   levelId: widget.levelId,
@@ -319,7 +362,7 @@ class _EmptySubjectScreenState extends State<StaffEmptySubjectScreen>
               context,
               MaterialPageRoute(
                 builder: (context) => StaffQuestionScreen(
-                   classes:widget.classList,
+                  classes: widget.classList,
                   classId: widget.classId,
                   syllabusId: widget.syllabusId!,
                   courseId: widget.courseId,
@@ -338,7 +381,7 @@ class _EmptySubjectScreenState extends State<StaffEmptySubjectScreen>
               MaterialPageRoute(
                 fullscreenDialog: true,
                 builder: (BuildContext context) => StaffCreateTopicScreen(
-                   classes:widget.classList,
+                  classes: widget.classList,
                   syllabusId: widget.syllabusId,
                   courseId: widget.courseId,
                   courseName: widget.courseName,
@@ -347,15 +390,13 @@ class _EmptySubjectScreenState extends State<StaffEmptySubjectScreen>
                 ),
               ),
             );
-            print("bbbbbbbbb${widget.classId}");
             break;
           case 'Material':
             Navigator.push(
               context,
               MaterialPageRoute(
                 builder: (_) => StaffAddMaterialScreen(
-
-                  syllabusClasses:widget.syllabusClasses,
+                  syllabusClasses: widget.syllabusClasses,
                   courseId: widget.courseId,
                   levelId: widget.levelId,
                   classId: widget.classId,
@@ -392,6 +433,118 @@ class _EmptySubjectScreenState extends State<StaffEmptySubjectScreen>
         ),
       ),
     );
+  }
+
+  String ellipsize(String? text, [int maxLength = 30]) {
+    if (text == null) return '';
+    return text.length <= maxLength ? text : '${text.substring(0, maxLength).trim()}...';
+  }
+
+  String _getIconPath(String? type) {
+    switch (type) {
+      case 'material':
+        return 'assets/icons/student/note_icon.svg';
+      case 'assignment':
+        return 'assets/icons/student/assignment_icon.svg';
+      case 'quiz':
+        return 'assets/icons/student/quiz_icon.svg';
+      default:
+        return 'assets/icons/student/note_icon.svg';
+    }
+  }
+
+  String deduceSession(String? year) {
+    if (year == null) return 'N/A';
+    DateTime date = DateTime.now();
+    int yearInt = int.tryParse(year) ?? DateTime.now().year;
+    if (date.month < 9) {
+      return "${yearInt - 1}/$yearInt Session";
+    } else {
+      return "$yearInt/${yearInt + 1} Session";
+    }
+  }
+
+  String getTermString(int? term) {
+    return {
+      1: "1st",
+      2: "2nd",
+      3: "3rd",
+    }[term] ?? "Unknown";
+  }
+
+  Widget buildCommentBox(StreamsModel sm) {
+    _controllers.putIfAbsent(sm.id, () => TextEditingController());
+    _focusNodes.putIfAbsent(sm.id, () => FocusNode());
+    return Row(
+      children: [
+        Expanded(
+          child: TextField(
+            controller: _controllers[sm.id],
+            focusNode: _focusNodes[sm.id],
+            decoration: const InputDecoration(
+              hintText: 'Add a comment...',
+              border: UnderlineInputBorder(),
+            ),
+          ),
+        ),
+        IconButton(
+          icon: const Icon(Icons.send),
+          color: AppColors.paymentTxtColor1,
+          onPressed: () {
+            _addComment(sm, _controllers[sm.id]!.text);
+          },
+        ),
+      ],
+    );
+  }
+
+  Future<void> _addComment(StreamsModel sm, String text, [Map<String, dynamic>? updatedComment]) async {
+    if (text.isNotEmpty) {
+      final comment = updatedComment ?? {
+        "content_title": sm.title,
+        "user_id": creatorId,
+        "user_name": creatorName,
+        "comment": text,
+        "level_id": widget.levelId ?? '',
+        "course_id": widget.courseId ?? '',
+        "course_name": widget.courseName ?? "",
+        "term": academicTerm ?? 0,
+        if (_isEditing && _editingComment != null) "content_id": sm.id.toString(),
+      };
+      try {
+
+        final commentProvider = locator<CommentProvider>();
+        final contentId = _editingComment?.id;
+        if (_isEditing) {
+          await commentProvider.UpdateComment(comment, contentId.toString());
+        } else {
+          print('Creating comment: $comment');
+          await commentProvider.createComment(comment, sm.id.toString());
+        }
+        setState(() {
+          fetchStreams();
+          _isAddingComment = false;
+          _isEditing = false;
+          _editingComment = null;
+          _controllers[sm.id]?.clear();
+          if (!_isEditing) {
+            comments.add(Comment(
+              author: creatorName ?? '',
+              date: DateTime.now(),
+              text: text,
+              contentTitle: sm.title,
+              userId: creatorId,
+              levelId: widget.levelId ?? "",
+              courseId: widget.courseId ?? "",
+              courseName: widget.courseName ?? "",
+              term: academicTerm ?? 0,
+            ));
+          }
+        });
+      } catch (e) {
+        CustomToaster.toastError(context, 'Error', _isEditing ? 'Failed to update comment' : 'Failed to add comment');
+      }
+    }
   }
 
   @override
@@ -452,36 +605,36 @@ class _EmptySubjectScreenState extends State<StaffEmptySubjectScreen>
                 child: const Icon(Icons.add, color: Colors.white),
               )
             : null,
-          bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _currentIndex,
-        onTap: (index) {
-          setState(() {
-            _currentIndex = index;
-          });
-        },
-        selectedItemColor: AppColors.eLearningBtnColor1,
-        unselectedItemColor: Colors.grey,
-        items: [
-          BottomNavigationBarItem(
-            icon: SvgPicture.asset(
-              _courseworkIconPath,
-              width: 24,
-              height: 24,
-              color: _currentIndex == 0 ? AppColors.eLearningBtnColor1 : Colors.grey,
+        bottomNavigationBar: BottomNavigationBar(
+          currentIndex: _currentIndex,
+          onTap: (index) {
+            setState(() {
+              _currentIndex = index;
+            });
+          },
+          selectedItemColor: AppColors.eLearningBtnColor1,
+          unselectedItemColor: Colors.grey,
+          items: [
+            BottomNavigationBarItem(
+              icon: SvgPicture.asset(
+                _courseworkIconPath,
+                width: 24,
+                height: 24,
+                color: _currentIndex == 0 ? AppColors.eLearningBtnColor1 : Colors.grey,
+              ),
+              label: 'Coursework',
             ),
-            label: 'Coursework',
-          ),
-          BottomNavigationBarItem(
-            icon: SvgPicture.asset(
-              _forumIconPath,
-              width: 24,
-              height: 24,
-              color: _currentIndex == 1 ? AppColors.eLearningBtnColor1 : Colors.grey,
+            BottomNavigationBarItem(
+              icon: SvgPicture.asset(
+                _forumIconPath,
+                width: 24,
+                height: 24,
+                color: _currentIndex == 1 ? AppColors.eLearningBtnColor1 : Colors.grey,
+              ),
+              label: 'Forum',
             ),
-            label: 'Forum',
-          ),
-        ],
-      ),
+          ],
+        ),
       ),
     );
   }
@@ -525,6 +678,277 @@ class _EmptySubjectScreenState extends State<StaffEmptySubjectScreen>
       height: double.infinity,
       decoration: Constants.customBoxDecoration(context),
       child: _buildForumContent(),
+    );
+  }
+
+  Widget _buildForumContent() {
+    if (isLoading || streams?['streams'] == null) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    final streamsList = streams!['streams'] as List<StreamsModel>;
+    String termString = getTermString(academicTerm);
+    String sessionString = deduceSession(academicYear);
+    String courseTitle = widget.courseTitle ?? 'Course';
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+      child: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Header
+            SizedBox(
+              width: MediaQuery.of(context).size.width,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(16.0),
+                child: Stack(
+                  children: [
+                    SvgPicture.asset(
+                      'assets/images/student/header_background.svg',
+                      width: MediaQuery.of(context).size.width,
+                      height: 100,
+                      fit: BoxFit.cover,
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                      child: Container(
+                        height: 100,
+                        alignment: Alignment.centerLeft,
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              courseTitle,
+                              style: AppTextStyles.normal700(
+                                fontSize: 18,
+                                color: AppColors.backgroundLight,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              '$sessionString Session',
+                              style: AppTextStyles.normal500(
+                                fontSize: 14,
+                                color: Colors.white70,
+                              ),
+                            ),
+                            Text(
+                              '$termString Term',
+                              style: AppTextStyles.normal500(
+                                fontSize: 12,
+                                color: Colors.white70,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            // Input Card
+            Transform.translate(
+              offset: const Offset(0, -2),
+              child: Card(
+                elevation: 4,
+                shadowColor: Colors.grey.shade200,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: Row(
+                    children: [
+                      CircleAvatar(
+                        backgroundColor: AppColors.booksButtonColor,
+                        radius: 16,
+                        child: Icon(Icons.person, color: Colors.grey[600], size: 20),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: TextField(
+                          decoration: InputDecoration(
+                            hintText: 'Share with your class...',
+                            border: InputBorder.none,
+                            hintStyle: AppTextStyles.normal400(
+                              fontSize: 14,
+                              color: Colors.grey,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            // Post Cards
+            Column(
+              children: streamsList.map((stream) {
+                return Column(
+                  children: [
+                    _buildForumPost(
+                      iconPath: _getIconPath(stream.type),
+                      title: ellipsize(stream.title),
+                      subtitle: '${stream.type ?? 0} comments',
+                      sm: stream,
+                    ),
+                    const SizedBox(height: 16),
+                  ],
+                );
+              }).toList(),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildForumPost({
+    required String iconPath,
+    required String title,
+    required String subtitle,
+    required StreamsModel sm,
+  }) {
+    return Card(
+      color: Colors.white,
+      elevation: 10,
+      shadowColor: Colors.grey.shade200,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(12.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Header Row
+            Row(
+              children: [
+                SvgPicture.asset(iconPath, height: 32, width: 32),
+                const SizedBox(width: 12),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: AppTextStyles.normal600(
+                        fontSize: 16,
+                        color: AppColors.backgroundDark,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      subtitle,
+                      style: AppTextStyles.normal400(
+                        fontSize: 12,
+                        color: Colors.grey,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            const Divider(color: Colors.grey),
+            // Comment Rows
+            Column(
+              children: sm.comments.map<Widget>((comment) {
+                return Column(
+                  children: [
+                    _buildComment(
+                      avatarColor: AppColors.booksButtonColor,
+                      name: comment.authorName ?? '',
+                      date: comment.uploadDate ?? '',
+                      message: comment.comment ?? '',
+                    ),
+                    const SizedBox(height: 12),
+                  ],
+                );
+              }).toList(),
+            ),
+            const SizedBox(height: 12),
+            buildCommentBox(sm),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildComment({
+    required Color avatarColor,
+    required String name,
+    required String date,
+    required String message,
+  }) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        CircleAvatar(
+          backgroundColor: avatarColor,
+          radius: 14,
+          child: Icon(Icons.person, size: 14, color: Colors.grey[600]),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Text(
+                    name,
+                    style: AppTextStyles.normal600(
+                      fontSize: 14,
+                      color: AppColors.backgroundDark,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    date.isNotEmpty ? DateFormat('dd MMM').format(DateTime.parse(date)) : 'N/A',
+                    style: AppTextStyles.normal400(
+                      fontSize: 12,
+                      color: Colors.grey,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 4),
+              Text(
+                message,
+                style: AppTextStyles.normal400(
+                  fontSize: 14,
+                  color: AppColors.backgroundDark,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Row(
+                children: [
+                  TextButton.icon(
+                    onPressed: () {},
+                    icon: const Icon(Icons.favorite_border, size: 16, color: Colors.grey),
+                    label: Text(
+                      'Like',
+                      style: AppTextStyles.normal400(fontSize: 12, color: Colors.grey),
+                    ),
+                  ),
+                  TextButton(
+                    onPressed: () {},
+                    child: Text(
+                      'Reply',
+                      style: AppTextStyles.normal400(fontSize: 12, color: Colors.grey),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 
@@ -624,296 +1048,6 @@ class _EmptySubjectScreenState extends State<StaffEmptySubjectScreen>
             const SizedBox(height: 70),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildForumContent() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-      child: Column(
-        children: [
-          Container(
-            height: 95,
-            width: MediaQuery.of(context).size.width,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(10),
-              color: Colors.transparent,
-            ),
-            child: Stack(
-              fit: StackFit.expand,
-              children: [
-                SvgPicture.asset(
-                  'assets/images/admission/background_img.svg',
-                  width: MediaQuery.of(context).size.width,
-                  height: 95,
-                  fit: BoxFit.cover,
-                ),
-                Positioned.fill(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 12.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          widget.courseTitle ?? 'Course',
-                          style: AppTextStyles.normal700(
-                            fontSize: 18,
-                            color: AppColors.backgroundLight,
-                          ),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        const SizedBox(height: 5),
-                        Text(
-                          'Class: ${_getClassNames()}',
-                          style: AppTextStyles.normal500(
-                            fontSize: 14,
-                            color: AppColors.backgroundLight,
-                          ),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        Text(
-                          'Teacher: Current Teacher',
-                          style: AppTextStyles.normal600(
-                            fontSize: 12,
-                            color: AppColors.backgroundLight,
-                          ),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 16),
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              border: Border.all(color: Colors.grey.shade300),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Row(
-              children: [
-                CircleAvatar(
-                  backgroundColor: Colors.grey.shade200,
-                  child: const Icon(Icons.person_outline, color: Colors.grey),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: TextField(
-                    decoration: InputDecoration(
-                      hintText: 'Share with your class...',
-                      border: InputBorder.none,
-                      hintStyle: AppTextStyles.normal400(
-                        fontSize: 14,
-                        color: Colors.grey,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 16),
-          Expanded(
-            child: ListView(
-              children: [
-                _buildForumPost(
-                  title: _topics.isNotEmpty ? _topics.first.name : "What is Punctuality?",
-                  date: "25 June, 2015",
-                  time: "08:52am",
-                  isTopicPost: true,
-                ),
-                ..._buildComments(),
-              ],
-            ),
-          ),
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              border: Border(
-                top: BorderSide(color: Colors.grey.shade300),
-              ),
-            ),
-            child: Row(
-              children: [
-                CircleAvatar(
-                  backgroundColor: Colors.grey.shade200,
-                  child: const Icon(Icons.person_outline, color: Colors.grey),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: TextField(
-                    decoration: InputDecoration(
-                      hintText: 'Add a comment...',
-                      border: InputBorder.none,
-                      hintStyle: AppTextStyles.normal400(
-                        fontSize: 14,
-                        color: Colors.grey,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildForumPost({
-    required String title,
-    required String date,
-    required String time,
-    bool isTopicPost = false,
-  }) {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 12),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              isTopicPost
-                  ? Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: AppColors.eLearningBtnColor1,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: const Icon(
-                        Icons.description,
-                        color: Colors.white,
-                        size: 20,
-                      ),
-                    )
-                  : CircleAvatar(
-                      backgroundColor: Colors.grey.shade200,
-                      child: const Icon(Icons.person_outline, color: Colors.grey),
-                    ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: AppTextStyles.normal600(
-                        fontSize: 16,
-                        color: AppColors.backgroundDark,
-                      ),
-                    ),
-                    Text(
-                      '$date · $time',
-                      style: AppTextStyles.normal400(
-                        fontSize: 12,
-                        color: Colors.grey,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  List<Widget> _buildComments() {
-    return [
-      _buildComment(
-        name: "Tochukwu Dennis",
-        content: "This is a mock data showing the info details of a post.",
-        date: "03 Jan",
-      ),
-      _buildComment(
-        name: "Tochukwu Dennis",
-        content: "This is a mock data showing the info details of a post.",
-        date: "03 Jan",
-      ),
-    ];
-  }
-
-  Widget _buildComment({
-    required String name,
-    required String content,
-    required String date,
-  }) {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(48, 12, 0, 12),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              CircleAvatar(
-                backgroundColor: Colors.grey.shade200,
-                radius: 16,
-                child: const Icon(Icons.person_outline, color: Colors.grey, size: 20),
-              ),
-              const SizedBox(width: 8),
-              Text(
-                name,
-                style: AppTextStyles.normal600(
-                  fontSize: 14,
-                  color: AppColors.backgroundDark,
-                ),
-              ),
-              const SizedBox(width: 8),
-              Text(
-                date,
-                style: AppTextStyles.normal400(
-                  fontSize: 12,
-                  color: Colors.grey,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Padding(
-            padding: const EdgeInsets.only(left: 40),
-            child: Text(
-              content,
-              style: AppTextStyles.normal400(
-                fontSize: 14,
-                color: AppColors.backgroundDark,
-              ),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.only(left: 40, top: 8),
-            child: Row(
-              children: [
-                TextButton.icon(
-                  onPressed: () {},
-                  icon: const Icon(Icons.favorite_border, size: 16),
-                  label: Text(
-                    'Like',
-                    style: AppTextStyles.normal400(
-                      fontSize: 12,
-                      color: Colors.grey,
-                    ),
-                  ),
-                ),
-                TextButton(
-                  onPressed: () {},
-                  child: Text(
-                    'Reply',
-                    style: AppTextStyles.normal400(
-                      fontSize: 12,
-                      color: Colors.grey,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
       ),
     );
   }
@@ -1027,20 +1161,13 @@ class _EmptySubjectScreenState extends State<StaffEmptySubjectScreen>
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    children: [
-                     
-                      Expanded(
-                        child: Text(
-                          item.title,
-                          style: AppTextStyles.normal400(
-                            fontSize: 14,
-                            color: AppColors.backgroundDark,
-                          ),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                    ],
+                  Text(
+                    item.title,
+                    style: AppTextStyles.normal400(
+                      fontSize: 14,
+                      color: AppColors.backgroundDark,
+                    ),
+                    overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 4),
                   Text(
@@ -1230,7 +1357,6 @@ class _EmptySubjectScreenState extends State<StaffEmptySubjectScreen>
 
     switch (item.type.toLowerCase()) {
       case 'assignment':
-        print('Navigating to assignment details for: ${item.id}');
         Navigator.push(
           context,
           MaterialPageRoute(
@@ -1284,8 +1410,6 @@ class _EmptySubjectScreenState extends State<StaffEmptySubjectScreen>
           'term': widget.term,
         };
 
-        print(correctAnswers);
-        print("${item.id}");
         Navigator.push(
           context,
           MaterialPageRoute(
@@ -1294,8 +1418,7 @@ class _EmptySubjectScreenState extends State<StaffEmptySubjectScreen>
               class_ids: item.classes
                   .map((c) => {'id': c.id.toString(), 'name': c.name})
                   .toList(),
-              syllabusClasses:widget.syllabusClasses,
-                 
+              syllabusClasses: widget.syllabusClasses,
               questions: item.questions,
               correctAnswers: correctAnswers,
               question: Question(
@@ -1364,8 +1487,6 @@ class _EmptySubjectScreenState extends State<StaffEmptySubjectScreen>
       );
     }).toList();
 
-    print("Editing item: ${item.title}, ID: ${item.id}");
-
     final questionData = {
       'id': item.id,
       'title': item.title,
@@ -1433,6 +1554,7 @@ class _EmptySubjectScreenState extends State<StaffEmptySubjectScreen>
           context,
           MaterialPageRoute(
             builder: (context) => StaffViewQuestionScreen(
+              source: "staff_empty_subject",
               question: Question(
                 id: item.id,
                 title: item.title,
@@ -1455,7 +1577,7 @@ class _EmptySubjectScreenState extends State<StaffEmptySubjectScreen>
               class_ids: item.classes
                   .map((c) => {'id': c.id.toString(), 'name': c.name})
                   .toList(),
-              syllabusClasses:widget.syllabusClasses,
+              syllabusClasses: widget.syllabusClasses,
               questions: item.questions,
               editMode: true,
               onSaveFlag: setRefreshFlag,
@@ -1596,7 +1718,6 @@ class _EmptySubjectScreenState extends State<StaffEmptySubjectScreen>
   }
 
   void _handleEditTopic(TopicContent topic) {
-    print('Editing topic: ${topic.name}, ID: ${topic.id}');
     if (topic.id == null || topic.id.toString().isEmpty) {
       CustomToaster.toastError(context, 'Error', 'Topic ID is missing or invalid');
       return;
@@ -1609,7 +1730,6 @@ class _EmptySubjectScreenState extends State<StaffEmptySubjectScreen>
       children: topic.children,
     );
 
-    print('Passing ${topicToEdit.name} topic${topicToEdit.type} to edit screen: ${topicToEdit.children.length}');
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -1697,20 +1817,6 @@ class _EmptySubjectScreenState extends State<StaffEmptySubjectScreen>
         return 'assets/icons/e_learning/material.svg';
       default:
         return 'assets/icons/e_learning/topic.svg';
-    }
-  }
-
-  String _getTypeDisplayName(String type) {
-    switch (type.toLowerCase()) {
-      case 'assignment':
-        return 'Assignment';
-      case 'quiz':
-      case 'question':
-        return 'Quiz';
-      case 'material':
-        return 'Material';
-      default:
-        return 'Content';
     }
   }
 }
