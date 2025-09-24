@@ -87,7 +87,7 @@ class _PaymentHistorySeeAllScreenState
           // Filters + Sort
           SliverToBoxAdapter(
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
               child: Row(
                 children: [
                   // Year filter
@@ -107,7 +107,6 @@ class _PaymentHistorySeeAllScreenState
                     ),
                   ),
                   const SizedBox(width: 8),
-
                   // Term filter
                   Expanded(
                     child: DropdownButtonFormField<String>(
@@ -146,7 +145,7 @@ class _PaymentHistorySeeAllScreenState
           // Count
           SliverToBoxAdapter(
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 6),
+              padding: const EdgeInsets.fromLTRB(20, 0, 20, 6),
               child: Align(
                 alignment: Alignment.centerLeft,
                 child: Text(
@@ -170,7 +169,7 @@ class _PaymentHistorySeeAllScreenState
               final payment = filtered[index];
               return Padding(
                 padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                    const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
                 child: PaymentHistoryItem(
                   payment: payment,
                   onTap: () => _openReceipt(context, payment),

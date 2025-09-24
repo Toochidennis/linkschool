@@ -1,32 +1,26 @@
-
-
-
-
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:linkschool/modules/student/payment/student_payment_home_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:linkschool/modules/providers/student/payment_submission_provider.dart';
+import 'package:linkschool/modules/common/app_colors.dart';
 
 class PaystackWebView extends StatefulWidget {
   final String checkoutUrl;
   final String reference;
   final String dbName;
-
-  // Extra fields from your button
   final String invoiceId;
   final String regNo;
   final String name;
   final int amount;
-  final List<Map<String, dynamic>> fees;
+  final List<Map<String, dynamic>> invoiceDetails;
   final int classId;
   final int levelId;
   final int year;
   final int term;
   final String email;
   final String studentId;
-
 
   const PaystackWebView({
     Key? key,
@@ -37,7 +31,7 @@ class PaystackWebView extends StatefulWidget {
     required this.regNo,
     required this.name,
     required this.amount,
-    required this.fees,
+    required this.invoiceDetails,
     required this.classId,
     required this.levelId,
     required this.year,
@@ -52,7 +46,7 @@ class PaystackWebView extends StatefulWidget {
 
 class _PaystackWebViewState extends State<PaystackWebView> {
   late final WebViewController _controller;
-  String? _currentUrl;
+  // debug: track last url if needed
   bool _posted = false;
 
   @override
@@ -65,10 +59,7 @@ class _PaystackWebViewState extends State<PaystackWebView> {
         NavigationDelegate(
           onUrlChange: (change) {
             if (change.url != null) {
-              _currentUrl = change.url;
               print('📡 URL changed: ${change.url}');
-              print('🔑 Reference: ${widget.reference}');
-              print('🗄️ DB Name: ${widget.dbName}');
             }
           },
           onNavigationRequest: (navigation) => NavigationDecision.navigate,
@@ -90,7 +81,7 @@ class _PaystackWebViewState extends State<PaystackWebView> {
         regNo: widget.regNo,
         name: widget.name,
         amount: widget.amount.toDouble(),
-        fees: widget.fees,
+        invoiceDetails: widget.invoiceDetails,
         classId: widget.classId,
         levelId: widget.levelId,
         year: widget.year,
@@ -104,59 +95,34 @@ class _PaystackWebViewState extends State<PaystackWebView> {
       print("❌ Error posting payment data: $e");
     }
   }
-Future<bool> _onWillPop() async {
-  await _postPaymentData();
-  Navigator.pushAndRemoveUntil(
-    context,
-    MaterialPageRoute(
-      builder: (_) => StudentPaymentHomeScreen(
-        logout: () {}, // pass your logout callback here
-      ),
-    ),
-    (route) => false, // removes all previous routes
-  );
-  return false; // prevent default pop
-}
 
+  void _navigateBackToHomeScreen() async {
+    await _postPaymentData();
+    Navigator.popUntil(
+      context,
+      (route) => route.settings.name == StudentPaymentHomeScreen.routeName ||
+          route.isFirst, // Fallback to first route if StudentPaymentHomeScreen not found
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     return WillPopScope(
-      onWillPop: _onWillPop,
+      onWillPop: () async {
+        _navigateBackToHomeScreen();
+        return false; // Prevent default pop
+      },
       child: Scaffold(
         appBar: AppBar(
+          backgroundColor: AppColors.primaryLight,
           title: const Text('Complete Payment'),
           leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () async {
-            await _postPaymentData();
-            Navigator.pushAndRemoveUntil(
-              context,
-              MaterialPageRoute(
-                builder: (_) => StudentPaymentHomeScreen(
-                  logout: () {}, // pass the same logout callback
-                ),
-              ),
-              (route) => false,
-            );
-          },
+            icon: const Icon(Icons.arrow_back),
+            onPressed: _navigateBackToHomeScreen,
+          ),
         ),
-      ),
-        body: WebViewWidget(controller: _controller),
-        floatingActionButton: kDebugMode
-            ? FloatingActionButton(
-                mini: true,
-                onPressed: () {
-                  print('Current URL: $_currentUrl');
-                  print('Reference: ${widget.reference}');
-                  print('DB Name: ${widget.dbName}');
-                  _controller.reload();
-                },
-                child: const Icon(Icons.refresh),
-              )
-            : null,
+  body: WebViewWidget(controller: _controller),
       ),
     );
   }
 }
- 

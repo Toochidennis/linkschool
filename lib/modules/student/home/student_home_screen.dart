@@ -22,6 +22,9 @@ import '../elearning/single_assignment_score_view.dart';
 import '../elearning/single_material_detail_screen.dart';
 import '../elearning/single_quiz_intro_page.dart';
 import '../elearning/single_quiz_score_page.dart';
+import 'package:linkschool/modules/student/payment/student_view_detail_payment.dart';
+import 'package:provider/provider.dart';
+import 'package:linkschool/modules/providers/student/payment_provider.dart';
 
 class StudentHomeScreen extends StatefulWidget {
   const StudentHomeScreen({super.key});
@@ -368,8 +371,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
                       style: AppTextStyles.normal600(
                           fontSize: 20, color: AppColors.primaryLight)),
                   const SizedBox(height: 12),
-
-                  const Row(
+                  Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Expanded(
@@ -384,17 +386,37 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
                           destination: null,
                         ),
                       ),
-                      SizedBox(width: 14.0),
+                      const SizedBox(width: 14.0),
                       Expanded(
-                        child: CustomButtonItem(
-                          backgroundColor: AppColors.studentCtnColor4,
-                          borderColor: AppColors.portalButton2BorderLight,
-                          textColor: AppColors.paymentTxtColor2,
-                          label: 'Make\nPayment',
-                          iconPath: 'assets/icons/payment.svg',
-                          iconHeight: 40.0,
-                          iconWidth: 36.0,
-                          destination: null,
+                        child: Builder(
+                          builder: (context) {
+                            final invoiceProvider = Provider.of<InvoiceProvider>(context);
+                            final invoices = invoiceProvider.invoices ?? [];
+                            return GestureDetector(
+                              onTap: () {
+                                if (invoices.isNotEmpty && invoices[0].amount > 0) {
+                                  showDialog(
+                                    context: context,
+                                    builder: (context) => StudentViewDetailPaymentDialog(invoice: invoices[0]),
+                                  );
+                                } else {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(content: Text('No invoice available for payment.')),
+                                  );
+                                }
+                              },
+                              child: CustomButtonItem(
+                                backgroundColor: AppColors.studentCtnColor4,
+                                borderColor: AppColors.portalButton2BorderLight,
+                                textColor: AppColors.paymentTxtColor2,
+                                label: 'Make\nPayment',
+                                iconPath: 'assets/icons/payment.svg',
+                                iconHeight: 40.0,
+                                iconWidth: 36.0,
+                                destination: null,
+                              ),
+                            );
+                          },
                         ),
                       ),
                     ],

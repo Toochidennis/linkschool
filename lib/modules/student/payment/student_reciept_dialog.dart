@@ -12,6 +12,8 @@ import 'package:printing/printing.dart';
 // import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 // import 'package:printing/printing.dart';
+import 'package:hive/hive.dart';
+import 'dart:convert';
 
 class StudentRecieptDialog extends StatefulWidget {
   final Payment payment;
@@ -146,11 +148,33 @@ class _StudentRecieptDialogState extends State<StudentRecieptDialog> {
                             ),
                             child: const Icon(Icons.check, size: 36, color: Color(0xFF32A852)),
                           ),
+                          const SizedBox(height: 10),
+                          Builder(
+                            builder: (context) {
+                              String schoolName = "School Name";
+                              try {
+                                final userBox = Hive.box('userData');
+                                final storedUserData = userBox.get('userData') ?? userBox.get('loginResponse');
+                                final processedData = storedUserData is String ? json.decode(storedUserData) : storedUserData;
+                                final response = processedData['response'] ?? processedData;
+                                final data = response['data'] ?? response;
+                                final settings = data['settings'] ?? data;
+                                schoolName = settings['school_name']?.toString() ?? "School Name";
+                              } catch (e) {}
+                              return Text(
+                                schoolName,
+                                style: const TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.black,
+                                ),
+                                textAlign: TextAlign.center,
+                              );
+                            },
+                          ),
                           const SizedBox(height: 12),
                           Text(
-                            widget.payment.termName != null
-                                ? '${widget.payment.termName} Fees Receipt'
-                                : 'Receipt',
+                            '${widget.payment.termName} Fees Receipt',
                             style: AppTextStyles.normal500(
                               fontSize: 18.0,
                               color: Colors.black,

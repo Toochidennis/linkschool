@@ -13,12 +13,15 @@ import 'package:linkschool/modules/common/widgets/portal/student/student_customi
 import 'package:linkschool/modules/student/payment/student_reciept_dialog.dart';
 import 'package:linkschool/modules/student/payment/student_setting_dialog.dart';
 import 'package:linkschool/modules/student/payment/student_view_detail_payment.dart';
+import 'package:hive/hive.dart';
+import 'dart:convert';
 
-// 👇 Declare this in main.dart, not here:
+// Declare this in main.dart, not here:
 // final RouteObserver<PageRoute> routeObserver = RouteObserver<PageRoute>();
 final RouteObserver<PageRoute> routeObserver = RouteObserver<PageRoute>();
 
 class StudentPaymentHomeScreen extends StatefulWidget {
+  static const String routeName = '/student_payment_home';
   final VoidCallback logout;
 
   const StudentPaymentHomeScreen({
@@ -36,6 +39,7 @@ class _StudentPaymentHomeScreenState extends State<StudentPaymentHomeScreen>
   int _currentCardIndex = 0;
   late double opacity;
   final String studentId = '277';
+  String studentName = 'Student'; // Default fallback name
 
   String _formatSchoolSession(String year) {
     // Example: "2024" -> "2023/2024"
@@ -54,27 +58,96 @@ class _StudentPaymentHomeScreenState extends State<StudentPaymentHomeScreen>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      _fetchStudentName();
       Provider.of<InvoiceProvider>(context, listen: false)
           .fetchInvoiceData(studentId);
     });
   }
 
+  // Fetch student name from payments or Hive
+  void _fetchStudentName() {
+    try {
+      final invoiceProvider = Provider.of<InvoiceProvider>(context, listen: false);
+      // Try to get name from payments first
+      if (invoiceProvider.payments != null && invoiceProvider.payments!.isNotEmpty) {
+        setState(() {
+          studentName = invoiceProvider.payments!.first.name ?? 'Student';
+        });
+        return;
+      }
+      // Fallback to Hive if no payments are available
+      final userBox = Hive.box('userData');
+      final storedUserData = userBox.get('userData') ?? userBox.get('loginResponse');
+      final processedData = storedUserData is String ? json.decode(storedUserData) : storedUserData;
+      final response = processedData['response'] ?? processedData;
+      final data = response['data'] ?? response;
+      setState(() {
+        studentName = data['name']?.toString() ?? 'Student'; // Adjust key based on your API response
+      });
+    } catch (e) {
+      debugPrint("Error fetching student name: $e");
+    }
+  }
+
   Future<void> _refreshData() async {
     final provider = Provider.of<InvoiceProvider>(context, listen: false);
     await provider.fetchInvoiceData(studentId);
+    setState(() {
+      _currentCardIndex = 0;
+    });
+    _fetchStudentName(); // Refresh name as well
   }
 
-  // 🔑 This runs when user returns to this screen
+  // This runs when user returns to this screen
   @override
   void didPopNext() {
     _refreshData();
+    if (mounted) {
+      setState(() {
+        _currentCardIndex = 0;
+      });
+    }
     super.didPopNext();
+  }
+
+  Widget _buildEmptyStateCard() {
+    return Padding(
+      padding: const EdgeInsets.all(20.0),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.credit_card_off_rounded,
+            size: 48,
+            color: Colors.white,
+          ),
+          const SizedBox(height: 10),
+          Text(
+            'No Fees Due',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+              color: Colors.white,
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            'You don\'t have any pending payments at this time',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 14,
+              color: Colors.white,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    // subscribe this screen to the RouteObserver
+    // Subscribe this screen to the RouteObserver
     routeObserver.subscribe(this, ModalRoute.of(context)! as PageRoute);
   }
 
@@ -116,25 +189,25 @@ class _StudentPaymentHomeScreenState extends State<StudentPaymentHomeScreen>
     final Brightness brightness = Theme.of(context).brightness;
     opacity = brightness == Brightness.light ? 0.1 : 0.15;
 
-    // 👇 Create a dummy invoice if none exists
+    // Create a dummy invoice if none exists
     final invoices = (invoiceProvider.invoices == null ||
-        invoiceProvider.invoices!.isEmpty)
+            invoiceProvider.invoices!.isEmpty)
         ? [
-      Invoice(
-        id: 0,
-        details: [],
-        amount: 0.0,
-        year: _formatSchoolSession(DateTime.now().year.toString()),
-        term: null,
-      )
-    ]
+            Invoice(
+              id: 0,
+              details: [],
+              amount: 0.0,
+              year: _formatSchoolSession(DateTime.now().year.toString()),
+              term: null,
+            )
+          ]
         : invoiceProvider.invoices!;
 
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: CustomStudentAppBar(
         title: 'Welcome',
-        subtitle: 'Tochukwu',
+        subtitle: studentName, // Use dynamic name here
         showNotification: true,
         showSettings: true,
         onNotificationTap: () {},
@@ -143,9 +216,9 @@ class _StudentPaymentHomeScreenState extends State<StudentPaymentHomeScreen>
       body: RefreshIndicator(
         onRefresh: _refreshData,
         child: SingleChildScrollView(
-         physics: const BouncingScrollPhysics(
-              parent: AlwaysScrollableScrollPhysics(),
-            ),
+          physics: const BouncingScrollPhysics(
+            parent: AlwaysScrollableScrollPhysics(),
+          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -165,7 +238,7 @@ class _StudentPaymentHomeScreenState extends State<StudentPaymentHomeScreen>
               else ...[
                 CarouselSlider(
                   options: CarouselOptions(
-                    height: 150,
+                    height: 180,
                     viewportFraction: 0.93,
                     enableInfiniteScroll: invoices.length > 1,
                     autoPlay: invoices.length > 1,
@@ -178,116 +251,133 @@ class _StudentPaymentHomeScreenState extends State<StudentPaymentHomeScreen>
                   items: invoices.map((invoice) {
                     return Builder(
                       builder: (BuildContext context) {
+                        // Check if this is the empty state invoice
+                        final isEmptyState =
+                            invoice.amount == 0.0 && invoice.id == 0;
+
                         return Padding(
                           padding: const EdgeInsets.symmetric(
                               horizontal: 8.0, vertical: 16.0),
                           child: Container(
                             width: double.infinity,
                             decoration: BoxDecoration(
-                              color: AppColors.eLearningBtnColor1,
-                              borderRadius: BorderRadius.circular(10),
+                              color: isEmptyState
+                                  ? AppColors.eLearningBtnColor1
+                                  : AppColors.eLearningBtnColor1,
+                              borderRadius: BorderRadius.circular(16),
+                              boxShadow: isEmptyState
+                                  ? [
+                                      BoxShadow(
+                                        color: Colors.black.withOpacity(0.05),
+                                        blurRadius: 10,
+                                        offset: const Offset(0, 4),
+                                      )
+                                    ]
+                                  : null,
                             ),
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(
-                                  vertical: 7.0, horizontal: 8.0),
-                              child: Row(
-                                mainAxisAlignment:
-                                MainAxisAlignment.spaceBetween,
-                                crossAxisAlignment: CrossAxisAlignment.center,
-                                children: [
-                                  Column(
-                                    crossAxisAlignment:
-                                    CrossAxisAlignment.start,
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Text(
-                                        invoice.amount == 0.0
-                                            ? 'No Fees Due'
-                                            : ' ${invoice.year} ${invoice.termName} Fees',
-                                        style: const TextStyle(
-                                            color: Colors.white, fontSize: 16),
-                                      ),
-                                      const SizedBox(height: 25),
-                                      Row(
-                                        children: [
-                                          const NairaSvgIcon(
-                                            color: Colors.white,
-                                            // size:25
-                                          width: 16,
-                                            height: 16, 
-                                          ),
-                                          Text(
-                                            _formatAmount(invoice.amount),
-                                            style: AppTextStyles.normal710(
-                                              fontSize: 27,
-                                              color: AppColors.backgroundLight,
+                            child: isEmptyState
+                                ? _buildEmptyStateCard()
+                                : Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                        vertical: 7.0, horizontal: 8.0),
+                                    child: Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.center,
+                                      children: [
+                                        Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Text(
+                                              '${invoice.year} ${invoice.termName} Fees',
+                                              style: const TextStyle(
+                                                  color: Colors.white,
+                                                  fontSize: 16),
+                                            ),
+                                            const SizedBox(height: 25),
+                                            Row(
+                                              children: [
+                                                const NairaSvgIcon(
+                                                  color: Colors.white,
+                                                  width: 25,
+                                                ),
+                                                Text(
+                                                  _formatAmount(invoice.amount),
+                                                  style: AppTextStyles.normal710(
+                                                    fontSize: 27,
+                                                    color:
+                                                        AppColors.backgroundLight,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ],
+                                        ),
+                                        Padding(
+                                          padding:
+                                              const EdgeInsets.only(top: 30),
+                                          child: ElevatedButton(
+                                            style: ElevatedButton.styleFrom(
+                                              backgroundColor:
+                                                  const Color.fromRGBO(
+                                                      198, 210, 255, 1),
+                                              padding: const EdgeInsets.symmetric(
+                                                  horizontal: 20, vertical: 12),
+                                              shape: RoundedRectangleBorder(
+                                                borderRadius:
+                                                    BorderRadius.circular(10),
+                                              ),
+                                              elevation: 0,
+                                            ),
+                                            onPressed: () =>
+                                                _navigateToViewDetailDialog(
+                                                    invoice),
+                                            child: Text(
+                                              'Pay Now',
+                                              style: AppTextStyles.normal500(
+                                                fontSize: 14,
+                                                color:
+                                                    AppColors.paymentTxtColor1,
+                                              ),
                                             ),
                                           ),
-                                        ],
-                                      ),
-                                    ],
-                                  ),
-                                  Padding(
-                                    padding: const EdgeInsets.only(top: 30),
-                                    child: ElevatedButton(
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor: invoice.amount == 0.0
-                                            ? Colors.grey
-                                            : const Color.fromRGBO(
-                                            198, 210, 255, 1),
-                                        padding: const EdgeInsets.symmetric(
-                                            horizontal: 20, vertical: 12),
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius:
-                                          BorderRadius.circular(10),
                                         ),
-                                        elevation: 0,
-                                      ),
-                                      onPressed: invoice.amount == 0.0
-                                          ? null
-                                          : () =>
-                                          _navigateToViewDetailDialog(
-                                              invoice),
-                                      child: Text(
-                                        invoice.amount == 0.0
-                                            ? 'No Payment'
-                                            : 'Pay Now',
-                                        style: AppTextStyles.normal500(
-                                          fontSize: 14,
-                                          color: invoice.amount == 0.0
-                                              ? Colors.white70
-                                              : AppColors.paymentTxtColor1,
-                                        ),
-                                      ),
+                                      ],
                                     ),
                                   ),
-                                ],
-                              ),
-                            ),
                           ),
                         );
                       },
                     );
                   }).toList(),
                 ),
+                // Show pagination dots only when there are multiple real invoices
+                if (invoices.length > 1 ||
+                    (invoices.length == 1 && invoices[0].amount > 0))
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: invoices.asMap().keys.map((index) {
+                      // Don't show dot for empty state if it's the only item
+                      if (invoices.length == 1 && invoices[0].amount == 0.0) {
+                        return const SizedBox.shrink();
+                      }
+                      return Container(
+                        width: 8,
+                        height: 8,
+                        margin: const EdgeInsets.symmetric(horizontal: 4),
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: _currentCardIndex == index
+                              ? const Color.fromRGBO(33, 150, 243, 1)
+                              : const Color.fromRGBO(224, 224, 224, 1),
+                        ),
+                      );
+                    }).toList(),
+                  ),
                 const SizedBox(height: 10),
-                // 👇 Always show pagination dots
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: invoices.asMap().keys.map((index) {
-                    return Container(
-                      width: 8,
-                      height: 8,
-                      margin: const EdgeInsets.symmetric(horizontal: 4),
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: _currentCardIndex == index
-                            ? const Color.fromRGBO(33, 150, 243, 1)
-                            : const Color.fromRGBO(224, 224, 224, 1),
-                      ),
-                    );
-                  }).toList(),
-                ),
               ],
               Padding(
                 padding: const EdgeInsets.all(8),
@@ -297,7 +387,7 @@ class _StudentPaymentHomeScreenState extends State<StudentPaymentHomeScreen>
                     const Text(
                       'Payment History',
                       style:
-                      TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                          TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                     ),
                     TextButton(
                       onPressed: () {
@@ -334,9 +424,9 @@ class _StudentPaymentHomeScreenState extends State<StudentPaymentHomeScreen>
               else
                 Column(
                   children: (invoiceProvider.payments!..sort(
-                    (a, b) => b.date.compareTo(a.date), // 👈 newest first
-                  ))
-                      .take(10) // 👈 show only latest 10
+                        (a, b) => b.date.compareTo(a.date), // Newest first
+                      ))
+                      .take(10) // Show only latest 10
                       .toList()
                       .asMap()
                       .entries
@@ -351,12 +441,9 @@ class _StudentPaymentHomeScreenState extends State<StudentPaymentHomeScreen>
                           onTap: () => _showReceiptDialog(payment),
                         ),
                         if (index != 9 &&
-                            index !=
-                                (invoiceProvider.payments!.length - 1))
+                            index != (invoiceProvider.payments!.length - 1))
                           const Divider(
-                              color: Colors.grey,
-                              thickness: 0.5,
-                              height: 1),
+                              color: Colors.grey, thickness: 0.5, height: 1),
                       ],
                     );
                   }).toList(),
@@ -386,7 +473,7 @@ class PaymentHistoryItem extends StatelessWidget {
   String _formatAmount(double amount) {
     return '${amount.toStringAsFixed(2).replaceAllMapped(
       RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
-          (Match m) => '${m[1]},',
+      (Match m) => '${m[1]},',
     )}';
   }
 
