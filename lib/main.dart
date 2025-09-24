@@ -45,6 +45,7 @@ import 'package:linkschool/modules/providers/student/marked_assignment_provider.
 import 'package:linkschool/modules/providers/student/marked_quiz_provider.dart';
 import 'package:linkschool/modules/providers/student/single_elearningcontent_provider.dart';
 import 'package:linkschool/modules/providers/student/streams_provider.dart';
+import 'package:linkschool/modules/providers/student/student_result_provider.dart';
 import 'package:linkschool/modules/providers/student/student_comment_provider.dart';
 import 'package:linkschool/modules/services/explore/cbt_service.dart';
 import 'package:linkschool/modules/services/staff/overview_service.dart';
@@ -141,6 +142,7 @@ Future<void> main() async {
           // StaffProvider from service locator
         ChangeNotifierProvider(create: (_) => locator<StaffSyllabusProvider>()),
         ChangeNotifierProvider(create: (_) => locator<InvoiceProvider>()),
+        ChangeNotifierProvider(create: (_) => locator<StudentResultProvider>()),
         ChangeNotifierProvider(create: (_) => locator<StaffOverviewProvider>()),
       ],
       child: const MyApp(),

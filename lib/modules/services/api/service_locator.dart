@@ -31,6 +31,7 @@ import 'package:linkschool/modules/providers/staff/overview.dart';
 import 'package:linkschool/modules/providers/staff/syllabus_provider.dart';
 import 'package:linkschool/modules/providers/student/payment_provider.dart';
 import 'package:linkschool/modules/providers/student/payment_submission_provider.dart';
+import 'package:linkschool/modules/providers/student/student_result_provider.dart';
 import 'package:linkschool/modules/services/admin/attendance_service.dart';
 import 'package:linkschool/modules/services/admin/e_learning/activity_service.dart';
 import 'package:linkschool/modules/services/admin/e_learning/admin_comment_service.dart';
@@ -71,6 +72,7 @@ import 'package:linkschool/modules/services/student/marked_assignment_service.da
 import 'package:linkschool/modules/services/student/marked_quiz_service.dart';
 import 'package:linkschool/modules/services/student/single_elearningcontentservice.dart';
 
+import 'package:linkschool/modules/services/student/student_result_service.dart';
 
 import '../../providers/student/student_comment_provider.dart';
 import '../student/student_comment_service.dart';
@@ -203,6 +205,9 @@ void setupServiceLocator() {
   locator.registerLazySingleton<MarkedQuizService>(
           () => MarkedQuizService(locator<ApiService>())
   );
+  locator.registerLazySingleton<StudentResultService>(
+          () => StudentResultService(locator<ApiService>())
+  );
 
   locator.registerLazySingleton<OverviewService>(
       () => OverviewService(locator<ApiService>()));
@@ -216,7 +221,9 @@ void setupServiceLocator() {
       () => MarkingService(locator<ApiService>()));
   locator.registerLazySingleton<MarkAssignmentProvider>(
       () => MarkAssignmentProvider(locator<MarkingService>()));
-
+  locator.registerLazySingleton<StudentResultProvider>(
+          () => StudentResultProvider(locator<StudentResultService>())
+  );
   locator.registerLazySingleton<ClassService>(() => ClassService());
   locator.registerLazySingleton<LevelService>(() => LevelService());
   // locator.registerLazySingleton<TermService>(() => TermService());
