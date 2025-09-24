@@ -2,13 +2,12 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
-import 'package:linkschool/modules/model/student/streams_model.dart';
-import 'package:linkschool/modules/model/student/submitted_quiz_model.dart';
+import 'package:linkschool/modules/model/student/student_result_model.dart';
 import 'package:linkschool/modules/services/api/api_service.dart';
 
-class MarkedQuizService {
+class StudentResultService {
   final ApiService _apiService;
-  MarkedQuizService(this._apiService);
+  StudentResultService(this._apiService);
 
   getuserdata(){
     final userBox = Hive.box('userData');
@@ -22,10 +21,13 @@ class MarkedQuizService {
     return data;
   }
 
-  Future<MarkedQuizModel> getMarkedQuiz({
-    required int contentid,
+  Future<StudentResultModel> getStudentResult({
+    required int levelid,
+    required int classid,
+
+
     required int term,
-    required int year,
+    required String year,
 
     String db = 'aalmgzmy_linkskoo_practice',
   }) async {
@@ -43,12 +45,14 @@ class MarkedQuizService {
 
     try {
       final response = await _apiService.get<Map<String, dynamic>>(
-        endpoint: 'portal/students/${studentid}/quiz-submissions',
+        endpoint: 'portal/students/${studentid}/result/${term}',
         queryParams: {
           '_db': db,
           'year':year,
           'term': term,
-          'content_id':contentid
+          'class_id':classid,
+          'level_id':levelid
+
         },
       );
 
@@ -56,16 +60,16 @@ class MarkedQuizService {
       if(response.statusCode == 200) {
 
         return
-          MarkedQuizModel.fromJson(response.rawData!['response']);
+          StudentResultModel.fromJson(response.rawData!['response']);
 
 
 
 
       }
 
-      throw Exception("Failed to Fetch Marked assignment: ${response.message}");
+      throw Exception("Failed to Fetch Student Result: ${response.message}");
     } catch (e) {
-      print("Error fetching Marked Quiz: $e");
+      print("Error fetching Student Result: $e");
       throw Exception("Failed to Fetch ma: ${e}");
     }
   }

@@ -16,6 +16,7 @@ import 'package:linkschool/modules/providers/admin/skills_behavior_table_provide
 import 'package:linkschool/modules/providers/student/marked_assignment_provider.dart';
 import 'package:linkschool/modules/providers/student/marked_quiz_provider.dart';
 import 'package:linkschool/modules/providers/student/streams_provider.dart';
+import 'package:linkschool/modules/providers/student/student_result_provider.dart';
 import 'package:linkschool/modules/services/admin/attendance_service.dart';
 import 'package:linkschool/modules/services/admin/e_learning/assignment_service.dart';
 import 'package:linkschool/modules/services/admin/e_learning/material_service.dart';
@@ -38,6 +39,7 @@ import 'package:linkschool/modules/services/student/marked_assignment_service.da
 import 'package:linkschool/modules/services/student/marked_quiz_service.dart';
 import 'package:linkschool/modules/services/student/single_elearningcontentservice.dart';
 import 'package:linkschool/modules/services/student/streams_service.dart';
+import 'package:linkschool/modules/services/student/student_result_service.dart';
 
 import '../../providers/student/comment_provider.dart';
 import '../student/comment_service.dart';
@@ -162,6 +164,9 @@ void setupServiceLocator() {
   locator.registerLazySingleton<MarkedQuizService>(
           () => MarkedQuizService(locator<ApiService>())
   );
+  locator.registerLazySingleton<StudentResultService>(
+          () => StudentResultService(locator<ApiService>())
+  );
   locator.registerLazySingleton<StreamsProvider>(
           () => StreamsProvider(locator<StreamsService>())
   );
@@ -171,7 +176,9 @@ void setupServiceLocator() {
   locator.registerLazySingleton<MarkedQuizProvider>(
           () => MarkedQuizProvider(locator<MarkedQuizService>())
   );
-
+  locator.registerLazySingleton<StudentResultProvider>(
+          () => StudentResultProvider(locator<StudentResultService>())
+  );
   locator.registerLazySingleton<ClassService>(() => ClassService());
   locator.registerLazySingleton<LevelService>(() => LevelService());
   // locator.registerLazySingleton<TermService>(() => TermService());

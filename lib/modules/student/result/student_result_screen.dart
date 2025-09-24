@@ -67,10 +67,10 @@ class _StudentResultScreenState extends State<StudentResultScreen> {
                     ),
                     const SizedBox(height: 10),
                     _buildTermRow(
-                        'First Term', 0.75, AppColors.paymentTxtColor1),
-                    _buildTermRow('Second Term', 0.75, AppColors.videoColor4),
+                        'First Term',1, 0.75, AppColors.paymentTxtColor1),
+                    _buildTermRow('Second Term',2, 0.75, AppColors.videoColor4),
                     _buildTermRow(
-                        'Third Term', 0.75, AppColors.exploreButton3Light),
+                        'Third Term',3, 0.75, AppColors.exploreButton3Light),
                     const SizedBox(height: 30),
                     CustomOutlineButton2(
                       onPressed: () {
@@ -202,13 +202,13 @@ class _StudentResultScreenState extends State<StudentResultScreen> {
     );
   }
 
-  Widget _buildTermRow(String term, double percent, Color indicatorColor) {
+  Widget _buildTermRow(String term,int termint, double percent, Color indicatorColor) {
     return GestureDetector(
       onTap: () {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => TermResultScreen(termTitle: term),
+            builder: (context) => TermResultScreen(termTitle: term, termInt:termint),
           ),
         );
       },
