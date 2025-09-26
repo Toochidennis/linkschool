@@ -70,7 +70,6 @@ class _StaffResultScreenState extends State<StaffResultScreen> {
           "name": course['course_name'] ?? '',
           "icon": _getIconForSubject(course['course_name'] ?? ''),
           "students": course['num_of_students'] ?? 0,
-          "progress": _calculateProgress(course['num_of_students'] ?? 0),
           "color": _getColorForSubject(course['course_name'] ?? ''),
           "course_id": course['course_id'] ?? 0,
           "class_id": classId,
@@ -145,44 +144,25 @@ class _StaffResultScreenState extends State<StaffResultScreen> {
   Color _getColorForSubject(String subjectName) {
     String lowerName = subjectName.toLowerCase();
     if (lowerName.contains('math') || lowerName.contains('numerical')) {
-      return Colors.blue;
+      return Colors.blue.shade600;
     } else if (lowerName.contains('science') || lowerName.contains('biology')) {
-      return Colors.green;
+      return Colors.green.shade600;
     } else if (lowerName.contains('chemistry')) {
-      return Colors.teal;
+      return Colors.teal.shade600;
     } else if (lowerName.contains('english') || lowerName.contains('literature')) {
-      return Colors.purple;
+      return Colors.purple.shade600;
     } else if (lowerName.contains('computer') || lowerName.contains('code')) {
-      return Colors.indigo;
+      return Colors.indigo.shade600;
     } else if (lowerName.contains('history') || lowerName.contains('civic')) {
-      return Colors.orange;
+      return Colors.orange.shade600;
     } else {
-      return Colors.grey;
+      return Colors.grey.shade600;
     }
-  }
-
-  int _calculateProgress(int numStudents) {
-    if (numStudents == 0) return 0;
-    if (numStudents <= 5) return 60;
-    if (numStudents <= 15) return 75;
-    if (numStudents <= 25) return 85;
-    return 90;
-  }
-
-  Color getStatusColor(int value) {
-    if (value >= 80) return Colors.green;
-    if (value >= 60) return Colors.orange;
-    return Colors.red;
-  }
-
-  String getStatusText(int value) {
-    if (value >= 80) return "Excellent";
-    if (value >= 60) return "Average";
-    return "Needs Improvement";
   }
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
     return Consumer<AuthProvider>(
       builder: (context, authProvider, child) {
         final userProfile = authProvider.getUserProfile();
@@ -195,96 +175,113 @@ class _StaffResultScreenState extends State<StaffResultScreen> {
             onNotificationTap: () {},
           ),
           body: Container(
-            decoration: Constants.customBoxDecoration(context),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  Colors.grey.shade50,
+                  Colors.grey.shade100,
+                ],
+              ),
+            ),
             child: SingleChildScrollView(
-              child: Column(
-                children: [
-                  Container(
-                    padding: EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(8),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.grey.withOpacity(0.1),
-                          spreadRadius: 1,
-                          blurRadius: 3,
-                          offset: Offset(0, 1),
-                        ),
-                      ],
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        classSubjects.isEmpty
-                            ? _buildEmptyState()
-                            : Column(
-                                children: classSubjects.map<Widget>((levelData) {
-                                  return Column(
+              physics: BouncingScrollPhysics(),
+              child: Padding(
+                padding: EdgeInsets.symmetric(
+                  horizontal: screenWidth * 0.04,
+                  vertical: 16,
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    classSubjects.isEmpty
+                        ? _buildEmptyState()
+                        : Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: classSubjects.map<Widget>((levelData) {
+                              return Card(
+                                elevation: 2,
+                                margin: EdgeInsets.only(bottom: 16),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Padding(
+                                  padding: EdgeInsets.all(16),
+                                  child: Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
                                       Container(
-                                        padding: EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                                        padding: EdgeInsets.symmetric(vertical: 12, horizontal: 16),
                                         margin: EdgeInsets.only(bottom: 12),
                                         decoration: BoxDecoration(
-                                          color: AppColors.bookText.withOpacity(0.1),
-                                          borderRadius: BorderRadius.circular(8),
-                                          border: Border.all(
-                                            color: AppColors.bookText.withOpacity(0.3),
-                                            width: 1,
+                                          gradient: LinearGradient(
+                                            colors: [
+                                              AppColors.bookText.withOpacity(0.1),
+                                              AppColors.bookText.withOpacity(0.05),
+                                            ],
                                           ),
+                                          borderRadius: BorderRadius.circular(8),
                                         ),
                                         child: Row(
                                           children: [
                                             Icon(
                                               Icons.school,
                                               color: AppColors.bookText,
-                                              size: 20,
+                                              size: 24,
                                             ),
-                                            SizedBox(width: 8),
-                                            Text(
-                                              levelData["level"],
-                                              style: TextStyle(
-                                                fontSize: 20,
-                                                fontWeight: FontWeight.bold,
-                                                color: AppColors.bookText,
+                                            SizedBox(width: 12),
+                                            Expanded(
+                                              child: Text(
+                                                levelData["level"],
+                                                style: AppTextStyles.normal700(
+                                                  fontSize: 20,
+                                                  color: AppColors.bookText,
+                                                ),
                                               ),
                                             ),
                                           ],
                                         ),
                                       ),
                                       ...levelData["classes"].map<Widget>((classData) {
-                                        return Container(
-                                          margin: EdgeInsets.only(left: 16, bottom: 16),
+                                        return Padding(
+                                          padding: EdgeInsets.only(bottom: 16),
                                           child: Column(
                                             crossAxisAlignment: CrossAxisAlignment.start,
                                             children: [
                                               Padding(
-                                                padding: EdgeInsets.only(bottom: 8),
+                                                padding: EdgeInsets.only(bottom: 12),
                                                 child: Row(
                                                   children: [
                                                     Container(
-                                                      width: 4,
-                                                      height: 20,
+                                                      width: 6,
+                                                      height: 24,
                                                       decoration: BoxDecoration(
-                                                        color: AppColors.bookText.withOpacity(0.6),
-                                                        borderRadius: BorderRadius.circular(2),
+                                                        gradient: LinearGradient(
+                                                          colors: [
+                                                            AppColors.bookText,
+                                                            AppColors.bookText.withOpacity(0.7),
+                                                          ],
+                                                        ),
+                                                        borderRadius: BorderRadius.circular(3),
                                                       ),
                                                     ),
-                                                    SizedBox(width: 8),
-                                                    Text(
-                                                      classData["class_name"],
-                                                      style: TextStyle(
-                                                        fontSize: 16,
-                                                        fontWeight: FontWeight.w600,
-                                                        color: AppColors.bookText.withOpacity(0.8),
+                                                    SizedBox(width: 12),
+                                                    Expanded(
+                                                      child: Text(
+                                                        classData["class_name"],
+                                                        style: AppTextStyles.normal600(
+                                                          fontSize: 18,
+                                                          color: AppColors.bookText,
+                                                        ),
                                                       ),
                                                     ),
                                                   ],
                                                 ),
                                               ),
                                               ...classData["subjects"].map<Widget>((subject) {
-                                                return Container(
-                                                  margin: EdgeInsets.only(left: 12, bottom: 8),
+                                                return Padding(
+                                                  padding: EdgeInsets.only(bottom: 12),
                                                   child: GestureDetector(
                                                     onTap: () => _showOverlayDialog(
                                                       subject["name"],
@@ -296,7 +293,6 @@ class _StaffResultScreenState extends State<StaffResultScreen> {
                                                       subject["name"],
                                                       subject["icon"],
                                                       subject["students"],
-                                                      subject["progress"],
                                                       subject["color"],
                                                     ),
                                                   ),
@@ -306,16 +302,15 @@ class _StaffResultScreenState extends State<StaffResultScreen> {
                                           ),
                                         );
                                       }).toList(),
-                                      SizedBox(height: 20),
                                     ],
-                                  );
-                                }).toList(),
-                              ),
-                        SizedBox(height: 100),
-                      ],
-                    ),
-                  ),
-                ],
+                                  ),
+                                ),
+                              );
+                            }).toList(),
+                          ),
+                    SizedBox(height: 100),
+                  ],
+                ),
               ),
             ),
           ),
@@ -325,98 +320,97 @@ class _StaffResultScreenState extends State<StaffResultScreen> {
   }
 
   Widget _buildEmptyState() {
-    return Container(
-      padding: EdgeInsets.all(32),
-      child: Column(
-        children: [
-          Icon(
-            Icons.school_outlined,
-            size: 64,
-            color: Colors.grey,
-          ),
-          SizedBox(height: 16),
-          Text(
-            'No classes assigned',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: Colors.grey,
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Container(
+        padding: EdgeInsets.all(32),
+        child: Column(
+          children: [
+            Icon(
+              Icons.school_outlined,
+              size: 80,
+              color: Colors.grey.shade400,
             ),
-          ),
-          SizedBox(height: 8),
-          Text(
-            'You have not been assigned to any classes yet.',
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.grey,
+            SizedBox(height: 16),
+            Text(
+              'No Classes Assigned',
+              style: AppTextStyles.normal700(
+                fontSize: 20,
+                color: Colors.grey.shade700,
+              ),
             ),
-            textAlign: TextAlign.center,
-          ),
-        ],
+            SizedBox(height: 8),
+            Text(
+              'You have not been assigned to any classes yet. Contact your administrator.',
+              style: AppTextStyles.normal400(
+                fontSize: 14,
+                color: Colors.grey.shade600,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
       ),
     );
   }
 
   Widget _buildClassItem(
-      String name, IconData icon, int students, int progress, Color color) {
-    return Container(
-      margin: EdgeInsets.only(bottom: 12),
-      padding: EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.grey.shade200),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: color.withOpacity(0.2),
-              borderRadius: BorderRadius.circular(20),
+      String name, IconData icon, int students, Color color) {
+    return Card(
+      elevation: 1,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Container(
+        padding: EdgeInsets.all(16),
+        child: Row(
+          children: [
+            Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    color.withOpacity(0.2),
+                    color.withOpacity(0.1),
+                  ],
+                ),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(icon, color: color, size: 28),
             ),
-            child: Icon(icon, color: color),
-          ),
-          SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  name,
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.bookText,
+            SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    name,
+                    style: AppTextStyles.normal600(
+                      fontSize: 16,
+                      color: AppColors.bookText,
+                    ),
                   ),
-                ),
-                Text(
-                  "$students students",
-                  style: TextStyle(color: Colors.grey, fontSize: 12),
-                ),
-              ],
-            ),
-          ),
-          Container(
-            padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            decoration: BoxDecoration(
-              color: getStatusColor(progress).withOpacity(0.2),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Text(
-              "$progress%",
-              style: TextStyle(
-                color: getStatusColor(progress),
-                fontWeight: FontWeight.bold,
+                  SizedBox(height: 4),
+                  Text(
+                    "$students students",
+                    style: AppTextStyles.normal400(
+                      fontSize: 12,
+                      color: Colors.grey.shade600,
+                    ),
+                  ),
+                ],
               ),
             ),
-          ),
-          SizedBox(width: 12),
-          IconButton(
-            icon: Icon(Icons.chevron_right, color: Colors.grey),
-            onPressed: () {},
-          ),
-        ],
+            Container(
+              padding: EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.grey.shade100,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(Icons.chevron_right, color: Colors.grey.shade600, size: 20),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -424,85 +418,101 @@ class _StaffResultScreenState extends State<StaffResultScreen> {
   void _showOverlayDialog(String subject, Map<String, dynamic> courseData, int classId, String className) {
     showModalBottomSheet(
       context: context,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      backgroundColor: Colors.white,
       builder: (BuildContext context) {
         return Container(
-          color: Colors.white,
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
+          padding: EdgeInsets.all(24),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
+              Container(
+                width: 40,
+                height: 4,
+                margin: EdgeInsets.only(bottom: 16),
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade300,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 8.0),
-                    child: Text(
-                      'Result',
-                      style: AppTextStyles.normal600(
-                          fontSize: 16, color: AppColors.backgroundDark),
+                  Text(
+                    'Result',
+                    style: AppTextStyles.normal700(
+                      fontSize: 18,
+                      color: AppColors.backgroundDark,
                     ),
                   ),
+                  SizedBox(height: 12),
                   Row(
                     children: [
                       Expanded(
                         child: _buildDialogButton(
-                          'Add',
+                          'Add Result',
                           'assets/icons/result/edit.svg',
                           () => _navigateToAddResult(subject, courseData, classId),
+                          Colors.blue.shade50,
+                          Colors.blue.shade600,
                         ),
                       ),
-                      const SizedBox(width: 8.0),
+                      SizedBox(width: 12),
                       Expanded(
                         child: _buildDialogButton(
-                          'View',
+                          'View Result',
                           'assets/icons/result/eye.svg',
                           () => _navigateToViewResult(subject, courseData, classId),
+                          Colors.green.shade50,
+                          Colors.green.shade600,
                         ),
                       ),
                     ],
                   ),
                 ],
               ),
-              const SizedBox(height: 16.0),
+              SizedBox(height: 24),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 8.0),
-                    child: Text(
-                      'Monthly assessment',
-                      style: AppTextStyles.normal600(
-                          fontSize: 16, color: AppColors.backgroundDark),
+                  Text(
+                    'Monthly Assessment',
+                    style: AppTextStyles.normal700(
+                      fontSize: 18,
+                      color: AppColors.backgroundDark,
                     ),
                   ),
+                  SizedBox(height: 12),
                   Row(
                     children: [
                       Expanded(
                         child: _buildDialogButton(
-                          'Add',
+                          'Add Assessment',
                           'assets/icons/result/edit.svg',
-                          () {
-                            Navigator.pop(context);
-                          },
+                          () => Navigator.pop(context),
+                          Colors.purple.shade50,
+                          Colors.purple.shade600,
                         ),
                       ),
-                      const SizedBox(width: 8.0),
+                      SizedBox(width: 12),
                       Expanded(
                         child: _buildDialogButton(
-                          'View',
+                          'View Assessment',
                           'assets/icons/result/eye.svg',
                           () => _navigateToMonthlyAssessment(subject, courseData, classId),
+                          Colors.purple.shade50,
+                          Colors.purple.shade600,
                         ),
                       ),
                     ],
                   ),
                 ],
               ),
-              SizedBox(height: 16.0),
-              Divider(
-                color: Colors.grey[300],
-                thickness: 1,
-              ),
+              SizedBox(height: 24),
+              Divider(color: Colors.grey.shade200),
+              SizedBox(height: 16),
               _buildAttendanceButton(
                 'Take Attendance',
                 'assets/icons/result/course.svg',
@@ -520,6 +530,8 @@ class _StaffResultScreenState extends State<StaffResultScreen> {
                     ),
                   );
                 },
+                Colors.orange.shade50,
+                Colors.orange.shade600,
               ),
             ],
           ),
@@ -529,45 +541,82 @@ class _StaffResultScreenState extends State<StaffResultScreen> {
   }
 
   Widget _buildDialogButton(
-      String text, String iconPath, VoidCallback onPressed) {
-    return Container(
-      decoration: BoxDecoration(
-        border: Border.all(color: Colors.grey),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: TextButton.icon(
-        onPressed: onPressed,
-        icon: SvgPicture.asset(
-          iconPath,
-          color: Colors.grey,
+      String text, String iconPath, VoidCallback onPressed, Color bgColor, Color iconColor) {
+    return GestureDetector(
+      onTap: onPressed,
+      child: Container(
+        padding: EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+        decoration: BoxDecoration(
+          color: bgColor,
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.withOpacity(0.1),
+              spreadRadius: 1,
+              blurRadius: 4,
+              offset: Offset(0, 2),
+            ),
+          ],
         ),
-        label: Text(
-          text,
-          style: AppTextStyles.normal600(
-              fontSize: 14, color: AppColors.backgroundDark),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            SvgPicture.asset(
+              iconPath,
+              color: iconColor,
+              width: 20,
+              height: 20,
+            ),
+            SizedBox(width: 8),
+            Text(
+              text,
+              style: AppTextStyles.normal600(
+                fontSize: 14,
+                color: iconColor,
+              ),
+            ),
+          ],
         ),
       ),
     );
   }
 
   Widget _buildAttendanceButton(
-      String text, String iconPath, VoidCallback onPressed) {
-    return Container(
-      width: double.infinity,
-      decoration: BoxDecoration(
-        border: Border.all(color: Colors.grey),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: TextButton.icon(
-        onPressed: onPressed,
-        icon: SvgPicture.asset(
-          iconPath,
-          color: Colors.grey,
+      String text, String iconPath, VoidCallback onPressed, Color bgColor, Color iconColor) {
+    return GestureDetector(
+      onTap: onPressed,
+      child: Container(
+        padding: EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+        decoration: BoxDecoration(
+          color: bgColor,
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.withOpacity(0.1),
+              spreadRadius: 1,
+              blurRadius: 4,
+              offset: Offset(0, 2),
+            ),
+          ],
         ),
-        label: Text(
-          text,
-          style: AppTextStyles.normal600(
-              fontSize: 14, color: AppColors.backgroundDark),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            SvgPicture.asset(
+              iconPath,
+              color: iconColor,
+              width: 24,
+              height: 24,
+            ),
+            SizedBox(width: 12),
+            Text(
+              text,
+              style: AppTextStyles.normal600(
+                fontSize: 16,
+                color: iconColor,
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -622,36 +671,44 @@ class _StaffResultScreenState extends State<StaffResultScreen> {
   }
 
   Widget buildInputResultsItem(BuildContext context) {
-    return ListTile(
-      leading: Container(
-        width: 40,
-        height: 40,
-        decoration: BoxDecoration(
-          color: AppColors.bgColor4,
-          borderRadius: BorderRadius.circular(4),
-        ),
-        child: Center(
-          child: SvgPicture.asset(
-            'assets/icons/result/course.svg',
-            color: AppColors.iconColor3,
-            width: 20,
-            height: 20,
+    return Card(
+      elevation: 1,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: ListTile(
+        leading: Container(
+          width: 48,
+          height: 48,
+          decoration: BoxDecoration(
+            color: AppColors.bgColor4,
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Center(
+            child: SvgPicture.asset(
+              'assets/icons/result/course.svg',
+              color: AppColors.iconColor3,
+              width: 24,
+              height: 24,
+            ),
           ),
         ),
+        title: Text(
+          'Attendance',
+          style: AppTextStyles.normal600(
+            fontSize: 16,
+            color: AppColors.backgroundDark,
+          ),
+        ),
+        onTap: () {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Please select a specific course to take attendance'),
+              backgroundColor: Colors.red.shade600,
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            ),
+          );
+        },
       ),
-      title: Text(
-        'Attendance',
-        style: AppTextStyles.normal600(
-            fontSize: 14, color: AppColors.backgroundDark),
-      ),
-      onTap: () {
-        // This ListTile seems to be unused or incorrectly implemented
-        // If needed, it should pass specific classId and courseId
-        // For now, we can leave it as is or remove it if not used
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Please select a specific course to take attendance')),
-        );
-      },
     );
   }
 }
@@ -667,8 +724,6 @@ class _StaffResultScreenState extends State<StaffResultScreen> {
 // import 'package:linkschool/modules/common/text_styles.dart';
 // import 'package:linkschool/modules/common/widgets/portal/student/student_customized_appbar.dart';
 // import 'package:linkschool/modules/staff/e_learning/sub_screens/staff_attandance_screen.dart';
-// // import 'package:linkschool/modules/staff/home/form_classes_screen.dart';
-// import 'package:linkschool/modules/staff/home/staff_take_attandance_screen.dart';
 // import 'package:linkschool/modules/staff/result/staff_add_view_course_result.dart';
 // import 'package:linkschool/modules/staff/result/staff_view_course_result.dart';
 // import 'package:linkschool/modules/staff/result/staff_monthly_assesment_screen.dart';
@@ -695,24 +750,16 @@ class _StaffResultScreenState extends State<StaffResultScreen> {
 //     final authProvider = Provider.of<AuthProvider>(context, listen: false);
 //     final staffCourses = authProvider.getStaffCourses();
 //     final formClasses = authProvider.getFormClasses();
-//     final userProfile = authProvider.getUserProfile();
-
-//     // Transform staff courses data to match UI structure organized by levels
 //     classSubjects = _transformStaffCoursesToUIByLevel(staffCourses, formClasses);
 //   }
 
 //   List<Map<String, dynamic>> _transformStaffCoursesToUIByLevel(
-//     List<Map<String, dynamic>> staffCourses, 
-//     List<Map<String, dynamic>> formClasses) {
-//     // Create a map to store level information for each class
+//       List<Map<String, dynamic>> staffCourses, List<Map<String, dynamic>> formClasses) {
 //     Map<int, Map<String, dynamic>> classToLevelMap = {};
-
-//     // First, map classes to their levels from form_classes data
 //     for (var levelData in formClasses) {
 //       String levelName = levelData['level_name'] ?? '';
 //       int levelId = levelData['level_id'] ?? 0;
 //       List<dynamic> classes = levelData['classes'] ?? [];
-      
 //       for (var classData in classes) {
 //         int classId = classData['class_id'] ?? 0;
 //         classToLevelMap[classId] = {
@@ -722,29 +769,19 @@ class _StaffResultScreenState extends State<StaffResultScreen> {
 //       }
 //     }
 
-//     // Group courses by level, then by class
 //     Map<String, Map<String, List<Map<String, dynamic>>>> levelStructure = {};
-
 //     for (var classData in staffCourses) {
 //       int classId = classData['class_id'] ?? 0;
 //       String className = classData['class_name'] ?? '';
 //       List<dynamic> courses = classData['courses'] ?? [];
+//       String levelName = classToLevelMap.containsKey(classId)
+//           ? classToLevelMap[classId]!['level_name']
+//           : _extractLevelFromClassName(className);
       
-//       // Determine level for this class
-//       String levelName = 'Unknown Level';
-//       if (classToLevelMap.containsKey(classId)) {
-//         levelName = classToLevelMap[classId]!['level_name'];
-//       } else {
-//         // If not in form_classes, try to extract level from class name
-//         levelName = _extractLevelFromClassName(className);
-//       }
-      
-//       // Initialize level structure if not exists
 //       if (!levelStructure.containsKey(levelName)) {
 //         levelStructure[levelName] = {};
 //       }
       
-//       // Process courses for this class
 //       List<Map<String, dynamic>> subjects = [];
 //       for (var course in courses) {
 //         subjects.add({
@@ -754,6 +791,8 @@ class _StaffResultScreenState extends State<StaffResultScreen> {
 //           "progress": _calculateProgress(course['num_of_students'] ?? 0),
 //           "color": _getColorForSubject(course['course_name'] ?? ''),
 //           "course_id": course['course_id'] ?? 0,
+//           "class_id": classId,
+//           "class_name": className,
 //         });
 //       }
       
@@ -762,12 +801,9 @@ class _StaffResultScreenState extends State<StaffResultScreen> {
 //       }
 //     }
 
-//     // Transform to UI structure
 //     List<Map<String, dynamic>> transformedData = [];
-
 //     levelStructure.forEach((levelName, classesData) {
 //       List<Map<String, dynamic>> classesForLevel = [];
-      
 //       classesData.forEach((className, subjects) {
 //         classesForLevel.add({
 //           "class_name": className,
@@ -775,7 +811,6 @@ class _StaffResultScreenState extends State<StaffResultScreen> {
 //           "subjects": subjects,
 //         });
 //       });
-      
 //       if (classesForLevel.isNotEmpty) {
 //         transformedData.add({
 //           "level": levelName,
@@ -784,14 +819,11 @@ class _StaffResultScreenState extends State<StaffResultScreen> {
 //       }
 //     });
 
-//     // Sort levels for consistent display
 //     transformedData.sort((a, b) => a["level"].compareTo(b["level"]));
-
 //     return transformedData;
 //   }
 
 //   String _extractLevelFromClassName(String className) {
-//     // Extract level from class name (e.g., "JSS1B" -> "JSS1", "SSS2A" -> "SSS2")
 //     if (className.length >= 4) {
 //       return className.substring(0, 4);
 //     }
@@ -831,25 +863,23 @@ class _StaffResultScreenState extends State<StaffResultScreen> {
 //   Color _getColorForSubject(String subjectName) {
 //     String lowerName = subjectName.toLowerCase();
 //     if (lowerName.contains('math') || lowerName.contains('numerical')) {
-//       return Colors.blue;
+//       return Colors.blue.shade600;
 //     } else if (lowerName.contains('science') || lowerName.contains('biology')) {
-//       return Colors.green;
+//       return Colors.green.shade600;
 //     } else if (lowerName.contains('chemistry')) {
-//       return Colors.teal;
+//       return Colors.teal.shade600;
 //     } else if (lowerName.contains('english') || lowerName.contains('literature')) {
-//       return Colors.purple;
+//       return Colors.purple.shade600;
 //     } else if (lowerName.contains('computer') || lowerName.contains('code')) {
-//       return Colors.indigo;
+//       return Colors.indigo.shade600;
 //     } else if (lowerName.contains('history') || lowerName.contains('civic')) {
-//       return Colors.orange;
+//       return Colors.orange.shade600;
 //     } else {
-//       return Colors.grey;
+//       return Colors.grey.shade600;
 //     }
 //   }
 
 //   int _calculateProgress(int numStudents) {
-//     // Simple progress calculation based on number of students
-//     // You can modify this logic based on your requirements
 //     if (numStudents == 0) return 0;
 //     if (numStudents <= 5) return 60;
 //     if (numStudents <= 15) return 75;
@@ -858,9 +888,9 @@ class _StaffResultScreenState extends State<StaffResultScreen> {
 //   }
 
 //   Color getStatusColor(int value) {
-//     if (value >= 80) return Colors.green;
-//     if (value >= 60) return Colors.orange;
-//     return Colors.red;
+//     if (value >= 80) return Colors.green.shade600;
+//     if (value >= 60) return Colors.orange.shade600;
+//     return Colors.red.shade600;
 //   }
 
 //   String getStatusText(int value) {
@@ -883,106 +913,110 @@ class _StaffResultScreenState extends State<StaffResultScreen> {
 //             onNotificationTap: () {},
 //           ),
 //           body: Container(
-//             decoration: Constants.customBoxDecoration(context),
+//             decoration: BoxDecoration(
+//               gradient: LinearGradient(
+//                 begin: Alignment.topCenter,
+//                 end: Alignment.bottomCenter,
+//                 colors: [
+//                   Colors.grey.shade50,
+//                   Colors.grey.shade100,
+//                 ],
+//               ),
+//             ),
 //             child: SingleChildScrollView(
-//               child: Column(
-//                 children: [
-//                   // My Classes
-//                   Container(
-//                     padding: EdgeInsets.all(16),
-//                     decoration: BoxDecoration(
-//                       borderRadius: BorderRadius.circular(8),
-//                       boxShadow: [
-//                         BoxShadow(
-//                           color: Colors.grey.withOpacity(0.1),
-//                           spreadRadius: 1,
-//                           blurRadius: 3,
-//                           offset: Offset(0, 1),
-//                         ),
-//                       ],
-//                     ),
-//                     child: Column(
-//                       crossAxisAlignment: CrossAxisAlignment.start,
-//                       children: [
-//                         classSubjects.isEmpty
-//                             ? _buildEmptyState()
-//                             : Column(
-//                                 children: classSubjects.map<Widget>((levelData) {
-//                                   return Column(
+//               physics: BouncingScrollPhysics(),
+//               child: Padding(
+//                 padding: EdgeInsets.all(16),
+//                 child: Column(
+//                   children: [
+//                     classSubjects.isEmpty
+//                         ? _buildEmptyState()
+//                         : Column(
+//                             children: classSubjects.map<Widget>((levelData) {
+//                               return Card(
+//                                 elevation: 2,
+//                                 margin: EdgeInsets.only(bottom: 16),
+//                                 shape: RoundedRectangleBorder(
+//                                   borderRadius: BorderRadius.circular(12),
+//                                 ),
+//                                 child: Padding(
+//                                   padding: EdgeInsets.all(16),
+//                                   child: Column(
 //                                     crossAxisAlignment: CrossAxisAlignment.start,
 //                                     children: [
-//                                       // Level Header
 //                                       Container(
-//                                         padding: EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+//                                         padding: EdgeInsets.symmetric(vertical: 12, horizontal: 16),
 //                                         margin: EdgeInsets.only(bottom: 12),
 //                                         decoration: BoxDecoration(
-//                                           color: AppColors.bookText.withOpacity(0.1),
-//                                           borderRadius: BorderRadius.circular(8),
-//                                           border: Border.all(
-//                                             color: AppColors.bookText.withOpacity(0.3),
-//                                             width: 1,
+//                                           gradient: LinearGradient(
+//                                             colors: [
+//                                               AppColors.bookText.withOpacity(0.1),
+//                                               AppColors.bookText.withOpacity(0.05),
+//                                             ],
 //                                           ),
+//                                           borderRadius: BorderRadius.circular(8),
 //                                         ),
 //                                         child: Row(
 //                                           children: [
 //                                             Icon(
 //                                               Icons.school,
 //                                               color: AppColors.bookText,
-//                                               size: 20,
+//                                               size: 24,
 //                                             ),
-//                                             SizedBox(width: 8),
+//                                             SizedBox(width: 12),
 //                                             Text(
 //                                               levelData["level"],
-//                                               style: TextStyle(
+//                                               style: AppTextStyles.normal700(
 //                                                 fontSize: 20,
-//                                                 fontWeight: FontWeight.bold,
 //                                                 color: AppColors.bookText,
 //                                               ),
 //                                             ),
 //                                           ],
 //                                         ),
 //                                       ),
-//                                       // Classes under this level
 //                                       ...levelData["classes"].map<Widget>((classData) {
 //                                         return Container(
-//                                           margin: EdgeInsets.only(left: 16, bottom: 16),
+//                                           margin: EdgeInsets.only(left: 8, bottom: 16),
 //                                           child: Column(
 //                                             crossAxisAlignment: CrossAxisAlignment.start,
 //                                             children: [
-//                                               // Class Header
 //                                               Padding(
-//                                                 padding: EdgeInsets.only(bottom: 8),
+//                                                 padding: EdgeInsets.only(bottom: 12),
 //                                                 child: Row(
 //                                                   children: [
 //                                                     Container(
-//                                                       width: 4,
-//                                                       height: 20,
+//                                                       width: 6,
+//                                                       height: 24,
 //                                                       decoration: BoxDecoration(
-//                                                         color: AppColors.bookText.withOpacity(0.6),
-//                                                         borderRadius: BorderRadius.circular(2),
+//                                                         gradient: LinearGradient(
+//                                                           colors: [
+//                                                             AppColors.bookText,
+//                                                             AppColors.bookText.withOpacity(0.7),
+//                                                           ],
+//                                                         ),
+//                                                         borderRadius: BorderRadius.circular(3),
 //                                                       ),
 //                                                     ),
-//                                                     SizedBox(width: 8),
+//                                                     SizedBox(width: 12),
 //                                                     Text(
 //                                                       classData["class_name"],
-//                                                       style: TextStyle(
-//                                                         fontSize: 16,
-//                                                         fontWeight: FontWeight.w600,
-//                                                         color: AppColors.bookText.withOpacity(0.8),
+//                                                       style: AppTextStyles.normal600(
+//                                                         fontSize: 18,
+//                                                         color: AppColors.bookText,
 //                                                       ),
 //                                                     ),
 //                                                   ],
 //                                                 ),
 //                                               ),
-//                                               // Subjects under this class
 //                                               ...classData["subjects"].map<Widget>((subject) {
-//                                                 return Container(
-//                                                   margin: EdgeInsets.only(left: 12, bottom: 8),
+//                                                 return Padding(
+//                                                   padding: EdgeInsets.only(left: 12, bottom: 12),
 //                                                   child: GestureDetector(
 //                                                     onTap: () => _showOverlayDialog(
 //                                                       subject["name"],
 //                                                       subject,
 //                                                       classData["class_id"],
+//                                                       classData["class_name"],
 //                                                     ),
 //                                                     child: _buildClassItem(
 //                                                       subject["name"],
@@ -998,16 +1032,15 @@ class _StaffResultScreenState extends State<StaffResultScreen> {
 //                                           ),
 //                                         );
 //                                       }).toList(),
-//                                       SizedBox(height: 20),
 //                                     ],
-//                                   );
-//                                 }).toList(),
-//                               ),
-//                         SizedBox(height: 100),
-//                       ],
-//                     ),
-//                   ),
-//                 ],
+//                                   ),
+//                                 ),
+//                               );
+//                             }).toList(),
+//                           ),
+//                     SizedBox(height: 100),
+//                   ],
+//                 ),
 //               ),
 //             ),
 //           ),
@@ -1017,317 +1050,330 @@ class _StaffResultScreenState extends State<StaffResultScreen> {
 //   }
 
 //   Widget _buildEmptyState() {
-//     return Container(
-//       padding: EdgeInsets.all(32),
-//       child: Column(
-//         children: [
-//           Icon(
-//             Icons.school_outlined,
-//             size: 64,
-//             color: Colors.grey,
-//           ),
-//           SizedBox(height: 16),
-//           Text(
-//             'No classes assigned',
-//             style: TextStyle(
-//               fontSize: 18,
-//               fontWeight: FontWeight.bold,
-//               color: Colors.grey,
+//     return Card(
+//       elevation: 2,
+//       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+//       child: Container(
+//         padding: EdgeInsets.all(32),
+//         child: Column(
+//           children: [
+//             Icon(
+//               Icons.school_outlined,
+//               size: 80,
+//               color: Colors.grey.shade400,
 //             ),
-//           ),
-//           SizedBox(height: 8),
-//           Text(
-//             'You have not been assigned to any classes yet.',
-//             style: TextStyle(
-//               fontSize: 14,
-//               color: Colors.grey,
+//             SizedBox(height: 16),
+//             Text(
+//               'No Classes Assigned',
+//               style: AppTextStyles.normal700(
+//                 fontSize: 20,
+//                 color: Colors.grey.shade700,
+//               ),
 //             ),
-//             textAlign: TextAlign.center,
-//           ),
-//         ],
+//             SizedBox(height: 8),
+//             Text(
+//               'You have not been assigned to any classes yet. Contact your administrator.',
+//               style: AppTextStyles.normal400(
+//                 fontSize: 14,
+//                 color: Colors.grey.shade600,
+//               ),
+//               textAlign: TextAlign.center,
+//             ),
+//           ],
+//         ),
 //       ),
 //     );
 //   }
 
 //   Widget _buildClassItem(
 //       String name, IconData icon, int students, int progress, Color color) {
-//     return Container(
-//       margin: EdgeInsets.only(bottom: 12),
-//       padding: EdgeInsets.all(12),
-//       decoration: BoxDecoration(
-//         color: Colors.white,
-//         borderRadius: BorderRadius.circular(8),
-//         border: Border.all(color: Colors.grey.shade200),
-//       ),
-//       child: Row(
-//         children: [
-//           Container(
-//             width: 40,
-//             height: 40,
-//             decoration: BoxDecoration(
-//               color: color.withOpacity(0.2),
-//               borderRadius: BorderRadius.circular(20),
+//     return Card(
+//       elevation: 1,
+//       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+//       child: Container(
+//         padding: EdgeInsets.all(16),
+//         child: Row(
+//           children: [
+//             Container(
+//               width: 48,
+//               height: 48,
+//               decoration: BoxDecoration(
+//                 gradient: LinearGradient(
+//                   colors: [
+//                     color.withOpacity(0.2),
+//                     color.withOpacity(0.1),
+//                   ],
+//                 ),
+//                 borderRadius: BorderRadius.circular(12),
+//               ),
+//               child: Icon(icon, color: color, size: 28),
 //             ),
-//             child: Icon(icon, color: color),
-//           ),
-//           SizedBox(width: 12),
-//           Expanded(
-//             child: Column(
-//               crossAxisAlignment: CrossAxisAlignment.start,
-//               children: [
-//                 Text(
-//                   name,
-//                   style: TextStyle(
-//                     fontWeight: FontWeight.bold,
-//                     color: AppColors.bookText,
+//             SizedBox(width: 16),
+//             Expanded(
+//               child: Column(
+//                 crossAxisAlignment: CrossAxisAlignment.start,
+//                 children: [
+//                   Text(
+//                     name,
+//                     style: AppTextStyles.normal600(
+//                       fontSize: 16,
+//                       color: AppColors.bookText,
+//                     ),
 //                   ),
-//                 ),
-//                 Text(
-//                   "$students students",
-//                   style: TextStyle(color: Colors.grey, fontSize: 12),
-//                 ),
-//               ],
-//             ),
-//           ),
-//           Container(
-//             padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-//             decoration: BoxDecoration(
-//               color: getStatusColor(progress).withOpacity(0.2),
-//               borderRadius: BorderRadius.circular(12),
-//             ),
-//             child: Text(
-//               "$progress%",
-//               style: TextStyle(
-//                 color: getStatusColor(progress),
-//                 fontWeight: FontWeight.bold,
+//                   SizedBox(height: 4),
+//                   Text(
+//                     "$students students",
+//                     style: AppTextStyles.normal400(
+//                       fontSize: 12,
+//                       color: Colors.grey.shade600,
+//                     ),
+//                   ),
+//                 ],
 //               ),
 //             ),
-//           ),
-//           SizedBox(width: 12),
-//           IconButton(
-//             icon: Icon(Icons.chevron_right, color: Colors.grey),
-//             onPressed: () {},
-//           ),
-//         ],
+//             Container(
+//               padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+//               decoration: BoxDecoration(
+//                 gradient: LinearGradient(
+//                   colors: [
+//                     getStatusColor(progress).withOpacity(0.2),
+//                     getStatusColor(progress).withOpacity(0.1),
+//                   ],
+//                 ),
+//                 borderRadius: BorderRadius.circular(16),
+//               ),
+//               child: Text(
+//                 "$progress%",
+//                 style: AppTextStyles.normal600(
+//                   fontSize: 14,
+//                   color: getStatusColor(progress),
+//                 ),
+//               ),
+//             ),
+//             SizedBox(width: 12),
+//             Container(
+//               padding: EdgeInsets.all(8),
+//               decoration: BoxDecoration(
+//                 color: Colors.grey.shade100,
+//                 shape: BoxShape.circle,
+//               ),
+//               child: Icon(Icons.chevron_right, color: Colors.grey.shade600, size: 20),
+//             ),
+//           ],
+//         ),
 //       ),
 //     );
 //   }
 
-// // void _showOverlayDialog(String subject, Map<String, dynamic> courseData, int classId) {
-// //   showModalBottomSheet(
-// //     context: context,
-// //     builder: (BuildContext context) {
-// //       return Container(
-// //         color: Colors.white,
-// //         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
-// //         child: Column(
-// //           mainAxisSize: MainAxisSize.min,
-// //           children: [
-// //             // ... (existing code for Result and Monthly Assessment) ...
-// //             Divider(
-// //               color: Colors.grey[300],
-// //               thickness: 1,
-// //             ),
-// //             _buildAttendanceButton(
-// //               'Take Attendance',
-// //               'assets/icons/result/course.svg',
-// //               () {
-// //                 Navigator.pop(context);
-// //                 Navigator.push(
-// //                   context,
-// //                   MaterialPageRoute(
-// //                     builder: (context) => StaffAttandanceScreen(
-// //                       classId: classId.toString(),
-// //                       courseId: courseData['course_id'].toString(),
-// //                       className: classData['class_name'] ?? '',
-// //                       courseName: courseData['name'] ?? '',
-// //                     ),
-// //                   ),
-// //                 );
-// //               },
-// //             ),
-// //           ],
-// //         ),
-// //       );
-// //     },
-// //   );
-// // }
-
-
-// void _showOverlayDialog(String subject, Map<String, dynamic> courseData, int classId) {
-//   // Find the className from classSubjects based on classId
-//   String className = '';
-//   for (var levelData in classSubjects) {
-//     for (var classData in levelData['classes']) {
-//       if (classData['class_id'] == classId) {
-//         className = classData['class_name'] ?? '';
-//         break;
-//       }
-//     }
-//     if (className.isNotEmpty) break;
+//   void _showOverlayDialog(String subject, Map<String, dynamic> courseData, int classId, String className) {
+//     showModalBottomSheet(
+//       context: context,
+//       shape: RoundedRectangleBorder(
+//         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+//       ),
+//       backgroundColor: Colors.white,
+//       builder: (BuildContext context) {
+//         return Container(
+//           padding: EdgeInsets.all(24),
+//           child: Column(
+//             mainAxisSize: MainAxisSize.min,
+//             children: [
+//               Container(
+//                 width: 40,
+//                 height: 4,
+//                 margin: EdgeInsets.only(bottom: 16),
+//                 decoration: BoxDecoration(
+//                   color: Colors.grey.shade300,
+//                   borderRadius: BorderRadius.circular(2),
+//                 ),
+//               ),
+//               Column(
+//                 crossAxisAlignment: CrossAxisAlignment.start,
+//                 children: [
+//                   Text(
+//                     'Result',
+//                     style: AppTextStyles.normal700(
+//                       fontSize: 18,
+//                       color: AppColors.backgroundDark,
+//                     ),
+//                   ),
+//                   SizedBox(height: 12),
+//                   Row(
+//                     children: [
+//                       Expanded(
+//                         child: _buildDialogButton(
+//                           'Add Result',
+//                           'assets/icons/result/edit.svg',
+//                           () => _navigateToAddResult(subject, courseData, classId),
+//                           Colors.blue.shade50,
+//                           Colors.blue.shade600,
+//                         ),
+//                       ),
+//                       SizedBox(width: 12),
+//                       Expanded(
+//                         child: _buildDialogButton(
+//                           'View Result',
+//                           'assets/icons/result/eye.svg',
+//                           () => _navigateToViewResult(subject, courseData, classId),
+//                           Colors.green.shade50,
+//                           Colors.green.shade600,
+//                         ),
+//                       ),
+//                     ],
+//                   ),
+//                 ],
+//               ),
+//               SizedBox(height: 24),
+//               Column(
+//                 crossAxisAlignment: CrossAxisAlignment.start,
+//                 children: [
+//                   Text(
+//                     'Monthly Assessment',
+//                     style: AppTextStyles.normal700(
+//                       fontSize: 18,
+//                       color: AppColors.backgroundDark,
+//                     ),
+//                   ),
+//                   SizedBox(height: 12),
+//                   Row(
+//                     children: [
+//                       Expanded(
+//                         child: _buildDialogButton(
+//                           'Add Assessment',
+//                           'assets/icons/result/edit.svg',
+//                           () => Navigator.pop(context),
+//                           Colors.purple.shade50,
+//                           Colors.purple.shade600,
+//                         ),
+//                       ),
+//                       SizedBox(width: 12),
+//                       Expanded(
+//                         child: _buildDialogButton(
+//                           'View Assessment',
+//                           'assets/icons/result/eye.svg',
+//                           () => _navigateToMonthlyAssessment(subject, courseData, classId),
+//                           Colors.purple.shade50,
+//                           Colors.purple.shade600,
+//                         ),
+//                       ),
+//                     ],
+//                   ),
+//                 ],
+//               ),
+//               SizedBox(height: 24),
+//               Divider(color: Colors.grey.shade200),
+//               SizedBox(height: 16),
+//               _buildAttendanceButton(
+//                 'Take Attendance',
+//                 'assets/icons/result/course.svg',
+//                 () {
+//                   Navigator.pop(context);
+//                   Navigator.push(
+//                     context,
+//                     MaterialPageRoute(
+//                       builder: (context) => StaffAttandanceScreen(
+//                         classId: classId.toString(),
+//                         courseId: courseData['course_id'].toString(),
+//                         className: className,
+//                         courseName: courseData['name'] ?? '',
+//                       ),
+//                     ),
+//                   );
+//                 },
+//                 Colors.orange.shade50,
+//                 Colors.orange.shade600,
+//               ),
+//             ],
+//           ),
+//         );
+//       },
+//     );
 //   }
 
-//   showModalBottomSheet(
-//     context: context,
-//     builder: (BuildContext context) {
-//       return Container(
-//         color: Colors.white,
-//         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
-//         child: Column(
-//           mainAxisSize: MainAxisSize.min,
-//           children: [
-//             // Top Section - Result
-//             Column(
-//               crossAxisAlignment: CrossAxisAlignment.start,
-//               children: [
-//                 // Header Row
-//                 Padding(
-//                   padding: const EdgeInsets.only(bottom: 8.0),
-//                   child: Text(
-//                     'Result',
-//                     style: AppTextStyles.normal600(
-//                         fontSize: 16, color: AppColors.backgroundDark),
-//                   ),
-//                 ),
-//                 // Body Row
-//                 Row(
-//                   children: [
-//                     Expanded(
-//                       child: _buildDialogButton(
-//                         'Add',
-//                         'assets/icons/result/edit.svg',
-//                         () => _navigateToAddResult(subject, courseData, classId),
-//                       ),
-//                     ),
-//                     const SizedBox(width: 8.0),
-//                     Expanded(
-//                       child: _buildDialogButton(
-//                         'View',
-//                         'assets/icons/result/eye.svg',
-//                         () => _navigateToViewResult(subject, courseData, classId),
-//                       ),
-//                     ),
-//                   ],
-//                 ),
-//               ],
-//             ),
-//             const SizedBox(height: 16.0),
-//             // Bottom Section - Monthly Assessment
-//             Column(
-//               crossAxisAlignment: CrossAxisAlignment.start,
-//               children: [
-//                 // Header Row
-//                 Padding(
-//                   padding: const EdgeInsets.only(bottom: 8.0),
-//                   child: Text(
-//                     'Monthly assessment',
-//                     style: AppTextStyles.normal600(
-//                         fontSize: 16, color: AppColors.backgroundDark),
-//                   ),
-//                 ),
-//                 // Body Row
-//                 Row(
-//                   children: [
-//                     Expanded(
-//                       child: _buildDialogButton(
-//                         'Add',
-//                         'assets/icons/result/edit.svg',
-//                         () {
-//                           Navigator.pop(context);
-//                         },
-//                       ),
-//                     ),
-//                     const SizedBox(width: 8.0),
-//                     Expanded(
-//                       child: _buildDialogButton(
-//                         'View',
-//                         'assets/icons/result/eye.svg',
-//                         () => _navigateToMonthlyAssessment(subject, courseData, classId),
-//                       ),
-//                     ),
-//                   ],
-//                 ),
-//               ],
-//             ),
-//             SizedBox(height: 16.0),
-//             Divider(
-//               color: Colors.grey[300],
-//               thickness: 1,
-//             ),
-//             _buildAttendanceButton(
-//               'Take Attendance',
-//               'assets/icons/result/course.svg',
-//               () {
-//                 Navigator.pop(context); // Close the bottom sheet first
-//                 Navigator.push(
-//                   context,
-//                   MaterialPageRoute(
-//                     builder: (context) => StaffAttandanceScreen(
-//                       classId: classId.toString(),
-//                       courseId: courseData['course_id'].toString(),
-//                       className: className,
-//                       courseName: courseData['name'] ?? subject,
-//                     ),
-//                   ),
-//                 );
-//               },
+//   Widget _buildDialogButton(
+//       String text, String iconPath, VoidCallback onPressed, Color bgColor, Color iconColor) {
+//     return GestureDetector(
+//       onTap: onPressed,
+//       child: Container(
+//         padding: EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+//         decoration: BoxDecoration(
+//           color: bgColor,
+//           borderRadius: BorderRadius.circular(12),
+//           boxShadow: [
+//             BoxShadow(
+//               color: Colors.grey.withOpacity(0.1),
+//               spreadRadius: 1,
+//               blurRadius: 4,
+//               offset: Offset(0, 2),
 //             ),
 //           ],
 //         ),
-//       );
-//     },
-//   );
-// }
-
-
-//   Widget _buildDialogButton(
-//       String text, String iconPath, VoidCallback onPressed) {
-//     return Container(
-//       decoration: BoxDecoration(
-//         border: Border.all(color: Colors.grey),
-//         borderRadius: BorderRadius.circular(8),
-//       ),
-//       child: TextButton.icon(
-//         onPressed: onPressed,
-//         icon: SvgPicture.asset(
-//           iconPath,
-//           color: Colors.grey,
-//         ),
-//         label: Text(
-//           text,
-//           style: AppTextStyles.normal600(
-//               fontSize: 14, color: AppColors.backgroundDark),
+//         child: Row(
+//           mainAxisAlignment: MainAxisAlignment.center,
+//           children: [
+//             SvgPicture.asset(
+//               iconPath,
+//               color: iconColor,
+//               width: 20,
+//               height: 20,
+//             ),
+//             SizedBox(width: 8),
+//             Text(
+//               text,
+//               style: AppTextStyles.normal600(
+//                 fontSize: 14,
+//                 color: iconColor,
+//               ),
+//             ),
+//           ],
 //         ),
 //       ),
 //     );
 //   }
 
 //   Widget _buildAttendanceButton(
-//       String text, String iconPath, VoidCallback onPressed) {
-//     return Container(
-//       width: double.infinity,
-//       decoration: BoxDecoration(
-//         border: Border.all(color: Colors.grey),
-//         borderRadius: BorderRadius.circular(8),
-//       ),
-//       child: TextButton.icon(
-//         onPressed: onPressed,
-//         icon: SvgPicture.asset(
-//           iconPath,
-//           color: Colors.grey,
+//       String text, String iconPath, VoidCallback onPressed, Color bgColor, Color iconColor) {
+//     return GestureDetector(
+//       onTap: onPressed,
+//       child: Container(
+//         padding: EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+//         decoration: BoxDecoration(
+//           color: bgColor,
+//           borderRadius: BorderRadius.circular(12),
+//           boxShadow: [
+//             BoxShadow(
+//               color: Colors.grey.withOpacity(0.1),
+//               spreadRadius: 1,
+//               blurRadius: 4,
+//               offset: Offset(0, 2),
+//             ),
+//           ],
 //         ),
-//         label: Text(
-//           text,
-//           style: AppTextStyles.normal600(
-//               fontSize: 14, color: AppColors.backgroundDark),
+//         child: Row(
+//           mainAxisAlignment: MainAxisAlignment.center,
+//           children: [
+//             SvgPicture.asset(
+//               iconPath,
+//               color: iconColor,
+//               width: 24,
+//               height: 24,
+//             ),
+//             SizedBox(width: 12),
+//             Text(
+//               text,
+//               style: AppTextStyles.normal600(
+//                 fontSize: 16,
+//                 color: iconColor,
+//               ),
+//             ),
+//           ],
 //         ),
 //       ),
 //     );
 //   }
 
 //   void _navigateToViewResult(String subject, Map<String, dynamic> courseData, int classId) {
-//     Navigator.pop(context); // Close the bottom sheet first
-    
+//     Navigator.pop(context);
 //     Navigator.push(
 //       context,
 //       MaterialPageRoute(
@@ -1341,8 +1387,7 @@ class _StaffResultScreenState extends State<StaffResultScreen> {
 //   }
 
 //   void _navigateToAddResult(String subject, Map<String, dynamic> courseData, int classId) {
-//     Navigator.pop(context); // Close the bottom sheet first
-    
+//     Navigator.pop(context);
 //     Navigator.push(
 //       context,
 //       MaterialPageRoute(
@@ -1355,46 +1400,11 @@ class _StaffResultScreenState extends State<StaffResultScreen> {
 //     );
 //   }
 
-//   Widget buildInputResultsItem(BuildContext context) {
-//     return ListTile(
-//       leading: Container(
-//         width: 40,
-//         height: 40,
-//         decoration: BoxDecoration(
-//           color: AppColors.bgColor4,
-//           borderRadius: BorderRadius.circular(4),
-//         ),
-//         child: Center(
-//           child: SvgPicture.asset(
-//             'assets/icons/result/course.svg',
-//             color: AppColors.iconColor3,
-//             width: 20,
-//             height: 20,
-//           ),
-//         ),
-//       ),
-//       title: Text(
-//         'Attendance',
-//         style: AppTextStyles.normal600(
-//             fontSize: 14, color: AppColors.backgroundDark),
-//       ),
-//       onTap: () {
-//         Navigator.push(
-//           context,
-//           MaterialPageRoute(
-//             builder: (context) => StaffAttandanceScreen(),
-//           ),
-//         );
-//       },
-//     );
-//   }
-
 //   void _navigateToMonthlyAssessment(
 //       String subject, Map<String, dynamic> courseData, int classId) {
-//     Navigator.pop(context); // Close the bottom sheet first
+//     Navigator.pop(context);
 //     final authProvider = Provider.of<AuthProvider>(context, listen: false);
 //     final settings = authProvider.getSettings();
-        
 //     Navigator.push(
 //       context,
 //       MaterialPageRoute(
@@ -1406,6 +1416,48 @@ class _StaffResultScreenState extends State<StaffResultScreen> {
 //           subject: subject,
 //           courseData: courseData,
 //         ),
+//       ),
+//     );
+//   }
+
+//   Widget buildInputResultsItem(BuildContext context) {
+//     return Card(
+//       elevation: 1,
+//       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+//       child: ListTile(
+//         leading: Container(
+//           width: 48,
+//           height: 48,
+//           decoration: BoxDecoration(
+//             color: AppColors.bgColor4,
+//             borderRadius: BorderRadius.circular(8),
+//           ),
+//           child: Center(
+//             child: SvgPicture.asset(
+//               'assets/icons/result/course.svg',
+//               color: AppColors.iconColor3,
+//               width: 24,
+//               height: 24,
+//             ),
+//           ),
+//         ),
+//         title: Text(
+//           'Attendance',
+//           style: AppTextStyles.normal600(
+//             fontSize: 16,
+//             color: AppColors.backgroundDark,
+//           ),
+//         ),
+//         onTap: () {
+//           ScaffoldMessenger.of(context).showSnackBar(
+//             SnackBar(
+//               content: Text('Please select a specific course to take attendance'),
+//               backgroundColor: Colors.red.shade600,
+//               behavior: SnackBarBehavior.floating,
+//               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+//             ),
+//           );
+//         },
 //       ),
 //     );
 //   }

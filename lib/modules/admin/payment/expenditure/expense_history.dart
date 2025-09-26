@@ -4,17 +4,21 @@ import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/admin/payment/expenditure/expense_history_detail.dart';
+import 'package:linkschool/modules/common/widgets/portal/profile/naira_icon.dart';
+// import 'package:linkschool/lib/widgets/naira_svg_icon.dart';
 
 class ExpenseHistoryScreen extends StatefulWidget {
   final String grade;
   final double amount;
   final String name;
+  final Map<String, dynamic> transaction;
 
   const ExpenseHistoryScreen({
     super.key,
     required this.grade,
     required this.amount,
     required this.name,
+    required this.transaction,
   });
 
   @override
@@ -97,8 +101,8 @@ class _ExpenseHistoryScreenState extends State<ExpenseHistoryScreen> {
               const SizedBox(height: 16),
               Expanded(
                 child: ListView.builder(
-                  itemCount: 5,
-                  itemBuilder: (context, index) => _buildStudentItem(context),
+                  itemCount: 1, // Single transaction for now
+                  itemBuilder: (context, index) => _buildTransactionItem(context),
                 ),
               ),
             ],
@@ -108,7 +112,7 @@ class _ExpenseHistoryScreenState extends State<ExpenseHistoryScreen> {
     );
   }
 
-  Widget _buildStudentItem(BuildContext context) {
+  Widget _buildTransactionItem(BuildContext context) {
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       decoration: BoxDecoration(
@@ -121,16 +125,36 @@ class _ExpenseHistoryScreenState extends State<ExpenseHistoryScreen> {
           widget.name,
           style: AppTextStyles.normal500(fontSize: 18, color: AppColors.backgroundDark),
         ),
-        trailing: Text(
-          '${widget.amount}',
-          style: AppTextStyles.normal700(fontSize: 18, color: const Color.fromRGBO(47, 85, 221, 1)),
+        subtitle: Text(
+          widget.transaction['date'] ?? '07-03-2018  17:23',
+          style: AppTextStyles.normal500(fontSize: 12, color: AppColors.text10Light),
+        ),
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text(
+              '-',
+              style: TextStyle(fontSize: 18, color: Colors.red, fontWeight: FontWeight.w700),
+            ),
+            const NairaSvgIcon(
+              width: 14.0,
+              height: 14.0,
+              color: Colors.red,
+            ),
+            const SizedBox(width: 2),
+            Text(
+              widget.amount.toStringAsFixed(2),
+              style: AppTextStyles.normal700(fontSize: 18, color: Colors.red),
+            ),
+          ],
         ),
         onTap: () => Navigator.push(
           context,
           MaterialPageRoute(
             builder: (context) => ExpenseHistoryDetail(
               studentName: widget.name,
-              amount: '${widget.amount}',
+              amount: widget.amount.toStringAsFixed(2),
+              transaction: widget.transaction,
             ),
           ),
         ),
@@ -138,7 +162,6 @@ class _ExpenseHistoryScreenState extends State<ExpenseHistoryScreen> {
     );
   }
 }
-
 
 
 // import 'package:flutter/material.dart';

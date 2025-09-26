@@ -370,7 +370,7 @@ class _StaffViewCourseResultState extends State<StaffViewCourseResult> {
 
   Widget _buildStudentColumn() {
     return Container(
-      width: 120,
+      width: 140, // Increased width slightly for better text display
       decoration: BoxDecoration(
         color: Colors.blue[700],
         borderRadius: const BorderRadius.only(topLeft: Radius.circular(8)),
@@ -380,18 +380,24 @@ class _StaffViewCourseResultState extends State<StaffViewCourseResult> {
           Container(
             height: 48,
             alignment: Alignment.center,
+            padding: const EdgeInsets.symmetric(horizontal: 8),
             child: const Text(
               'Student Name',
               style: TextStyle(
                 color: Colors.white,
                 fontWeight: FontWeight.w500,
               ),
+              textAlign: TextAlign.center,
             ),
           ),
           ...courseResults.map((result) {
+            final studentName = result['student_name']?.toString() ?? 'N/A';
+            
             return Container(
-              height: 50,
-              padding: const EdgeInsets.symmetric(horizontal: 8),
+              constraints: const BoxConstraints(
+                minHeight: 60, // Increased minimum height to accommodate wrapped text
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
               decoration: BoxDecoration(
                 color: Colors.grey[100],
                 border: Border(
@@ -399,14 +405,18 @@ class _StaffViewCourseResultState extends State<StaffViewCourseResult> {
                   right: BorderSide(color: Colors.grey[300]!),
                 ),
               ),
-              child: Align(
-                alignment: Alignment.centerLeft,
+              child: Center(
                 child: Text(
-                  result['student_name']?.toString() ?? 'N/A',
+                  studentName,
                   style: const TextStyle(
-                    fontSize: 14,
+                    fontSize: 13,
                     color: Colors.black,
+                    height: 1.3, // Improved line spacing
                   ),
+                  textAlign: TextAlign.center,
+                  maxLines: 3, // Allow up to 3 lines
+                  overflow: TextOverflow.ellipsis,
+                  softWrap: true, // Enable text wrapping
                 ),
               ),
             );
@@ -461,7 +471,9 @@ class _StaffViewCourseResultState extends State<StaffViewCourseResult> {
             }
 
             return Container(
-              height: 50,
+              constraints: const BoxConstraints(
+                minHeight: 60, // Match the height of student name cells
+              ),
               alignment: Alignment.center,
               decoration: BoxDecoration(
                 color: Colors.grey[100],
@@ -477,6 +489,7 @@ class _StaffViewCourseResultState extends State<StaffViewCourseResult> {
                   color: Colors.black,
                   fontWeight: isGrade ? FontWeight.w600 : FontWeight.normal,
                 ),
+                textAlign: TextAlign.center,
               ),
             );
           }),
@@ -491,39 +504,33 @@ class _StaffViewCourseResultState extends State<StaffViewCourseResult> {
 
 
 // import 'package:flutter/material.dart';
+// import 'package:hive/hive.dart';
+// import 'dart:convert';
 // import 'package:linkschool/config/env_config.dart';
-// // import 'package:linkschool/config/env.dart';
 // import 'package:linkschool/modules/auth/provider/auth_provider.dart';
 // import 'package:linkschool/modules/common/app_colors.dart';
 // import 'package:linkschool/modules/common/constants.dart';
 // import 'package:linkschool/modules/services/api/api_service.dart';
-// // import 'package:linkschool/modules/services/api/api_service.dart';
 // import 'package:linkschool/modules/services/api/service_locator.dart';
 // import 'package:provider/provider.dart';
 
-// class StaffviewcourseResult extends StatefulWidget {
+// class StaffViewCourseResult extends StatefulWidget {
 //   final String classId;
-//   final String year;
-//   final int term;
-//   final String termName;
 //   final String subject;
 //   final Map<String, dynamic> courseData;
 
-//   const StaffviewcourseResult({
-//     super.key, 
+//   const StaffViewCourseResult({
+//     super.key,
 //     required this.classId,
-//     required this.year,
-//     required this.term,
-//     required this.termName,
 //     required this.subject,
 //     required this.courseData,
 //   });
 
 //   @override
-//   State<StaffviewcourseResult> createState() => _StaffviewcourseResultState();
+//   State<StaffViewCourseResult> createState() => _StaffViewCourseResultState();
 // }
 
-// class _StaffviewcourseResultState extends State<StaffviewcourseResult> {
+// class _StaffViewCourseResultState extends State<StaffViewCourseResult> {
 //   late double opacity;
 //   List<Map<String, dynamic>> courseResults = [];
 //   List<Map<String, dynamic>> grades = [];
@@ -531,37 +538,89 @@ class _StaffViewCourseResultState extends State<StaffViewCourseResult> {
 //   bool isLoading = true;
 //   String? error;
 //   Map<String, int> maxScores = {};
+  
+//   // Settings from local storage
+//   String year = '';
+//   int term = 0;
+//   String termName = '';
 
 //   @override
 //   void initState() {
 //     super.initState();
-//     print('Initializing ViewCourseResultScreen');
-//     fetchCourseResults();
-//     fetchAssessments();
+//     print('Initializing StaffViewCourseResultFixed');
+//     _loadSettingsFromStorage();
 //   }
 
+//   Future<void> _loadSettingsFromStorage() async {
+//     try {
+//       final userBox = Hive.box('userData');
+      
+//       // Try to get from different possible storage keys
+//       dynamic storedData = userBox.get('userData') ?? userBox.get('loginResponse');
+      
+//       if (storedData != null) {
+//         Map<String, dynamic> processedData = storedData is String
+//             ? json.decode(storedData)
+//             : storedData;
+            
+//         final response = processedData['response'] ?? processedData;
+//         final data = response['data'] ?? response;
+//         final settings = data['settings'] ?? {};
+        
+//         setState(() {
+//           year = settings['year']?.toString() ?? '';
+//           term = settings['term'] ?? 0;
+//           termName = 'Term $term';
+//         });
+        
+//         print('Loaded settings from storage - Year: $year, Term: $term');
+        
+//         // Now fetch the course results with the correct parameters
+//         await fetchCourseResults();
+//         await fetchAssessments();
+//       } else {
+//         setState(() {
+//           error = 'Settings not found in local storage';
+//           isLoading = false;
+//         });
+//         print('No settings found in local storage');
+//       }
+//     } catch (e) {
+//       setState(() {
+//         error = 'Failed to load settings: $e';
+//         isLoading = false;
+//       });
+//       print('Error loading settings: $e');
+//     }
+//   }
 
 //   Future<void> fetchCourseResults() async {
+//     if (year.isEmpty || term == 0) {
+//       setState(() {
+//         error = 'Invalid year or term from settings';
+//         isLoading = false;
+//       });
+//       return;
+//     }
+
 //     try {
 //       final authProvider = Provider.of<AuthProvider>(context, listen: false);
 //       final apiService = locator<ApiService>();
-
+      
 //       if (authProvider.token != null) {
 //         apiService.setAuthToken(authProvider.token!);
 //       }
 
 //       final dbName = EnvConfig.dbName;
 //       final courseId = widget.courseData['course_id'].toString();
-//       final levelId = widget.courseData['level_id']?.toString() ??
-//           authProvider.getLevels().firstWhere(
-//                 (level) => level['level_name'] == 'JSS1',
-//                 orElse: () => {'id': '66'},
-//               )['id'].toString();
+      
+//       // Get level_id from course data or use a default
+//       final levelId = widget.courseData['level_id']?.toString() ?? '66';
 
 //       final endpoint = 'portal/classes/${widget.classId}/courses/$courseId/results';
 //       final queryParams = {
-//         'term': widget.term.toString(),
-//         'year': widget.year,
+//         'term': term.toString(),
+//         'year': year,
 //         '_db': dbName,
 //         'level_id': levelId,
 //       };
@@ -576,8 +635,8 @@ class _StaffViewCourseResultState extends State<StaffViewCourseResult> {
 //       if (response.success && response.rawData != null) {
 //         final results = response.rawData!['response']['course_results'] as List;
 //         final gradesData = response.rawData!['response']['grades'] as List;
-
 //         final uniqueAssessments = <String>{};
+
 //         for (var result in results) {
 //           final assessments = result['assessments'] as List;
 //           print('Result assessments for result_id ${result['result_id']}: $assessments');
@@ -592,6 +651,7 @@ class _StaffViewCourseResultState extends State<StaffViewCourseResult> {
 //           assessmentNames = uniqueAssessments.toList();
 //           isLoading = false;
 //         });
+
 //         print('Fetched ${courseResults.length} results, ${grades.length} grades, ${assessmentNames.length} assessments');
 //       } else {
 //         setState(() {
@@ -613,6 +673,7 @@ class _StaffViewCourseResultState extends State<StaffViewCourseResult> {
 //     try {
 //       final apiService = locator<ApiService>();
 //       final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      
 //       if (authProvider.token != null) {
 //         apiService.setAuthToken(authProvider.token!);
 //       }
@@ -628,12 +689,14 @@ class _StaffViewCourseResultState extends State<StaffViewCourseResult> {
 //       if (response.success && response.rawData != null) {
 //         final assessmentsData = response.rawData!['assessments'] as List;
 //         final tempMaxScores = <String, int>{};
+
 //         for (var assessmentData in assessmentsData) {
 //           final assessments = assessmentData['assessments'] as List;
 //           for (var assessment in assessments) {
 //             tempMaxScores[assessment['assessment_name']] = assessment['assessment_score'] ?? 0;
 //           }
 //         }
+
 //         setState(() {
 //           maxScores = tempMaxScores;
 //         });
@@ -653,6 +716,7 @@ class _StaffViewCourseResultState extends State<StaffViewCourseResult> {
 //       final score = double.parse(totalScore);
 //       final sortedGrades = List<Map<String, dynamic>>.from(grades)
 //         ..sort((a, b) => (b['start'] as num).compareTo(a['start'] as num));
+
 //       for (var grade in sortedGrades) {
 //         if (score >= (grade['start'])) {
 //           return grade['grade_symbol'] as String;
@@ -673,8 +737,7 @@ class _StaffViewCourseResultState extends State<StaffViewCourseResult> {
 //     return Scaffold(
 //       appBar: AppBar(
 //         title: Text(
-//           ' Result (View Only)',
-//           // '${widget.subject} Result (View Only)',
+//           '${widget.subject} Result (View Only)',
 //           style: const TextStyle(
 //             fontSize: 18,
 //             fontWeight: FontWeight.w600,
@@ -713,12 +776,11 @@ class _StaffViewCourseResultState extends State<StaffViewCourseResult> {
 //         child: SizedBox.expand(
 //           child: Container(
 //             decoration: Constants.customBoxDecoration(context),
-//             child: 
-//             // isLoading
-//             //     ? const Center(child: CircularProgressIndicator())
-//             //     : error != null
-//             //         ? Center(child: Text(error!, style: const TextStyle(color: Colors.red)))
-//                      SingleChildScrollView(
+//             child: isLoading
+//                 ? const Center(child: CircularProgressIndicator())
+//                 : error != null
+//                     ? Center(child: Text(error!, style: const TextStyle(color: Colors.red)))
+//                     : SingleChildScrollView(
 //                         child: Column(
 //                           children: [
 //                             _buildTermSection(),
@@ -749,8 +811,9 @@ class _StaffViewCourseResultState extends State<StaffViewCourseResult> {
 //             ),
 //             child: Center(
 //               child: Text(
-//                 '2023',
-//                 // '${widget.year}/${int.parse(widget.year) + 1} ${widget.termName}',
+//                 year.isNotEmpty && term > 0 
+//                     ? '$year/${int.parse(year) + 1} $termName'
+//                     : 'Loading session...',
 //                 style: const TextStyle(
 //                   fontSize: 16,
 //                   fontWeight: FontWeight.w500,
@@ -763,36 +826,6 @@ class _StaffViewCourseResultState extends State<StaffViewCourseResult> {
 //       ),
 //     );
 //   }
-//   // Widget _buildCourseResult() {
-//   //   return Padding(
-//   //     padding: const EdgeInsets.all(16.0),
-//   //     child: Column(
-//   //       alignment: CrossAxisAlignment.start,
-//   //       children: [
-//   //         Container(
-//   //           width: double.infinity,
-//   //           padding: const EdgeInsets.all(16.0),
-//   //           decoration: const BoxDecoration(
-//   //             border: Border(
-//   //               top: BorderSide(color: Colors.orange, width: 2),
-//   //               bottom: BorderSide(color: Colors.orange, width: 2),
-//   //             ),
-//   //           ),
-//   //           child: Center(
-//   //             child: Text(
-//   //               '${widget.year}/${int.parse(widget.year) + 1} ${widget.termName}',
-//   //               style: const TextStyle(
-//   //                 fontSize: 16,
-//   //                 fontWeight: FontWeight.w500,
-//   //                 color: Colors.orange,
-//   //               ),
-//   //             ),
-//   //           ),
-//   //         ),
-//   //       ],
-//   //     ),
-//   //   );
-//   // }
 
 //   Widget _buildCoursesTable() {
 //     if (courseResults.isEmpty) {
@@ -840,7 +873,6 @@ class _StaffViewCourseResultState extends State<StaffViewCourseResult> {
 //     );
 //   }
 
-//   // Build fixed student column
 //   Widget _buildStudentColumn() {
 //     return Container(
 //       width: 120,
@@ -889,7 +921,6 @@ class _StaffViewCourseResultState extends State<StaffViewCourseResult> {
 //     );
 //   }
 
-//   // Build scrollable column for reg number, assessments, total, or grade
 //   Widget _buildScrollableColumn(String title, double width, int index,
 //       {bool isRegNo = false, bool isAssessment = false, bool isTotal = false, bool isGrade = false}) {
 //     return Container(
@@ -933,6 +964,7 @@ class _StaffViewCourseResultState extends State<StaffViewCourseResult> {
 //             } else if (isGrade) {
 //               value = getGradeForScore(result['total_score']?.toString() ?? '');
 //             }
+
 //             return Container(
 //               height: 50,
 //               alignment: Alignment.center,

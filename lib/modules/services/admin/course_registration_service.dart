@@ -1,3 +1,4 @@
+import 'package:linkschool/config/env_config.dart';
 import 'package:linkschool/modules/model/admin/course_registration_model.dart';
 import 'package:linkschool/modules/services/api/api_service.dart';
 import 'package:linkschool/modules/services/api/service_locator.dart';
@@ -11,7 +12,7 @@ class CourseRegistrationService {
     final response = await _apiService.get(
       endpoint: 'portal/classes/$classId/registered-students',
       queryParams: {
-        '_db': 'aalmgzmy_linkskoo_practice',
+        '_db': EnvConfig.dbName,
         'year': year,
         'term': term,
       },

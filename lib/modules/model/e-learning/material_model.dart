@@ -13,6 +13,7 @@ class Material {
   final String marks;
   final DateTime createdAt;
   final  List<AttachmentItem>? attachments;
+  final String? topicId;
 
   Material({
     required this.title,
@@ -25,6 +26,7 @@ class Material {
     required this.marks,
     this.attachments,
     DateTime? createdAt, int? id,
+    this.topicId,
    
   }) : createdAt = createdAt ?? DateTime.now();
 }

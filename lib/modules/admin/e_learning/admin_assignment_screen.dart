@@ -10,7 +10,6 @@ import 'package:intl/intl.dart';
 import 'package:linkschool/modules/admin/e_learning/select_topic_screen.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/buttons/custom_outline_button..dart';
-
 import 'package:linkschool/modules/common/buttons/custom_save_elevated_button.dart';
 import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/custom_toaster.dart';
@@ -29,8 +28,8 @@ class AdminAssignmentScreen extends StatefulWidget {
   final String? levelId;
   final int? syllabusId;
   final syllabusClasses;
-
-    final bool editMode;
+  final int? itemId;
+  final bool editMode;
   final Assignment? assignmentToEdit;
 
   const AdminAssignmentScreen({
@@ -39,11 +38,12 @@ class AdminAssignmentScreen extends StatefulWidget {
     this.classId,
     this.courseId,
     this.courseName,
-    this.levelId, 
-    this.syllabusId, 
+    this.levelId,
+    this.syllabusId,
     this.syllabusClasses,
     this.editMode = false,
     this.assignmentToEdit,
+    this.itemId,
   });
 
   @override
@@ -55,39 +55,50 @@ class _AdminAssignmentScreenState extends State<AdminAssignmentScreen> {
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _descriptionController = TextEditingController();
   final TextEditingController _marksController = TextEditingController();
-   List<AttachmentItem> _attachments = [];
+  List<AttachmentItem> _attachments = [];
   DateTime _startDate = DateTime.now();
   DateTime _endDate = DateTime.now().add(const Duration(days: 1));
-    String _selectedTopic = 'No Topic';
+  String _selectedTopic = 'No Topic';
   int? _selectedTopicId;
-  String _marks = ' 0 marks';
+  String _marks = ' marks';
   late double opacity;
   int? creatorId;
   String? creatorName;
   String? academicYear;
   int? academicTerm;
-
-
+  bool _isSaving = false;
+  String? _replacingServerFileName;
+  List<String> _removedServerFileNames = [];
 
   @override
   void initState() {
     super.initState();
-         _populateFormForEdit();
+    _populateFormForEdit();
     _loadUserData();
   }
 
- void _populateFormForEdit() {
-  if (widget.editMode && widget.assignmentToEdit != null) {
-    final assignment = widget.assignmentToEdit!;
-    _titleController.text = assignment.title;
-    _descriptionController.text = assignment.description;
-    _marksController.text = assignment.marks;
-    _endDate = assignment.dueDate;
-    _selectedTopic = assignment.topic;
-     _attachments = assignment.attachments;
-     _selectedClass = assignment.selectedClass;
+  void _populateFormForEdit() {
+    if (widget.editMode && widget.assignmentToEdit != null) {
+      final assignment = widget.assignmentToEdit!;
+      _titleController.text = assignment.title;
+      _descriptionController.text = assignment.description;
+      _marks = '${assignment.marks} marks';
+      _marksController.text = assignment.marks.toString();
+      print("markssssssssssssss ${assignment.marks}");
+      _endDate = assignment.dueDate;
+      _selectedTopic = assignment.topic;
+      _selectedTopicId = int.tryParse(assignment.topicId ?? "");
+      _selectedClass = assignment.selectedClass;
+
+      _attachments = assignment.attachments.map((attachment) => AttachmentItem(
+            fileName: attachment.fileName,
+            iconPath: attachment.iconPath,
+            fileContent: attachment.fileContent,
+            isExisting: true,
+            originalServerFileName: attachment.fileName,
+          )).toList();
+    }
   }
-}
 
   Future<void> _loadUserData() async {
     try {
@@ -119,158 +130,170 @@ class _AdminAssignmentScreenState extends State<AdminAssignmentScreen> {
     final Brightness brightness = Theme.of(context).brightness;
     opacity = brightness == Brightness.light ? 0.1 : 0.15;
 
-    return Scaffold(
-      appBar: AppBar(
-        leading: IconButton(
-          onPressed: () => Navigator.of(context).pop(),
-          icon: Image.asset(
-            'assets/icons/arrow_back.png',
-            color: AppColors.primaryLight,
-            width: 34.0,
-            height: 34.0,
-          ),
-        ),
-        title: Text(
-          'Assignment',
-          style: AppTextStyles.normal600(
-            fontSize: 24.0,
-            color: AppColors.primaryLight,
-          ),
-        ),
-        backgroundColor: AppColors.backgroundLight,
-        flexibleSpace: FlexibleSpaceBar(
-          background: Stack(
-            children: [
-              Positioned.fill(
-                child: Opacity(
-                  opacity: opacity,
-                  child: Image.asset(
-                    'assets/images/background.png',
-                    fit: BoxFit.cover,
-                  ),
+    return WillPopScope(
+      onWillPop: () async {
+          FocusScope.of(context).unfocus();
+        return true;
+      },
+      child: GestureDetector(
+        onTap: () => FocusScope.of(context).unfocus(),
+        child: Scaffold(
+          appBar: AppBar(
+            leading: IconButton(
+              onPressed: () => Navigator.of(context).pop(),
+              icon: Image.asset(
+                'assets/icons/arrow_back.png',
+                color: AppColors.primaryLight,
+                width: 34.0,
+                height: 34.0,
+              ),
+            ),
+            title: Text(
+              'Assignment',
+              style: AppTextStyles.normal600(
+                fontSize: 24.0,
+                color: AppColors.primaryLight,
+              ),
+            ),
+            backgroundColor: AppColors.backgroundLight,
+            flexibleSpace: FlexibleSpaceBar(
+              background: Stack(
+                children: [
+                  Positioned.fill(
+                    child: Opacity(
+                      opacity: opacity,
+                      child: Image.asset(
+                        'assets/images/background.png',
+                        fit: BoxFit.cover,
+                      ),
+                    ),
+                  )
+                ],
+              ),
+            ),
+            actions: [
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                child: CustomSaveElevatedButton(
+                  onPressed: _saveAssignment,
+                  text: 'Save',
+                  isLoading: _isSaving,
                 ),
-              )
+              ),
             ],
           ),
-        ),
-        actions: [
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8.0),
-            child: CustomSaveElevatedButton(
-              onPressed: _saveAssignment,
-              text: 'Save',
-            ),
-          ),
-        ],
-      ),
-      body: Container(
-        decoration: Constants.customBoxDecoration(context),
-        child: Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Title:',
-                  style: AppTextStyles.normal600(fontSize: 16.0, color: Colors.black),
-                ),
-                const SizedBox(height: 8.0),
-                TextField(
-                  controller: _titleController,
-                  decoration: InputDecoration(
-                    hintText: 'e.g. Dying and bleaching',
-                    hintStyle: const TextStyle(color: Colors.grey),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8.0),
+          body: Container(
+            decoration: Constants.customBoxDecoration(context),
+            child: Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Title:',
+                      style: AppTextStyles.normal600(fontSize: 16.0, color: Colors.black),
                     ),
-                    contentPadding: const EdgeInsets.all(12.0),
-                  ),
-                ),
-                const SizedBox(height: 16.0),
-                Text(
-                  'Description:',
-                  style: AppTextStyles.normal600(fontSize: 16.0, color: Colors.black),
-                ),
-                const SizedBox(height: 8.0),
-                TextField(
-                  controller: _descriptionController,
-                  maxLines: 5,
-                  decoration: InputDecoration(
-                    hintText: 'Type here...',
-                    hintStyle: const TextStyle(color: Colors.grey),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8.0),
-                    ),
-                    contentPadding: const EdgeInsets.all(12.0),
-                  ),
-                ),
-                const SizedBox(height: 32.0),
-                Text(
-                  'Select the learning group for this syllabus: *',
-                  style: AppTextStyles.normal600(fontSize: 16.0, color: Colors.black),
-                ),
-                const SizedBox(height: 16.0),
-                _buildGroupRow(
-                  context,
-                  iconPath: 'assets/icons/e_learning/people.svg',
-                  text: _selectedClass,
-                  onTap: () async {
-                    await Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (context) => SelectClassesDialog(
-                          onSave: (selectedClass) {
-                            setState(() {
-                              _selectedClass = selectedClass;
-                            });
-                          },
-                          levelId: widget.levelId,
-                          syllabusClasses:widget.syllabusClasses,
+                    const SizedBox(height: 8.0),
+                    TextField(
+                      controller: _titleController,
+                      textCapitalization: TextCapitalization.sentences,
+                      decoration: InputDecoration(
+                        hintText: 'e.g. Dying and bleaching',
+                        hintStyle: const TextStyle(color: Colors.grey),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8.0),
                         ),
+                        contentPadding: const EdgeInsets.all(12.0),
                       ),
-                    );
-                  },
+                    ),
+                    const SizedBox(height: 16.0),
+                    Text(
+                      'Description:',
+                      style: AppTextStyles.normal600(fontSize: 16.0, color: Colors.black),
+                    ),
+                    const SizedBox(height: 8.0),
+                    TextField(
+                      controller: _descriptionController,
+                      maxLines: 5,
+                      textCapitalization: TextCapitalization.sentences,
+                      decoration: InputDecoration(
+                        hintText: 'Type here...',
+                        hintStyle: const TextStyle(color: Colors.grey),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8.0),
+                        ),
+                        contentPadding: const EdgeInsets.all(12.0),
+                      ),
+                    ),
+                    const SizedBox(height: 32.0),
+                    Text(
+                      'Select the learning group for this syllabus: *',
+                      style: AppTextStyles.normal600(fontSize: 16.0, color: Colors.black),
+                    ),
+                    const SizedBox(height: 16.0),
+                    _buildGroupRow(
+                      context,
+                      iconPath: 'assets/icons/e_learning/people.svg',
+                      text: _selectedClass,
+                      onTap: () async {
+                        await Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (context) => SelectClassesDialog(
+                              onSave: (selectedClass) {
+                                setState(() {
+                                  _selectedClass = selectedClass;
+                                });
+                              },
+                              levelId: widget.levelId,
+                              syllabusClasses: widget.syllabusClasses,
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 8.0),
+                      child: _buildAttachmentsSection(),
+                    ),
+                    Divider(color: Colors.grey.withOpacity(0.5)),
+                    Padding(
+                      padding: const EdgeInsets.only(top: 8.0),
+                      child: _buildGroupRow(
+                        context,
+                        iconPath: 'assets/icons/e_learning/mark.svg',
+                        text: _marks,
+                        showEditButton: true,
+                        onTap: _showMarksDialog,
+                      ),
+                    ),
+                    _buildGroupRow(
+                      context,
+                      iconPath: 'assets/icons/e_learning/calender.svg',
+                      text: 'Start: ${_formatDate(_startDate)}',
+                      showEditButton: true,
+                      isSelected: true,
+                      onTap: () => _showDatePicker(true),
+                    ),
+                    _buildGroupRow(
+                      context,
+                      iconPath: 'assets/icons/e_learning/calender.svg',
+                      text: 'Due: ${_formatDate(_endDate)}',
+                      showEditButton: true,
+                      isSelected: true,
+                      onTap: () => _showDatePicker(false),
+                    ),
+                    _buildGroupRow(
+                      context,
+                      iconPath: 'assets/icons/e_learning/clipboard.svg',
+                      text: _selectedTopic,
+                      showEditButton: true,
+                      isSelected: true,
+                      onTap: () => _selectTopic(),
+                    ),
+                  ],
                 ),
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 8.0),
-                  child: _buildAttachmentsSection(),
-                ),
-                Divider(color: Colors.grey.withOpacity(0.5)),
-                Padding(
-                  padding: const EdgeInsets.only(top: 8.0),
-                  child: _buildGroupRow(
-                    context,
-                    iconPath: 'assets/icons/e_learning/mark.svg',
-                    text: _marks,
-                    showEditButton: true,
-                    onTap: _showMarksDialog,
-                  ),
-                ),
-                _buildGroupRow(
-                  context,
-                  iconPath: 'assets/icons/e_learning/calender.svg',
-                  text: 'Start: ${_formatDate(_startDate)}',
-                  showEditButton: true,
-                  isSelected: true,
-                  onTap: () => _showDatePicker(true),
-                ),
-                _buildGroupRow(
-                  context,
-                  iconPath: 'assets/icons/e_learning/calender.svg',
-                  text: 'Due: ${_formatDate(_endDate)}',
-                  showEditButton: true,
-                  isSelected: true,
-                  onTap: () => _showDatePicker(false),
-                ),
-                _buildGroupRow(
-                  context,
-                  iconPath: 'assets/icons/e_learning/clipboard.svg',
-                  text: _selectedTopic,
-                  showEditButton: true,
-                  isSelected: true,
-                  onTap: () => _selectTopic(),
-                ),
-              ],
+              ),
             ),
           ),
         ),
@@ -445,58 +468,6 @@ class _AdminAssignmentScreenState extends State<AdminAssignmentScreen> {
     return DateFormat('yyyy-MM-dd').format(date);
   }
 
-  String _getDayOfWeek(int day) {
-    switch (day) {
-      case 1:
-        return 'Mon';
-      case 2:
-        return 'Tue';
-      case 3:
-        return 'Wed';
-      case 4:
-        return 'Thur';
-      case 5:
-        return 'Fri';
-      case 6:
-        return 'Sat';
-      case 7:
-        return 'Sun';
-      default:
-        return '';
-    }
-  }
-
-  String _getMonth(int month) {
-    switch (month) {
-      case 1:
-        return 'Jan';
-      case 2:
-        return 'Feb';
-      case 3:
-        return 'Mar';
-      case 4:
-        return 'Apr';
-      case 5:
-        return 'May';
-      case 6:
-        return 'Jun';
-      case 7:
-        return 'Jul';
-      case 8:
-        return 'Aug';
-      case 9:
-        return 'Sep';
-      case 10:
-        return 'Oct';
-      case 11:
-        return 'Nov';
-      case 12:
-        return 'Dec';
-      default:
-        return '';
-    }
-  }
-
   Widget _buildAttachmentsSection() {
     return GestureDetector(
       onTap: _attachments.isEmpty ? _showAttachmentOptions : null,
@@ -564,8 +535,15 @@ class _AdminAssignmentScreenState extends State<AdminAssignmentScreen> {
             icon: const Icon(Icons.close, size: 20, color: Colors.red),
             onPressed: () {
               setState(() {
+                if (attachment.isExisting && attachment.originalServerFileName != null) {
+                  _replacingServerFileName = attachment.originalServerFileName;
+                  _removedServerFileNames.add(attachment.originalServerFileName!);
+                }
                 _attachments.remove(attachment);
               });
+              if (attachment.isExisting) {
+                _showAttachmentOptionsForReplacement();
+              }
             },
           ),
         ],
@@ -608,19 +586,14 @@ class _AdminAssignmentScreenState extends State<AdminAssignmentScreen> {
             children: <Widget>[
               Text(
                 'Add attachment',
-                style: AppTextStyles.normal600(
-                    fontSize: 20, color: AppColors.backgroundDark),
+                style: AppTextStyles.normal600(fontSize: 20, color: AppColors.backgroundDark),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 16),
-              _buildAttachmentOption('Insert link',
-                  'assets/icons/e_learning/link3.svg', _showInsertLinkDialog),
-              _buildAttachmentOption('Upload file',
-                  'assets/icons/e_learning/upload_file.svg', _uploadFile),
-              _buildAttachmentOption('Take photo',
-                  'assets/icons/e_learning/take_photo.svg', _takePhoto),
-              _buildAttachmentOption('Record Video',
-                  'assets/icons/e_learning/record_video.svg', _recordVideo),
+              _buildAttachmentOption('Insert link', 'assets/icons/e_learning/link3.svg', _showInsertLinkDialog),
+              _buildAttachmentOption('Upload file', 'assets/icons/e_learning/upload_file.svg', _uploadFile),
+              _buildAttachmentOption('Take photo', 'assets/icons/e_learning/take_photo.svg', _takePhoto),
+              _buildAttachmentOption('Record Video', 'assets/icons/e_learning/record_video.svg', _recordVideo),
             ],
           ),
         );
@@ -628,8 +601,38 @@ class _AdminAssignmentScreenState extends State<AdminAssignmentScreen> {
     );
   }
 
-  Widget _buildAttachmentOption(
-      String text, String iconPath, VoidCallback onTap) {
+  void _showAttachmentOptionsForReplacement() {
+    showModalBottomSheet(
+      context: context,
+      builder: (BuildContext context) {
+        return Container(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'Replace attachment',
+                style: AppTextStyles.normal600(fontSize: 20, color: AppColors.backgroundDark),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 16),
+              _buildAttachmentOption('Upload file', 'assets/icons/e_learning/upload_file.svg', _uploadFile),
+              _buildAttachmentOption('Take photo', 'assets/icons/e_learning/take_photo.svg', _takePhoto),
+              _buildAttachmentOption('Record Video', 'assets/icons/e_learning/record_video.svg', _recordVideo),
+              _buildAttachmentOption('Cancel', 'assets/icons/e_learning/cancel.svg', () {
+                setState(() {
+                  _replacingServerFileName = null;
+                });
+                Navigator.of(context).pop();
+              }),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildAttachmentOption(String text, String iconPath, VoidCallback onTap) {
     return InkWell(
       onTap: onTap,
       child: Container(
@@ -641,150 +644,124 @@ class _AdminAssignmentScreenState extends State<AdminAssignmentScreen> {
             SvgPicture.asset(iconPath, width: 24, height: 24),
             const SizedBox(width: 16),
             Text(
-                text,
-                style: AppTextStyles.normal400(
-                    fontSize: 16, color: AppColors.backgroundDark)),
+              text,
+              style: AppTextStyles.normal400(fontSize: 16, color: AppColors.backgroundDark),
+            ),
           ],
         ),
       ),
     );
   }
 
- void _showInsertLinkDialog() {
-  TextEditingController linkController = TextEditingController();
+  void _showInsertLinkDialog() {
+    TextEditingController linkController = TextEditingController();
 
-  showDialog(
-    context: context,
-    builder: (BuildContext context) {
-      return StatefulBuilder(
-        builder: (context, setState) {
-        bool isValidUrl(String url) {
-  try {
-    
-    final uri = Uri.parse(url);
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            bool isValidUrl(String url) {
+              try {
+                final uri = Uri.parse(url);
+                return uri.isAbsolute && uri.scheme.isNotEmpty;
+              } catch (e) {
+                return false;
+              }
+            }
 
-    return uri.isAbsolute && uri.scheme.isNotEmpty;
-  } catch (e) {
-    return false;
-  }
-}
+            final isValid = isValidUrl(linkController.text);
 
-          final isValid = isValidUrl(linkController.text);
-
-          return AlertDialog(
-            title: Text(
-              'Insert Link',
-              style: AppTextStyles.normal600(
-                fontSize: 20,
-                color: AppColors.backgroundDark,
+            return AlertDialog(
+              title: Text(
+                'Insert Link',
+                style: AppTextStyles.normal600(fontSize: 20, color: AppColors.backgroundDark),
+                textAlign: TextAlign.center,
               ),
-              textAlign: TextAlign.center,
-            ),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextField(
-                  controller: linkController,
-                  onChanged: (_) => setState(() {}),
-                  decoration: InputDecoration(
-                    fillColor: Colors.grey[100],
-                    filled: true,
-                    hintText: 'Enter link here (https://...)',
-                    errorText: linkController.text.isNotEmpty && !isValid
-                        ? 'Please enter a valid URL'
-                        : null,
-                    prefixIcon: Padding(
-                      padding: const EdgeInsets.all(10),
-                      child: SvgPicture.asset(
-                        'assets/icons/e_learning/link3.svg',
-                        width: 24,
-                        height: 24,
-                        fit: BoxFit.scaleDown,
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(
+                    controller: linkController,
+                    onChanged: (_) => setState(() {}),
+                    decoration: InputDecoration(
+                      fillColor: Colors.grey[100],
+                      filled: true,
+                      hintText: 'Enter link here (https://...)',
+                      errorText: linkController.text.isNotEmpty && !isValid
+                          ? 'Please enter a valid URL'
+                          : null,
+                      prefixIcon: Padding(
+                        padding: const EdgeInsets.all(10),
+                        child: SvgPicture.asset(
+                          'assets/icons/e_learning/link3.svg',
+                          width: 24,
+                          height: 24,
+                          fit: BoxFit.scaleDown,
+                        ),
+                      ),
+                      border: const UnderlineInputBorder(),
+                      focusedBorder: const UnderlineInputBorder(
+                        borderSide: BorderSide(color: AppColors.primaryLight),
                       ),
                     ),
-                    border: const UnderlineInputBorder(),
-                    focusedBorder: const UnderlineInputBorder(
-                      borderSide: BorderSide(color: AppColors.primaryLight),
-                    ),
                   ),
+                ],
+              ),
+              actions: [
+                CustomOutlineButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  text: 'Cancel',
+                  borderColor: AppColors.eLearningBtnColor3.withOpacity(0.4),
+                  textColor: AppColors.eLearningBtnColor3,
+                ),
+                CustomSaveElevatedButton(
+                  onPressed: isValid && linkController.text.isNotEmpty
+                      ? () {
+                          String fullUrl = linkController.text.replaceAll(' ', '');
+                          _addAttachment(fullUrl, 'assets/icons/e_learning/link3.svg', fullUrl);
+                          Navigator.of(context).pop();
+                          Navigator.of(context).pop();
+                        }
+                      : () {},
+                  text: 'Save',
                 ),
               ],
-            ),
-            actions: [
-              CustomOutlineButton(
-                onPressed: () => Navigator.of(context).pop(),
-                text: 'Cancel',
-                borderColor: AppColors.eLearningBtnColor3.withOpacity(0.4),
-                textColor: AppColors.eLearningBtnColor3,
-              ),
-              CustomSaveElevatedButton(
-                onPressed: isValid && linkController.text.isNotEmpty
-                    ? () {
-                        String fullUrl = linkController.text.replaceAll(' ', ''); // Remove all spaces
-
-                        _addAttachment(
-                          fullUrl, // Use cleaned URL as the display name
-                          'assets/icons/e_learning/link3.svg',
-                          fullUrl, // Use cleaned URL as the content
-                        );
-
-                        Navigator.of(context).pop();
-                        Navigator.of(context).pop(); // Close both dialog and bottom sheet
-                      }
-                    : () {},
-                text: 'Save',
-              ),
-            ],
-          );
-        },
-      );
-    },
-  );
-}
-
-
- Future<void> _uploadFile() async {
-  try {
-    FilePickerResult? result = await FilePicker.platform.pickFiles();
-    
-    if (result != null) {
-      PlatformFile file = result.files.first;
-      String fileName = file.name;
-      
-      // Option 1: Use bytes if available (for small files)
-      if (file.bytes != null) {
-        String base64String = base64Encode(file.bytes!);
-        _addAttachment(fileName, 'assets/icons/e_learning/upload.svg', base64String);
-      } 
-      // Option 2: Read from path for large files
-      else if (file.path != null) {
-        // For very large files, consider uploading directly without base64
-        Uint8List fileBytes = await File(file.path!).readAsBytes();
-        String base64String = base64Encode(fileBytes);
-        _addAttachment(fileName, 'assets/icons/e_learning/upload.svg', base64String);
-      } 
-      // Option 3: Just use the file info
-      else {
-        _addAttachment(fileName, 'assets/icons/e_learning/upload.svg');
-       
-      }
-       Navigator.of(context).pop();
-    }
-  } catch (e) {
-    print('Error picking file: $e');
-    // Show error to user
+            );
+          },
+        );
+      },
+    );
   }
-}
+
+  Future<void> _uploadFile() async {
+    try {
+      FilePickerResult? result = await FilePicker.platform.pickFiles();
+      if (result != null) {
+        PlatformFile file = result.files.first;
+        String fileName = file.name;
+        String? base64String;
+        if (file.bytes != null) {
+          base64String = base64Encode(file.bytes!);
+        } else if (file.path != null) {
+          base64String = base64Encode(await File(file.path!).readAsBytes());
+        }
+        _addAttachment(fileName, 'assets/icons/e_learning/upload_file.svg', base64String);
+        Navigator.of(context).pop();
+      }
+    } catch (e) {
+      print('Error picking file: $e');
+      CustomToaster.toastError(context, 'Error', 'Failed to pick file: $e');
+    }
+  }
 
   Future<void> _takePhoto() async {
     final ImagePicker picker = ImagePicker();
     final XFile? photo = await picker.pickImage(source: ImageSource.camera);
-
     if (photo != null) {
       Uint8List fileBytes = await photo.readAsBytes();
       final base64String = base64Encode(fileBytes);
-      _addAttachment(
-          'Photo: ${photo.name}', 'assets/icons/e_learning/camera.svg',base64String);
+      _addAttachment('Photo: ${photo.name}', 'assets/icons/e_learning/take_photo.svg', base64String);
       Navigator.of(context).pop();
     }
   }
@@ -792,19 +769,27 @@ class _AdminAssignmentScreenState extends State<AdminAssignmentScreen> {
   Future<void> _recordVideo() async {
     final ImagePicker picker = ImagePicker();
     final XFile? video = await picker.pickVideo(source: ImageSource.camera);
-
     if (video != null) {
       Uint8List fileBytes = await video.readAsBytes();
-      final base64String =base64Encode(fileBytes);
-      _addAttachment(
-          'Video: ${video.name}', 'assets/icons/e_learning/video.svg',base64String);
-          Navigator.of(context).pop();
+      final base64String = base64Encode(fileBytes);
+      _addAttachment('Video: ${video.name}', 'assets/icons/e_learning/record_video.svg', base64String);
+      Navigator.of(context).pop();
     }
   }
 
   void _addAttachment(String content, String iconPath, [String? base64Content]) {
     setState(() {
-      _attachments.add(AttachmentItem(fileName: content, iconPath: iconPath, fileContent: base64Content ?? ''));
+      _attachments.add(AttachmentItem(
+        fileName: content,
+        iconPath: iconPath,
+        fileContent: base64Content ?? '',
+        isExisting: _replacingServerFileName != null,
+        originalServerFileName: _replacingServerFileName,
+      ));
+      if (_replacingServerFileName != null) {
+        _removedServerFileNames.remove(_replacingServerFileName);
+      }
+      _replacingServerFileName = null;
     });
   }
 
@@ -812,28 +797,31 @@ class _AdminAssignmentScreenState extends State<AdminAssignmentScreen> {
     final result = await Navigator.push(
       context,
       MaterialPageRoute(
-          builder: (context) =>  SelectTopicScreen(
-                callingScreen: '',
-                syllabusId: widget.syllabusId,
-                levelId: widget.levelId!, // Pass the appropriate levelId here
-              )),
+        builder: (context) => SelectTopicScreen(
+          callingScreen: '',
+          syllabusId: widget.syllabusId,
+          levelId: widget.levelId!,
+          courseName: widget.courseName,
+          courseId: widget.courseId,
+        ),
+      ),
     );
 
     if (result != null && result is Map) {
       setState(() {
-           _selectedTopic = result['topicName'] ?? 'No Topic'; // Update topic name
-        _selectedTopicId = result['topicId']; // Store topic ID
-
+        _selectedTopic = result['topicName'] ?? 'No Topic';
+        _selectedTopicId = result['topicId'];
       });
-    }else {
+    } else {
       setState(() {
-        _selectedTopic = 'No Topic'; // Reset if no topic is selected
-        _selectedTopicId = null; // Reset topic ID
+        _selectedTopic = 'No Topic';
+        _selectedTopicId = null;
       });
-    } 
+    }
   }
 
   void _saveAssignment() async {
+    
     if (_titleController.text.isEmpty) {
       CustomToaster.toastError(context, 'Error', 'Please enter a title');
       return;
@@ -842,25 +830,25 @@ class _AdminAssignmentScreenState extends State<AdminAssignmentScreen> {
       CustomToaster.toastError(context, 'Error', 'Please enter a description');
       return;
     }
-    if(_selectedClass == 'Select classes') {
+    if (_selectedClass == 'Select classes') {
       CustomToaster.toastError(context, 'Error', 'Please select at least one class');
       return;
     }
-  
     if (_startDate == null || _endDate == null) {
       CustomToaster.toastError(context, 'Error', 'Please select both start and end dates');
       return;
     }
-    // if(_endDate.isBefore(_startDate)) {
-    //   CustomToaster.toastError(context, 'Error', 'End date cannot be before start date');
-    //   return;
-    // }
-    if(_marksController.text.isEmpty) {
-        CustomToaster.toastError(context, 'Error', 'Please enter marks');
+    if (_marksController.text.isEmpty) {
+      CustomToaster.toastError(context, 'Error', 'Please enter marks');
       return;
     }
+
+    setState(() {
+      _isSaving = true;
+    });
+
     try {
-      final assignmentProvider = Provider.of<AssignmentProvider>(context, listen: false);
+            final assignmentProvider = Provider.of<AssignmentProvider>(context, listen: false);
       final userBox = Hive.box('userData');
       final storedUserData = userBox.get('userData') ?? userBox.get('loginResponse');
       final processedData = storedUserData is String
@@ -900,7 +888,11 @@ class _AdminAssignmentScreenState extends State<AdminAssignmentScreen> {
         'description': _descriptionController.text,
         'topic': _selectedTopic,
         'topic_id': _selectedTopicId ?? 0,
-        "syllabus_id": widget.syllabusId!,
+        'syllabus_id': widget.syllabusId!,
+        'course_id': widget.courseId,
+        'course_name': widget.courseName,
+        'term': academicTerm,
+        'level_id': widget.levelId,
         'creator_id': creatorId,
         'creator_name': creatorName,
         'start_date': _formatDate(_startDate),
@@ -913,63 +905,74 @@ class _AdminAssignmentScreenState extends State<AdminAssignmentScreen> {
               ],
         'files': _attachments.map((attachment) {
           return {
-            'old_file_name': attachment.fileName,
             'type': _getAttachmentType(attachment.iconPath!, attachment.fileName!),
             'file_name': attachment.fileName,
-            'file': attachment.fileContent,
+           'file': attachment.fileContent != null ? attachment.fileContent : null,
+            'old_file_name': attachment.isExisting ? (attachment.originalServerFileName ?? '') : '',
           };
         }).toList(),
+        if (widget.editMode) 'removed_files': _removedServerFileNames,
       };
 
       if (widget.editMode && widget.assignmentToEdit != null) {
-        final id =  widget.assignmentToEdit!.id;
+        final id = widget.assignmentToEdit?.id ?? widget.itemId;
         print('Updating Assignment Data:');
         print(const JsonEncoder.withIndent('  ').convert(assignmentPayload));
-        
-
-        await assignmentProvider.UpDateAssignment(assignmentPayload ,id!);
-
+        await assignmentProvider.UpDateAssignment(assignmentPayload, id!);
       } else {
-        // In CREATE mode
         print('Creating Assignment Data:');
         print(const JsonEncoder.withIndent('  ').convert(assignmentPayload));
-        
         await assignmentProvider.addAssignment(assignmentPayload);
       }
-       
+
       widget.onSave(assignmentPayload);
       Navigator.of(context).pop();
     } catch (e) {
       print('Error saving assignment: $e');
-      CustomToaster.toastError(
-        context,
-        'Error',
-        'Failed to save assignment: ${e.toString()}',
-      );
+      CustomToaster.toastError(context, 'Error', 'Failed to save assignment: $e');
+    } finally {
+      setState(() {
+        _isSaving = false;
+      });
     }
   }
 
-  String _getAttachmentType(String iconPath, String content) {
+String _getAttachmentType(String iconPath, String content) {
     if (iconPath.contains('link')) return 'url';
-    if (iconPath.contains('upload')) {
-      final extension = content.split('.').last.toLowerCase();
-      // Image extensions
-      if (['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'].contains(extension)) {
-      return 'photo';
-      }
-      // Video extensions  
-      if (['mp4', 'mov', 'avi', 'wmv', 'flv', 'webm'].contains(extension)) {
-      return 'video';
-      }
-      return 'file'; // Other file types
+    
+    // Extract file extension from content/filename
+    String extension = '';
+    if (content.contains('.')) {
+      extension = content.split('.').last.toLowerCase();
     }
-    if (iconPath.contains('camera')) return 'photo';
-    if (iconPath.contains('video')) return 'video';
-    return 'other';
+    
+    if (iconPath.contains('upload') || extension.isNotEmpty) {
+      // Document types
+      if (['pdf', 'doc', 'docx', 'txt', 'rtf', 'odt'].contains(extension)) return 'pdf';
+      // Spreadsheet types  
+      if (['xls', 'xlsx', 'csv', 'ods'].contains(extension)) return 'pdf';
+      // Presentation types
+      if (['ppt', 'pptx', 'odp'].contains(extension)) return 'pdf';
+      // Image types
+      if (['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'].contains(extension)) return 'image';
+      // Video types
+      if (['mp4', 'mov', 'avi', 'wmv', 'flv', 'webm'].contains(extension)) return 'video';
+  
+      return 'file';
+    }
+    
+    if (iconPath.contains('camera') || iconPath.contains('take_photo')) return 'image';
+    if (iconPath.contains('video') || iconPath.contains('record_video')) return 'video';
+    
+    if (extension.isNotEmpty) {
+      if (['pdf', 'doc', 'docx', 'txt', 'rtf', 'odt', 'xls', 'xlsx', 'csv', 'ods', 'ppt', 'pptx', 'odp'].contains(extension)) return 'pdf';
+      if (['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'].contains(extension)) return 'image';
+      if (['mp4', 'mov', 'avi', 'wmv', 'flv', 'webm'].contains(extension)) return 'video';
+    }
+    
+    return 'file'; // Default fallback
   }
 }
-
-
 
 class Assignment {
   final int? id;
@@ -979,6 +982,7 @@ class Assignment {
   final List<AttachmentItem> attachments;
   final DateTime dueDate;
   final String topic;
+  final String? topicId;
   final String marks;
   final DateTime createdAt;
 
@@ -992,6 +996,7 @@ class Assignment {
     required this.topic,
     required this.marks,
     DateTime? createdAt,
+    this.topicId,
   }) : createdAt = createdAt ?? DateTime.now();
 }
 

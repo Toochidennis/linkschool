@@ -13,7 +13,7 @@ import 'package:provider/provider.dart';
 
 import '../../common/custom_toaster.dart';
 import '../../model/student/comment_model.dart';
-import '../../providers/student/comment_provider.dart';
+import '../../providers/student/student_comment_provider.dart';
 import '../../services/api/service_locator.dart';
 
 
@@ -484,7 +484,7 @@ class _ForumScreenState extends State<ForumScreen> {
 
       try {
 //
-        final commentProvider = Provider.of<CommentProvider>(context, listen: false);
+        final commentProvider = Provider.of<StudentCommentProvider>(context, listen: false);
         final contentId = _editingComment?.id;
         if (_isEditing) {
           comment['content_id'];

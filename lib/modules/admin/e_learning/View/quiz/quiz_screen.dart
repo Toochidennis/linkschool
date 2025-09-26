@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:linkschool/modules/admin/e_learning/View/question/assessment_screen.dart';
+import 'package:linkschool/modules/admin/e_learning/View/question/view_question_screen.dart';
 import 'package:linkschool/modules/admin/e_learning/View/quiz/quiz_assessment_screen.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/buttons/custom_long_elevated_button.dart';
 import 'package:linkschool/modules/common/constants.dart';
+import 'package:linkschool/modules/common/custom_toaster.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/common/widgets/portal/quiz/answer_tab_widget.dart';
+import 'package:linkschool/modules/providers/admin/e_learning/delete_sylabus_content.dart';
+import 'package:linkschool/modules/services/api/service_locator.dart';
 import '../../../../model/e-learning/question_model.dart';
 
 // import 'package:linkschool/modules/model/e-learning/question_model.dart';
@@ -13,9 +17,18 @@ import '../../../../model/e-learning/question_model.dart';
 class QuizScreen extends StatefulWidget {
   final Question question;
   final List<Map<String, dynamic>>? questions;
-  final List<Map<String,dynamic>>? correctAnswers;
-
-  const QuizScreen({super.key, required this.question, this.questions, this.correctAnswers});
+  final List<Map<String, dynamic>>? correctAnswers;
+  final Map<String, dynamic?>? questiondata;
+  final List<Map<String, String>>? class_ids;
+  final String? syllabusClasses;
+  const QuizScreen(
+      {super.key,
+      required this.question,
+      this.questions,
+      this.correctAnswers,
+      this.questiondata,
+      this.class_ids,
+      this.syllabusClasses});
 
   @override
   _QuizScreenState createState() => _QuizScreenState();
@@ -30,7 +43,7 @@ class _QuizScreenState extends State<QuizScreen> {
     final Brightness brightness = Theme.of(context).brightness;
     opacity = brightness == Brightness.light ? 0.1 : 0.15;
     return DefaultTabController(
-      length: 2, 
+      length: 2,
       child: Scaffold(
         appBar: AppBar(
           leading: IconButton(
@@ -53,7 +66,38 @@ class _QuizScreenState extends State<QuizScreen> {
             PopupMenuButton<String>(
               icon: const Icon(Icons.more_vert, color: AppColors.primaryLight),
               onSelected: (String result) {
-                // Handle menu item selection
+                switch (result) {
+                  case 'edit':
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => ViewQuestionScreen(
+                          question: Question(
+                            id: widget.question.id, // Pass the quiz ID
+                            title: widget.question.title,
+                            description: widget.question.description,
+                            selectedClass: widget.question.selectedClass,
+                            endDate: DateTime.now(),
+                            startDate: DateTime.now(),
+                            //  startDate:widget.question.startDate != null ? DateTime.parse(widget.question.startDate ?? {}) : DateTime.now(),
+                            // endDate: widget.question.endDate != null ? DateTime.parse(widget.question.endDate!) : DateTime.now(),
+                            topic: widget.question.topic ?? 'No Topic',
+                            duration: widget.question.duration,
+
+                            marks: widget.question.marks?.toString() ?? '0',
+                            topicId: widget.question.topicId,
+                          ),
+                          questiondata: widget.questiondata ?? {},
+                          class_ids: widget.class_ids,
+                          syllabusClasses: widget.syllabusClasses,
+                          questions: widget.questions,
+                          editMode: true,
+                        ),
+                      ),
+                    );
+                  case 'delete':
+                    deleteQuiz(widget.question.id);
+                }
               },
               itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
                 const PopupMenuItem<String>(
@@ -67,40 +111,40 @@ class _QuizScreenState extends State<QuizScreen> {
               ],
             ),
           ],
-        backgroundColor: AppColors.backgroundLight,
-        flexibleSpace: FlexibleSpaceBar(
-          background: Stack(
-            children: [
-              Positioned.fill(
-                child: Opacity(
-                  opacity: opacity,
-                  child: Image.asset(
-                    'assets/images/background.png',
-                    fit: BoxFit.cover,
+          backgroundColor: AppColors.backgroundLight,
+          flexibleSpace: FlexibleSpaceBar(
+            background: Stack(
+              children: [
+                Positioned.fill(
+                  child: Opacity(
+                    opacity: opacity,
+                    child: Image.asset(
+                      'assets/images/background.png',
+                      fit: BoxFit.cover,
+                    ),
                   ),
-                ),
-              )
-            ],
+                )
+              ],
+            ),
           ),
-        ),
           bottom: TabBar(
             // Move TabBar to AppBar's bottom
             // controller: _tabController,
-            tabs:  [
-            Tab(
-              child: Text(
-                'Questions',
-                style: AppTextStyles.normal600(
-                    fontSize: 18, color: AppColors.primaryLight),
+            tabs: [
+              Tab(
+                child: Text(
+                  'Questions',
+                  style: AppTextStyles.normal600(
+                      fontSize: 18, color: AppColors.primaryLight),
+                ),
               ),
-            ),
-            Tab(
-              child: Text(
-                'Answers',
-                style: AppTextStyles.normal600(
-                    fontSize: 18, color: AppColors.primaryLight),
+              Tab(
+                child: Text(
+                  'Answers',
+                  style: AppTextStyles.normal600(
+                      fontSize: 18, color: AppColors.primaryLight),
+                ),
               ),
-            ),
             ],
           ),
         ),
@@ -118,11 +162,23 @@ class _QuizScreenState extends State<QuizScreen> {
     );
   }
 
+  Future<void> deleteQuiz(id) async {
+    try {
+      final provider = locator<DeleteSyllabusProvider>();
+      await provider.DeleteQuiz(widget.question.id.toString());
+      CustomToaster.toastSuccess(
+          context, 'Success', 'quiz deleted successfully');
+      Navigator.of(context).pop();
+    } catch (e) {
+      print('Error deleting question: $e');
+    }
+  }
+
   Widget _buildQuestionTab() {
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
-        _buildInfoRow('Due date:', _formatDate(widget.question.endDate)),
+        _buildInfoRow('Due:', _formatDate(widget.question.endDate)),
         const Divider(color: Colors.grey),
         Text(
           widget.question.title,
@@ -140,28 +196,34 @@ class _QuizScreenState extends State<QuizScreen> {
           onPressed: () {
             // Navigate to the assessment screen
             print("SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS ${widget.correctAnswers}");
+            print("quiz duration ${widget.question.duration}");
+
             Navigator.push(
               context,
               MaterialPageRoute(
                 builder: (context) => AssessmentScreen(
-                 duration: widget.question.duration,
-                  questions: widget.questions ?? [],
-                  correctAnswer:widget.correctAnswers
-                ),
+                    title: widget.question.title,
+                    duration: widget.question.duration,
+                    questions: widget.questions ?? [],
+                    mark: widget.question.marks,
+                    correctAnswer: widget.correctAnswers),
               ),
             );
           },
           backgroundColor: AppColors.eLearningBtnColor1,
           text: 'Take Quiz',
-          textStyle: AppTextStyles.normal600(fontSize: 18, color: AppColors.backgroundLight),
+          textStyle: AppTextStyles.normal600(
+              fontSize: 18, color: AppColors.backgroundLight),
         ),
       ],
     );
   }
 
-Widget _buildAnswersTab() {
-  return const AnswersTabWidget();
-}
+  Widget _buildAnswersTab() {
+    return AnswersTabWidget(
+      itemId: widget.question.id.toString(),
+    );
+  }
 
   Widget _buildInfoRow(String label, String value) {
     return Padding(
@@ -213,4 +275,3 @@ Widget _buildAnswersTab() {
     return '${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
   }
 }
-

@@ -11,7 +11,7 @@ import 'package:provider/provider.dart';
 
 class BulkRegistrationScreen extends StatefulWidget {
   final String classId;
-  
+
   const BulkRegistrationScreen({
     super.key,
     required this.classId,
@@ -27,70 +27,61 @@ class _BulkRegistrationScreenState extends State<BulkRegistrationScreen> {
   int _totalRegisteredCourses = 0;
   int _totalStudents = 0;
   String _academicSession = '';
-  
 
-@override
-void initState() {
-  super.initState();
-  _loadSettingsFromHive();
-  WidgetsBinding.instance.addPostFrameCallback((_) {
-    // Make sure widget.classId is not null or empty
+  @override
+  void initState() {
+    super.initState();
+    _loadSettingsFromHive();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (widget.classId.isNotEmpty) {
+        _fetchRegisteredStudents();
+      } else {
+        debugPrint('Error: Missing classId parameter');
+      }
+    });
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
     if (widget.classId.isNotEmpty) {
       _fetchRegisteredStudents();
-    } else {
-      // Log error or handle missing classId
-      debugPrint('Error: Missing classId parameter');
     }
-  });
-}
-
-@override
-void didChangeDependencies() {
-  super.didChangeDependencies();
-  // This will be called when returning from course registration
-  // Refresh the data to show updated course counts
-  if (widget.classId.isNotEmpty) {
-    _fetchRegisteredStudents();
   }
-}
 
   void _loadSettingsFromHive() {
     final userBox = Hive.box('userData');
     final userData = userBox.get('userData');
-    
+
     if (userData != null && userData['data'] != null && userData['data']['settings'] != null) {
       setState(() {
         _settings = Map<String, dynamic>.from(userData['data']['settings']);
-        
-        // Set selected term based on settings
+
         int termNumber = _settings['term'] ?? 1;
-        _selectedTerm = termNumber == 1 
-            ? 'First term' 
-            : termNumber == 2 
-                ? 'Second term' 
+        _selectedTerm = termNumber == 1
+            ? 'First term'
+            : termNumber == 2
+                ? 'Second term'
                 : 'Third term';
-                
-        // Set academic session
+
         _academicSession = "${int.parse(_settings['year'] ?? '2023') - 1}/${_settings['year'] ?? '2023'} academic session";
       });
     }
   }
 
   void _fetchRegisteredStudents() {
-    // Extract term number from the selected term
-    int termNumber = _selectedTerm == 'First term' 
-        ? 1 
-        : _selectedTerm == 'Second term' 
-            ? 2 
+    int termNumber = _selectedTerm == 'First term'
+        ? 1
+        : _selectedTerm == 'Second term'
+            ? 2
             : 3;
 
-  // Debug print to verify params
-  debugPrint('Fetching students with classId: ${widget.classId}, term: $termNumber, year: ${_settings['year'] ?? '2023'}');
-            
+    debugPrint('Fetching students with classId: ${widget.classId}, term: $termNumber, year: ${_settings['year'] ?? '2023'}');
+
     Provider.of<CourseRegistrationProvider>(context, listen: false)
         .fetchRegisteredCourses(
-            widget.classId, 
-            termNumber.toString(), 
+            widget.classId,
+            termNumber.toString(),
             _settings['year'] ?? '2023'
         );
   }
@@ -127,14 +118,13 @@ void didChangeDependencies() {
       ),
       body: Consumer<CourseRegistrationProvider>(
         builder: (context, provider, child) {
-          // Update counters when data is loaded
           if (!provider.isLoading && provider.registeredCourses.isNotEmpty) {
             _totalStudents = provider.registeredCourses.length;
             _totalRegisteredCourses = provider.registeredCourses
                 .where((student) => student.courseCount > 0)
                 .length;
           }
-          
+
           return SingleChildScrollView(
             child: Column(
               children: [
@@ -326,30 +316,30 @@ void didChangeDependencies() {
                     ),
                     ElevatedButton(
                         onPressed: () {
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (context) => CourseRegistrationScreen(
-          studentName: student.studentName,
-          coursesRegistered: student.courseCount,
-          classId: widget.classId,
-          studentId: student.studentId, 
-        ),
-      ),
-    );
-  },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.videoColor4,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (context) => CourseRegistrationScreen(
+                                studentName: student.studentName,
+                                coursesRegistered: student.courseCount,
+                                classId: widget.classId,
+                                studentId: student.studentId,
+                              ),
+                            ),
+                          );
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.videoColor4,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
                         ),
-                      ),
-                      child: Text(
-                        (student.courseCount > 0) ? 'Edit' : 'Register',
-                        style: AppTextStyles.normal700(
-                          fontSize: 12,
-                          color: AppColors.backgroundLight,
+                        child: Text(
+                          (student.courseCount > 0) ? 'Edit' : 'Register',
+                          style: AppTextStyles.normal700(
+                            fontSize: 12,
+                            color: AppColors.backgroundLight,
+                          ),
                         ),
-                      ),
                     ),
                   ],
                 ),
@@ -366,17 +356,23 @@ void didChangeDependencies() {
 
 
 // // ignore_for_file: deprecated_member_use
-
 // import 'package:flutter/material.dart';
 // import 'package:flutter_svg/svg.dart';
+// import 'package:hive/hive.dart';
 // import 'package:linkschool/modules/common/app_colors.dart';
 // import 'package:linkschool/modules/common/text_styles.dart';
 // import 'package:linkschool/modules/common/utils/custom_dropdown_utils.dart';
 // import 'package:linkschool/modules/admin/result/class_detail/registration/course_registration.dart';
-
+// import 'package:linkschool/modules/providers/admin/course_registration_provider.dart';
+// import 'package:provider/provider.dart';
 
 // class BulkRegistrationScreen extends StatefulWidget {
-//   const BulkRegistrationScreen({super.key});
+//   final String classId;
+  
+//   const BulkRegistrationScreen({
+//     super.key,
+//     required this.classId,
+//   });
 
 //   @override
 //   State<BulkRegistrationScreen> createState() => _BulkRegistrationScreenState();
@@ -384,14 +380,97 @@ void didChangeDependencies() {
 
 // class _BulkRegistrationScreenState extends State<BulkRegistrationScreen> {
 //   String _selectedTerm = 'First term';
+//   Map<String, dynamic> _settings = {};
+//   int _totalRegisteredCourses = 0;
+//   int _totalStudents = 0;
+//   String _academicSession = '';
   
+
+// @override
+// void initState() {
+//   super.initState();
+//   _loadSettingsFromHive();
+//   WidgetsBinding.instance.addPostFrameCallback((_) {
+//     // Make sure widget.classId is not null or empty
+//     if (widget.classId.isNotEmpty) {
+//       _fetchRegisteredStudents();
+//     } else {
+//       // Log error or handle missing classId
+//       debugPrint('Error: Missing classId parameter');
+//     }
+//   });
+// }
+
+// @override
+// void didChangeDependencies() {
+//   super.didChangeDependencies();
+//   // This will be called when returning from course registration
+//   // Refresh the data to show updated course counts
+//   if (widget.classId.isNotEmpty) {
+//     _fetchRegisteredStudents();
+//   }
+// }
+
+//   void _loadSettingsFromHive() {
+//     final userBox = Hive.box('userData');
+//     final userData = userBox.get('userData');
+    
+//     if (userData != null && userData['data'] != null && userData['data']['settings'] != null) {
+//       setState(() {
+//         _settings = Map<String, dynamic>.from(userData['data']['settings']);
+        
+//         // Set selected term based on settings
+//         int termNumber = _settings['term'] ?? 1;
+//         _selectedTerm = termNumber == 1 
+//             ? 'First term' 
+//             : termNumber == 2 
+//                 ? 'Second term' 
+//                 : 'Third term';
+                
+//         // Set academic session
+//         _academicSession = "${int.parse(_settings['year'] ?? '2023') - 1}/${_settings['year'] ?? '2023'} academic session";
+//       });
+//     }
+//   }
+
+//   void _fetchRegisteredStudents() {
+//     // Extract term number from the selected term
+//     int termNumber = _selectedTerm == 'First term' 
+//         ? 1 
+//         : _selectedTerm == 'Second term' 
+//             ? 2 
+//             : 3;
+
+//   // Debug print to verify params
+//   debugPrint('Fetching students with classId: ${widget.classId}, term: $termNumber, year: ${_settings['year'] ?? '2023'}');
+            
+//     Provider.of<CourseRegistrationProvider>(context, listen: false)
+//         .fetchRegisteredCourses(
+//             widget.classId, 
+//             termNumber.toString(), 
+//             _settings['year'] ?? '2023'
+//         );
+//   }
+
+//   String titleCase(String input) {
+//     if (input.isEmpty) {
+//       return input;
+//     }
+//     return input.split(' ').map((word) {
+//       if (word.isEmpty) {
+//         return word;
+//       }
+//       return word[0].toUpperCase() + word.substring(1).toLowerCase();
+//     }).join(' ');
+//   }
+
 //   @override
 //   Widget build(BuildContext context) {
 //     return Scaffold(
 //       appBar: AppBar(
 //         leading: IconButton(
 //           onPressed: () {
-//              Navigator.of(context).pop();
+//             Navigator.of(context).pop();
 //           },
 //           icon: Image.asset(
 //             'assets/icons/arrow_back.png',
@@ -403,14 +482,26 @@ void didChangeDependencies() {
 //         backgroundColor: AppColors.backgroundLight,
 //         elevation: 0.0,
 //       ),
-//       body: SingleChildScrollView(
-//         child: Column(
-//           children: [
-//             _buildTopContainer(),
-//             SizedBox(height: 32,),
-//             _buildStudentList(),
-//           ],
-//         ),
+//       body: Consumer<CourseRegistrationProvider>(
+//         builder: (context, provider, child) {
+//           // Update counters when data is loaded
+//           if (!provider.isLoading && provider.registeredCourses.isNotEmpty) {
+//             _totalStudents = provider.registeredCourses.length;
+//             _totalRegisteredCourses = provider.registeredCourses
+//                 .where((student) => student.courseCount > 0)
+//                 .length;
+//           }
+          
+//           return SingleChildScrollView(
+//             child: Column(
+//               children: [
+//                 _buildTopContainer(),
+//                 SizedBox(height: 32),
+//                 _buildStudentList(provider),
+//               ],
+//             ),
+//           );
+//         },
 //       ),
 //     );
 //   }
@@ -440,7 +531,8 @@ void didChangeDependencies() {
 //                 children: [
 //                   Container(
 //                     height: 42,
-//                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+//                     padding:
+//                         const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
 //                     decoration: BoxDecoration(
 //                       color: AppColors.regBgColor1,
 //                       borderRadius: BorderRadius.circular(24),
@@ -449,44 +541,59 @@ void didChangeDependencies() {
 //                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
 //                       children: [
 //                         Text(
-//                           '2016/2017 academic session',
-//                           style: AppTextStyles.normal600(fontSize: 12, color: AppColors.backgroundDark),
+//                           _academicSession,
+//                           style: AppTextStyles.normal600(
+//                               fontSize: 12, color: AppColors.backgroundDark),
 //                         ),
-//                         CustomDropdown(items: const [
-//                           'First term',
-//                           'Second term',
-//                           'Third term',
-//                         ], value: _selectedTerm, onChanged: (newValue) {
-//                           setState(() {
-//                             _selectedTerm = newValue!;
-//                           });
-//                         })
+//                         CustomDropdown(
+//                             items: const [
+//                               'First term',
+//                               'Second term',
+//                               'Third term',
+//                             ],
+//                             value: _selectedTerm,
+//                             onChanged: (newValue) {
+//                               setState(() {
+//                                 _selectedTerm = newValue!;
+//                                 _fetchRegisteredStudents();
+//                               });
+//                             })
 //                       ],
 //                     ),
 //                   ),
-//                   const SizedBox(height: 34,),
+//                   const SizedBox(height: 34),
 //                   Row(
 //                     children: [
 //                       const CircleAvatar(
 //                         backgroundColor: AppColors.regAvatarColor,
-//                         child: Icon(Icons.person, color: AppColors.primaryLight, weight: 20.0,),
+//                         child: Icon(
+//                           Icons.person,
+//                           color: AppColors.primaryLight,
+//                           weight: 20.0,
+//                         ),
 //                       ),
-//                       const SizedBox(width: 12,),
+//                       const SizedBox(width: 12),
 //                       Column(
 //                         crossAxisAlignment: CrossAxisAlignment.start,
 //                         children: [
-//                           Text('Students', style: AppTextStyles.normal500(fontSize: 14, color: AppColors.backgroundLight)),
-//                           const SizedBox(height: 5.0,),
-//                           Text('345', style: AppTextStyles.normal700(fontSize: 17, color: AppColors.backgroundLight)),
+//                           Text('Students',
+//                               style: AppTextStyles.normal500(
+//                                   fontSize: 14,
+//                                   color: AppColors.backgroundLight)),
+//                           const SizedBox(height: 5.0),
+//                           Text(_totalStudents.toString(),
+//                               style: AppTextStyles.normal700(
+//                                   fontSize: 17,
+//                                   color: AppColors.backgroundLight)),
 //                         ],
 //                       ),
-//                       SizedBox(width: 25,),
+//                       SizedBox(width: 25),
 //                       Container(
 //                         width: 1,
 //                         height: 40,
 //                         color: AppColors.backgroundLight,
 //                       ),
-//                       const SizedBox(width: 25,),
+//                       const SizedBox(width: 25),
 //                       CircleAvatar(
 //                         backgroundColor: AppColors.backgroundLight,
 //                         child: Center(
@@ -498,13 +605,19 @@ void didChangeDependencies() {
 //                           ),
 //                         ),
 //                       ),
-//                       const SizedBox(width: 12,),
+//                       const SizedBox(width: 12),
 //                       Column(
 //                         crossAxisAlignment: CrossAxisAlignment.start,
 //                         children: [
-//                           Text('Course Registered', style: AppTextStyles.normal500(fontSize: 14, color: AppColors.backgroundLight)),
-//                           const SizedBox(height: 5.0,),
-//                           Text('345', style: AppTextStyles.normal700(fontSize: 17, color: AppColors.backgroundLight)),
+//                           Text('Course Registered',
+//                               style: AppTextStyles.normal500(
+//                                   fontSize: 14,
+//                                   color: AppColors.backgroundLight)),
+//                           const SizedBox(height: 5.0),
+//                           Text(_totalRegisteredCourses.toString(),
+//                               style: AppTextStyles.normal700(
+//                                   fontSize: 17,
+//                                   color: AppColors.backgroundLight)),
 //                         ],
 //                       ),
 //                     ],
@@ -518,79 +631,91 @@ void didChangeDependencies() {
 //     );
 //   }
 
-//   Widget _buildStudentList() {
+//   Widget _buildStudentList(CourseRegistrationProvider provider) {
+//     if (provider.isLoading) {
+//       return Center(child: CircularProgressIndicator());
+//     }
+
+//     if (provider.registeredCourses.isEmpty) {
+//       return Center(child: Text("No registered students found."));
+//     }
+
 //     return Padding(
 //       padding: EdgeInsets.symmetric(horizontal: 16.0),
 //       child: Column(
-//         children: [
-//         _buildStudentListItem('Toochukwu Dennis', 0),
-//         _buildStudentListItem('Toochukwu Dennis', 2),
-//         _buildStudentListItem('Toochukwu Dennis', 1),
-//         _buildStudentListItem('Toochukwu Dennis', 3),
-//         _buildStudentListItem('Toochukwu Dennis', 0),
-//         _buildStudentListItem('Toochukwu Dennis', 1),
-//         _buildStudentListItem('Toochukwu Dennis', 2),
-//         _buildStudentListItem('Toochukwu Dennis', 0),
-//         _buildStudentListItem('Toochukwu Dennis', 1),
-//         _buildStudentListItem('Toochukwu Dennis', 3),
-//         ],
+//         children: provider.registeredCourses.map((student) {
+//           return Column(
+//             children: [
+//               Container(
+//                 child: Row(
+//                   children: [
+//                     Container(
+//                       width: 40,
+//                       height: 40,
+//                       decoration: BoxDecoration(
+//                         color: AppColors.primaryLight,
+//                         borderRadius: BorderRadius.circular(8),
+//                       ),
+//                       child: Icon(Icons.person, color: AppColors.backgroundLight),
+//                     ),
+//                     const SizedBox(width: 12),
+//                     Expanded(
+//                       child: Column(
+//                         crossAxisAlignment: CrossAxisAlignment.start,
+//                         children: [
+//                           Text(
+//                             titleCase(student.studentName),
+//                             style: AppTextStyles.normal600(
+//                               fontSize: 16,
+//                               color: AppColors.backgroundDark,
+//                             ),
+//                           ),
+//                           SizedBox(height: 2),
+//                           Text(
+//                             '${student.courseCount} courses registered',
+//                             style: AppTextStyles.normal400(
+//                               fontSize: 12,
+//                               color: Colors.grey,
+//                             ),
+//                           ),
+//                         ],
+//                       ),
+//                     ),
+//                     ElevatedButton(
+//                         onPressed: () {
+//     Navigator.of(context).push(
+//       MaterialPageRoute(
+//         builder: (context) => CourseRegistrationScreen(
+//           studentName: student.studentName,
+//           coursesRegistered: student.courseCount,
+//           classId: widget.classId,
+//           studentId: student.studentId, 
+//         ),
 //       ),
 //     );
-//   }
-
-//   Widget _buildStudentListItem(String name, int coursesRegistered) {
-//     return Column(
-//       children: [
-//         Row(
-//           children: [
-//             Container(
-//               width: 40,
-//               height: 40,
-//               decoration: BoxDecoration(
-//                 color: AppColors.primaryLight,
-//                 borderRadius: BorderRadius.circular(8),
-//               ),
-//               child: Icon(Icons.person, color: AppColors.backgroundLight),
-//             ),
-//             const SizedBox(width: 12),
-//             Expanded(
-//               child: Column(
-//                 crossAxisAlignment: CrossAxisAlignment.start,
-//                 children: [
-//                   Text(
-//                     name,
-//                     style: AppTextStyles.normal600(fontSize: 16, color: AppColors.backgroundDark),
-//                   ),
-//                   SizedBox(height: 8,),
-//                   Text(
-//                     '$coursesRegistered courses registered',
-//                     style: AppTextStyles.normal400(fontSize: 12, color: Colors.grey),
-//                   ),
-//                 ],
-//               ),
-//             ),
-// ElevatedButton(
-//   onPressed: () {
-//     if (coursesRegistered > 0) {
-//       Navigator.of(context).push(
-//         MaterialPageRoute(
-//           builder: (context) => CourseRegistrationScreen(studentName: name, coursesRegistered: coursesRegistered),
-//         ),
-//       );
-//     }
 //   },
-//   style: ElevatedButton.styleFrom(
-//     backgroundColor: AppColors.videoColor4,
-//     shape: RoundedRectangleBorder(
-//       borderRadius: BorderRadius.circular(8),
-//     ),
-//   ),
-//   child: Text(coursesRegistered > 0 ? 'Edit' : 'Register', style: AppTextStyles.normal700(fontSize: 12, color: AppColors.backgroundLight)),
-// ),
-//           ],
-//         ),
-//         Divider(),
-//       ],
+//                       style: ElevatedButton.styleFrom(
+//                         backgroundColor: AppColors.videoColor4,
+//                         shape: RoundedRectangleBorder(
+//                           borderRadius: BorderRadius.circular(8),
+//                         ),
+//                       ),
+//                       child: Text(
+//                         (student.courseCount > 0) ? 'Edit' : 'Register',
+//                         style: AppTextStyles.normal700(
+//                           fontSize: 12,
+//                           color: AppColors.backgroundLight,
+//                         ),
+//                       ),
+//                     ),
+//                   ],
+//                 ),
+//               ),
+//               Divider(),
+//             ],
+//           );
+//         }).toList(),
+//       ),
 //     );
 //   }
 // }

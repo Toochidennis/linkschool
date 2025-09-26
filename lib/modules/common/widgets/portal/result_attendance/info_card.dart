@@ -6,11 +6,46 @@ import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/common/utils/dash_line_utils.dart';
 
-class InfoCard extends StatelessWidget {
+class InfoCard extends StatefulWidget {
   final String? className;
   final String? classId;
   
   const InfoCard({super.key, this.className, this.classId});
+
+  @override
+  State<InfoCard> createState() => _InfoCardState();
+}
+
+class _InfoCardState extends State<InfoCard> {
+    String _academicSession = '';
+   Map<String, dynamic> _settings = {};
+   String _selectedTerm = 'First term';
+
+    @override
+  void initState() {
+    super.initState();
+    _loadSettingsFromHive();
+  }
+    void _loadSettingsFromHive() {
+    final userBox = Hive.box('userData');
+    final userData = userBox.get('userData');
+
+    if (userData != null && userData['data'] != null && userData['data']['settings'] != null) {
+      setState(() {
+        _settings = Map<String, dynamic>.from(userData['data']['settings']);
+
+        int termNumber = _settings['term'] ?? 1;
+        _selectedTerm = termNumber == 1
+            ? 'First term'
+            : termNumber == 2
+                ? 'Second term'
+                : 'Third term';
+
+        _academicSession = "${int.parse(_settings['year'] ?? '2023') - 1}/${_settings['year'] ?? '2023'} academic session";
+      });
+    }
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -63,7 +98,7 @@ class InfoCard extends StatelessWidget {
         const SizedBox(height: 4),
         Text(_getClassName(), style: AppTextStyles.normal600(fontSize: 22, color: AppColors.primaryLight)),
         const SizedBox(height: 4),
-        Text(_getAcademicSession(), style: AppTextStyles.normal500(fontSize: 14, color: AppColors.textGray)),
+        Text(_academicSession, style: AppTextStyles.normal500(fontSize: 14, color: AppColors.textGray)),
       ],
     );
   }
@@ -100,8 +135,8 @@ class InfoCard extends StatelessWidget {
 
   // Helper method to get the class name from props or fallback to stored data
   String _getClassName() {
-    if (className != null && className!.isNotEmpty) {
-      return className!;
+    if (widget.className != null && widget.className!.isNotEmpty) {
+      return widget.className!;
     }
     
     // Fallback: try to get from Hive storage if not provided

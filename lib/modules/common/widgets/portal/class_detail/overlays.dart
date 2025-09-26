@@ -1,19 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:linkschool/config/env_config.dart';
 import 'package:linkschool/modules/admin/result/class_detail/student_result/comment_course_result_screen.dart';
 import 'package:linkschool/modules/admin/result/class_detail/student_result/course_result_screen.dart';
 import 'package:linkschool/modules/admin/result/class_detail/student_result/student_result.dart';
 import 'package:linkschool/modules/admin/result/class_detail/student_result/composite_result_screen.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
+// import 'package:linkschool/modules/common/utils/term_comparison_utils.dart';
 import 'package:linkschool/modules/staff/e_learning/form_classes/admin_edit_staff_skill_behaviour_screen.dart';
 import 'package:linkschool/modules/staff/e_learning/form_classes/admin_skill_behaviour_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:linkschool/modules/providers/admin/student_provider.dart';
 
+import '../../../utils/class_detail/term_comparison_utils.dart';
+
 void showStudentResultOverlay(BuildContext context, {String? classId, String? className}) {
   final studentProvider = Provider.of<StudentProvider>(context, listen: false);
-  
+    
   if (classId != null) {
     studentProvider.fetchStudents(classId);
   }
@@ -63,7 +67,7 @@ void showStudentResultOverlay(BuildContext context, {String? classId, String? cl
                               child: CircularProgressIndicator(),
                             );
                           }
-                          
+                                                    
                           if (provider.errorMessage.isNotEmpty) {
                             return Center(
                               child: Text(
@@ -72,13 +76,13 @@ void showStudentResultOverlay(BuildContext context, {String? classId, String? cl
                               ),
                             );
                           }
-                          
+                                                    
                           if (provider.students.isEmpty) {
                             return const Center(
                               child: Text('No students available in this class'),
                             );
                           }
-                          
+                                                    
                           return ListView.separated(
                             controller: controller,
                             itemCount: provider.students.length,
@@ -87,7 +91,7 @@ void showStudentResultOverlay(BuildContext context, {String? classId, String? cl
                               final student = provider.students[index];
                               final firstLetter = student.fullName.isNotEmpty ?
                                    student.fullName[0].toUpperCase() : 'S';
-                              
+                                                            
                               return ListTile(
                                 leading: CircleAvatar(
                                   backgroundColor: Colors.primaries[index % Colors.primaries.length],
@@ -129,7 +133,17 @@ void showStudentResultOverlay(BuildContext context, {String? classId, String? cl
   );
 }
 
-void showTermOverlay(BuildContext context, {required String classId, required String levelId, required String year, required int termId, required String termName, required bool isCurrentTerm}) {
+void showTermOverlay(BuildContext context, {
+  required String classId, 
+  required String levelId, 
+  required String year, 
+  required int termId, 
+  required String termName, 
+  required bool isCurrentTerm
+}) {
+  // Check if selected term matches user's login term
+  final isUserCurrentTerm = TermComparisonUtils.isCurrentUserTerm(year, termId);
+  
   showModalBottomSheet(
     context: context,
     isScrollControlled: true,
@@ -157,21 +171,18 @@ void showTermOverlay(BuildContext context, {required String classId, required St
                       'assets/icons/result/course.svg',
                       'assets/icons/result/composite_result.svg',
                     ];
-
                     final labels = [
                       'Comment on results',
                       'Skills and Behaviour',
                       'Course result',
                       'Composite result',
                     ];
-
                     final colors = [
                       AppColors.bgColor2,
                       AppColors.bgColor3,
                       AppColors.bgColor4,
                       AppColors.bgColor5,
                     ];
-
                     final iconColors = [
                       AppColors.iconColor1,
                       AppColors.iconColor2,
@@ -199,7 +210,7 @@ void showTermOverlay(BuildContext context, {required String classId, required St
                       title: Text(labels[index]),
                       onTap: () {
                         Navigator.pop(context); // Close the overlay first
-                        
+                                                
                         if (labels[index] == 'Comment on results') {
                           Navigator.push(
                             context,
@@ -210,6 +221,7 @@ void showTermOverlay(BuildContext context, {required String classId, required St
                                 term: termId,
                                 termName: termName,
                                 isCurrentTerm: isCurrentTerm,
+                                isUserCurrentTerm: isUserCurrentTerm, // Pass the comparison result
                               ),
                             ),
                           );
@@ -223,12 +235,39 @@ void showTermOverlay(BuildContext context, {required String classId, required St
                                 term: termId,
                                 termName: termName,
                                 isCurrentTerm: isCurrentTerm,
+                                isUserCurrentTerm: isUserCurrentTerm, // Pass the comparison result
                               ),
                             ),
                           );
                         } else if (labels[index] == 'Skills and Behaviour') {
-                          // Always show skills behaviour overlay regardless of current term
-                          _showSkillsBehaviourOverlay(context, classId: classId, levelId: levelId, year: year, termId: termId, termName: termName, isCurrentTerm: isCurrentTerm);
+                          // Check if user's term matches selected term
+                          if (isUserCurrentTerm) {
+                            // Show both Add and View options
+                            _showSkillsBehaviourOverlay(
+                              context, 
+                              classId: classId, 
+                              levelId: levelId, 
+                              year: year, 
+                              termId: termId, 
+                              termName: termName, 
+                              isCurrentTerm: isCurrentTerm,
+                              showBothOptions: true,
+                            );
+                          } else {
+                            // Navigate directly to admin_skill_behaviour_screen (View only)
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => AdminSkillsBehaviourScreen(
+                                  classId: classId,
+                                  levelId: levelId,
+                                  term: termId.toString(),
+                                  year: year,
+                                  db: EnvConfig.dbName,
+                                ),
+                              ),
+                            );
+                          }
                         } else if (labels[index] == 'Composite result') {
                           Navigator.push(
                             context,
@@ -255,7 +294,15 @@ void showTermOverlay(BuildContext context, {required String classId, required St
   );
 }
 
-void _showSkillsBehaviourOverlay(BuildContext context, {required String classId, required String levelId, required String year, required int termId, required String termName, required bool isCurrentTerm}) {
+void _showSkillsBehaviourOverlay(BuildContext context, {
+  required String classId, 
+  required String levelId, 
+  required String year, 
+  required int termId, 
+  required String termName, 
+  required bool isCurrentTerm,
+  required bool showBothOptions,
+}) {
   showModalBottomSheet(
     context: context,
     builder: (BuildContext context) {
@@ -276,54 +323,83 @@ void _showSkillsBehaviourOverlay(BuildContext context, {required String classId,
                         fontSize: 16, color: AppColors.backgroundDark),
                   ),
                 ),
-                // Always show both Add and View buttons regardless of current term
-                Row(
-                  children: [
-                    Expanded(
-                      child: _buildDialogButton(
-                        'Add',
-                        'assets/icons/result/edit.svg',
-                        () {
-                          Navigator.pop(context);
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => EditSkillsBehaviourScreen(
-                                classId: classId,
-                                levelId: levelId,
-                                term: termId.toString(),
-                                year: year,
-                                db: 'aalmgzmy_linkskoo_practice',
+                // Show both Add and View buttons only if showBothOptions is true
+                if (showBothOptions) ...[
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _buildDialogButton(
+                          'Add',
+                          'assets/icons/result/edit.svg',
+                          () {
+                            Navigator.pop(context);
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => EditSkillsBehaviourScreen(
+                                  classId: classId,
+                                  levelId: levelId,
+                                  term: termId.toString(),
+                                  year: year,
+                                  db: EnvConfig.dbName,
+                                ),
                               ),
-                            ),
-                          );
-                        },
+                            );
+                          },
+                        ),
                       ),
-                    ),
-                    const SizedBox(width: 8.0),
-                    Expanded(
-                      child: _buildDialogButton(
-                        'View',
-                        'assets/icons/result/eye.svg',
-                        () {
-                          Navigator.pop(context);
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => AdminSkillsBehaviourScreen(
-                                classId: classId,
-                                levelId: levelId,
-                                term: termId.toString(),
-                                year: year,
-                                db: 'aalmgzmy_linkskoo_practice',
+                      const SizedBox(width: 8.0),
+                      Expanded(
+                        child: _buildDialogButton(
+                          'View',
+                          'assets/icons/result/eye.svg',
+                          () {
+                            Navigator.pop(context);
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => AdminSkillsBehaviourScreen(
+                                  classId: classId,
+                                  levelId: levelId,
+                                  term: termId.toString(),
+                                  year: year,
+                                  db: EnvConfig.dbName,
+                                ),
                               ),
-                            ),
-                          );
-                        },
+                            );
+                          },
+                        ),
                       ),
-                    ),
-                  ],
-                ),
+                    ],
+                  ),
+                ] else ...[
+                  // Show only View button
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _buildDialogButton(
+                          'View',
+                          'assets/icons/result/eye.svg',
+                          () {
+                            Navigator.pop(context);
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => AdminSkillsBehaviourScreen(
+                                  classId: classId,
+                                  levelId: levelId,
+                                  term: termId.toString(),
+                                  year: year,
+                                  db: EnvConfig.dbName,
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ],
             ),
           ],
@@ -357,16 +433,19 @@ Widget _buildDialogButton(String text, String iconPath, VoidCallback onPressed) 
 
 
 
+
+
 // import 'package:flutter/material.dart';
 // import 'package:flutter_svg/flutter_svg.dart';
+// import 'package:linkschool/config/env_config.dart';
 // import 'package:linkschool/modules/admin/result/class_detail/student_result/comment_course_result_screen.dart';
 // import 'package:linkschool/modules/admin/result/class_detail/student_result/course_result_screen.dart';
 // import 'package:linkschool/modules/admin/result/class_detail/student_result/student_result.dart';
 // import 'package:linkschool/modules/admin/result/class_detail/student_result/composite_result_screen.dart';
 // import 'package:linkschool/modules/common/app_colors.dart';
 // import 'package:linkschool/modules/common/text_styles.dart';
-// import 'package:linkschool/modules/staff/e_learning/form_classes/edit_staff_skill_behaviour_screen.dart';
-// import 'package:linkschool/modules/staff/e_learning/form_classes/staff_skill_behaviour_screen.dart';
+// import 'package:linkschool/modules/staff/e_learning/form_classes/admin_edit_staff_skill_behaviour_screen.dart';
+// import 'package:linkschool/modules/staff/e_learning/form_classes/admin_skill_behaviour_screen.dart';
 // import 'package:provider/provider.dart';
 // import 'package:linkschool/modules/providers/admin/student_provider.dart';
 
@@ -444,8 +523,8 @@ Widget _buildDialogButton(String text, String iconPath, VoidCallback onPressed) 
 //                             separatorBuilder: (context, index) => const Divider(),
 //                             itemBuilder: (context, index) {
 //                               final student = provider.students[index];
-//                               final firstLetter = student.fullName.isNotEmpty ? 
-//                                   student.fullName[0].toUpperCase() : 'S';
+//                               final firstLetter = student.fullName.isNotEmpty ?
+//                                    student.fullName[0].toUpperCase() : 'S';
                               
 //                               return ListTile(
 //                                 leading: CircleAvatar(
@@ -516,24 +595,28 @@ Widget _buildDialogButton(String text, String iconPath, VoidCallback onPressed) 
 //                       'assets/icons/result/course.svg',
 //                       'assets/icons/result/composite_result.svg',
 //                     ];
+
 //                     final labels = [
 //                       'Comment on results',
 //                       'Skills and Behaviour',
 //                       'Course result',
 //                       'Composite result',
 //                     ];
+
 //                     final colors = [
 //                       AppColors.bgColor2,
 //                       AppColors.bgColor3,
 //                       AppColors.bgColor4,
 //                       AppColors.bgColor5,
 //                     ];
+
 //                     final iconColors = [
 //                       AppColors.iconColor1,
 //                       AppColors.iconColor2,
 //                       AppColors.iconColor3,
 //                       AppColors.iconColor4,
 //                     ];
+
 //                     return ListTile(
 //                       leading: Container(
 //                         width: 40,
@@ -582,22 +665,8 @@ Widget _buildDialogButton(String text, String iconPath, VoidCallback onPressed) 
 //                             ),
 //                           );
 //                         } else if (labels[index] == 'Skills and Behaviour') {
-//                           if (isCurrentTerm) {
-//                             _showSkillsBehaviourOverlay(context, classId: classId, levelId: levelId, year: year, termId: termId, termName: termName, isCurrentTerm: isCurrentTerm);
-//                           } else {
-//                             Navigator.push(
-//                               context,
-//                               MaterialPageRoute(
-//                                 builder: (context) => StaffSkillsBehaviourScreen(
-//                                   classId: classId,
-//                                   levelId: levelId,
-//                                   term: termId.toString(),
-//                                   year: year,
-//                                   db: 'aalmgzmy_linkskoo_practice',
-//                                 ),
-//                               ),
-//                             );
-//                           }
+//                           // Always show skills behaviour overlay regardless of current term
+//                           _showSkillsBehaviourOverlay(context, classId: classId, levelId: levelId, year: year, termId: termId, termName: termName, isCurrentTerm: isCurrentTerm);
 //                         } else if (labels[index] == 'Composite result') {
 //                           Navigator.push(
 //                             context,
@@ -645,6 +714,7 @@ Widget _buildDialogButton(String text, String iconPath, VoidCallback onPressed) 
 //                         fontSize: 16, color: AppColors.backgroundDark),
 //                   ),
 //                 ),
+//                 // Always show both Add and View buttons regardless of current term
 //                 Row(
 //                   children: [
 //                     Expanded(
@@ -661,7 +731,7 @@ Widget _buildDialogButton(String text, String iconPath, VoidCallback onPressed) 
 //                                 levelId: levelId,
 //                                 term: termId.toString(),
 //                                 year: year,
-//                                 db: 'aalmgzmy_linkskoo_practice',
+//                                 db: EnvConfig.dbName,
 //                               ),
 //                             ),
 //                           );
@@ -678,12 +748,12 @@ Widget _buildDialogButton(String text, String iconPath, VoidCallback onPressed) 
 //                           Navigator.push(
 //                             context,
 //                             MaterialPageRoute(
-//                               builder: (context) => StaffSkillsBehaviourScreen(
+//                               builder: (context) => AdminSkillsBehaviourScreen(
 //                                 classId: classId,
 //                                 levelId: levelId,
 //                                 term: termId.toString(),
 //                                 year: year,
-//                                 db: 'aalmgzmy_linkskoo_practice',
+//                                 db: EnvConfig.dbName,
 //                               ),
 //                             ),
 //                           );

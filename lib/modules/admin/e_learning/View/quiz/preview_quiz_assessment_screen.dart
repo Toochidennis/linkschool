@@ -10,13 +10,16 @@ import 'package:linkschool/modules/model/e-learning/quiz_model.dart'hide QuizQue
 class PreviewQuizAssessmentScreen extends StatelessWidget {
    late double opacity;
    final List<QuizQuestion> question;
-   final List<String> correctAnswers;
+   final List<dynamic> correctAnswers;
   final List<dynamic> userAnswer;
+  final String? mark;
+ final  Duration? duration;
   PreviewQuizAssessmentScreen({
     super.key,
     required this.question,
     required this.correctAnswers,
-    required this.userAnswer,
+    required this.userAnswer,  this.mark,
+     this.duration,
   });
 
   @override
@@ -36,24 +39,6 @@ class PreviewQuizAssessmentScreen extends StatelessWidget {
         ),
         title: const Text('Quiz Summary'),
         centerTitle: true,
-          actions: [
-            PopupMenuButton<String>(
-              icon: const Icon(Icons.more_vert, color: AppColors.primaryLight),
-              onSelected: (String result) {
-                // Handle menu item selection
-              },
-              itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
-                const PopupMenuItem<String>(
-                  value: 'edit',
-                  child: Text('Edit'),
-                ),
-                const PopupMenuItem<String>(
-                  value: 'delete',
-                  child: Text('Delete'),
-                ),
-              ],
-            ),
-          ],
         backgroundColor: AppColors.backgroundLight,
         flexibleSpace: FlexibleSpaceBar(
           background: Stack(
@@ -107,13 +92,14 @@ class PreviewQuizAssessmentScreen extends StatelessWidget {
     return '';
   }
 
-  // Method to get correct answer safely
-  String _getCorrectAnswer(int index) {
-    if (index < correctAnswers.length && correctAnswers[index] != null) {
-      return correctAnswers[index].toString().trim();
-    }
-    return '';
+String _getCorrectAnswer(int index) {
+  if (index < correctAnswers.length && correctAnswers[index] != null) {
+    final answer = correctAnswers[index] as Map<String, dynamic>;
+    return answer['imageUrl']?.toString().trim() ?? answer['text']?.toString().trim() ?? '';
   }
+  return '';
+}
+
 
   // Method to determine question status
   String _getQuestionStatus(int index) {
@@ -150,8 +136,8 @@ class PreviewQuizAssessmentScreen extends StatelessWidget {
     int score = 0;
     for (int i = 0; i < question.length; i++) {
       if (_getQuestionStatus(i) == 'Correct') {
-        score += 5;
-        //score += question[i]. ?? 5; // Default to 5 if grade is null
+       // score += question[i].questionGrade ?? 5; // Default to 5 if grade is null
+     score += question[i].questionGrade;
       }
     }
     return score;
@@ -161,9 +147,8 @@ class PreviewQuizAssessmentScreen extends StatelessWidget {
   int _calculateTotalScore() {
     int total = 0;
     for (var q in question) {
-      // total += q.questionGrade ?? 5; 
-      //// Default to 5 if grade is null
-      total =5;
+      //total += q.questionGrade ?? 5; // Default to 5 if grade is null
+    total += q.questionGrade;
     }
     return total;
   }
@@ -179,58 +164,70 @@ class PreviewQuizAssessmentScreen extends StatelessWidget {
     return correct;
   }
 
-  Widget _buildScoreCard() {
-    int correctAnswers = _countCorrectAnswers();
-    int totalQuestions = question.length;
-    int score = _calculateScore();
-    int totalScore = _calculateTotalScore();
+ Widget _buildScoreCard() {
+  int correctAnswers = _countCorrectAnswers();
+  int totalQuestions = question.length;
+  int totalScore = _calculateTotalScore();
+  int score = mark != null ? int.tryParse(mark!) ?? 0 : _calculateScore(); // Use mark if available
 
-    return Card(
-      elevation: 4,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-      child: Container(
-        height: 65,
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text(
-                  'Your Score',
-                  style: TextStyle(color: Colors.grey),
-                ),
-                Text(
-                  '$correctAnswers of $totalQuestions questions', 
-                  style: AppTextStyles.normal500(fontSize: 12, color: AppColors.backgroundDark)
-                ),
-              ],
-            ),
-            const SizedBox(height: 4),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  '$score/$totalScore',
-                  style: AppTextStyles.normal700(fontSize: 18, color: AppColors.eLearningContColor2),
-                ),
-                Row(
-                  children: [
-                    const Icon(Icons.access_time, color: Colors.grey, size: 16),
-                    const SizedBox(width: 4),
-                    Text(
-                      '56mins 40seconds', // You can make this dynamic too if needed
-                      style: AppTextStyles.normal600(fontSize: 12, color: AppColors.backgroundDark),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ],
-        ),
+  return Card(
+    elevation: 4,
+    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+    child: Container(
+      height: 65,
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'Your Score',
+                style: TextStyle(color: Colors.grey),
+              ),
+              Text(
+                '$correctAnswers of $totalQuestions questions',
+                style: AppTextStyles.normal500(fontSize: 12, color: AppColors.backgroundDark),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                '$score/$totalScore',
+                style: AppTextStyles.normal700(fontSize: 18, color: AppColors.eLearningContColor2),
+              ),
+              Row(
+                children: [
+                  const Icon(Icons.access_time, color: Colors.grey, size: 16),
+                  const SizedBox(width: 4),
+                  Text(
+                    duration != null
+                        ? _formatTime(duration!.inSeconds)
+                        : 'N/A',
+                    style: AppTextStyles.normal600(fontSize: 12, color: AppColors.backgroundDark),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ],
       ),
-    );
+    ),
+  );
+}
+  String _formatTime(int seconds) {
+    int hours = seconds ~/ 3600;
+    int minutes = (seconds % 3600) ~/ 60;
+    int remainingSeconds = seconds % 60;
+    if (hours == 0 ) {
+      return "${minutes.toString().padLeft(2, '0')}:${remainingSeconds.toString().padLeft(2, '0')}";
+    }else {
+      return '${hours.toString().padLeft(2, '0')}:${minutes.toString().padLeft(2, '0')}:${remainingSeconds.toString().padLeft(2, '0')}';
+    }
   }
 
   Widget _buildDynamicQuestionCard(int index) {
@@ -238,8 +235,9 @@ class PreviewQuizAssessmentScreen extends StatelessWidget {
     Color statusColor = _getStatusColor(status);
     String userAns = _getUserAnswer(index);
     String correctAns = _getCorrectAnswer(index);
-    //int marks = question[index].questionGrade ?? 5;
-    int marks = 5;
+int marks = question[index].questionGrade;
+   
+    
 
     return Card(
       elevation: 2,
@@ -290,22 +288,22 @@ class PreviewQuizAssessmentScreen extends StatelessWidget {
             const SizedBox(height: 8),
             
             // Display options for multiple choice questions
-            if (question[index] is OptionsQuestion &&
-                (question[index] as OptionsQuestion).options.isNotEmpty) ...[
-              const Text('Options:', style: TextStyle(fontWeight: FontWeight.w600)),
-              const SizedBox(height: 4),
-              ...(question[index] as OptionsQuestion).options.map<Widget>((option) => Padding(
-                padding: const EdgeInsets.only(left: 16.0, bottom: 2.0),
-                child: Text('• ${option['text'] ?? option['option'] ?? option.toString()}'),
-              )).toList(),
-              const SizedBox(height: 8),
-            ],
-            
+        
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 const Text('Your answer:'),
-                Flexible(
+                if(userAns.endsWith('.jpg'))
+                GestureDetector(
+                  child: Image.network(
+                           "https://linkskool.net/$userAns",
+                            height: 50,
+                            width: 50,
+                            fit: BoxFit.contain,
+                          ),
+                )
+
+              else  Flexible(
                   child: Text(
                     userAns.isEmpty ? 'No answer' : userAns,
                     textAlign: TextAlign.right,
@@ -322,7 +320,17 @@ class PreviewQuizAssessmentScreen extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
+                
                 const Text('Correct Answer:'),
+                if (correctAns.endsWith(".jpg"))
+               Image.network(
+                   "https://linkskool.net/$correctAns",
+                 height: 50,
+                 width: 50,
+                 fit: BoxFit.contain,
+               )
+      else
+
                 Flexible(
                   child: Text(
                     correctAns,
@@ -445,275 +453,3 @@ class PreviewQuizAssessmentScreen extends StatelessWidget {
     );
   }
 }
-
-
-
-// // ignore_for_file: must_be_immutable
-
-// import 'package:flutter/material.dart';
-// import 'package:linkschool/modules/admin/e_learning/View/question/assessment_screen.dart' ;
-// import 'package:linkschool/modules/common/app_colors.dart';
-// import 'package:linkschool/modules/common/constants.dart';
-// import 'package:linkschool/modules/common/text_styles.dart';
-// import 'package:linkschool/modules/model/e-learning/quiz_model.dart'hide QuizQuestion;
-
-// class PreviewQuizAssessmentScreen extends StatelessWidget {
-//    late double opacity;
-//    final List<QuizQuestion> question;
-//    final List<dynamic> correctAnswers;
-//   final List<dynamic> userAnswer;
-//   PreviewQuizAssessmentScreen({
-//     super.key,
-//     required this.question,
-//     required this.correctAnswers,
-//     required this.userAnswer,
-//   });
-
-//   @override
-//   Widget build(BuildContext context) {
-//     final Brightness brightness = Theme.of(context).brightness;
-//     opacity = brightness == Brightness.light ? 0.1 : 0.15;
-//     return Scaffold(
-//       appBar: AppBar(
-//         leading: IconButton(
-//           onPressed: () => Navigator.of(context).pop(),
-//           icon: Image.asset(
-//             'assets/icons/arrow_back.png',
-//             color: AppColors.primaryLight,
-//             width: 34.0,
-//             height: 34.0,
-//           ),
-//         ),
-//         title: const Text('Quiz Summary'),
-//         centerTitle: true,
-//           actions: [
-//             PopupMenuButton<String>(
-//               icon: const Icon(Icons.more_vert, color: AppColors.primaryLight),
-//               onSelected: (String result) {
-//                 // Handle menu item selection
-//               },
-//               itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
-//                 const PopupMenuItem<String>(
-//                   value: 'edit',
-//                   child: Text('Edit'),
-//                 ),
-//                 const PopupMenuItem<String>(
-//                   value: 'delete',
-//                   child: Text('Delete'),
-//                 ),
-//               ],
-//             ),
-//           ],
-//         backgroundColor: AppColors.backgroundLight,
-//         flexibleSpace: FlexibleSpaceBar(
-//           background: Stack(
-//             children: [
-//               Positioned.fill(
-//                 child: Opacity(
-//                   opacity: opacity,
-//                   child: Image.asset(
-//                     'assets/images/background.png',
-//                     fit: BoxFit.cover,
-//                   ),
-//                 ),
-//               )
-//             ],
-//           ),
-//         ),
-//       ),
-//       body: Container(
-//         decoration: Constants.customBoxDecoration(context),
-//         child: SingleChildScrollView(
-//           padding: const EdgeInsets.all(16),
-//           child: Column(
-//             crossAxisAlignment: CrossAxisAlignment.start,
-//             children: [
-//               Text(
-//                 '2nd Continuous Assessment Test',
-//                 style: AppTextStyles.normal600(fontSize: 18, color: AppColors.eLearningContColor2),
-//               ),
-//               const SizedBox(height: 16),
-//               _buildScoreCard(),
-//               const SizedBox(height: 16),
-//               _buildQuestionCard(
-//                 questionNumber: 1,
-//                 status: 'Correct',
-//                 statusColor: AppColors.attCheckColor2,
-//                 question: 'What is the major reason for corruption in Nigeria?',
-//                 userAnswer: 'Bad Governance',
-//                 correctAnswer: 'Bad Governance',
-//                 marks: 5,
-//               ),
-//               const SizedBox(height: 16),
-//               _buildQuestionCard(
-//                 questionNumber: 2,
-//                 status: 'Wrong',
-//                 statusColor: AppColors.eLearningRedBtnColor,
-//                 question: 'Which year did Nigeria gain independence?',
-//                 userAnswer: '1963',
-//                 correctAnswer: '1960',
-//                 marks: 5,
-//               ),
-//               const SizedBox(height: 16),
-//               _buildQuestionCard(
-//                 questionNumber: 3,
-//                 status: 'No answer',
-//                 statusColor: AppColors.text5Light,
-//                 question: 'Who was the first president of Nigeria?',
-//                 userAnswer: '',
-//                 correctAnswer: 'Nnamdi Azikiwe',
-//                 marks: 5,
-//               ),
-//             ],
-//           ),
-//         ),
-//       ),
-//     );
-//   }
-
-
-  
-
-//   Widget _buildScoreCard() {
-//     return Card(
-//       elevation: 4,
-//       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-//       child: Container(
-//         height: 65,
-//         padding: const EdgeInsets.symmetric(horizontal: 16),
-//         child: Column(
-//           mainAxisAlignment: MainAxisAlignment.center,
-//           children: [
-//             Row(
-//               mainAxisAlignment: MainAxisAlignment.spaceBetween,
-//               children: [
-//                 const Text(
-//                   'Your Score',
-//                   style: TextStyle(color: Colors.grey),
-//                 ),
-//                 Text('10 of 15 questions', style: AppTextStyles.normal500(fontSize: 12, color: AppColors.backgroundDark)),
-//               ],
-//             ),
-//             const SizedBox(height: 4),
-//             Row(
-//               mainAxisAlignment: MainAxisAlignment.spaceBetween,
-//               children: [
-//                 Text(
-//                   '175/200',
-//                   style: AppTextStyles.normal700(fontSize: 18, color: AppColors.eLearningContColor2),
-//                 ),
-//                 Row(
-//                   children: [
-//                     const Icon(Icons.access_time, color: Colors.grey, size: 16),
-//                     const SizedBox(width: 4),
-//                     Text(
-//                       '56mins 40seconds',
-//                       style: AppTextStyles.normal600(fontSize: 12, color: AppColors.backgroundDark),
-//                     ),
-//                   ],
-//                 ),
-//               ],
-//             ),
-//           ],
-//         ),
-//       ),
-//     );
-//   }
-
-//   // Function to determine the dynamic color for marks
-//   Color _getMarksColor(String status) {
-//     switch (status) {
-//       case 'Correct':
-//         return Colors.green;
-//       case 'Wrong':
-//         return Colors.red;
-//       case 'No answer':
-//       default:
-//         return Colors.red;
-//     }
-//   }
-
-//   Widget _buildQuestionCard({
-//     required int questionNumber,
-//     required String status,
-//     required Color statusColor,
-//     required String question,
-//     required String userAnswer,
-//     required String correctAnswer,
-//     required int marks,
-//   }) {
-//     return Card(
-//       elevation: 2,
-//       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-//       child: Padding(
-//         padding: const EdgeInsets.all(16),
-//         child: Column(
-//           crossAxisAlignment: CrossAxisAlignment.start,
-//           children: [
-//             Row(
-//               mainAxisAlignment: MainAxisAlignment.spaceBetween,
-//               children: [
-//                 Text('Question $questionNumber', style: AppTextStyles.normal600(fontSize: 18, color: AppColors.eLearningContColor2)),
-//                 Container(
-//                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-//                   decoration: BoxDecoration(
-//                     color: statusColor,
-//                     borderRadius: BorderRadius.circular(4),
-//                   ),
-//                   child: Row(
-//                     mainAxisSize: MainAxisSize.min,
-//                     children: [
-//                       Text(
-//                         status,
-//                         style: const TextStyle(color: Colors.white, fontSize: 12),
-//                       ),
-//                       if (status != 'No answer') ...[
-//                         const SizedBox(width: 4),
-//                         Icon(
-//                           status == 'Correct' ? Icons.check : Icons.close,
-//                           color: Colors.white,
-//                           size: 12,
-//                         ),
-//                       ],
-//                     ],
-//                   ),
-//                 ),
-//               ],
-//             ),
-//             const SizedBox(height: 8),
-//             Text(
-//               question,
-//               style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-//             ),
-//             const SizedBox(height: 8),
-//             Row(
-//               mainAxisAlignment: MainAxisAlignment.spaceBetween,
-//               children: [
-//                 const Text('Your answer:'),
-//                 Text(userAnswer.isEmpty ? 'No answer' : userAnswer),
-//               ],
-//             ),
-//             const SizedBox(height: 4),
-//             Row(
-//               mainAxisAlignment: MainAxisAlignment.spaceBetween,
-//               children: [
-//                 const Text('Correct Answer:'),
-//                 Text(correctAnswer),
-//               ],
-//             ),
-//             const SizedBox(height: 8),
-//             Align(
-//               alignment: Alignment.centerRight,
-//               // Use the dynamic color for the marks
-//               child: Text(
-//                 '$marks marks',
-//                 style: AppTextStyles.normal600(fontSize: 16, color: _getMarksColor(status)),
-//               ),
-//             ),
-//           ],
-//         ),
-//       ),
-//     );
-//   }
-// }
-

@@ -9,11 +9,15 @@ import 'package:linkschool/modules/model/e-learning/topic_model.dart';
 import 'package:linkschool/modules/providers/admin/e_learning/topic_provider.dart';
 import 'package:provider/provider.dart';
 
+
 class SelectTopicScreen extends StatefulWidget {
   final String callingScreen;
   final VoidCallback? onTopicCreated;
   final String? levelId;
   final int? syllabusId;
+  final courseId;
+  final courseName;
+  final int? preSelectedTopicId; // Add this parameter
 
   const SelectTopicScreen({
     super.key,
@@ -21,6 +25,9 @@ class SelectTopicScreen extends StatefulWidget {
     this.onTopicCreated,
     this.levelId,
     this.syllabusId,
+    this.courseId,
+    this.courseName,
+    this.preSelectedTopicId, // Add this parameter
   });
 
   @override
@@ -152,27 +159,26 @@ class _SelectTopicScreenState extends State<SelectTopicScreen> {
           ),
         ),
       ),
-      floatingActionButton: widget.syllabusId != null && widget.syllabusId! > 0
-          ? FloatingActionButton(
-              onPressed: () async {
-                await Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (context) => CreateTopicScreen(
-                      levelId: widget.levelId,
-                      syllabusId: widget.syllabusId!, // Safe to use ! here due to the condition above
-                    ),
-                  ),
-                );
-                // Refresh topics after creating a new one
-                if (widget.syllabusId != null && widget.syllabusId! > 0) {
-                  Provider.of<TopicProvider>(context, listen: false)
-                      .fetchTopic(syllabusId: widget.syllabusId!);
-                }
-              },
-              backgroundColor: AppColors.primaryLight,
-              child: const Icon(Icons.add, color: AppColors.text6Light),
-            )
-          : null, // Don't show FAB if syllabusId is null
+      floatingActionButton: FloatingActionButton(
+        onPressed: () async {
+          await Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (context) => CreateTopicScreen(
+                levelId: widget.levelId,
+                syllabusId: widget.syllabusId!,
+                courseId: widget.courseId,
+                courseName: widget.courseName,
+              ),
+            ),
+          );
+          if (widget.syllabusId != null) {
+            Provider.of<TopicProvider>(context, listen: false)
+                .fetchTopic(syllabusId: widget.syllabusId!);
+          }
+        },
+        child: const Icon(Icons.add, color: AppColors.text6Light),
+        backgroundColor: AppColors.primaryLight,
+      ),
     );
   }
 

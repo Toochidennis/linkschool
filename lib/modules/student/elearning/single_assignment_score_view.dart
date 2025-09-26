@@ -17,7 +17,7 @@ import '../../common/custom_toaster.dart';
 import '../../common/text_styles.dart';
 import '../../model/student/assignment_submissions_model.dart';
 import '../../model/student/comment_model.dart';
-import '../../providers/student/comment_provider.dart';
+import '../../providers/student/student_comment_provider.dart';
 
 
 class SingleAssignmentScoreView extends StatefulWidget {
@@ -784,7 +784,7 @@ class _AddCommentModalState extends State<AddCommentModal> {
 
       try {
 //
-        final commentProvider = Provider.of<CommentProvider>(context, listen: false);
+        final commentProvider = Provider.of<StudentCommentProvider>(context, listen: false);
         final contentId = _editingComment?.id;
         if (_isEditing) {
           comment['content_id'];
@@ -826,7 +826,7 @@ class _AddCommentModalState extends State<AddCommentModal> {
     );
   }
   Widget _buildCommentSection() {
-    return Consumer<CommentProvider>(
+    return Consumer<StudentCommentProvider>(
       builder: (context, commentProvider, child) {
         final commentList = commentProvider.comments;
         return Column(
@@ -987,7 +987,7 @@ class _AddCommentModalState extends State<AddCommentModal> {
 
               // Scrollable content
               Expanded(
-                child: Consumer<CommentProvider>(
+                child: Consumer<StudentCommentProvider>(
                   builder: (context, commentProvider, child) {
                     final commentList = commentProvider.comments;
 

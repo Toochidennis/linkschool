@@ -7,6 +7,8 @@ class AttachmentItem {
 
   final String? fileContent;
   final String?  content;
+  final bool isExisting;
+    final String? originalServerFileName; 
   final String? base64Content;
   final File? file;             // Actual file object
 // base64 or URL
@@ -16,6 +18,8 @@ class AttachmentItem {
     this.fileType,
     this.fileContent,
     this.content,
+    this.isExisting = false, 
+       this.originalServerFileName,
     this.base64Content,
     this.file,
 

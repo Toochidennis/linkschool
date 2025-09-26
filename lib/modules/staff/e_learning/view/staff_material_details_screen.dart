@@ -1,45 +1,146 @@
+import 'dart:convert';
+import 'dart:io';
+import 'package:chewie/chewie.dart';
 import 'package:flutter/material.dart';
+import 'package:hive/hive.dart';
 import 'package:intl/intl.dart';
+import 'package:linkschool/modules/admin/e_learning/add_material_screen.dart';
 import 'package:linkschool/modules/admin/e_learning/admin_assignment_screen.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
+import 'package:linkschool/modules/common/constants.dart';
+import 'package:linkschool/modules/common/custom_toaster.dart';
+import 'package:linkschool/modules/common/pdf_reader.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/model/e-learning/comment_model.dart';
-import 'package:linkschool/modules/model/e-learning/material_model.dart'
-    as custom;
-
+import 'package:linkschool/modules/model/e-learning/material_model.dart' as custom;
+import 'package:linkschool/modules/providers/admin/e_learning/admin_comment_provider.dart';
+import 'package:linkschool/modules/providers/admin/e_learning/comment_provider.dart';
+import 'package:linkschool/modules/providers/admin/e_learning/delete_sylabus_content.dart';
+import 'package:linkschool/modules/services/api/service_locator.dart';
+import 'package:linkschool/modules/staff/e_learning/sub_screens/staff_add_material_screen.dart';
+import 'package:provider/provider.dart';
+import 'package:skeletonizer/skeletonizer.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:video_player/video_player.dart';
+import 'package:http/http.dart' as http;
+import 'package:video_thumbnail/video_thumbnail.dart';
 import '../../../common/widgets/portal/attachmentItem.dart';
 
 class StaffMaterialDetailsScreen extends StatefulWidget {
   final custom.Material material;
+  final int? syllabusId;
+  final String? courseId;
+  final String? levelId;
+  final String? classId;
+  final String? courseName;
+  final int? itemId;
+  final List<Map<String, dynamic>>? syllabusClasses;
 
   const StaffMaterialDetailsScreen({
     super.key,
     required this.material,
+    this.syllabusId,
+    this.courseId,
+    this.levelId,
+    this.classId,
+    this.courseName,
+    this.itemId,
+    this.syllabusClasses,
   });
 
   @override
-  StaffMaterialDetailsScreenState createState() => StaffMaterialDetailsScreenState();
+  _StaffMaterialDetailsScreenState createState() => _StaffMaterialDetailsScreenState();
 }
 
-class StaffMaterialDetailsScreenState
-    extends State<StaffMaterialDetailsScreen> {
+class _StaffMaterialDetailsScreenState extends State<StaffMaterialDetailsScreen>
+    with SingleTickerProviderStateMixin {
+  late TabController _tabController;
   final TextEditingController _commentController = TextEditingController();
+  final ScrollController _scrollController = ScrollController();
+  final FocusNode _commentFocusNode = FocusNode();
   List<Comment> comments = [];
   bool _isAddingComment = false;
+  bool _isEditing = false;
+  Comment? _editingComment;
   late double opacity;
-  final String networkImage =
-      'https://img.freepik.com/free-vector/gradient-human-rights-day-background_52683-149974.jpg?t=st=1717832829~exp=1717833429~hmac=3e938edcacd7fef2a791b36c7d3decbf64248d9760dd7da0a304acee382b8a86';
+  final String networkImage = 'https://img.freepik.com/free-vector/gradient-human-rights-day-background_52683-149974.jpg?t=st=1717832829~exp=1717833429~hmac=3e938edcacd7fef2a791b36c7d3decbf64248d9760dd7da0a304acee382b8a86';
+  String? creatorName;
+  int? creatorId;
+  int? academicTerm;
+  String? academicYear;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserData();
+    if (mounted) setState(() {});
+    _tabController = TabController(length: 2, vsync: this);
+    locator<CommentProvider>().fetchComments(widget.itemId.toString());
+    _scrollController.addListener(() {
+      if (_scrollController.position.pixels >=
+              _scrollController.position.maxScrollExtent * 0.9 &&
+          !locator<CommentProvider>().isLoading &&
+          locator<CommentProvider>().hasNext) {
+        Provider.of<CommentProvider>(context, listen: false)
+            .fetchComments(widget.itemId.toString());
+      }
+    });
+    _tabController.addListener(_handleTabChange);
+  }
+
+  void _handleTabChange() {
+    if (_tabController.indexIsChanging && mounted) {
+      setState(() {
+        _isAddingComment = false;
+        _isEditing = false;
+        _editingComment = null;
+        _commentController.clear();
+        _commentFocusNode.unfocus();
+      });
+    }
+  }
 
   @override
   void dispose() {
+    _tabController.dispose();
     _commentController.dispose();
+    _scrollController.dispose();
+    _commentFocusNode.dispose();
     super.dispose();
+  }
+
+  Future<void> _loadUserData() async {
+    try {
+      final userBox = Hive.box('userData');
+      final storedUserData = userBox.get('userData') ?? userBox.get('loginResponse');
+      if (storedUserData != null) {
+        final processedData = storedUserData is String
+            ? json.decode(storedUserData)
+            : storedUserData as Map<String, dynamic>;
+        final response = processedData['response'] ?? processedData;
+        final data = response['data'] ?? response;
+        final profile = data['profile'] ?? {};
+        final settings = data['settings'] ?? {};
+        setState(() {
+          creatorId = profile['staff_id'] as int?;
+          creatorName = profile['name']?.toString();
+          academicYear = settings['year']?.toString();
+          academicTerm = settings['term'] as int?;
+        });
+      }
+      print('Creator ID: $creatorId');
+      print('Creator Name: $creatorName');
+      print('Academic Year: $academicYear');
+      print('Academic Term: $academicTerm');
+    } catch (e) {
+      print('Error loading user data: $e');
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    // final Brightness brightness = Theme.of(context).brightness;
-    // opacity = brightness == Brightness.light ? 0.1 : 0.15;
+    final Brightness brightness = Theme.of(context).brightness;
+    opacity = brightness == Brightness.light ? 0.1 : 0.15;
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
@@ -52,7 +153,7 @@ class StaffMaterialDetailsScreenState
           ),
         ),
         title: Text(
-          "Quiz ",
+          'Material',
           style: AppTextStyles.normal600(
             fontSize: 24.0,
             color: AppColors.paymentTxtColor1,
@@ -60,13 +161,43 @@ class StaffMaterialDetailsScreenState
         ),
         actions: [
           PopupMenuButton<String>(
-            icon: const Icon(
-              Icons.more_vert,
-              color: AppColors.paymentTxtColor1,
-            ),
+            icon: const Icon(Icons.more_vert, color: AppColors.paymentTxtColor1),
             onSelected: (String result) {
-              final attachments = widget.material.attachments;
-              print('${attachments}');
+              print('mmmmmmmmmmmmmmmm ${widget.material.title}');
+              switch (result) {
+                case 'edit':
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => StaffAddMaterialScreen(
+                        itemId: widget.itemId,
+                        syllabusId: widget.syllabusId,
+                        courseId: widget.courseId,
+                        levelId: widget.levelId,
+                        classId: widget.classId,
+                        courseName: widget.courseName,
+                        editMode: true,
+                        syllabusClasses: widget.syllabusClasses,
+                        materialToEdit: custom.Material(
+                          title: widget.material.title,
+                          description: widget.material.description,
+                          selectedClass: widget.material.selectedClass,
+                          startDate: widget.material.startDate,
+                          endDate: widget.material.endDate,
+                          topic: widget.material.topic,
+                          attachments: widget.material.attachments,
+                          duration: widget.material.duration,
+                          marks: widget.material.marks,
+                        ),
+                        onSave: (material) {},
+                      ),
+                    ),
+                  );
+                  break;
+                case 'delete':
+                  deleteMaterial(widget.itemId);
+                  break;
+              }
             },
             itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
               const PopupMenuItem<String>(
@@ -81,18 +212,71 @@ class StaffMaterialDetailsScreenState
           ),
         ],
         backgroundColor: AppColors.backgroundLight,
-        // flexibleSpace: Container(
-        //   decoration: BoxDecoration(
-        //     image: DecorationImage(
-        //       image: AssetImage('assets/images/background.png'),
-        //       fit: BoxFit.cover,
-        //       opacity: opacity,
-        //     ),
-        //   ),
-        // ),
+        flexibleSpace: FlexibleSpaceBar(
+          background: Stack(
+            children: [
+              Positioned.fill(
+                child: Opacity(
+                  opacity: opacity,
+                  child: Image.asset(
+                    'assets/images/background.png',
+                    fit: BoxFit.cover,
+                  ),
+                ),
+              )
+            ],
+          ),
+        ),
       ),
-      body: _buildInstructionsTab(),
+      body: Container(
+        color: Colors.white,
+        child: _buildInstructionsTab(),
+      ),
+      bottomNavigationBar: _tabController.index == 0
+          ? SafeArea(
+              child: AnimatedPadding(
+                duration: const Duration(milliseconds: 300),
+                padding: EdgeInsets.only(
+                  bottom: MediaQuery.of(context).viewInsets.bottom,
+                  left: 8.0,
+                  right: 8.0,
+                  top: 8.0,
+                ),
+                child: _isAddingComment
+                    ? _buildCommentInput()
+                    : InkWell(
+                        onTap: () {
+                          setState(() {
+                            _isAddingComment = true;
+                            WidgetsBinding.instance.addPostFrameCallback((_) {
+                              _commentFocusNode.requestFocus();
+                            });
+                          });
+                        },
+                        child: Padding(
+                          padding: const EdgeInsets.all(12.0),
+                          child: Text(
+                            'Add class comment',
+                            style: AppTextStyles.normal500(
+                                fontSize: 16.0, color: AppColors.paymentTxtColor1),
+                          ),
+                        ),
+                      ),
+              ),
+            )
+          : null,
     );
+  }
+
+  Future<void> deleteMaterial(id) async {
+    try {
+      final provider = locator<DeleteSyllabusProvider>();
+      await provider.deleteMaterial(id.toString());
+      CustomToaster.toastSuccess(context, 'Success', 'Material deleted successfully');
+      Navigator.of(context).pop();
+    } catch (e) {
+      print('Error deleting material: $e');
+    }
   }
 
   Widget _buildInstructionsTab() {
@@ -103,7 +287,6 @@ class StaffMaterialDetailsScreenState
           _buildDueDate(),
           _buildDivider(),
           _buildTitle(),
-          _buildGrade(),
           _buildDivider(),
           _buildDescription(),
           _buildDivider(),
@@ -123,8 +306,6 @@ class StaffMaterialDetailsScreenState
   }
 
   Widget _buildDueDate() {
-    final DateTime dueDate =
-        DateTime.now().add(const Duration(days: 5, hours: 2));
     return Padding(
       padding: const EdgeInsets.only(
           top: 20.0, bottom: 16.0, right: 16.0, left: 16.0),
@@ -136,8 +317,7 @@ class StaffMaterialDetailsScreenState
                 fontSize: 16.0, color: AppColors.eLearningTxtColor1),
           ),
           Text(
-            DateFormat('E, dd MMM yyyy (hh:mm a)')
-                .format(widget.material.endDate),
+            DateFormat('E, dd MMM yyyy (hh:mm a)').format(widget.material.endDate),
             style: AppTextStyles.normal500(fontSize: 16.0, color: Colors.black),
           ),
         ],
@@ -146,7 +326,6 @@ class StaffMaterialDetailsScreenState
   }
 
   Widget _buildTitle() {
-    const String title = 'Mid-Term Assignment';
     return Container(
       width: double.infinity,
       decoration: const BoxDecoration(
@@ -167,28 +346,7 @@ class StaffMaterialDetailsScreenState
     );
   }
 
-  Widget _buildGrade() {
-    const String marks = "85/100";
-    return Padding(
-      padding: const EdgeInsets.all(16.0),
-      child: Row(
-        children: [
-          Text(
-            'Grade : ',
-            style: AppTextStyles.normal600(
-                fontSize: 16.0, color: AppColors.eLearningTxtColor1),
-          ),
-          Text(
-            widget.material.marks,
-            style: AppTextStyles.normal500(fontSize: 16.0, color: Colors.black),
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildDescription() {
-    const String description = "Complete the mid-term review on chapters 1-3.";
     return Padding(
       padding: const EdgeInsets.all(16.0),
       child: Row(
@@ -201,8 +359,7 @@ class StaffMaterialDetailsScreenState
           Expanded(
             child: Text(
               widget.material.description,
-              style:
-                  AppTextStyles.normal500(fontSize: 16.0, color: Colors.black),
+              style: AppTextStyles.normal500(fontSize: 16.0, color: Colors.black),
             ),
           ),
         ],
@@ -210,1094 +367,686 @@ class StaffMaterialDetailsScreenState
     );
   }
 
-  Widget _buildAttachments() {
-    final attachments = widget.material.attachments; // List<AttachmentItem>
-    if (attachments == null || attachments.isEmpty) {
-      print(attachments);
-      return const SizedBox.shrink();
+ Widget _buildAttachments() {
+  final attachments = widget.material.attachments;
+  if (attachments == null || attachments.isEmpty) {
+    return const Center(child: Text('No attachment available'));
+  }
+  return Padding(
+    padding: const EdgeInsets.all(16.0),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Attachments',
+          style: AppTextStyles.normal600(
+              fontSize: 18.0, color: AppColors.eLearningTxtColor1),
+        ),
+        const SizedBox(height: 12),
+        GridView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 2,
+            crossAxisSpacing: 12.0,
+            mainAxisSpacing: 12.0,
+            childAspectRatio: 1.2,
+          ),
+          itemCount: attachments.length,
+          itemBuilder: (context, index) {
+            return _buildAttachmentItem(attachments[index]);
+          },
+        ),
+      ],
+    ),
+  );
+}
+
+  String _getFileType(String? fileName) {
+    if (fileName == null) return 'unknown';
+    final extension = fileName.toLowerCase().split('.').last;
+    if (['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'].contains(extension)) {
+      return 'image';
     }
-    return Padding(
-      padding: const EdgeInsets.all(16.0),
-      child: Row(
-        children: List.generate(attachments.length, (index) {
-          return Expanded(
-            child: Padding(
-              padding: EdgeInsets.only(
-                  right: index < attachments.length - 1 ? 16.0 : 0),
-              child: _buildAttachmentItem(attachments[index]),
-            ),
-          );
-        }),
-      ),
-    );
+    if (['mp4', 'avi', 'mov', 'wmv', 'flv', 'webm', 'm4v', '3gp'].contains(extension)) {
+      return 'video';
+    }
+if (['pdf','doc', 'docx', 'txt', 'rtf'].contains(extension)) {
+      return 'pdf';
+    }
+   
+    if (['.com', '.org', '.net', '.edu', 'http', 'https'].contains(extension) || fileName.startsWith('http')) {
+      return 'url';
+    }
+    if (['xls', 'xlsx', 'csv'].contains(extension)) {
+      return 'spreadsheet';
+    }
+    if (['ppt', 'pptx'].contains(extension)) {
+      return 'presentation';
+    }
+    if (['zip', 'rar', '7z', 'tar', 'gz'].contains(extension)) {
+      return 'archive';
+    }
+    return 'unknown';
   }
 
-  // Widget _buildAttachments() {
-  //   const List<Map<String, String>> attachments = [
-  //     {
-  //       "type": "image",
-  //       "url":
-  //           "https://img.freepik.com/free-vector/gradient-human-rights-day-background_52683-149974.jpg?t=st=1717832829~exp=1717833429~hmac=3e938edcacd7fef2a791b36c7d3decbf64248d9760dd7da0a304acee382b8a86"
-  //     },
-  //     {"type": "link", "url": "https://jdidlf.com.ng..."},
-  //   ];
-  //   return Padding(
-  //     padding: const EdgeInsets.all(16.0),
-  //     child: Row(
-  //       children: [
-  //         Expanded(
-  //           child: _buildAttachmentItem(attachments[0]),
-  //         ),
-  //         const SizedBox(width: 16),
-  //         Expanded(
-  //           child: _buildAttachmentItem(attachments[1]),
-  //         ),
-  //       ],
-  //     ),
-  //   );
-  // }
+  IconData _getFileIcon(String fileType) {
+    switch (fileType) {
+      case 'image':
+        return Icons.image;
+      case 'video':
+        return Icons.video_library;
+      case 'pdf':
+        return Icons.picture_as_pdf;
+      case 'document':
+        return Icons.description;
+      case 'spreadsheet':
+        return Icons.table_chart;
+      case 'presentation':
+        return Icons.slideshow;
+      case 'archive':
+        return Icons.archive;
+      default:
+        return Icons.insert_drive_file;
+    }
+  }
 
-  // Widget _buildAttachmentItem(Map<String, String> attachment) {
-  //   if (attachment["type"] == "image") {
-  //     return ClipRRect(
-  //       borderRadius: BorderRadius.circular(8),
-  //       child: Image.network(
-  //         attachment["url"]!,
-  //         fit: BoxFit.cover,
-  //         height: 100,
-  //       ),
-  //     );
-  //   } else {
-  //     return Container(
-  //       height: 100,
-  //       color: Colors.blue.shade100,
-  //       child: Column(
-  //         children: [
-  //           Expanded(
-  //             flex: 2,
-  //             child: Image.network(
-  //               networkImage,
-  //               fit: BoxFit.cover,
-  //               width: double.infinity,
-  //             ),
-  //           ),
-  //           Expanded(
-  //             flex: 2,
-  //             child: Padding(
-  //               padding: const EdgeInsets.symmetric(horizontal: 8.0),
-  //               child: Row(
-  //                 children: [
-  //                   const Icon(Icons.link, color: Colors.blue),
-  //                   const SizedBox(width: 8),
-  //                   Expanded(
-  //                     child: Text(
-  //                       attachment["url"]!,
-  //                       overflow: TextOverflow.ellipsis,
-  //                     ),
-  //                   ),
-  //                 ],
-  //               ),
-  //             ),
-  //           ),
-  //         ],
-  //       ),
-  //     );
-  //   }
-  // }
+  Color _getFileColor(String fileType) {
+    switch (fileType) {
+      case 'image':
+        return Colors.blue[700]!;
+      case 'video':
+        return Colors.blue[700]!;
+      case 'pdf':
+        return Colors.blue[700]!;
+      case 'document':
+        return Colors.blue[700]!;
+      case 'spreadsheet':
+        return Colors.blue[700]!;
+      case 'presentation':
+        return Colors.blue[700]!;
+      case 'archive':
+        return Colors.blue[700]!;
+      default:
+        return Colors.blue[700]!;
+    }
+  }
 
-  Widget _buildAttachmentItem(AttachmentItem attachment) {
-    // Detect image by file extension or type
-    final isImage = attachment.fileName!.toLowerCase().endsWith('.jpg') ||
-        attachment.fileName!.toLowerCase().endsWith('.jpeg') ||
-        attachment.fileName!.toLowerCase().endsWith('.png') ||
-      attachment.fileName!.toLowerCase().endsWith('.gif') ||
-        attachment.iconPath!
-            .contains('material.svg') || // your mapping for images
-        attachment.iconPath!.contains('photo');
+  Future<void> _launchUrl(String url) async {
+    try {
+      final Uri uri = Uri.parse(url);
+      if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
+        CustomToaster.toastError(context, 'Error', 'Could not launch $url');
+      }
+    } catch (e) {
+      CustomToaster.toastError(context, 'Error', 'Invalid URL: $url');
+    }
+  }
 
-    if (isImage) {
-      // Build the full URL if needed
-      final imageUrl =
-          "https://linkskool.net/api/v3/portal/${attachment.fileName}";
-
-      print(imageUrl);
-
-      return ClipRRect(
-        borderRadius: BorderRadius.circular(8),
-        child: Image.network(
-          imageUrl,
-          fit: BoxFit.cover,
-          height: 100,
-          errorBuilder: (context, error, stackTrace) => Image.network(
-            networkImage,
-            fit: BoxFit.cover,
-            height: 100,
+  void _showFullScreenMedia(String url, String type) {
+    if (type == 'pdf') {
+      // For PDFs, directly open in external app since we removed native_pdf_renderer
+     // _launchUrl(url);
+     PdfViewerPage(url: url,);
+    } else {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => FullScreenMediaViewer(
+            url: url,
+            type: type,
+            fileName: url.split('/').last,
           ),
         ),
       );
-    } else {
-      // Not an image: show default image and file/link name
-      return Container(
-        height: 100,
-        color: Colors.blue.shade100,
-        child: Column(
-          children: [
-            Expanded(
-              flex: 2,
-              child: Image.network(
-                networkImage,
-                fit: BoxFit.cover,
-                height: 100,
-              ),
+    }
+  }
+
+Widget _buildAttachmentItem(AttachmentItem attachment) {
+final rawFileName = attachment.fileName ?? 'Unknown file';
+final fileType = _getFileType(rawFileName);
+final fileUrl = "https://linkskool.net/$rawFileName";
+
+// Extract only the actual file name (remove the path)
+final fileName = rawFileName.split('/').last;
+  return GestureDetector(
+    onTap: () {
+      if (fileType == 'image' || fileType == 'video') {
+        _showFullScreenMedia(fileUrl, fileType);
+      } else {
+        // For all other files including PDF, open in external app
+        //fileUrl
+        if(fileType == 'pdf'){
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => PdfViewerPage(url: fileUrl),
             ),
-            Expanded(
-              flex: 2,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                child: Row(
-                  children: [
-                    const Icon(Icons.link, color: Colors.blue),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        attachment.fileName!,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ],
+          );
+
+        } else {_launchUrl(fileName);
+      }}
+    },
+    child: Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(12.0),
+        border: Border.all(
+          color: _getFileColor(fileType).withOpacity(0.3),
+          width: 1.5,
+        ),
+        color: Colors.white,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.1),
+            spreadRadius: 1,
+            blurRadius: 3,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          Expanded(
+            flex: 3,
+            child: Container(
+              width: double.infinity,
+              decoration: BoxDecoration(
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(12.0),
+                  topRight: Radius.circular(12.0),
+                ),
+                color: _getFileColor(fileType).withOpacity(0.1),
+              ),
+              child: _buildPreviewContent(fileType, fileUrl, fileName),
+            ),
+          ),
+        if (fileType == "pdf" || fileType == "url") 
+  Expanded(
+    flex: 1,
+    child: Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 6.0),
+      child: Text(
+        fileName.length > 17 ? fileName.substring(0, 17) : fileName,
+        style: AppTextStyles.normal500(
+          fontSize: 14.0,
+          color: Colors.black,
+        ),
+        maxLines: 2,
+        overflow: TextOverflow.ellipsis,
+        textAlign: TextAlign.center,
+      ),
+    ),
+  ),
+
+        ],
+      ),
+    ),
+  );
+}
+
+  Widget _buildPreviewContent(String fileType, String fileUrl, String fileName) {
+    switch (fileType) {
+      case 'image':
+        return ClipRRect(
+          borderRadius: const BorderRadius.only(
+            topLeft: Radius.circular(12.0),
+            topRight: Radius.circular(12.0),
+          ),
+          child: Image.network(
+            fileUrl,
+            fit: BoxFit.cover,
+            errorBuilder: (context, error, stackTrace) => Icon(
+              Icons.broken_image,
+              color: Colors.grey,
+              size: 40,
+            ),
+            loadingBuilder: (context, child, loadingProgress) {
+              if (loadingProgress == null) return child;
+              return Center(
+                child: CircularProgressIndicator(
+                  value: loadingProgress.expectedTotalBytes != null
+                      ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
+                      : null,
+                ),
+              );
+            },
+          ),
+        );
+      case 'video':
+  return FutureBuilder<String?>(
+    future: VideoThumbnail.thumbnailFile(
+      video: fileUrl,
+      imageFormat: ImageFormat.PNG,
+      maxHeight: 200,
+      quality: 50,
+    ),
+    builder: (context, snapshot) {
+      if (snapshot.connectionState == ConnectionState.waiting) {
+        return const Center(child: CircularProgressIndicator());
+      }
+      if (snapshot.hasError || snapshot.data == null) {
+        return const Icon(Icons.videocam, size: 50, color: Colors.blue);
+      }
+      return Stack(
+        fit: StackFit.expand,
+        children: [
+          Image.file(File(snapshot.data!), fit: BoxFit.cover),
+          const Center(
+            child: Icon(Icons.play_circle_fill, size: 60, color: Colors.white),
+          ),
+        ],
+      );
+    },
+  );
+
+      case 'pdf':
+        return Stack(
+          children: [
+            Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [Colors.blue.shade100, Colors.blue.shade200],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+              ),
+              child: Center(
+                child: Icon(
+                  Icons.picture_as_pdf,
+                  size: 50,
+                  color: Colors.blue.shade600,
                 ),
               ),
             ),
+           
           ],
-        ),
-      );
+        );
+      case 'url':
+        return Center(
+          child: Icon(
+            Icons.link,
+            size: 40,
+            color: _getFileColor(fileType),
+          ),
+        );
+      default:
+        return Center(
+          child: Icon(
+            _getFileIcon(fileType),
+            size: 40,
+            color: _getFileColor(fileType),
+          ),
+        );
     }
   }
 
   Widget _buildCommentSection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        if (comments.isNotEmpty) ...[
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Text(
-              'Class comments',
-              style:
-                  AppTextStyles.normal600(fontSize: 18.0, color: Colors.black),
-            ),
-          ),
-          ...comments.map(_buildCommentItem),
-          _buildDivider(),
-        ],
-        Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: _isAddingComment
-              ? _buildCommentInput()
-              : InkWell(
-                  onTap: () {
-                    setState(() {
-                      _isAddingComment = true;
-                    });
+    return Consumer<CommentProvider>(
+      builder: (context, commentProvider, child) {
+        final commentList = commentProvider.comments;
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (commentProvider.isLoading && commentList.isEmpty)
+              Skeletonizer(
+                child: ListView.builder(
+                  controller: _scrollController,
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: 5,
+                  itemBuilder: (context, index) {
+                    return ListTile(
+                      leading: CircleAvatar(
+                        backgroundColor: Colors.grey.shade300,
+                      ),
+                      title: Container(
+                        height: 16,
+                        color: Colors.grey.shade300,
+                      ),
+                      subtitle: Container(
+                        height: 14,
+                        color: Colors.grey.shade300,
+                      ),
+                    );
                   },
+                ),
+              ),
+            if (commentList.isNotEmpty) ...[
+              Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Text(
+                  'Class comments',
+                  style: AppTextStyles.normal600(fontSize: 18.0, color: Colors.black),
+                ),
+              ),
+              ListView.builder(
+                controller: _scrollController,
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: commentList.length + (commentProvider.isLoading ? 1 : 0),
+                itemBuilder: (context, index) {
+                  if (index == commentList.length) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+                  return _buildCommentItem(commentList[index]);
+                },
+              ),
+              if (commentProvider.error != null)
+                Padding(
+                  padding: const EdgeInsets.all(16.0),
                   child: Text(
-                    'Add class comment',
-                    style: AppTextStyles.normal500(
-                        fontSize: 16.0, color: AppColors.paymentTxtColor1),
+                    commentProvider.message!,
+                    style: const TextStyle(color: Colors.red),
                   ),
                 ),
-        ),
-      ],
+              _buildDivider(),
+            ],
+          ],
+        );
+      },
     );
   }
 
   Widget _buildCommentItem(Comment comment) {
-    return ListTile(
-      leading: CircleAvatar(
-        backgroundColor: AppColors.paymentTxtColor1,
-        child: Text(
-          comment.author[0].toUpperCase(),
-          style: AppTextStyles.normal500(
-              fontSize: 18, color: AppColors.backgroundLight),
-        ),
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 8),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
       ),
-      title: Row(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(comment.author,
-              style: AppTextStyles.normal600(
-                  fontSize: 16.0, color: AppColors.backgroundDark)),
-          const SizedBox(width: 8),
-          Text(
-            DateFormat('d MMMM').format(comment.date),
-            style: AppTextStyles.normal400(fontSize: 14.0, color: Colors.grey),
+          CircleAvatar(
+            radius: 20,
+            backgroundColor: AppColors.paymentTxtColor1,
+            child: Text(
+              comment.author[0].toUpperCase(),
+              style: AppTextStyles.normal500(
+                fontSize: 16,
+                color: AppColors.backgroundLight,
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: Row(
+                        children: [
+                          Text(
+                            comment.author,
+                            style: AppTextStyles.normal600(
+                              fontSize: 15,
+                              color: AppColors.backgroundDark,
+                            ),
+                          ),
+                          SizedBox(width: 8),
+                          Text(
+                            DateFormat('d MMM, HH:mm').format(comment.date),
+                            style: AppTextStyles.normal400(
+                              fontSize: 13,
+                              color: Colors.grey.shade600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    PopupMenuButton<String>(
+                      icon: const Icon(Icons.more_vert, size: 20, color: AppColors.primaryLight),
+                      onSelected: (value) {
+                        if (value == 'edit') {
+                          _editComment(comment);
+                        } else if (value == 'delete') {
+                          _deleteComment(comment);
+                        }
+                      },
+                      itemBuilder: (context) => [
+                        const PopupMenuItem(
+                          value: 'edit',
+                          child: Text('Edit'),
+                        ),
+                        const PopupMenuItem(
+                          value: 'delete',
+                          child: Text('Delete'),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+                Text(
+                  comment.text,
+                  style: AppTextStyles.normal500(
+                    fontSize: 14,
+                    color: AppColors.text4Light,
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
-      ),
-      subtitle: Text(
-        comment.text,
-        style:
-            AppTextStyles.normal500(fontSize: 16, color: AppColors.text4Light),
       ),
     );
   }
 
   Widget _buildCommentInput() {
-    return Row(
-      children: [
-        Expanded(
-          child: TextField(
-            controller: _commentController,
-            decoration: const InputDecoration(
-              hintText: 'Type your comment...',
-              border: OutlineInputBorder(),
+    final provider = Provider.of<CommentProvider>(context, listen: false);
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        children: [
+          Expanded(
+            child: TextField(
+              controller: _commentController,
+              focusNode: _commentFocusNode,
+              decoration: const InputDecoration(
+                hintText: 'Type your comment...',
+                border: OutlineInputBorder(),
+              ),
             ),
           ),
-        ),
-        IconButton(
-          icon: const Icon(Icons.send),
-          onPressed: _addComment,
-          color: AppColors.paymentTxtColor1,
-        ),
-      ],
+          provider.isLoading
+              ? const CircularProgressIndicator()
+              : IconButton(
+                  icon: const Icon(Icons.send),
+                  onPressed: _addComment,
+                  color: AppColors.paymentTxtColor1,
+                ),
+        ],
+      ),
     );
   }
 
-  void _addComment() {
+  void _addComment([Map<String, dynamic>? updatedComment]) async {
     if (_commentController.text.isNotEmpty) {
-      setState(() {
-        comments.add(Comment(
-          author: 'Joe Onwe',
-          text: _commentController.text,
-          date: DateTime.now(),
-        ));
-        _commentController.clear();
-        _isAddingComment = false;
-      });
+      final comment = updatedComment ?? {
+        "content_title": widget.material.title,
+        "user_id": creatorId,
+        "user_name": creatorName,
+        "comment": _commentController.text,
+        "level_id": widget.levelId,
+        "course_id": widget.courseId,
+        "course_name": widget.courseName,
+        "term": academicTerm,
+        if (_isEditing == true && _editingComment != null)
+          "content_id": widget.itemId.toString(),
+      };
+      try {
+        final commentProvider = Provider.of<CommentProvider>(context, listen: false);
+        final contentId = _editingComment?.id;
+        if (_isEditing) {
+          comment['content_id'];
+          print("printed Comment $comment");
+          await commentProvider.UpdateComment(comment, contentId.toString());
+          CustomToaster.toastSuccess(context, 'Success', 'Comment updated successfully');
+        } else {
+          await commentProvider.createComment(comment, widget.itemId.toString());
+          CustomToaster.toastSuccess(context, 'Success', 'Comment added successfully');
+        }
+        await commentProvider.fetchComments(widget.itemId.toString());
+        setState(() {
+          _isAddingComment = false;
+          _isEditing = false;
+          _editingComment = null;
+          _commentController.clear();
+          if (!_isEditing) {
+            comments.add(Comment(
+              author: creatorName ?? 'Unknown',
+              date: DateTime.now(),
+              text: _commentController.text,
+              contentTitle: widget.material.title,
+              userId: creatorId,
+              levelId: widget.levelId,
+              courseId: widget.courseId,
+              courseName: widget.courseName,
+              term: academicTerm,
+            ));
+          }
+        });
+      } catch (e) {
+        CustomToaster.toastError(context, 'Error', _isEditing ? 'Failed to update comment' : 'Failed to add comment');
+      }
     }
+  }
+
+  void _deleteComment(Comment comment) async {
+    final commentProvider = Provider.of<CommentProvider>(context, listen: false);
+    print('Setting up delete for comment ID: ${comment.id}');
+    final commentId = comment.id.toString();
+    try {
+      await commentProvider.DeleteComment(commentId);
+      CustomToaster.toastSuccess(context, 'Success', 'Comment deleted successfully');
+    } catch (e) {
+      CustomToaster.toastError(context, 'Error', 'Failed to delete comment');
+    }
+  }
+
+  void _editComment(Comment comment) {
+    if (comment.text.isEmpty) {
+      CustomToaster.toastError(context, 'Error', 'Comment text cannot be empty');
+      return;
+    }
+    print('Setting up edit for comment ID: ${comment.id}');
+    _editingComment = comment;
+    _commentController.text = comment.text;
+    final updatedComment = {
+      "content_title": widget.material.title,
+      "user_id": creatorId,
+      "user_name": creatorName,
+      "comment": _commentController.text,
+      "level_id": widget.levelId,
+      "course_id": widget.courseId,
+      "course_name": widget.courseName,
+      "term": academicTerm,
+      "comment_id": comment.id,
+    };
+    print('Editing comment: ${updatedComment['comment']} with ID: ${comment.id}');
+    setState(() {
+      _isAddingComment = true;
+      _isEditing = true;
+      _commentFocusNode.requestFocus();
+    });
+    print('Edit setup complete. _isEditing: $_isEditing, _editingComment.id: ${_editingComment?.id}');
   }
 }
 
+// Full Screen Media Viewer (only for images and videos now)
+class FullScreenMediaViewer extends StatefulWidget {
+  final String url;
+  final String type;
+  final String fileName;
 
-// import 'package:flutter/material.dart';
-// import 'package:intl/intl.dart';
-// import 'package:linkschool/modules/admin_portal/e_learning/admin_assignment_screen.dart';
-// import 'package:linkschool/modules/common/app_colors.dart';
-// import 'package:linkschool/modules/common/constants.dart';
-// import 'package:linkschool/modules/common/text_styles.dart';
-// import 'package:linkschool/modules/model/e-learning/comment_model.dart';
+  const FullScreenMediaViewer({
+    Key? key,
+    required this.url,
+    required this.type,
+    required this.fileName,
+  }) : super(key: key);
 
-// class StaffAssignmentDetailsScreen extends StatefulWidget {
-//   const StaffAssignmentDetailsScreen({super.key, required Assignment assignment});
+  @override
+  State<FullScreenMediaViewer> createState() => _FullScreenMediaViewerState();
+}
 
-//   @override
-//   _StaffAssignmentDetailsScreenState createState() => _StaffAssignmentDetailsScreenState();
-// }
+class _FullScreenMediaViewerState extends State<FullScreenMediaViewer> {
+  VideoPlayerController? _videoController;
+  ChewieController? _chewieController;
 
-// class _StaffAssignmentDetailsScreenState extends State<StaffAssignmentDetailsScreen>
-//     with SingleTickerProviderStateMixin {
-//   late TabController _tabController;
-//   final TextEditingController _commentController = TextEditingController();
-//   List<Comment> comments = [];
-//   bool _isAddingComment = false;
-//   late double opacity;
-//   final String networkImage = 'https://img.freepik.com/free-vector/gradient-human-rights-day-background_52683-149974.jpg?t=st=1717832829~exp=1717833429~hmac=3e938edcacd7fef2a791b36c7d3decbf64248d9760dd7da0a304acee382b8a86';
+  @override
+  void initState() {
+    super.initState();
+    if (widget.type == 'video') {
+      _initializeVideo();
+    }
+  }
 
-//   @override
-//   void initState() {
-//     super.initState();
-//     _tabController = TabController(length: 2, vsync: this);
-//   }
+  Future<void> _initializeVideo() async {
+    _videoController = VideoPlayerController.network(widget.url);
+    await _videoController!.initialize();
 
-//   @override
-//   void dispose() {
-//     _tabController.dispose();
-//     _commentController.dispose();
-//     super.dispose();
-//   }
+    _chewieController = ChewieController(
+      videoPlayerController: _videoController!,
+      autoPlay: true,
+      looping: false,
+      allowMuting: true,
+      allowPlaybackSpeedChanging: true,
+      aspectRatio: _videoController!.value.aspectRatio,
+    );
 
-//   @override
-//   Widget build(BuildContext context) {
-//     final Brightness brightness = Theme.of(context).brightness;
-//     opacity = brightness == Brightness.light ? 0.1 : 0.15;
-//     return Scaffold(
-//       appBar: AppBar(
-//         leading: IconButton(
-//           onPressed: () => Navigator.of(context).pop(),
-//           icon: Image.asset(
-//             'assets/icons/arrow_back.png',
-//             color: AppColors.paymentTxtColor1,
-//             width: 34.0,
-//             height: 34.0,
-//           ),
-//         ),
-//         title: Text(
-//           'Assignment',
-//           style: AppTextStyles.normal600(
-//             fontSize: 24.0,
-//             color: AppColors.paymentTxtColor1,
-//           ),
-//         ),
-//         actions: [
-//           PopupMenuButton<String>(
-//             icon: const Icon(Icons.more_vert, color: AppColors.paymentTxtColor1,),
-//             onSelected: (String result) {
-//               // Handle menu item selection
-//             },
-//             itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
-//               const PopupMenuItem<String>(
-//                 value: 'edit',
-//                 child: Text('Edit'),
-//               ),
-//               const PopupMenuItem<String>(
-//                 value: 'delete',
-//                 child: Text('Delete'),
-//               ),
-//             ],
-//           ),
-//         ],
-//         backgroundColor: AppColors.backgroundLight,
-//         flexibleSpace: FlexibleSpaceBar(
-//           background: Stack(
-//             children: [
-//               Positioned.fill(
-//                 child: Opacity(
-//                   opacity: opacity,
-//                   child: Image.asset(
-//                     'assets/images/background.png',
-//                     fit: BoxFit.cover,
-//                   ),
-//                 ),
-//               )
-//             ],
-//           ),
-//         ),
-//         bottom: TabBar(
-//           controller: _tabController,
-//           tabs: [
-//             Tab(
-//               child: Text(
-//                 'Instructions',
-//                 style: AppTextStyles.normal600(
-//                     fontSize: 18, color: AppColors.paymentTxtColor1),
-//               ),
-//             ),
-//             Tab(
-//               child: Text(
-//                 'Student work',
-//                 style: AppTextStyles.normal600(
-//                     fontSize: 18, color: AppColors.paymentTxtColor1),
-//               ),
-//             ),
-//           ],
-//         ),
-//       ),
-//       body: Container(
-//         decoration: Constants.customBoxDecoration(context),
-//         child: TabBarView(
-//           controller: _tabController,
-//           children: [
-//             _buildInstructionsTab(),
-//             const Center(child: Text('Student work content')),
-//           ],
-//         ),
-//       ),
-//     );
-//   }
+    if (mounted) setState(() {});
+  }
 
-//   Widget _buildInstructionsTab() {
-//     return SingleChildScrollView(
-//       child: Column(
-//         crossAxisAlignment: CrossAxisAlignment.start,
-//         children: [
-//           _buildDueDate(),
-//           _buildDivider(),
-//           _buildTitle(),
-//           _buildGrade(),
-//           _buildDivider(),
-//           _buildDescription(),
-//           _buildDivider(),
-//           _buildAttachments(),
-//           _buildDivider(),
-//           _buildCommentSection(),
-//         ],
-//       ),
-//     );
-//   }
+  @override
+  void dispose() {
+    _videoController?.dispose();
+    _chewieController?.dispose();
+    super.dispose();
+  }
 
-//   Widget _buildDivider() {
-//     return Padding(
-//       padding: const EdgeInsets.symmetric(horizontal: 16.0),
-//       child: Divider(color: Colors.grey.withOpacity(0.5)),
-//     );
-//   }
-
-//   Widget _buildDueDate() {
-//     final DateTime dueDate = DateTime.now().add(const Duration(days: 5, hours: 2));
-//     return Padding(
-//       padding: const EdgeInsets.only(
-//           top: 20.0, bottom: 16.0, right: 16.0, left: 16.0),
-//       child: Row(
-//         children: [
-//           Text(
-//             'Due: ',
-//             style: AppTextStyles.normal600(
-//                 fontSize: 16.0, color: AppColors.eLearningTxtColor1),
-//           ),
-//           Text(
-//             DateFormat('E, dd MMM yyyy (hh:mm a)').format(dueDate),
-//             style: AppTextStyles.normal500(fontSize: 16.0, color: Colors.black),
-//           ),
-//         ],
-//       ),
-//     );
-//   }
-
-//   Widget _buildTitle() {
-//     const String title = 'Mid-Term Assignment';
-//     return Container(
-//       width: double.infinity,
-//       decoration: const BoxDecoration(
-//         border: Border(
-//           bottom: BorderSide(color: AppColors.paymentTxtColor1, width: 2.0),
-//         ),
-//       ),
-//       child: Padding(
-//         padding: const EdgeInsets.all(16.0),
-//         child: Text(
-//           title,
-//           style: AppTextStyles.normal600(
-//             fontSize: 20.0,
-//             color: AppColors.paymentTxtColor1,
-//           ),
-//         ),
-//       ),
-//     );
-//   }
-
-//   Widget _buildGrade() {
-//     const String marks = "85/100";
-//     return Padding(
-//       padding: const EdgeInsets.all(16.0),
-//       child: Row(
-//         children: [
-//           Text(
-//             'Grade : ',
-//             style: AppTextStyles.normal600(
-//                 fontSize: 16.0, color: AppColors.eLearningTxtColor1),
-//           ),
-//           Text(
-//             marks,
-//             style: AppTextStyles.normal500(fontSize: 16.0, color: Colors.black),
-//           ),
-//         ],
-//       ),
-//     );
-//   }
-
-//   Widget _buildDescription() {
-//     const String description = "Complete the mid-term review on chapters 1-3.";
-//     return Padding(
-//       padding: const EdgeInsets.all(16.0),
-//       child: Row(
-//         children: [
-//           Text(
-//             'Description : ',
-//             style: AppTextStyles.normal600(
-//                 fontSize: 16.0, color: AppColors.eLearningTxtColor1),
-//           ),
-//           Expanded(
-//             child: Text(
-//               description,
-//               style: AppTextStyles.normal500(fontSize: 16.0, color: Colors.black),
-//             ),
-//           ),
-//         ],
-//       ),
-//     );
-//   }
-
-//   Widget _buildAttachments() {
-//     const List<Map<String, String>> attachments = [
-//       {"type": "image", "url": "https://img.freepik.com/free-vector/gradient-human-rights-day-background_52683-149974.jpg?t=st=1717832829~exp=1717833429~hmac=3e938edcacd7fef2a791b36c7d3decbf64248d9760dd7da0a304acee382b8a86"},
-//       {"type": "link", "url": "https://jdidlf.com.ng..."},
-//     ];
-//     return Padding(
-//       padding: const EdgeInsets.all(16.0),
-//       child: Row(
-//         children: [
-//           Expanded(
-//             child: _buildAttachmentItem(attachments[0]),
-//           ),
-//           const SizedBox(width: 16),
-//           Expanded(
-//             child: _buildAttachmentItem(attachments[1]),
-//           ),
-//         ],
-//       ),
-//     );
-//   }
-
-//   Widget _buildAttachmentItem(Map<String, String> attachment) {
-//     if (attachment["type"] == "image") {
-//       return ClipRRect(
-//         borderRadius: BorderRadius.circular(8),
-//         child: Image.network(
-//           attachment["url"]!,
-//           fit: BoxFit.cover,
-//           height: 100,
-//         ),
-//       );
-//     } else {
-//       return Container(
-//         height: 100,
-//         color: Colors.blue.shade100,
-//         child: Column(
-//           children: [
-//             Expanded(
-//               flex: 2,
-//               child: Image.network(
-//                 networkImage,
-//                 fit: BoxFit.cover,
-//                 width: double.infinity,
-//               ),
-//             ),
-//             Expanded(
-//               flex: 2,
-//               child: Padding(
-//                 padding: const EdgeInsets.symmetric(horizontal: 8.0),
-//                 child: Row(
-//                   children: [
-//                     const Icon(Icons.link, color: Colors.blue),
-//                     const SizedBox(width: 8),
-//                     Expanded(
-//                       child: Text(
-//                         attachment["url"]!,
-//                         overflow: TextOverflow.ellipsis,
-//                       ),
-//                     ),
-//                   ],
-//                 ),
-//               ),
-//             ),
-//           ],
-//         ),
-//       );
-//     }
-//   }
-
-//   Widget _buildCommentSection() {
-//     return Column(
-//       crossAxisAlignment: CrossAxisAlignment.start,
-//       children: [
-//         if (comments.isNotEmpty) ...[
-//           Padding(
-//             padding: const EdgeInsets.all(16.0),
-//             child: Text(
-//               'Class comments',
-//               style:
-//                   AppTextStyles.normal600(fontSize: 18.0, color: Colors.black),
-//             ),
-//           ),
-//           ...comments.map(_buildCommentItem),
-//           _buildDivider(),
-//         ],
-//         Padding(
-//           padding: const EdgeInsets.all(16.0),
-//           child: _isAddingComment
-//               ? _buildCommentInput()
-//               : InkWell(
-//                   onTap: () {
-//                     setState(() {
-//                       _isAddingComment = true;
-//                     });
-//                   },
-//                   child: Text(
-//                     'Add class comment',
-//                     style: AppTextStyles.normal500(
-//                         fontSize: 16.0, color: AppColors.paymentTxtColor1),
-//                   ),
-//                 ),
-//         ),
-//       ],
-//     );
-//   }
-
-//   Widget _buildCommentItem(Comment comment) {
-//     return ListTile(
-//       leading: CircleAvatar(
-//         backgroundColor: AppColors.paymentTxtColor1,
-//         child: Text(
-//           comment.author[0].toUpperCase(),
-//           style: AppTextStyles.normal500(
-//               fontSize: 18, color: AppColors.backgroundLight),
-//         ),
-//       ),
-//       title: Row(
-//         children: [
-//           Text(comment.author,
-//               style: AppTextStyles.normal600(
-//                   fontSize: 16.0, color: AppColors.backgroundDark)),
-//           const SizedBox(width: 8),
-//           Text(
-//             DateFormat('d MMMM').format(comment.date),
-//             style: AppTextStyles.normal400(fontSize: 14.0, color: Colors.grey),
-//           ),
-//         ],
-//       ),
-//       subtitle: Text(
-//         comment.text,
-//         style:
-//             AppTextStyles.normal500(fontSize: 16, color: AppColors.text4Light),
-//       ),
-//     );
-//   }
-
-//   Widget _buildCommentInput() {
-//     return Row(
-//       children: [
-//         Expanded(
-//           child: TextField(
-//             controller: _commentController,
-//             decoration: const InputDecoration(
-//               hintText: 'Type your comment...',
-//               border: OutlineInputBorder(),
-//             ),
-//           ),
-//         ),
-//         IconButton(
-//           icon: const Icon(Icons.send),
-//           onPressed: _addComment,
-//           color: AppColors.paymentTxtColor1,
-//         ),
-//       ],
-//     );
-//   }
-
-//   void _addComment() {
-//     if (_commentController.text.isNotEmpty) {
-//       setState(() {
-//         comments.add(Comment(
-//           author: 'Joe Onwe',
-//           text: _commentController.text,
-//           date: DateTime.now(),
-//         ));
-//         _commentController.clear();
-//         _isAddingComment = false;
-//       });
-//     }
-//   }
-// }
-
-
-
-
-// import 'package:flutter/material.dart';
-// import 'package:intl/intl.dart';
-// import 'package:linkschool/modules/common/app_colors.dart';
-// import 'package:linkschool/modules/common/constants.dart';
-// import 'package:linkschool/modules/common/text_styles.dart';
-// import 'package:linkschool/modules/model/e-learning/comment_model.dart';
-// import 'package:linkschool/modules/model/e-learning/material_model.dart' as custom;
-
-
-// class StaffMaterialDetailsScreen extends StatefulWidget {
-//   const StaffMaterialDetailsScreen({super.key, required custom.Material material});
-
-//   @override
-//   _StaffMaterialDetailsScreenState createState() => _StaffMaterialDetailsScreenState();
-// }
-
-// class _StaffMaterialDetailsScreenState extends State<StaffMaterialDetailsScreen>
-//     with SingleTickerProviderStateMixin {
-//   late TabController _tabController;
-//   final TextEditingController _commentController = TextEditingController();
-//   List<Comment> comments = [];
-//   bool _isAddingComment = false;
-//   late double opacity;
-//   final String networkImage = 'https://img.freepik.com/free-vector/gradient-human-rights-day-background_52683-149974.jpg?t=st=1717832829~exp=1717833429~hmac=3e938edcacd7fef2a791b36c7d3decbf64248d9760dd7da0a304acee382b8a86';
-
-//   @override
-//   void initState() {
-//     super.initState();
-//     _tabController = TabController(length: 2, vsync: this);
-//   }
-
-//   @override
-//   void dispose() {
-//     _tabController.dispose();
-//     _commentController.dispose();
-//     super.dispose();
-//   }
-
-//   @override
-//   Widget build(BuildContext context) {
-//     final Brightness brightness = Theme.of(context).brightness;
-//     opacity = brightness == Brightness.light ? 0.1 : 0.15;
-//     return Scaffold(
-//       appBar: AppBar(
-//         leading: IconButton(
-//           onPressed: () => Navigator.of(context).pop(),
-//           icon: Image.asset(
-//             'assets/icons/arrow_back.png',
-//             color: AppColors.paymentTxtColor1,
-//             width: 34.0,
-//             height: 34.0,
-//           ),
-//         ),
-//         title: Text(
-//           'Material',
-//           style: AppTextStyles.normal600(
-//             fontSize: 24.0,
-//             color: AppColors.paymentTxtColor1,
-//           ),
-//         ),
-//         actions: [
-//           PopupMenuButton<String>(
-//             icon: const Icon(Icons.more_vert, color: AppColors.paymentTxtColor1,),
-//             onSelected: (String result) {
-//               // Handle menu item selection
-//             },
-//             itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
-//               const PopupMenuItem<String>(
-//                 value: 'edit',
-//                 child: Text('Edit'),
-//               ),
-//               const PopupMenuItem<String>(
-//                 value: 'delete',
-//                 child: Text('Delete'),
-//               ),
-//             ],
-//           ),
-//         ],
-//         backgroundColor: AppColors.backgroundLight,
-//         flexibleSpace: FlexibleSpaceBar(
-//           background: Stack(
-//             children: [
-//               Positioned.fill(
-//                 child: Opacity(
-//                   opacity: opacity,
-//                   child: Image.asset(
-//                     'assets/images/background.png',
-//                     fit: BoxFit.cover,
-//                   ),
-//                 ),
-//               )
-//             ],
-//           ),
-//         ),
-//         bottom: TabBar(
-//           controller: _tabController,
-//           tabs: [
-//             Tab(
-//               child: Text(
-//                 'Instructions',
-//                 style: AppTextStyles.normal600(
-//                     fontSize: 18, color: AppColors.paymentTxtColor1),
-//               ),
-//             ),
-//             Tab(
-//               child: Text(
-//                 'Student work',
-//                 style: AppTextStyles.normal600(
-//                     fontSize: 18, color: AppColors.paymentTxtColor1),
-//               ),
-//             ),
-//           ],
-//         ),
-//       ),
-//       body: Container(
-//         decoration: Constants.customBoxDecoration(context),
-//         child: TabBarView(
-//           controller: _tabController,
-//           children: [
-//             _buildInstructionsTab(),
-//             const Center(child: Text('Student work content')),
-//           ],
-//         ),
-//       ),
-//     );
-//   }
-
-//   Widget _buildInstructionsTab() {
-//     return SingleChildScrollView(
-//       child: Column(
-//         crossAxisAlignment: CrossAxisAlignment.start,
-//         children: [
-//           _buildDueDate(),
-//           _buildDivider(),
-//           _buildTitle(),
-//           _buildGrade(),
-//           _buildDivider(),
-//           _buildDescription(),
-//           _buildDivider(),
-//           _buildAttachments(),
-//           _buildDivider(),
-//           _buildCommentSection(),
-//         ],
-//       ),
-//     );
-//   }
-
-//   Widget _buildDivider() {
-//     return Padding(
-//       padding: const EdgeInsets.symmetric(horizontal: 16.0),
-//       child: Divider(color: Colors.grey.withOpacity(0.5)),
-//     );
-//   }
-
-//   Widget _buildDueDate() {
-//     final DateTime dueDate = DateTime.now().add(const Duration(days: 5, hours: 2));
-//     return Padding(
-//       padding: const EdgeInsets.only(
-//           top: 20.0, bottom: 16.0, right: 16.0, left: 16.0),
-//       child: Row(
-//         children: [
-//           Text(
-//             'Due: ',
-//             style: AppTextStyles.normal600(
-//                 fontSize: 16.0, color: AppColors.eLearningTxtColor1),
-//           ),
-//           Text(
-//             DateFormat('E, dd MMM yyyy (hh:mm a)').format(dueDate),
-//             style: AppTextStyles.normal500(fontSize: 16.0, color: Colors.black),
-//           ),
-//         ],
-//       ),
-//     );
-//   }
-
-//   Widget _buildTitle() {
-//     const String title = 'Mid-Term Assignment';
-//     return Container(
-//       width: double.infinity,
-//       decoration: const BoxDecoration(
-//         border: Border(
-//           bottom: BorderSide(color: AppColors.paymentTxtColor1, width: 2.0),
-//         ),
-//       ),
-//       child: Padding(
-//         padding: const EdgeInsets.all(16.0),
-//         child: Text(
-//           title,
-//           style: AppTextStyles.normal600(
-//             fontSize: 20.0,
-//             color: AppColors.paymentTxtColor1,
-//           ),
-//         ),
-//       ),
-//     );
-//   }
-
-//   Widget _buildGrade() {
-//     const String marks = "85/100";
-//     return Padding(
-//       padding: const EdgeInsets.all(16.0),
-//       child: Row(
-//         children: [
-//           Text(
-//             'Grade : ',
-//             style: AppTextStyles.normal600(
-//                 fontSize: 16.0, color: AppColors.eLearningTxtColor1),
-//           ),
-//           Text(
-//             marks,
-//             style: AppTextStyles.normal500(fontSize: 16.0, color: Colors.black),
-//           ),
-//         ],
-//       ),
-//     );
-//   }
-
-//   Widget _buildDescription() {
-//     const String description = "Complete the mid-term review on chapters 1-3.";
-//     return Padding(
-//       padding: const EdgeInsets.all(16.0),
-//       child: Row(
-//         children: [
-//           Text(
-//             'Description : ',
-//             style: AppTextStyles.normal600(
-//                 fontSize: 16.0, color: AppColors.eLearningTxtColor1),
-//           ),
-//           Expanded(
-//             child: Text(
-//               description,
-//               style: AppTextStyles.normal500(fontSize: 16.0, color: Colors.black),
-//             ),
-//           ),
-//         ],
-//       ),
-//     );
-//   }
-
-//   Widget _buildAttachments() {
-//     const List<Map<String, String>> attachments = [
-//       {"type": "image", "url": "https://img.freepik.com/free-vector/gradient-human-rights-day-background_52683-149974.jpg?t=st=1717832829~exp=1717833429~hmac=3e938edcacd7fef2a791b36c7d3decbf64248d9760dd7da0a304acee382b8a86"},
-//       {"type": "link", "url": "https://jdidlf.com.ng..."},
-//     ];
-//     return Padding(
-//       padding: const EdgeInsets.all(16.0),
-//       child: Row(
-//         children: [
-//           Expanded(
-//             child: _buildAttachmentItem(attachments[0]),
-//           ),
-//           const SizedBox(width: 16),
-//           Expanded(
-//             child: _buildAttachmentItem(attachments[1]),
-//           ),
-//         ],
-//       ),
-//     );
-//   }
-
-//   Widget _buildAttachmentItem(Map<String, String> attachment) {
-//     if (attachment["type"] == "image") {
-//       return ClipRRect(
-//         borderRadius: BorderRadius.circular(8),
-//         child: Image.network(
-//           attachment["url"]!,
-//           fit: BoxFit.cover,
-//           height: 100,
-//         ),
-//       );
-//     } else {
-//       return Container(
-//         height: 100,
-//         color: Colors.blue.shade100,
-//         child: Column(
-//           children: [
-//             Expanded(
-//               flex: 2,
-//               child: Image.network(
-//                 networkImage,
-//                 fit: BoxFit.cover,
-//                 width: double.infinity,
-//               ),
-//             ),
-//             Expanded(
-//               flex: 2,
-//               child: Padding(
-//                 padding: const EdgeInsets.symmetric(horizontal: 8.0),
-//                 child: Row(
-//                   children: [
-//                     const Icon(Icons.link, color: Colors.blue),
-//                     const SizedBox(width: 8),
-//                     Expanded(
-//                       child: Text(
-//                         attachment["url"]!,
-//                         overflow: TextOverflow.ellipsis,
-//                       ),
-//                     ),
-//                   ],
-//                 ),
-//               ),
-//             ),
-//           ],
-//         ),
-//       );
-//     }
-//   }
-
-//   Widget _buildCommentSection() {
-//     return Column(
-//       crossAxisAlignment: CrossAxisAlignment.start,
-//       children: [
-//         if (comments.isNotEmpty) ...[
-//           Padding(
-//             padding: const EdgeInsets.all(16.0),
-//             child: Text(
-//               'Class comments',
-//               style:
-//                   AppTextStyles.normal600(fontSize: 18.0, color: Colors.black),
-//             ),
-//           ),
-//           ...comments.map(_buildCommentItem),
-//           _buildDivider(),
-//         ],
-//         Padding(
-//           padding: const EdgeInsets.all(16.0),
-//           child: _isAddingComment
-//               ? _buildCommentInput()
-//               : InkWell(
-//                   onTap: () {
-//                     setState(() {
-//                       _isAddingComment = true;
-//                     });
-//                   },
-//                   child: Text(
-//                     'Add class comment',
-//                     style: AppTextStyles.normal500(
-//                         fontSize: 16.0, color: AppColors.paymentTxtColor1),
-//                   ),
-//                 ),
-//         ),
-//       ],
-//     );
-//   }
-
-//   Widget _buildCommentItem(Comment comment) {
-//     return ListTile(
-//       leading: CircleAvatar(
-//         backgroundColor: AppColors.paymentTxtColor1,
-//         child: Text(
-//           comment.author[0].toUpperCase(),
-//           style: AppTextStyles.normal500(
-//               fontSize: 18, color: AppColors.backgroundLight),
-//         ),
-//       ),
-//       title: Row(
-//         children: [
-//           Text(comment.author,
-//               style: AppTextStyles.normal600(
-//                   fontSize: 16.0, color: AppColors.backgroundDark)),
-//           const SizedBox(width: 8),
-//           Text(
-//             DateFormat('d MMMM').format(comment.date),
-//             style: AppTextStyles.normal400(fontSize: 14.0, color: Colors.grey),
-//           ),
-//         ],
-//       ),
-//       subtitle: Text(
-//         comment.text,
-//         style:
-//             AppTextStyles.normal500(fontSize: 16, color: AppColors.text4Light),
-//       ),
-//     );
-//   }
-
-//   Widget _buildCommentInput() {
-//     return Row(
-//       children: [
-//         Expanded(
-//           child: TextField(
-//             controller: _commentController,
-//             decoration: const InputDecoration(
-//               hintText: 'Type your comment...',
-//               border: OutlineInputBorder(),
-//             ),
-//           ),
-//         ),
-//         IconButton(
-//           icon: const Icon(Icons.send),
-//           onPressed: _addComment,
-//           color: AppColors.paymentTxtColor1,
-//         ),
-//       ],
-//     );
-//   }
-
-//   void _addComment() {
-//     if (_commentController.text.isNotEmpty) {
-//       setState(() {
-//         comments.add(Comment(
-//           author: 'Joe Onwe',
-//           text: _commentController.text,
-//           date: DateTime.now(),
-//         ));
-//         _commentController.clear();
-//         _isAddingComment = false;
-//       });
-//     }
-//   }
-// }
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.black,
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.close, color: Colors.white),
+          onPressed: () => Navigator.pop(context),
+        ),
+        title: Text(
+          widget.fileName,
+          style: const TextStyle(color: Colors.white),
+          overflow: TextOverflow.ellipsis,
+        ),
+      ),
+      body: Center(
+        child: widget.type == 'video'
+            ? (_chewieController != null &&
+                    _chewieController!.videoPlayerController.value.isInitialized)
+                ? Chewie(controller: _chewieController!)
+                : const CircularProgressIndicator(color: Colors.white)
+            : Image.network(
+                widget.url,
+                fit: BoxFit.contain,
+                errorBuilder: (context, error, stackTrace) => const Icon(
+                  Icons.broken_image,
+                  color: Colors.white,
+                  size: 100,
+                ),
+                loadingBuilder: (context, child, loadingProgress) {
+                  if (loadingProgress == null) return child;
+                  return const Center(
+                    child: CircularProgressIndicator(color: Colors.white),
+                  );
+                },
+              ),
+      ),
+    );
+  }
+}
