@@ -17,7 +17,7 @@ import 'package:linkschool/modules/providers/admin/e_learning/delete_sylabus_con
 import 'package:linkschool/modules/providers/admin/e_learning/mark_assignment_provider.dart';
 import 'package:linkschool/modules/providers/admin/e_learning/material_provider.dart';
 import 'package:linkschool/modules/providers/admin/e_learning/quiz_provider.dart';
-import 'package:linkschool/modules/providers/admin/e_learning/single_content_provider.dart';
+// import 'package:linkschool/modules/providers/admin/e_learning/single_content_provider.dart';
 import 'package:linkschool/modules/providers/admin/e_learning/syllabus_content_provider.dart';
 import 'package:linkschool/modules/providers/admin/e_learning/syllabus_provider.dart';
 import 'package:linkschool/modules/providers/admin/course_result_provider.dart';

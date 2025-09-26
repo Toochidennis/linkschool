@@ -1,21 +1,103 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-    <!-- Internet permission -->
+    <!-- Essential permissions -->
+    <uses-permission android:name="android.permission.INTERNET"/>
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
+    
+    <!-- File and storage permissions -->
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" 
+        android:maxSdkVersion="32"/>
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" 
+        android:maxSdkVersion="32"/>
+    
+    <!-- For Android 13+ (API 33+) -->
+    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES"/>
+    <uses-permission android:name="android.permission.READ_MEDIA_VIDEO"/>
+    
+    <!-- Camera permission -->
+    <uses-permission android:name="android.permission.CAMERA"/>
+    
+    <!-- Removed problematic permissions that might cause installation issues -->
+    <!-- <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES"/> -->
+    <!-- <uses-permission android:name="android.permission.READ_MEDIA_VISUAL_USER_SELECTED"/> -->
+    <!-- <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE"/> -->
+    
+    <application
+        android:name="${applicationName}"
+        android:label="LinkSchool"
+        android:icon="@mipmap/ic_launcher"
+        android:usesCleartextTraffic="true"
+        android:requestLegacyExternalStorage="true">
+        
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:launchMode="singleTop"
+            android:theme="@style/LaunchTheme"
+            android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode"
+            android:hardwareAccelerated="true"
+            android:windowSoftInputMode="adjustResize">
+            
+            <meta-data
+                android:name="io.flutter.embedding.android.NormalTheme"
+                android:resource="@style/NormalTheme"/>
+                
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN"/>
+                <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
+        </activity>
+        
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths"/>
+        </provider>
+        
+        <meta-data
+            android:name="flutterEmbedding"
+            android:value="2"/>
+    </application>
+    
+    <queries>
+        <intent>
+            <action android:name="android.intent.action.PROCESS_TEXT"/>
+            <data android:mimeType="text/plain"/>
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.VIEW"/>
+            <data android:scheme="http"/>
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.VIEW"/>
+            <data android:scheme="https"/>
+        </intent>
+    </queries>
+</manifest>
+
+
+
+
+<!-- <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <uses-permission android:name="android.permission.INTERNET"/>
     
-    <!-- File and storage permissions for file_picker, image_picker, pdf generation -->
+
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
     <uses-permission android:name="android.permission.READ_MEDIA_IMAGES"/>
     <uses-permission android:name="android.permission.READ_MEDIA_VIDEO"/>
     <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE" android:maxSdkVersion="29"/>
     
-    <!-- Camera permission for image_picker -->
+  
     <uses-permission android:name="android.permission.CAMERA"/>
     
-    <!-- For URL launcher -->
+    
     <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES"/>
     
-    <!-- For video thumbnail -->
+    
     <uses-permission android:name="android.permission.READ_MEDIA_VISUAL_USER_SELECTED"/>
     
     <application
@@ -44,7 +126,7 @@
             </intent-filter>
         </activity>
         
-        <!-- File provider for sharing files -->
+       
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.fileprovider"
@@ -65,7 +147,7 @@
             <action android:name="android.intent.action.PROCESS_TEXT"/>
             <data android:mimeType="text/plain"/>
         </intent>
-        <!-- For url_launcher -->
+       
         <intent>
             <action android:name="android.intent.action.VIEW"/>
             <data android:scheme="http"/>
@@ -75,4 +157,4 @@
             <data android:scheme="https"/>
         </intent>
     </queries>
-</manifest>
+</manifest> -->

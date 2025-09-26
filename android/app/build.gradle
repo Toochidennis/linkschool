@@ -24,12 +24,13 @@ if (flutterVersionName == null) {
 
 android {
     namespace "com.digitaldream.linkskool.linkschool"
-    compileSdkVersion 35  // Required by plugins
+    compileSdkVersion 35
     ndkVersion flutter.ndkVersion
 
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
+        coreLibraryDesugaringEnabled false
     }
 
     kotlinOptions {
@@ -43,7 +44,7 @@ android {
     defaultConfig {
         applicationId "com.digitaldream.linkskool.linkschool"
         minSdkVersion 23 
-        targetSdkVersion 35  // Match compile SDK
+        targetSdkVersion 35
         versionCode flutterVersionCode.toInteger()
         versionName flutterVersionName
         multiDexEnabled true
@@ -51,13 +52,17 @@ android {
 
     buildTypes {
         release {
-            // Remove this line to use unsigned APK for now
-            // signingConfig signingConfigs.debug
-            
+            signingConfig signingConfigs.debug
             minifyEnabled false
             shrinkResources false
-            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            // Add these flags to prevent UI rendering issues
+            debuggable false
+            jniDebuggable false
+            renderscriptDebuggable false
+            zipAlignEnabled true
+            // Remove proguard rules that might cause issues
         }
+
         debug {
             signingConfig signingConfigs.debug
         }
@@ -68,10 +73,17 @@ flutter {
     source '../..'
 }
 
-dependencies {
-    implementation 'androidx.multidex:multidex:2.0.1'
-}
+// dependencies {
+//     implementation 'androidx.multidx:multidx:2.0.1'
+// }
 
+        // release {
+        //     // CRITICAL: Add signing for release builds
+        //     signingConfig signingConfigs.debug
+        //     minifyEnabled false
+        //     shrinkResources false
+        //     proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        // }
 
 
 
@@ -80,7 +92,7 @@ dependencies {
 //     id "kotlin-android"
 //     id "dev.flutter.flutter-gradle-plugin"
 // }
-// //task-manager-fec98
+
 // def localProperties = new Properties()
 // def localPropertiesFile = rootProject.file('local.properties')
 // if (localPropertiesFile.exists()) {
@@ -99,41 +111,50 @@ dependencies {
 //     flutterVersionName = '1.0'
 // }
 
-//     android {
-//         namespace "com.digitaldream.linkskool.linkschool"
-//         compileSdkVersion 35// Explicitly set to 35
-//         ndkVersion flutter.ndkVersion
+// android {
+//     namespace "com.digitaldream.linkskool.linkschool"
+//     compileSdkVersion 35
+//     ndkVersion flutter.ndkVersion
 
-//         compileOptions {
-//             sourceCompatibility JavaVersion.VERSION_1_8
-//             targetCompatibility JavaVersion.VERSION_1_8
+//     compileOptions {
+//         sourceCompatibility JavaVersion.VERSION_1_8
+//         targetCompatibility JavaVersion.VERSION_1_8
+//     }
+
+//     kotlinOptions {
+//         jvmTarget = '1.8'
+//     }
+
+//     sourceSets {
+//         main.java.srcDirs += 'src/main/kotlin'
+//     }
+
+//     defaultConfig {
+//         applicationId "com.digitaldream.linkskool.linkschool"
+//         minSdkVersion 23 
+//         targetSdkVersion 35
+//         versionCode flutterVersionCode.toInteger()
+//         versionName flutterVersionName
+//         multiDexEnabled true
+//     }
+
+//     buildTypes {
+//         release {
+//             // Use debug signing for testing (temporary fix)
+//             signingConfig signingConfigs.debug
+//             minifyEnabled false
+//             shrinkResources false
 //         }
-
-//         kotlinOptions {
-//             jvmTarget = '1.8'
-//         }
-
-//         sourceSets {
-//             main.java.srcDirs += 'src/main/kotlin'
-//         }
-
-//         defaultConfig {
-//             applicationId "com.digitaldream.linkskool.linkschool"
-//             minSdkVersion 23 
-//             targetSdkVersion 35 // Explicitly set to 35
-//             versionCode flutterVersionCode.toInteger()
-//             versionName flutterVersionName
-//         }
-
-//         buildTypes {
-//             release {
-//                 signingConfig signingConfigs.debug
-//             }
+//         debug {
+//             signingConfig signingConfigs.debug
 //         }
 //     }
+// }
 
 // flutter {
 //     source '../..'
 // }
 
-// dependencies {}
+// dependencies {
+//     implementation 'androidx.multidex:multidex:2.0.1'
+// }

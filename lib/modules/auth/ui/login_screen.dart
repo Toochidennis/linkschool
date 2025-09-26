@@ -70,11 +70,9 @@ class _LoginScreenState extends State<LoginScreen> {
       try {
         await authProvider.login(username, password, schoolCode);
         widget.onLoginSuccess();
-        CustomToaster.toastSuccess(
-            context, 'Success', 'Login successful!');
+        CustomToaster.toastSuccess(context, 'Success', 'Login successful!');
       } catch (e) {
-        CustomToaster.toastError(
-            context, 'Error', 'Login failed: $e');
+        CustomToaster.toastError(context, 'Error', 'Login failed: $e');
         print('error:$e');
       } finally {
         if (mounted) {
@@ -182,151 +180,295 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
         Padding(
           padding: const EdgeInsets.only(top: 24, left: 10, right: 10),
-          child: Wrap(
+          child: Column(
+            // ✅ Use Column instead of Wrap
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text("Get Started now",
                   style: AppTextStyles.normal700(
                       fontSize: 32, color: AppColors.bookText)),
-              Column(
-                children: [
-                  Padding(
-                    padding:
-                        const EdgeInsets.symmetric(vertical: 2, horizontal: 8),
-                    child: Text(
-                      "Log in and simplify your school processes",
-                      style: AppTextStyles.normal400(
-                          fontSize: 14, color: AppColors.assessmentColor2),
-                    ),
-                  )
-                ],
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 8),
+                child: Text(
+                  "Log in and simplify your school processes",
+                  style: AppTextStyles.normal400(
+                      fontSize: 14, color: AppColors.assessmentColor2),
+                ),
               ),
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.all(8),
-                  child: Column(
-                    children: [
-                      TextFormField(
-                        controller: _usernameController,
-                        focusNode: _usernameFocus,
-                        decoration: InputDecoration(
-                          hintText: 'Enter Username',
-                          filled: true,
-                          fillColor: AppColors.assessmentColor1,
-                          contentPadding:
-                              EdgeInsets.symmetric(vertical: 8, horizontal: 10),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(10),
-                            borderSide: BorderSide.none,
+              SizedBox(height: 20), // Add some spacing
+              // ✅ Remove Expanded wrapper and add form fields directly
+              Padding(
+                padding: const EdgeInsets.all(8),
+                child: Column(
+                  children: [
+                    TextFormField(
+                      controller: _usernameController,
+                      focusNode: _usernameFocus,
+                      decoration: InputDecoration(
+                        hintText: 'Enter Username',
+                        filled: true,
+                        fillColor: AppColors.assessmentColor1,
+                        contentPadding:
+                            EdgeInsets.symmetric(vertical: 8, horizontal: 10),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10),
+                          borderSide: BorderSide.none,
+                        ),
+                      ),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Please enter a username';
+                        }
+                        return null;
+                      },
+                      onFieldSubmitted: (_) {
+                        FocusScope.of(context).requestFocus(_passwordFocus);
+                      },
+                    ),
+                    SizedBox(height: 20),
+                    TextFormField(
+                      controller: _passwordController,
+                      focusNode: _passwordFocus,
+                      obscureText: _obscurePassword,
+                      decoration: InputDecoration(
+                        hintText: 'Enter Password',
+                        filled: true,
+                        fillColor: AppColors.assessmentColor1,
+                        contentPadding:
+                            EdgeInsets.symmetric(vertical: 8, horizontal: 10),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10),
+                          borderSide: BorderSide.none,
+                        ),
+                        suffixIcon: IconButton(
+                          icon: Icon(_obscurePassword
+                              ? Icons.visibility_off
+                              : Icons.visibility),
+                          onPressed: () {
+                            setState(() {
+                              _obscurePassword = !_obscurePassword;
+                            });
+                          },
+                        ),
+                      ),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Please enter a password';
+                        }
+                        return null;
+                      },
+                      onFieldSubmitted: (_) {
+                        FocusScope.of(context).requestFocus(_schoolCodeFocus);
+                      },
+                    ),
+                    SizedBox(height: 20),
+                    TextFormField(
+                      controller: _schoolCodeController,
+                      focusNode: _schoolCodeFocus,
+                      obscureText: _obscureSchoolCode,
+                      decoration: InputDecoration(
+                        hintText: 'Enter School Code',
+                        filled: true,
+                        fillColor: AppColors.assessmentColor1,
+                        contentPadding:
+                            EdgeInsets.symmetric(vertical: 8, horizontal: 10),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10),
+                          borderSide: BorderSide.none,
+                        ),
+                        suffixIcon: IconButton(
+                          icon: Icon(_obscureSchoolCode
+                              ? Icons.visibility_off_rounded
+                              : Icons.visibility),
+                          onPressed: () {
+                            setState(() {
+                              _obscureSchoolCode = !_obscureSchoolCode;
+                            });
+                          },
+                        ),
+                      ),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Please enter a school code';
+                        }
+                        return null;
+                      },
+                    ),
+                    SizedBox(height: 20),
+                    CustomBlueElevatedButton(
+                      text: _isLoading ? 'Signing in...' : 'Login',
+                      onPressed: _isLoading ? null : _login,
+                      backgroundColor: AppColors.aicircle,
+                      textStyle: AppTextStyles.italicTitle700(
+                          fontSize: 14, color: AppColors.assessmentColor1),
+                      padding:
+                          EdgeInsets.symmetric(vertical: 14, horizontal: 140),
+                    ),
+                    if (_isLoading)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 10),
+                        child: SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 3,
+                            color: AppColors.aicircle,
                           ),
                         ),
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Please enter a username';
-                          }
-                          return null;
-                        },
-                        onFieldSubmitted: (_) {
-                          FocusScope.of(context).requestFocus(_passwordFocus);
-                        },
                       ),
-                      SizedBox(height: 20),
-                      TextFormField(
-                        controller: _passwordController,
-                        focusNode: _passwordFocus,
-                        obscureText: _obscurePassword,
-                        decoration: InputDecoration(
-                          hintText: 'Enter Password',
-                          filled: true,
-                          fillColor: AppColors.assessmentColor1,
-                          contentPadding:
-                              EdgeInsets.symmetric(vertical: 8, horizontal: 10),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(10),
-                            borderSide: BorderSide.none,
-                          ),
-                          suffixIcon: IconButton(
-                            icon: Icon(_obscurePassword
-                                ? Icons.visibility_off
-                                : Icons.visibility),
-                            onPressed: () {
-                              setState(() {
-                                _obscurePassword = !_obscurePassword;
-                              });
-                            },
-                          ),
-                        ),
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Please enter a password';
-                          }
-                          return null;
-                        },
-                        onFieldSubmitted: (_) {
-                          FocusScope.of(context).requestFocus(_schoolCodeFocus);
-                        },
-                      ),
-                      SizedBox(height: 20),
-                      TextFormField(
-                        controller: _schoolCodeController,
-                        focusNode: _schoolCodeFocus,
-                        obscureText: _obscureSchoolCode,
-                        decoration: InputDecoration(
-                          hintText: 'Enter School Code',
-                          filled: true,
-                          fillColor: AppColors.assessmentColor1,
-                          contentPadding:
-                              EdgeInsets.symmetric(vertical: 8, horizontal: 10),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(10),
-                            borderSide: BorderSide.none,
-                          ),
-                          suffixIcon: IconButton(
-                            icon: Icon(_obscureSchoolCode
-                                ? Icons.visibility_off_rounded
-                                : Icons.visibility),
-                            onPressed: () {
-                              setState(() {
-                                _obscureSchoolCode = !_obscureSchoolCode;
-                              });
-                            },
-                          ),
-                        ),
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Please enter a school code';
-                          }
-                          return null;
-                        },
-                      ),
-                      SizedBox(height: 20),
-                      CustomBlueElevatedButton(
-                        text: _isLoading ? 'Signing in...' : 'Login',
-                        onPressed: _isLoading ? null : _login,
-                        backgroundColor: AppColors.aicircle,
-                        textStyle: AppTextStyles.italicTitle700(
-                            fontSize: 14, color: AppColors.assessmentColor1),
-                        padding:
-                            EdgeInsets.symmetric(vertical: 14, horizontal: 140),
-                      ),
-                      if (_isLoading)
-                        Padding(
-                          padding: const EdgeInsets.only(top: 10),
-                          child: SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 3,
-                              color: AppColors.aicircle,
-                            ),
-                          ),
-                        ),
-                    ],
-                  ),
+                  ],
                 ),
               ),
             ],
           ),
         ),
+        // Padding(
+        //   padding: const EdgeInsets.only(top: 24, left: 10, right: 10),
+        //   child: Wrap(
+        //     children: [
+        //       Text("Get Started now",
+        //           style: AppTextStyles.normal700(
+        //               fontSize: 32, color: AppColors.bookText)),
+        //       Column(
+        //         children: [
+        //           Padding(
+        //             padding:
+        //                 const EdgeInsets.symmetric(vertical: 2, horizontal: 8),
+        //             child: Text(
+        //               "Log in and simplify your school processes",
+        //               style: AppTextStyles.normal400(
+        //                   fontSize: 14, color: AppColors.assessmentColor2),
+        //             ),
+        //           )
+        //         ],
+        //       ),
+        //       Expanded(
+        //         child: Padding(
+        //           padding: const EdgeInsets.all(8),
+        //           child: Column(
+        //             children: [
+        //               TextFormField(
+        //                 controller: _usernameController,
+        //                 focusNode: _usernameFocus,
+        //                 decoration: InputDecoration(
+        //                   hintText: 'Enter Username',
+        //                   filled: true,
+        //                   fillColor: AppColors.assessmentColor1,
+        //                   contentPadding:
+        //                       EdgeInsets.symmetric(vertical: 8, horizontal: 10),
+        //                   border: OutlineInputBorder(
+        //                     borderRadius: BorderRadius.circular(10),
+        //                     borderSide: BorderSide.none,
+        //                   ),
+        //                 ),
+        //                 validator: (value) {
+        //                   if (value == null || value.isEmpty) {
+        //                     return 'Please enter a username';
+        //                   }
+        //                   return null;
+        //                 },
+        //                 onFieldSubmitted: (_) {
+        //                   FocusScope.of(context).requestFocus(_passwordFocus);
+        //                 },
+        //               ),
+        //               SizedBox(height: 20),
+        //               TextFormField(
+        //                 controller: _passwordController,
+        //                 focusNode: _passwordFocus,
+        //                 obscureText: _obscurePassword,
+        //                 decoration: InputDecoration(
+        //                   hintText: 'Enter Password',
+        //                   filled: true,
+        //                   fillColor: AppColors.assessmentColor1,
+        //                   contentPadding:
+        //                       EdgeInsets.symmetric(vertical: 8, horizontal: 10),
+        //                   border: OutlineInputBorder(
+        //                     borderRadius: BorderRadius.circular(10),
+        //                     borderSide: BorderSide.none,
+        //                   ),
+        //                   suffixIcon: IconButton(
+        //                     icon: Icon(_obscurePassword
+        //                         ? Icons.visibility_off
+        //                         : Icons.visibility),
+        //                     onPressed: () {
+        //                       setState(() {
+        //                         _obscurePassword = !_obscurePassword;
+        //                       });
+        //                     },
+        //                   ),
+        //                 ),
+        //                 validator: (value) {
+        //                   if (value == null || value.isEmpty) {
+        //                     return 'Please enter a password';
+        //                   }
+        //                   return null;
+        //                 },
+        //                 onFieldSubmitted: (_) {
+        //                   FocusScope.of(context).requestFocus(_schoolCodeFocus);
+        //                 },
+        //               ),
+        //               SizedBox(height: 20),
+        //               TextFormField(
+        //                 controller: _schoolCodeController,
+        //                 focusNode: _schoolCodeFocus,
+        //                 obscureText: _obscureSchoolCode,
+        //                 decoration: InputDecoration(
+        //                   hintText: 'Enter School Code',
+        //                   filled: true,
+        //                   fillColor: AppColors.assessmentColor1,
+        //                   contentPadding:
+        //                       EdgeInsets.symmetric(vertical: 8, horizontal: 10),
+        //                   border: OutlineInputBorder(
+        //                     borderRadius: BorderRadius.circular(10),
+        //                     borderSide: BorderSide.none,
+        //                   ),
+        //                   suffixIcon: IconButton(
+        //                     icon: Icon(_obscureSchoolCode
+        //                         ? Icons.visibility_off_rounded
+        //                         : Icons.visibility),
+        //                     onPressed: () {
+        //                       setState(() {
+        //                         _obscureSchoolCode = !_obscureSchoolCode;
+        //                       });
+        //                     },
+        //                   ),
+        //                 ),
+        //                 validator: (value) {
+        //                   if (value == null || value.isEmpty) {
+        //                     return 'Please enter a school code';
+        //                   }
+        //                   return null;
+        //                 },
+        //               ),
+        //               SizedBox(height: 20),
+        //               CustomBlueElevatedButton(
+        //                 text: _isLoading ? 'Signing in...' : 'Login',
+        //                 onPressed: _isLoading ? null : _login,
+        //                 backgroundColor: AppColors.aicircle,
+        //                 textStyle: AppTextStyles.italicTitle700(
+        //                     fontSize: 14, color: AppColors.assessmentColor1),
+        //                 padding:
+        //                     EdgeInsets.symmetric(vertical: 14, horizontal: 140),
+        //               ),
+        //               if (_isLoading)
+        //                 Padding(
+        //                   padding: const EdgeInsets.only(top: 10),
+        //                   child: SizedBox(
+        //                     width: 20,
+        //                     height: 20,
+        //                     child: CircularProgressIndicator(
+        //                       strokeWidth: 3,
+        //                       color: AppColors.aicircle,
+        //                     ),
+        //                   ),
+        //                 ),
+        //             ],
+        //           ),
+        //         ),
+        //       ),
+        //     ],
+        //   ),
+        // ),
       ],
     );
   }

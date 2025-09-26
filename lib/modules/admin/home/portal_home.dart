@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:linkschool/modules/admin/home/portal_news_item.dart';
-import 'package:linkschool/modules/student/result/student_result_screen.dart';
+import 'package:linkschool/modules/admin/home/quick_actions/manage_course_screen.dart';
+import 'package:linkschool/modules/admin/home/quick_actions/manage_level_class_screen.dart';
+import 'package:linkschool/modules/admin/home/quick_actions/manage_staffs_screen.dart';
+import 'package:linkschool/modules/admin/home/quick_actions/manage_students_screen.dart';
 import '../../common/app_colors.dart';
 import '../../common/constants.dart';
 import '../../common/text_styles.dart';
-import '../../explore/home/custom_button_item.dart';
 
 class PortalHome extends StatefulWidget {
   final PreferredSizeWidget appBar;
@@ -19,8 +21,7 @@ class PortalHome extends StatefulWidget {
   State<PortalHome> createState() => _PortalHomeState();
 }
 
-class _PortalHomeState extends State<PortalHome>
-    with TickerProviderStateMixin {
+class _PortalHomeState extends State<PortalHome> with TickerProviderStateMixin {
   late AnimationController _fadeController;
   late AnimationController _slideController;
   late AnimationController _bounceController;
@@ -31,29 +32,27 @@ class _PortalHomeState extends State<PortalHome>
   final TextEditingController _questionController = TextEditingController();
   final TextEditingController _newsController = TextEditingController();
   bool _showAddForm = false;
-  String _selectedType = 'question'; // 'question' or 'news'
+  String _selectedType = 'question';
 
   @override
   void initState() {
     super.initState();
-    
-    // Initialize animation controllers
+
     _fadeController = AnimationController(
       duration: const Duration(milliseconds: 800),
       vsync: this,
     );
-    
+
     _slideController = AnimationController(
       duration: const Duration(milliseconds: 600),
       vsync: this,
     );
-    
+
     _bounceController = AnimationController(
       duration: const Duration(milliseconds: 1200),
       vsync: this,
     );
 
-    // Initialize animations
     _fadeAnimation = Tween<double>(
       begin: 0.0,
       end: 1.0,
@@ -78,7 +77,6 @@ class _PortalHomeState extends State<PortalHome>
       curve: Curves.elasticOut,
     ));
 
-    // Start animations
     _fadeController.forward();
     Future.delayed(const Duration(milliseconds: 200), () {
       _slideController.forward();
@@ -148,16 +146,17 @@ class _PortalHomeState extends State<PortalHome>
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 200),
               curve: Curves.easeInOut,
-              padding: const EdgeInsets.all(16.0),
+              padding: const EdgeInsets.all(12.0), // Reduced padding
               decoration: BoxDecoration(
                 color: backgroundColor,
-                borderRadius: BorderRadius.circular(20.0),
+                borderRadius:
+                    BorderRadius.circular(16.0), // Slightly smaller radius
                 border: Border.all(color: borderColor, width: 2),
                 boxShadow: [
                   BoxShadow(
                     color: backgroundColor.withOpacity(0.3),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
+                    blurRadius: 8, // Reduced shadow
+                    offset: const Offset(0, 3),
                   ),
                 ],
               ),
@@ -172,26 +171,26 @@ class _PortalHomeState extends State<PortalHome>
                       return Transform.scale(
                         scale: value,
                         child: Container(
-                          padding: const EdgeInsets.all(12),
+                          padding: const EdgeInsets.all(8), // Reduced padding
                           decoration: BoxDecoration(
                             color: Colors.white.withOpacity(0.2),
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius: BorderRadius.circular(10),
                           ),
                           child: Icon(
                             icon,
-                            size: 32,
+                            size: 24, // Reduced icon size
                             color: Colors.white,
                           ),
                         ),
                       );
                     },
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 8), // Reduced spacing
                   Text(
                     label,
                     style: const TextStyle(
                       color: Colors.white,
-                      fontSize: 14,
+                      fontSize: 12, // Reduced font size
                       fontWeight: FontWeight.w600,
                       fontFamily: 'Urbanist',
                     ),
@@ -218,17 +217,17 @@ class _PortalHomeState extends State<PortalHome>
     return _buildAnimatedCard(
       index: index,
       child: Container(
-        padding: const EdgeInsets.all(20.0),
+        padding: const EdgeInsets.all(14.0), // Reduced padding
         margin: const EdgeInsets.symmetric(horizontal: 4.0),
         decoration: BoxDecoration(
           color: backgroundColor,
-          borderRadius: BorderRadius.circular(20.0),
+          borderRadius: BorderRadius.circular(16.0), // Reduced radius
           border: Border.all(color: AppColors.text6Light, width: 1),
           boxShadow: [
             BoxShadow(
               color: AppColors.text2Light.withOpacity(0.1),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
+              blurRadius: 8, // Reduced shadow
+              offset: const Offset(0, 3),
             ),
           ],
         ),
@@ -239,46 +238,46 @@ class _PortalHomeState extends State<PortalHome>
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Container(
-                  padding: const EdgeInsets.all(8),
+                  padding: const EdgeInsets.all(6), // Reduced padding
                   decoration: BoxDecoration(
                     color: iconColor.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(10),
+                    borderRadius: BorderRadius.circular(8),
                   ),
                   child: Icon(
                     icon,
                     color: iconColor,
-                    size: 20,
+                    size: 18, // Reduced icon size
                   ),
                 ),
                 Text(
                   '+12%',
                   style: AppTextStyles.normal500(
-                    fontSize: 12,
+                    fontSize: 10, // Reduced font size
                     color: AppColors.attCheckColor2,
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 8), // Reduced spacing
             Text(
               value,
               style: AppTextStyles.normal700(
-                fontSize: 24,
+                fontSize: 20, // Reduced font size
                 color: AppColors.text2Light,
               ),
             ),
             Text(
               title,
               style: AppTextStyles.normal400(
-                fontSize: 14,
+                fontSize: 12, // Reduced font size
                 color: AppColors.text7Light,
               ),
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: 2),
             Text(
               subtitle,
               style: AppTextStyles.normal400(
-                fontSize: 12,
+                fontSize: 10, // Reduced font size
                 color: AppColors.text9Light,
               ),
             ),
@@ -415,8 +414,6 @@ class _PortalHomeState extends State<PortalHome>
             ],
           ),
           const SizedBox(height: 16),
-          
-          // Toggle buttons for content type
           Container(
             decoration: BoxDecoration(
               color: AppColors.textFieldLight,
@@ -436,18 +433,18 @@ class _PortalHomeState extends State<PortalHome>
                       duration: const Duration(milliseconds: 200),
                       padding: const EdgeInsets.symmetric(vertical: 12),
                       decoration: BoxDecoration(
-                        color: _selectedType == 'question' 
-                          ? AppColors.text2Light 
-                          : Colors.transparent,
+                        color: _selectedType == 'question'
+                            ? AppColors.text2Light
+                            : Colors.transparent,
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: Text(
                         'Announcement',
                         textAlign: TextAlign.center,
                         style: TextStyle(
-                          color: _selectedType == 'question' 
-                            ? Colors.white 
-                            : AppColors.text5Light,
+                          color: _selectedType == 'question'
+                              ? Colors.white
+                              : AppColors.text5Light,
                           fontWeight: FontWeight.w600,
                           fontFamily: 'Urbanist',
                         ),
@@ -466,18 +463,18 @@ class _PortalHomeState extends State<PortalHome>
                       duration: const Duration(milliseconds: 200),
                       padding: const EdgeInsets.symmetric(vertical: 12),
                       decoration: BoxDecoration(
-                        color: _selectedType == 'news' 
-                          ? AppColors.text2Light 
-                          : Colors.transparent,
+                        color: _selectedType == 'news'
+                            ? AppColors.text2Light
+                            : Colors.transparent,
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: Text(
                         'News Feed',
                         textAlign: TextAlign.center,
                         style: TextStyle(
-                          color: _selectedType == 'news' 
-                            ? Colors.white 
-                            : AppColors.text5Light,
+                          color: _selectedType == 'news'
+                              ? Colors.white
+                              : AppColors.text5Light,
                           fontWeight: FontWeight.w600,
                           fontFamily: 'Urbanist',
                         ),
@@ -488,17 +485,16 @@ class _PortalHomeState extends State<PortalHome>
               ],
             ),
           ),
-          
           const SizedBox(height: 20),
-          
-          // Content input field
           TextField(
-            controller: _selectedType == 'question' ? _questionController : _newsController,
+            controller: _selectedType == 'question'
+                ? _questionController
+                : _newsController,
             maxLines: 4,
             decoration: InputDecoration(
-              hintText: _selectedType == 'question' 
-                ? 'Enter announcement here...' 
-                : 'Enter news content here...',
+              hintText: _selectedType == 'question'
+                  ? 'Enter announcement here...'
+                  : 'Enter news content here...',
               hintStyle: const TextStyle(
                 color: AppColors.text5Light,
                 fontSize: 14,
@@ -520,10 +516,7 @@ class _PortalHomeState extends State<PortalHome>
               ),
             ),
           ),
-          
           const SizedBox(height: 20),
-          
-          // Submit button
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
@@ -555,11 +548,13 @@ class _PortalHomeState extends State<PortalHome>
   }
 
   void _handleSubmit() {
-    final controller = _selectedType == 'question' ? _questionController : _newsController;
+    final controller =
+        _selectedType == 'question' ? _questionController : _newsController;
     if (controller.text.trim().isNotEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('${_selectedType == 'question' ? 'Announcement' : 'News feed'} added successfully!'),
+          content: Text(
+              '${_selectedType == 'question' ? 'Announcement' : 'News feed'} added successfully!'),
           backgroundColor: AppColors.text2Light,
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(
@@ -567,7 +562,7 @@ class _PortalHomeState extends State<PortalHome>
           ),
         ),
       );
-      
+
       controller.clear();
       setState(() {
         _showAddForm = false;
@@ -622,7 +617,7 @@ class _PortalHomeState extends State<PortalHome>
                             ),
                           ],
                         ),
-                        const SizedBox(height: 20),
+                        const SizedBox(height: 16), // Reduced spacing
                         Row(
                           children: [
                             Expanded(
@@ -636,7 +631,7 @@ class _PortalHomeState extends State<PortalHome>
                                 index: 1,
                               ),
                             ),
-                            const SizedBox(width: 12),
+                            const SizedBox(width: 8), // Reduced spacing
                             Expanded(
                               child: _buildStatsCard(
                                 title: 'Staff Members',
@@ -650,7 +645,7 @@ class _PortalHomeState extends State<PortalHome>
                             ),
                           ],
                         ),
-                        const SizedBox(height: 12),
+                        const SizedBox(height: 8), // Reduced spacing
                         Row(
                           children: [
                             Expanded(
@@ -664,7 +659,7 @@ class _PortalHomeState extends State<PortalHome>
                                 index: 3,
                               ),
                             ),
-                            const SizedBox(width: 12),
+                            const SizedBox(width: 8), // Reduced spacing
                             Expanded(
                               child: _buildStatsCard(
                                 title: 'Attendance',
@@ -683,9 +678,9 @@ class _PortalHomeState extends State<PortalHome>
                   ),
                 ),
 
-                const SizedBox(height: 24),
+                const SizedBox(height: 20), // Reduced spacing
 
-                // Quick Actions Section (Admin-specific)
+                // Quick Actions Section (Admin-specific) - Now with 4 buttons
                 _buildAnimatedCard(
                   index: 5,
                   child: Padding(
@@ -717,7 +712,8 @@ class _PortalHomeState extends State<PortalHome>
                             ),
                           ],
                         ),
-                        const SizedBox(height: 20),
+                        const SizedBox(height: 16), // Reduced spacing
+                        // First row of buttons
                         Row(
                           children: [
                             Expanded(
@@ -727,12 +723,18 @@ class _PortalHomeState extends State<PortalHome>
                                 backgroundColor: AppColors.portalButton1Light,
                                 borderColor: AppColors.portalButton1BorderLight,
                                 onTap: () {
-                                  // Navigate to student management
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) =>
+                                          const ManageStudentsScreen(),
+                                    ),
+                                  );
                                 },
                                 index: 0,
                               ),
                             ),
-                            const SizedBox(width: 16),
+                            const SizedBox(width: 12), // Reduced spacing
                             Expanded(
                               child: _buildQuickActionButton(
                                 label: 'Staff\nDirectory',
@@ -740,9 +742,60 @@ class _PortalHomeState extends State<PortalHome>
                                 backgroundColor: AppColors.portalButton2Light,
                                 borderColor: AppColors.portalButton2BorderLight,
                                 onTap: () {
-                                  // Navigate to staff directory
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) =>
+                                          const ManageStaffScreen(),
+                                    ),
+                                  );
                                 },
                                 index: 1,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 12), // Spacing between rows
+                        // Second row of buttons
+                        Row(
+                          children: [
+                            Expanded(
+                              child: _buildQuickActionButton(
+                                label: 'Manage\nCourses',
+                                icon: Icons.book_rounded,
+                                backgroundColor: AppColors.attCheckColor2,
+                                borderColor:
+                                    AppColors.attCheckColor2.withOpacity(0.3),
+                                onTap: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) =>
+                                          const CourseManagementScreen(),
+                                    ),
+                                  );
+                                },
+                                index: 2,
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: _buildQuickActionButton(
+                                label: 'Levels &\nClasses',
+                                icon: Icons.school_outlined,
+                                backgroundColor: AppColors.secondaryLight,
+                                borderColor:
+                                    AppColors.secondaryLight.withOpacity(0.3),
+                                onTap: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) =>
+                                          const LevelClassManagementScreen(),
+                                    ),
+                                  );
+                                },
+                                index: 3,
                               ),
                             ),
                           ],
@@ -752,7 +805,7 @@ class _PortalHomeState extends State<PortalHome>
                   ),
                 ),
 
-                const SizedBox(height: 24),
+                const SizedBox(height: 20), // Reduced spacing
 
                 // Recent Activities Section
                 _buildAnimatedCard(
@@ -770,7 +823,8 @@ class _PortalHomeState extends State<PortalHome>
                                 Container(
                                   padding: const EdgeInsets.all(8),
                                   decoration: BoxDecoration(
-                                    color: AppColors.text2Light.withOpacity(0.1),
+                                    color:
+                                        AppColors.text2Light.withOpacity(0.1),
                                     borderRadius: BorderRadius.circular(12),
                                   ),
                                   child: Icon(
@@ -838,6 +892,22 @@ class _PortalHomeState extends State<PortalHome>
                           iconColor: AppColors.text2Light,
                           index: 3,
                         ),
+                        _buildRecentActivityItem(
+                          title: 'New Course Added',
+                          subtitle: 'Computer Science added to SSS1',
+                          time: '3 hours ago',
+                          icon: Icons.add_circle_rounded,
+                          iconColor: AppColors.attCheckColor2,
+                          index: 4,
+                        ),
+                        _buildRecentActivityItem(
+                          title: 'Class Assignment',
+                          subtitle: 'Students moved to new classes',
+                          time: '4 hours ago',
+                          icon: Icons.swap_horiz_rounded,
+                          iconColor: AppColors.portalButton1Light,
+                          index: 5,
+                        ),
                       ],
                     ),
                   ),
@@ -895,7 +965,8 @@ class _PortalHomeState extends State<PortalHome>
                                   borderRadius: BorderRadius.circular(20),
                                   boxShadow: [
                                     BoxShadow(
-                                      color: AppColors.text2Light.withOpacity(0.3),
+                                      color:
+                                          AppColors.text2Light.withOpacity(0.3),
                                       blurRadius: 8,
                                       offset: const Offset(0, 2),
                                     ),
@@ -1031,14 +1102,7 @@ class _PortalHomeState extends State<PortalHome>
 
 
 
-// import 'package:flutter/material.dart';
-// import 'package:flutter/services.dart';
-// import 'package:linkschool/modules/admin/home/portal_news_item.dart';
-// import 'package:linkschool/modules/student/result/student_result_screen.dart';
-// import '../../common/app_colors.dart';
-// import '../../common/constants.dart';
-// import '../../common/text_styles.dart';
-// import '../../explore/home/custom_button_item.dart';
+
 
 // class PortalHome extends StatefulWidget {
 //   final PreferredSizeWidget appBar;
@@ -1162,7 +1226,7 @@ class _PortalHomeState extends State<PortalHome>
 
 //   Widget _buildQuickActionButton({
 //     required String label,
-//     required String iconPath,
+//     required IconData icon,
 //     required Color backgroundColor,
 //     required Color borderColor,
 //     required VoidCallback onTap,
@@ -1175,7 +1239,6 @@ class _PortalHomeState extends State<PortalHome>
 //           scale: _bounceAnimation.value,
 //           child: GestureDetector(
 //             onTap: () {
-//               // Add ripple effect
 //               HapticFeedback.lightImpact();
 //               onTap();
 //             },
@@ -1212,9 +1275,7 @@ class _PortalHomeState extends State<PortalHome>
 //                             borderRadius: BorderRadius.circular(12),
 //                           ),
 //                           child: Icon(
-//                             iconPath == 'assets/icons/result.svg' 
-//                               ? Icons.assessment 
-//                               : Icons.payment,
+//                             icon,
 //                             size: 32,
 //                             color: Colors.white,
 //                           ),
@@ -1235,6 +1296,170 @@ class _PortalHomeState extends State<PortalHome>
 //                   ),
 //                 ],
 //               ),
+//             ),
+//           ),
+//         );
+//       },
+//     );
+//   }
+
+//   Widget _buildStatsCard({
+//     required String title,
+//     required String value,
+//     required String subtitle,
+//     required IconData icon,
+//     required Color iconColor,
+//     required Color backgroundColor,
+//     required int index,
+//   }) {
+//     return _buildAnimatedCard(
+//       index: index,
+//       child: Container(
+//         padding: const EdgeInsets.all(20.0),
+//         margin: const EdgeInsets.symmetric(horizontal: 4.0),
+//         decoration: BoxDecoration(
+//           color: backgroundColor,
+//           borderRadius: BorderRadius.circular(20.0),
+//           border: Border.all(color: AppColors.text6Light, width: 1),
+//           boxShadow: [
+//             BoxShadow(
+//               color: AppColors.text2Light.withOpacity(0.1),
+//               blurRadius: 10,
+//               offset: const Offset(0, 4),
+//             ),
+//           ],
+//         ),
+//         child: Column(
+//           crossAxisAlignment: CrossAxisAlignment.start,
+//           children: [
+//             Row(
+//               mainAxisAlignment: MainAxisAlignment.spaceBetween,
+//               children: [
+//                 Container(
+//                   padding: const EdgeInsets.all(8),
+//                   decoration: BoxDecoration(
+//                     color: iconColor.withOpacity(0.1),
+//                     borderRadius: BorderRadius.circular(10),
+//                   ),
+//                   child: Icon(
+//                     icon,
+//                     color: iconColor,
+//                     size: 20,
+//                   ),
+//                 ),
+//                 Text(
+//                   '+12%',
+//                   style: AppTextStyles.normal500(
+//                     fontSize: 12,
+//                     color: AppColors.attCheckColor2,
+//                   ),
+//                 ),
+//               ],
+//             ),
+//             const SizedBox(height: 12),
+//             Text(
+//               value,
+//               style: AppTextStyles.normal700(
+//                 fontSize: 24,
+//                 color: AppColors.text2Light,
+//               ),
+//             ),
+//             Text(
+//               title,
+//               style: AppTextStyles.normal400(
+//                 fontSize: 14,
+//                 color: AppColors.text7Light,
+//               ),
+//             ),
+//             const SizedBox(height: 4),
+//             Text(
+//               subtitle,
+//               style: AppTextStyles.normal400(
+//                 fontSize: 12,
+//                 color: AppColors.text9Light,
+//               ),
+//             ),
+//           ],
+//         ),
+//       ),
+//     );
+//   }
+
+//   Widget _buildRecentActivityItem({
+//     required String title,
+//     required String subtitle,
+//     required String time,
+//     required IconData icon,
+//     required Color iconColor,
+//     required int index,
+//   }) {
+//     return TweenAnimationBuilder<double>(
+//       tween: Tween<double>(begin: 0, end: 1),
+//       duration: Duration(milliseconds: 600 + (index * 100)),
+//       curve: Curves.easeOutBack,
+//       builder: (context, value, child) {
+//         return Transform.scale(
+//           scale: value,
+//           child: Container(
+//             margin: const EdgeInsets.only(bottom: 12.0),
+//             padding: const EdgeInsets.all(16.0),
+//             decoration: BoxDecoration(
+//               color: Colors.white,
+//               borderRadius: BorderRadius.circular(16.0),
+//               border: Border.all(color: AppColors.text6Light, width: 1),
+//               boxShadow: [
+//                 BoxShadow(
+//                   color: AppColors.text2Light.withOpacity(0.05),
+//                   blurRadius: 8,
+//                   offset: const Offset(0, 2),
+//                 ),
+//               ],
+//             ),
+//             child: Row(
+//               children: [
+//                 Container(
+//                   padding: const EdgeInsets.all(8),
+//                   decoration: BoxDecoration(
+//                     color: iconColor.withOpacity(0.1),
+//                     borderRadius: BorderRadius.circular(10),
+//                   ),
+//                   child: Icon(
+//                     icon,
+//                     color: iconColor,
+//                     size: 20,
+//                   ),
+//                 ),
+//                 const SizedBox(width: 12),
+//                 Expanded(
+//                   child: Column(
+//                     crossAxisAlignment: CrossAxisAlignment.start,
+//                     children: [
+//                       Text(
+//                         title,
+//                         style: AppTextStyles.normal600(
+//                           fontSize: 14,
+//                           color: AppColors.text2Light,
+//                         ),
+//                       ),
+//                       const SizedBox(height: 2),
+//                       Text(
+//                         subtitle,
+//                         style: AppTextStyles.normal400(
+//                           fontSize: 12,
+//                           color: AppColors.text7Light,
+//                         ),
+//                       ),
+//                     ],
+//                   ),
+//                 ),
+//                 Text(
+//                   time,
+//                   style: AppTextStyles.normal400(
+//                     fontSize: 11,
+//                     color: AppColors.text9Light,
+//                   ),
+//                 ),
+//               ],
 //             ),
 //           ),
 //         );
@@ -1314,7 +1539,7 @@ class _PortalHomeState extends State<PortalHome>
 //                         borderRadius: BorderRadius.circular(10),
 //                       ),
 //                       child: Text(
-//                         'Question',
+//                         'Announcement',
 //                         textAlign: TextAlign.center,
 //                         style: TextStyle(
 //                           color: _selectedType == 'question' 
@@ -1369,7 +1594,7 @@ class _PortalHomeState extends State<PortalHome>
 //             maxLines: 4,
 //             decoration: InputDecoration(
 //               hintText: _selectedType == 'question' 
-//                 ? 'Enter your question here...' 
+//                 ? 'Enter announcement here...' 
 //                 : 'Enter news content here...',
 //               hintStyle: const TextStyle(
 //                 color: AppColors.text5Light,
@@ -1400,7 +1625,6 @@ class _PortalHomeState extends State<PortalHome>
 //             width: double.infinity,
 //             child: ElevatedButton(
 //               onPressed: () {
-//                 // Handle submit logic here
 //                 _handleSubmit();
 //               },
 //               style: ElevatedButton.styleFrom(
@@ -1412,7 +1636,7 @@ class _PortalHomeState extends State<PortalHome>
 //                 elevation: 0,
 //               ),
 //               child: Text(
-//                 'Add ${_selectedType == 'question' ? 'Question' : 'News Feed'}',
+//                 'Add ${_selectedType == 'question' ? 'Announcement' : 'News Feed'}',
 //                 style: const TextStyle(
 //                   color: Colors.white,
 //                   fontSize: 16,
@@ -1430,10 +1654,9 @@ class _PortalHomeState extends State<PortalHome>
 //   void _handleSubmit() {
 //     final controller = _selectedType == 'question' ? _questionController : _newsController;
 //     if (controller.text.trim().isNotEmpty) {
-//       // Add your submission logic here
 //       ScaffoldMessenger.of(context).showSnackBar(
 //         SnackBar(
-//           content: Text('${_selectedType == 'question' ? 'Question' : 'News feed'} added successfully!'),
+//           content: Text('${_selectedType == 'question' ? 'Announcement' : 'News feed'} added successfully!'),
 //           backgroundColor: AppColors.text2Light,
 //           behavior: SnackBarBehavior.floating,
 //           shape: RoundedRectangleBorder(
@@ -1464,9 +1687,104 @@ class _PortalHomeState extends State<PortalHome>
 //             child: Column(
 //               crossAxisAlignment: CrossAxisAlignment.start,
 //               children: [
-//                 // Quick Actions Section
+//                 // Admin Overview Stats Section
 //                 _buildAnimatedCard(
 //                   index: 0,
+//                   child: Padding(
+//                     padding: const EdgeInsets.all(16.0),
+//                     child: Column(
+//                       crossAxisAlignment: CrossAxisAlignment.start,
+//                       children: [
+//                         Row(
+//                           children: [
+//                             Container(
+//                               padding: const EdgeInsets.all(8),
+//                               decoration: BoxDecoration(
+//                                 color: AppColors.text2Light.withOpacity(0.1),
+//                                 borderRadius: BorderRadius.circular(12),
+//                               ),
+//                               child: Icon(
+//                                 Icons.analytics_rounded,
+//                                 color: AppColors.text2Light,
+//                                 size: 24,
+//                               ),
+//                             ),
+//                             const SizedBox(width: 12),
+//                             Text(
+//                               'School Overview',
+//                               style: AppTextStyles.normal600(
+//                                 fontSize: 20,
+//                                 color: AppColors.text2Light,
+//                               ),
+//                             ),
+//                           ],
+//                         ),
+//                         const SizedBox(height: 20),
+//                         Row(
+//                           children: [
+//                             Expanded(
+//                               child: _buildStatsCard(
+//                                 title: 'Total Students',
+//                                 value: '1,247',
+//                                 subtitle: 'Active this term',
+//                                 icon: Icons.people_rounded,
+//                                 iconColor: AppColors.portalButton1Light,
+//                                 backgroundColor: AppColors.boxColor2,
+//                                 index: 1,
+//                               ),
+//                             ),
+//                             const SizedBox(width: 12),
+//                             Expanded(
+//                               child: _buildStatsCard(
+//                                 title: 'Staff Members',
+//                                 value: '89',
+//                                 subtitle: 'Teaching & Admin',
+//                                 icon: Icons.school_rounded,
+//                                 iconColor: AppColors.attCheckColor2,
+//                                 backgroundColor: AppColors.boxColor4,
+//                                 index: 2,
+//                               ),
+//                             ),
+//                           ],
+//                         ),
+//                         const SizedBox(height: 12),
+//                         Row(
+//                           children: [
+//                             Expanded(
+//                               child: _buildStatsCard(
+//                                 title: 'Classes',
+//                                 value: '24',
+//                                 subtitle: 'Active classes',
+//                                 icon: Icons.class_rounded,
+//                                 iconColor: AppColors.secondaryLight,
+//                                 backgroundColor: AppColors.boxColor1,
+//                                 index: 3,
+//                               ),
+//                             ),
+//                             const SizedBox(width: 12),
+//                             Expanded(
+//                               child: _buildStatsCard(
+//                                 title: 'Attendance',
+//                                 value: '94%',
+//                                 subtitle: 'Today\'s rate',
+//                                 icon: Icons.how_to_reg_rounded,
+//                                 iconColor: AppColors.text2Light,
+//                                 backgroundColor: AppColors.boxColor3,
+//                                 index: 4,
+//                               ),
+//                             ),
+//                           ],
+//                         ),
+//                       ],
+//                     ),
+//                   ),
+//                 ),
+
+//                 const SizedBox(height: 24),
+
+//                 // Quick Actions Section (Admin-specific)
+//                 _buildAnimatedCard(
+//                   index: 5,
 //                   child: Padding(
 //                     padding: const EdgeInsets.all(16.0),
 //                     child: Column(
@@ -1501,20 +1819,12 @@ class _PortalHomeState extends State<PortalHome>
 //                           children: [
 //                             Expanded(
 //                               child: _buildQuickActionButton(
-//                                 label: 'Check\nResults',
-//                                 iconPath: 'assets/icons/result.svg',
+//                                 label: 'Manage\nStudents',
+//                                 icon: Icons.people_alt_rounded,
 //                                 backgroundColor: AppColors.portalButton1Light,
 //                                 borderColor: AppColors.portalButton1BorderLight,
 //                                 onTap: () {
-//                                   Navigator.push(
-//                                     context,
-//                                     MaterialPageRoute(
-//                                       builder: (context) => const StudentResultScreen(
-//                                         studentName: 'Tochukwu Dennis',
-//                                         className: 'JSS2',
-//                                       ),
-//                                     ),
-//                                   );
+//                                   // Navigate to student management
 //                                 },
 //                                 index: 0,
 //                               ),
@@ -1522,12 +1832,12 @@ class _PortalHomeState extends State<PortalHome>
 //                             const SizedBox(width: 16),
 //                             Expanded(
 //                               child: _buildQuickActionButton(
-//                                 label: 'Make\nPayment',
-//                                 iconPath: 'assets/icons/payment.svg',
+//                                 label: 'Staff\nDirectory',
+//                                 icon: Icons.badge_rounded,
 //                                 backgroundColor: AppColors.portalButton2Light,
 //                                 borderColor: AppColors.portalButton2BorderLight,
 //                                 onTap: () {
-//                                   // Handle payment navigation
+//                                   // Navigate to staff directory
 //                                 },
 //                                 index: 1,
 //                               ),
@@ -1541,9 +1851,100 @@ class _PortalHomeState extends State<PortalHome>
 
 //                 const SizedBox(height: 24),
 
+//                 // Recent Activities Section
+//                 _buildAnimatedCard(
+//                   index: 6,
+//                   child: Padding(
+//                     padding: const EdgeInsets.symmetric(horizontal: 16.0),
+//                     child: Column(
+//                       crossAxisAlignment: CrossAxisAlignment.start,
+//                       children: [
+//                         Row(
+//                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
+//                           children: [
+//                             Row(
+//                               children: [
+//                                 Container(
+//                                   padding: const EdgeInsets.all(8),
+//                                   decoration: BoxDecoration(
+//                                     color: AppColors.text2Light.withOpacity(0.1),
+//                                     borderRadius: BorderRadius.circular(12),
+//                                   ),
+//                                   child: Icon(
+//                                     Icons.history_rounded,
+//                                     color: AppColors.text2Light,
+//                                     size: 20,
+//                                   ),
+//                                 ),
+//                                 const SizedBox(width: 8),
+//                                 Text(
+//                                   'Recent Activities',
+//                                   style: AppTextStyles.normal600(
+//                                     fontSize: 18,
+//                                     color: AppColors.text2Light,
+//                                   ),
+//                                 ),
+//                               ],
+//                             ),
+//                             TextButton(
+//                               onPressed: () {
+//                                 // Handle see all activities
+//                               },
+//                               child: const Text(
+//                                 'View all',
+//                                 style: TextStyle(
+//                                   decoration: TextDecoration.underline,
+//                                   color: AppColors.text2Light,
+//                                   fontFamily: 'Urbanist',
+//                                   fontWeight: FontWeight.w500,
+//                                 ),
+//                               ),
+//                             ),
+//                           ],
+//                         ),
+//                         const SizedBox(height: 16),
+//                         _buildRecentActivityItem(
+//                           title: 'New Student Registration',
+//                           subtitle: 'Sarah Johnson enrolled in JSS1A',
+//                           time: '10 min ago',
+//                           icon: Icons.person_add_rounded,
+//                           iconColor: AppColors.attCheckColor2,
+//                           index: 0,
+//                         ),
+//                         _buildRecentActivityItem(
+//                           title: 'Fee Payment Received',
+//                           subtitle: 'Michael Chen - Term 2 fees paid',
+//                           time: '25 min ago',
+//                           icon: Icons.payment_rounded,
+//                           iconColor: AppColors.portalButton1Light,
+//                           index: 1,
+//                         ),
+//                         _buildRecentActivityItem(
+//                           title: 'Exam Schedule Updated',
+//                           subtitle: 'Mathematics exam moved to Friday',
+//                           time: '1 hour ago',
+//                           icon: Icons.schedule_rounded,
+//                           iconColor: AppColors.secondaryLight,
+//                           index: 2,
+//                         ),
+//                         _buildRecentActivityItem(
+//                           title: 'Staff Meeting Scheduled',
+//                           subtitle: 'Department heads meeting tomorrow',
+//                           time: '2 hours ago',
+//                           icon: Icons.meeting_room_rounded,
+//                           iconColor: AppColors.text2Light,
+//                           index: 3,
+//                         ),
+//                       ],
+//                     ),
+//                   ),
+//                 ),
+
+//                 const SizedBox(height: 24),
+
 //                 // Feeds Section Header with Add Button
 //                 _buildAnimatedCard(
-//                   index: 1,
+//                   index: 7,
 //                   child: Padding(
 //                     padding: const EdgeInsets.symmetric(horizontal: 16.0),
 //                     child: Row(
@@ -1565,7 +1966,7 @@ class _PortalHomeState extends State<PortalHome>
 //                             ),
 //                             const SizedBox(width: 8),
 //                             Text(
-//                               'Feeds',
+//                               'School Feeds',
 //                               style: AppTextStyles.normal600(
 //                                 fontSize: 20,
 //                                 color: AppColors.text2Light,
@@ -1575,7 +1976,6 @@ class _PortalHomeState extends State<PortalHome>
 //                         ),
 //                         Row(
 //                           children: [
-//                             // Add Content Button
 //                             GestureDetector(
 //                               onTap: () {
 //                                 setState(() {
@@ -1646,7 +2046,7 @@ class _PortalHomeState extends State<PortalHome>
 //                 // Add Content Form (conditionally shown)
 //                 if (_showAddForm)
 //                   _buildAnimatedCard(
-//                     index: 2,
+//                     index: 8,
 //                     child: _buildAddContentForm(),
 //                   ),
 
@@ -1654,7 +2054,7 @@ class _PortalHomeState extends State<PortalHome>
 
 //                 // Feeds Content
 //                 _buildAnimatedCard(
-//                   index: 3,
+//                   index: 9,
 //                   child: Column(
 //                     children: [
 //                       TweenAnimationBuilder<double>(
@@ -1667,10 +2067,10 @@ class _PortalHomeState extends State<PortalHome>
 //                             child: const PortalNewsItem(
 //                               profileImageUrl:
 //                                   'https://img.freepik.com/free-vector/gradient-human-rights-day-background_52683-149974.jpg?t=st=1717832829~exp=1717833429~hmac=3e938edcacd7fef2a791b36c7d3decbf64248d9760dd7da0a304acee382b8a86',
-//                               name: 'John Doe',
+//                               name: 'School Administration',
 //                               newsContent:
-//                                   'This is a mock data showing the info details of a recording.',
-//                               time: '2 hours ago',
+//                                   'Important: Parent-Teacher conference scheduled for next week. Please check your email for detailed schedule.',
+//                               time: '1 hour ago',
 //                             ),
 //                           );
 //                         },
@@ -1685,10 +2085,28 @@ class _PortalHomeState extends State<PortalHome>
 //                             child: const PortalNewsItem(
 //                               profileImageUrl:
 //                                   'https://img.freepik.com/free-vector/gradient-human-rights-day-background_52683-149974.jpg?t=st=1717832829~exp=1717833429~hmac=3e938edcacd7fef2a791b36c7d3decbf64248d9760dd7da0a304acee382b8a86',
-//                               name: 'Vanguard news',
+//                               name: 'Academic Department',
 //                               newsContent:
-//                                   'This is a mock data showing the info details of a recording.',
-//                               time: '2 minutes ago',
+//                                   'Congratulations to our students for excellent performance in the recent inter-school competition!',
+//                               time: '3 hours ago',
+//                             ),
+//                           );
+//                         },
+//                       ),
+//                       TweenAnimationBuilder<double>(
+//                         tween: Tween<double>(begin: 0, end: 1),
+//                         duration: const Duration(milliseconds: 1000),
+//                         curve: Curves.easeOutBack,
+//                         builder: (context, value, child) {
+//                           return Transform.scale(
+//                             scale: value,
+//                             child: const PortalNewsItem(
+//                               profileImageUrl:
+//                                   'https://img.freepik.com/free-vector/gradient-human-rights-day-background_52683-149974.jpg?t=st=1717832829~exp=1717833429~hmac=3e938edcacd7fef2a791b36c7d3decbf64248d9760dd7da0a304acee382b8a86',
+//                               name: 'Sports Department',
+//                               newsContent:
+//                                   'Annual Sports Day preparations are underway! Students can register for various events starting Monday.',
+//                               time: '5 hours ago',
 //                             ),
 //                           );
 //                         },
