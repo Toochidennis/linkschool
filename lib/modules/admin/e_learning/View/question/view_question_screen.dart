@@ -610,7 +610,11 @@ void _initializeQuestions() {
 
        if(widget.source == 'empty_subject') {
       Navigator.of(context).popUntil(ModalRoute.withName('/empty_subject'));
+    }
+     else if(widget.source == 'elearning_dashboard') {
+      Navigator.of(context).popUntil(ModalRoute.withName('/recent_quiz'));
     } else {
+      Navigator.of(context).pop();
       Navigator.of(context).pop();
     }
      
@@ -869,8 +873,9 @@ void _initializeQuestions() {
                   'assets/icons/e_learning/preview_icon.png',
                 ),
               ),
-              onPressed: () {
-                _SaveToPrefs();
+              onPressed: () async {
+                await _SaveToPrefs();
+               
                   print('Created Questions: $createdQuestions');
                 Navigator.push(
                   context,
@@ -902,7 +907,8 @@ void _initializeQuestions() {
   }
 
   // Updated _SaveToPrefs method in ViewQuestionScreen
-void _SaveToPrefs() async {
+// Fixed _SaveToPrefs method in ViewQuestionScreen
+Future<void> _SaveToPrefs() async {
   SharedPreferences prefs = await SharedPreferences.getInstance();
   
   try {
@@ -914,34 +920,51 @@ void _SaveToPrefs() async {
       final correctOptions = q['correctOptions'] as List<int>;
       final correctAnswerController = q['correctAnswerController'] as TextEditingController?;
       
-      // Handle options for multiple choice
+      // Handle options for multiple choice with better validation
       List<Map<String, dynamic>> options = [];
       if (q['type'] == 'multiple_choice' && q['options'] != null) {
-        options = (q['options'] as List).map<Map<String, dynamic>>((opt) {
-          Map<String, dynamic>? optionFile = opt['options_file'];
+        final originalOptions = q['options'] as List;
+        
+        // Ensure we have the same number of options as controllers
+        int optionCount = optionControllers.length;
+        for (int i = 0; i < optionCount; i++) {
+          Map<String, dynamic>? optionFile;
           
-          return {
-            'order': opt['order'],
-            'text': opt['text'] ?? '',
-            'option_files': optionFile != null
-                ? [{
-                    'file_name': optionFile['file_name'] ?? '',
-                    'old_file_name': '',
-                    'type': 'image',
-                    'file': optionFile['base64'] ?? '',
-                  }]
-                : [],
-          };
-        }).toList();
+          // Safely get option file if it exists
+          if (i < originalOptions.length && originalOptions[i]['options_file'] != null) {
+            final origFile = originalOptions[i]['options_file'];
+            optionFile = {
+              'file_name': origFile['file_name'] ?? '',
+              'base64': origFile['base64'] ?? '',
+            };
+          }
+          
+          options.add({
+            'order': i,
+            'text': i < optionControllers.length ? optionControllers[i].text : '',
+            'option_files': optionFile != null ? [{
+              'file_name': optionFile['file_name'],
+              'old_file_name': '',
+              'type': 'image',
+              'file': _ensureProperBase64Format(optionFile['base64']),
+            }] : [],
+          });
+        }
       }
 
-      // Handle correct answer
+      // Handle correct answer with better validation
       dynamic correct = {};
       if (q['type'] == 'multiple_choice') {
         if (correctOptions.isNotEmpty && correctOptions.first < optionControllers.length) {
           correct = {
             'order': correctOptions.first,
             'text': optionControllers[correctOptions.first].text,
+          };
+        } else {
+          // Fallback to first option if no valid selection
+          correct = {
+            'order': 0,
+            'text': optionControllers.isNotEmpty ? optionControllers[0].text : '',
           };
         }
       } else {
@@ -952,40 +975,100 @@ void _SaveToPrefs() async {
         };
       }
 
+      // Handle question image with proper validation
+      List<Map<String, dynamic>> questionFiles = [];
+      if (q['imagePath'] != null && q['imagePath'].toString().isNotEmpty) {
+        questionFiles.add({
+          'file_name': q['imageName'] ?? 'question_image.jpg',
+          'old_file_name': '',
+          'type': 'image',
+          'file': _ensureProperBase64Format(q['imagePath'].toString()),
+        });
+      }
+
       return {
-        'question_id': q['question_id'] ?? '0',
-        'question_text': questionController.text,
+        'question_id': q['question_id']?.toString() ?? '0', // Include question_id
+        'question_text': questionController.text.trim(),
         'question_grade': marksController.text.isNotEmpty ? marksController.text : '1',
         'question_type': q['type'],
-        'question_files': q['imagePath'] != null
-            ? [
-                {
-                  'file_name': q['imageName'] ?? '',
-                  'old_file_name': '',
-                  'type': 'image',
-                  'file': q['imagePath'],
-                }
-              ]
-            : [],
+        'question_files': questionFiles,
         'options': options,
         'correct': correct,
-        'topic': q['topic'] ?? currentQuestion.topic,
+        'topic': q['topic'] ?? currentQuestion.topic ?? 'General',
       };
     }).toList();
+
+    // Validate that we have questions to save
+    if (questionsForPreview.isEmpty) {
+      print('WARNING: No questions to save for preview');
+      CustomToaster.toastError(context, "Error", "No questions available for preview");
+      return;
+    }
+
+    // Debug: Print questions being saved
+    print('=== SAVING QUESTIONS FOR PREVIEW ===');
+    print('Saving ${questionsForPreview.length} questions');
+    for (int i = 0; i < questionsForPreview.length; i++) {
+      final q = questionsForPreview[i];
+      print('Question $i:');
+      print('  - ID: ${q['question_id']}');
+      print('  - Text: "${q['question_text']}"');
+      print('  - Type: ${q['question_type']}');
+      print('  - Grade: ${q['question_grade']}');
+      print('  - Has image: ${q['question_files'].isNotEmpty}');
+      print('  - Options count: ${q['options'].length}');
+      print('  - Correct: ${q['correct']}');
+    }
 
     // Save questions to SharedPreferences
     String questionsJson = jsonEncode(questionsForPreview);
     await prefs.setString('preview_questions', questionsJson);
     
     // Save additional metadata
-    await prefs.setString('preview_title', widget.questiondata['title'] ?? 'Assessment');
+    await prefs.setString('preview_title', widget.questiondata['title']?.toString() ?? 'Assessment Preview');
     await prefs.setString('preview_duration', currentQuestion.duration.inSeconds.toString());
     await prefs.setBool('is_edit_mode', widget.editMode);
     
-    print('Questions saved to SharedPreferences successfully');
+    print('✓ Questions saved successfully. JSON length: ${questionsJson.length}');
+    print('✓ Title saved: ${widget.questiondata['title']}');
+    print('✓ Duration saved: ${currentQuestion.duration.inSeconds} seconds');
+    
+  } catch (e, stackTrace) {
+    print('ERROR saving questions to SharedPreferences: $e');
+    print('Stack trace: $stackTrace');
+    CustomToaster.toastError(context, "Error", "Failed to save questions for preview: $e");
+   return;
+  }
+}
+
+// Helper method to ensure proper base64 format
+String _ensureProperBase64Format(String? imageData) {
+  if (imageData == null || imageData.isEmpty) return '';
+  
+  // If already has data URL prefix, return as is
+  if (imageData.startsWith('data:')) {
+    return imageData;
+  }
+  
+  // If it looks like base64, add proper prefix
+  if (_isBase64String(imageData)) {
+    return 'data:image/jpeg;base64,$imageData';
+  }
+  
+  // Otherwise return as is (might be a file path)
+  return imageData;
+}
+
+// Helper method to check if string is valid base64
+bool _isBase64String(String str) {
+  try {
+    // Remove any whitespace
+    str = str.replaceAll(RegExp(r'\s+'), '');
+    // Check if it's valid base64
+    base64Decode(str);
+    return true;
   } catch (e) {
-    print('Error saving questions to SharedPreferences: $e');
-    CustomToaster.toastError(context, "Error", "Failed to save questions for preview");
+    return false;
   }
 }
 

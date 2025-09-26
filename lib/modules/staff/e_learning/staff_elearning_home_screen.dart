@@ -503,6 +503,7 @@ Future<void> _loadUserData() async {
               return GestureDetector(
                 onTap: () {
                   if (activity.type.toLowerCase() == 'material') {
+                    print("syllabus classes ${activity.classes.map((e) => e.toJson()).toList()}");
                     Navigator.push(
                       context,
                       MaterialPageRoute(
@@ -510,7 +511,9 @@ Future<void> _loadUserData() async {
                           itemId: activity.id,
                           syllabusId: activity.syllabusId,
                           courseId: activity.courseId.toString(),
+                          syllabusClasses: activity.classes.map((e) => e.toJson()).toList(),
                           levelId: activity.levelId,
+                          //classId: activity.classes.first.id,
                           courseName: activity.courseName,
                         ),
                       ),
@@ -521,11 +524,25 @@ Future<void> _loadUserData() async {
                       MaterialPageRoute(
                         builder: (_) => StaffRecentAssignment(
                           itemId: activity.id,
+                          syllabusClasses: activity.classes.map((e) => e.toJson()).toList(),
                           syllabusId: activity.syllabusId,
                           courseId: activity.courseId.toString(),
                           levelId: activity.levelId,
                           courseName: activity.courseName,
                           // if it’s the Assignment model
+                        ),
+                      ),
+                    );
+                  }else if (activity.type.toLowerCase() == 'quiz') {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => StaffRecentQuiz(
+                          levelId: activity.levelId,
+            syllabusId: activity.syllabusId.toString(),
+            courseName: activity.courseName,
+            courseId: activity.courseId.toString(),
+           quizId: activity.id.toString(),
                         ),
                       ),
                     );

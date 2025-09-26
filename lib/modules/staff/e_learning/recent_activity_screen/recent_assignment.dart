@@ -225,13 +225,12 @@ class _StaffRecentAssignmentState extends State<StaffRecentAssignment> with Sing
                             id: assignmentData?.id ?? 0,
                             title: assignmentData?.title ?? '',
                             description: assignmentData?.description ?? '',
-                            selectedClass: assignmentData?.classes.isNotEmpty ?? false
-                                ? assignmentData!.classes.first.name
-                                : '',
+                            selectedClass: widget.syllabusClasses?.first['class_name'] ?? '',
                             attachments: (assignmentData?.contentFiles ?? [])
                                 .map((file) => AttachmentItem(
                                       fileName: file.fileName,
                                       fileContent: file.file,
+                                      
                                       iconPath: _getFileType(file.fileName) == 'image' ||
                                               _getFileType(file.fileName) == 'video'
                                           ? 'assets/icons/e_learning/material.svg'

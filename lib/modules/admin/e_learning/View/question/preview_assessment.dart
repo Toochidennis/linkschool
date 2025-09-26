@@ -79,167 +79,280 @@ class _PreviewAssessmentState extends State<PreviewAssessment> {
     }
   }
 
-  Future<void> _loadQuestions() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final String? savedQuestions = prefs.getString('preview_questions');
-      final String? savedTitle = prefs.getString('preview_title');
-      final String? savedDuration = prefs.getString('preview_duration');
-      final bool isEditMode = prefs.getBool('is_edit_mode') ?? false;
-      
-      setState(() {
-        _isEditMode = isEditMode;
-        _previewTitle = savedTitle;
-        if (savedDuration != null) {
-          _previewDuration = Duration(seconds: int.tryParse(savedDuration) ?? 3600);
+  // Fixed _loadQuestions method in PreviewAssessment
+Future<void> _loadQuestions() async {
+  try {
+    final prefs = await SharedPreferences.getInstance();
+    final String? savedQuestions = prefs.getString('preview_questions');
+    final String? savedTitle = prefs.getString('preview_title');
+    final String? savedDuration = prefs.getString('preview_duration');
+    final bool isEditMode = prefs.getBool('is_edit_mode') ?? false;
+    
+    print('=== LOADING QUESTIONS DEBUG ===');
+    print('SavedQuestions exists: ${savedQuestions != null}');
+    print('SavedQuestions length: ${savedQuestions?.length ?? 0}');
+    print('SavedTitle: $savedTitle');
+    print('SavedDuration: $savedDuration');
+    print('IsEditMode: $isEditMode');
+    
+    // Set preview metadata
+    setState(() {
+      _isEditMode = isEditMode;
+      _previewTitle = savedTitle;
+      if (savedDuration != null) {
+        final seconds = int.tryParse(savedDuration) ?? 3600;
+        _previewDuration = Duration(seconds: seconds);
+        print('Parsed duration: $seconds seconds');
+      }
+    });
+    
+    List<QuizQuestion> loadedQuestions = [];
+    
+    // Prefer questions passed via widget
+    if (widget.questions != null && widget.questions!.isNotEmpty) {
+      print('Loading questions from widget.questions: ${widget.questions!.length}');
+      for (int i = 0; i < widget.questions!.length; i++) {
+        try {
+          final q = widget.questions![i];
+          final QuizQuestion processedQuestion = _processQuestionData(q, i);
+          loadedQuestions.add(processedQuestion);
+        } catch (e) {
+          print('Error processing widget question $i: $e');
+          loadedQuestions.add(_createFallbackQuestion(i));
         }
+      }
+    } else if (savedQuestions != null && savedQuestions.isNotEmpty) {
+      print('Loading questions from SharedPreferences...');
+      
+      try {
+        final List<dynamic> questionsJson = jsonDecode(savedQuestions);
+        print('Successfully decoded ${questionsJson.length} questions from JSON');
+        
+        // Process each question with better error handling
+        for (int i = 0; i < questionsJson.length; i++) {
+          try {
+            final q = questionsJson[i] as Map<String, dynamic>;
+            print('Processing question $i: ${q['question_text']}');
+            
+            final QuizQuestion processedQuestion = _processQuestionData(q, i);
+            loadedQuestions.add(processedQuestion);
+            
+          } catch (e) {
+            print('Error processing question $i: $e');
+            // Create a fallback question to prevent complete failure
+            loadedQuestions.add(_createFallbackQuestion(i));
+          }
+        }
+        
+      } catch (jsonError) {
+        print('JSON decode error: $jsonError');
+        // Fall through to widget.questions fallback
+      }
+    }
+    
+    // No further fallback needed; we already preferred widget.questions
+    
+    // Final validation and state update
+    if (loadedQuestions.isNotEmpty) {
+      setState(() {
+        questions = loadedQuestions;
+        _totalQuestions = questions.length;
+        userAnswers = List<dynamic>.filled(_totalQuestions, null, growable: false);
       });
       
-      if (savedQuestions != null && savedQuestions.isNotEmpty) {
-        final List<dynamic> questionsJson = jsonDecode(savedQuestions);
-        setState(() {
-          questions = questionsJson.map((q) {
-            final String topic = q['topic'] ?? "General Knowledge";
-            final String questionText = q['question_text'] ?? '';
-            final int questionGrade = int.tryParse(q['question_grade'].toString()) ?? 0;
-            final List<dynamic> questionFiles = q['question_files'] as List<dynamic>? ?? [];
-            
-            // Handle question image - check if it's base64 or file path
-            String? imagePath;
-            if (questionFiles.isNotEmpty) {
-              final file = questionFiles.first;
-              if (file['file'] != null && file['file'].toString().isNotEmpty) {
-                // Check if it's a base64 string (starts with data: or is pure base64)
-                String fileContent = file['file'].toString();
-                if (fileContent.startsWith('data:') || _isBase64(fileContent)) {
-                  // It's base64, use it directly for preview
-                  imagePath = fileContent.startsWith('data:') ? fileContent : 'data:image/jpeg;base64,$fileContent';
-                } else {
-                  // It's a file path, construct the URL
-                  imagePath = file['file_name']?.toString();
-                }
-              }
-            }
-
-            final Map<String, dynamic>? correct = q['correct'] is List && (q['correct'] as List).isNotEmpty
-                ? (q['correct'] as List).first as Map<String, dynamic>?
-                : q['correct'] as Map<String, dynamic>?;
-
-            if (q['question_type'] == 'multiple_choice') {
-              final List<dynamic> options = q['options'] as List<dynamic>? ?? [];
-              return TextQuestion(
-                topic: topic,
-                questionGrade: questionGrade,
-                questionText: questionText,
-                imageUrl: imagePath,
-                options: options.map((opt) {
-                  final List<dynamic> optionFiles = opt['option_files'] as List<dynamic>? ?? [];
-                  String? optionImageUrl;
-                  
-                  if (optionFiles.isNotEmpty) {
-                    final optFile = optionFiles.first;
-                    if (optFile['file'] != null && optFile['file'].toString().isNotEmpty) {
-                      String fileContent = optFile['file'].toString();
-                      if (fileContent.startsWith('data:') || _isBase64(fileContent)) {
-                        optionImageUrl = fileContent.startsWith('data:') ? fileContent : 'data:image/jpeg;base64,$fileContent';
-                      } else {
-                        optionImageUrl = optFile['file_name']?.toString();
-                      }
-                    }
-                  }
-
-                  return {
-                    'text': opt['text'] as String? ?? '',
-                    'imageUrl': optionImageUrl,
-                    'order': opt['order']?.toString(),
-                  };
-                }).toList(),
-                correctAnswers: correct != null && correct['text'] != null
-                    ? [correct['text'] as String]
-                    : [],
-              );
-            } else {
-              // Handles 'short_answer'
-              return TypedAnswerQuestion(
-                topic: topic,
-                questionGrade: questionGrade,
-                questionText: questionText,
-                imageUrl: imagePath,
-                correctAnswer: correct != null ? correct['text'] as String? : null,
-              );
-            }
-          }).toList();
-          _totalQuestions = questions.length;
-          userAnswers = List<dynamic>.filled(_totalQuestions, null, growable: false);
-        });
-      } else if (widget.questions != null && widget.questions!.isNotEmpty) {
-        // Fallback to widget.questions
-        setState(() {
-          questions = widget.questions!.map((q) {
-            final String topic = q['topic'] ?? "General Knowledge";
-            final String questionText = q['question_text'] ?? '';
-            final int questionGrade = int.tryParse(q['question_grade'].toString()) ?? 0;
-            final List<dynamic> questionFiles = q['question_files'] as List<dynamic>? ?? [];
-            final String? imagePath = questionFiles.isNotEmpty
-                ? questionFiles[0]['file_name'] as String?
-                : null;
-            final Map<String, dynamic>? correct = q['correct'] as Map<String, dynamic>?;
-            
-            if (q['question_type'] == 'multiple_choice') {
-              final List<dynamic> options = q['options'] as List<dynamic>? ?? [];
-              return TextQuestion(
-                topic: topic,
-                questionGrade: questionGrade,
-                questionText: questionText,
-                imageUrl: imagePath,
-                options: options.map((opt) {
-                  final List<dynamic> optionFiles = opt['option_files'] as List<dynamic>? ?? [];
-                  return {
-                    'text': opt['text'] as String? ?? '',
-                    'imageUrl': optionFiles.isNotEmpty
-                        ? optionFiles[0]['file_name'] as String?
-                        : null,
-                    'order': opt['order']?.toString(),
-                  };
-                }).toList(),
-                correctAnswers: correct != null && correct['text'] != null
-                    ? [correct['text'] as String]
-                    : [],
-              );
-            } else {
-              // Handles 'short_answer'
-              return TypedAnswerQuestion(
-                topic: topic,
-                questionGrade: questionGrade,
-                questionText: questionText,
-                imageUrl: imagePath,
-                correctAnswer: correct != null ? correct['text'] as String? : null,
-              );
-            }
-          }).toList();
-          _totalQuestions = questions.length;
-          userAnswers = List<dynamic>.filled(_totalQuestions, null, growable: false);
-        });
-      } else {
-        // No questions available
-        setState(() {
-          questions = [];
-          _totalQuestions = 0;
-          userAnswers = [];
-        });
+      print('=== QUESTIONS LOADED SUCCESSFULLY ===');
+      print('Total questions: $_totalQuestions');
+      for (int i = 0; i < questions.length; i++) {
+        final q = questions[i];
+        print('Question $i: "${q.questionText}" (${q.runtimeType})');
+        if (q is TypedAnswerQuestion) {
+          print('  - Type: Short Answer');
+          print('  - Correct: ${q.correctAnswer}');
+        } else if (q is TextQuestion) {
+          print('  - Type: Multiple Choice');
+          print('  - Options: ${q.options.length}');
+          print('  - Correct: ${q.correctAnswers}');
+        }
+        print('  - Grade: ${q.questionGrade}');
+        print('  - Has Image: ${q.imageUrl != null}');
       }
-    } catch (e) {
-      debugPrint('Error loading questions: $e');
+      
+    } else {
+      // No questions available at all
+      print('ERROR: No questions found from any source');
       setState(() {
         questions = [];
         _totalQuestions = 0;
         userAnswers = [];
       });
     }
+    
+  } catch (e, stackTrace) {
+    print('Critical error in _loadQuestions: $e');
+    print('Stack trace: $stackTrace');
+    
+    // Set empty state to prevent crashes
+    setState(() {
+      questions = [];
+      _totalQuestions = 0;
+      userAnswers = [];
+    });
   }
+}
+
+// Helper method to process question data
+QuizQuestion _processQuestionData(Map<String, dynamic> q, int index) {
+  final String topic = q['topic']?.toString() ?? "General Knowledge";
+  final String questionText = q['question_text']?.toString() ?? 'Question ${index + 1}';
+  final int questionGrade = int.tryParse(q['question_grade']?.toString() ?? '0') ?? 1;
+  
+  print('  Processing: "$questionText" (Grade: $questionGrade)');
+  
+  // Handle question image
+  String? imagePath = _processQuestionImage(q['question_files']);
+  
+  // Handle question type
+  final String questionType = q['question_type']?.toString() ?? 'short_answer';
+  
+  if (questionType == 'multiple_choice') {
+    return _createMultipleChoiceQuestion(q, topic, questionText, questionGrade, imagePath);
+  } else {
+    return _createShortAnswerQuestion(q, topic, questionText, questionGrade, imagePath);
+  }
+}
+
+// Helper method to process question images
+String? _processQuestionImage(dynamic questionFiles) {
+  if (questionFiles is List && questionFiles.isNotEmpty) {
+    final file = questionFiles.first;
+    if (file is Map && file['file'] != null) {
+      final String fileContent = file['file'].toString();
+      if (fileContent.isNotEmpty) {
+        // Handle different image formats
+        if (fileContent.startsWith('data:')) {
+          return fileContent;
+        } else if (_isBase64(fileContent)) {
+          return 'data:image/jpeg;base64,$fileContent';
+        } else {
+          // Assume it's a file path
+          return fileContent;
+        }
+      }
+    }
+  }
+  return null;
+}
+
+// Helper method to create multiple choice question
+TextQuestion _createMultipleChoiceQuestion(
+    Map<String, dynamic> q, String topic, String questionText, int questionGrade, String? imagePath) {
+  
+  final List<dynamic> optionsData = q['options'] as List<dynamic>? ?? [];
+  print('    Processing ${optionsData.length} options');
+  
+  final List<Map<String, dynamic>> options = optionsData.map((opt) {
+    final optMap = opt as Map<String, dynamic>;
+    
+    // Handle option image
+    String? optionImageUrl;
+    final List<dynamic> optionFiles = optMap['option_files'] as List<dynamic>? ?? [];
+    if (optionFiles.isNotEmpty) {
+      final optFile = optionFiles.first as Map<String, dynamic>?;
+      if (optFile != null && optFile['file'] != null) {
+        final String fileContent = optFile['file'].toString();
+        if (fileContent.isNotEmpty) {
+          if (fileContent.startsWith('data:')) {
+            optionImageUrl = fileContent;
+          } else if (_isBase64(fileContent)) {
+            optionImageUrl = 'data:image/jpeg;base64,$fileContent';
+          } else {
+            optionImageUrl = fileContent;
+          }
+        }
+      }
+    }
+    
+    return {
+      'text': optMap['text']?.toString() ?? '',
+      'imageUrl': optionImageUrl,
+      'order': optMap['order']?.toString() ?? '0',
+    };
+  }).toList();
+  
+  // Handle correct answer
+  final dynamic correctData = q['correct'];
+  List<String> correctAnswers = [];
+  
+  if (correctData is Map && correctData['text'] != null) {
+    correctAnswers.add(correctData['text'].toString());
+  } else if (correctData is List && correctData.isNotEmpty) {
+    correctAnswers.add(correctData.first['text']?.toString() ?? '');
+  }
+  
+  print('    Correct answers: $correctAnswers');
+  
+  return TextQuestion(
+    topic: topic,
+    questionGrade: questionGrade,
+    questionText: questionText,
+    imageUrl: imagePath,
+    options: options,
+    correctAnswers: correctAnswers,
+  );
+}
+
+// Helper method to create short answer question
+TypedAnswerQuestion _createShortAnswerQuestion(
+    Map<String, dynamic> q, String topic, String questionText, int questionGrade, String? imagePath) {
+  
+  final dynamic correctData = q['correct'];
+  String? correctAnswer;
+  
+  if (correctData is Map && correctData['text'] != null) {
+    correctAnswer = correctData['text'].toString();
+  } else if (correctData is List && correctData.isNotEmpty) {
+    correctAnswer = correctData.first['text']?.toString();
+  }
+  
+  print('    Correct answer: $correctAnswer');
+  
+  return TypedAnswerQuestion(
+    topic: topic,
+    questionGrade: questionGrade,
+    questionText: questionText,
+    imageUrl: imagePath,
+    correctAnswer: correctAnswer,
+  );
+}
+
+// Helper method to create fallback question when processing fails
+QuizQuestion _createFallbackQuestion(int index) {
+  return TypedAnswerQuestion(
+    topic: "General",
+    questionGrade: 1,
+    questionText: "Question ${index + 1} (Error loading question)",
+    correctAnswer: "No answer available",
+  );
+}
+
+// Helper method to check if string is base64
+bool _isBase64(String str) {
+  if (str.isEmpty) return false;
+  try {
+    // Remove any whitespace
+    str = str.replaceAll(RegExp(r'\s+'), '');
+    // Basic length check (base64 strings are multiples of 4)
+    if (str.length % 4 != 0) return false;
+    // Try to decode
+    base64Decode(str);
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
 
   // Helper method to check if a string is base64
-  bool _isBase64(String str) {
+  bool _isBase64String(String str) {
     try {
       base64Decode(str);
       return true;

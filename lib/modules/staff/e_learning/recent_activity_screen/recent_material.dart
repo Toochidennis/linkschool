@@ -236,7 +236,7 @@ print("syllabusClasses: ${widget.syllabusClasses}");
 
 print("title: ${materialData?.title}");
 print("description: ${materialData?.description}");
-print("classes: ${materialData?.classes}");
+print("classes: ${widget.syllabusClasses}");
 print("startDate: ${materialData?.startDate}");
 print("endDate: ${materialData?.endDate}");
 print("topic: ${materialData?.topic}");
@@ -257,14 +257,12 @@ print("grade: ${materialData?.grade}");
                         editMode: true,
                         syllabusClasses: widget.syllabusClasses,
                         materialToEdit: custom.Material(
-                          title: materialData!.title,
-                          description: materialData!.description,
-                          selectedClass: materialData!.classes.map((c) => c.name).join(', '),
-                          startDate:DateTime.parse(materialData!.startDate!),
-
-                          endDate: DateTime.parse(materialData!.endDate!),
-                          topic: materialData!.topic ?? '',
-                          attachments: (materialData!.contentFiles ?? [])
+                          title: materialData?.title ?? '',
+                          description: materialData?.description ?? '',
+                          selectedClass:widget.syllabusClasses?.first['class_name'] ?? '',
+                         
+                          topic: materialData?.topic ?? '',
+                          attachments: (materialData?.contentFiles ?? [])
                               .map((file) => AttachmentItem(
                                     fileName: file.fileName,
                                     fileContent: file.file ?? '',
@@ -275,12 +273,10 @@ print("grade: ${materialData?.grade}");
                                             : 'assets/icons/e_learning/link.svg',
                                   ))
                               .toList(),
-                          duration:  materialData!.duration != null
-    ? Duration(minutes: int.parse(materialData!.duration!))
-    : Duration.zero,
-topicId: materialData!.topicId.toString(),
+                        
+topicId: materialData?.topicId.toString(),
                           
-                         marks: materialData!.grade ?? "0",
+                         marks: materialData?.grade ?? "0",
 
                         ),
                         onSave: (material) {},
