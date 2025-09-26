@@ -47,113 +47,6 @@ class _ViewCourseResultScreenState extends State<ViewCourseResultScreen> {
     fetchAssessments();
   }
 
-  // Future<void> fetchCourseResults() async {
-  //   try {
-  //     final authProvider = Provider.of<AuthProvider>(context, listen: false);
-  //     final apiService = locator<ApiService>();
-
-  //     if (authProvider.authToken != null) {
-  //       apiService.setAuthToken(authProvider.authToken!);
-  //     }
-
-  //     final dbName = EnvConfig.dbName;
-  //     final courseId = widget.courseData['course_id'].toString();
-  //     final levelId = widget.courseData['level_id']?.toString() ??
-  //         authProvider.getLevels().firstWhere(
-  //               (level) => level['level_name'] == 'JSS1',
-  //               orElse: () => {'id': '66'},
-  //             )['id'].toString();
-
-  //     final endpoint = 'https://api.linkschool.com/portal/classes/${widget.classId}/courses/$courseId/results';
-  //     final queryParams = {
-  //       'term': widget.term.toString(),
-  //       'year': widget.year,
-  //       '_db': dbName,
-  //       'level_id': levelId,
-  //     };
-
-  //     print('Fetching course results from: $endpoint with params: $queryParams');
-
-  //     final response = await apiService.get(
-  //       endpoint: endpoint,
-  //       queryParams: queryParams,
-  //     );
-
-  //     if (response.success && response.rawData != null) {
-  //       final results = response.rawData!['response']['course_results'] as List;
-  //       final gradesData = response.rawData!['response']['grades'] as List;
-
-  //       final uniqueAssessments = <String>{};
-  //       for (var result in results) {
-  //         final assessments = result['assessments'] as List;
-  //         print('Result assessments for result_id ${result['result_id']}: $assessments');
-  //         for (var assessment in assessments) {
-  //           uniqueAssessments.add(assessment['assessment_name'] as String);
-  //         }
-  //       }
-
-  //       setState(() {
-  //         courseResults = List<Map<String, dynamic>>.from(results);
-  //         grades = List<Map<String, dynamic>>.from(gradesData);
-  //         assessmentNames = uniqueAssessments.toList();
-  //         isLoading = false;
-  //       });
-  //       print('Fetched ${courseResults.length} results, ${grades.length} grades, ${assessmentNames.length} assessments');
-  //     } else {
-  //       setState(() {
-  //         error = response.message;
-  //         isLoading = false;
-  //       });
-  //       print('Failed to fetch results: ${response.message}');
-  //     }
-  //   } catch (e) {
-  //     setState(() {
-  //       error = 'Failed to load results: $e';
-  //       isLoading = false;
-  //     });
-  //     print('Error fetching results: $e');
-  //   }
-  // }
-
-  // Future<void> fetchAssessments() async {
-  //   try {
-  //     final apiService = locator<ApiService>();
-  //     final authProvider = Provider.of<AuthProvider>(context, listen: false);
-  //     if (authProvider.authToken != null) {
-  //       apiService.setAuthToken(authProvider.authToken!);
-  //     }
-
-  //     final dbName = EnvConfig.dbName;
-  //     final response = await apiService.get(
-  //       endpoint: 'https://api.linkschool.com/portal/assessments',
-  //       queryParams: {'_db': dbName},
-  //     );
-
-  //     print('Fetching assessments with db: $dbName');
-
-  //     if (response.success && response.rawData != null) {
-  //       final assessmentsData = response.rawData!['assessments'] as List;
-  //       final tempMaxScores = <String, int>{};
-  //       for (var assessmentData in assessmentsData) {
-  //         final assessments = assessmentData['assessments'] as List;
-  //         for (var assessment in assessments) {
-  //           tempMaxScores[assessment['assessment_name']] = assessment['assessment_score'] ?? 0;
-  //         }
-  //       }
-  //       setState(() {
-  //         maxScores = tempMaxScores;
-  //       });
-  //       print('Fetched max scores: $maxScores');
-  //     }
-  //   } catch (e) {
-  //     setState(() {
-  //       error = 'Failed to load assessments: $e';
-  //     });
-  //     print('Error fetching assessments: $e');
-  //   }
-  // }
-
-
   Future<void> fetchCourseResults() async {
     try {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
@@ -373,36 +266,6 @@ class _ViewCourseResultScreenState extends State<ViewCourseResultScreen> {
       ),
     );
   }
-  // Widget _buildCourseResult() {
-  //   return Padding(
-  //     padding: const EdgeInsets.all(16.0),
-  //     child: Column(
-  //       alignment: CrossAxisAlignment.start,
-  //       children: [
-  //         Container(
-  //           width: double.infinity,
-  //           padding: const EdgeInsets.all(16.0),
-  //           decoration: const BoxDecoration(
-  //             border: Border(
-  //               top: BorderSide(color: Colors.orange, width: 2),
-  //               bottom: BorderSide(color: Colors.orange, width: 2),
-  //             ),
-  //           ),
-  //           child: Center(
-  //             child: Text(
-  //               '${widget.year}/${int.parse(widget.year) + 1} ${widget.termName}',
-  //               style: const TextStyle(
-  //                 fontSize: 16,
-  //                 fontWeight: FontWeight.w500,
-  //                 color: Colors.orange,
-  //               ),
-  //             ),
-  //           ),
-  //         ),
-  //       ],
-  //     ),
-  //   );
-  // }
 
   Widget _buildCoursesTable() {
     if (courseResults.isEmpty) {
@@ -570,7 +433,142 @@ class _ViewCourseResultScreenState extends State<ViewCourseResultScreen> {
 }
 
 
+  // Widget _buildCourseResult() {
+  //   return Padding(
+  //     padding: const EdgeInsets.all(16.0),
+  //     child: Column(
+  //       alignment: CrossAxisAlignment.start,
+  //       children: [
+  //         Container(
+  //           width: double.infinity,
+  //           padding: const EdgeInsets.all(16.0),
+  //           decoration: const BoxDecoration(
+  //             border: Border(
+  //               top: BorderSide(color: Colors.orange, width: 2),
+  //               bottom: BorderSide(color: Colors.orange, width: 2),
+  //             ),
+  //           ),
+  //           child: Center(
+  //             child: Text(
+  //               '${widget.year}/${int.parse(widget.year) + 1} ${widget.termName}',
+  //               style: const TextStyle(
+  //                 fontSize: 16,
+  //                 fontWeight: FontWeight.w500,
+  //                 color: Colors.orange,
+  //               ),
+  //             ),
+  //           ),
+  //         ),
+  //       ],
+  //     ),
+  //   );
+  // }
 
+  // Future<void> fetchCourseResults() async {
+  //   try {
+  //     final authProvider = Provider.of<AuthProvider>(context, listen: false);
+  //     final apiService = locator<ApiService>();
+
+  //     if (authProvider.authToken != null) {
+  //       apiService.setAuthToken(authProvider.authToken!);
+  //     }
+
+  //     final dbName = EnvConfig.dbName;
+  //     final courseId = widget.courseData['course_id'].toString();
+  //     final levelId = widget.courseData['level_id']?.toString() ??
+  //         authProvider.getLevels().firstWhere(
+  //               (level) => level['level_name'] == 'JSS1',
+  //               orElse: () => {'id': '66'},
+  //             )['id'].toString();
+
+  //     final endpoint = 'https://api.linkschool.com/portal/classes/${widget.classId}/courses/$courseId/results';
+  //     final queryParams = {
+  //       'term': widget.term.toString(),
+  //       'year': widget.year,
+  //       '_db': dbName,
+  //       'level_id': levelId,
+  //     };
+
+  //     print('Fetching course results from: $endpoint with params: $queryParams');
+
+  //     final response = await apiService.get(
+  //       endpoint: endpoint,
+  //       queryParams: queryParams,
+  //     );
+
+  //     if (response.success && response.rawData != null) {
+  //       final results = response.rawData!['response']['course_results'] as List;
+  //       final gradesData = response.rawData!['response']['grades'] as List;
+
+  //       final uniqueAssessments = <String>{};
+  //       for (var result in results) {
+  //         final assessments = result['assessments'] as List;
+  //         print('Result assessments for result_id ${result['result_id']}: $assessments');
+  //         for (var assessment in assessments) {
+  //           uniqueAssessments.add(assessment['assessment_name'] as String);
+  //         }
+  //       }
+
+  //       setState(() {
+  //         courseResults = List<Map<String, dynamic>>.from(results);
+  //         grades = List<Map<String, dynamic>>.from(gradesData);
+  //         assessmentNames = uniqueAssessments.toList();
+  //         isLoading = false;
+  //       });
+  //       print('Fetched ${courseResults.length} results, ${grades.length} grades, ${assessmentNames.length} assessments');
+  //     } else {
+  //       setState(() {
+  //         error = response.message;
+  //         isLoading = false;
+  //       });
+  //       print('Failed to fetch results: ${response.message}');
+  //     }
+  //   } catch (e) {
+  //     setState(() {
+  //       error = 'Failed to load results: $e';
+  //       isLoading = false;
+  //     });
+  //     print('Error fetching results: $e');
+  //   }
+  // }
+
+  // Future<void> fetchAssessments() async {
+  //   try {
+  //     final apiService = locator<ApiService>();
+  //     final authProvider = Provider.of<AuthProvider>(context, listen: false);
+  //     if (authProvider.authToken != null) {
+  //       apiService.setAuthToken(authProvider.authToken!);
+  //     }
+
+  //     final dbName = EnvConfig.dbName;
+  //     final response = await apiService.get(
+  //       endpoint: 'https://api.linkschool.com/portal/assessments',
+  //       queryParams: {'_db': dbName},
+  //     );
+
+  //     print('Fetching assessments with db: $dbName');
+
+  //     if (response.success && response.rawData != null) {
+  //       final assessmentsData = response.rawData!['assessments'] as List;
+  //       final tempMaxScores = <String, int>{};
+  //       for (var assessmentData in assessmentsData) {
+  //         final assessments = assessmentData['assessments'] as List;
+  //         for (var assessment in assessments) {
+  //           tempMaxScores[assessment['assessment_name']] = assessment['assessment_score'] ?? 0;
+  //         }
+  //       }
+  //       setState(() {
+  //         maxScores = tempMaxScores;
+  //       });
+  //       print('Fetched max scores: $maxScores');
+  //     }
+  //   } catch (e) {
+  //     setState(() {
+  //       error = 'Failed to load assessments: $e';
+  //     });
+  //     print('Error fetching assessments: $e');
+  //   }
+  // }
 
 
 // import 'package:flutter/material.dart';

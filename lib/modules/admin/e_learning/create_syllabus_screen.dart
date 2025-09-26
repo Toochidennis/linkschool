@@ -9,9 +9,11 @@ import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/common/widgets/portal/e_learning/select_classes_dialog.dart';
 import 'package:linkschool/modules/common/widgets/portal/e_learning/select_teachers_dialog.dart';
 import 'package:linkschool/modules/model/e-learning/syllabus_model.dart';
-import 'package:linkschool/modules/providers/admin/e_learning/syllabus_provider.dart';
+// import 'package:linkschool/modules/providers/admin/e_learning/syllabus_provider.dart';
 import 'package:linkschool/modules/services/admin/e_learning/syllabus_service.dart';
 import 'package:linkschool/modules/services/api/api_service.dart';
+
+import '../../providers/admin/e_learning/syllabus_provider.dart';
 
 class CreateSyllabusScreen extends StatefulWidget {
   final Map<String, dynamic>? syllabusData;

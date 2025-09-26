@@ -55,10 +55,6 @@ class SkillsProvider with ChangeNotifier {
   }
 
   Future<void> addSkill(String skillName, String type, String level, {BuildContext? context}) async {
-    _isLoading = true;
-    _error = '';
-    notifyListeners();
-
     try {
       final authProvider = locator<AuthProvider>();
       if (authProvider.token != null) {
@@ -73,22 +69,26 @@ class SkillsProvider with ChangeNotifier {
         levelId: level,
       );
 
-      if (response.success && context != null) {
-        CustomToaster.toastSuccess(
-          context,
-          'Success',
-          'Skill/Behaviour added successfully',
-        );
+      if (response.success) {
+        // Show success message only if context is still valid
+        if (context != null && context.mounted) {
+          CustomToaster.toastSuccess(
+            context,
+            'Success',
+            'Skill/Behaviour added successfully',
+          );
+        }
+        // Refresh skills after successful addition
+        await fetchSkills();
+      } else {
+        throw Exception(response.message ?? 'Failed to add skill');
       }
-      await fetchSkills();
     } catch (e) {
       _error = e.toString();
-      if (context != null) {
+      // Only show error if context is still valid
+      if (context != null && context.mounted) {
         CustomToaster.toastError(context, 'Error', _error);
       }
-    } finally {
-      _isLoading = false;
-      notifyListeners();
     }
   }
 
@@ -112,7 +112,7 @@ class SkillsProvider with ChangeNotifier {
         levelId: level,
       );
 
-      if (response.success && context != null) {
+      if (response.success && context != null && context.mounted) {
         CustomToaster.toastSuccess(
           context,
           'Success',
@@ -122,7 +122,7 @@ class SkillsProvider with ChangeNotifier {
       await fetchSkills();
     } catch (e) {
       _error = e.toString();
-      if (context != null) {
+      if (context != null && context.mounted) {
         CustomToaster.toastError(context, 'Error', _error);
       }
     } finally {
@@ -148,7 +148,7 @@ class SkillsProvider with ChangeNotifier {
       await fetchSkills();
     } catch (e) {
       _error = e.toString();
-      if (context != null) {
+      if (context != null && context.mounted) {
         CustomToaster.toastError(context, 'Error', _error);
       }
     } finally {
@@ -159,26 +159,40 @@ class SkillsProvider with ChangeNotifier {
 }
 
 
+
+
 // import 'package:flutter/material.dart';
 // import 'package:linkschool/modules/auth/provider/auth_provider.dart';
 // import 'package:linkschool/modules/model/admin/behaviour_model.dart';
 // import 'package:linkschool/modules/services/admin/behaviour_service.dart';
 // import 'package:linkschool/modules/services/api/api_service.dart';
-// import 'package:linkschool/modules/common/custom_toaster.dart';
 // import 'package:linkschool/modules/services/api/service_locator.dart';
-// // import 'package:linkschool/modules/providers/auth/auth_provider.dart';
+// import 'package:linkschool/modules/common/custom_toaster.dart';
 
 // class SkillsProvider with ChangeNotifier {
 //   final SkillService _skillService;
 //   List<Skills> _skills = [];
 //   bool _isLoading = false;
 //   String _error = '';
+//   String _selectedLevel = '0'; // Default to '0' for all levels
 
 //   SkillsProvider(this._skillService);
 
-//   List<Skills> get skills => _skills;
+//   List<Skills> get skills {
+//     // Filter skills based on selected level
+//     if (_selectedLevel == '0') {
+//       return _skills; // Return all skills for 'General (All level)'
+//     }
+//     return _skills.where((skill) => skill.level == _selectedLevel).toList();
+//   }
 //   bool get isLoading => _isLoading;
 //   String get error => _error;
+//   String get selectedLevel => _selectedLevel;
+
+//   void setSelectedLevel(String level) {
+//     _selectedLevel = level;
+//     notifyListeners();
+//   }
 
 //   Future<void> fetchSkills() async {
 //     _isLoading = true;
@@ -186,7 +200,6 @@ class SkillsProvider with ChangeNotifier {
 //     notifyListeners();
 
 //     try {
-//       // Ensure token is set before making API call
 //       final authProvider = locator<AuthProvider>();
 //       if (authProvider.token != null) {
 //         locator<ApiService>().setAuthToken(authProvider.token!);

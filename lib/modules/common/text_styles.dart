@@ -102,6 +102,18 @@ class AppTextStyles {
     );
   }
 
+  static TextStyle normal710({
+    required double fontSize,
+    required Color color,
+  }) {
+    return TextStyle(
+      fontSize: fontSize,
+      color: color,
+      fontWeight: FontWeight.w700,
+      fontFamily: 'Poppins-Regular',
+    );
+  }
+
 // newly added styles
   static TextStyle normal400({required double fontSize, required Color color}){
     return TextStyle(

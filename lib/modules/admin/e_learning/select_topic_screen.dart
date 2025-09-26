@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:linkschool/modules/admin/e_learning/create_topic_screen.dart';
-import 'package:linkschool/modules/admin/result/behaviour_settings_screen.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/buttons/custom_save_elevated_button.dart';
 import 'package:linkschool/modules/common/constants.dart';
@@ -9,8 +8,6 @@ import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/model/e-learning/topic_model.dart';
 import 'package:linkschool/modules/providers/admin/e_learning/topic_provider.dart';
 import 'package:provider/provider.dart';
-// import 'package:linkschool/modules/admin_portal/result/behaviour_settings_screen.dart';
-
 
 
 class SelectTopicScreen extends StatefulWidget {
@@ -40,7 +37,7 @@ class SelectTopicScreen extends StatefulWidget {
 class _SelectTopicScreenState extends State<SelectTopicScreen> {
   late final String callingScreen;
   late final VoidCallback? onTopicCreated;
-  Topic? selectedTopic; // Changed to Topic? to store the full Topic object
+  Topic? selectedTopic;
   late double opacity;
 
   @override
@@ -49,6 +46,7 @@ class _SelectTopicScreenState extends State<SelectTopicScreen> {
     callingScreen = widget.callingScreen;
     onTopicCreated = widget.onTopicCreated;
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      // Add null safety check
       if (widget.syllabusId != null && widget.syllabusId! > 0) {
         print('Fetching topics with syllabusId: ${widget.syllabusId}');
         Provider.of<TopicProvider>(context, listen: false)
@@ -104,12 +102,11 @@ class _SelectTopicScreenState extends State<SelectTopicScreen> {
             padding: const EdgeInsets.symmetric(horizontal: 8.0),
             child: CustomSaveElevatedButton(
               onPressed: () {
-                 Navigator.pop(context, {
-          'topicName': selectedTopic?.name ?? 'No Topic',
-          'topicId': selectedTopic?.id,
-        });
-      },
-              
+                Navigator.pop(context, {
+                  'topicName': selectedTopic?.name ?? 'No Topic',
+                  'topicId': selectedTopic?.id,
+                });
+              },
               text: 'Save',
             ),
           ),
@@ -121,24 +118,42 @@ class _SelectTopicScreenState extends State<SelectTopicScreen> {
           padding: const EdgeInsets.all(16.0),
           child: Column(
             children: [
-             
               const SizedBox(height: 10),
               Expanded(
                 child: topicProvider.isLoading
                     ? const Center(child: CircularProgressIndicator())
-                    : topicProvider.topics.isEmpty
-                        ? const Center(child: Text('No topics found'))
-                        : ListView.builder(
-                            itemCount: topicProvider.topics.length,
-                            itemBuilder: (context, index) {
-                              final topicItem = topicProvider.topics[index];
-                              return TopicItem(
-                                topic: topicItem,
-                                isSelected: topicItem == selectedTopic,
-                                onSelect: _selectTopic,
-                              );
-                            },
-                          ),
+                    : topicProvider.error.isNotEmpty
+                        ? Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Text('Error: ${topicProvider.error}'),
+                                const SizedBox(height: 16),
+                                ElevatedButton(
+                                  onPressed: () {
+                                    if (widget.syllabusId != null && widget.syllabusId! > 0) {
+                                      Provider.of<TopicProvider>(context, listen: false)
+                                          .fetchTopic(syllabusId: widget.syllabusId!);
+                                    }
+                                  },
+                                  child: const Text('Retry'),
+                                ),
+                              ],
+                            ),
+                          )
+                        : topicProvider.topics.isEmpty
+                            ? const Center(child: Text('No topics found'))
+                            : ListView.builder(
+                                itemCount: topicProvider.topics.length,
+                                itemBuilder: (context, index) {
+                                  final topicItem = topicProvider.topics[index];
+                                  return TopicItem(
+                                    topic: topicItem,
+                                    isSelected: topicItem == selectedTopic,
+                                    onSelect: _selectTopic,
+                                  );
+                                },
+                              ),
               ),
             ],
           ),
@@ -175,9 +190,9 @@ class _SelectTopicScreenState extends State<SelectTopicScreen> {
 }
 
 class TopicItem extends StatelessWidget {
-  final Topic topic; // Changed to Topic object
+  final Topic topic;
   final bool isSelected;
-  final Function(Topic) onSelect; // Updated to accept Topic
+  final Function(Topic) onSelect;
 
   const TopicItem({
     super.key,
@@ -211,7 +226,9 @@ class TopicItem extends StatelessWidget {
               ),
               const SizedBox(width: 18),
               Expanded(
-                child: Text(topic.name), // Use topic.name
+                child: Text(
+                  topic.name.isNotEmpty ? topic.name : 'Unnamed Topic',
+                ),
               ),
               if (isSelected)
                 SvgPicture.asset(
@@ -229,6 +246,7 @@ class TopicItem extends StatelessWidget {
 
 
 
+
 // import 'package:flutter/material.dart';
 // import 'package:flutter_svg/flutter_svg.dart';
 // import 'package:linkschool/modules/admin/e_learning/create_topic_screen.dart';
@@ -237,22 +255,24 @@ class TopicItem extends StatelessWidget {
 // import 'package:linkschool/modules/common/buttons/custom_save_elevated_button.dart';
 // import 'package:linkschool/modules/common/constants.dart';
 // import 'package:linkschool/modules/common/text_styles.dart';
+// import 'package:linkschool/modules/model/e-learning/topic_model.dart';
 // import 'package:linkschool/modules/providers/admin/e_learning/topic_provider.dart';
 // import 'package:provider/provider.dart';
 // // import 'package:linkschool/modules/admin_portal/result/behaviour_settings_screen.dart';
 
+
 // class SelectTopicScreen extends StatefulWidget {
 //   final String callingScreen;
 //   final VoidCallback? onTopicCreated;
-//   final String? levelId ;
+//   final String? levelId;
 //   final int? syllabusId;
-  
+
 //   const SelectTopicScreen({
 //     super.key,
 //     required this.callingScreen,
 //     this.onTopicCreated,
-//      this.levelId,
-//      this.syllabusId,
+//     this.levelId,
+//     this.syllabusId,
 //   });
 
 //   @override
@@ -262,23 +282,22 @@ class TopicItem extends StatelessWidget {
 // class _SelectTopicScreenState extends State<SelectTopicScreen> {
 //   late final String callingScreen;
 //   late final VoidCallback? onTopicCreated;
-
-  
-//   String? selectedTopic;
+//   Topic? selectedTopic; // Changed to Topic? to store the full Topic object
 //   late double opacity;
+
 //   @override
 //   void initState() {
 //     super.initState();
-
 //     callingScreen = widget.callingScreen;
 //     onTopicCreated = widget.onTopicCreated;
 //     WidgetsBinding.instance.addPostFrameCallback((_) {
-//      if (widget.syllabusId != null && widget.syllabusId! > 0) {
-//       print('Fetching topics with syllabusId: ${widget.syllabusId}');
-//       Provider.of<TopicProvider>(context, listen: false).fetchTopic(syllabusId: widget.syllabusId!);
-//     } else {
-//       print('Invalid syllabusId: ${widget.syllabusId}, skipping fetch');
-//     }
+//       if (widget.syllabusId != null && widget.syllabusId! > 0) {
+//         print('Fetching topics with syllabusId: ${widget.syllabusId}');
+//         Provider.of<TopicProvider>(context, listen: false)
+//             .fetchTopic(syllabusId: widget.syllabusId!);
+//       } else {
+//         print('Invalid syllabusId: ${widget.syllabusId}, skipping fetch');
+//       }
 //     });
 //   }
 
@@ -287,12 +306,11 @@ class TopicItem extends StatelessWidget {
 //     final topicProvider = Provider.of<TopicProvider>(context);
 //     final Brightness brightness = Theme.of(context).brightness;
 //     opacity = brightness == Brightness.light ? 0.1 : 0.15;
+
 //     return Scaffold(
 //       appBar: AppBar(
 //         leading: IconButton(
-//           onPressed: () {
-//             Navigator.of(context).pop();
-//           },
+//           onPressed: () => Navigator.of(context).pop(),
 //           icon: Image.asset(
 //             'assets/icons/arrow_back.png',
 //             color: AppColors.primaryLight,
@@ -328,8 +346,12 @@ class TopicItem extends StatelessWidget {
 //             padding: const EdgeInsets.symmetric(horizontal: 8.0),
 //             child: CustomSaveElevatedButton(
 //               onPressed: () {
-//                 Navigator.pop(context, selectedTopic ?? 'No Topic');
-//               },
+//                  Navigator.pop(context, {
+//           'topicName': selectedTopic?.name ?? 'No Topic',
+//           'topicId': selectedTopic?.id,
+//         });
+//       },
+              
 //               text: 'Save',
 //             ),
 //           ),
@@ -341,13 +363,7 @@ class TopicItem extends StatelessWidget {
 //           padding: const EdgeInsets.all(16.0),
 //           child: Column(
 //             children: [
-//               TextField(
-//                 decoration: InputDecoration(
-//                   hintText: 'Add new Topic',
-//                   border: OutlineInputBorder(),
-//                 ),
-                
-//               ),
+             
 //               const SizedBox(height: 10),
 //               Expanded(
 //                 child: topicProvider.isLoading
@@ -359,8 +375,8 @@ class TopicItem extends StatelessWidget {
 //                             itemBuilder: (context, index) {
 //                               final topicItem = topicProvider.topics[index];
 //                               return TopicItem(
-//                                 topic: topicItem.name,
-//                                 isSelected: topicItem.name == selectedTopic,
+//                                 topic: topicItem,
+//                                 isSelected: topicItem == selectedTopic,
 //                                 onSelect: _selectTopic,
 //                               );
 //                             },
@@ -370,77 +386,38 @@ class TopicItem extends StatelessWidget {
 //           ),
 //         ),
 //       ),
-
 //       floatingActionButton: FloatingActionButton(
-//   onPressed: () async {
-//     await Navigator.of(context).push(
-//       MaterialPageRoute(
-//         builder: (context) => CreateTopicScreen(
-//           levelId: widget.levelId,
-//           syllabusId: widget.syllabusId!, // Pass the syllabusId
-                   
-//         ),
+//         onPressed: () async {
+//           await Navigator.of(context).push(
+//             MaterialPageRoute(
+//               builder: (context) => CreateTopicScreen(
+//                 levelId: widget.levelId,
+//                 syllabusId: widget.syllabusId!,
+//               ),
+//             ),
+//           );
+//           if (widget.syllabusId != null) {
+//             Provider.of<TopicProvider>(context, listen: false)
+//                 .fetchTopic(syllabusId: widget.syllabusId!);
+//           }
+//         },
+//         child: const Icon(Icons.add, color: AppColors.text6Light),
+//         backgroundColor: AppColors.primaryLight,
 //       ),
 //     );
-//      if (widget.syllabusId != null) {
-//       Provider.of<TopicProvider>(context, listen: false)
-//         .fetchTopic(syllabusId: widget.syllabusId!);
-//     }
-//   },
-//   child: Icon(Icons.add,color: AppColors.text6Light,),
-//   backgroundColor: AppColors.primaryLight,
-// ),
-//   );
-// }
+//   }
 
-//   // void _addTopic(String topic) {
-//   //   setState(() {
-//   //     topics.add(topic);
-//   //     selectedTopic = topic;
-//   //     if (onTopicCreated != null) {
-//   //       onTopicCreated!();
-//   //     }
-//   //   });
-//   // }
-
-//   void _selectTopic(String topic) {
+//   void _selectTopic(Topic topic) {
 //     setState(() {
 //       selectedTopic = topic;
 //     });
 //   }
 // }
 
-// class TopicsList extends StatelessWidget {
-//   final List<String> topics;
-//   final String? selectedTopic;
-//   final Function(String) onSelect;
-
-//   const TopicsList({
-//     super.key,
-//     required this.topics,
-//     required this.selectedTopic,
-//     required this.onSelect,
-//   });
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return ListView.builder(
-//       itemCount: topics.length,
-//       itemBuilder: (context, index) {
-//         return TopicItem(
-//           topic: topics[index],
-//           isSelected: topics[index] == selectedTopic,
-//           onSelect: onSelect,
-//         );
-//       },
-//     );
-//   }
-// }
-
 // class TopicItem extends StatelessWidget {
-//   final String topic;
+//   final Topic topic; // Changed to Topic object
 //   final bool isSelected;
-//   final Function(String) onSelect;
+//   final Function(Topic) onSelect; // Updated to accept Topic
 
 //   const TopicItem({
 //     super.key,
@@ -474,7 +451,7 @@ class TopicItem extends StatelessWidget {
 //               ),
 //               const SizedBox(width: 18),
 //               Expanded(
-//                 child: Text(topic),
+//                 child: Text(topic.name), // Use topic.name
 //               ),
 //               if (isSelected)
 //                 SvgPicture.asset(

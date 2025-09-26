@@ -307,7 +307,9 @@ await _syllabusProvider.fetchSyllabus(levelId, term,courseId);
           
             context,
             MaterialPageRoute(
-              builder: (context) => EmptySubjectScreen(
+              builder: (context) => 
+              
+              EmptySubjectScreen(
                  syllabusId: _syllabusList[index]['id'] as int?,
                  syllabusClasses: (_syllabusList[index]['classes'] as List<ClassModel>?)
     ?.map((c) => c.toJson()).toList() ?? [],

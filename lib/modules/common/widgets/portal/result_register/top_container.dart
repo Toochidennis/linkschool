@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:hive/hive.dart';
+import 'package:linkschool/config/env_config.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/common/utils/custom_dropdown_utils.dart';
@@ -8,7 +10,7 @@ import 'package:linkschool/modules/services/api/api_service.dart';
 import 'package:linkschool/modules/auth/provider/auth_provider.dart';
 // import 'course_registration_history.dart';
 
-class TopContainer extends StatelessWidget {
+class TopContainer extends StatefulWidget {
   final String selectedTerm;
   final Function(String?) onTermChanged;
   final String classId;
@@ -24,10 +26,46 @@ class TopContainer extends StatelessWidget {
     required this.authProvider,
   });
 
+  @override
+  State<TopContainer> createState() => _TopContainerState();
+}
+
+class _TopContainerState extends State<TopContainer> {
+  String _academicSession = '';
+   Map<String, dynamic> _settings = {};
+   String _selectedTerm = 'First term';
+
+    @override
+  void initState() {
+    super.initState();
+    _loadSettingsFromHive();
+  }
+
+    void _loadSettingsFromHive() {
+    final userBox = Hive.box('userData');
+    final userData = userBox.get('userData');
+
+    if (userData != null && userData['data'] != null && userData['data']['settings'] != null) {
+      setState(() {
+        _settings = Map<String, dynamic>.from(userData['data']['settings']);
+
+        int termNumber = _settings['term'] ?? 1;
+        _selectedTerm = termNumber == 1
+            ? 'First term'
+            : termNumber == 2
+                ? 'Second term'
+                : 'Third term';
+
+        _academicSession = "${int.parse(_settings['year'] ?? '2023') - 1}/${_settings['year'] ?? '2023'} academic session";
+      });
+    }
+  }
+
+
   Future<int> _fetchTotalStudents() async {
-    final response = await apiService.get<CourseRegistrationHistory>(
-      endpoint: 'portal/classes/$classId/course-registrations/history',
-      queryParams: {'_db': 'aalmgzmy_linkskoo_practice'},
+    final response = await widget.apiService.get<CourseRegistrationHistory>(
+      endpoint: 'portal/classes/${widget.classId}/course-registrations/history',
+      queryParams: {'_db': EnvConfig.dbName},
       fromJson: (json) => CourseRegistrationHistory.fromJson(json['data']),
     );
 
@@ -54,16 +92,16 @@ class TopContainer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Get settings data from AuthProvider
-    final settings = authProvider.getSettings();
-    final yearFromServer = settings['year'] ?? '2016';
-    final termNumber = settings['term'] ?? 1;
-    final termText = _getTermText(termNumber);
+    // // Get settings data from AuthProvider
+    // final settings = widget.authProvider.getSettings();
+    // final yearFromServer = settings['year'] ?? '2016';
+    // final termNumber = settings['term'] ?? 1;
+    // final termText = _getTermText(termNumber);
     
-    // Format year as current/next year (e.g., 2025/2026)
-    final currentYear = int.tryParse(yearFromServer.toString()) ?? 2016;
-    final nextYear = currentYear + 1;
-    final academicYear = '$currentYear/$nextYear';
+    // // Format year as current/next year (e.g., 2025/2026)
+    // final currentYear = int.tryParse(yearFromServer.toString()) ?? 2016;
+    // final nextYear = currentYear + 1;
+    // final academicYear = '$currentYear/$nextYear';
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0),
@@ -99,7 +137,7 @@ class TopContainer extends StatelessWidget {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          '$academicYear academic session',
+                          '$_academicSession',
                           style: AppTextStyles.normal600(
                               fontSize: 12, color: AppColors.backgroundDark),
                         ),
@@ -109,8 +147,8 @@ class TopContainer extends StatelessWidget {
                             'Second term',
                             'Third term'
                           ],
-                          value: termText,
-                          onChanged: onTermChanged,
+                          value: _selectedTerm,
+                          onChanged: widget.onTermChanged,
                         ),
                       ],
                     ),

@@ -207,8 +207,10 @@ class HistorySection extends StatelessWidget {
                 itemCount: groupedTerms.length,
                 itemBuilder: (context, index) {
                   final year = groupedTerms.keys.elementAt(index);
-                  final nextYear = (int.parse(year) + 1).toString();
-                  final session = '$year/$nextYear';
+                  // final nextYear = (int.parse(year) + 1).toString();
+                  // final session = '$year/$nextYear';
+                  final nextYear = int.parse(year);
+                  final session = '${nextYear - 1}/$year';
                   final sessionTerms = groupedTerms[year]!;
 
                   return InkWell(

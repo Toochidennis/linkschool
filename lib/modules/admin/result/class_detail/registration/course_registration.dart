@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:hive/hive.dart'; 
+import 'package:hive/hive.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/model/admin/course_registration_model.dart';
 import 'package:linkschool/modules/providers/admin/course_registration_provider.dart';
 import 'package:provider/provider.dart';
-// Import CustomToaster
 import 'package:linkschool/modules/common/custom_toaster.dart';
 
 class CourseRegistrationScreen extends StatefulWidget {
@@ -14,10 +13,10 @@ class CourseRegistrationScreen extends StatefulWidget {
   final int coursesRegistered;
   final String classId;
   final int studentId;
-  
+
   const CourseRegistrationScreen({
-    super.key, 
-    required this.studentName, 
+    super.key,
+    required this.studentName,
     required this.coursesRegistered,
     required this.classId,
     required this.studentId,
@@ -31,74 +30,140 @@ class _CourseRegistrationScreenState extends State<CourseRegistrationScreen> {
   late List<bool> selectedSubjects;
   late List<Color> subjectColors;
   late List<Map<String, dynamic>> courses;
-  bool _hasSelectedCourses = false; // Track if any courses are selected
-  bool _isSaving = false; // Track save operation state
-  bool _isLoadingRegisteredCourses = true; // Track loading state for registered courses
-  List<int> _registeredCourseIds = []; // Store IDs of already registered courses
-  
+  bool _hasSelectedCourses = false;
+  bool _isSaving = false;
+  bool _isLoadingRegisteredCourses = true;
+  List<int> _registeredCourseIds = [];
+  String _academicSession = '';
+  Map<String, dynamic> _settings = {};
+  String _selectedTerm = 'First term';
+
   @override
   void initState() {
     super.initState();
-    // Load courses from Hive on initialization
+    _loadSettingsFromHive();
     courses = getCoursesFromHive();
-    // Initialize all courses as unchecked by default
     selectedSubjects = List<bool>.filled(courses.length, false);
-    // Initialize colors with primary colors cycle
     subjectColors = List.generate(
-      courses.length, 
-      (index) => Colors.primaries[index % Colors.primaries.length]
+      courses.length,
+      (index) => Colors.primaries[index % Colors.primaries.length],
     );
-    
-    // Load registered courses for this student
-    _fetchRegisteredCoursesForStudent();
+
+    // Fetch registered courses from server
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _fetchRegisteredCoursesForStudent();
+    });
+  }
+
+  void _loadSettingsFromHive() {
+    final userBox = Hive.box('userData');
+    final userData = userBox.get('userData');
+
+    if (userData != null && userData['data'] != null && userData['data']['settings'] != null) {
+      setState(() {
+        _settings = Map<String, dynamic>.from(userData['data']['settings']);
+        int termNumber = _settings['term'] ?? 1;
+        _selectedTerm = termNumber == 1
+            ? 'First term'
+            : termNumber == 2
+                ? 'Second term'
+                : 'Third term';
+        _academicSession = "${int.parse(_settings['year'] ?? '2023') - 1}/${_settings['year'] ?? '2023'} academic session";
+      });
+    } else {
+      print('No settings found in Hive, using defaults');
+      _settings = {'year': '2023', 'term': 1};
+      _selectedTerm = 'First term';
+      _academicSession = '2022/2023 academic session';
+    }
+  }
+
+  // Save registered courses to Hive
+  Future<void> _saveRegisteredCoursesToHive(List<int> courseIds) async {
+    final userBox = Hive.box('userData');
+    final key = 'registeredCourses_${widget.studentId}_${widget.classId}_${_settings['year']}_${_settings['term']}';
+    await userBox.put(key, courseIds);
+    print('Saved registered courses to Hive: $courseIds');
+  }
+
+  // Get registered courses from Hive
+  List<int> _getRegisteredCoursesFromHive() {
+    final userBox = Hive.box('userData');
+    final key = 'registeredCourses_${widget.studentId}_${widget.classId}_${_settings['year']}_${_settings['term']}';
+    final cachedCourses = userBox.get(key);
+    if (cachedCourses == null) {
+      print('No cached courses found in Hive for key: $key');
+      return [];
+    }
+    // Ensure cachedCourses is a List and cast its elements to int
+    if (cachedCourses is List) {
+      final result = cachedCourses
+          .where((id) => id is int || (id is num && id is int)) // Filter valid integers
+          .cast<int>()
+          .toList();
+      print('Retrieved cached courses from Hive: $result');
+      return result;
+    }
+    print('Invalid cached courses format in Hive: $cachedCourses');
+    return [];
   }
 
   // Fetch already registered courses for this student
   Future<void> _fetchRegisteredCoursesForStudent() async {
     setState(() {
       _isLoadingRegisteredCourses = true;
+      _registeredCourseIds = [];
+      selectedSubjects = List<bool>.filled(courses.length, false);
+      _hasSelectedCourses = false;
     });
-    
+
     try {
-      // Get required parameters from Hive
       final userBox = Hive.box('userData');
       final userData = userBox.get('userData');
-      final settings = userData?['data']?['settings'];
-      
-      if (userData == null || settings == null) {
-        throw Exception('User data not found');
-      }
-      
-      final year = settings['year'] ?? '2025';
-      final term = settings['term'] ?? '3';
-      final dbName = userData['_db'] ?? 'aalmgzmy_linkskoo_practice';
-      
-      // Call the API through the provider
+      final settings = userData?['data']?['settings'] ?? _settings;
+
+      final year = settings['year']?.toString() ?? '2023';
+      final term = settings['term']?.toString() ?? '1';
+      final dbName = userData?['_db'] ?? 'aalmgzmy_linkskoo_practice';
+
+      print('Fetching registered courses with params:');
+      print('Student ID: ${widget.studentId}');
+      print('Class ID: ${widget.classId}');
+      print('Year: $year');
+      print('Term: $term');
+      print('DB Name: $dbName');
+
       final provider = Provider.of<CourseRegistrationProvider>(context, listen: false);
       final response = await provider.fetchStudentRegisteredCourses(
         studentId: widget.studentId,
         classId: widget.classId,
-        year: year.toString(),
-        term: term.toString(),
+        year: year,
+        term: term,
         dbName: dbName,
       );
-      
-      if (response.isNotEmpty) {
-        // Store the IDs of registered courses
+
+      setState(() {
         _registeredCourseIds = response;
-        
-        // Update selected subjects based on registered courses
+        // Update selectedSubjects based on server response
         for (int i = 0; i < courses.length; i++) {
-          if (_registeredCourseIds.contains(courses[i]['id'])) {
-            selectedSubjects[i] = true;
-          }
+          selectedSubjects[i] = _registeredCourseIds.contains(courses[i]['id']);
         }
-        
-        // Update hasSelectedCourses flag
         _hasSelectedCourses = selectedSubjects.contains(true);
-      }
+        print('Updated selectedSubjects: $selectedSubjects');
+        // Save to Hive for persistence
+        _saveRegisteredCoursesToHive(_registeredCourseIds);
+      });
     } catch (e) {
       print('Error fetching registered courses: $e');
+      // Fallback to cached data
+      setState(() {
+        _registeredCourseIds = _getRegisteredCoursesFromHive();
+        for (int i = 0; i < courses.length; i++) {
+          selectedSubjects[i] = _registeredCourseIds.contains(courses[i]['id']);
+        }
+        _hasSelectedCourses = selectedSubjects.contains(true);
+        print('Using cached selectedSubjects: $selectedSubjects');
+      });
     } finally {
       setState(() {
         _isLoadingRegisteredCourses = false;
@@ -108,55 +173,49 @@ class _CourseRegistrationScreenState extends State<CourseRegistrationScreen> {
 
   List<Map<String, dynamic>> getCoursesFromHive() {
     final userDataBox = Hive.box('userData');
-    
+
     try {
-      // Try to get courses from the userData directly
       final userData = userDataBox.get('userData');
-      if (userData != null && 
-          userData['data'] != null && 
+      if (userData != null &&
+          userData['data'] != null &&
           userData['data']['courses'] != null) {
-        // Properly convert each map with explicit casting
         final coursesList = userData['data']['courses'] as List;
-        return coursesList.map((course) => 
-          Map<String, dynamic>.from(course as Map)).toList();
+        final result = coursesList.map((course) => Map<String, dynamic>.from(course as Map)).toList();
+        print('Courses retrieved from Hive: $result');
+        return result;
       }
-      
-      // Alternatively, try to get from the specific 'courses' key if saved separately
+
       final courses = userDataBox.get('courses');
       if (courses != null && courses is List) {
-        // Properly convert each map with explicit casting
-        return courses.map((course) => 
-          Map<String, dynamic>.from(course as Map)).toList();
+        final result = courses.map((course) => Map<String, dynamic>.from(course as Map)).toList();
+        print('Courses retrieved from Hive (fallback): $result');
+        return result;
       }
     } catch (e) {
       print('Error converting courses data: $e');
     }
-    
-    // Return empty list if no data is found
+    print('No courses found in Hive');
     return [];
   }
 
   Future<void> _saveSelectedCourses() async {
-    if (!_hasSelectedCourses) return;
+    if (!_hasSelectedCourses) {
+      CustomToaster.toastError(context, 'Error', 'No courses selected');
+      return;
+    }
 
     setState(() {
       _isSaving = true;
     });
 
     try {
-      // Get settings from Hive
       final userBox = Hive.box('userData');
       final userData = userBox.get('userData');
-      final settings = userData?['data']?['settings'];
-      
-      if (userData == null || settings == null) {
-        throw Exception('User data not found');
-      }
+      final settings = userData?['data']?['settings'] ?? _settings;
 
-      // Prepare the payload
       final payload = {
-        "year": settings['year'] ?? 2025,
-        "term": settings['term'] ?? 3,
+        "year": settings['year'] ?? 2023,
+        "term": settings['term'] ?? 0,
         "class_id": widget.classId,
         "registered_courses": courses
             .asMap()
@@ -164,10 +223,11 @@ class _CourseRegistrationScreenState extends State<CourseRegistrationScreen> {
             .where((entry) => selectedSubjects[entry.key])
             .map((entry) => {"course_id": entry.value['id']})
             .toList(),
-        "_db": userData['_db'] ?? 'aalmgzmy_linkskoo_practice',
+        "_db": userData?['_db'] ?? 'aalmgzmy_linkskoo_practice',
       };
 
-      // Call the API through the provider
+      print('Saving courses with payload: $payload');
+
       final provider = Provider.of<CourseRegistrationProvider>(context, listen: false);
       final response = await provider.registerCourse(
         CourseRegistrationModel(
@@ -178,33 +238,42 @@ class _CourseRegistrationScreenState extends State<CourseRegistrationScreen> {
           term: settings['term']?.toString(),
           year: settings['year']?.toString(),
         ),
-        payload: payload, // Pass the custom payload
+        payload: payload,
       );
 
       if (response) {
-        // Only show toast on successful save
+        final selectedCourseIds = courses
+            .asMap()
+            .entries
+            .where((entry) => selectedSubjects[entry.key])
+            .map((entry) => entry.value['id'] as int)
+            .toList();
+        setState(() {
+          _registeredCourseIds = selectedCourseIds;
+          _hasSelectedCourses = selectedSubjects.contains(true);
+        });
+        await _saveRegisteredCoursesToHive(selectedCourseIds);
+
         CustomToaster.toastSuccess(
-          context, 
-          'Success', 
-          'Courses saved successfully'
+          context,
+          'Success',
+          'Courses saved successfully',
         );
-        
-        // Refresh the registered courses list
+
+        // Refresh the course list from the server
         await _fetchRegisteredCoursesForStudent();
       } else {
-        // Only show toast on error
         CustomToaster.toastError(
-          context, 
-          'Failed', 
-          'Failed to save courses'
+          context,
+          'Failed',
+          'Failed to save courses',
         );
       }
     } catch (e) {
-      // Only show toast on error
       CustomToaster.toastError(
-        context, 
-        'Error', 
-        'Error: ${e.toString()}'
+        context,
+        'Error',
+        'Error: ${e.toString()}',
       );
     } finally {
       setState(() {
@@ -216,11 +285,9 @@ class _CourseRegistrationScreenState extends State<CourseRegistrationScreen> {
   void _updateSelection(int index, bool isSelected) {
     setState(() {
       selectedSubjects[index] = isSelected;
-      // Update hasSelectedCourses based on if any course is selected
       _hasSelectedCourses = selectedSubjects.contains(true);
+      print('Updated selection for index $index: $isSelected, selectedSubjects: $selectedSubjects');
     });
-    
-    // Removed the toast that appears on every selection
   }
 
   @override
@@ -274,21 +341,19 @@ class _CourseRegistrationScreenState extends State<CourseRegistrationScreen> {
                           ),
                           const SizedBox(height: 4.0),
                           Text(
-                            '2015/2016 Academic Session',
+                            _academicSession,
                             style: AppTextStyles.normal400(fontSize: 16, color: Colors.white70),
                           ),
                         ],
                       ),
                     ),
-                    if (_hasSelectedCourses) // Only show when courses are selected
+                    if (_hasSelectedCourses)
                       Positioned(
                         bottom: 2.0,
                         right: 8.0,
                         child: FloatingActionButton(
                           onPressed: _isSaving ? null : _saveSelectedCourses,
-                          backgroundColor: _isSaving 
-                              ? Colors.grey 
-                              : AppColors.primaryLight,
+                          backgroundColor: _isSaving ? Colors.grey : AppColors.primaryLight,
                           shape: const CircleBorder(),
                           child: Container(
                             width: 50,
@@ -349,12 +414,10 @@ class _CourseRegistrationScreenState extends State<CourseRegistrationScreen> {
                                 itemBuilder: (context, index) {
                                   final course = courses[index];
                                   final courseName = course['course_name'] as String;
-                                  
+
                                   return Container(
                                     decoration: BoxDecoration(
-                                      color: selectedSubjects[index] 
-                                          ? Colors.grey[200] 
-                                          : Colors.white,
+                                      color: selectedSubjects[index] ? Colors.grey[200] : Colors.white,
                                       border: Border(
                                         bottom: BorderSide(
                                           color: Colors.grey[300]!,
@@ -380,15 +443,11 @@ class _CourseRegistrationScreenState extends State<CourseRegistrationScreen> {
                                           height: 24,
                                           decoration: BoxDecoration(
                                             shape: BoxShape.circle,
-                                            color: selectedSubjects[index] 
-                                                ? Colors.green 
-                                                : Colors.white,
+                                            color: selectedSubjects[index] ? Colors.green : Colors.white,
                                             border: Border.all(color: Colors.grey),
                                           ),
                                           child: selectedSubjects[index]
-                                              ? const Icon(Icons.check, 
-                                                  size: 16, 
-                                                  color: Colors.white)
+                                              ? const Icon(Icons.check, size: 16, color: Colors.white)
                                               : null,
                                         ),
                                       ),
@@ -408,16 +467,14 @@ class _CourseRegistrationScreenState extends State<CourseRegistrationScreen> {
 }
 
 
-
 // import 'package:flutter/material.dart';
 // import 'package:flutter_svg/flutter_svg.dart';
-// import 'package:hive/hive.dart'; 
+// import 'package:hive/hive.dart';
 // import 'package:linkschool/modules/common/app_colors.dart';
 // import 'package:linkschool/modules/common/text_styles.dart';
 // import 'package:linkschool/modules/model/admin/course_registration_model.dart';
 // import 'package:linkschool/modules/providers/admin/course_registration_provider.dart';
 // import 'package:provider/provider.dart';
-// // Import CustomToaster
 // import 'package:linkschool/modules/common/custom_toaster.dart';
 
 // class CourseRegistrationScreen extends StatefulWidget {
@@ -425,10 +482,10 @@ class _CourseRegistrationScreenState extends State<CourseRegistrationScreen> {
 //   final int coursesRegistered;
 //   final String classId;
 //   final int studentId;
-  
+
 //   const CourseRegistrationScreen({
-//     super.key, 
-//     required this.studentName, 
+//     super.key,
+//     required this.studentName,
 //     required this.coursesRegistered,
 //     required this.classId,
 //     required this.studentId,
@@ -442,52 +499,157 @@ class _CourseRegistrationScreenState extends State<CourseRegistrationScreen> {
 //   late List<bool> selectedSubjects;
 //   late List<Color> subjectColors;
 //   late List<Map<String, dynamic>> courses;
-//   bool _hasSelectedCourses = false; // Track if any courses are selected
-//   bool _isSaving = false; // Track save operation state
-  
+//   bool _hasSelectedCourses = false;
+//   bool _isSaving = false;
+//   bool _isLoadingRegisteredCourses = true;
+//   List<int> _registeredCourseIds = [];
+
+//     String _academicSession = '';
+//    Map<String, dynamic> _settings = {};
+//    String _selectedTerm = 'First term';
+
 //   @override
 //   void initState() {
 //     super.initState();
-//     // Load courses from Hive on initialization
+//     _loadSettingsFromHive();
 //     courses = getCoursesFromHive();
-//     // Initialize all courses as unchecked by default
 //     selectedSubjects = List<bool>.filled(courses.length, false);
-//     // Initialize colors with primary colors cycle
 //     subjectColors = List.generate(
-//       courses.length, 
-//       (index) => Colors.primaries[index % Colors.primaries.length]
+//       courses.length,
+//       (index) => Colors.primaries[index % Colors.primaries.length],
 //     );
+
+//     // Initialize with cached data
+//     _registeredCourseIds = _getRegisteredCoursesFromHive();
+//     for (int i = 0; i < courses.length; i++) {
+//       selectedSubjects[i] = _registeredCourseIds.contains(courses[i]['id']);
+//     }
+//     _hasSelectedCourses = selectedSubjects.contains(true);
+
+//     // Fetch fresh data from server
+//     _fetchRegisteredCoursesForStudent();
 //   }
 
-// List<Map<String, dynamic>> getCoursesFromHive() {
-//   final userDataBox = Hive.box('userData');
-  
-//   try {
-//     // Try to get courses from the userData directly
-//     final userData = userDataBox.get('userData');
-//     if (userData != null && 
-//         userData['data'] != null && 
-//         userData['data']['courses'] != null) {
-//       // Properly convert each map with explicit casting
-//       final coursesList = userData['data']['courses'] as List;
-//       return coursesList.map((course) => 
-//         Map<String, dynamic>.from(course as Map)).toList();
+//       void _loadSettingsFromHive() {
+//     final userBox = Hive.box('userData');
+//     final userData = userBox.get('userData');
+
+//     if (userData != null && userData['data'] != null && userData['data']['settings'] != null) {
+//       setState(() {
+//         _settings = Map<String, dynamic>.from(userData['data']['settings']);
+
+//         int termNumber = _settings['term'] ?? 1;
+//         _selectedTerm = termNumber == 1
+//             ? 'First term'
+//             : termNumber == 2
+//                 ? 'Second term'
+//                 : 'Third term';
+
+//         _academicSession = "${int.parse(_settings['year'] ?? '2023') - 1}/${_settings['year'] ?? '2023'} academic session";
+//       });
 //     }
-    
-//     // Alternatively, try to get from the specific 'courses' key if saved separately
-//     final courses = userDataBox.get('courses');
-//     if (courses != null && courses is List) {
-//       // Properly convert each map with explicit casting
-//       return courses.map((course) => 
-//         Map<String, dynamic>.from(course as Map)).toList();
-//     }
-//   } catch (e) {
-//     print('Error converting courses data: $e');
 //   }
-  
-//   // Return empty list if no data is found
-//   return [];
-// }
+
+//   // Save registered courses to Hive
+//   Future<void> _saveRegisteredCoursesToHive(List<int> courseIds) async {
+//     final userBox = Hive.box('userData');
+//     await userBox.put('registeredCourses_${widget.studentId}_${widget.classId}', courseIds);
+//   }
+
+//   // Get registered courses from Hive
+//   List<int> _getRegisteredCoursesFromHive() {
+//     final userBox = Hive.box('userData');
+//     final cachedCourses = userBox.get('registeredCourses_${widget.studentId}_${widget.classId}');
+//     return cachedCourses != null ? List<int>.from(cachedCourses) : [];
+//   }
+
+//   // Fetch already registered courses for this student
+//   Future<void> _fetchRegisteredCoursesForStudent() async {
+//     setState(() {
+//       _isLoadingRegisteredCourses = true;
+//     });
+
+//     try {
+//       final userBox = Hive.box('userData');
+//       final userData = userBox.get('userData');
+//       final settings = userData?['data']?['settings'];
+
+//       if (userData == null || settings == null) {
+//         throw Exception('User data not found');
+//       }
+
+//       final year = settings['year'] ?? '2025';
+//       final term = settings['term'] ?? '3';
+//       final dbName = userData['_db'] ?? 'aalmgzmy_linkskoo_practice';
+
+//       // Debug logging
+//       print('Fetching registered courses with params:');
+//       print('Student ID: ${widget.studentId}');
+//       print('Class ID: ${widget.classId}');
+//       print('Year: $year');
+//       print('Term: $term');
+//       print('DB Name: $dbName');
+
+//       final provider = Provider.of<CourseRegistrationProvider>(context, listen: false);
+//       final response = await provider.fetchStudentRegisteredCourses(
+//         studentId: widget.studentId,
+//         classId: widget.classId,
+//         year: year.toString(),
+//         term: term.toString(),
+//         dbName: dbName,
+//       );
+
+//       if (response.isNotEmpty) {
+//         _registeredCourseIds = response;
+//         await _saveRegisteredCoursesToHive(response);
+//       } else {
+//         _registeredCourseIds = _getRegisteredCoursesFromHive();
+//         print('No courses returned from API, using cached data: $_registeredCourseIds');
+//       }
+
+//       for (int i = 0; i < courses.length; i++) {
+//         selectedSubjects[i] = _registeredCourseIds.contains(courses[i]['id']);
+//       }
+
+//       _hasSelectedCourses = selectedSubjects.contains(true);
+//     } catch (e) {
+//       print('Error fetching registered courses: $e');
+//       _registeredCourseIds = _getRegisteredCoursesFromHive();
+//       for (int i = 0; i < courses.length; i++) {
+//         selectedSubjects[i] = _registeredCourseIds.contains(courses[i]['id']);
+//       }
+//       _hasSelectedCourses = selectedSubjects.contains(true);
+//     } finally {
+//       setState(() {
+//         _isLoadingRegisteredCourses = false;
+//       });
+//     }
+//   }
+
+//   List<Map<String, dynamic>> getCoursesFromHive() {
+//     final userDataBox = Hive.box('userData');
+
+//     try {
+//       final userData = userDataBox.get('userData');
+//       if (userData != null &&
+//           userData['data'] != null &&
+//           userData['data']['courses'] != null) {
+//         final coursesList = userData['data']['courses'] as List;
+//         return coursesList.map((course) =>
+//             Map<String, dynamic>.from(course as Map)).toList();
+//       }
+
+//       final courses = userDataBox.get('courses');
+//       if (courses != null && courses is List) {
+//         return courses.map((course) =>
+//             Map<String, dynamic>.from(course as Map)).toList();
+//       }
+//     } catch (e) {
+//       print('Error converting courses data: $e');
+//     }
+
+//     return [];
+//   }
 
 //   Future<void> _saveSelectedCourses() async {
 //     if (!_hasSelectedCourses) return;
@@ -497,16 +659,14 @@ class _CourseRegistrationScreenState extends State<CourseRegistrationScreen> {
 //     });
 
 //     try {
-//       // Get settings from Hive
 //       final userBox = Hive.box('userData');
 //       final userData = userBox.get('userData');
-//       final settings = userBox.get('settings');
-      
+//       final settings = userData?['data']?['settings'];
+
 //       if (userData == null || settings == null) {
 //         throw Exception('User data not found');
 //       }
 
-//       // Prepare the payload
 //       final payload = {
 //         "year": settings['year'] ?? 2025,
 //         "term": settings['term'] ?? 3,
@@ -520,7 +680,6 @@ class _CourseRegistrationScreenState extends State<CourseRegistrationScreen> {
 //         "_db": userData['_db'] ?? 'aalmgzmy_linkskoo_practice',
 //       };
 
-//       // Call the API through the provider
 //       final provider = Provider.of<CourseRegistrationProvider>(context, listen: false);
 //       final response = await provider.registerCourse(
 //         CourseRegistrationModel(
@@ -531,30 +690,38 @@ class _CourseRegistrationScreenState extends State<CourseRegistrationScreen> {
 //           term: settings['term']?.toString(),
 //           year: settings['year']?.toString(),
 //         ),
-//         payload: payload, // Pass the custom payload
+//         payload: payload,
 //       );
 
 //       if (response) {
-//         // Replace SnackBar with CustomToaster
+//         final selectedCourseIds = courses
+//             .asMap()
+//             .entries
+//             .where((entry) => selectedSubjects[entry.key])
+//             .map((entry) => entry.value['id'] as int)
+//             .toList();
+//         await _saveRegisteredCoursesToHive(selectedCourseIds);
+//         _registeredCourseIds = selectedCourseIds;
+
 //         CustomToaster.toastSuccess(
-//           context, 
-//           'Success', 
-//           'Courses saved successfully'
+//           context,
+//           'Success',
+//           'Courses saved successfully',
 //         );
+
+//         await _fetchRegisteredCoursesForStudent();
 //       } else {
-//         // Replace SnackBar with CustomToaster
 //         CustomToaster.toastError(
-//           context, 
-//           'Failed', 
-//           'Failed to save courses'
+//           context,
+//           'Failed',
+//           'Failed to save courses',
 //         );
 //       }
 //     } catch (e) {
-//       // Replace SnackBar with CustomToaster
 //       CustomToaster.toastError(
-//         context, 
-//         'Error', 
-//         'Error: ${e.toString()}'
+//         context,
+//         'Error',
+//         'Error: ${e.toString()}',
 //       );
 //     } finally {
 //       setState(() {
@@ -566,7 +733,6 @@ class _CourseRegistrationScreenState extends State<CourseRegistrationScreen> {
 //   void _updateSelection(int index, bool isSelected) {
 //     setState(() {
 //       selectedSubjects[index] = isSelected;
-//       // Update hasSelectedCourses based on if any course is selected
 //       _hasSelectedCourses = selectedSubjects.contains(true);
 //     });
 //   }
@@ -622,21 +788,19 @@ class _CourseRegistrationScreenState extends State<CourseRegistrationScreen> {
 //                           ),
 //                           const SizedBox(height: 4.0),
 //                           Text(
-//                             '2015/2016 Academic Session',
+//                             _academicSession,
 //                             style: AppTextStyles.normal400(fontSize: 16, color: Colors.white70),
 //                           ),
 //                         ],
 //                       ),
 //                     ),
-//                     if (_hasSelectedCourses) // Only show when courses are selected
+//                     if (_hasSelectedCourses)
 //                       Positioned(
 //                         bottom: 2.0,
 //                         right: 8.0,
 //                         child: FloatingActionButton(
 //                           onPressed: _isSaving ? null : _saveSelectedCourses,
-//                           backgroundColor: _isSaving 
-//                               ? Colors.grey 
-//                               : AppColors.primaryLight,
+//                           backgroundColor: _isSaving ? Colors.grey : AppColors.primaryLight,
 //                           shape: const CircleBorder(),
 //                           child: Container(
 //                             width: 50,
@@ -687,70 +851,57 @@ class _CourseRegistrationScreenState extends State<CourseRegistrationScreen> {
 //                       topLeft: Radius.circular(20.0),
 //                       topRight: Radius.circular(20.0),
 //                     ),
-//                     child: courses.isEmpty
-//                         ? const Center(child: Text('No courses available'))
-//                         : ListView.builder(
-//                             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-//                             itemCount: courses.length,
-//                             itemBuilder: (context, index) {
-//                               final course = courses[index];
-//                               final courseName = course['course_name'] as String;
-                              
-//                               return Container(
-//                                 decoration: BoxDecoration(
-//                                   color: selectedSubjects[index] 
-//                                       ? Colors.grey[200] 
-//                                       : Colors.white,
-//                                   border: Border(
-//                                     bottom: BorderSide(
-//                                       color: Colors.grey[300]!,
-//                                       width: 1,
-//                                     ),
-//                                   ),
-//                                 ),
-//                                 child: ListTile(
-//                                   leading: CircleAvatar(
-//                                     backgroundColor: subjectColors[index],
-//                                     child: Text(
-//                                       courseName.isNotEmpty ? courseName[0].toUpperCase() : '?',
-//                                       style: const TextStyle(color: Colors.white),
-//                                     ),
-//                                   ),
-//                                   title: Text(courseName),
-//                                   trailing: GestureDetector(
-//                                     onTap: () {
-//                                       _updateSelection(index, !selectedSubjects[index]);
-                                      
-//                                       // Show info toast when course is selected/deselected
-//                                       if (selectedSubjects[index]) {
-//                                         CustomToaster.toastInfo(
-//                                           context,
-//                                           'Course Selected',
-//                                           'Added ${courseName} to selected courses'
-//                                         );
-//                                       }
-//                                     },
-//                                     child: Container(
-//                                       width: 24,
-//                                       height: 24,
-//                                       decoration: BoxDecoration(
-//                                         shape: BoxShape.circle,
-//                                         color: selectedSubjects[index] 
-//                                             ? Colors.green 
-//                                             : Colors.white,
-//                                         border: Border.all(color: Colors.grey),
+//                     child: _isLoadingRegisteredCourses
+//                         ? const Center(child: CircularProgressIndicator())
+//                         : courses.isEmpty
+//                             ? const Center(child: Text('No courses available'))
+//                             : ListView.builder(
+//                                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+//                                 itemCount: courses.length,
+//                                 itemBuilder: (context, index) {
+//                                   final course = courses[index];
+//                                   final courseName = course['course_name'] as String;
+
+//                                   return Container(
+//                                     decoration: BoxDecoration(
+//                                       color: selectedSubjects[index] ? Colors.grey[200] : Colors.white,
+//                                       border: Border(
+//                                         bottom: BorderSide(
+//                                           color: Colors.grey[300]!,
+//                                           width: 1,
+//                                         ),
 //                                       ),
-//                                       child: selectedSubjects[index]
-//                                           ? const Icon(Icons.check, 
-//                                               size: 16, 
-//                                               color: Colors.white)
-//                                           : null,
 //                                     ),
-//                                   ),
-//                                 ),
-//                               );
-//                             },
-//                           ),
+//                                     child: ListTile(
+//                                       leading: CircleAvatar(
+//                                         backgroundColor: subjectColors[index],
+//                                         child: Text(
+//                                           courseName.isNotEmpty ? courseName[0].toUpperCase() : '?',
+//                                           style: const TextStyle(color: Colors.white),
+//                                         ),
+//                                       ),
+//                                       title: Text(courseName),
+//                                       trailing: GestureDetector(
+//                                         onTap: () {
+//                                           _updateSelection(index, !selectedSubjects[index]);
+//                                         },
+//                                         child: Container(
+//                                           width: 24,
+//                                           height: 24,
+//                                           decoration: BoxDecoration(
+//                                             shape: BoxShape.circle,
+//                                             color: selectedSubjects[index] ? Colors.green : Colors.white,
+//                                             border: Border.all(color: Colors.grey),
+//                                           ),
+//                                           child: selectedSubjects[index]
+//                                               ? const Icon(Icons.check, size: 16, color: Colors.white)
+//                                               : null,
+//                                         ),
+//                                       ),
+//                                     ),
+//                                   );
+//                                 },
+//                               ),
 //                   ),
 //                 ),
 //               ),

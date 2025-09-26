@@ -4,27 +4,37 @@ import 'package:linkschool/modules/services/admin/e_learning/topic_service.dart'
 
 class TopicProvider extends ChangeNotifier {
   final TopicService topicService;
+  
   TopicProvider(this.topicService);
 
-  bool isLoading = false;
-  String error = '';
- List<Topic> _topics = [];
-   List<Topic> get topics => _topics;
+  bool _isLoading = false;
+  String _error = '';
+  List<Topic> _topics = [];
 
-  Future<void>fetchTopic({required int syllabusId})async{
-      isLoading = true;
-    error = '';
+  bool get isLoading => _isLoading;
+  String get error => _error;
+  List<Topic> get topics => _topics;
+
+  Future<void> fetchTopic({required int syllabusId}) async {
+    _isLoading = true;
+    _error = '';
     notifyListeners();
 
-    try{
+    try {
+      print('TopicProvider: Fetching topics for syllabusId: $syllabusId');
       _topics = await topicService.FetchTopic(syllabusId: syllabusId);
-    }catch(e){
-      error = e.toString();
+      print('TopicProvider: Successfully fetched ${_topics.length} topics');
+      _error = '';
+    } catch (e, stackTrace) {
+      print('TopicProvider: Error fetching topics: $e');
+      print('TopicProvider: Stack trace: $stackTrace');
+      _error = e.toString();
+      _topics = [];
+    } finally {
+      _isLoading = false;
+      notifyListeners();
     }
-    isLoading = false;
-    notifyListeners();
   }
-
 
   Future<void> addTopic({
     required int syllabusId,
@@ -37,13 +47,11 @@ class TopicProvider extends ChangeNotifier {
     required String term,
     required int creatorId,
     required List<ClassModel> classes,
-  
-  
-  
   }) async {
-    isLoading = true;
-    error = '';
+    _isLoading = true;
+    _error = '';
     notifyListeners();
+
     try {
       await topicService.createTopic(
         syllabusId: syllabusId,
@@ -57,10 +65,89 @@ class TopicProvider extends ChangeNotifier {
         classes: classes,
        term:term,
       );
+      
+      // Refresh the topics list after adding
+      await fetchTopic(syllabusId: syllabusId);
     } catch (e) {
-      error = e.toString();
+      print('TopicProvider: Error adding topic: $e');
+      _error = e.toString();
+    } finally {
+      _isLoading = false;
+      notifyListeners();
     }
-    isLoading = false;
+  }
+
+  void clearTopics() {
+    _topics = [];
+    _error = '';
+    notifyListeners();
+  }
+
+  void clearError() {
+    _error = '';
     notifyListeners();
   }
 }
+
+
+
+
+// import 'package:flutter/material.dart';
+// import 'package:linkschool/modules/model/e-learning/topic_model.dart';
+// import 'package:linkschool/modules/services/admin/e_learning/topic_service.dart';
+
+// class TopicProvider extends ChangeNotifier {
+//   final TopicService topicService;
+//   TopicProvider(this.topicService);
+
+//   bool isLoading = false;
+//   String error = '';
+//  List<Topic> _topics = [];
+//    List<Topic> get topics => _topics;
+
+//   Future<void>fetchTopic({required int syllabusId})async{
+//       isLoading = true;
+//     error = '';
+//     notifyListeners();
+
+//     try{
+//       _topics = await topicService.FetchTopic(syllabusId: syllabusId);
+//     }catch(e){
+//       error = e.toString();
+//     }
+//     isLoading = false;
+//     notifyListeners();
+//   }
+
+
+//   Future<void> addTopic({
+//     required int syllabusId,
+//     required String topic,
+//     required String creatorName,
+//     required String objective,
+//     required int creatorId,
+//     required List<ClassModel> classes,
+  
+  
+  
+//   }) async {
+//     isLoading = true;
+//     error = '';
+//     notifyListeners();
+//     try {
+//       await topicService.createTopic(
+//         syllabusId: syllabusId,
+//         topic: topic,
+//         creatorName: creatorName,
+//         objective: objective,
+//         creatorId: creatorId,
+//         classes: classes,
+       
+//       );
+//     } catch (e) {
+//       error = e.toString();
+//     }
+//     isLoading = false;
+//     notifyListeners();
+//   }
+// }

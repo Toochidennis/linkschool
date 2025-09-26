@@ -13,6 +13,7 @@ import 'package:linkschool/modules/common/pdf_reader.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/model/e-learning/comment_model.dart';
 import 'package:linkschool/modules/model/e-learning/material_model.dart' as custom;
+import 'package:linkschool/modules/providers/admin/e_learning/admin_comment_provider.dart';
 import 'package:linkschool/modules/providers/admin/e_learning/comment_provider.dart';
 import 'package:linkschool/modules/providers/admin/e_learning/delete_sylabus_content.dart';
 import 'package:linkschool/modules/services/api/service_locator.dart';

@@ -9,6 +9,7 @@ import 'package:linkschool/modules/auth/ui/login_screen.dart';
 import 'package:linkschool/modules/student/student_dashboard.dart';
 import 'package:linkschool/modules/staff/staff_dashboard.dart';
 import 'package:linkschool/modules/admin/home/portal_dashboard.dart';
+import 'package:linkschool/routes/select_school.dart';
 
 class AppNavigationFlow extends StatefulWidget {
   const AppNavigationFlow({super.key});
@@ -23,36 +24,81 @@ class _AppNavigationFlowState extends State<AppNavigationFlow> {
   int _selectedIndex = 0;
   late FlipCardController _flipController;
   bool _showLogin = false;
+  bool _showSchoolSelection = false;
+  bool _isInitialized = false;
 
   @override
   void initState() {
     super.initState();
     _flipController = FlipCardController();
-    _checkLoginStatus();
-    Provider.of<AuthProvider>(context, listen: false).checkLoginStatus();
+    _initializeApp();
+  }
+
+  Future<void> _initializeApp() async {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    await authProvider.checkLoginStatus();
+    await _checkLoginStatus();
+    
+    setState(() {
+      _isInitialized = true;
+    });
+
+    // If user is logged in, automatically show their dashboard
+    if (_isLoggedIn && _flipController.state!.isFront) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          _flipController.toggleCard();
+        }
+      });
+    }
   }
 
   Future<void> _checkLoginStatus() async {
-    final prefs = await SharedPreferences.getInstance();
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     
     setState(() {
       _userRole = authProvider.user?.role ?? '';
       _isLoggedIn = authProvider.isLoggedIn;
       _showLogin = false;
+      _showSchoolSelection = false;
     });
 
     print('User Role: $_userRole');
     print('Is Logged In: $_isLoggedIn');
   }
 
-  void _handleSwitch(bool value) {
-    if (!_isLoggedIn) {
+  void _handleSwitchFromExplore(bool value) {
+    // When switching from explore dashboard
+    if (_isLoggedIn) {
+      // User is logged in, flip to their dashboard
+      if (_flipController.state!.isFront) {
+        _flipController.toggleCard();
+      }
+    } else {
+      // User not logged in, show school selection
       setState(() {
-        _showLogin = true;
+        _showSchoolSelection = true;
+        _showLogin = false;
       });
+      
+      if (_flipController.state!.isFront) {
+        _flipController.toggleCard();
+      }
     }
-    _flipController.toggleCard();
+  }
+
+  void _handleSwitchFromDashboard(bool value) {
+    // When switching from user dashboard back to explore
+    if (!_flipController.state!.isFront) {
+      _flipController.toggleCard();
+    }
+  }
+
+  void _navigateToLogin() {
+    setState(() {
+      _showLogin = true;
+      _showSchoolSelection = false;
+    });
   }
 
   void _updateSelectedIndex(int index) {
@@ -69,15 +115,35 @@ class _AppNavigationFlowState extends State<AppNavigationFlow> {
       _isLoggedIn = false;
       _userRole = '';
       _showLogin = false;
+      _showSchoolSelection = false;
     });
-    _flipController.toggleCard();
+    
+    // Navigate back to explore dashboard
+    if (!_flipController.state!.isFront) {
+      _flipController.toggleCard();
+    }
+  }
+
+  Widget _getFrontWidget() {
+    return ExploreDashboard(
+      onSwitch: _handleSwitchFromExplore,
+      selectedIndex: _selectedIndex,
+      onTabSelected: _updateSelectedIndex,
+    );
   }
 
   Widget _getBackWidget() {
+    if (_showSchoolSelection) {
+      return SelectSchool(
+        onSchoolSelected: _navigateToLogin,
+      );
+    }
+
     if (_showLogin) {
       return LoginScreen(
         onLoginSuccess: () async {
           await _checkLoginStatus();
+          // After successful login, navigate to user dashboard
           setState(() {});
         },
       );
@@ -87,46 +153,79 @@ class _AppNavigationFlowState extends State<AppNavigationFlow> {
       switch (_userRole) {
         case 'staff':
           return StaffDashboard(
-            onSwitch: _handleSwitch,
+            onSwitch: _handleSwitchFromDashboard,
             selectedIndex: _selectedIndex,
             onTabSelected: _updateSelectedIndex,
             onLogout: _handleLogout,
           );
         case 'admin':
           return PortalDashboard(
-            onSwitch: _handleSwitch,
+            onSwitch: _handleSwitchFromDashboard,
             selectedIndex: _selectedIndex,
             onTabSelected: _updateSelectedIndex,
             onLogout: _handleLogout,
           );
         case 'student':
           return StudentDashboard(
-            onSwitch: _handleSwitch,
+            onSwitch: _handleSwitchFromDashboard,
             selectedIndex: _selectedIndex,
             onTabSelected: _updateSelectedIndex,
             onLogout: _handleLogout,
           );
         default:
           return Center(
-            child: Text('Unknown user role: $_userRole'),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text('Unknown user role: $_userRole'),
+                ElevatedButton(
+                  onPressed: _handleLogout,
+                  child: Text('Logout'),
+                ),
+              ],
+            ),
           );
       }
     }
 
-    return Container(); 
+    // Fallback - this shouldn't happen but just in case
+    return Container(
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text('Something went wrong'),
+            ElevatedButton(
+              onPressed: () {
+                setState(() {
+                  _showSchoolSelection = true;
+                  _showLogin = false;
+                });
+              },
+              child: Text('Try Again'),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
+    // Show loading while initializing
+    if (!_isInitialized) {
+      return Scaffold(
+        body: Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
+
     return Scaffold(
       body: FlipCard(
         controller: _flipController,
         flipOnTouch: false,
-        front: ExploreDashboard(
-          onSwitch: _handleSwitch,
-          selectedIndex: _selectedIndex,
-          onTabSelected: _updateSelectedIndex,
-        ),
+        front: _getFrontWidget(),
         back: AnimatedSwitcher(
           duration: const Duration(milliseconds: 300),
           child: _getBackWidget(),
@@ -169,21 +268,21 @@ class _AppNavigationFlowState extends State<AppNavigationFlow> {
 //     super.initState();
 //     _flipController = FlipCardController();
 //     _checkLoginStatus();
-//       Provider.of<AuthProvider>(context, listen: false).checkLoginStatus();
+//     Provider.of<AuthProvider>(context, listen: false).checkLoginStatus();
 //   }
 
 //   Future<void> _checkLoginStatus() async {
 //     final prefs = await SharedPreferences.getInstance();
+//     final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    
 //     setState(() {
-//       _userRole = prefs.getString('role') ?? '';
-//       _isLoggedIn = prefs.getBool('isLoggedIn') ?? false;
+//       _userRole = authProvider.user?.role ?? '';
+//       _isLoggedIn = authProvider.isLoggedIn;
 //       _showLogin = false;
 //     });
 
 //     print('User Role: $_userRole');
 //     print('Is Logged In: $_isLoggedIn');
-//     // print('Hive - User Data: $userData');
-//     // print('Hive - Access Level: $accessLevel');
 //   }
 
 //   void _handleSwitch(bool value) {
@@ -202,8 +301,9 @@ class _AppNavigationFlowState extends State<AppNavigationFlow> {
 //   }
 
 //   Future<void> _handleLogout() async {
-//     final prefs = await SharedPreferences.getInstance();
-//     await prefs.clear();
+//     final authProvider = Provider.of<AuthProvider>(context, listen: false);
+//     await authProvider.logout();
+    
 //     setState(() {
 //       _isLoggedIn = false;
 //       _userRole = '';
@@ -224,22 +324,21 @@ class _AppNavigationFlowState extends State<AppNavigationFlow> {
 
 //     if (_isLoggedIn) {
 //       switch (_userRole) {
-//         case '1': // Staff
-//         case '3': // Staff
+//         case 'staff':
 //           return StaffDashboard(
 //             onSwitch: _handleSwitch,
 //             selectedIndex: _selectedIndex,
 //             onTabSelected: _updateSelectedIndex,
 //             onLogout: _handleLogout,
 //           );
-//         case '2': // Admin
+//         case 'admin':
 //           return PortalDashboard(
 //             onSwitch: _handleSwitch,
 //             selectedIndex: _selectedIndex,
 //             onTabSelected: _updateSelectedIndex,
 //             onLogout: _handleLogout,
 //           );
-//         case '0': // Student
+//         case 'student':
 //           return StudentDashboard(
 //             onSwitch: _handleSwitch,
 //             selectedIndex: _selectedIndex,
@@ -249,13 +348,12 @@ class _AppNavigationFlowState extends State<AppNavigationFlow> {
 //         default:
 //           return Center(
 //             child: Text('Unknown user role: $_userRole'),
-//           ); // Fallback for unknown roles
+//           );
 //       }
 //     }
 
-//     return Container(); // Fallback for non-logg
+//     return Container(); 
 //   }
-
 
 //   @override
 //   Widget build(BuildContext context) {

@@ -16,6 +16,7 @@ import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/common/widgets/portal/quiz/quiz_resultscreen.dart';
 import 'package:linkschool/modules/model/e-learning/comment_model.dart';
 import 'package:linkschool/modules/model/e-learning/syllabus_content_model.dart';
+import 'package:linkschool/modules/providers/admin/e_learning/admin_comment_provider.dart';
 import 'package:linkschool/modules/providers/admin/e_learning/comment_provider.dart';
 import 'package:linkschool/modules/providers/admin/e_learning/delete_sylabus_content.dart';
 import 'package:linkschool/modules/providers/admin/e_learning/mark_assignment_provider.dart';
@@ -738,7 +739,7 @@ if (['pdf','doc', 'docx', 'txt', 'rtf'].contains(extension)) {
 
 
 Widget _buildCommentSection() {
-  return Consumer<CommentProvider>(
+  return Consumer<AdminCommentProvider>(
     builder: (context, commentProvider, child) {
       final commentList = commentProvider.comments;
       return Column(
