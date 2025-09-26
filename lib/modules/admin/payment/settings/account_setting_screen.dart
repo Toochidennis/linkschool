@@ -261,6 +261,69 @@ class _AccountSettingScreenState extends State<AccountSettingScreen> {
     );
   }
 
+  // Widget _buildAccountRow(AccountModel account) {
+  //   return Container(
+  //     margin: const EdgeInsets.only(bottom: 8),
+  //     decoration: BoxDecoration(
+  //       border: Border.all(color: Colors.grey.shade300),
+  //       borderRadius: BorderRadius.circular(8),
+  //     ),
+  //     child: ListTile(
+  //       leading: CircleAvatar(
+  //         backgroundColor: AppColors.eLearningBtnColor1,
+  //         child: SvgPicture.asset(
+  //           'assets/icons/profile/fee.svg',
+  //           color: Colors.white,
+  //         ),
+  //       ),
+  //       title: Text(
+  //         account.accountName,
+  //         style: const TextStyle(
+  //           fontWeight: FontWeight.w600,
+  //           fontSize: 16,
+  //         ),
+  //       ),
+  //       subtitle: RichText(
+  //         text: TextSpan(
+  //           children: [
+  //             TextSpan(
+  //               text: 'Number: ',
+  //               style: TextStyle(
+  //                 fontWeight: FontWeight.bold,
+  //                 color: Colors.black,
+  //                 fontSize: 14,
+  //               ),
+  //             ),
+  //             TextSpan(
+  //               text: '${account.accountNumber} • ',
+  //               style: TextStyle(color: Colors.grey[600], fontSize: 14),
+  //             ),
+  //             TextSpan(
+  //               text: 'Type: ',
+  //               style: TextStyle(
+  //                 fontWeight: FontWeight.bold,
+  //                 color: Colors.black,
+  //                 fontSize: 14,
+  //               ),
+  //             ),
+  //             TextSpan(
+  //               text: account.accountTypeString,
+  //               style: TextStyle(
+  //                 color: account.accountType == 0 ? Colors.green[600] : Colors.orange[600],
+  //                 fontSize: 14,
+  //                 fontWeight: FontWeight.w500,
+  //               ),
+  //             ),
+  //           ],
+  //         ),
+  //       ),
+  //       trailing: SvgPicture.asset('assets/icons/profile/edit_pen.svg'),
+  //       onTap: () => _showAddEditAccountOverlay(context, account: account),
+  //     ),
+  //   );
+  // }
+
+
   Widget _buildAccountRow(AccountModel account) {
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
@@ -317,11 +380,152 @@ class _AccountSettingScreenState extends State<AccountSettingScreen> {
             ],
           ),
         ),
-        trailing: SvgPicture.asset('assets/icons/profile/edit_pen.svg'),
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            IconButton(
+              onPressed: () => _showAddEditAccountOverlay(context, account: account),
+              icon: SvgPicture.asset(
+                'assets/icons/profile/edit_pen.svg',
+                width: 20,
+                height: 20,
+              ),
+              tooltip: 'Edit Account',
+            ),
+            IconButton(
+              onPressed: () => _showDeleteConfirmationDialog(context, account),
+              icon: Icon(
+                Icons.delete_outline,
+                color: Colors.red[600],
+                size: 20,
+              ),
+              tooltip: 'Delete Account',
+            ),
+          ],
+        ),
         onTap: () => _showAddEditAccountOverlay(context, account: account),
       ),
     );
   }
+
+
+  void _showDeleteConfirmationDialog(BuildContext context, AccountModel account) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Row(
+            children: [
+              Icon(
+                Icons.warning_amber_rounded,
+                color: Colors.orange[600],
+                size: 28,
+              ),
+              const SizedBox(width: 8),
+              const Text('Delete Account'),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Are you sure you want to delete this account?',
+                style: TextStyle(fontSize: 16),
+              ),
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.grey[100],
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.grey[300]!),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Account Details:',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.grey[700],
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text('Name: ${account.accountName}'),
+                    Text('Number: ${account.accountNumber}'),
+                    Text('Type: ${account.accountTypeString}'),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                'This action cannot be undone.',
+                style: TextStyle(
+                  color: Colors.red[600],
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: const Text('Cancel'),
+            ),
+            Consumer<AccountProvider>(
+              builder: (context, accountProvider, child) {
+                return ElevatedButton(
+                  onPressed: accountProvider.isDeletingAccount
+                      ? null
+                      : () async {
+                          final success = await accountProvider.deleteAccount(
+                            accountId: account.id,
+                          );
+                          
+                          if (success) {
+                            Navigator.of(context).pop();
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Account deleted successfully'),
+                                backgroundColor: Colors.green,
+                              ),
+                            );
+                          } else {
+                            // Keep dialog open to show error
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('Error: ${accountProvider.errorMessage}'),
+                                backgroundColor: Colors.red,
+                              ),
+                            );
+                          }
+                        },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.red[600],
+                    foregroundColor: Colors.white,
+                  ),
+                  child: accountProvider.isDeletingAccount
+                      ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2,
+                          ),
+                        )
+                      : const Text('Delete'),
+                );
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
 
   void _showSearchDialog(BuildContext context) {
     final accountProvider = context.read<AccountProvider>();

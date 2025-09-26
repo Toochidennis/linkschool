@@ -88,7 +88,7 @@ class _PaymentSettingScreenState extends State<PaymentSettingScreen> {
               ),
               _buildSettingsRow(
                 icon: 'assets/icons/profile/fee_amount.svg',
-                title: 'Amount Setting',
+                title: 'Amount Settings',
                 onTap: () => _showLevelSelectionOverlay(context),
               ),
               _buildSettingsRow(

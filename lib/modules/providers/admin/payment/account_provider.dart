@@ -16,6 +16,7 @@ class AccountProvider extends ChangeNotifier {
   bool _isUpdatingAccount = false;
   String _searchQuery = '';
   String? _selectedAccountTypeFilter;
+  bool _isDeletingAccount = false;
 
   // Getters
   List<AccountModel> get accounts => _filteredAccounts;
@@ -26,6 +27,9 @@ class AccountProvider extends ChangeNotifier {
   bool get isUpdatingAccount => _isUpdatingAccount;
   String get searchQuery => _searchQuery;
   String? get selectedAccountTypeFilter => _selectedAccountTypeFilter;
+
+  
+  bool get isDeletingAccount => _isDeletingAccount;
 
   // Fetch accounts from API, handling pagination
   Future<void> fetchAccounts() async {
@@ -240,6 +244,54 @@ class AccountProvider extends ChangeNotifier {
     } catch (e) {
       print('Error handling auth error: $e');
       _errorMessage = 'Authentication error. Please login again.';
+    }
+  }
+
+  Future<bool> deleteAccount({
+    required int accountId,
+  }) async {
+    _isDeletingAccount = true;
+    _errorMessage = '';
+    notifyListeners();
+
+    try {
+      final response = await _accountService.deleteAccount(
+        accountId: accountId,
+      );
+
+      if (response.success) {
+        // Refresh the accounts list after successful deletion
+        await fetchAccounts();
+        _errorMessage = '';
+        return true;
+      } else {
+        // Check if it's an auth error
+        if (response.statusCode == 401 || response.statusCode == 400 || 
+            response.message.toLowerCase().contains('token')) {
+          await _handleAuthError();
+          // Retry the delete after handling auth error
+          final retryResponse = await _accountService.deleteAccount(
+            accountId: accountId,
+          );
+          if (retryResponse.success) {
+            await fetchAccounts();
+            _errorMessage = '';
+            return true;
+          } else {
+            _errorMessage = retryResponse.message;
+            return false;
+          }
+        } else {
+          _errorMessage = response.message;
+          return false;
+        }
+      }
+    } catch (e) {
+      _errorMessage = 'Failed to delete account: ${e.toString()}';
+      return false;
+    } finally {
+      _isDeletingAccount = false;
+      notifyListeners();
     }
   }
 }
