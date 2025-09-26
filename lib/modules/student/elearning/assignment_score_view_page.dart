@@ -168,7 +168,7 @@ class _AssignmentScoreViewState extends State<AssignmentScoreView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F5F7),
+      backgroundColor: Colors.white,
       appBar: AppBar(
         backgroundColor: const Color(0xFFF5F5F7),
         elevation: 0,
@@ -196,33 +196,33 @@ class _AssignmentScoreViewState extends State<AssignmentScoreView> {
           // Header Section
           Container(
             width: double.infinity,
-            padding: const EdgeInsets.fromLTRB(32, 20, 32, 40),
+            padding: const EdgeInsets.fromLTRB(32, 20, 32, 20),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                  Text(
                   widget.childContent.title?? "No Title",
                   style: TextStyle(
-                    fontSize: 36,
-                    fontWeight: FontWeight.w600,
+                    fontSize: 22,
+                    fontWeight: FontWeight.w500,
                     color: Colors.black,
                   ),
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 4),
                  Text(
                   "${widget.childContent.grade} Points"  "",
                   style: TextStyle(
                     fontSize: 18,
-                    color: Colors.grey,
+                    color: Colors.black,
                     fontWeight: FontWeight.w400,
                   ),
                 ),
-                const SizedBox(height: 32),
+                const SizedBox(height: 10),
                 InkWell(
                   onTap: () => _showAddCommentModal(context),
                   borderRadius: BorderRadius.circular(8),
                   child: const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 8),
+                    padding: EdgeInsets.symmetric(vertical: 4),
                     child: Row(
                       children: [
                         Icon(
@@ -257,7 +257,7 @@ class _AssignmentScoreViewState extends State<AssignmentScoreView> {
           Expanded(
             child: Container(
               width: double.infinity,
-              padding: const EdgeInsets.all(32),
+              padding: const EdgeInsets.all(20),
               child:  Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -277,15 +277,16 @@ class _AssignmentScoreViewState extends State<AssignmentScoreView> {
 
           // Bottom Section
           GestureDetector(
-            onTap: (){
-              _showYourWorkModal(context);
-            }
-            ,
+              onVerticalDragEnd: (details) { // Use this callback instead.
+                _showYourWorkModal(context);
+              },
             child: Container(
-              padding: const EdgeInsets.all(32),
+              height: 140,
+              padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: Colors.grey.shade200,
-                borderRadius: BorderRadius.circular(10),
+
+                color: Colors.grey.shade100,
+                borderRadius: BorderRadius.circular(30),
               ),
               child:
               Column(
@@ -295,12 +296,12 @@ class _AssignmentScoreViewState extends State<AssignmentScoreView> {
                     width: 40,
                     height: 4,
                     decoration: BoxDecoration(
-                      color: Colors.grey.withOpacity(0.3),
+                      color: Colors.grey.shade900.withOpacity(0.4),
                       borderRadius: BorderRadius.circular(2),
                     ),
                   ),
 
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 5),
 
                   // Your work section
                   Row(
@@ -309,8 +310,8 @@ class _AssignmentScoreViewState extends State<AssignmentScoreView> {
                       const Text(
                         'Your work',
                         style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.w600,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w500,
                           color: Colors.black,
                         ),
                       ),
@@ -335,12 +336,14 @@ class _AssignmentScoreViewState extends State<AssignmentScoreView> {
                     ],
                   ),
 
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 10),
 
                   // Assignment file
                   Container(
+                    height: 60,
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
+
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
@@ -358,7 +361,7 @@ class _AssignmentScoreViewState extends State<AssignmentScoreView> {
                       children: [
                         Container(
                           width: 40,
-                          height: 40,
+                          height: 15,
                           decoration: BoxDecoration(
                             color: Colors.grey.withOpacity(0.1),
                             borderRadius: BorderRadius.circular(8),
@@ -366,22 +369,23 @@ class _AssignmentScoreViewState extends State<AssignmentScoreView> {
                           child: const Icon(
                             Icons.description_outlined,
                             color: Colors.grey,
-                            size: 20,
+                            size: 15,
                           ),
                         ),
                         const SizedBox(width: 16),
                          Expanded(
                           child: Text(
                             widget.childContent.contentFiles?.isNotEmpty == true
-                                ? widget.childContent.contentFiles![0].fileName
+                                ? widget.childContent.contentFiles![0].fileName!.split('/').last
                                 : "No file",
-                            style: TextStyle(
-                              fontSize: 16,
+                            style: const TextStyle(
+                              fontSize: 10,
                               color: Colors.black87,
                               fontWeight: FontWeight.w500,
                             ),
                           ),
-                        ),
+
+                         ),
                       ],
                     ),
                   ),
@@ -578,7 +582,7 @@ class _YourWorkModalState extends State<YourWorkModal> {
                                         const SizedBox(width: 8),
                                         Expanded(
                                           child: Text(
-                                            file.fileName ?? "Unknown file", // <-- dynamic file name
+                                            file.fileName.split('/').last ?? "Unknown file", // <-- dynamic file name
                                             overflow: TextOverflow.ellipsis,
                                             style: const TextStyle(
                                               fontSize: 16,
