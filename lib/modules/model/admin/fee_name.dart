@@ -42,3 +42,21 @@ class AddFeeNameRequest {
     };
   }
 }
+
+
+class UpdateFeeNameRequest {
+  final String feeName;
+  final bool isMandatory;
+
+  UpdateFeeNameRequest({
+    required this.feeName,
+    required this.isMandatory,
+  });
+
+  Map<String, dynamic> toJson() {
+    return {
+      'fee_name': feeName,
+      'is_mandatory': isMandatory ? 1 : 0,
+    };
+  }
+}
