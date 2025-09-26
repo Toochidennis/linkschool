@@ -125,7 +125,7 @@ class AccountService {
           '_db': db,
         },
         fromJson: (json) => json,
-        addDatabaseParam: false, // Don't add _db to query params
+        addDatabaseParam: false,
       );
 
       return response;
