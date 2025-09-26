@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-// import 'package:flutter_svg/flutter_svg.dart';
 import 'package:hive/hive.dart';
 import 'package:linkschool/modules/auth/provider/auth_provider.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
@@ -9,24 +8,24 @@ import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/common/widgets/portal/profile/naira_icon.dart';
 import 'package:linkschool/modules/services/api/api_service.dart';
 import 'package:linkschool/modules/services/api/service_locator.dart';
-// import 'package:linkschool/modules/common/widgets/naira_icon.dart';
 import 'package:provider/provider.dart';
 
-class FeeSettingDetailsScreen extends StatefulWidget {
+
+class AmountSettingScreen extends StatefulWidget {
   final String levelName;
   final int levelId;
 
-  const FeeSettingDetailsScreen({
+  const AmountSettingScreen({
     super.key,
     required this.levelName,
     required this.levelId,
   });
 
   @override
-  State<FeeSettingDetailsScreen> createState() => _FeeSettingDetailsScreenState();
+  State<AmountSettingScreen> createState() => AmounteSettingScreenState();
 }
 
-class _FeeSettingDetailsScreenState extends State<FeeSettingDetailsScreen> {
+class AmounteSettingScreenState extends State<AmountSettingScreen> {
   String selectedLevel = '';
   late double opacity;
   List<Map<String, dynamic>> feeItems = [];
@@ -40,10 +39,10 @@ class _FeeSettingDetailsScreenState extends State<FeeSettingDetailsScreen> {
   void initState() {
     super.initState();
     selectedLevel = widget.levelName;
-    _fetchNextTermFees();
+    _fetchInvoices();
   }
 
-  Future<void> _fetchNextTermFees() async {
+  Future<void> _fetchInvoices() async {
     setState(() {
       isLoading = true;
       errorMessage = null;
@@ -189,7 +188,7 @@ class _FeeSettingDetailsScreenState extends State<FeeSettingDetailsScreen> {
                                     Navigator.pushReplacement(
                                       context,
                                       MaterialPageRoute(
-                                        builder: (context) => FeeSettingDetailsScreen(
+                                        builder: (context) => AmountSettingScreen(
                                           levelName: levelName,
                                           levelId: level['id'],
                                         ),
@@ -344,7 +343,7 @@ class _FeeSettingDetailsScreenState extends State<FeeSettingDetailsScreen> {
           ),
         ),
         title: Text(
-          'Fee Settings',
+          'Amount Settings',
           style: AppTextStyles.normal600(
             fontSize: 24.0,
             color: AppColors.eLearningBtnColor1,
@@ -455,7 +454,7 @@ class _FeeSettingDetailsScreenState extends State<FeeSettingDetailsScreen> {
                                   ),
                                   const SizedBox(height: 16),
                                   ElevatedButton(
-                                    onPressed: _fetchNextTermFees,
+                                    onPressed: _fetchInvoices,
                                     child: const Text('Retry'),
                                   ),
                                 ],
