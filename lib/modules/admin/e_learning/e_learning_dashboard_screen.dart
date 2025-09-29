@@ -264,7 +264,9 @@ Widget _buildTopContainers(OverviewProvider overviewProvider) {
                           courseId: assessment is RecentQuizModel ? assessment.courseId.toString() : '',
                           courseName: assessment is RecentQuizModel ? assessment.courseName : '',
                         quizId: quizId),
+                        settings: const RouteSettings(name: '/recent_quiz'),
                     ),
+                   
                   );
                 } else {
                   ScaffoldMessenger.of(context).showSnackBar(

@@ -9,7 +9,7 @@ class Material {
   final DateTime startDate;
   final DateTime endDate;
   final String topic;
-  final Duration duration;
+  final Duration? duration;
   final String marks;
   final DateTime createdAt;
   final  List<AttachmentItem>? attachments;
@@ -19,14 +19,17 @@ class Material {
     required this.title,
     required this.description,
     required this.selectedClass,
-    required this.startDate,
-    required this.endDate,
+      DateTime? startDate,
+    DateTime? endDate,
     required this.topic,
-    required this.duration,
+     this.duration,
     required this.marks,
     this.attachments,
     DateTime? createdAt, int? id,
     this.topicId,
    
-  }) : createdAt = createdAt ?? DateTime.now();
+  }) : createdAt = createdAt ?? DateTime.now(),
+  startDate = startDate ?? DateTime.now(),
+  endDate = endDate ?? DateTime.now();
+
 }

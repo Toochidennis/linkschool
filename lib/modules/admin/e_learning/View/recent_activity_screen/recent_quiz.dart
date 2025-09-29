@@ -316,7 +316,7 @@ void _prepareFormattedData() {
           syllabusClasses: quizData!.classes.map((c) => c.name).join(', '),
           questions: questions!,
           editMode: true,
-           source: 'elearning',
+           source: 'elearning_dashboard',
         ),
       ),
     ).then((_) {
