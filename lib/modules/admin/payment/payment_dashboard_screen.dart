@@ -1,4 +1,3 @@
-// ignore_for_file: deprecated_member_use
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:hive/hive.dart';
@@ -14,7 +13,6 @@ import '../../model/admin/payment_model.dart';
 import '../../services/admin/payment/payment_service.dart';
 import '../../services/api/api_service.dart';
 import 'expenditure/expenditure_screen.dart';
-import 'receipt/generate_report/report_payment.dart';
 import 'receipt/payment_outstanding_screen.dart';
 import 'receipt/payment_received_screen.dart';
 import 'receipt/receipt_screen.dart' hide Level, ClassModel;
@@ -296,7 +294,7 @@ class _PaymentDashboardScreenState extends State<PaymentDashboardScreen> {
                                   transaction.date,
                                   transaction.amount,
                                   transaction.levelName,
-                                  transaction, // Pass the complete transaction object
+                                  transaction, // transaction object
                                 ),
                               )
                               .toList()
