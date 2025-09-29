@@ -5,6 +5,8 @@ import 'package:flutter_pdfview/flutter_pdfview.dart';
 import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
 
+import '../../common/app_colors.dart';
+
 class PdfViewerPage extends StatefulWidget {
   final String url;
   const PdfViewerPage({super.key, required this.url});
@@ -49,7 +51,15 @@ class _PdfViewerPageState extends State<PdfViewerPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("PDF Preview")),
+      appBar: AppBar( leading: IconButton(
+        onPressed: () => Navigator.of(context).pop(),
+        icon: Image.asset(
+          'assets/icons/arrow_back.png',
+          color: Colors.white,
+          width: 34.0,
+          height: 34.0,
+        ),
+      ),title: const Text("PDF Preview")),
       body: loading
           ? const Center(child: CircularProgressIndicator())
           : localPath == null

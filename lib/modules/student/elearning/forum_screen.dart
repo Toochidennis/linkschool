@@ -256,7 +256,7 @@ class _ForumScreenState extends State<ForumScreen> {
                 ),
               ),
               // Section 2: Input Card (still visually attached to the header)
-              Transform.translate(
+              /*Transform.translate(
                 offset: const Offset(0, -2),
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16.0),
@@ -290,7 +290,7 @@ class _ForumScreenState extends State<ForumScreen> {
                     ),
                   ),
                 ),
-              ),
+              ),*/
               const SizedBox(height: 16),
 
               // Section 3: Post Card
