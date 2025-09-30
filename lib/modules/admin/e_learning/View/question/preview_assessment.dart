@@ -11,10 +11,11 @@ import 'package:linkschool/modules/common/buttons/custom_long_elevated_button.da
 import 'package:linkschool/modules/common/buttons/custom_medium_elevated_button.dart';
 
 import 'package:linkschool/modules/common/buttons/custom_outline_button..dart';
-import 'package:linkschool/modules/common/constants.dart';
+import 'package:linkschool/modules/common/constants.dart' ;
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/model/e-learning/question_model.dart';
-import 'package:linkschool/modules/model/e-learning/quiz_model.dart';
+import 'package:linkschool/modules/model/e-learning/quiz_model.dart' hide QuizQuestion;
+import 'package:linkschool/modules/admin/e_learning/View/question/assessment_screen.dart' show QuizQuestion, OptionsQuestion, TextQuestion, TypedAnswerQuestion;
 import 'package:shared_preferences/shared_preferences.dart';
 
 class PreviewAssessment extends StatefulWidget {
@@ -1035,7 +1036,7 @@ int totalScore = 0;
     MaterialPageRoute(
       builder: (context) => PreviewQuizAssessmentScreen(
         userAnswer: processedAnswers,
-        question:[],
+        question:questions,
       
         correctAnswers: processedCorrectAnswers,
         mark:totalScore.toString(),
@@ -1046,65 +1047,4 @@ int totalScore = 0;
 }
 }
 
-abstract class QuizQuestion {
-  final String topic;
-  final String questionText;
-  final String? imageUrl;
-    final int questionGrade;
-
-  QuizQuestion({
-    required this.topic,
-    required this.questionText,
-    this.imageUrl,
-  required this.questionGrade,
-  });
-}
-
-class OptionsQuestion extends QuizQuestion {
-  final List<Map<String, dynamic>> options;
-
-  OptionsQuestion({
-    required super.topic,
-    required super.questionText,
-    required this.options,
-    super.imageUrl,
-    required super.questionGrade,
-  });
-}
-
-class TextQuestion extends OptionsQuestion {
-  final List<String> correctAnswers;
-
-  TextQuestion({
-    required super.topic,
-    required super.questionText,
-    required super.options,
-    super.imageUrl,
-    required this.correctAnswers, required super.questionGrade,
-  });
-}
-
-class ImageQuestion extends OptionsQuestion {
-  final List<String> correctAnswers;
-
-  ImageQuestion({
-    required super.topic,
-    required super.questionText,
-    required super.options,
-    required super.imageUrl,
-    required this.correctAnswers, required super.questionGrade,
-  });
-}
-
-class TypedAnswerQuestion extends QuizQuestion {
-  final String? correctAnswer;
-  // Removed duplicate questionGrade field and moved required super.questionGrade to constructor initializer list
-
-  TypedAnswerQuestion({
-    required super.topic,
-    required super.questionText,
-    super.imageUrl,
-    required super.questionGrade,
-    this.correctAnswer,
-  });
-}
+// Use question type definitions from assessment_screen.dart to avoid duplicate classes

@@ -526,7 +526,12 @@ class _QuizResultsScreenState extends State<QuizResultsScreen> {
             ),
             const SizedBox(height: 12),
             isQuestionImage
-                ? Image.network("https://linkskool.net/${attempt.questionText}")
+                ? Image.network(
+                  "https://linkskool.net/${attempt.questionText}",
+                    width: 220,  
+                   height: 180, 
+                   fit: BoxFit.cover
+                  )
                 : Text(
                     attempt.questionText,
                     style: const TextStyle(
@@ -543,7 +548,13 @@ class _QuizResultsScreenState extends State<QuizResultsScreen> {
               children: [
 
                 isUserAnswerImage
-                 ? Image.network("https://linkskool.net/${attempt.userAnswer}")
+                 ? Image.network(
+                  "https://linkskool.net/${attempt.userAnswer}",
+                  width: 220,  
+                   height: 180, 
+                  fit: BoxFit.cover           
+                  
+                  )
                : const Text(
                   'Student answer:',
                   style: TextStyle(
@@ -584,7 +595,12 @@ class _QuizResultsScreenState extends State<QuizResultsScreen> {
                   ),
                 ),
                 isCorrectAnswerImage
-                 ? Image.network("https://linkskool.net/${attempt.userAnswer}")
+                 ? Image.network(
+                  "https://linkskool.net/${attempt.userAnswer}",
+                   width: 220,  
+                   height: 180,  
+                  fit: BoxFit.cover
+                  )
                : Flexible(
                   child: Text(
                     attempt.correctAnswer,

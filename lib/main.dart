@@ -12,12 +12,13 @@ import 'package:linkschool/modules/providers/admin/course_registration_provider.
 import 'package:linkschool/modules/providers/admin/e_learning/activity_provider.dart';
 import 'package:linkschool/modules/providers/admin/e_learning/assignment_provider.dart';
 import 'package:linkschool/modules/providers/admin/e_learning/admin_comment_provider.dart';
+import 'package:linkschool/modules/providers/admin/e_learning/comment_provider.dart';
 import 'package:linkschool/modules/providers/admin/e_learning/delete_question.dart';
 import 'package:linkschool/modules/providers/admin/e_learning/delete_sylabus_content.dart';
 import 'package:linkschool/modules/providers/admin/e_learning/mark_assignment_provider.dart';
 import 'package:linkschool/modules/providers/admin/e_learning/material_provider.dart';
 import 'package:linkschool/modules/providers/admin/e_learning/quiz_provider.dart';
-// import 'package:linkschool/modules/providers/admin/e_learning/single_content_provider.dart';
+import 'package:linkschool/modules/providers/admin/e_learning/single_content_provider.dart';
 import 'package:linkschool/modules/providers/admin/e_learning/syllabus_content_provider.dart';
 import 'package:linkschool/modules/providers/admin/e_learning/syllabus_provider.dart';
 import 'package:linkschool/modules/providers/admin/course_result_provider.dart';
@@ -41,13 +42,13 @@ import 'package:linkschool/modules/providers/staff/syllabus_provider.dart';
 import 'package:linkschool/modules/providers/student/elearningcontent_provider.dart';
 import 'package:linkschool/modules/providers/student/payment_provider.dart';
 import 'package:linkschool/modules/providers/student/payment_submission_provider.dart';
-import 'package:linkschool/modules/services/admin/e_learning/single-content_service.dart';
 import 'package:linkschool/modules/providers/student/marked_assignment_provider.dart';
 import 'package:linkschool/modules/providers/student/marked_quiz_provider.dart';
 import 'package:linkschool/modules/providers/student/single_elearningcontent_provider.dart';
 import 'package:linkschool/modules/providers/student/streams_provider.dart';
-import 'package:linkschool/modules/providers/student/student_result_provider.dart';
 import 'package:linkschool/modules/providers/student/student_comment_provider.dart';
+import 'package:linkschool/modules/providers/student/student_result_provider.dart';
+import 'package:linkschool/modules/services/admin/e_learning/activity_service.dart';
 import 'package:linkschool/modules/services/explore/cbt_service.dart';
 import 'package:linkschool/modules/services/staff/overview_service.dart';
 import 'package:linkschool/routes/onboardingScreen.dart';
@@ -58,11 +59,10 @@ import 'modules/providers/admin/registered_terms_provider.dart';
 import 'modules/providers/explore/game/game_provider.dart';
 import 'modules/providers/admin/grade_provider.dart';
 import 'modules/providers/student/dashboard_provider.dart';
-import 'package:linkschool/modules/services/admin/e_learning/activity_service.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
+
   try {
     await Hive.initFlutter();
     await Hive.openBox('userData');
@@ -72,10 +72,10 @@ Future<void> main() async {
   } catch (e) {
     print('Error initializing Hive: $e');
   }
-  
+
   await EnvConfig.init();
   setupServiceLocator();
-  
+
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(
       statusBarColor: Colors.transparent,
@@ -83,22 +83,22 @@ Future<void> main() async {
       statusBarBrightness: Brightness.dark,
     ),
   );
-  
+
   runApp(
     MultiProvider(
       providers: [
         // Core providers
         ChangeNotifierProvider(create: (_) => locator<AuthProvider>()),
-        
-        // Explore providers
+
+        // Explore
         ChangeNotifierProvider(create: (_) => NewsProvider()),
         ChangeNotifierProvider(create: (_) => SubjectProvider()),
         ChangeNotifierProvider(create: (_) => CBTProvider(CBTService())),
         ChangeNotifierProvider(create: (_) => GameProvider()),
         ChangeNotifierProvider(create: (_) => ExamProvider()),
         ChangeNotifierProvider(create: (_) => ForYouProvider()),
-        
-        // Admin E-Learning providers
+
+        // Admin E-Learning
         ChangeNotifierProvider(create: (_) => locator<SyllabusProvider>()),
         ChangeNotifierProvider(create: (_) => locator<SyllabusContentProvider>()),
         ChangeNotifierProvider(create: (_) => locator<TopicProvider>()),
@@ -108,44 +108,48 @@ Future<void> main() async {
         ChangeNotifierProvider(create: (_) => locator<DeleteSyllabusProvider>()),
         ChangeNotifierProvider(create: (_) => locator<DeleteQuestionProvider>()),
         ChangeNotifierProvider(create: (_) => locator<MarkAssignmentProvider>()),
+        ChangeNotifierProvider(create: (_) => locator<SingleContentProvider>()),
         ChangeNotifierProvider(create: (_) => OverviewProvider(locator<OverviewService>())),
         ChangeNotifierProvider(create: (_) => locator<AdminCommentProvider>()),
         ChangeNotifierProvider(create: (_) => locator<StudentCommentProvider>()),
-        
-        // Admin core providers
+        ChangeNotifierProvider(create: (_) => locator<CommentProvider>()), 
+
+        // Admin core
         ChangeNotifierProvider(create: (_) => locator<GradeProvider>()),
         ChangeNotifierProvider(create: (_) => locator<SkillsProvider>()),
         ChangeNotifierProvider(create: (_) => locator<SkillsBehaviorTableProvider>()),
         ChangeNotifierProvider(create: (_) => locator<StudentProvider>()),
         ChangeNotifierProvider(create: (_) => locator<AttendanceProvider>()),
         ChangeNotifierProvider(create: (_) => locator<PerformanceProvider>()),
-        
-        // CRITICAL: Add the missing payment providers from service locator
+
+        // Payments
         ChangeNotifierProvider(create: (_) => locator<AccountProvider>()),
         ChangeNotifierProvider(create: (_) => locator<FeeProvider>()),
-        
-        // Level, Class, Assessment, Term providers
+
+        // Level, Class, Assessment, Term
         ChangeNotifierProvider(create: (_) => LevelProvider()),
         ChangeNotifierProvider(create: (_) => ClassProvider()),
         ChangeNotifierProvider(create: (_) => AssessmentProvider()),
         ChangeNotifierProvider(create: (_) => TermProvider()),
         ChangeNotifierProvider(create: (_) => RegisteredTermsProvider()),
         ChangeNotifierProvider(create: (_) => CourseRegistrationProvider()),
-        
-        // Course result providers
+
+        // Course results
         ChangeNotifierProvider(create: (_) => CourseResultProvider()),
         ChangeNotifierProvider(create: (_) => ViewCourseResultProvider()),
+         ChangeNotifierProvider(create: (_) => locator<AdminCommentProvider>()),
+
+        // Student
         ChangeNotifierProvider(create: (_) => DashboardProvider()),
         ChangeNotifierProvider(create: (_) => ElearningContentProvider()),
         ChangeNotifierProvider(create: (_) => locator<StreamsProvider>()),
         ChangeNotifierProvider(create: (_) => locator<MarkedAssignmentProvider>()),
-
-          // StaffProvider from service locator
-        ChangeNotifierProvider(create: (_) => locator<StaffSyllabusProvider>()),
-        ChangeNotifierProvider(create: (_) => locator<InvoiceProvider>()),
         ChangeNotifierProvider(create: (_) => locator<StudentResultProvider>()),
-        ChangeNotifierProvider(create: (_) => locator<StaffOverviewProvider>()),
-                  ChangeNotifierProvider(create: (_) => locator<StaffStreamsProvider>()),
+        // Staff
+        ChangeNotifierProvider(create: (_) => locator<StaffSyllabusProvider>()),
+        ChangeNotifierProvider(create: (_) => StaffOverviewProvider( locator<StaffOverviewService>())),
+        ChangeNotifierProvider(create: (_) => locator<StaffStreamsProvider>()),
+        
       ],
       child: const MyApp(),
     ),
@@ -154,7 +158,7 @@ Future<void> main() async {
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
-  
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -189,19 +193,18 @@ class _AppInitializerState extends State<AppInitializer> {
     try {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
       await authProvider.checkLoginStatus();
-      
+
       // Check if user has completed onboarding
       final userBox = Hive.box('userData');
       final hasSeenOnboarding = userBox.get('hasSeenOnboarding', defaultValue: false);
-      
+
       setState(() {
         _showOnboarding = !hasSeenOnboarding && !authProvider.isLoggedIn;
       });
-      
     } catch (e) {
       print('Error initializing app: $e');
       setState(() {
-        _showOnboarding = true; // Show onboarding on error
+        _showOnboarding = true;
       });
     } finally {
       if (mounted) {
@@ -216,18 +219,14 @@ class _AppInitializerState extends State<AppInitializer> {
   Widget build(BuildContext context) {
     if (!_isInitialized) {
       return const Scaffold(
-        body: Center(
-          child: CircularProgressIndicator(),
-        ),
+        body: Center(child: CircularProgressIndicator()),
       );
     }
 
-    // If user should see onboarding, show it
     if (_showOnboarding) {
       return Onboardingscreen();
     }
 
-    // Otherwise, show the main app navigation flow
     return AppNavigationFlow();
   }
 }

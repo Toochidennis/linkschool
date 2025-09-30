@@ -64,7 +64,7 @@ class PreviewQuizAssessmentScreen extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                '2nd Continuous Assessment Test',
+                '2nd Continuous Assessment Test.......',
                 style: AppTextStyles.normal600(fontSize: 18, color: AppColors.eLearningContColor2),
               ),
               const SizedBox(height: 16),

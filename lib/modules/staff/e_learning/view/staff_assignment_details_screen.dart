@@ -739,36 +739,36 @@ if (['pdf','doc', 'docx', 'txt', 'rtf'].contains(extension)) {
 
 
 Widget _buildCommentSection() {
-  return Consumer<AdminCommentProvider>(
+  return Consumer<CommentProvider>(
     builder: (context, commentProvider, child) {
       final commentList = commentProvider.comments;
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           if (commentProvider.isLoading && commentList.isEmpty)
-          Skeletonizer(
-            child: ListView.builder(
-              controller: _scrollController,
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: 5, // Show 5 skeleton items
-              itemBuilder: (context, index) {
-                return ListTile(
-                  leading: CircleAvatar(
-                    backgroundColor: Colors.grey.shade300,
-                  ),
-                  title: Container(
-                    height: 16,
-                    color: Colors.grey.shade300,
-                  ),
-                  subtitle: Container(
-                    height: 14,
-                    color: Colors.grey.shade300,
-                  ),
-                );
-              },
+            Skeletonizer(
+              child: ListView.builder(
+                controller: _scrollController,
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: 5, // Show 5 skeleton items
+                itemBuilder: (context, index) {
+                  return ListTile(
+                    leading: CircleAvatar(
+                      backgroundColor: Colors.grey.shade300,
+                    ),
+                    title: Container(
+                      height: 16,
+                      color: Colors.grey.shade300,
+                    ),
+                    subtitle: Container(
+                      height: 14,
+                      color: Colors.grey.shade300,
+                    ),
+                  );
+                },
+              ),
             ),
-          ),
           if (commentList.isNotEmpty) ...[
             Padding(
               padding: const EdgeInsets.all(16.0),
@@ -793,13 +793,12 @@ Widget _buildCommentSection() {
               Padding(
                 padding: const EdgeInsets.all(16.0),
                 child: Text(
-                  commentProvider.message!,
+                  commentProvider.message ?? 'Failed to load comments',
                   style: const TextStyle(color: Colors.red),
                 ),
               ),
             _buildDivider(),
           ],
-        
         ],
       );
     },
@@ -812,6 +811,7 @@ Widget _buildCommentItem(Comment comment) {
     padding: const EdgeInsets.all(12),
     decoration: BoxDecoration(
       color: Colors.white,
+      
       borderRadius: BorderRadius.circular(12),
       
     ),
