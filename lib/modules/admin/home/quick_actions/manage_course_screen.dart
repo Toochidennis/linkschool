@@ -18,6 +18,8 @@ class _CourseManagementScreenState extends State<CourseManagementScreen> {
 
   void _showAddCourseBottomSheet() {
     final nameController = TextEditingController();
+    final courseCodeController = TextEditingController();
+
     String? dialogLevel;
     String? dialogClass;
     final levels = ['JSS1', 'JSS2', 'JSS3', 'SSS1', 'SSS2', 'SSS3'];
@@ -80,22 +82,12 @@ class _CourseManagementScreenState extends State<CourseManagementScreen> {
                 ),
                 const SizedBox(height: 16),
                 // Level dropdown
-                DropdownButtonFormField<String>(
-                  value: dialogLevel,
+                TextField(
+                  controller: courseCodeController,
                   decoration: const InputDecoration(
-                    labelText: 'Level',
+                    labelText: 'Course code',
                     border: OutlineInputBorder(),
                   ),
-                  items: levels.map((level) => DropdownMenuItem(
-                    value: level,
-                    child: Text(level),
-                  )).toList(),
-                  onChanged: (value) {
-                    setState(() {
-                      dialogLevel = value;
-                      dialogClass = null;
-                    });
-                  },
                 ),
                 const SizedBox(height: 16),
                 // Class dropdown
