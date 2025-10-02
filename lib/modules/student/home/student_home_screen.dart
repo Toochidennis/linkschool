@@ -11,6 +11,7 @@ import 'package:linkschool/modules/common/widgets/portal/student/student_customi
 import 'package:linkschool/modules/explore/home/custom_button_item.dart';
 import 'package:linkschool/modules/student/home/feed_details_screen.dart';
 import 'package:linkschool/modules/student/home/new_post_dialog.dart';
+import 'package:linkschool/modules/student/result/student_result_screen.dart';
 import 'package:provider/provider.dart';
 
 import '../../model/student/dashboard_model.dart';
@@ -375,7 +376,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Expanded(
-                        child: CustomButtonItem(
+                        child: CustomButtonItem(//
                           backgroundColor: AppColors.studentCtnColor3,
                           borderColor: AppColors.portalButton1BorderLight,
                           textColor: AppColors.paymentBtnColor1,
@@ -383,7 +384,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
                           iconPath: 'assets/icons/result.svg',
                           iconHeight: 40.0,
                           iconWidth: 36.0,
-                          destination: null,
+                          destination: StudentResultScreen(studentName: getuserdata()['profile']['name'], className: getuserdata()['profile']['class_name']),
                         ),
                       ),
                       const SizedBox(width: 14.0),

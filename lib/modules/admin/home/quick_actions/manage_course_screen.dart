@@ -16,8 +16,10 @@ class _CourseManagementScreenState extends State<CourseManagementScreen> {
     {'name': 'Basic Science', 'level': 'JSS1', 'class': 'JSS1B', 'id': 'BSC001'},
   ];
 
-  void _showAddCourseDialog() {
+  void _showAddCourseBottomSheet() {
     final nameController = TextEditingController();
+    final courseCodeController = TextEditingController();
+
     String? dialogLevel;
     String? dialogClass;
     final levels = ['JSS1', 'JSS2', 'JSS3', 'SSS1', 'SSS2', 'SSS3'];
@@ -30,15 +32,47 @@ class _CourseManagementScreenState extends State<CourseManagementScreen> {
       'SSS3': ['SSS3A', 'SSS3B', 'SSS3C'],
     };
 
-    showDialog(
+    showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
       builder: (context) => StatefulBuilder(
-        builder: (context, setState) => AlertDialog(
-          title: const Text('Add New Course'),
-          content: SingleChildScrollView(
+        builder: (context, setState) => Padding(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(context).viewInsets.bottom,
+            left: 16,
+            right: 16,
+            top: 16,
+          ),
+          child: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
+                // Handle bar
+                Center(
+                  child: Container(
+                    width: 40,
+                    height: 4,
+                    margin: const EdgeInsets.only(bottom: 20),
+                    decoration: BoxDecoration(
+                      color: Colors.grey[300],
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+                // Title
+                const Text(
+                  'Add New Course',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 20),
+                // Course name field
                 TextField(
                   controller: nameController,
                   decoration: const InputDecoration(
@@ -47,72 +81,74 @@ class _CourseManagementScreenState extends State<CourseManagementScreen> {
                   ),
                 ),
                 const SizedBox(height: 16),
-                DropdownButtonFormField<String>(
-                  value: dialogLevel,
+                // Level dropdown
+                TextField(
+                  controller: courseCodeController,
                   decoration: const InputDecoration(
-                    labelText: 'Level',
+                    labelText: 'Course code',
                     border: OutlineInputBorder(),
                   ),
-                  items: levels.map((level) => DropdownMenuItem(
-                    value: level,
-                    child: Text(level),
-                  )).toList(),
-                  onChanged: (value) {
-                    setState(() {
-                      dialogLevel = value;
-                      dialogClass = null;
-                    });
-                  },
                 ),
                 const SizedBox(height: 16),
+                // Class dropdown
                 DropdownButtonFormField<String>(
                   value: dialogClass,
                   decoration: const InputDecoration(
                     labelText: 'Class',
                     border: OutlineInputBorder(),
                   ),
-                  items: dialogLevel == null 
-                    ? []
-                    : classesPerLevel[dialogLevel]!.map((cls) => DropdownMenuItem(
-                        value: cls,
-                        child: Text(cls),
-                      )).toList(),
+                  items: dialogLevel == null
+                      ? []
+                      : classesPerLevel[dialogLevel]!.map((cls) => DropdownMenuItem(
+                    value: cls,
+                    child: Text(cls),
+                  )).toList(),
                   onChanged: (value) {
                     setState(() {
                       dialogClass = value;
                     });
                   },
                 ),
+                const SizedBox(height: 24),
+                // Action buttons
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: () => Navigator.pop(context),
+                        child: const Text('Cancel'),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: () {
+                          if (nameController.text.isNotEmpty &&
+                              dialogLevel != null &&
+                              dialogClass != null) {
+                            setState(() {
+                              courses.add({
+                                'name': nameController.text,
+                                'level': dialogLevel!,
+                                'class': dialogClass!,
+                                'id': 'CRS${(courses.length + 1).toString().padLeft(3, '0')}',
+                              });
+                            });
+                            Navigator.pop(context);
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Course added successfully')),
+                            );
+                          }
+                        },
+                        child: const Text('Add Course'),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
               ],
             ),
           ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel'),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                if (nameController.text.isNotEmpty && 
-                    dialogLevel != null && 
-                    dialogClass != null) {
-                  setState(() {
-                    courses.add({
-                      'name': nameController.text,
-                      'level': dialogLevel!,
-                      'class': dialogClass!,
-                      'id': 'CRS${(courses.length + 1).toString().padLeft(3, '0')}',
-                    });
-                  });
-                  Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Course added successfully')),
-                  );
-                }
-              },
-              child: const Text('Add Course'),
-            ),
-          ],
         ),
       ),
     );
@@ -191,10 +227,18 @@ class _CourseManagementScreenState extends State<CourseManagementScreen> {
           },
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _showAddCourseDialog,
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: _showAddCourseBottomSheet,
         backgroundColor: AppColors.text2Light,
-        child: const Icon(Icons.add, color: Colors.white),
+        icon: const Icon(Icons.add, color: Colors.white),
+        label: const Text(
+          'Add Course',
+          style: TextStyle(
+            fontFamily: 'Urbanist',
+            color: Colors.white,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
       ),
     );
   }
