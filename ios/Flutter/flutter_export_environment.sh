@@ -1,7 +1,12 @@
 #!/bin/sh
 # This is a generated file; do not edit or check into version control.
+<<<<<<< HEAD
 export "FLUTTER_ROOT=C:\src\flutter"
 export "FLUTTER_APPLICATION_PATH=C:\Users\HP\Documents\ITstuff\linkschool"
+=======
+export "FLUTTER_ROOT=C:\Users\ewoch\flutter"
+export "FLUTTER_APPLICATION_PATH=C:\Users\ewoch\Documents\linkschool"
+>>>>>>> aa78a852ee19fb2c81797fb46ba5da93f1198c71
 export "COCOAPODS_PARALLEL_CODE_SIGN=true"
 export "FLUTTER_TARGET=lib\main.dart"
 export "FLUTTER_BUILD_DIR=build"

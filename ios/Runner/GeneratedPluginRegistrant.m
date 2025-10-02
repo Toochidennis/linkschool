@@ -42,10 +42,10 @@
 @import image_picker_ios;
 #endif
 
-#if __has_include(<open_file_ios/OpenFilePlugin.h>)
-#import <open_file_ios/OpenFilePlugin.h>
+#if __has_include(<open_filex/OpenFilePlugin.h>)
+#import <open_filex/OpenFilePlugin.h>
 #else
-@import open_file_ios;
+@import open_filex;
 #endif
 
 #if __has_include(<package_info_plus/FPPPackageInfoPlusPlugin.h>)

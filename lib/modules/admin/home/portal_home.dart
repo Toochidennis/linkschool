@@ -678,7 +678,7 @@ class _PortalHomeState extends State<PortalHome> with TickerProviderStateMixin {
                   ),
                 ),
 
-                const SizedBox(height: 20), // Reduced spacing
+                const SizedBox(height: 20),
 
                 // Quick Actions Section (Admin-specific) - Now with 4 buttons
                 _buildAnimatedCard(
@@ -712,7 +712,7 @@ class _PortalHomeState extends State<PortalHome> with TickerProviderStateMixin {
                             ),
                           ],
                         ),
-                        const SizedBox(height: 16), // Reduced spacing
+                        const SizedBox(height: 16), 
                         // First row of buttons
                         Row(
                           children: [
