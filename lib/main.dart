@@ -23,6 +23,9 @@ import 'package:linkschool/modules/providers/admin/e_learning/syllabus_content_p
 import 'package:linkschool/modules/providers/admin/e_learning/syllabus_provider.dart';
 import 'package:linkschool/modules/providers/admin/course_result_provider.dart';
 import 'package:linkschool/modules/providers/admin/e_learning/topic_provider.dart';
+import 'package:linkschool/modules/providers/admin/home/add_staff_provider.dart';
+import 'package:linkschool/modules/providers/admin/home/level_class_provider.dart';
+import 'package:linkschool/modules/providers/admin/home/manage_student_provider.dart';
 import 'package:linkschool/modules/providers/admin/level_provider.dart';
 import 'package:linkschool/modules/providers/admin/payment/account_provider.dart';
 import 'package:linkschool/modules/providers/admin/payment/fee_provider.dart';
@@ -97,6 +100,12 @@ Future<void> main() async {
         ChangeNotifierProvider(create: (_) => GameProvider()),
         ChangeNotifierProvider(create: (_) => ExamProvider()),
         ChangeNotifierProvider(create: (_) => ForYouProvider()),
+        
+        // Admin HomeScreen 
+         ChangeNotifierProvider(create: (_) => locator<AddStaffProvider>()), 
+         ChangeNotifierProvider(create: (_) => locator<LevelClassProvider>(),), 
+         ChangeNotifierProvider(create: (_) => locator<ManageStudentProvider>()),
+
 
         // Admin E-Learning
         ChangeNotifierProvider(create: (_) => locator<SyllabusProvider>()),

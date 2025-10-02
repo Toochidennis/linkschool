@@ -18,6 +18,9 @@ import 'package:linkschool/modules/providers/admin/e_learning/syllabus_provider.
 import 'package:linkschool/modules/providers/admin/e_learning/topic_provider.dart';
 
 import 'package:linkschool/modules/providers/admin/grade_provider.dart';
+import 'package:linkschool/modules/providers/admin/home/add_staff_provider.dart';
+import 'package:linkschool/modules/providers/admin/home/level_class_provider.dart';
+import 'package:linkschool/modules/providers/admin/home/manage_student_provider.dart';
 import 'package:linkschool/modules/providers/admin/skills_behavior_table_provider.dart';
 import 'package:linkschool/modules/providers/staff/streams_provider.dart';
 import 'package:linkschool/modules/providers/staff/syllabus_provider.dart';
@@ -35,6 +38,9 @@ import 'package:linkschool/modules/services/admin/e_learning/single-content_serv
 import 'package:linkschool/modules/services/admin/e_learning/syllabus_content_service.dart';
 import 'package:linkschool/modules/services/admin/e_learning/syllabus_service.dart';
 import 'package:linkschool/modules/services/admin/e_learning/topic_service.dart';
+import 'package:linkschool/modules/services/admin/home/add_staff_service.dart';
+import 'package:linkschool/modules/services/admin/home/level_class_service.dart';
+import 'package:linkschool/modules/services/admin/home/manage_student_service.dart';
 import 'package:linkschool/modules/services/api/api_service.dart';
 import 'package:linkschool/modules/services/admin/class_service.dart';
 import 'package:linkschool/modules/services/admin/grade_service.dart';
@@ -59,6 +65,33 @@ void setupServiceLocator() {
     apiKey: dotenv.env['API_KEY'],
   ));
 
+
+// ______________admin home screen_____________________________
+
+locator.registerLazySingleton<ManageStudentService>(
+    () => ManageStudentService(locator<ApiService>())
+  );
+  locator.registerLazySingleton<ManageStudentProvider>(
+    () => ManageStudentProvider(locator<ManageStudentService>())
+  );
+
+
+ locator.registerLazySingleton<AddStaffService>(
+    () => AddStaffService(locator<ApiService>())
+  );
+
+     locator.registerLazySingleton<AddStaffProvider>(
+    () => AddStaffProvider(locator<AddStaffService>())
+  );
+
+
+  locator.registerSingleton<LevelClassService>(LevelClassService(locator<ApiService>()));
+
+  // Register LevelClassProvider as a singleton, injecting LevelClassService
+  locator.registerSingleton<LevelClassProvider>(LevelClassProvider(locator<LevelClassService>()));
+  
+
+// ******************////************************************* */
 // admin comment  Api with ApiService dependency
  locator.registerLazySingleton<AdminCommentService>(
     () => AdminCommentService(locator<ApiService>())

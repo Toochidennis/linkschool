@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:linkschool/modules/model/admin/home/add_staff_model.dart';
+import 'package:linkschool/modules/providers/admin/home/add_staff_provider.dart';
+import 'package:provider/provider.dart';
 import '../../../common/app_colors.dart';
 import '../../../common/constants.dart';
 import '../../../common/text_styles.dart';
@@ -16,7 +19,7 @@ class _ManageStaffScreenState extends State<ManageStaffScreen>
   late AnimationController _fadeController;
   late AnimationController _slideController;
   late Animation<double> _fadeAnimation;
-  late Animation<Offset> _slideAnimation;
+  String? _editingStaffId;
 
   final TextEditingController _searchController = TextEditingController();
   final TextEditingController _nameController = TextEditingController();
@@ -24,17 +27,47 @@ class _ManageStaffScreenState extends State<ManageStaffScreen>
   final TextEditingController _phoneController = TextEditingController();
   final TextEditingController _addressController = TextEditingController();
   final TextEditingController _salaryController = TextEditingController();
+  // Additional controllers for full staff profile
+  final TextEditingController _surnameController = TextEditingController();
+  final TextEditingController _firstNameController = TextEditingController();
+  final TextEditingController _middleNameController = TextEditingController();
+  final TextEditingController _birthDateController = TextEditingController();
+  final TextEditingController _cityController = TextEditingController();
+  final TextEditingController _stateController = TextEditingController();
+  final TextEditingController _countryController = TextEditingController();
+  final TextEditingController _religionController = TextEditingController();
+  final TextEditingController _lgaOriginController = TextEditingController();
+  final TextEditingController _stateOriginController = TextEditingController();
+  final TextEditingController _nationalityController = TextEditingController();
+  final TextEditingController _homeTownController = TextEditingController();
+  final TextEditingController _healthStatusController = TextEditingController();
+  final TextEditingController _pastRecordController = TextEditingController();
+  final TextEditingController _pastRecordExtraController = TextEditingController();
+  final TextEditingController _personalRecordController = TextEditingController();
+  final TextEditingController _employmentHistoryController = TextEditingController();
+  final TextEditingController _refereesController = TextEditingController();
+  final TextEditingController _extraNoteController = TextEditingController();
+  final TextEditingController _nextOfKinNameController = TextEditingController();
+  final TextEditingController _nextOfKinAddressController = TextEditingController();
+  final TextEditingController _nextOfKinEmailController = TextEditingController();
+  final TextEditingController _nextOfKinPhoneController = TextEditingController();
+  final TextEditingController _employmentDateController = TextEditingController();
+  final TextEditingController _healthAppraisalController = TextEditingController();
+  final TextEditingController _generalAppraisalController = TextEditingController();
+  final TextEditingController _gradeController = TextEditingController();
+  final TextEditingController _departmentController = TextEditingController();
+  final TextEditingController _sectionController = TextEditingController();
+  final TextEditingController _designationController = TextEditingController();
   
   String _selectedFilter = 'All';
   bool _showAddForm = false;
   bool _isEditing = false;
-  int? _editingIndex;
   String _selectedGender = 'Male';
   String _selectedRole = 'Teacher';
   String _selectedStatus = 'Active';
+  String _selectedMaritalStatus = 'single';
+  String _selectedAccessLevel = 'staff';
   List<String> _selectedCourses = [];
-  String _selectedLevel = '';
-  String _selectedClass = '';
 
   // Mock data for staff members
   List<Map<String, dynamic>> _staffList = [
@@ -132,17 +165,17 @@ class _ManageStaffScreenState extends State<ManageStaffScreen>
       curve: Curves.easeInOut,
     ));
 
-    _slideAnimation = Tween<Offset>(
-      begin: const Offset(0, 0.3),
-      end: Offset.zero,
-    ).animate(CurvedAnimation(
-      parent: _slideController,
-      curve: Curves.elasticOut,
-    ));
 
     _fadeController.forward();
     _slideController.forward();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+    final provider = Provider.of<AddStaffProvider>(context, listen: false);
+    provider.fetchAllStaff();
+  });
   }
+
+
 
   @override
   void dispose() {
@@ -154,26 +187,61 @@ class _ManageStaffScreenState extends State<ManageStaffScreen>
     _phoneController.dispose();
     _addressController.dispose();
     _salaryController.dispose();
+    _surnameController.dispose();
+    _firstNameController.dispose();
+    _middleNameController.dispose();
+    _birthDateController.dispose();
+    _cityController.dispose();
+    _stateController.dispose();
+    _countryController.dispose();
+    _religionController.dispose();
+    _lgaOriginController.dispose();
+    _stateOriginController.dispose();
+    _nationalityController.dispose();
+    _homeTownController.dispose();
+    _healthStatusController.dispose();
+    _pastRecordController.dispose();
+    _pastRecordExtraController.dispose();
+    _personalRecordController.dispose();
+    _employmentHistoryController.dispose();
+    _refereesController.dispose();
+    _extraNoteController.dispose();
+    _nextOfKinNameController.dispose();
+    _nextOfKinAddressController.dispose();
+    _nextOfKinEmailController.dispose();
+    _nextOfKinPhoneController.dispose();
+    _employmentDateController.dispose();
+    _healthAppraisalController.dispose();
+    _generalAppraisalController.dispose();
+    _gradeController.dispose();
+    _departmentController.dispose();
+    _sectionController.dispose();
+    _designationController.dispose();
     super.dispose();
   }
 
   List<Map<String, dynamic>> get _filteredStaffList {
-    List<Map<String, dynamic>> filtered = _staffList;
-    
-    if (_selectedFilter != 'All') {
-      filtered = filtered.where((staff) => staff['role'] == _selectedFilter).toList();
-    }
-    
-    if (_searchController.text.isNotEmpty) {
-      filtered = filtered.where((staff) =>
-        staff['name'].toString().toLowerCase().contains(_searchController.text.toLowerCase()) ||
-        staff['email'].toString().toLowerCase().contains(_searchController.text.toLowerCase()) ||
-        staff['id'].toString().toLowerCase().contains(_searchController.text.toLowerCase())
-      ).toList();
-    }
-    
-    return filtered;
+  final provider = Provider.of<AddStaffProvider>(context, listen: false);
+  
+  // Convert Staff objects to display maps
+  List<Map<String, dynamic>> filtered = provider.staffList
+      .map((staff) => staff.toDisplayMap())
+      .toList();
+  
+  if (_selectedFilter != 'All') {
+    filtered = filtered.where((staff) => staff['role'] == _selectedFilter).toList();
   }
+  
+  if (_searchController.text.isNotEmpty) {
+    filtered = filtered.where((staff) =>
+      staff['name'].toString().toLowerCase().contains(_searchController.text.toLowerCase()) ||
+      staff['email'].toString().toLowerCase().contains(_searchController.text.toLowerCase()) ||
+      staff['id'].toString().toLowerCase().contains(_searchController.text.toLowerCase())
+    ).toList();
+  }
+  
+  return filtered;
+}
 
   Widget _buildAnimatedCard({
     required Widget child,
@@ -319,7 +387,7 @@ class _ManageStaffScreenState extends State<ManageStaffScreen>
                   borderRadius: BorderRadius.circular(25),
                 ),
                 child: Icon(
-                  staff['gender'] == 'Male' ? Icons.man : Icons.woman,
+                  (staff['gender']?.toString().toLowerCase() ?? 'male') == 'male' ? Icons.man : Icons.woman,
                   color: AppColors.text2Light,
                   size: 30,
                 ),
@@ -527,9 +595,8 @@ class _ManageStaffScreenState extends State<ManageStaffScreen>
                 onPressed: () {
                   _clearForm();
                   setState(() {
-                    _showAddForm = false;
-                    _isEditing = false;
-                    _editingIndex = null;
+                  _showAddForm = false;
+                  _isEditing = false;
                   });
                 },
                 icon: const Icon(
@@ -541,11 +608,31 @@ class _ManageStaffScreenState extends State<ManageStaffScreen>
           ),
           const SizedBox(height: 16),
           
-          // Name Field
+          // Names
+          Row(
+            children: [
+              Expanded(
+                child: _buildTextField(
+                  controller: _surnameController,
+                  label: 'Surname',
+                  icon: Icons.badge,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _buildTextField(
+                  controller: _firstNameController,
+                  label: 'First Name',
+                  icon: Icons.person,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
           _buildTextField(
-            controller: _nameController,
-            label: 'Full Name',
-            icon: Icons.person,
+            controller: _middleNameController,
+            label: 'Middle Name',
+            icon: Icons.person_outline,
           ),
           const SizedBox(height: 12),
           
@@ -567,6 +654,32 @@ class _ManageStaffScreenState extends State<ManageStaffScreen>
           ),
           const SizedBox(height: 12),
           
+          // Birth date
+          GestureDetector(
+            onTap: () async {
+              final now = DateTime.now();
+              final initial = DateTime(now.year - 18, now.month, now.day);
+              final picked = await showDatePicker(
+                context: context,
+                initialDate: initial,
+                firstDate: DateTime(1940),
+                lastDate: now,
+              );
+              if (picked != null) {
+                _birthDateController.text = picked.toIso8601String().substring(0, 10);
+                setState(() {});
+              }
+            },
+            child: AbsorbPointer(
+              child: _buildTextField(
+                controller: _birthDateController,
+                label: 'Birth Date (YYYY-MM-DD)',
+                icon: Icons.cake,
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+
           // Address Field
           _buildTextField(
             controller: _addressController,
@@ -574,12 +687,41 @@ class _ManageStaffScreenState extends State<ManageStaffScreen>
             icon: Icons.location_on,
           ),
           const SizedBox(height: 12),
+
+          // City, State, Country
+          Row(
+            children: [
+              Expanded(
+                child: _buildTextField(
+                  controller: _cityController,
+                  label: 'City',
+                  icon: Icons.location_city,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _buildTextField(
+                  controller: _stateController,
+                  label: 'State',
+                  icon: Icons.map,
+                  keyboardType: TextInputType.number
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          _buildTextField(
+            controller: _countryController,
+            label: 'Country',
+            icon: Icons.flag,
+          ),
+          const SizedBox(height: 12),
           
           // Salary Field
           _buildTextField(
-            controller: _salaryController,
-            label: 'Salary',
-            icon: Icons.money,
+            controller: _nationalityController,
+            label: 'Nationality',
+            icon: Icons.language,
             keyboardType: TextInputType.number,
           ),
           const SizedBox(height: 16),
@@ -615,19 +757,278 @@ class _ManageStaffScreenState extends State<ManageStaffScreen>
             ],
           ),
           const SizedBox(height: 12),
-          
-          // Status Selection
+
+          // Marital Status and Access Level
+          Row(
+            children: [
+              Expanded(
+                child: _buildDropdown(
+                  label: 'Marital Status',
+                  value: _selectedMaritalStatus,
+                  items: ['single', 'married', 'divorced', 'widowed'],
+                  onChanged: (value) {
+                    setState(() {
+                      _selectedMaritalStatus = value!;
+                    });
+                  },
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _buildDropdown(
+                  label: 'Access Level',
+                  value: _selectedAccessLevel,
+                  items: ['admin', 'staff'],
+                  onChanged: (value) {
+                    setState(() {
+                      _selectedAccessLevel = value!;
+                    });
+                  },
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+
+          // Origins & Nationality
+          Row(
+            children: [
+              Expanded(
+                child: _buildTextField(
+                  controller: _lgaOriginController,
+                  label: 'LGA of Origin',
+                  icon: Icons.place,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _buildTextField(
+                  controller: _stateOriginController,
+                  label: 'State of Origin',
+                  icon: Icons.public,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              // Expanded(
+              //   child: _buildTextField(
+              //     controller: _nationalityController,
+              //     label: 'Nationality',
+              //     icon: ,
+              //   ),
+              // ),
+            
+              Expanded(
+                child: _buildTextField(
+                  controller: _homeTownController,
+                  label: 'Home Town',
+                  icon: Icons.home,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+
+          // Religion
+          _buildTextField(
+            controller: _religionController,
+            label: 'Religion',
+            icon: Icons.church,
+          ),
+          const SizedBox(height: 12),
+
+          // Health & Records
+          _buildTextField(
+            controller: _healthStatusController,
+            label: 'Health Status',
+            icon: Icons.health_and_safety,
+          ),
+          const SizedBox(height: 12),
+          _buildTextField(
+            controller: _pastRecordController,
+            label: 'Past Record',
+            icon: Icons.history,
+          ),
+          const SizedBox(height: 12),
+          _buildTextField(
+            controller: _pastRecordExtraController,
+            label: 'Past Record Extra',
+            icon: Icons.note_add,
+          ),
+          const SizedBox(height: 12),
+          _buildTextField(
+            controller: _personalRecordController,
+            label: 'Personal Record',
+            icon: Icons.fact_check,
+          ),
+          const SizedBox(height: 12),
+          _buildTextField(
+            controller: _employmentHistoryController,
+            label: 'Employment History',
+            icon: Icons.work_history,
+          ),
+          const SizedBox(height: 12),
+          _buildTextField(
+            controller: _refereesController,
+            label: 'Referees',
+            icon: Icons.people_outline,
+          ),
+          const SizedBox(height: 12),
+          _buildTextField(
+            controller: _extraNoteController,
+            label: 'Extra Note',
+            icon: Icons.sticky_note_2,
+          ),
+          const SizedBox(height: 12),
+
+          // Next of Kin
+          _buildTextField(
+            controller: _nextOfKinNameController,
+            label: 'Next of Kin Name',
+            icon: Icons.person_2,
+          ),
+          const SizedBox(height: 12),
+          _buildTextField(
+            controller: _nextOfKinAddressController,
+            label: 'Next of Kin Address',
+            icon: Icons.location_on_outlined,
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: _buildTextField(
+                  controller: _nextOfKinEmailController,
+                  label: 'Next of Kin Email',
+                  icon: Icons.alternate_email,
+                  keyboardType: TextInputType.emailAddress,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _buildTextField(
+                  controller: _nextOfKinPhoneController,
+                  label: 'Next of Kin Phone',
+                  icon: Icons.phone_android,
+                  keyboardType: TextInputType.phone,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+
+          // Employment date
+          GestureDetector(
+            onTap: () async {
+              final now = DateTime.now();
+              final picked = await showDatePicker(
+                context: context,
+                initialDate: now,
+                firstDate: DateTime(1970),
+                lastDate: DateTime(now.year + 1),
+              );
+              if (picked != null) {
+                _employmentDateController.text = picked.toIso8601String().substring(0, 10);
+                setState(() {});
+              }
+            },
+            child: AbsorbPointer(
+              child: _buildTextField(
+                controller: _employmentDateController,
+                label: 'Employment Date (YYYY-MM-DD)',
+                icon: Icons.event,
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+
+          // Employment status
           _buildDropdown(
-            label: 'Status',
+            label: 'Employment Status',
             value: _selectedStatus,
-            items: ['Active', 'Inactive'],
+            items: ['Active', 'Inactive', 'Suspended'],
             onChanged: (value) {
               setState(() {
                 _selectedStatus = value!;
               });
             },
           ),
+          const SizedBox(height: 12),
+
+          // Appraisals
+          Row(
+            children: [
+              Expanded(
+                child: _buildTextField(
+                  controller: _healthAppraisalController,
+                  label: 'Health Appraisal',
+                  icon: Icons.monitor_heart,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _buildTextField(
+                  controller: _generalAppraisalController,
+                  label: 'General Appraisal',
+                  icon: Icons.star_rate,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+
+          // Department & Grade
+          Row(
+            children: [
+              Expanded(
+                child: _buildTextField(
+                  controller: _departmentController,
+                  label: 'Department',
+                  icon: Icons.apartment,
+                  keyboardType: TextInputType.number
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _buildTextField(
+                  controller: _gradeController,
+                  label: 'Grade (number)',
+                  icon: Icons.format_list_numbered,
+                  keyboardType: TextInputType.number,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+
+          // Section & Designation (IDs as numbers)
+          Row(
+            children: [
+              Expanded(
+                child: _buildTextField(
+                  controller: _sectionController,
+                  label: 'Section (ID number)',
+                  icon: Icons.grid_view,
+                  keyboardType: TextInputType.number,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _buildTextField(
+                  controller: _designationController,
+                  label: 'Designation (ID number)',
+                  icon: Icons.badge_outlined,
+                  keyboardType: TextInputType.number,
+                ),
+              ),
+            ],
+          ),
           const SizedBox(height: 20),
+          
+          
           
           // Submit Button
           SizedBox(
@@ -739,59 +1140,131 @@ class _ManageStaffScreenState extends State<ManageStaffScreen>
     _phoneController.clear();
     _addressController.clear();
     _salaryController.clear();
+    _surnameController.clear();
+    _firstNameController.clear();
+    _middleNameController.clear();
+    _birthDateController.clear();
+    _cityController.clear();
+    _stateController.clear();
+    _countryController.clear();
+    _religionController.clear();
+    _lgaOriginController.clear();
+    _stateOriginController.clear();
+    _nationalityController.clear();
+    _homeTownController.clear();
+    _healthStatusController.clear();
+    _pastRecordController.clear();
+    _pastRecordExtraController.clear();
+    _personalRecordController.clear();
+    _employmentHistoryController.clear();
+    _refereesController.clear();
+    _extraNoteController.clear();
+    _nextOfKinNameController.clear();
+    _nextOfKinAddressController.clear();
+    _nextOfKinEmailController.clear();
+    _nextOfKinPhoneController.clear();
+    _employmentDateController.clear();
+    _healthAppraisalController.clear();
+    _generalAppraisalController.clear();
+    _gradeController.clear();
+    _departmentController.clear();
+    _sectionController.clear();
+    _designationController.clear();
     _selectedGender = 'Male';
     _selectedRole = 'Teacher';
     _selectedStatus = 'Active';
+    _selectedMaritalStatus = 'single';
+    _selectedAccessLevel = 'staff';
     _selectedCourses.clear();
-    _selectedLevel = '';
-    _selectedClass = '';
   }
 
-  void _handleSubmit() {
-    if (_nameController.text.trim().isEmpty ||
-        _emailController.text.trim().isEmpty ||
-        _phoneController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please fill in all required fields'),
-          backgroundColor: Colors.red,
-        ),
-      );
-      return;
-    }
+void _handleSubmit() async {
+  // Basic validation
+  if (_surnameController.text.trim().isEmpty ||
+      _firstNameController.text.trim().isEmpty ||
+      _emailController.text.trim().isEmpty ||
+      _phoneController.text.trim().isEmpty) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Please fill in all required fields (Surname, First Name, Email, Phone)'),
+        backgroundColor: Colors.red,
+      ),
+    );
+    return;
+  }
 
-    final newStaff = {
-      'id': _isEditing ? _staffList[_editingIndex!]['id'] : 'ST${_staffList.length + 1}'.padLeft(5, '0'),
-      'name': _nameController.text.trim(),
-      'email': _emailController.text.trim(),
-      'phone': _phoneController.text.trim(),
-      'gender': _selectedGender,
-      'role': _selectedRole,
-      'courses': _selectedCourses,
-      'level': _selectedLevel,
-      'class': _selectedClass,
-      'status': _selectedStatus,
-      'joinDate': _isEditing ? _staffList[_editingIndex!]['joinDate'] : DateTime.now().toString().substring(0, 10),
-      'salary': _salaryController.text.trim(),
-      'address': _addressController.text.trim(),
-    };
+  final newStaff = {
+    'surname': _surnameController.text.trim(),
+    'first_name': _firstNameController.text.trim(),
+    'middle_name': _middleNameController.text.trim(),
+    'gender': _selectedGender.toLowerCase(),
+    'email': _emailController.text.trim(),
+    'phone': _phoneController.text.trim(),
+    'birth_date': _birthDateController.text.trim(),
+    'address': _addressController.text.trim(),
+    'city': _cityController.text.trim(),
+    'state': _stateController.text.trim(),
+    'country': _countryController.text.trim(),
+    'phone_number': _phoneController.text.trim(),
+    'religion': _religionController.text.trim(),
+    'marital_status': _selectedMaritalStatus,
+    'lga_origin': _lgaOriginController.text.trim(),
+    'state_origin': _stateOriginController.text.trim(),
+    'nationality': _nationalityController.text.trim(),
+    'home_town': _homeTownController.text.trim(),
+    'health_status': _healthStatusController.text.trim(),
+    'past_record': _pastRecordController.text.trim(),
+    'past_record_extra': _pastRecordExtraController.text.trim(),
+    'personal_record': _personalRecordController.text.trim(),
+    'employment_history': _employmentHistoryController.text.trim(),
+    'referees': _refereesController.text.trim(),
+    'extra_note': _extraNoteController.text.trim(),
+    'next_of_kin_name': _nextOfKinNameController.text.trim(),
+    'next_of_kin_address': _nextOfKinAddressController.text.trim(),
+    'next_of_kin_email': _nextOfKinEmailController.text.trim(),
+    'next_of_kin_phone': _nextOfKinPhoneController.text.trim(),
+    'employment_date': _employmentDateController.text.trim(),
+    'employment_status': _selectedStatus,
+    'health_appraisal': _healthAppraisalController.text.trim(),
+    'general_appraisal': _generalAppraisalController.text.trim(),
+    'grade': int.tryParse(_gradeController.text.trim()),
+    'department': _departmentController.text.trim(),
+    'section': int.tryParse(_sectionController.text.trim()),
+    'designation': int.tryParse(_designationController.text.trim()),
+    'access_level': _selectedAccessLevel,
+  };
 
+  print("Creating Staff: $newStaff");
+
+  // Get the provider
+  final addStaffProvider = Provider.of<AddStaffProvider>(context, listen: false);
+  bool success;
+
+ if (_isEditing) {
+ 
+
+    success = await addStaffProvider.updateStaff(_editingStaffId!, newStaff);
+  } else {
+    success = await addStaffProvider.createStaff(newStaff);
+  }
+
+  if (success) {
+    // Fetch fresh staff data to refresh the screen
+    await addStaffProvider.fetchAllStaff();
+    
+    // Clear the form
+    _clearForm();
+    
+    // Hide the form
     setState(() {
-      if (_isEditing && _editingIndex != null) {
-        _staffList[_editingIndex!] = newStaff;
-      } else {
-        _staffList.add(newStaff);
-      }
       _showAddForm = false;
       _isEditing = false;
-      _editingIndex = null;
     });
 
-    _clearForm();
-
+    // Show success message
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(_isEditing ? 'Staff updated successfully!' : 'Staff added successfully!'),
+        content: Text(addStaffProvider.message ?? 'Staff created successfully!'),
         backgroundColor: AppColors.attCheckColor2,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(
@@ -799,62 +1272,139 @@ class _ManageStaffScreenState extends State<ManageStaffScreen>
         ),
       ),
     );
+  } else {
+    // Show error message
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(addStaffProvider.error ?? 'Failed to create staff'),
+        backgroundColor: Colors.red,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10),
+        ),
+      ),
+    );
   }
+}
 
-  void _editStaff(int index) {
-    final staff = _staffList[index];
-    setState(() {
-      _isEditing = true;
-      _editingIndex = index;
-      _showAddForm = true;
-      
-      _nameController.text = staff['name'];
-      _emailController.text = staff['email'];
-      _phoneController.text = staff['phone'];
-      _addressController.text = staff['address'];
-      _salaryController.text = staff['salary'];
-      _selectedGender = staff['gender'];
-      _selectedRole = staff['role'];
-      _selectedStatus = staff['status'];
-      _selectedCourses = List<String>.from(staff['courses']);
-      _selectedLevel = staff['level'] ?? '';
-      _selectedClass = staff['class'] ?? '';
-    });
-  }
 
-  void _deleteStaff(int index) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Delete Staff'),
-        content: const Text('Are you sure you want to delete this staff member?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () {
-              setState(() {
-                _staffList.removeAt(index);
-              });
-              Navigator.pop(context);
+
+
+
+void _editStaff(int index) {
+  final provider = Provider.of<AddStaffProvider>(context, listen: false);
+  final filteredList = _filteredStaffList;
+  final staffMap = filteredList[index];
+
+  // Find the actual staff object in provider.staffList using the staffNo (mapped as 'id' in toDisplayMap)
+  final staff = provider.staffList.firstWhere(
+    (s) => s.staffNo == staffMap['id'],
+    orElse: () => throw Exception('Staff not found'),
+  );
+
+  setState(() {
+    _isEditing = true;
+    _showAddForm = true;
+  _editingStaffId = staff.staffNo;
+    // Populate form fields with data from the Staff object
+    _surnameController.text = staff.lastName ?? '';
+    _firstNameController.text = staff.firstName ?? '';
+    _middleNameController.text = staff.middleName ?? '';
+    _emailController.text = staff.emailAddress ?? '';
+    _phoneController.text = staff.phoneNumber ?? '';
+    _addressController.text = staff.address ?? '';
+    _birthDateController.text = staff.birthDate ?? '';
+    _cityController.text = staff.city ?? '';
+    _stateController.text = staff.state?.toString() ?? '';
+    _countryController.text = staff.country ?? '';
+    _religionController.text = staff.religion ?? '';
+    _lgaOriginController.text = staff.lgaOrigin ?? '';
+    _stateOriginController.text = staff.stateOrigin ?? '';
+    _nationalityController.text = staff.nationality ?? '';
+    _homeTownController.text = staff.homeTown ?? '';
+    _healthStatusController.text = staff.healthStatus ?? '';
+    _pastRecordController.text = staff.pastRecord ?? '';
+    _pastRecordExtraController.text = staff.pastRecordExtra ?? '';
+    _personalRecordController.text = staff.personalRecord ?? '';
+    _employmentHistoryController.text = staff.employmentHistory ?? '';
+    _refereesController.text = staff.referees ?? '';
+    _extraNoteController.text = staff.extraNote ?? '';
+    _nextOfKinNameController.text = staff.nextOfKinName ?? '';
+    _nextOfKinAddressController.text = staff.nextOfKinAddress ?? '';
+    _nextOfKinEmailController.text = staff.nextOfKinEmail ?? '';
+    _nextOfKinPhoneController.text = staff.nextOfKinPhone ?? '';
+    _employmentDateController.text = staff.employmentDate ?? '';
+    _healthAppraisalController.text = staff.healthAppraisal ?? '';
+    _generalAppraisalController.text = staff.generalAppraisal ?? '';
+    _gradeController.text = staff.grade?.toString() ?? '';
+    _departmentController.text = staff.department?.toString() ?? '';
+    _sectionController.text = staff.section?.toString() ?? '';
+    _designationController.text = staff.designation?.toString() ?? '';
+
+    // Populate dropdowns and other state variables
+   _selectedGender = (staff.gender?.toLowerCase() == 'male')
+        ? 'Male'
+        : (staff.gender?.toLowerCase() == 'female' ? 'Female' : 'Male');
+    _selectedRole = staff.accessLevel == 'admin' ? 'Admin Staff' : 'Teacher';
+    _selectedStatus = staff.employmentStatus ?? 'Active';
+    _selectedMaritalStatus = staff.maritalStatus ?? 'single';
+    _selectedAccessLevel = staff.accessLevel ?? 'staff';
+    _selectedCourses = staffMap['courses'] ?? <String>[]; // Use courses from toDisplayMap or fetch separately if available
+  });
+}
+
+  void _deleteStaff(int index) async {
+
+  final provider = Provider.of<AddStaffProvider>(context, listen: false);
+  final staff = provider.staffList[index];
+      print('Are you sure you want to delete ${staff.fullName}?');
+  showDialog(
+    context: context,
+    builder: (context) => AlertDialog(
+      title: const Text('Delete Staff'),
+      content: Text('Are you sure you want to delete ${staff.fullName}?'),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Cancel'),
+        ),
+        TextButton(
+          onPressed: () async {
+            Navigator.pop(context);
+            
+            final success = await provider.deleteStaff(staff.id);
+            
+            if (success) {
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
                   content: Text('Staff deleted successfully!'),
                   backgroundColor: Colors.red,
                 ),
               );
-            },
-            child: const Text('Delete', style: TextStyle(color: Colors.red)),
-          ),
-        ],
-      ),
-    );
-  }
+            } else {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(provider.error ?? 'Failed to delete staff'),
+                  backgroundColor: Colors.red,
+                ),
+              );
+            }
+          },
+          child: const Text('Delete', style: TextStyle(color: Colors.red)),
+        ),
+      ],
+    ),
+  );
+}
 
   void _showAssignCourseDialog(int index) {
-    List<String> tempSelectedCourses = List<String>.from(_staffList[index]['courses']);
+    final provider = Provider.of<AddStaffProvider>(context, listen: false);
+    final filteredList = _filteredStaffList;
+    final staffMap = filteredList[index];
+    
+    // Find the actual staff object in provider's list
+    final staff = provider.staffList.firstWhere((s) => s.id.toString() == staffMap['id']);
+    List<String> tempSelectedCourses = <String>[]; // Staff model doesn't have courses field yet
     
     showDialog(
       context: context,
@@ -892,17 +1442,30 @@ class _ManageStaffScreenState extends State<ManageStaffScreen>
               child: const Text('Cancel'),
             ),
             ElevatedButton(
-              onPressed: () {
-                setState(() {
-                  _staffList[index]['courses'] = tempSelectedCourses;
-                });
+              onPressed: () async {
                 Navigator.pop(context);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Courses assigned successfully!'),
-                    backgroundColor: AppColors.attCheckColor2,
-                  ),
-                );
+                
+                // Update the staff with new courses via API
+                final updatedStaff = staff.toJson();
+                updatedStaff['courses'] = tempSelectedCourses;
+                
+                final success = await provider.updateStaff(_editingStaffId!, updatedStaff);
+                
+                if (success) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Courses assigned successfully!'),
+                      backgroundColor: AppColors.attCheckColor2,
+                    ),
+                  );
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(provider.error ?? 'Failed to assign courses'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
               },
               child: const Text('Assign'),
             ),
@@ -913,8 +1476,14 @@ class _ManageStaffScreenState extends State<ManageStaffScreen>
   }
 
   void _showAssignClassDialog(int index) {
-    String tempLevel = _staffList[index]['level'] ?? _availableLevels.first;
-    String tempClass = _staffList[index]['class'] ?? '';
+    final provider = Provider.of<AddStaffProvider>(context, listen: false);
+    final filteredList = _filteredStaffList;
+    final staffMap = filteredList[index];
+    
+    // Find the actual staff object in provider's list
+    final staff = provider.staffList.firstWhere((s) => s.id.toString() == staffMap['id']);
+    String tempLevel = _availableLevels.first; // Staff model doesn't have level field yet
+    String tempClass = ''; // Staff model doesn't have class field yet
     
     showDialog(
       context: context,
@@ -969,19 +1538,32 @@ class _ManageStaffScreenState extends State<ManageStaffScreen>
               child: const Text('Cancel'),
             ),
             ElevatedButton(
-              onPressed: () {
+              onPressed: () async {
                 if (tempClass.isNotEmpty) {
-                  setState(() {
-                    _staffList[index]['level'] = tempLevel;
-                    _staffList[index]['class'] = tempClass;
-                  });
                   Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Class assigned successfully!'),
-                      backgroundColor: AppColors.attCheckColor2,
-                    ),
-                  );
+                  
+                  // Update the staff with new level and class via API
+                  final updatedStaff = staff.toJson();
+                  updatedStaff['level'] = tempLevel;
+                  updatedStaff['class'] = tempClass;
+                  
+                  final success = await provider.updateStaff(_editingStaffId!, updatedStaff);
+                  
+                  if (success) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Class assigned successfully!'),
+                        backgroundColor: AppColors.attCheckColor2,
+                      ),
+                    );
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(provider.error ?? 'Failed to assign class'),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                  }
                 } else {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
@@ -991,6 +1573,8 @@ class _ManageStaffScreenState extends State<ManageStaffScreen>
                   );
                 }
               },
+
+             
               child: const Text('Assign'),
             ),
           ],
@@ -1001,7 +1585,9 @@ class _ManageStaffScreenState extends State<ManageStaffScreen>
 
   @override
   Widget build(BuildContext context) {
-    final filteredStaff = _filteredStaffList;
+    return Consumer<AddStaffProvider>(
+      builder: (context, provider, child) {
+        final filteredStaff = _filteredStaffList;
     
     return Scaffold(
       appBar: AppBar(
@@ -1023,7 +1609,6 @@ class _ManageStaffScreenState extends State<ManageStaffScreen>
                 if (_showAddForm) {
                   _clearForm();
                   _isEditing = false;
-                  _editingIndex = null;
                 }
               });
             },
@@ -1077,7 +1662,7 @@ class _ManageStaffScreenState extends State<ManageStaffScreen>
                           Expanded(
                             child: _buildStatsCard(
                               title: 'Total Staff',
-                              value: _staffList.length.toString(),
+                              value:  provider.staffList.length.toString(),
                               icon: Icons.group,
                               iconColor: AppColors.text2Light,
                               backgroundColor: AppColors.boxColor1,
@@ -1087,7 +1672,7 @@ class _ManageStaffScreenState extends State<ManageStaffScreen>
                           Expanded(
                             child: _buildStatsCard(
                               title: 'Active Staff',
-                              value: _staffList.where((s) => s['status'] == 'Active').length.toString(),
+                              value: provider.staffList.where((s) => s.isActive).length.toString(),
                               icon: Icons.check_circle,
                               iconColor: AppColors.attCheckColor2,
                               backgroundColor: AppColors.boxColor2,
@@ -1097,7 +1682,7 @@ class _ManageStaffScreenState extends State<ManageStaffScreen>
                           Expanded(
                             child: _buildStatsCard(
                               title: 'Teachers',
-                              value: _staffList.where((s) => s['role'] == 'Teacher').length.toString(),
+                              value: provider.staffList.where((s) => s.accessLevel != 'admin').length.toString(),
                               icon: Icons.school,
                               iconColor: AppColors.secondaryLight,
                               backgroundColor: AppColors.boxColor3,
@@ -1269,7 +1854,6 @@ class _ManageStaffScreenState extends State<ManageStaffScreen>
                           physics: const NeverScrollableScrollPhysics(),
                           itemCount: filteredStaff.length,
                           itemBuilder: (context, index) {
-                            final staffIndex = _staffList.indexOf(filteredStaff[index]);
                             return TweenAnimationBuilder<double>(
                               tween: Tween<double>(begin: 0, end: 1),
                               duration: Duration(milliseconds: 300 + (index * 100)),
@@ -1277,7 +1861,7 @@ class _ManageStaffScreenState extends State<ManageStaffScreen>
                               builder: (context, value, child) {
                                 return Transform.scale(
                                   scale: value,
-                                  child: _buildStaffCard(filteredStaff[index], staffIndex),
+                                  child: _buildStaffCard(filteredStaff[index], index),
                                 );
                               },
                             );
@@ -1300,7 +1884,6 @@ class _ManageStaffScreenState extends State<ManageStaffScreen>
                 _showAddForm = true;
                 _clearForm();
                 _isEditing = false;
-                _editingIndex = null;
               });
             },
             icon: const Icon(Icons.add),
@@ -1315,6 +1898,8 @@ class _ManageStaffScreenState extends State<ManageStaffScreen>
             foregroundColor: Colors.white,
           )
         : null,
+    );
+      },
     );
   }
 }
