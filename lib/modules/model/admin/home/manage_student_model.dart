@@ -31,6 +31,7 @@ class StudentPhoto {
 class Students {
   final int id;
   final StudentPhoto? photo;
+  final String? photoPath; // Add this to store file paths from server
   final String surname;
   final String firstName;
   final String middle;
@@ -42,10 +43,10 @@ class Students {
   final int? country;
   final String? email;
   final String? religion;
-  final String guardianName;
-  final String guardianAddress;
+  final String? guardianName;        // Changed to nullable
+  final String? guardianAddress;     // Changed to nullable
   final String? guardianEmail;
-  final String guardianPhoneNo;
+  final String? guardianPhoneNo;     // Changed to nullable
   final String? lgaOrigin;
   final String? stateOrigin;
   final String? nationality;
@@ -61,6 +62,7 @@ class Students {
   Students({
     required this.id,
     this.photo,
+    this.photoPath,
     required this.surname,
     required this.firstName,
     required this.middle,
@@ -72,10 +74,10 @@ class Students {
     this.country,
     this.email,
     this.religion,
-    required this.guardianName,
-    required this.guardianAddress,
+    this.guardianName,
+    this.guardianAddress,
     this.guardianEmail,
-    required this.guardianPhoneNo,
+    this.guardianPhoneNo,
     this.lgaOrigin,
     this.stateOrigin,
     this.nationality,
@@ -90,17 +92,29 @@ class Students {
   });
 
   factory Students.fromJson(Map<String, dynamic> json) {
+    StudentPhoto? photoObj;
+    String? photoPathStr;
+    
+    // Handle photo field - can be null, string path, or object
+    if (json['photo'] != null) {
+      if (json['photo'] is String) {
+        final photoStr = json['photo'] as String;
+        if (photoStr.isNotEmpty) {
+          photoPathStr = photoStr; // Store the path
+        }
+      } else if (json['photo'] is Map<String, dynamic>) {
+        photoObj = StudentPhoto.fromJson(json['photo'] as Map<String, dynamic>);
+      }
+    }
+
     return Students(
       id: json['id'] as int,
-      photo: json['photo'] != null
-          ? json['photo'] is String
-              ? StudentPhoto(file: json['photo'] as String?)
-              : StudentPhoto.fromJson(json['photo'] as Map<String, dynamic>)
-          : null,
-      surname: (json['surname'] as String?) ?? '',
-      firstName: (json['first_name'] as String?) ?? '',
-      middle: (json['middle'] as String?) ?? '',
-      gender: (json['gender'] as String?) ?? '',
+      photo: photoObj,
+      photoPath: photoPathStr,
+      surname: (json['surname'] as String?)?.trim() ?? '',
+      firstName: (json['first_name'] as String?)?.trim() ?? '',
+      middle: (json['middle'] as String?)?.trim() ?? '',
+      gender: _normalizeGender(json['gender'] as String?),
       birthDate: json['birth_date'] as String?,
       address: json['address'] as String?,
       city: json['city'] as int?,
@@ -108,10 +122,10 @@ class Students {
       country: json['country'] as int?,
       email: json['email'] as String?,
       religion: json['religion'] as String?,
-      guardianName: (json['guardian_name'] as String?) ?? '',
-      guardianAddress: (json['guardian_address'] as String?) ?? '',
+      guardianName: json['guardian_name'] as String?,
+      guardianAddress: json['guardian_address'] as String?,
       guardianEmail: json['guardian_email'] as String?,
-      guardianPhoneNo: (json['guardian_phone_no'] as String?) ?? '',
+      guardianPhoneNo: json['guardian_phone_no'] as String?,
       lgaOrigin: json['lga_origin'] as String?,
       stateOrigin: json['state_origin'] as String?,
       nationality: json['nationality'] as String?,
@@ -124,6 +138,15 @@ class Students {
       levelId: json['level_id'] as int,
       registrationNo: json['registration_no'] as String?,
     );
+  }
+
+  // Helper method to normalize gender values
+  static String _normalizeGender(String? gender) {
+    if (gender == null || gender.isEmpty) return '';
+    final lowercase = gender.toLowerCase();
+    if (lowercase == 'm') return 'male';
+    if (lowercase == 'f') return 'female';
+    return lowercase; // Return as-is if already 'male' or 'female'
   }
 
   Map<String, dynamic> toJson() {
@@ -159,8 +182,7 @@ class Students {
     };
   }
 
-
-    String getInitials() {
+  String getInitials() {
     final firstInitial = firstName.isNotEmpty ? firstName[0].toUpperCase() : '';
     final surnameInitial = surname.isNotEmpty ? surname[0].toUpperCase() : '';
     return '$firstInitial$surnameInitial';

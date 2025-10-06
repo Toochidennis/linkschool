@@ -111,6 +111,32 @@ class AccountService {
       );
     }
   }
+
+  Future<ApiResponse<Map<String, dynamic>>> deleteAccount({
+    required int accountId,
+  }) async {
+    try {
+      final userBox = Hive.box('userData');
+      final db = userBox.get('_db');
+      
+      final response = await _apiService.delete<Map<String, dynamic>>(
+        endpoint: 'portal/payments/accounts/$accountId',
+        body: {
+          '_db': db,
+        },
+        fromJson: (json) => json,
+        addDatabaseParam: false,
+      );
+
+      return response;
+    } catch (e) {
+      print('Error deleting account: $e');
+      return ApiResponse<Map<String, dynamic>>.error(
+        'Failed to delete account: ${e.toString()}',
+        500,
+      );
+    }
+  }
 }
 
 

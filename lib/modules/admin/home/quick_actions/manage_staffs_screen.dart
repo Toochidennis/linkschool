@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:linkschool/modules/admin/home/quick_actions/course_assignment_screen.dart';
 import 'package:linkschool/modules/model/admin/home/add_staff_model.dart';
 import 'package:linkschool/modules/providers/admin/home/add_staff_provider.dart';
+
 import 'package:provider/provider.dart';
 import '../../../common/app_colors.dart';
 import '../../../common/constants.dart';
@@ -14,20 +16,17 @@ class ManageStaffScreen extends StatefulWidget {
   State<ManageStaffScreen> createState() => _ManageStaffScreenState();
 }
 
-class _ManageStaffScreenState extends State<ManageStaffScreen>
-    with TickerProviderStateMixin {
+class _ManageStaffScreenState extends State<ManageStaffScreen> with TickerProviderStateMixin {
   late AnimationController _fadeController;
   late AnimationController _slideController;
   late Animation<double> _fadeAnimation;
   String? _editingStaffId;
-
   final TextEditingController _searchController = TextEditingController();
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _phoneController = TextEditingController();
   final TextEditingController _addressController = TextEditingController();
   final TextEditingController _salaryController = TextEditingController();
-  // Additional controllers for full staff profile
   final TextEditingController _surnameController = TextEditingController();
   final TextEditingController _firstNameController = TextEditingController();
   final TextEditingController _middleNameController = TextEditingController();
@@ -58,7 +57,7 @@ class _ManageStaffScreenState extends State<ManageStaffScreen>
   final TextEditingController _departmentController = TextEditingController();
   final TextEditingController _sectionController = TextEditingController();
   final TextEditingController _designationController = TextEditingController();
-  
+
   String _selectedFilter = 'All';
   bool _showAddForm = false;
   bool _isEditing = false;
@@ -69,75 +68,6 @@ class _ManageStaffScreenState extends State<ManageStaffScreen>
   String _selectedAccessLevel = 'staff';
   List<String> _selectedCourses = [];
 
-  // Mock data for staff members
-  List<Map<String, dynamic>> _staffList = [
-    {
-      'id': 'ST001',
-      'name': 'Mrs. Sarah Johnson',
-      'email': 'sarah.johnson@school.com',
-      'phone': '+234 801 234 5678',
-      'gender': 'Female',
-      'role': 'Teacher',
-      'courses': ['Mathematics', 'Physics'],
-      'level': 'SSS1',
-      'class': 'SSS1A',
-      'status': 'Active',
-      'joinDate': '2023-01-15',
-      'salary': '150,000',
-      'address': '123 Victoria Island, Lagos',
-    },
-    {
-      'id': 'ST002',
-      'name': 'Mr. David Chen',
-      'email': 'david.chen@school.com',
-      'phone': '+234 802 345 6789',
-      'gender': 'Male',
-      'role': 'Teacher',
-      'courses': ['English Language', 'Literature'],
-      'level': 'JSS2',
-      'class': 'JSS2B',
-      'status': 'Active',
-      'joinDate': '2022-09-01',
-      'salary': '140,000',
-      'address': '45 Ikeja GRA, Lagos',
-    },
-    {
-      'id': 'ST003',
-      'name': 'Dr. Amina Hassan',
-      'email': 'amina.hassan@school.com',
-      'phone': '+234 803 456 7890',
-      'gender': 'Female',
-      'role': 'Vice Principal',
-      'courses': ['Biology', 'Chemistry'],
-      'level': 'SSS2',
-      'class': 'SSS2A',
-      'status': 'Active',
-      'joinDate': '2021-03-10',
-      'salary': '250,000',
-      'address': '78 Lekki Phase 1, Lagos',
-    },
-  ];
-
-  // Mock data for courses, levels, and classes
-  final List<String> _availableCourses = [
-    'Mathematics', 'English Language', 'Physics', 'Chemistry', 'Biology',
-    'Geography', 'History', 'Literature', 'Economics', 'Government',
-    'Computer Science', 'Agricultural Science', 'Fine Arts', 'Music'
-  ];
-
-  final List<String> _availableLevels = [
-    'JSS1', 'JSS2', 'JSS3', 'SSS1', 'SSS2', 'SSS3'
-  ];
-
-  final Map<String, List<String>> _classesPerLevel = {
-    'JSS1': ['JSS1A', 'JSS1B', 'JSS1C'],
-    'JSS2': ['JSS2A', 'JSS2B', 'JSS2C'],
-    'JSS3': ['JSS3A', 'JSS3B', 'JSS3C'],
-    'SSS1': ['SSS1A', 'SSS1B', 'SSS1C'],
-    'SSS2': ['SSS2A', 'SSS2B', 'SSS2C'],
-    'SSS3': ['SSS3A', 'SSS3B', 'SSS3C'],
-  };
-
   final List<String> _staffRoles = [
     'Teacher', 'Vice Principal', 'Principal', 'Admin Staff', 'Librarian',
     'Lab Assistant', 'Counselor', 'IT Support'
@@ -146,17 +76,14 @@ class _ManageStaffScreenState extends State<ManageStaffScreen>
   @override
   void initState() {
     super.initState();
-    
     _fadeController = AnimationController(
       duration: const Duration(milliseconds: 800),
       vsync: this,
     );
-    
     _slideController = AnimationController(
       duration: const Duration(milliseconds: 600),
       vsync: this,
     );
-
     _fadeAnimation = Tween<double>(
       begin: 0.0,
       end: 1.0,
@@ -164,18 +91,13 @@ class _ManageStaffScreenState extends State<ManageStaffScreen>
       parent: _fadeController,
       curve: Curves.easeInOut,
     ));
-
-
     _fadeController.forward();
     _slideController.forward();
-
     WidgetsBinding.instance.addPostFrameCallback((_) {
-    final provider = Provider.of<AddStaffProvider>(context, listen: false);
-    provider.fetchAllStaff();
-  });
+      final provider = Provider.of<AddStaffProvider>(context, listen: false);
+      provider.fetchAllStaff();
+    });
   }
-
-
 
   @override
   void dispose() {
@@ -221,27 +143,25 @@ class _ManageStaffScreenState extends State<ManageStaffScreen>
   }
 
   List<Map<String, dynamic>> get _filteredStaffList {
-  final provider = Provider.of<AddStaffProvider>(context, listen: false);
-  
-  // Convert Staff objects to display maps
-  List<Map<String, dynamic>> filtered = provider.staffList
-      .map((staff) => staff.toDisplayMap())
-      .toList();
-  
-  if (_selectedFilter != 'All') {
-    filtered = filtered.where((staff) => staff['role'] == _selectedFilter).toList();
+    final provider = Provider.of<AddStaffProvider>(context, listen: false);
+    List<Map<String, dynamic>> filtered = provider.staffList
+        .map((staff) => staff.toDisplayMap())
+        .toList();
+
+    if (_selectedFilter != 'All') {
+      filtered = filtered.where((staff) => staff['role'] == _selectedFilter).toList();
+    }
+
+    if (_searchController.text.isNotEmpty) {
+      filtered = filtered.where((staff) =>
+          staff['name'].toString().toLowerCase().contains(_searchController.text.toLowerCase()) ||
+          staff['email'].toString().toLowerCase().contains(_searchController.text.toLowerCase()) ||
+          staff['id'].toString().toLowerCase().contains(_searchController.text.toLowerCase())
+      ).toList();
+    }
+
+    return filtered;
   }
-  
-  if (_searchController.text.isNotEmpty) {
-    filtered = filtered.where((staff) =>
-      staff['name'].toString().toLowerCase().contains(_searchController.text.toLowerCase()) ||
-      staff['email'].toString().toLowerCase().contains(_searchController.text.toLowerCase()) ||
-      staff['id'].toString().toLowerCase().contains(_searchController.text.toLowerCase())
-    ).toList();
-  }
-  
-  return filtered;
-}
 
   Widget _buildAnimatedCard({
     required Widget child,
@@ -415,17 +335,17 @@ class _ManageStaffScreenState extends State<ManageStaffScreen>
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                       decoration: BoxDecoration(
-                        color: staff['status'] == 'Active' 
-                          ? AppColors.attCheckColor2.withOpacity(0.1)
-                          : Colors.red.withOpacity(0.1),
+                        color: staff['status'] == 'Active'
+                            ? AppColors.attCheckColor2.withOpacity(0.1)
+                            : Colors.red.withOpacity(0.1),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Text(
                         staff['status'],
                         style: TextStyle(
-                          color: staff['status'] == 'Active' 
-                            ? AppColors.attCheckColor2
-                            : Colors.red,
+                          color: staff['status'] == 'Active'
+                              ? AppColors.attCheckColor2
+                              : Colors.red,
                           fontSize: 10,
                           fontWeight: FontWeight.w600,
                         ),
@@ -440,10 +360,13 @@ class _ManageStaffScreenState extends State<ManageStaffScreen>
                     _editStaff(index);
                   } else if (value == 'delete') {
                     _deleteStaff(index);
-                  } else if (value == 'assign_course') {
-                    _showAssignCourseDialog(index);
-                  } else if (value == 'assign_class') {
-                    _showAssignClassDialog(index);
+                  } else if (value == 'assign_courses') {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => AssignCoursesScreen(staffId: staff['id']),
+                      ),
+                    );
                   }
                 },
                 itemBuilder: (context) => [
@@ -451,29 +374,19 @@ class _ManageStaffScreenState extends State<ManageStaffScreen>
                     value: 'edit',
                     child: Row(
                       children: [
-                        Icon(Icons.edit, size: 16),
+                        Icon(Icons.edit, size: 16, color: AppColors.text2Light),
                         SizedBox(width: 8),
                         Text('Edit'),
                       ],
                     ),
                   ),
                   const PopupMenuItem(
-                    value: 'assign_course',
+                    value: 'assign_courses',
                     child: Row(
                       children: [
-                        Icon(Icons.book, size: 16),
+                        Icon(Icons.book, size: 16, color: AppColors.text2Light),
                         SizedBox(width: 8),
-                        Text('Assign Course'),
-                      ],
-                    ),
-                  ),
-                  const PopupMenuItem(
-                    value: 'assign_class',
-                    child: Row(
-                      children: [
-                        Icon(Icons.class_, size: 16),
-                        SizedBox(width: 8),
-                        Text('Assign Class'),
+                        Text('Assign Courses'),
                       ],
                     ),
                   ),
@@ -595,8 +508,8 @@ class _ManageStaffScreenState extends State<ManageStaffScreen>
                 onPressed: () {
                   _clearForm();
                   setState(() {
-                  _showAddForm = false;
-                  _isEditing = false;
+                    _showAddForm = false;
+                    _isEditing = false;
                   });
                 },
                 icon: const Icon(
@@ -607,14 +520,12 @@ class _ManageStaffScreenState extends State<ManageStaffScreen>
             ],
           ),
           const SizedBox(height: 16),
-          
-          // Names
           Row(
             children: [
               Expanded(
                 child: _buildTextField(
                   controller: _surnameController,
-                  label: 'Surname',
+                  label: 'Surname *',
                   icon: Icons.badge,
                 ),
               ),
@@ -622,7 +533,7 @@ class _ManageStaffScreenState extends State<ManageStaffScreen>
               Expanded(
                 child: _buildTextField(
                   controller: _firstNameController,
-                  label: 'First Name',
+                  label: 'First Name *',
                   icon: Icons.person,
                 ),
               ),
@@ -635,17 +546,13 @@ class _ManageStaffScreenState extends State<ManageStaffScreen>
             icon: Icons.person_outline,
           ),
           const SizedBox(height: 12),
-          
-          // Email Field
           _buildTextField(
             controller: _emailController,
-            label: 'Email Address',
+            label: 'Email Address *',
             icon: Icons.email,
             keyboardType: TextInputType.emailAddress,
           ),
           const SizedBox(height: 12),
-          
-          // Phone Field
           _buildTextField(
             controller: _phoneController,
             label: 'Phone Number',
@@ -653,8 +560,6 @@ class _ManageStaffScreenState extends State<ManageStaffScreen>
             keyboardType: TextInputType.phone,
           ),
           const SizedBox(height: 12),
-          
-          // Birth date
           GestureDetector(
             onTap: () async {
               final now = DateTime.now();
@@ -679,16 +584,12 @@ class _ManageStaffScreenState extends State<ManageStaffScreen>
             ),
           ),
           const SizedBox(height: 12),
-
-          // Address Field
           _buildTextField(
             controller: _addressController,
             label: 'Address',
             icon: Icons.location_on,
           ),
           const SizedBox(height: 12),
-
-          // City, State, Country
           Row(
             children: [
               Expanded(
@@ -704,7 +605,7 @@ class _ManageStaffScreenState extends State<ManageStaffScreen>
                   controller: _stateController,
                   label: 'State',
                   icon: Icons.map,
-                  keyboardType: TextInputType.number
+                  keyboardType:TextInputType.number
                 ),
               ),
             ],
@@ -716,22 +617,17 @@ class _ManageStaffScreenState extends State<ManageStaffScreen>
             icon: Icons.flag,
           ),
           const SizedBox(height: 12),
-          
-          // Salary Field
           _buildTextField(
             controller: _nationalityController,
             label: 'Nationality',
             icon: Icons.language,
-            keyboardType: TextInputType.number,
           ),
           const SizedBox(height: 16),
-          
-          // Gender Selection
           Row(
             children: [
               Expanded(
                 child: _buildDropdown(
-                  label: 'Gender',
+                  label: 'Gender *',
                   value: _selectedGender,
                   items: ['Male', 'Female'],
                   onChanged: (value) {
@@ -757,8 +653,6 @@ class _ManageStaffScreenState extends State<ManageStaffScreen>
             ],
           ),
           const SizedBox(height: 12),
-
-          // Marital Status and Access Level
           Row(
             children: [
               Expanded(
@@ -776,7 +670,7 @@ class _ManageStaffScreenState extends State<ManageStaffScreen>
               const SizedBox(width: 12),
               Expanded(
                 child: _buildDropdown(
-                  label: 'Access Level',
+                  label: 'Access Level *',
                   value: _selectedAccessLevel,
                   items: ['admin', 'staff'],
                   onChanged: (value) {
@@ -789,8 +683,6 @@ class _ManageStaffScreenState extends State<ManageStaffScreen>
             ],
           ),
           const SizedBox(height: 12),
-
-          // Origins & Nationality
           Row(
             children: [
               Expanded(
@@ -811,36 +703,18 @@ class _ManageStaffScreenState extends State<ManageStaffScreen>
             ],
           ),
           const SizedBox(height: 12),
-          Row(
-            children: [
-              // Expanded(
-              //   child: _buildTextField(
-              //     controller: _nationalityController,
-              //     label: 'Nationality',
-              //     icon: ,
-              //   ),
-              // ),
-            
-              Expanded(
-                child: _buildTextField(
-                  controller: _homeTownController,
-                  label: 'Home Town',
-                  icon: Icons.home,
-                ),
-              ),
-            ],
+          _buildTextField(
+            controller: _homeTownController,
+            label: 'Home Town',
+            icon: Icons.home,
           ),
           const SizedBox(height: 12),
-
-          // Religion
           _buildTextField(
             controller: _religionController,
             label: 'Religion',
             icon: Icons.church,
           ),
           const SizedBox(height: 12),
-
-          // Health & Records
           _buildTextField(
             controller: _healthStatusController,
             label: 'Health Status',
@@ -883,8 +757,6 @@ class _ManageStaffScreenState extends State<ManageStaffScreen>
             icon: Icons.sticky_note_2,
           ),
           const SizedBox(height: 12),
-
-          // Next of Kin
           _buildTextField(
             controller: _nextOfKinNameController,
             label: 'Next of Kin Name',
@@ -919,8 +791,6 @@ class _ManageStaffScreenState extends State<ManageStaffScreen>
             ],
           ),
           const SizedBox(height: 12),
-
-          // Employment date
           GestureDetector(
             onTap: () async {
               final now = DateTime.now();
@@ -944,8 +814,6 @@ class _ManageStaffScreenState extends State<ManageStaffScreen>
             ),
           ),
           const SizedBox(height: 12),
-
-          // Employment status
           _buildDropdown(
             label: 'Employment Status',
             value: _selectedStatus,
@@ -957,8 +825,6 @@ class _ManageStaffScreenState extends State<ManageStaffScreen>
             },
           ),
           const SizedBox(height: 12),
-
-          // Appraisals
           Row(
             children: [
               Expanded(
@@ -979,8 +845,6 @@ class _ManageStaffScreenState extends State<ManageStaffScreen>
             ],
           ),
           const SizedBox(height: 12),
-
-          // Department & Grade
           Row(
             children: [
               Expanded(
@@ -988,7 +852,6 @@ class _ManageStaffScreenState extends State<ManageStaffScreen>
                   controller: _departmentController,
                   label: 'Department',
                   icon: Icons.apartment,
-                  keyboardType: TextInputType.number
                 ),
               ),
               const SizedBox(width: 12),
@@ -1003,8 +866,6 @@ class _ManageStaffScreenState extends State<ManageStaffScreen>
             ],
           ),
           const SizedBox(height: 12),
-
-          // Section & Designation (IDs as numbers)
           Row(
             children: [
               Expanded(
@@ -1027,10 +888,6 @@ class _ManageStaffScreenState extends State<ManageStaffScreen>
             ],
           ),
           const SizedBox(height: 20),
-          
-          
-          
-          // Submit Button
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
@@ -1043,7 +900,8 @@ class _ManageStaffScreenState extends State<ManageStaffScreen>
                 ),
                 elevation: 0,
               ),
-              child: Text(
+              child:
+               Text(
                 _isEditing ? 'Update Staff' : 'Add Staff',
                 style: const TextStyle(
                   color: Colors.white,
@@ -1178,32 +1036,111 @@ class _ManageStaffScreenState extends State<ManageStaffScreen>
     _selectedCourses.clear();
   }
 
-void _handleSubmit() async {
-  // Basic validation
-  if (_surnameController.text.trim().isEmpty ||
-      _firstNameController.text.trim().isEmpty ||
-      _emailController.text.trim().isEmpty ||
-      _phoneController.text.trim().isEmpty) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Please fill in all required fields (Surname, First Name, Email, Phone)'),
-        backgroundColor: Colors.red,
-      ),
-    );
-    return;
-  }
-
-  final newStaff = {
+  void _handleSubmit() async {
+    // Form validation
+    final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
+    if (_surnameController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Please enter Surname'),
+          backgroundColor: Colors.red,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+        ),
+      );
+      return;
+    }
+    if (_firstNameController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Please enter First Name'),
+          backgroundColor: Colors.red,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+        ),
+      );
+      return;
+    }
+    if (_selectedGender.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Please select Gender'),
+          backgroundColor: Colors.red,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+        ),
+      );
+      return;
+    }
+    if (_birthDateController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Please enter Birth Date'),
+          backgroundColor: Colors.red,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+        ),
+      );
+      return;
+    }
+    if (_selectedAccessLevel.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Please select Access Level'),
+          backgroundColor: Colors.red,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+        ),
+      );
+      return;
+    }
+    if (_employmentDateController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Please Enter an Employment date '),
+          backgroundColor: Colors.red,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+        ),
+      );
+      return;
+    }
+    if (_emailController.text.trim().isNotEmpty && !emailRegex.hasMatch(_emailController.text.trim())) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Please enter a valid email address'),
+          backgroundColor: Colors.red,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+        ),
+      );
+      return;
+    }
+   final newStaff = {
     'surname': _surnameController.text.trim(),
     'first_name': _firstNameController.text.trim(),
     'middle_name': _middleNameController.text.trim(),
     'gender': _selectedGender.toLowerCase(),
-    'email': _emailController.text.trim(),
+    'email_address': _emailController.text.trim(),
     'phone': _phoneController.text.trim(),
     'birth_date': _birthDateController.text.trim(),
     'address': _addressController.text.trim(),
-    'city': _cityController.text.trim(),
-    'state': _stateController.text.trim(),
+    'city': int.tryParse(_cityController.text.trim()) ?? 0,
+    'state': int.tryParse(_stateController.text.trim()) ?? 0, // Parse as integer
     'country': _countryController.text.trim(),
     'phone_number': _phoneController.text.trim(),
     'religion': _religionController.text.trim(),
@@ -1227,358 +1164,152 @@ void _handleSubmit() async {
     'employment_status': _selectedStatus,
     'health_appraisal': _healthAppraisalController.text.trim(),
     'general_appraisal': _generalAppraisalController.text.trim(),
-    'grade': int.tryParse(_gradeController.text.trim()),
-    'department': _departmentController.text.trim(),
-    'section': int.tryParse(_sectionController.text.trim()),
-    'designation': int.tryParse(_designationController.text.trim()),
+    'grade': int.tryParse(_gradeController.text.trim()) ?? 0,
+    'department': int.tryParse(_departmentController.text.trim()) ?? 0,
+    'section': int.tryParse(_sectionController.text.trim()) ?? 0,
+    'designation': int.tryParse(_designationController.text.trim()) ?? 0,
     'access_level': _selectedAccessLevel,
   };
 
-  print("Creating Staff: $newStaff");
+    final addStaffProvider = Provider.of<AddStaffProvider>(context, listen: false);
+    bool success;
+    if (_isEditing) {
+      success = await addStaffProvider.updateStaff(_editingStaffId!, newStaff);
+    } else {
+      success = await addStaffProvider.createStaff(newStaff);
+    }
 
-  // Get the provider
-  final addStaffProvider = Provider.of<AddStaffProvider>(context, listen: false);
-  bool success;
-
- if (_isEditing) {
- 
-
-    success = await addStaffProvider.updateStaff(_editingStaffId!, newStaff);
-  } else {
-    success = await addStaffProvider.createStaff(newStaff);
+    if (success) {
+      await addStaffProvider.fetchAllStaff();
+      _clearForm();
+      setState(() {
+        _showAddForm = false;
+        _isEditing = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(addStaffProvider.message ?? 'Staff ${_isEditing ? 'updated' : 'created'} successfully!'),
+          backgroundColor: AppColors.attCheckColor2,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+        ),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(addStaffProvider.error ?? 'Failed to ${_isEditing ? 'update' : 'create'} staff'),
+          backgroundColor: Colors.red,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+        ),
+      );
+    }
   }
 
-  if (success) {
-    // Fetch fresh staff data to refresh the screen
-    await addStaffProvider.fetchAllStaff();
-    
-    // Clear the form
-    _clearForm();
-    
-    // Hide the form
+  void _editStaff(int index) {
+    final provider = Provider.of<AddStaffProvider>(context, listen: false);
+    final filteredList = _filteredStaffList;
+    final staffMap = filteredList[index];
+    final staff = provider.staffList.firstWhere(
+      (s) => s.staffNo == staffMap['id'],
+      orElse: () => throw Exception('Staff not found'),
+    );
     setState(() {
-      _showAddForm = false;
-      _isEditing = false;
+      _isEditing = true;
+      _showAddForm = true;
+      _editingStaffId = staff.staffNo;
+      _surnameController.text = staff.lastName ?? '';
+      _firstNameController.text = staff.firstName ?? '';
+      _middleNameController.text = staff.middleName ?? '';
+      _emailController.text = staff.emailAddress ?? '';
+      _phoneController.text = staff.phoneNumber ?? '';
+      _addressController.text = staff.address ?? '';
+      _birthDateController.text = staff.birthDate ?? '';
+      _cityController.text = staff.city ?? '';
+      _stateController.text = staff.state?.toString() ?? '';
+      _countryController.text = staff.country ?? '';
+      _religionController.text = staff.religion ?? '';
+      _lgaOriginController.text = staff.lgaOrigin ?? '';
+      _stateOriginController.text = staff.stateOrigin ?? '';
+      _nationalityController.text = staff.nationality ?? '';
+      _homeTownController.text = staff.homeTown ?? '';
+      _healthStatusController.text = staff.healthStatus ?? '';
+      _pastRecordController.text = staff.pastRecord ?? '';
+      _pastRecordExtraController.text = staff.pastRecordExtra ?? '';
+      _personalRecordController.text = staff.personalRecord ?? '';
+      _employmentHistoryController.text = staff.employmentHistory ?? '';
+      _refereesController.text = staff.referees ?? '';
+      _extraNoteController.text = staff.extraNote ?? '';
+      _nextOfKinNameController.text = staff.nextOfKinName ?? '';
+      _nextOfKinAddressController.text = staff.nextOfKinAddress ?? '';
+      _nextOfKinEmailController.text = staff.nextOfKinEmail ?? '';
+      _nextOfKinPhoneController.text = staff.nextOfKinPhone ?? '';
+      _employmentDateController.text = staff.employmentDate ?? '';
+      _healthAppraisalController.text = staff.healthAppraisal ?? '';
+      _generalAppraisalController.text = staff.generalAppraisal ?? '';
+      _gradeController.text = staff.grade?.toString() ?? '';
+      _departmentController.text = staff.department?.toString() ?? '';
+      _sectionController.text = staff.section?.toString() ?? '';
+      _designationController.text = staff.designation?.toString() ?? '';
+      _selectedGender = (staff.gender?.toLowerCase() == 'male')
+          ? 'Male'
+          : (staff.gender?.toLowerCase() == 'female' ? 'Female' : 'Male');
+      _selectedRole = staff.accessLevel == 'admin' ? 'Admin Staff' : 'Teacher';
+      _selectedStatus = staff.employmentStatus ?? 'Active';
+      _selectedMaritalStatus = staff.maritalStatus ?? 'single';
+      _selectedAccessLevel = staff.accessLevel ?? 'staff';
+      _selectedCourses = staffMap['courses'] ?? <String>[];
     });
-
-    // Show success message
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(addStaffProvider.message ?? 'Staff created successfully!'),
-        backgroundColor: AppColors.attCheckColor2,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(10),
-        ),
-      ),
-    );
-  } else {
-    // Show error message
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(addStaffProvider.error ?? 'Failed to create staff'),
-        backgroundColor: Colors.red,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(10),
-        ),
-      ),
-    );
   }
-}
-
-
-
-
-
-void _editStaff(int index) {
-  final provider = Provider.of<AddStaffProvider>(context, listen: false);
-  final filteredList = _filteredStaffList;
-  final staffMap = filteredList[index];
-
-  // Find the actual staff object in provider.staffList using the staffNo (mapped as 'id' in toDisplayMap)
-  final staff = provider.staffList.firstWhere(
-    (s) => s.staffNo == staffMap['id'],
-    orElse: () => throw Exception('Staff not found'),
-  );
-
-  setState(() {
-    _isEditing = true;
-    _showAddForm = true;
-  _editingStaffId = staff.staffNo;
-    // Populate form fields with data from the Staff object
-    _surnameController.text = staff.lastName ?? '';
-    _firstNameController.text = staff.firstName ?? '';
-    _middleNameController.text = staff.middleName ?? '';
-    _emailController.text = staff.emailAddress ?? '';
-    _phoneController.text = staff.phoneNumber ?? '';
-    _addressController.text = staff.address ?? '';
-    _birthDateController.text = staff.birthDate ?? '';
-    _cityController.text = staff.city ?? '';
-    _stateController.text = staff.state?.toString() ?? '';
-    _countryController.text = staff.country ?? '';
-    _religionController.text = staff.religion ?? '';
-    _lgaOriginController.text = staff.lgaOrigin ?? '';
-    _stateOriginController.text = staff.stateOrigin ?? '';
-    _nationalityController.text = staff.nationality ?? '';
-    _homeTownController.text = staff.homeTown ?? '';
-    _healthStatusController.text = staff.healthStatus ?? '';
-    _pastRecordController.text = staff.pastRecord ?? '';
-    _pastRecordExtraController.text = staff.pastRecordExtra ?? '';
-    _personalRecordController.text = staff.personalRecord ?? '';
-    _employmentHistoryController.text = staff.employmentHistory ?? '';
-    _refereesController.text = staff.referees ?? '';
-    _extraNoteController.text = staff.extraNote ?? '';
-    _nextOfKinNameController.text = staff.nextOfKinName ?? '';
-    _nextOfKinAddressController.text = staff.nextOfKinAddress ?? '';
-    _nextOfKinEmailController.text = staff.nextOfKinEmail ?? '';
-    _nextOfKinPhoneController.text = staff.nextOfKinPhone ?? '';
-    _employmentDateController.text = staff.employmentDate ?? '';
-    _healthAppraisalController.text = staff.healthAppraisal ?? '';
-    _generalAppraisalController.text = staff.generalAppraisal ?? '';
-    _gradeController.text = staff.grade?.toString() ?? '';
-    _departmentController.text = staff.department?.toString() ?? '';
-    _sectionController.text = staff.section?.toString() ?? '';
-    _designationController.text = staff.designation?.toString() ?? '';
-
-    // Populate dropdowns and other state variables
-   _selectedGender = (staff.gender?.toLowerCase() == 'male')
-        ? 'Male'
-        : (staff.gender?.toLowerCase() == 'female' ? 'Female' : 'Male');
-    _selectedRole = staff.accessLevel == 'admin' ? 'Admin Staff' : 'Teacher';
-    _selectedStatus = staff.employmentStatus ?? 'Active';
-    _selectedMaritalStatus = staff.maritalStatus ?? 'single';
-    _selectedAccessLevel = staff.accessLevel ?? 'staff';
-    _selectedCourses = staffMap['courses'] ?? <String>[]; // Use courses from toDisplayMap or fetch separately if available
-  });
-}
 
   void _deleteStaff(int index) async {
-
-  final provider = Provider.of<AddStaffProvider>(context, listen: false);
-  final staff = provider.staffList[index];
-      print('Are you sure you want to delete ${staff.fullName}?');
-  showDialog(
-    context: context,
-    builder: (context) => AlertDialog(
-      title: const Text('Delete Staff'),
-      content: Text('Are you sure you want to delete ${staff.fullName}?'),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: const Text('Cancel'),
-        ),
-        TextButton(
-          onPressed: () async {
-            Navigator.pop(context);
-            
-            final success = await provider.deleteStaff(staff.id);
-            
-            if (success) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Staff deleted successfully!'),
-                  backgroundColor: Colors.red,
-                ),
-              );
-            } else {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(provider.error ?? 'Failed to delete staff'),
-                  backgroundColor: Colors.red,
-                ),
-              );
-            }
-          },
-          child: const Text('Delete', style: TextStyle(color: Colors.red)),
-        ),
-      ],
-    ),
-  );
-}
-
-  void _showAssignCourseDialog(int index) {
     final provider = Provider.of<AddStaffProvider>(context, listen: false);
-    final filteredList = _filteredStaffList;
-    final staffMap = filteredList[index];
-    
-    // Find the actual staff object in provider's list
-    final staff = provider.staffList.firstWhere((s) => s.id.toString() == staffMap['id']);
-    List<String> tempSelectedCourses = <String>[]; // Staff model doesn't have courses field yet
-    
+    final staff = provider.staffList[index];
     showDialog(
       context: context,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setDialogState) => AlertDialog(
-          title: const Text('Assign Courses'),
-          content: SizedBox(
-            width: double.maxFinite,
-            child: ListView.builder(
-              shrinkWrap: true,
-              itemCount: _availableCourses.length,
-              itemBuilder: (context, courseIndex) {
-                final course = _availableCourses[courseIndex];
-                final isSelected = tempSelectedCourses.contains(course);
-                
-                return CheckboxListTile(
-                  title: Text(course),
-                  value: isSelected,
-                  onChanged: (value) {
-                    setDialogState(() {
-                      if (value == true) {
-                        tempSelectedCourses.add(course);
-                      } else {
-                        tempSelectedCourses.remove(course);
-                      }
-                    });
-                  },
-                );
-              },
-            ),
+      builder: (context) => AlertDialog(
+        title: const Text('Delete Staff'),
+        content: Text('Are you sure you want to delete ${staff.fullName}?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
           ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel'),
-            ),
-            ElevatedButton(
-              onPressed: () async {
-                Navigator.pop(context);
-                
-                // Update the staff with new courses via API
-                final updatedStaff = staff.toJson();
-                updatedStaff['courses'] = tempSelectedCourses;
-                
-                final success = await provider.updateStaff(_editingStaffId!, updatedStaff);
-                
-                if (success) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Courses assigned successfully!'),
-                      backgroundColor: AppColors.attCheckColor2,
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              final success = await provider.deleteStaff(staff.id);
+              if (success) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: const Text('Staff deleted successfully!'),
+                    backgroundColor: AppColors.attCheckColor2,
+                    behavior: SnackBarBehavior.floating,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
                     ),
-                  );
-                } else {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(provider.error ?? 'Failed to assign courses'),
-                      backgroundColor: Colors.red,
-                    ),
-                  );
-                }
-              },
-              child: const Text('Assign'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _showAssignClassDialog(int index) {
-    final provider = Provider.of<AddStaffProvider>(context, listen: false);
-    final filteredList = _filteredStaffList;
-    final staffMap = filteredList[index];
-    
-    // Find the actual staff object in provider's list
-    final staff = provider.staffList.firstWhere((s) => s.id.toString() == staffMap['id']);
-    String tempLevel = _availableLevels.first; // Staff model doesn't have level field yet
-    String tempClass = ''; // Staff model doesn't have class field yet
-    
-    showDialog(
-      context: context,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setDialogState) => AlertDialog(
-          title: const Text('Assign Class'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              DropdownButtonFormField<String>(
-                value: tempLevel,
-                decoration: const InputDecoration(
-                  labelText: 'Select Level',
-                ),
-                items: _availableLevels.map((level) {
-                  return DropdownMenuItem(
-                    value: level,
-                    child: Text(level),
-                  );
-                }).toList(),
-                onChanged: (value) {
-                  setDialogState(() {
-                    tempLevel = value!;
-                    tempClass = ''; // Reset class when level changes
-                  });
-                },
-              ),
-              const SizedBox(height: 16),
-              if (tempLevel.isNotEmpty)
-                DropdownButtonFormField<String>(
-                  value: tempClass.isEmpty ? null : tempClass,
-                  decoration: const InputDecoration(
-                    labelText: 'Select Class',
                   ),
-                  items: _classesPerLevel[tempLevel]?.map((className) {
-                    return DropdownMenuItem(
-                      value: className,
-                      child: Text(className),
-                    );
-                  }).toList() ?? [],
-                  onChanged: (value) {
-                    setDialogState(() {
-                      tempClass = value ?? '';
-                    });
-                  },
-                ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel'),
-            ),
-            ElevatedButton(
-              onPressed: () async {
-                if (tempClass.isNotEmpty) {
-                  Navigator.pop(context);
-                  
-                  // Update the staff with new level and class via API
-                  final updatedStaff = staff.toJson();
-                  updatedStaff['level'] = tempLevel;
-                  updatedStaff['class'] = tempClass;
-                  
-                  final success = await provider.updateStaff(_editingStaffId!, updatedStaff);
-                  
-                  if (success) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Class assigned successfully!'),
-                        backgroundColor: AppColors.attCheckColor2,
-                      ),
-                    );
-                  } else {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(provider.error ?? 'Failed to assign class'),
-                        backgroundColor: Colors.red,
-                      ),
-                    );
-                  }
-                } else {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Please select both level and class'),
-                      backgroundColor: Colors.red,
+                );
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(provider.error ?? 'Failed to delete staff'),
+                    backgroundColor: Colors.red,
+                    behavior: SnackBarBehavior.floating,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
                     ),
-                  );
-                }
-              },
-
-             
-              child: const Text('Assign'),
-            ),
-          ],
-        ),
+                  ),
+                );
+              }
+            },
+            child: const Text('Delete', style: TextStyle(color: Colors.red)),
+          ),
+        ],
       ),
     );
   }
@@ -1588,307 +1319,10 @@ void _editStaff(int index) {
     return Consumer<AddStaffProvider>(
       builder: (context, provider, child) {
         final filteredStaff = _filteredStaffList;
-    
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text(
-          'Manage Staff',
-          style: TextStyle(
-            fontFamily: 'Urbanist',
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        backgroundColor: AppColors.text2Light,
-        foregroundColor: Colors.white,
-        elevation: 0,
-        actions: [
-          IconButton(
-            onPressed: () {
-              setState(() {
-                _showAddForm = !_showAddForm;
-                if (_showAddForm) {
-                  _clearForm();
-                  _isEditing = false;
-                }
-              });
-            },
-            icon: Icon(_showAddForm ? Icons.close : Icons.add),
-          ),
-        ],
-      ),
-      body: Container(
-        height: double.infinity,
-        decoration: Constants.customBoxDecoration(context),
-        child: SingleChildScrollView(
-          physics: const BouncingScrollPhysics(),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Stats Section
-              _buildAnimatedCard(
-                index: 0,
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              color: AppColors.text2Light.withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Icon(
-                              Icons.people,
-                              color: AppColors.text2Light,
-                              size: 24,
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Text(
-                            'Staff Overview',
-                            style: AppTextStyles.normal600(
-                              fontSize: 20,
-                              color: AppColors.text2Light,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 16),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: _buildStatsCard(
-                              title: 'Total Staff',
-                              value:  provider.staffList.length.toString(),
-                              icon: Icons.group,
-                              iconColor: AppColors.text2Light,
-                              backgroundColor: AppColors.boxColor1,
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: _buildStatsCard(
-                              title: 'Active Staff',
-                              value: provider.staffList.where((s) => s.isActive).length.toString(),
-                              icon: Icons.check_circle,
-                              iconColor: AppColors.attCheckColor2,
-                              backgroundColor: AppColors.boxColor2,
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: _buildStatsCard(
-                              title: 'Teachers',
-                              value: provider.staffList.where((s) => s.accessLevel != 'admin').length.toString(),
-                              icon: Icons.school,
-                              iconColor: AppColors.secondaryLight,
-                              backgroundColor: AppColors.boxColor3,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-
-              const SizedBox(height: 16),
-
-              // Add Staff Form (conditionally shown)
-              if (_showAddForm)
-                _buildAnimatedCard(
-                  index: 1,
-                  child: _buildAddStaffForm(),
-                ),
-
-              if (_showAddForm) const SizedBox(height: 16),
-
-              // Search and Filter Section
-              _buildAnimatedCard(
-                index: 2,
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Search Bar
-                      TextField(
-                        controller: _searchController,
-                        onChanged: (value) => setState(() {}),
-                        decoration: InputDecoration(
-                          hintText: 'Search staff by name, email, or ID...',
-                          prefixIcon: const Icon(Icons.search, color: AppColors.text7Light),
-                          suffixIcon: _searchController.text.isNotEmpty
-                            ? IconButton(
-                                onPressed: () {
-                                  _searchController.clear();
-                                  setState(() {});
-                                },
-                                icon: const Icon(Icons.clear, color: AppColors.text7Light),
-                              )
-                            : null,
-                          hintStyle: const TextStyle(
-                            color: AppColors.text5Light,
-                            fontSize: 14,
-                            fontFamily: 'Urbanist',
-                          ),
-                          filled: true,
-                          fillColor: Colors.white,
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(16.0),
-                            borderSide: BorderSide(color: AppColors.textFieldBorderLight),
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(16.0),
-                            borderSide: BorderSide(color: AppColors.textFieldBorderLight),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(16.0),
-                            borderSide: BorderSide(color: AppColors.text2Light, width: 2),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      
-                      // Filter Chips
-                      SingleChildScrollView(
-                        scrollDirection: Axis.horizontal,
-                        child: Row(
-                          children: [
-                            _buildFilterChip('All', _selectedFilter == 'All'),
-                            const SizedBox(width: 8),
-                            _buildFilterChip('Teacher', _selectedFilter == 'Teacher'),
-                            const SizedBox(width: 8),
-                            _buildFilterChip('Principal', _selectedFilter == 'Principal'),
-                            const SizedBox(width: 8),
-                            _buildFilterChip('Vice Principal', _selectedFilter == 'Vice Principal'),
-                            const SizedBox(width: 8),
-                            _buildFilterChip('Admin Staff', _selectedFilter == 'Admin Staff'),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-
-              const SizedBox(height: 16),
-
-              // Staff List Section
-              _buildAnimatedCard(
-                index: 3,
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            'Staff Members (${filteredStaff.length})',
-                            style: AppTextStyles.normal600(
-                              fontSize: 18,
-                              color: AppColors.text2Light,
-                            ),
-                          ),
-                          if (filteredStaff.length != _staffList.length)
-                            TextButton(
-                              onPressed: () {
-                                setState(() {
-                                  _selectedFilter = 'All';
-                                  _searchController.clear();
-                                });
-                              },
-                              child: const Text(
-                                'Clear filters',
-                                style: TextStyle(
-                                  color: AppColors.text2Light,
-                                  fontFamily: 'Urbanist',
-                                ),
-                              ),
-                            ),
-                        ],
-                      ),
-                      const SizedBox(height: 16),
-                      
-                      if (filteredStaff.isEmpty)
-                        Center(
-                          child: Padding(
-                            padding: const EdgeInsets.all(32.0),
-                            child: Column(
-                              children: [
-                                Icon(
-                                  Icons.people_outline,
-                                  size: 64,
-                                  color: AppColors.text7Light,
-                                ),
-                                const SizedBox(height: 16),
-                                Text(
-                                  'No staff members found',
-                                  style: AppTextStyles.normal500(
-                                    fontSize: 16,
-                                    color: AppColors.text7Light,
-                                  ),
-                                ),
-                                const SizedBox(height: 8),
-                                Text(
-                                  _searchController.text.isNotEmpty 
-                                    ? 'Try adjusting your search criteria'
-                                    : 'Add staff members to get started',
-                                  style: AppTextStyles.normal400(
-                                    fontSize: 14,
-                                    color: AppColors.text9Light,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        )
-                      else
-                        ListView.builder(
-                          shrinkWrap: true,
-                          physics: const NeverScrollableScrollPhysics(),
-                          itemCount: filteredStaff.length,
-                          itemBuilder: (context, index) {
-                            return TweenAnimationBuilder<double>(
-                              tween: Tween<double>(begin: 0, end: 1),
-                              duration: Duration(milliseconds: 300 + (index * 100)),
-                              curve: Curves.easeOutBack,
-                              builder: (context, value, child) {
-                                return Transform.scale(
-                                  scale: value,
-                                  child: _buildStaffCard(filteredStaff[index], index),
-                                );
-                              },
-                            );
-                          },
-                        ),
-                    ],
-                  ),
-                ),
-              ),
-              
-              const SizedBox(height: 100), // Bottom padding for FAB
-            ],
-          ),
-        ),
-      ),
-      floatingActionButton: !_showAddForm 
-        ? FloatingActionButton.extended(
-            onPressed: () {
-              setState(() {
-                _showAddForm = true;
-                _clearForm();
-                _isEditing = false;
-              });
-            },
-            icon: const Icon(Icons.add),
-            label: const Text(
-              'Add Staff',
+        return Scaffold(
+          appBar: AppBar(
+            title: const Text(
+              'Manage Staff',
               style: TextStyle(
                 fontFamily: 'Urbanist',
                 fontWeight: FontWeight.w600,
@@ -1896,9 +1330,290 @@ void _editStaff(int index) {
             ),
             backgroundColor: AppColors.text2Light,
             foregroundColor: Colors.white,
-          )
-        : null,
-    );
+            elevation: 0,
+            actions: [
+              IconButton(
+                onPressed: () {
+                  setState(() {
+                    _showAddForm = !_showAddForm;
+                    if (_showAddForm) {
+                      _clearForm();
+                      _isEditing = false;
+                    }
+                  });
+                },
+                icon: Icon(_showAddForm ? Icons.close : Icons.add),
+              ),
+            ],
+          ),
+          body: Container(
+            height: double.infinity,
+            decoration: Constants.customBoxDecoration(context),
+            child: SingleChildScrollView(
+              physics: const BouncingScrollPhysics(),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildAnimatedCard(
+                    index: 0,
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: AppColors.text2Light.withOpacity(0.1),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Icon(
+                                  Icons.people,
+                                  color: AppColors.text2Light,
+                                  size: 24,
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Text(
+                                'Staff Overview',
+                                style: AppTextStyles.normal600(
+                                  fontSize: 20,
+                                  color: AppColors.text2Light,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 16),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: _buildStatsCard(
+                                  title: 'Total Staff',
+                                  value: provider.staffList.length.toString(),
+                                  icon: Icons.group,
+                                  iconColor: AppColors.text2Light,
+                                  backgroundColor: AppColors.boxColor1,
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: _buildStatsCard(
+                                  title: 'Active Staff',
+                                  value: provider.staffList.where((s) => s.isActive).length.toString(),
+                                  icon: Icons.check_circle,
+                                  iconColor: AppColors.attCheckColor2,
+                                  backgroundColor: AppColors.boxColor2,
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: _buildStatsCard(
+                                  title: 'Teachers',
+                                  value: provider.staffList.where((s) => s.accessLevel != 'admin').length.toString(),
+                                  icon: Icons.school,
+                                  iconColor: AppColors.secondaryLight,
+                                  backgroundColor: AppColors.boxColor3,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  if (_showAddForm)
+                    _buildAnimatedCard(
+                      index: 1,
+                      child: _buildAddStaffForm(),
+                    ),
+                  if (_showAddForm) const SizedBox(height: 16),
+                  _buildAnimatedCard(
+                    index: 2,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          TextField(
+                            controller: _searchController,
+                            onChanged: (value) => setState(() {}),
+                            decoration: InputDecoration(
+                              hintText: 'Search staff by name, email, or ID...',
+                              prefixIcon: const Icon(Icons.search, color: AppColors.text7Light),
+                              suffixIcon: _searchController.text.isNotEmpty
+                                  ? IconButton(
+                                      onPressed: () {
+                                        _searchController.clear();
+                                        setState(() {});
+                                      },
+                                      icon: const Icon(Icons.clear, color: AppColors.text7Light),
+                                    )
+                                  : null,
+                              hintStyle: const TextStyle(
+                                color: AppColors.text5Light,
+                                fontSize: 14,
+                                fontFamily: 'Urbanist',
+                              ),
+                              filled: true,
+                              fillColor: Colors.white,
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(16.0),
+                                borderSide: BorderSide(color: AppColors.textFieldBorderLight),
+                              ),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(16.0),
+                                borderSide: BorderSide(color: AppColors.textFieldBorderLight),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(16.0),
+                                borderSide: BorderSide(color: AppColors.text2Light, width: 2),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          SingleChildScrollView(
+                            scrollDirection: Axis.horizontal,
+                            child: Row(
+                              children: [
+                                _buildFilterChip('All', _selectedFilter == 'All'),
+                                const SizedBox(width: 8),
+                                _buildFilterChip('Teacher', _selectedFilter == 'Teacher'),
+                                const SizedBox(width: 8),
+                                _buildFilterChip('Principal', _selectedFilter == 'Principal'),
+                                const SizedBox(width: 8),
+                                _buildFilterChip('Vice Principal', _selectedFilter == 'Vice Principal'),
+                                const SizedBox(width: 8),
+                                _buildFilterChip('Admin Staff', _selectedFilter == 'Admin Staff'),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  _buildAnimatedCard(
+                    index: 3,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                'Staff Members (${filteredStaff.length})',
+                                style: AppTextStyles.normal600(
+                                  fontSize: 18,
+                                  color: AppColors.text2Light,
+                                ),
+                              ),
+                              if (filteredStaff.length != provider.staffList.length)
+                                TextButton(
+                                  onPressed: () {
+                                    setState(() {
+                                      _selectedFilter = 'All';
+                                      _searchController.clear();
+                                    });
+                                  },
+                                  child: const Text(
+                                    'Clear filters',
+                                    style: TextStyle(
+                                      color: AppColors.text2Light,
+                                      fontFamily: 'Urbanist',
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          ),
+                          const SizedBox(height: 16),
+                          if (filteredStaff.isEmpty)
+                            Center(
+                              child: Padding(
+                                padding: const EdgeInsets.all(32.0),
+                                child: Column(
+                                  children: [
+                                    Icon(
+                                      Icons.people_outline,
+                                      size: 64,
+                                      color: AppColors.text7Light,
+                                    ),
+                                    const SizedBox(height: 16),
+                                    Text(
+                                      'No staff members found',
+                                      style: AppTextStyles.normal500(
+                                        fontSize: 16,
+                                        color: AppColors.text7Light,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Text(
+                                      _searchController.text.isNotEmpty
+                                          ? 'Try adjusting your search criteria'
+                                          : 'Add staff members to get started',
+                                      style: AppTextStyles.normal400(
+                                        fontSize: 14,
+                                        color: AppColors.text9Light,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            )
+                          else
+                            ListView.builder(
+                              shrinkWrap: true,
+                              physics: const NeverScrollableScrollPhysics(),
+                              itemCount: filteredStaff.length,
+                              itemBuilder: (context, index) {
+                                return TweenAnimationBuilder<double>(
+                                  tween: Tween<double>(begin: 0, end: 1),
+                                  duration: Duration(milliseconds: 300 + (index * 100)),
+                                  curve: Curves.easeOutBack,
+                                  builder: (context, value, child) {
+                                    return Transform.scale(
+                                      scale: value,
+                                      child: _buildStaffCard(filteredStaff[index], index),
+                                    );
+                                  },
+                                );
+                              },
+                            ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 100),
+                ],
+              ),
+            ),
+          ),
+          floatingActionButton: !_showAddForm
+              ? FloatingActionButton.extended(
+                  onPressed: () {
+                    setState(() {
+                      _showAddForm = true;
+                      _clearForm();
+                      _isEditing = false;
+                    });
+                  },
+                  icon: const Icon(Icons.add),
+                  label: const Text(
+                    'Add Staff',
+                    style: TextStyle(
+                      fontFamily: 'Urbanist',
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  backgroundColor: AppColors.text2Light,
+                  foregroundColor: Colors.white,
+                )
+              : null,
+        );
       },
     );
   }

@@ -263,14 +263,13 @@ TextQuestion _createMultipleChoiceQuestion(
   // Handle correct answer
   final dynamic correctData = q['correct'];
   List<String> correctAnswers = [];
-  
   if (correctData is Map && correctData['text'] != null) {
     correctAnswers.add(correctData['text'].toString());
   } else if (correctData is List && correctData.isNotEmpty) {
     correctAnswers.add(correctData.first['text']?.toString() ?? '');
   }
   
-  print('    Correct answers: $correctAnswers');
+  print('Correct answers: $correctAnswers');
   
   return TextQuestion(
     topic: topic,

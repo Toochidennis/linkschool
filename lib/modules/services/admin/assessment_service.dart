@@ -58,6 +58,8 @@ class AssessmentService {
       // Get token from local storage
       final userBox = Hive.box('userData');
       final token = userBox.get('token');
+     
+    final dbName = userBox.get('_db') ?? 'aalmgzmy_linkskoo_practice';
       
       if (token == null) {
         throw Exception('Authentication token not found');
@@ -67,10 +69,11 @@ class AssessmentService {
       _apiService.setAuthToken(token);
 
       // Database parameter will be automatically added by ApiService
-      return await _apiService.request(
+      return await _apiService.delete(
         endpoint: 'portal/assessments/$assessmentId',
-        method: HttpMethod.DELETE,
-        body: {}, // Empty body, database will be added automatically
+        body: {
+          "_db":dbName
+        }, // Empty body, database will be added automatically
       );
     } catch (e) {
       rethrow;

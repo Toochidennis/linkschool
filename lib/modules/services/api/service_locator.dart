@@ -18,7 +18,9 @@ import 'package:linkschool/modules/providers/admin/e_learning/syllabus_provider.
 import 'package:linkschool/modules/providers/admin/e_learning/topic_provider.dart';
 
 import 'package:linkschool/modules/providers/admin/grade_provider.dart';
+import 'package:linkschool/modules/providers/admin/home/add_course_provider.dart';
 import 'package:linkschool/modules/providers/admin/home/add_staff_provider.dart';
+import 'package:linkschool/modules/providers/admin/home/assign_course_provider.dart';
 import 'package:linkschool/modules/providers/admin/home/level_class_provider.dart';
 import 'package:linkschool/modules/providers/admin/home/manage_student_provider.dart';
 import 'package:linkschool/modules/providers/admin/skills_behavior_table_provider.dart';
@@ -38,7 +40,9 @@ import 'package:linkschool/modules/services/admin/e_learning/single-content_serv
 import 'package:linkschool/modules/services/admin/e_learning/syllabus_content_service.dart';
 import 'package:linkschool/modules/services/admin/e_learning/syllabus_service.dart';
 import 'package:linkschool/modules/services/admin/e_learning/topic_service.dart';
+import 'package:linkschool/modules/services/admin/home/add_course_service.dart';
 import 'package:linkschool/modules/services/admin/home/add_staff_service.dart';
+import 'package:linkschool/modules/services/admin/home/assign_course_service.dart';
 import 'package:linkschool/modules/services/admin/home/level_class_service.dart';
 import 'package:linkschool/modules/services/admin/home/manage_student_service.dart';
 import 'package:linkschool/modules/services/api/api_service.dart';
@@ -68,6 +72,18 @@ void setupServiceLocator() {
 
 // ______________admin home screen_____________________________
 
+
+  locator.registerSingleton<AssignCourseService>(AssignCourseService(locator<ApiService>()));
+  locator.registerSingleton<AssignCourseProvider>(AssignCourseProvider(locator<AssignCourseService>()));
+// Add courses 
+locator.registerLazySingleton<CourseService>(
+    () => CourseService(locator<ApiService>())
+  );
+  locator.registerLazySingleton<CourseProvider>(
+    () => CourseProvider(locator<CourseService>())
+  );
+
+// Add student
 locator.registerLazySingleton<ManageStudentService>(
     () => ManageStudentService(locator<ApiService>())
   );
@@ -75,6 +91,8 @@ locator.registerLazySingleton<ManageStudentService>(
     () => ManageStudentProvider(locator<ManageStudentService>())
   );
 
+
+//  Add staff
 
  locator.registerLazySingleton<AddStaffService>(
     () => AddStaffService(locator<ApiService>())
@@ -84,7 +102,7 @@ locator.registerLazySingleton<ManageStudentService>(
     () => AddStaffProvider(locator<AddStaffService>())
   );
 
-
+//  Add levels 
   locator.registerSingleton<LevelClassService>(LevelClassService(locator<ApiService>()));
 
   // Register LevelClassProvider as a singleton, injecting LevelClassService

@@ -8,7 +8,7 @@ import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/admin/payment/settings/vendor/vendor_setting_screen.dart';
 import 'package:linkschool/modules/admin/payment/settings/account_setting_screen.dart';
 import 'package:linkschool/modules/admin/payment/settings/fee_setting/fee_setting_screen.dart';
-import 'package:linkschool/modules/admin/payment/settings/fee_setting/fee_setting_details_screen.dart';
+import 'package:linkschool/modules/admin/payment/settings/fee_setting/amount_setting_screen.dart';
 import 'package:linkschool/modules/admin/payment/settings/widgets/level_selection_overlay.dart';
 import 'package:provider/provider.dart';
 
@@ -88,7 +88,7 @@ class _PaymentSettingScreenState extends State<PaymentSettingScreen> {
               ),
               _buildSettingsRow(
                 icon: 'assets/icons/profile/fee_amount.svg',
-                title: 'Amount Setting',
+                title: 'Amount Settings',
                 onTap: () => _showLevelSelectionOverlay(context),
               ),
               _buildSettingsRow(
@@ -166,7 +166,7 @@ class _PaymentSettingScreenState extends State<PaymentSettingScreen> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => FeeSettingDetailsScreen(
+        builder: (context) => AmountSettingScreen(
           levelName: levelName,
           levelId: levelId,
         ),

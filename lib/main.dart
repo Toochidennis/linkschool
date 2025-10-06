@@ -24,6 +24,8 @@ import 'package:linkschool/modules/providers/admin/e_learning/syllabus_provider.
 import 'package:linkschool/modules/providers/admin/course_result_provider.dart';
 import 'package:linkschool/modules/providers/admin/e_learning/topic_provider.dart';
 import 'package:linkschool/modules/providers/admin/home/add_staff_provider.dart';
+import 'package:linkschool/modules/providers/admin/home/add_course_provider.dart';
+import 'package:linkschool/modules/providers/admin/home/assign_course_provider.dart';
 import 'package:linkschool/modules/providers/admin/home/level_class_provider.dart';
 import 'package:linkschool/modules/providers/admin/home/manage_student_provider.dart';
 import 'package:linkschool/modules/providers/admin/level_provider.dart';
@@ -104,8 +106,9 @@ Future<void> main() async {
         // Admin HomeScreen 
          ChangeNotifierProvider(create: (_) => locator<AddStaffProvider>()), 
          ChangeNotifierProvider(create: (_) => locator<LevelClassProvider>(),), 
+         ChangeNotifierProvider(create: (_) => locator<AssignCourseProvider>(),), 
          ChangeNotifierProvider(create: (_) => locator<ManageStudentProvider>()),
-
+         ChangeNotifierProvider(create: (_) => locator<CourseProvider>()),
 
         // Admin E-Learning
         ChangeNotifierProvider(create: (_) => locator<SyllabusProvider>()),
@@ -205,8 +208,9 @@ class _AppInitializerState extends State<AppInitializer> {
 
       // Check if user has completed onboarding
       final userBox = Hive.box('userData');
+      
       final hasSeenOnboarding = userBox.get('hasSeenOnboarding', defaultValue: false);
-
+      print('hasSeenOnboarding value: $hasSeenOnboarding'); 
       setState(() {
         _showOnboarding = !hasSeenOnboarding && !authProvider.isLoggedIn;
       });

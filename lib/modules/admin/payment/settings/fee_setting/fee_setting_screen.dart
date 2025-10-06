@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:linkschool/modules/admin/payment/settings/widgets/add_fee_overlay.dart';
+import 'package:linkschool/modules/admin/payment/settings/widgets/edit_fee_overlay.dart';
+// import 'package:linkschool/modules/admin/payment/settings/widgets/edit_fee_overlay.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/custom_toaster.dart';
@@ -106,7 +108,7 @@ class _FeeSettingScreenState extends State<FeeSettingScreen> {
                 padding: const EdgeInsets.all(16.0),
                 child: Column(
                   children: [
-                    // Show loading indicator at top when adding new fee
+                    // Show loading indicator at top when processing
                     if (feeProvider.isLoading && feeProvider.feeNames.isNotEmpty)
                       Container(
                         padding: const EdgeInsets.all(8),
@@ -120,7 +122,7 @@ class _FeeSettingScreenState extends State<FeeSettingScreen> {
                             ),
                             const SizedBox(width: 8),
                             Text(
-                              'Adding fee name...',
+                              'Processing...',
                               style: TextStyle(
                                 fontSize: 12,
                                 color: Colors.grey[600],
@@ -136,8 +138,7 @@ class _FeeSettingScreenState extends State<FeeSettingScreen> {
                         itemBuilder: (context, index) {
                           final feeName = feeProvider.feeNames[index];
                           return _buildFeeRow(
-                            feeName.feeName,
-                            isRequired: feeName.isMandatory,
+                            feeName,
                             isNewlyAdded: index == 0 && feeProvider.isLoading,
                           );
                         },
@@ -162,7 +163,7 @@ class _FeeSettingScreenState extends State<FeeSettingScreen> {
     );
   }
 
-  Widget _buildFeeRow(String title, {required bool isRequired, bool isNewlyAdded = false}) {
+  Widget _buildFeeRow(dynamic feeName, {bool isNewlyAdded = false}) {
     return Container(
       margin: EdgeInsets.only(bottom: 8),
       decoration: BoxDecoration(
@@ -180,13 +181,13 @@ class _FeeSettingScreenState extends State<FeeSettingScreen> {
               color: Colors.white),
         ),
         title: Text(
-          title,
+          feeName.feeName,
           style: TextStyle(
             fontWeight: isNewlyAdded ? FontWeight.bold : FontWeight.normal,
           ),
         ),
         subtitle: Text(
-          isRequired ? 'Required' : 'Not Required',
+          feeName.isMandatory ? 'Required' : 'Not Required',
           style: TextStyle(
             color: Colors.grey,
             fontWeight: isNewlyAdded ? FontWeight.w500 : FontWeight.normal,
@@ -208,7 +209,38 @@ class _FeeSettingScreenState extends State<FeeSettingScreen> {
                   ),
                 ),
               )
-            : null,
+            : PopupMenuButton<String>(
+                onSelected: (value) {
+                  if (value == 'edit') {
+                    _showEditFeeOverlay(context, feeName);
+                  } else if (value == 'delete') {
+                    _showDeleteConfirmation(context, feeName);
+                  }
+                },
+                itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
+                  const PopupMenuItem<String>(
+                    value: 'edit',
+                    child: Row(
+                      children: [
+                        Icon(Icons.edit, color: Colors.blue, size: 18),
+                        SizedBox(width: 8),
+                        Text('Edit'),
+                      ],
+                    ),
+                  ),
+                  const PopupMenuItem<String>(
+                    value: 'delete',
+                    child: Row(
+                      children: [
+                        Icon(Icons.delete, color: Colors.red, size: 18),
+                        SizedBox(width: 8),
+                        Text('Delete'),
+                      ],
+                    ),
+                  ),
+                ],
+                child: const Icon(Icons.more_vert, color: Colors.grey),
+              ),
       ),
     );
   }
@@ -247,6 +279,109 @@ class _FeeSettingScreenState extends State<FeeSettingScreen> {
       },
     );
   }
+
+  void _showEditFeeOverlay(BuildContext context, dynamic feeName) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (BuildContext context) {
+        return Padding(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(context).viewInsets.bottom,
+          ),
+          child: EditFeeOverlay(
+            initialFeeName: feeName.feeName,
+            initialIsMandatory: feeName.isMandatory,
+            onConfirm: (newFeeName, newIsMandatory) async {
+              final feeProvider = Provider.of<FeeProvider>(context, listen: false);
+              final success = await feeProvider.updateFeeName(
+                feeName.id.toString(),
+                newFeeName,
+                newIsMandatory,
+              );
+              
+              if (success) {
+                CustomToaster.toastSuccess(
+                  context,
+                  'Success',
+                  'Fee name updated successfully',
+                );
+              } else {
+                CustomToaster.toastError(
+                  context,
+                  'Error',
+                  feeProvider.error ?? 'Failed to update fee name',
+                );
+              }
+            },
+          ),
+        );
+      },
+    );
+  }
+
+  void _showDeleteConfirmation(BuildContext context, dynamic feeName) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text(
+            'Delete Fee Name',
+            style: AppTextStyles.normal600(
+              fontSize: 18,
+              color: AppColors.eLearningBtnColor1,
+            ),
+          ),
+          content: Text(
+            'Are you sure you want to delete "${feeName.feeName}"? This action cannot be undone.',
+            style: AppTextStyles.normal400(fontSize: 16, color: AppColors.backgroundDark),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text(
+                'Cancel',
+                style: AppTextStyles.normal500(
+                  fontSize: 16,
+                  color: Colors.grey,
+                ),
+              ),
+            ),
+            TextButton(
+              onPressed: () async {
+                Navigator.of(context).pop();
+                
+                final feeProvider = Provider.of<FeeProvider>(context, listen: false);
+                final success = await feeProvider.deleteFeeName(feeName.id.toString());
+                
+                if (success) {
+                  CustomToaster.toastSuccess(
+                    context,
+                    'Success',
+                    'Fee name deleted successfully',
+                  );
+                } else {
+                  CustomToaster.toastError(
+                    context,
+                    'Error',
+                    feeProvider.error ?? 'Failed to delete fee name',
+                  );
+                }
+              },
+              child: Text(
+                'Delete',
+                style: AppTextStyles.normal500(
+                  fontSize: 16,
+                  color: AppColors.eLearningRedBtnColor,
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
 }
 
 
@@ -254,18 +389,13 @@ class _FeeSettingScreenState extends State<FeeSettingScreen> {
 
 
 
-// // ignore_for_file: prefer_const_constructors
 // import 'package:flutter/material.dart';
 // import 'package:flutter_svg/flutter_svg.dart';
 // import 'package:linkschool/modules/admin/payment/settings/widgets/add_fee_overlay.dart';
-// import 'package:linkschool/modules/admin/payment/settings/widgets/fee_action_overlay.dart';
-// import 'package:linkschool/modules/admin/payment/settings/widgets/level_selection_overlay.dart';
-// import 'package:linkschool/modules/auth/provider/auth_provider.dart';
 // import 'package:linkschool/modules/common/app_colors.dart';
 // import 'package:linkschool/modules/common/constants.dart';
 // import 'package:linkschool/modules/common/custom_toaster.dart';
 // import 'package:linkschool/modules/common/text_styles.dart';
-// import 'package:linkschool/modules/admin/payment/settings/fee_setting/fee_setting_details_screen.dart';
 // import 'package:linkschool/modules/providers/admin/payment/fee_provider.dart';
 // import 'package:provider/provider.dart';
 
@@ -412,7 +542,7 @@ class _FeeSettingScreenState extends State<FeeSettingScreen> {
 //         ),
 //       ),
 //       floatingActionButton: FloatingActionButton(
-//         onPressed: () => _showFeeActionOverlay(context),
+//         onPressed: () => _showAddFeeOverlay(context),
 //         backgroundColor: AppColors.videoColor4,
 //         child: Icon(
 //           Icons.add,
@@ -474,20 +604,6 @@ class _FeeSettingScreenState extends State<FeeSettingScreen> {
 //     );
 //   }
 
-//   void _showFeeActionOverlay(BuildContext context) {
-//     showModalBottomSheet(
-//       context: context,
-//       isScrollControlled: true,
-//       backgroundColor: Colors.transparent,
-//       builder: (BuildContext context) {
-//         return FeeActionOverlay(
-//           onSetFeeName: () => _showAddFeeOverlay(context),
-//           onSetFeeAmount: () => _showLevelSelectionOverlay(context),
-//         );
-//       },
-//     );
-//   }
-
 //   void _showAddFeeOverlay(BuildContext context) {
 //     showModalBottomSheet(
 //       context: context,
@@ -520,42 +636,6 @@ class _FeeSettingScreenState extends State<FeeSettingScreen> {
 //           ),
 //         );
 //       },
-//     );
-//   }
-
-//   void _showLevelSelectionOverlay(BuildContext context) {
-//     showModalBottomSheet(
-//       context: context,
-//       isScrollControlled: true,
-//       backgroundColor: Colors.transparent,
-//       builder: (BuildContext context) {
-//         return LevelSelectionOverlay(
-//           onLevelSelected: (levelName) {
-//             _navigateToFeeDetailsScreen(context, levelName);
-//           },
-//         );
-//       },
-//     );
-//   }
-
-//   void _navigateToFeeDetailsScreen(BuildContext context, String levelName) {
-//     // Retrieve levelId from AuthProvider
-//     final authProvider = Provider.of<AuthProvider>(context, listen: false);
-//     final levels = authProvider.getLevels();
-//     final selectedLevel = levels.firstWhere(
-//       (level) => level['level_name'] == levelName,
-//       orElse: () => {'id': 0, 'level_name': levelName},
-//     );
-//     final levelId = selectedLevel['id'] as int;
-
-//     Navigator.push(
-//       context,
-//       MaterialPageRoute(
-//         builder: (context) => FeeSettingDetailsScreen(
-//           levelName: levelName,
-//           levelId: levelId,
-//         ),
-//       ),
 //     );
 //   }
 // }

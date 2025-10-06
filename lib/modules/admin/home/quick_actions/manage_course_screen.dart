@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/constants.dart';
+import 'package:linkschool/modules/common/text_styles.dart';
+import 'package:linkschool/modules/model/admin/home/add_course_model.dart';
+import 'package:linkschool/modules/providers/admin/home/add_course_provider.dart';
+import 'package:provider/provider.dart';
 
 class CourseManagementScreen extends StatefulWidget {
   const CourseManagementScreen({super.key});
@@ -9,110 +13,348 @@ class CourseManagementScreen extends StatefulWidget {
   State<CourseManagementScreen> createState() => _CourseManagementScreenState();
 }
 
-class _CourseManagementScreenState extends State<CourseManagementScreen> {
-  List<Map<String, dynamic>> courses = [
-    {'name': 'Mathematics', 'level': 'JSS1', 'class': 'JSS1A', 'id': 'MTH001'},
-    {'name': 'English Language', 'level': 'JSS1', 'class': 'JSS1A', 'id': 'ENG001'},
-    {'name': 'Basic Science', 'level': 'JSS1', 'class': 'JSS1B', 'id': 'BSC001'},
-  ];
+class _CourseManagementScreenState extends State<CourseManagementScreen>
+    with TickerProviderStateMixin {
+  late AnimationController _fadeController;
+  late AnimationController _slideController;
+  late Animation<double> _fadeAnimation;
 
-  void _showAddCourseDialog() {
-    final nameController = TextEditingController();
-    String? dialogLevel;
-    String? dialogClass;
-    final levels = ['JSS1', 'JSS2', 'JSS3', 'SSS1', 'SSS2', 'SSS3'];
-    final classesPerLevel = {
-      'JSS1': ['JSS1A', 'JSS1B', 'JSS1C'],
-      'JSS2': ['JSS2A', 'JSS2B', 'JSS2C'],
-      'JSS3': ['JSS3A', 'JSS3B', 'JSS3C'],
-      'SSS1': ['SSS1A', 'SSS1B', 'SSS1C'],
-      'SSS2': ['SSS2A', 'SSS2B', 'SSS2C'],
-      'SSS3': ['SSS3A', 'SSS3B', 'SSS3C'],
-    };
+  @override
+  void initState() {
+    super.initState();
+    _fadeController = AnimationController(
+      duration: const Duration(milliseconds: 800),
+      vsync: this,
+    );
+    _slideController = AnimationController(
+      duration: const Duration(milliseconds: 600),
+      vsync: this,
+    );
+    _fadeAnimation = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(
+      parent: _fadeController,
+      curve: Curves.easeInOut,
+    ));
+    _fadeController.forward();
+    _slideController.forward();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Provider.of<CourseProvider>(context, listen: false).fetchCourses();
+    });
+  }
+
+  @override
+  void dispose() {
+    _fadeController.dispose();
+    _slideController.dispose();
+    super.dispose();
+  }
+
+  Widget _buildAnimatedCard({
+    required Widget child,
+    required int index,
+  }) {
+    return AnimatedBuilder(
+      animation: _fadeAnimation,
+      builder: (context, child) {
+        return FadeTransition(
+          opacity: _fadeAnimation,
+          child: SlideTransition(
+            position: Tween<Offset>(
+              begin: Offset(0, 0.3 + (index * 0.1)),
+              end: Offset.zero,
+            ).animate(CurvedAnimation(
+              parent: _slideController,
+              curve: Interval(
+                index * 0.1,
+                1.0,
+                curve: Curves.elasticOut,
+              ),
+            )),
+            child: child,
+          ),
+        );
+      },
+      child: child,
+    );
+  }
+
+  Widget _buildTextField({
+    required TextEditingController controller,
+    required String label,
+    required IconData icon,
+    int? maxLength,
+  }) {
+    return TextField(
+      controller: controller,
+      maxLength: maxLength,
+      decoration: InputDecoration(
+        labelText: label,
+        prefixIcon: Icon(icon, color: AppColors.text2Light),
+        labelStyle: const TextStyle(
+          color: AppColors.text5Light,
+          fontSize: 14,
+          fontFamily: 'Urbanist',
+        ),
+        filled: true,
+        fillColor: AppColors.textFieldLight,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16.0),
+          borderSide: BorderSide(color: AppColors.textFieldBorderLight),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16.0),
+          borderSide: BorderSide(color: AppColors.textFieldBorderLight),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16.0),
+          borderSide: BorderSide(color: AppColors.text2Light, width: 2),
+        ),
+        counterText: "",
+      ),
+    );
+  }
+
+  void _showAddEditCourseForm({Courses? course}) {
+    final courseProvider = Provider.of<CourseProvider>(context, listen: false);
+    final isEditing = course != null;
+    final nameController =
+        TextEditingController(text: course?.courseName ?? '');
+    final courseCodeController =
+        TextEditingController(text: course?.courseCode ?? '');
 
     showDialog(
       context: context,
       builder: (context) => StatefulBuilder(
-        builder: (context, setState) => AlertDialog(
-          title: const Text('Add New Course'),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextField(
-                  controller: nameController,
-                  decoration: const InputDecoration(
-                    labelText: 'Course Name',
-                    border: OutlineInputBorder(),
+        builder: (context, setState) => ConstrainedBox(
+          constraints: BoxConstraints(
+            maxWidth: MediaQuery.of(context).size.width * 0.98,
+          ),
+          child: Dialog(
+            shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20.0)),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 300),
+              curve: Curves.easeInOut,
+              width: MediaQuery.of(context).size.width * 0.95,
+              margin: const EdgeInsets.all(16.0),
+              padding: const EdgeInsets.all(20.0),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(20.0),
+                border:
+                    Border.all(color: AppColors.text2Light.withOpacity(0.2)),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.text2Light.withOpacity(0.1),
+                    blurRadius: 20,
+                    offset: const Offset(0, 8),
                   ),
+                ],
+              ),
+              child: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          isEditing ? 'Edit Course' : 'Add New Course',
+                          style: AppTextStyles.normal600(
+                            fontSize: 18,
+                            color: AppColors.text2Light,
+                          ),
+                        ),
+                        IconButton(
+                          onPressed: () => Navigator.pop(context),
+                          icon: const Icon(
+                            Icons.close,
+                            color: AppColors.text5Light,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    Center(
+                      child: Container(
+                        width: 100,
+                        height: 100,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border:
+                              Border.all(color: AppColors.text2Light, width: 2),
+                          color: AppColors.textFieldLight,
+                        ),
+                        child: const Icon(
+                          Icons.book,
+                          color: AppColors.text2Light,
+                          size: 40,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    _buildTextField(
+                      controller: nameController,
+                      label: 'Course Name',
+                      icon: Icons.book,
+                    ),
+                    const SizedBox(height: 12),
+                    _buildTextField(
+                      controller: courseCodeController,
+                      label: 'Course Code',
+                      icon: Icons.code,
+                      maxLength: 5,
+                    ),
+                    const SizedBox(height: 20),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: courseProvider.isLoading
+                            ? null
+                            : () async {
+                                // Check Course Name
+                                if (nameController.text.trim().isEmpty) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: const Text(
+                                          'Please enter the Course Name'),
+                                      backgroundColor: Colors.red,
+                                      behavior: SnackBarBehavior.floating,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
+                                    ),
+                                  );
+                                  return;
+                                }
+                                // Check Course Code
+                                if (courseCodeController.text.trim().isEmpty) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: const Text(
+                                          'Please enter the Course Code'),
+                                      backgroundColor: Colors.red,
+                                      behavior: SnackBarBehavior.floating,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
+                                    ),
+                                  );
+                                  return;
+                                }
+                                
+                                if (courseCodeController.text.trim().length > 5) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: const Text(
+                                          'Course Code must not be more than 5 characters'),
+                                      backgroundColor: Colors.red,
+                                      behavior: SnackBarBehavior.floating,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
+                                    ),
+                                  );
+                                  return;
+                                }
+
+                                final courseData = {
+                                  'course_name': nameController.text.trim(),
+                                  'course_code':
+                                      courseCodeController.text.trim(),
+                                  '_db': '',
+                                };
+
+                                bool success;
+                                if (isEditing) {
+                                  success = await courseProvider.updateCourse(
+                                      course!.id.toString(), courseData);
+                                } else {
+                                  success = await courseProvider
+                                      .createCourse(courseData);
+                                }
+
+                                if (success) {
+                                  if (!isEditing) {
+                                    final newCourse = Courses(
+                                      id: courseProvider.courses.last.id,
+                                      courseName: nameController.text.trim(),
+                                      courseCode:
+                                          courseCodeController.text.trim(),
+                                    );
+                                    courseProvider.courses.add(newCourse);
+                                    courseProvider.notifyListeners();
+                                  } else {
+                                    final updatedCourse = Courses(
+                                      id: course!.id,
+                                      courseName: nameController.text.trim(),
+                                      courseCode:
+                                          courseCodeController.text.trim(),
+                                    );
+                                    final index = courseProvider.courses
+                                        .indexWhere((c) => c.id == course.id);
+                                    if (index != -1) {
+                                      courseProvider.courses[index] =
+                                          updatedCourse;
+                                      courseProvider.notifyListeners();
+                                    }
+                                  }
+                                  Navigator.pop(context);
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(isEditing
+                                          ? 'Course updated successfully'
+                                          : 'Course added successfully'),
+                                      backgroundColor: AppColors.attCheckColor2,
+                                      behavior: SnackBarBehavior.floating,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
+                                    ),
+                                  );
+                                } else {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(courseProvider.error ??
+                                          'Failed to ${isEditing ? 'update' : 'add'} course'),
+                                      backgroundColor: Colors.red,
+                                      behavior: SnackBarBehavior.floating,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
+                                    ),
+                                  );
+                                }
+                              },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.text2Light,
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          elevation: 0,
+                        ),
+                        child: courseProvider.isLoading 
+                            ? const CircularProgressIndicator(
+                                color: Colors.white)
+                            : Text(
+                                isEditing ? 'Update Course' : 'Add Course',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                  fontFamily: 'Urbanist',
+                                ),
+                              ),
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 16),
-                DropdownButtonFormField<String>(
-                  value: dialogLevel,
-                  decoration: const InputDecoration(
-                    labelText: 'Level',
-                    border: OutlineInputBorder(),
-                  ),
-                  items: levels.map((level) => DropdownMenuItem(
-                    value: level,
-                    child: Text(level),
-                  )).toList(),
-                  onChanged: (value) {
-                    setState(() {
-                      dialogLevel = value;
-                      dialogClass = null;
-                    });
-                  },
-                ),
-                const SizedBox(height: 16),
-                DropdownButtonFormField<String>(
-                  value: dialogClass,
-                  decoration: const InputDecoration(
-                    labelText: 'Class',
-                    border: OutlineInputBorder(),
-                  ),
-                  items: dialogLevel == null 
-                    ? []
-                    : classesPerLevel[dialogLevel]!.map((cls) => DropdownMenuItem(
-                        value: cls,
-                        child: Text(cls),
-                      )).toList(),
-                  onChanged: (value) {
-                    setState(() {
-                      dialogClass = value;
-                    });
-                  },
-                ),
-              ],
+              ),
             ),
           ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel'),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                if (nameController.text.isNotEmpty && 
-                    dialogLevel != null && 
-                    dialogClass != null) {
-                  setState(() {
-                    courses.add({
-                      'name': nameController.text,
-                      'level': dialogLevel!,
-                      'class': dialogClass!,
-                      'id': 'CRS${(courses.length + 1).toString().padLeft(3, '0')}',
-                    });
-                  });
-                  Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Course added successfully')),
-                  );
-                }
-              },
-              child: const Text('Add Course'),
-            ),
-          ],
         ),
       ),
     );
@@ -120,81 +362,232 @@ class _CourseManagementScreenState extends State<CourseManagementScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final courseProvider = Provider.of<CourseProvider>(context);
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Manage Courses'),
+        title: const Text(
+          'Manage Courses',
+          style: TextStyle(
+            fontFamily: 'Urbanist',
+            fontWeight: FontWeight.w600,
+          ),
+        ),
         backgroundColor: AppColors.text2Light,
         foregroundColor: Colors.white,
+        elevation: 0,
       ),
-      body: Container(
-        decoration: Constants.customBoxDecoration(context),
-        child: ListView.builder(
-          padding: const EdgeInsets.all(16),
-          itemCount: courses.length,
-          itemBuilder: (context, index) {
-            final course = courses[index];
-            return Card(
-              margin: const EdgeInsets.only(bottom: 8),
-              child: ListTile(
-                leading: CircleAvatar(
-                  backgroundColor: AppColors.attCheckColor2,
-                  child: const Icon(Icons.book, color: Colors.white),
-                ),
-                title: Text(course['name']),
-                subtitle: Text('${course['level']} - ${course['class']} | ID: ${course['id']}'),
-                trailing: PopupMenuButton<String>(
-                  onSelected: (value) {
-                    if (value == 'delete') {
-                      showDialog(
-                        context: context,
-                        builder: (context) => AlertDialog(
-                          title: const Text('Delete Course'),
-                          content: Text('Are you sure you want to delete ${course['name']}?'),
-                          actions: [
-                            TextButton(
-                              onPressed: () => Navigator.pop(context),
-                              child: const Text('Cancel'),
+      body: courseProvider.isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : Container(
+              decoration: Constants.customBoxDecoration(context),
+              child: courseProvider.courses.isEmpty
+                  ? Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.book_outlined,
+                            size: 64,
+                            color: AppColors.text7Light,
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            'No courses found',
+                            style: AppTextStyles.normal500(
+                              fontSize: 16,
+                              color: AppColors.text7Light,
                             ),
-                            ElevatedButton(
-                              onPressed: () {
-                                setState(() {
-                                  courses.removeAt(index);
-                                });
-                                Navigator.pop(context);
-                              },
-                              child: const Text('Delete'),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Add courses to get started',
+                            style: AppTextStyles.normal400(
+                              fontSize: 14,
+                              color: AppColors.text9Light,
                             ),
-                          ],
-                        ),
-                      );
-                    }
-                  },
-                  itemBuilder: (context) => [
-                    const PopupMenuItem(
-                      value: 'edit',
-                      child: ListTile(
-                        leading: Icon(Icons.edit),
-                        title: Text('Edit'),
+                          ),
+                        ],
                       ),
+                    )
+                  : ListView.builder(
+                      padding: const EdgeInsets.all(16),
+                      itemCount: courseProvider.courses.length,
+                      itemBuilder: (context, index) {
+                        final course = courseProvider.courses[index];
+
+                        return _buildAnimatedCard(
+                          index: index,
+                          child: Card(
+                            margin: const EdgeInsets.only(bottom: 8),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16.0),
+                              side: BorderSide(color: AppColors.text6Light),
+                            ),
+                            elevation: 2,
+                            child: ListTile(
+                              leading: Container(
+                                width: 50,
+                                height: 50,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  border: Border.all(
+                                      color: AppColors.text2Light, width: 2),
+                                  color: AppColors.text2Light.withOpacity(0.1),
+                                ),
+                                child: const Icon(
+                                  Icons.book,
+                                  color: AppColors.text2Light,
+                                  size: 24,
+                                ),
+                              ),
+                              title: Text(
+                                course.courseName,
+                                style: AppTextStyles.normal600(
+                                  fontSize: 16,
+                                  color: AppColors.text2Light,
+                                ),
+                              ),
+                              subtitle: Text(
+                                'Code: ${course.courseCode}',
+                                style: AppTextStyles.normal400(
+                                  fontSize: 12,
+                                  color: AppColors.text7Light,
+                                ),
+                              ),
+                              trailing: PopupMenuButton<String>(
+                                onSelected: (value) {
+                                  if (value == 'edit') {
+                                    _showAddEditCourseForm(course: course);
+                                  } else if (value == 'delete') {
+                                    showDialog(
+                                      context: context,
+                                      builder: (context) => AlertDialog(
+                                        title: const Text('Delete Course'),
+                                        content: Text(
+                                            'Are you sure you want to delete ${course.courseName}?'),
+                                        actions: [
+                                          TextButton(
+                                            onPressed: () =>
+                                                Navigator.pop(context),
+                                            child: const Text('Cancel'),
+                                          ),
+                                          Consumer<CourseProvider>(
+                                            builder: (context, provider, _) =>
+                                                ElevatedButton(
+                                              onPressed: provider.isLoading
+                                                  ? null
+                                                  : () async {
+                                                      final success =
+                                                          await provider
+                                                              .deleteCourse(course
+                                                                  .id
+                                                                  .toString());
+                                                      if (success) {
+                                                        Navigator.pop(context);
+                                                        ScaffoldMessenger.of(
+                                                                context)
+                                                            .showSnackBar(
+                                                          SnackBar(
+                                                            content: const Text(
+                                                                'Course deleted successfully'),
+                                                            backgroundColor:
+                                                                AppColors
+                                                                    .attCheckColor2,
+                                                            behavior:
+                                                                SnackBarBehavior
+                                                                    .floating,
+                                                            shape:
+                                                                RoundedRectangleBorder(
+                                                              borderRadius:
+                                                                  BorderRadius
+                                                                      .circular(
+                                                                          10),
+                                                            ),
+                                                          ),
+                                                        );
+                                                      } else {
+                                                        ScaffoldMessenger.of(
+                                                                context)
+                                                            .showSnackBar(
+                                                          SnackBar(
+                                                            content: Text(provider
+                                                                    .error ??
+                                                                'Failed to delete course'),
+                                                            backgroundColor:
+                                                                Colors.red,
+                                                            behavior:
+                                                                SnackBarBehavior
+                                                                    .floating,
+                                                            shape:
+                                                                RoundedRectangleBorder(
+                                                              borderRadius:
+                                                                  BorderRadius
+                                                                      .circular(
+                                                                          10),
+                                                            ),
+                                                          ),
+                                                        );
+                                                      }
+                                                    },
+                                              child: provider.isLoading
+                                                  ? const CircularProgressIndicator()
+                                                  : const Text('Delete',
+                                                      style: TextStyle(
+                                                          color: Colors.red)),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    );
+                                  }
+                                },
+                                itemBuilder: (context) => [
+                                  const PopupMenuItem(
+                                    value: 'edit',
+                                    child: Row(
+                                      children: [
+                                        Icon(Icons.edit,
+                                            size: 16,
+                                            color: AppColors.text2Light),
+                                        SizedBox(width: 8),
+                                        Text('Edit'),
+                                      ],
+                                    ),
+                                  ),
+                                  const PopupMenuItem(
+                                    value: 'delete',
+                                    child: Row(
+                                      children: [
+                                        Icon(Icons.delete,
+                                            size: 16, color: Colors.red),
+                                        SizedBox(width: 8),
+                                        Text('Delete',
+                                            style:
+                                                TextStyle(color: Colors.red)),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        );
+                      },
                     ),
-                    const PopupMenuItem(
-                      value: 'delete',
-                      child: ListTile(
-                        leading: Icon(Icons.delete, color: Colors.red),
-                        title: Text('Delete', style: TextStyle(color: Colors.red)),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            );
-          },
-        ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _showAddCourseDialog,
+            ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => _showAddEditCourseForm(),
         backgroundColor: AppColors.text2Light,
-        child: const Icon(Icons.add, color: Colors.white),
+        icon: const Icon(Icons.add, color: Colors.white),
+        label: const Text(
+          'Add Course',
+          style: TextStyle(
+            fontFamily: 'Urbanist',
+            color: Colors.white,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
       ),
     );
   }

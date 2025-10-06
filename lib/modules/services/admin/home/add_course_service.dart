@@ -1,148 +1,139 @@
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
-import 'package:linkschool/modules/model/admin/home/manage_student_model.dart';
-
+import 'package:linkschool/modules/model/admin/home/add_course_model.dart';
 import 'package:linkschool/modules/services/api/api_service.dart';
 
-class ManageStudentService {
+class CourseService {
   final ApiService _apiService;
 
-  ManageStudentService(this._apiService);
+  CourseService(this._apiService);
 
-  Future<void> createStudent(Map<String, dynamic> newStudent) async {
+  Future<void> createCourse(Map<String, dynamic> newCourse) async {
     final userBox = Hive.box('userData');
     final loginData = userBox.get('userData') ?? userBox.get('loginResponse');
     final dbName = userBox.get('_db') ?? 'aalmgzmy_linkskoo_practice';
-
     if (loginData == null || loginData['token'] == null) {
       throw Exception("No valid login data or token found");
     }
     final token = loginData['token'] as String;
-
     _apiService.setAuthToken(token);
-    newStudent['_db'] = dbName;
-    print("Request Payload: $newStudent");
+    newCourse['_db'] = dbName;
+    print("Request Payload: $newCourse");
     try {
       final response = await _apiService.post<Map<String, dynamic>>(
-        endpoint: 'portal/students',
-        body: newStudent,
+        endpoint: 'portal/courses',
+        body: newCourse,
       );
       print("Response Status Code: ${response.statusCode}");
       if (!response.success) {
-        print("Failed to create student");
+        print("Failed to create course");
         print("Error: ${response.message ?? 'No error message provided'}");
-        // Remove usage of GlobalKey<NavigatorState>().currentContext!
-        // Instead, just throw the error and let the UI layer handle SnackBars
-        throw Exception("Failed to create student: ${response.message}");
+        // Remove the use of GlobalKey<NavigatorState>().currentContext!
+        // Instead, just throw the error and let the UI handle the snackbar
+        throw Exception("Failed to create course: ${response.message}");
       } else {
-        print('Student created successfully.');
-       
+        print('Course created successfully.');
+        // Do not throw or show snackbar here, just return
+        return;
       }
     } catch (e) {
-      print("Error creating student: $e");
-
-      throw Exception("Failed to create student: $e");
+      print("Error creating course: $e");
+      // Only throw if the error is not a success
+      throw Exception("Failed to create course: $e");
     }
   }
 
-  Future<void> updateStudent(String studentId, Map<String, dynamic> updatedStudent) async {
+  Future<void> updateCourse(String courseId, Map<String, dynamic> updatedCourse) async {
     final userBox = Hive.box('userData');
     final loginData = userBox.get('userData') ?? userBox.get('loginResponse');
     final dbName = userBox.get('_db') ?? 'aalmgzmy_linkskoo_practice';
-
     if (loginData == null || loginData['token'] == null) {
       throw Exception("No valid login data or token found");
     }
     final token = loginData['token'] as String;
-
     _apiService.setAuthToken(token);
-    updatedStudent['_db'] = dbName;
-    print("Update Request Payload: $updatedStudent");
+    updatedCourse['_db'] = dbName;
+    print("Update Request Payload: $updatedCourse");
     try {
       final response = await _apiService.put<Map<String, dynamic>>(
-        endpoint: 'portal/students/$studentId',
-        body: updatedStudent,
+        endpoint: 'portal/courses/$courseId',
+        body: updatedCourse,
       );
       if (!response.success) {
-        print("Failed to update student");
+        print("Failed to update course");
         print("Error: ${response.message ?? 'No error message provided'}");
-        throw Exception("Failed to update student: ${response.message}");
+        throw Exception("Failed to update course: ${response.message}");
       } else {
-        print('Student updated successfully.');
+        print('Course updated successfully.');
       }
     } catch (e) {
-      print("Error updating student: $e");
-      throw Exception("Failed to update student: $e");
+      print("Error updating course: $e");
+      throw Exception("Failed to update course: $e");
     }
   }
 
-  Future<void> deleteStudent(String studentId) async {
+  Future<void> deleteCourse(String courseId) async {
     final userBox = Hive.box('userData');
     final loginData = userBox.get('userData') ?? userBox.get('loginResponse');
     final dbName = userBox.get('_db') ?? 'aalmgzmy_linkskoo_practice';
-
     if (loginData == null || loginData['token'] == null) {
       throw Exception("No valid login data or token found");
     }
     final token = loginData['token'] as String;
-
     _apiService.setAuthToken(token);
     try {
       final response = await _apiService.delete<Map<String, dynamic>>(
-        endpoint: 'portal/students/$studentId',
+        endpoint: 'portal/courses/$courseId',
         body: {
           '_db': dbName,
         },
       );
       if (!response.success) {
-        print("Failed to delete student");
+        print("Failed to delete course");
         print("Error: ${response.message ?? 'No error message provided'}");
-        throw Exception("Failed to delete student: ${response.message}");
+        throw Exception("Failed to delete course: ${response.message}");
       } else {
-        print('Student deleted successfully.');
+        print('Course deleted successfully.');
       }
     } catch (e) {
-      print("Error deleting student: $e");
-      throw Exception("Failed to delete student: $e");
+      print("Error deleting course: $e");
+      throw Exception("Failed to delete course: $e");
     }
   }
 
-  Future<List<Students>> fetchStudents() async {
+  Future<List<Courses>> fetchCourses() async {
     final userBox = Hive.box('userData');
     final loginData = userBox.get('userData') ?? userBox.get('loginResponse');
     final dbName = userBox.get('_db') ?? 'aalmgzmy_linkskoo_practice';
-
     if (loginData == null || loginData['token'] == null) {
       throw Exception("No valid login data or token found");
     }
     final token = loginData['token'] as String;
-
     _apiService.setAuthToken(token);
     try {
       final response = await _apiService.get<Map<String, dynamic>>(
-        endpoint: 'portal/students',
+        endpoint: 'portal/courses',
         queryParams: {
           '_db': dbName,
         },
       );
-      print("Fetch Students Response Status Code: ${response.statusCode}");
+      print("Fetch Courses Response Status Code: ${response.statusCode}");
       if (!response.success) {
-        print("Failed to fetch students");
+        print("Failed to fetch courses");
         print("Error: ${response.message ?? 'No error message provided'}");
-        throw Exception("Failed to fetch students: ${response.message}");
+        throw Exception("Failed to fetch courses: ${response.message}");
       }
-
       final data = response.rawData?['response'];
       if (data is List) {
-        print('Students fetched successfully: ${data.length} students found.');
-        return data.map((json) => Students.fromJson(json as Map<String, dynamic>)).toList();
+        print('Courses fetched successfully: ${data.length} courses found.');
+        return data.map((json) => Courses.fromJson(json as Map<String, dynamic>)).toList();
       } else {
         print("Unexpected response format");
         throw Exception("Unexpected response format");
       }
     } catch (e) {
-      print("Error fetching students: $e");
-      throw Exception("Failed to fetch students: $e");
+      print("Error fetching courses: $e");
+      throw Exception("Failed to fetch courses: $e");
     }
   }
 }

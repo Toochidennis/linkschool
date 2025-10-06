@@ -1,7 +1,9 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/svg.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:linkschool/modules/admin/home/quick_actions/student_details.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
@@ -9,6 +11,7 @@ import 'package:linkschool/modules/model/admin/home/level_class_model.dart';
 import 'package:linkschool/modules/model/admin/home/manage_student_model.dart';
 import 'package:linkschool/modules/providers/admin/home/level_class_provider.dart';
 import 'package:linkschool/modules/providers/admin/home/manage_student_provider.dart';
+import 'package:path/path.dart' as path;
 import 'package:provider/provider.dart';
 class ManageStudentsScreen extends StatefulWidget {
   const ManageStudentsScreen({super.key});
@@ -47,7 +50,10 @@ class _ManageStudentsScreenState extends State<ManageStudentsScreen> {
     final surnameController = TextEditingController(text: student?.surname ?? '');
     final firstNameController = TextEditingController(text: student?.firstName ?? '');
     final middleNameController = TextEditingController(text: student?.middle ?? '');
-    String? gender = student?.gender.isNotEmpty == true ? student!.gender : 'male';
+   String? gender = student?.gender.isNotEmpty == true 
+    ? (student!.gender == 'f' || student!.gender == 'F' ? 'female' : 
+       student.gender == 'm' || student.gender == 'M' ? 'male' : student.gender)
+    : 'male';
     final birthDateController = TextEditingController(text: student?.birthDate ?? '');
     final addressController = TextEditingController(text: student?.address ?? '');
     final cityController = TextEditingController(text: student?.city?.toString() ?? '');
@@ -57,7 +63,7 @@ class _ManageStudentsScreenState extends State<ManageStudentsScreen> {
     final religionController = TextEditingController(text: student?.religion ?? '');
     final guardianNameController = TextEditingController(text: student?.guardianName ?? '');
     final guardianAddressController = TextEditingController(text: student?.guardianAddress ?? '');
-    final guardianEmailController = TextEditingController(text: student?.guardianEmail ?? '');
+    
     final guardianPhoneController = TextEditingController(text: student?.guardianPhoneNo ?? '');
     final lgaOriginController = TextEditingController(text: student?.lgaOrigin ?? '');
     final stateOriginController = TextEditingController(text: student?.stateOrigin ?? '');
@@ -71,19 +77,29 @@ class _ManageStudentsScreenState extends State<ManageStudentsScreen> {
     int? dialogLevelId = student?.levelId;
     int? dialogClassId = student?.classId;
     File? tempImage;
-
-    showDialog(
+     String oldFileName = '';
+print("student photo:sss ${student?.photo}");
+  if (isEditing && student?.photo != null && student!.photo is String && (student.photo as String).isNotEmpty) {
+    // Extract the filename from the returned photo path
+    print("student photo:sss ${student?.photo}");
+    oldFileName = path.basename(student.photo as String); 
+  }
+    showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
       builder: (context) => StatefulBuilder(
-        builder: (context, setState) => ConstrainedBox(
-          constraints: BoxConstraints(
-          maxWidth: MediaQuery.of(context).size.width * 0.98,),
-          child: Dialog(
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20.0)),
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 300),
-              width: MediaQuery.of(context).size.width * 0.9,
-              curve: Curves.easeInOut,
+       builder: (context, setState) => Padding(
+  padding: const EdgeInsets.all(8.0),
+  child: Dialog(
+    insetPadding: EdgeInsets.zero, // Remove default Dialog padding
+    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20.0)),
+    child: AnimatedContainer(
+      duration: const Duration(milliseconds: 300),
+      width: MediaQuery.of(context).size.width, // Full width
+      curve: Curves.easeInOut,
               margin: const EdgeInsets.all(8.0),
               padding: const EdgeInsets.all(10.0),
               decoration: BoxDecoration(
@@ -142,14 +158,21 @@ class _ManageStudentsScreenState extends State<ManageStudentsScreen> {
                             color: AppColors.textFieldLight,
                           ),
                           child: tempImage != null
-                              ? ClipOval(child: Image.file(tempImage!, fit: BoxFit.cover))
-                              : student?.photo?.file != null
-                                  ? ClipOval(
-                                      child: Image.memory(
-                                        base64Decode(student!.photo!.file!),
-                                        fit: BoxFit.cover,
-                                      ),
-                                    )
+    ? ClipOval(child: Image.file(tempImage!, fit: BoxFit.cover))
+    : student?.photo?.file != null
+        ? ClipOval(
+            child: Image.memory(
+              base64Decode(student!.photo!.file!),
+              fit: BoxFit.cover,
+            ),
+          )
+        : (student?.photoPath != null && student!.photoPath!.isNotEmpty)
+            ? ClipOval(
+                child: Image.network(
+                  "https://linkskool.net/${student.photoPath}",
+                  fit: BoxFit.cover,
+                ),
+              )
                                   : Icon(Icons.add_a_photo, color: AppColors.text2Light, size: 40),
                         ),
                       ),
@@ -184,10 +207,11 @@ class _ManageStudentsScreenState extends State<ManageStudentsScreen> {
                     _buildDropdown(
                       label: 'Gender',
                       value: gender,
-                      items: ['male', 'female'].map((g) => DropdownMenuItem(
-                        value: g,
-                        child: Text(g.capitalize()),
-                      )).toList(),
+                     items: ['male', 'female'].map((g) => DropdownMenuItem(
+  value: g,
+  child: Text(g.capitalize()),
+)).toList(),
+
                       onChanged: (value) {
                         setState(() {
                           gender = value;
@@ -283,14 +307,7 @@ class _ManageStudentsScreenState extends State<ManageStudentsScreen> {
                     const SizedBox(height: 12),
                     Row(
                       children: [
-                        Expanded(
-                          child: _buildTextField(
-                            controller: guardianEmailController,
-                            label: 'Guardian Email',
-                            icon: Icons.alternate_email,
-                            keyboardType: TextInputType.emailAddress,
-                          ),
-                        ),
+                       
                         const SizedBox(width: 12),
                         Expanded(
                           child: _buildTextField(
@@ -335,11 +352,7 @@ class _ManageStudentsScreenState extends State<ManageStudentsScreen> {
                       icon: Icons.health_and_safety,
                     ),
                     const SizedBox(height: 12),
-                    _buildTextField(
-                      controller: dateAdmittedController,
-                      label: 'Date Admitted (YYYY)',
-                      icon: Icons.event,
-                    ),
+                 
                     const SizedBox(height: 12),
                     _buildTextField(
                       controller: studentStatusController,
@@ -363,6 +376,7 @@ class _ManageStudentsScreenState extends State<ManageStudentsScreen> {
                       controller: registrationNoController,
                       label: 'Registration Number',
                       icon: Icons.confirmation_number,
+                      keyboardType: TextInputType.number,
                     ),
                     const SizedBox(height: 12),
                     Consumer<LevelClassProvider>(
@@ -433,27 +447,28 @@ class _ManageStudentsScreenState extends State<ManageStudentsScreen> {
                                 }
           
                                 final studentData = {
-                                  'photo': base64Image != null
-                                      ? {
-                                          'file': base64Image,
-                                          'file_name': 'passport_photo.jpg',
-                                          'old_file_name': student?.photo?.fileName ?? '',
-                                        }
-                                      : student?.photo?.toJson(),
+                                  "photo": tempImage != null
+          ? {
+              "file": base64Encode(tempImage!.readAsBytesSync()),
+              "file_name": path.basename(tempImage!.path),  
+              "old_file_name": oldFileName                  
+            }
+          : (isEditing 
+              ? student.photo ?? ""                     
+              : ""),                                        
                                   'surname': surnameController.text.trim(),
                                   'first_name': firstNameController.text.trim(),
                                   'middle': middleNameController.text.trim(),
                                   'gender': gender,
                                   'birth_date': birthDateController.text.trim(),
                                   'address': addressController.text.trim(),
-                                  'city': int.tryParse(cityController.text.trim()),
-                                  'state': int.tryParse(stateController.text.trim()),
-                                  'country': int.tryParse(countryController.text.trim()),
+                                  'city': int.tryParse(cityController.text.trim()) ?? 0,
+                                  'state': int.tryParse(stateController.text.trim()) ?? 0,
+                                  'country': int.tryParse(countryController.text.trim()) ?? 0,
                                   'email': emailController.text.trim(),
                                   'religion': religionController.text.trim(),
                                   'guardian_name': guardianNameController.text.trim(),
                                   'guardian_address': guardianAddressController.text.trim(),
-                                 // 'guardian_email': guardianEmailController.text.trim(),
                                   'guardian_phone_no': guardianPhoneController.text.trim(),
                                   'lga_origin': lgaOriginController.text.trim(),
                                   'state_origin': stateOriginController.text.trim(),
@@ -471,8 +486,10 @@ class _ManageStudentsScreenState extends State<ManageStudentsScreen> {
                                 bool success;
                                 if (isEditing) {
                                   success = await studentProvider.updateStudent(student!.id.toString(), studentData);
+                                 
                                 } else {
                                   success = await studentProvider.createStudent(studentData);
+                                
                                 }
           
                                 if (success) {
@@ -531,431 +548,7 @@ class _ManageStudentsScreenState extends State<ManageStudentsScreen> {
     );
   }
 
-  void _showEditStudentDialog(Students student) {
-    final studentProvider = Provider.of<ManageStudentProvider>(context, listen: false);
-    final levelClassProvider = Provider.of<LevelClassProvider>(context, listen: false);
-    final surnameController = TextEditingController(text: student.surname);
-    final firstNameController = TextEditingController(text: student.firstName);
-    final middleNameController = TextEditingController(text: student.middle);
-    String? gender = student.gender.isNotEmpty ? student.gender : null;
-    final birthDateController = TextEditingController(text: student.birthDate);
-    final addressController = TextEditingController(text: student.address);
-    final cityController = TextEditingController(text: student.city?.toString());
-    final stateController = TextEditingController(text: student.state?.toString());
-    final countryController = TextEditingController(text: student.country?.toString());
-    final emailController = TextEditingController(text: student.email);
-    final religionController = TextEditingController(text: student.religion);
-    final guardianNameController = TextEditingController(text: student.guardianName);
-    final guardianAddressController = TextEditingController(text: student.guardianAddress);
-    final guardianEmailController = TextEditingController(text: student.guardianEmail);
-    final guardianPhoneController = TextEditingController(text: student.guardianPhoneNo);
-    final lgaOriginController = TextEditingController(text: student.lgaOrigin);
-    final stateOriginController = TextEditingController(text: student.stateOrigin);
-    final nationalityController = TextEditingController(text: student.nationality);
-    final healthStatusController = TextEditingController(text: student.healthStatus);
-    final dateAdmittedController = TextEditingController(text: student.dateAdmitted);
-    final studentStatusController = TextEditingController(text: student.studentStatus);
-    final pastRecordController = TextEditingController(text: student.pastRecord);
-    final academicResultController = TextEditingController(text: student.academicResult);
-    final registrationNoController = TextEditingController(text: student.registrationNo);
-    int? dialogLevelId = student.levelId;
-    int? dialogClassId = student.classId;
-    File? tempImage = _selectedImage;
-
-    showDialog(
-      context: context,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setState) => AlertDialog(
-          title: const Text('Edit Student'),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                GestureDetector(
-                  onTap: () async {
-                    final picker = ImagePicker();
-                    final pickedFile = await picker.pickImage(source: ImageSource.gallery);
-                    if (pickedFile != null) {
-                      setState(() {
-                        tempImage = File(pickedFile.path);
-                      });
-                    }
-                  },
-                  child: Container(
-                    height: 100,
-                    width: 100,
-                    decoration: BoxDecoration(
-                      color: Colors.grey[200],
-                      borderRadius: BorderRadius.circular(50),
-                    ),
-                    child: tempImage != null
-                        ? ClipOval(child: Image.file(tempImage!, fit: BoxFit.cover))
-                        : student.photo?.file != null
-                            ? ClipOval(
-                                child: Image.memory(
-                                  base64Decode(student.photo!.file!),
-                                  fit: BoxFit.cover,
-                                  width: 100,
-                                  height: 100,
-                                ),
-                              )
-                            : const Icon(Icons.add_a_photo, size: 40),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: surnameController,
-                  decoration: const InputDecoration(
-                    labelText: 'Surname',
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: firstNameController,
-                  decoration: const InputDecoration(
-                    labelText: 'First Name',
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: middleNameController,
-                  decoration: const InputDecoration(
-                    labelText: 'Middle Name',
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                DropdownButtonFormField<String>(
-                  value: gender,
-                  decoration: const InputDecoration(
-                    labelText: 'Gender',
-                    border: OutlineInputBorder(),
-                  ),
-                  items: ['Male', 'Female'].map((g) => DropdownMenuItem(
-                    value: g.toLowerCase(),
-                    child: Text(g),
-                  )).toList(),
-                  onChanged: (value) {
-                    setState(() {
-                      gender = value;
-                    });
-                  },
-                ),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: birthDateController,
-                  decoration: const InputDecoration(
-                    labelText: 'Birth Date (YYYY-MM-DD)',
-                    border: OutlineInputBorder(),
-                  ),
-                  onTap: () async {
-                    DateTime? pickedDate = await showDatePicker(
-                      context: context,
-                      initialDate: DateTime.now(),
-                      firstDate: DateTime(1900),
-                      lastDate: DateTime.now(),
-                    );
-                    if (pickedDate != null) {
-                      setState(() {
-                        birthDateController.text =
-                            "${pickedDate.year}-${pickedDate.month.toString().padLeft(2, '0')}-${pickedDate.day.toString().padLeft(2, '0')}";
-                      });
-                    }
-                  },
-                ),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: addressController,
-                  decoration: const InputDecoration(
-                    labelText: 'Address',
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: cityController,
-                  decoration: const InputDecoration(
-                    labelText: 'City ID',
-                    border: OutlineInputBorder(),
-                  ),
-                  keyboardType: TextInputType.number,
-                ),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: stateController,
-                  decoration: const InputDecoration(
-                    labelText: 'State ID',
-                    border: OutlineInputBorder(),
-                  ),
-                  keyboardType: TextInputType.number,
-                ),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: countryController,
-                  decoration: const InputDecoration(
-                    labelText: 'Country ID',
-                    border: OutlineInputBorder(),
-                  ),
-                  keyboardType: TextInputType.number,
-                ),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: emailController,
-                  decoration: const InputDecoration(
-                    labelText: 'Email',
-                    border: OutlineInputBorder(),
-                  ),
-                  keyboardType: TextInputType.emailAddress,
-                ),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: religionController,
-                  decoration: const InputDecoration(
-                    labelText: 'Religion',
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: guardianNameController,
-                  decoration: const InputDecoration(
-                    labelText: 'Guardian Name',
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: guardianAddressController,
-                  decoration: const InputDecoration(
-                    labelText: 'Guardian Address',
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: guardianEmailController,
-                  decoration: const InputDecoration(
-                    labelText: 'Guardian Email',
-                    border: OutlineInputBorder(),
-                  ),
-                  keyboardType: TextInputType.emailAddress,
-                ),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: guardianPhoneController,
-                  decoration: const InputDecoration(
-                    labelText: 'Guardian Phone',
-                    border: OutlineInputBorder(),
-                  ),
-                  keyboardType: TextInputType.phone,
-                ),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: lgaOriginController,
-                  decoration: const InputDecoration(
-                    labelText: 'LGA Origin',
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: stateOriginController,
-                  decoration: const InputDecoration(
-                    labelText: 'State Origin',
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: nationalityController,
-                  decoration: const InputDecoration(
-                    labelText: 'Nationality',
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: healthStatusController,
-                  decoration: const InputDecoration(
-                    labelText: 'Health Status',
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: dateAdmittedController,
-                  decoration: const InputDecoration(
-                    labelText: 'Date Admitted (YYYY)',
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: studentStatusController,
-                  decoration: const InputDecoration(
-                    labelText: 'Student Status',
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: pastRecordController,
-                  decoration: const InputDecoration(
-                    labelText: 'Past Record',
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: academicResultController,
-                  decoration: const InputDecoration(
-                    labelText: 'Academic Result',
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: registrationNoController,
-                  decoration: const InputDecoration(
-                    labelText: 'Registration Number',
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Consumer<LevelClassProvider>(
-                  builder: (context, provider, _) => DropdownButtonFormField<int>(
-                    value: dialogLevelId,
-                    decoration: const InputDecoration(
-                      labelText: 'Level',
-                      border: OutlineInputBorder(),
-                    ),
-                    items: provider.levelsWithClasses.map((levelWithClasses) {
-                      return DropdownMenuItem(
-                        value: levelWithClasses.level.id,
-                        child: Text(levelWithClasses.level.levelName),
-                      );
-                    }).toList(),
-                    onChanged: (value) {
-                      setState(() {
-                        dialogLevelId = value;
-                        dialogClassId = null;
-                      });
-                    },
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Consumer<LevelClassProvider>(
-                  builder: (context, provider, _) => DropdownButtonFormField<int>(
-                    value: dialogClassId,
-                    decoration: const InputDecoration(
-                      labelText: 'Class',
-                      border: OutlineInputBorder(),
-                    ),
-                    items: dialogLevelId == null
-                        ? []
-                        : provider.levelsWithClasses
-                            .firstWhere((lwc) => lwc.level.id == dialogLevelId)
-                            .classes
-                            .map((cls) => DropdownMenuItem(
-                                  value: cls.id,
-                                  child: Text(cls.className),
-                                ))
-                            .toList(),
-                    onChanged: (value) {
-                      setState(() {
-                        dialogClassId = value;
-                      });
-                    },
-                  ),
-                ),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel'),
-            ),
-            Consumer<ManageStudentProvider>(
-              builder: (context, provider, _) => ElevatedButton(
-                onPressed: provider.isLoading
-                    ? null
-                    : () async {
-                        if (surnameController.text.isNotEmpty &&
-                            firstNameController.text.isNotEmpty &&
-                            gender != null &&
-                            dialogLevelId != null &&
-                            dialogClassId != null) {
-                          String? base64Image;
-                          if (tempImage != null) {
-                            final bytes = await tempImage?.readAsBytes();
-                            base64Image = base64Encode(bytes!);
-                          }
-
-                          final updatedStudent = {
-                            'photo': base64Image != null
-                                ? {
-                                    'file': base64Image,
-                                    'file_name': 'passport_photo.jpg',
-                                    'old_file_name': student.photo?.fileName ?? '',
-                                  }
-                                : student.photo?.toJson(),
-                            'surname': surnameController.text,
-                            'first_name': firstNameController.text,
-                            'middle': middleNameController.text,
-                            'gender': gender,
-                            'birth_date': birthDateController.text,
-                            'address': addressController.text,
-                            'city': int.tryParse(cityController.text),
-                            'state': int.tryParse(stateController.text),
-                            'country': int.tryParse(countryController.text),
-                            'email': emailController.text,
-                            'religion': religionController.text,
-                            'guardian_name': guardianNameController.text,
-                            'guardian_address': guardianAddressController.text,
-                            'guardian_email': guardianEmailController.text,
-                            'guardian_phone_no': guardianPhoneController.text,
-                            'lga_origin': lgaOriginController.text,
-                            'state_origin': stateOriginController.text,
-                            'nationality': nationalityController.text,
-                            'health_status': healthStatusController.text,
-                            'date_admitted': dateAdmittedController.text,
-                            'student_status': studentStatusController.text,
-                            'past_record': pastRecordController.text,
-                            'academic_result': academicResultController.text,
-                            'level_id': dialogLevelId,
-                            'class_id': dialogClassId,
-                            'registration_no': registrationNoController.text,
-                          };
-
-                          final success = await studentProvider.updateStudent(student.id.toString(), updatedStudent);
-                          if (success) {
-                            Navigator.pop(context);
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Student updated successfully')),
-                            );
-                          } else {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(studentProvider.error ?? 'Failed to update student'),
-                                backgroundColor: Colors.red,
-                              ),
-                            );
-                          }
-                        }
-                      },
-                child: provider.isLoading
-                    ? const CircularProgressIndicator()
-                    : const Text('Update'),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+  
 
   @override
   Widget build(BuildContext context) {
@@ -1087,89 +680,104 @@ class _ManageStudentsScreenState extends State<ManageStudentsScreen> {
                                   )
                                   .className;
 
-                              return Card(
-                                margin: const EdgeInsets.only(bottom: 8),
-                                child: ListTile(
-                                  leading: CircleAvatar(
-                                    backgroundColor: AppColors.text2Light,
-                                    child: student.photo?.file != null
-                                        ? ClipOval(
-                                            child: Image.memory(
-                                              base64Decode(student.photo!.file!),
-                                              fit: BoxFit.cover,
-                                              width: 40,
-                                              height: 40,
-                                            ),
-                                          )
-                                        : Text(
-                                            student.getInitials(),
-                                            style: const TextStyle(color: Colors.white),
+                              return GestureDetector(
+                                onTap: () {
+                                  Navigator.push(context, MaterialPageRoute(builder: (context) => StudentProfileScreen(student: student)));
+                                },
+                                child: Card(
+                                  margin: const EdgeInsets.only(bottom: 8),
+                                  child: ListTile(
+                                   leading: CircleAvatar(
+                                  backgroundColor: AppColors.text2Light,
+                                  child: student.photoPath != null && student.photoPath!.isNotEmpty
+                                      ? ClipOval(
+                                          child: Image.network(  
+                                            "https://linkskool.net/${student.photoPath}",
+                                            fit: BoxFit.cover,
+                                            width: 40,
+                                            height: 40,
+                                            errorBuilder: (context, error, stackTrace) {
+                                              return Text(
+                                                student.getInitials(),
+                                                style: const TextStyle(color: Colors.white),
+                                              );
+                                            },
+                                            loadingBuilder: (context, child, loadingProgress) {
+                                              if (loadingProgress == null) return child;
+                                              return const CircularProgressIndicator(strokeWidth: 2);
+                                            },
                                           ),
-                                  ),
-                                  title: Text('${student.firstName} ${student.surname}'),
-                                  subtitle: Text('$levelName - $className | ID: ${student.registrationNo ?? student.id}'),
-                                  trailing: PopupMenuButton<String>(
-                                    onSelected: (value) {
-                                      if (value == 'edit') {
-                                        _showEditStudentDialog(student);
-                                      } else if (value == 'delete') {
-                                        showDialog(
-                                          context: context,
-                                          builder: (context) => AlertDialog(
-                                            title: const Text('Delete Student'),
-                                            content: Text(
-                                                'Are you sure you want to delete ${student.firstName} ${student.surname}?'),
-                                            actions: [
-                                              TextButton(
-                                                onPressed: () => Navigator.pop(context),
-                                                child: const Text('Cancel'),
-                                              ),
-                                              Consumer<ManageStudentProvider>(
-                                                builder: (context, provider, _) => ElevatedButton(
-                                                  onPressed: provider.isLoading
-                                                      ? null
-                                                      : () async {
-                                                          final success = await provider.deleteStudent(student.id.toString());
-                                                          if (success) {
-                                                            Navigator.pop(context);
-                                                            ScaffoldMessenger.of(context).showSnackBar(
-                                                              const SnackBar(content: Text('Student deleted successfully')),
-                                                            );
-                                                          } else {
-                                                            ScaffoldMessenger.of(context).showSnackBar(
-                                                              SnackBar(
-                                                                content: Text(provider.error ?? 'Failed to delete student'),
-                                                                backgroundColor: Colors.red,
-                                                              ),
-                                                            );
-                                                          }
-                                                        },
-                                                  child: provider.isLoading
-                                                      ? const CircularProgressIndicator()
-                                                      : const Text('Delete'),
+                                        )
+                                      : Text(
+                                          student.getInitials(),
+                                          style: const TextStyle(color: Colors.white),
+                                        ),
+                                ),
+                                    title: Text('${student.firstName} ${student.surname}'),
+                                    subtitle: Text('$levelName - $className | ID: ${student.registrationNo ?? student.id}'),
+                                    trailing: PopupMenuButton<String>(
+                                      onSelected: (value) {
+                                        if (value == 'edit') {
+                                          _showAddEditStudentForm(student: student);
+                                        } else if (value == 'delete') {
+                                          showDialog(
+                                            context: context,
+                                            builder: (context) => AlertDialog(
+                                              title: const Text('Delete Student'),
+                                              content: Text(
+                                                  'Are you sure you want to delete ${student.firstName} ${student.surname}?'),
+                                              actions: [
+                                                TextButton(
+                                                  onPressed: () => Navigator.pop(context),
+                                                  child: const Text('Cancel'),
                                                 ),
-                                              ),
-                                            ],
+                                                Consumer<ManageStudentProvider>(
+                                                  builder: (context, provider, _) => ElevatedButton(
+                                                    onPressed: provider.isLoading
+                                                        ? null
+                                                        : () async {
+                                                            final success = await provider.deleteStudent(student.id.toString());
+                                                            if (success) {
+                                                              Navigator.pop(context);
+                                                              ScaffoldMessenger.of(context).showSnackBar(
+                                                                const SnackBar(content: Text('Student deleted successfully')),
+                                                              );
+                                                            } else {
+                                                              ScaffoldMessenger.of(context).showSnackBar(
+                                                                SnackBar(
+                                                                  content: Text(provider.error ?? 'Failed to delete student'),
+                                                                  backgroundColor: Colors.red,
+                                                                ),
+                                                              );
+                                                            }
+                                                          },
+                                                    child: provider.isLoading
+                                                        ? const CircularProgressIndicator()
+                                                        : const Text('Delete'),
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          );
+                                        }
+                                      },
+                                      itemBuilder: (context) => [
+                                        const PopupMenuItem(
+                                          value: 'edit',
+                                          child: ListTile(
+                                            leading: Icon(Icons.edit),
+                                            title: Text('Edit'),
                                           ),
-                                        );
-                                      }
-                                    },
-                                    itemBuilder: (context) => [
-                                      const PopupMenuItem(
-                                        value: 'edit',
-                                        child: ListTile(
-                                          leading: Icon(Icons.edit),
-                                          title: Text('Edit'),
                                         ),
-                                      ),
-                                      const PopupMenuItem(
-                                        value: 'delete',
-                                        child: ListTile(
-                                          leading: Icon(Icons.delete, color: Colors.red),
-                                          title: Text('Delete', style: TextStyle(color: Colors.red)),
+                                        const PopupMenuItem(
+                                          value: 'delete',
+                                          child: ListTile(
+                                            leading: Icon(Icons.delete, color: Colors.red),
+                                            title: Text('Delete', style: TextStyle(color: Colors.red)),
+                                          ),
                                         ),
-                                      ),
-                                    ],
+                                      ],
+                                    ),
                                   ),
                                 ),
                               );
@@ -1231,6 +839,7 @@ class _ManageStudentsScreenState extends State<ManageStudentsScreen> {
           borderSide: BorderSide(color: AppColors.text2Light, width: 2),
         ),
       ),
+
     );
   }
 

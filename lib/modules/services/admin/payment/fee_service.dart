@@ -65,6 +65,51 @@ class FeeService {
       );
     }
   }
+
+  // Update fee name method
+  Future<ApiResponse<void>> updateFeeName(String feeNameId, UpdateFeeNameRequest request) async {
+    try {
+      // Ensure token is set before making the request
+      _ensureTokenIsSet();
+      
+      final response = await _apiService.put<void>(
+        endpoint: 'portal/payments/fee-names/$feeNameId',
+        body: request.toJson(),
+      );
+      return response;
+    } catch (e) {
+      return ApiResponse<void>.error(
+        'Failed to update fee name: $e',
+        500,
+      );
+    }
+  }
+
+  // Delete fee name method
+  Future<ApiResponse<void>> deleteFeeName(String feeNameId, {required String year, required String term}) async {
+    try {
+      // Ensure token is set before making the request
+      _ensureTokenIsSet();
+
+      final userBox = Hive.box('userData');
+      final db = userBox.get('_db');
+      
+      final response = await _apiService.delete<void>(
+        endpoint: 'portal/payments/fee-names/$feeNameId?year=$year&term=$term',
+        body: {
+          '_db': db ?? '',
+        }, 
+        fromJson: (json) => json,
+        addDatabaseParam: false,
+      );
+      return response;
+    } catch (e) {
+      return ApiResponse<void>.error(
+        'Failed to delete fee name: $e',
+        500,
+      );
+    }
+  }
 }
 
 
