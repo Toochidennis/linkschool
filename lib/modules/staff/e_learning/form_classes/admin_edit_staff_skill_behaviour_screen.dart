@@ -1,5 +1,8 @@
 
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
+import 'package:hive/hive.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
@@ -34,6 +37,7 @@ class _EditSkillsBehaviourScreenState extends State<EditSkillsBehaviourScreen> {
   @override
   void initState() {
     super.initState();
+    _loadUserData();
     final skillsProvider = Provider.of<SkillsBehaviorTableProvider>(context, listen: false);
     skillsProvider.fetchSkillsAndBehaviours(
       classId: widget.classId,
@@ -43,6 +47,51 @@ class _EditSkillsBehaviourScreenState extends State<EditSkillsBehaviourScreen> {
       db: widget.db,
     );
   }
+
+  int? creatorId;
+  String? creatorRole;
+  String? creatorName;
+  String? academicYear;
+  int? academicTerm;
+  String? schoolName;
+  String? databaseName;
+
+Future<void> _loadUserData() async {
+  try {
+    final userBox = Hive.box('userData');
+    final storedUserData = userBox.get('userData') ?? userBox.get('loginResponse');
+
+    if (storedUserData == null) return;
+
+    final processedData = storedUserData is String
+        ? json.decode(storedUserData)
+        : Map<String, dynamic>.from(storedUserData);
+
+    final response = processedData['response'] ?? processedData;
+    final data = response['data'] ?? response;
+
+    final profile = data['profile'] ?? {};
+    final settings = data['settings'] ?? {};
+
+    setState(() {
+      creatorId = profile['staff_id'] as int?;
+      creatorName = profile['name']?.toString();
+      creatorRole = profile['role']?.toString();
+
+      academicYear = settings['year']?.toString();
+      academicTerm = settings['term'] as int?;
+      schoolName = settings['school_name']?.toString();
+
+
+      debugPrint('User data loaded: creatorId=$creatorId, academicTerm=$academicTerm');
+      // ✅ Extract DB name from response (not inside data)
+      databaseName = response['_db']?.toString();
+    });
+  } catch (e) {
+    debugPrint('Error loading user data: $e');
+  }
+}
+
 
   @override
   void dispose() {
@@ -174,20 +223,43 @@ class _EditSkillsBehaviourScreenState extends State<EditSkillsBehaviourScreen> {
     });
 
     if ((skillsPayload['skills'] as List).isNotEmpty) {
-      final success = await provider.createSkillsAndBehaviours(
-        skillsPayload: skillsPayload,
-        classId: widget.classId,
-        levelId: widget.levelId,
-        term: widget.term,
-        year: widget.year,
-        db: widget.db,
-      );
+      bool isEditing = false;
+      // Check if any student already has skills (i.e., editing)
+      for (var student in provider.students) {
+        if (student.skills.isNotEmpty) {
+          isEditing = true;
+          break;
+        }
+      }
+
+      bool success = false;
+      if (isEditing) {
+        success = await provider.updateSkillsAndBehaviours(
+          skillsPayload: skillsPayload,
+          classId: widget.classId,
+          levelId: widget.levelId,
+          term: widget.term,
+          year: widget.year,
+          db: widget.db,
+        );
+      } else {
+        success = await provider.createSkillsAndBehaviours(
+          skillsPayload: skillsPayload,
+          classId: widget.classId,
+          levelId: widget.levelId,
+          term: widget.term,
+          year: widget.year,
+          db: widget.db,
+        );
+      }
 
       if (success && mounted) {
         CustomToaster.toastSuccess(
           context,
           'Success',
-          'Skills and behaviors saved successfully',
+          isEditing
+              ? 'Skills and behaviors updated successfully'
+              : 'Skills and behaviors saved successfully',
         );
       } else if (mounted) {
         CustomToaster.toastError(

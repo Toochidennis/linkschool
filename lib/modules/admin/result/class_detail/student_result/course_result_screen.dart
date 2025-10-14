@@ -67,144 +67,150 @@ class _CourseResultScreenState extends State<CourseResultScreen> {
               color: AppColors.primaryLight,
             )),
       ),
-      body: Stack(
-        children: [
-          Container(
-            decoration: const BoxDecoration(
-              color: AppColors.bgColor1,
-            ),
-            child: CustomScrollView(
-              physics: const BouncingScrollPhysics(),
-              slivers: [
-                const SliverToBoxAdapter(
-                  child: SizedBox(
-                    height: 15.0,
+      body: RefreshIndicator(
+        onRefresh: () async {
+          await Provider.of<CourseResultProvider>(context, listen: false)
+              .fetchAverageScores(widget.classId, widget.year, widget.term);
+        },
+        child: Stack(
+          children: [
+            Container(
+              decoration: const BoxDecoration(
+                color: AppColors.bgColor1,
+              ),
+              child: CustomScrollView(
+                physics: const BouncingScrollPhysics(),
+                slivers: [
+                  const SliverToBoxAdapter(
+                    child: SizedBox(
+                      height: 15.0,
+                    ),
                   ),
-                ),
-                SliverToBoxAdapter(
-                  child: Container(
-                    height: 250,
-                    color: AppColors.bgColor1,
-                    child: AspectRatio(
-                      aspectRatio: 2.0,
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                        child: Consumer<CourseResultProvider>(
-                          builder: (context, provider, child) {
-                            if (provider.isLoading) {
-                              return const Center(
-                                child: CircularProgressIndicator(),
-                              );
-                            }
-                            if (provider.error != null) {
-                              return Center(
-                                child: Text(
-                                  provider.error!,
-                                  style: const TextStyle(color: Colors.red),
-                                ),
-                              );
-                            }
-                            if (provider.averageScores.isEmpty) {
-                              return const Center(
-                                child: Text('No course results available'),
-                              );
-                            }
-                            return BarChart(
-                              BarChartData(
-                                maxY: 100,
-                                titlesData: FlTitlesData(
-                                  rightTitles: const AxisTitles(
-                                      sideTitles:
-                                          SideTitles(showTitles: false)),
-                                  topTitles: const AxisTitles(
-                                      sideTitles:
-                                          SideTitles(showTitles: false)),
-                                  bottomTitles: AxisTitles(
-                                    sideTitles: SideTitles(
-                                      showTitles: true,
-                                      reservedSize: 42,
-                                      getTitlesWidget: (value, meta) =>
-                                          _getTitles(value, meta,
-                                              provider.averageScores),
+                  SliverToBoxAdapter(
+                    child: Container(
+                      height: 250,
+                      color: AppColors.bgColor1,
+                      child: AspectRatio(
+                        aspectRatio: 2.0,
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                          child: Consumer<CourseResultProvider>(
+                            builder: (context, provider, child) {
+                              if (provider.isLoading) {
+                                return const Center(
+                                  child: CircularProgressIndicator(),
+                                );
+                              }
+                              if (provider.error != null) {
+                                return Center(
+                                  child: Text(
+                                    provider.error!,
+                                    style: const TextStyle(color: Colors.red),
+                                  ),
+                                );
+                              }
+                              if (provider.averageScores.isEmpty) {
+                                return const Center(
+                                  child: Text('No course results available'),
+                                );
+                              }
+                              return BarChart(
+                                BarChartData(
+                                  maxY: 100,
+                                  titlesData: FlTitlesData(
+                                    rightTitles: const AxisTitles(
+                                        sideTitles:
+                                            SideTitles(showTitles: false)),
+                                    topTitles: const AxisTitles(
+                                        sideTitles:
+                                            SideTitles(showTitles: false)),
+                                    bottomTitles: AxisTitles(
+                                      sideTitles: SideTitles(
+                                        showTitles: true,
+                                        reservedSize: 42,
+                                        getTitlesWidget: (value, meta) =>
+                                            _getTitles(value, meta,
+                                                provider.averageScores),
+                                      ),
+                                    ),
+                                    leftTitles: AxisTitles(
+                                      sideTitles: SideTitles(
+                                        showTitles: true,
+                                        reservedSize: 30,
+                                        interval: 20,
+                                        getTitlesWidget: _leftTitles,
+                                      ),
                                     ),
                                   ),
-                                  leftTitles: AxisTitles(
-                                    sideTitles: SideTitles(
-                                      showTitles: true,
-                                      reservedSize: 30,
-                                      interval: 20,
-                                      getTitlesWidget: _leftTitles,
-                                    ),
+                                  borderData: FlBorderData(show: false),
+                                  gridData: FlGridData(
+                                    show: true,
+                                    drawVerticalLine: false,
+                                    horizontalInterval: 20,
+                                    getDrawingHorizontalLine: (value) {
+                                      return FlLine(
+                                        color: Colors.black.withOpacity(0.3),
+                                        strokeWidth: 1,
+                                        dashArray: [5, 5],
+                                      );
+                                    },
+                                    checkToShowHorizontalLine: (value) =>
+                                        value % 20 == 0,
                                   ),
+                                  barGroups:
+                                      _buildBarGroups(provider.averageScores),
+                                  groupsSpace: 22.44,
                                 ),
-                                borderData: FlBorderData(show: false),
-                                gridData: FlGridData(
-                                  show: true,
-                                  drawVerticalLine: false,
-                                  horizontalInterval: 20,
-                                  getDrawingHorizontalLine: (value) {
-                                    return FlLine(
-                                      color: Colors.black.withOpacity(0.3),
-                                      strokeWidth: 1,
-                                      dashArray: [5, 5],
-                                    );
-                                  },
-                                  checkToShowHorizontalLine: (value) =>
-                                      value % 20 == 0,
-                                ),
-                                barGroups:
-                                    _buildBarGroups(provider.averageScores),
-                                groupsSpace: 22.44,
-                              ),
-                              swapAnimationCurve: Curves.linear,
-                              swapAnimationDuration:
-                                  const Duration(milliseconds: 500),
-                            );
-                          },
+                                swapAnimationCurve: Curves.linear,
+                                swapAnimationDuration:
+                                    const Duration(milliseconds: 500),
+                              );
+                            },
+                          ),
                         ),
                       ),
                     ),
                   ),
-                ),
-                SliverToBoxAdapter(
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(8.0),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.grey.withOpacity(0.3),
-                          spreadRadius: 1,
-                          blurRadius: 5,
-                          offset: const Offset(0, -3),
-                        ),
-                      ],
-                    ),
-                    child: Consumer<CourseResultProvider>(
-                      builder: (context, provider, child) {
-                        if (provider.isLoading) {
-                          return const Center(
-                              child: CircularProgressIndicator());
-                        }
-                        if (provider.error != null) {
-                          return Center(
-                            child: Text(
-                              provider.error!,
-                              style: const TextStyle(color: Colors.red),
-                            ),
+                  SliverToBoxAdapter(
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(8.0),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.grey.withOpacity(0.3),
+                            spreadRadius: 1,
+                            blurRadius: 5,
+                            offset: const Offset(0, -3),
+                          ),
+                        ],
+                      ),
+                      child: Consumer<CourseResultProvider>(
+                        builder: (context, provider, child) {
+                          if (provider.isLoading) {
+                            return const Center(
+                                child: CircularProgressIndicator());
+                          }
+                          if (provider.error != null) {
+                            return Center(
+                              child: Text(
+                                provider.error!,
+                                style: const TextStyle(color: Colors.red),
+                              ),
+                            );
+                          }
+                          return Column(
+                            children: _buildSubjectRows(provider.averageScores),
                           );
-                        }
-                        return Column(
-                          children: _buildSubjectRows(provider.averageScores),
-                        );
-                      },
+                        },
+                      ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

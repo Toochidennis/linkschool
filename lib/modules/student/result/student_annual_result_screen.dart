@@ -5,6 +5,7 @@ import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:provider/provider.dart';
 import 'package:linkschool/modules/providers/admin/student_provider.dart';
 import 'package:hive/hive.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../model/admin/student_model.dart';
 
@@ -97,6 +98,7 @@ class _StudentAnnualResultScreenState extends State<StudentAnnualResultScreen> {
           TextButton.icon(
             onPressed: () {
               // Implement download functionality
+              _downloadTermResults();
             },
             icon: const Icon(Icons.download, color: AppColors.eLearningBtnColor1),
             label: const Text(
@@ -169,6 +171,38 @@ class _StudentAnnualResultScreenState extends State<StudentAnnualResultScreen> {
       ),
     );
   }
+
+    Future<void> _downloadTermResults() async {
+  final url = 'https://linkskool.net/api/v1/students/${widget.studentId}/terms/${widget.classId}/results/download';
+  
+  try {
+    if (await canLaunchUrl(Uri.parse(url))) {
+      await launchUrl(
+        Uri.parse(url),
+        mode: LaunchMode.externalApplication, // Opens in browser
+      );
+    } else {
+      // Show error if URL can't be launched
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Could not launch $url'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  } catch (e) {
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error launching URL: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+}
 
   bool _isEmptyResult(List<Map<String, dynamic>> results) {
     return results.every((term) =>

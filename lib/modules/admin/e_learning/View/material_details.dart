@@ -798,6 +798,7 @@ final fileName = rawFileName.split('/').last;
                         ],
                       ),
                     ),
+                    if (comment.userId == creatorId)
                     PopupMenuButton<String>(
                       icon: const Icon(Icons.more_vert, size: 20, color: AppColors.primaryLight),
                       onSelected: (value) {

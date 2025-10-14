@@ -8,7 +8,7 @@ import '../../model/explore/home/video_model.dart';
 
 
 class ForYouService {
-  static const String baseUrl = 'http://www.cbtportal.linkskool.com/api';
+  static const String baseUrl = 'http://www.cbtportal.linkskool.com/api/forYou.php';
 
   Future<Map<String, dynamic>> fetchForYouData() async {
     final response = await http.get(Uri.parse('$baseUrl/forYou.php'));

@@ -54,6 +54,7 @@ class StudentResultScreen extends StatelessWidget {
                 context,
                 className: className ?? 'Unknown Class',
                 classId: classId,
+                isFromResultScreen: true,
               ),
               backgroundColor: AppColors.videoColor4,
               textStyle: AppTextStyles.normal700(

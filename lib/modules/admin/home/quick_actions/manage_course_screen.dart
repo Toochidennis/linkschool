@@ -124,236 +124,166 @@ class _CourseManagementScreenState extends State<CourseManagementScreen>
     final courseCodeController =
         TextEditingController(text: course?.courseCode ?? '');
 
-    showDialog(
+    showModalBottomSheet(
       context: context,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setState) => ConstrainedBox(
-          constraints: BoxConstraints(
-            maxWidth: MediaQuery.of(context).size.width * 0.98,
-          ),
-          child: Dialog(
-            shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20.0)),
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 300),
-              curve: Curves.easeInOut,
-              width: MediaQuery.of(context).size.width * 0.95,
-              margin: const EdgeInsets.all(16.0),
-              padding: const EdgeInsets.all(20.0),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(20.0),
-                border:
-                    Border.all(color: AppColors.text2Light.withOpacity(0.2)),
-                boxShadow: [
-                  BoxShadow(
-                    color: AppColors.text2Light.withOpacity(0.1),
-                    blurRadius: 20,
-                    offset: const Offset(0, 8),
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20.0)),
+      ),
+      builder: (context) => Padding(
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(context).viewInsets.bottom,
+          left: 16.0,
+          right: 16.0,
+          top: 20.0,
+        ),
+        child: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    isEditing ? 'Edit Course' : 'Add New Course',
+                    style: AppTextStyles.normal600(
+                      fontSize: 18,
+                      color: AppColors.text2Light,
+                    ),
+                  ),
+                  IconButton(
+                    onPressed: () => Navigator.pop(context),
+                    icon: const Icon(
+                      Icons.close,
+                      color: AppColors.text5Light,
+                    ),
                   ),
                 ],
               ),
-              child: SingleChildScrollView(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          isEditing ? 'Edit Course' : 'Add New Course',
-                          style: AppTextStyles.normal600(
-                            fontSize: 18,
-                            color: AppColors.text2Light,
-                          ),
-                        ),
-                        IconButton(
-                          onPressed: () => Navigator.pop(context),
-                          icon: const Icon(
-                            Icons.close,
-                            color: AppColors.text5Light,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    Center(
-                      child: Container(
-                        width: 100,
-                        height: 100,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          border:
-                              Border.all(color: AppColors.text2Light, width: 2),
-                          color: AppColors.textFieldLight,
-                        ),
-                        child: const Icon(
-                          Icons.book,
-                          color: AppColors.text2Light,
-                          size: 40,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    _buildTextField(
-                      controller: nameController,
-                      label: 'Course Name',
-                      icon: Icons.book,
-                    ),
-                    const SizedBox(height: 12),
-                    _buildTextField(
-                      controller: courseCodeController,
-                      label: 'Course Code',
-                      icon: Icons.code,
-                      maxLength: 5,
-                    ),
-                    const SizedBox(height: 20),
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        onPressed: courseProvider.isLoading
-                            ? null
-                            : () async {
-                                // Check Course Name
-                                if (nameController.text.trim().isEmpty) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: const Text(
-                                          'Please enter the Course Name'),
-                                      backgroundColor: Colors.red,
-                                      behavior: SnackBarBehavior.floating,
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(10),
-                                      ),
-                                    ),
-                                  );
-                                  return;
-                                }
-                                // Check Course Code
-                                if (courseCodeController.text.trim().isEmpty) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: const Text(
-                                          'Please enter the Course Code'),
-                                      backgroundColor: Colors.red,
-                                      behavior: SnackBarBehavior.floating,
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(10),
-                                      ),
-                                    ),
-                                  );
-                                  return;
-                                }
-                                
-                                if (courseCodeController.text.trim().length > 5) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: const Text(
-                                          'Course Code must not be more than 5 characters'),
-                                      backgroundColor: Colors.red,
-                                      behavior: SnackBarBehavior.floating,
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(10),
-                                      ),
-                                    ),
-                                  );
-                                  return;
-                                }
-
-                                final courseData = {
-                                  'course_name': nameController.text.trim(),
-                                  'course_code':
-                                      courseCodeController.text.trim(),
-                                  '_db': '',
-                                };
-
-                                bool success;
-                                if (isEditing) {
-                                  success = await courseProvider.updateCourse(
-                                      course!.id.toString(), courseData);
-                                } else {
-                                  success = await courseProvider
-                                      .createCourse(courseData);
-                                }
-
-                                if (success) {
-                                  if (!isEditing) {
-                                    final newCourse = Courses(
-                                      id: courseProvider.courses.last.id,
-                                      courseName: nameController.text.trim(),
-                                      courseCode:
-                                          courseCodeController.text.trim(),
-                                    );
-                                    courseProvider.courses.add(newCourse);
-                                    courseProvider.notifyListeners();
-                                  } else {
-                                    final updatedCourse = Courses(
-                                      id: course!.id,
-                                      courseName: nameController.text.trim(),
-                                      courseCode:
-                                          courseCodeController.text.trim(),
-                                    );
-                                    final index = courseProvider.courses
-                                        .indexWhere((c) => c.id == course.id);
-                                    if (index != -1) {
-                                      courseProvider.courses[index] =
-                                          updatedCourse;
-                                      courseProvider.notifyListeners();
-                                    }
-                                  }
-                                  Navigator.pop(context);
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Text(isEditing
-                                          ? 'Course updated successfully'
-                                          : 'Course added successfully'),
-                                      backgroundColor: AppColors.attCheckColor2,
-                                      behavior: SnackBarBehavior.floating,
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(10),
-                                      ),
-                                    ),
-                                  );
-                                } else {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Text(courseProvider.error ??
-                                          'Failed to ${isEditing ? 'update' : 'add'} course'),
-                                      backgroundColor: Colors.red,
-                                      behavior: SnackBarBehavior.floating,
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(10),
-                                      ),
-                                    ),
-                                  );
-                                }
-                              },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.text2Light,
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                          elevation: 0,
-                        ),
-                        child: courseProvider.isLoading 
-                            ? const CircularProgressIndicator(
-                                color: Colors.white)
-                            : Text(
-                                isEditing ? 'Update Course' : 'Add Course',
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600,
-                                  fontFamily: 'Urbanist',
+              const SizedBox(height: 16),
+              _buildTextField(
+                controller: nameController,
+                label: 'Course Name',
+                icon: Icons.book,
+              ),
+              const SizedBox(height: 12),
+              _buildTextField(
+                controller: courseCodeController,
+                label: 'Course Code',
+                icon: Icons.code,
+                maxLength: 5,
+              ),
+              const SizedBox(height: 20),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: courseProvider.isLoading
+                      ? null
+                      : () async {
+                          if (nameController.text.trim().isEmpty) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: const Text('Please enter the Course Name'),
+                                backgroundColor: Colors.red,
+                                behavior: SnackBarBehavior.floating,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(10),
                                 ),
                               ),
-                      ),
+                            );
+                            return;
+                          }
+                          if (courseCodeController.text.trim().isEmpty) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: const Text('Please enter the Course Code'),
+                                backgroundColor: Colors.red,
+                                behavior: SnackBarBehavior.floating,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                              ),
+                            );
+                            return;
+                          }
+                          if (courseCodeController.text.trim().length > 5) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: const Text('Course Code must not be more than 5 characters'),
+                                backgroundColor: Colors.red,
+                                behavior: SnackBarBehavior.floating,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                              ),
+                            );
+                            return;
+                          }
+
+                          final courseData = {
+                            'course_name': nameController.text.trim(),
+                            'course_code': courseCodeController.text.trim(),
+                            '_db': '',
+                          };
+
+                          bool success;
+                          if (isEditing) {
+                            success = await courseProvider.updateCourse(
+                                course!.id.toString(), courseData);
+                          } else {
+                            success = await courseProvider.createCourse(courseData);
+                          }
+
+                          if (success) {
+                            Navigator.pop(context);
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(isEditing
+                                    ? 'Course updated successfully'
+                                    : 'Course added successfully'),
+                                backgroundColor: AppColors.attCheckColor2,
+                                behavior: SnackBarBehavior.floating,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                              ),
+                            );
+                          } else {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(courseProvider.error ??
+                                    'Failed to ${isEditing ? 'update' : 'add'} course'),
+                                backgroundColor: Colors.red,
+                                behavior: SnackBarBehavior.floating,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                              ),
+                            );
+                          }
+                        },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.text2Light,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
                     ),
-                  ],
+                    elevation: 0,
+                  ),
+                  child: courseProvider.isLoading
+                      ? const CircularProgressIndicator(color: Colors.white)
+                      : Text(
+                          isEditing ? 'Update Course' : 'Add Course',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            fontFamily: 'Urbanist',
+                          ),
+                        ),
                 ),
               ),
-            ),
+            ],
           ),
         ),
       ),

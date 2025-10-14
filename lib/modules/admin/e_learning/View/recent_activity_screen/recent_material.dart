@@ -892,6 +892,7 @@ class _RecentMaterialState extends State<RecentMaterial>
                         ],
                       ),
                     ),
+                    if (comment.userId == creatorId)
                     PopupMenuButton<String>(
                       icon: const Icon(Icons.more_vert, size: 20, color: AppColors.primaryLight),
                       onSelected: (value) {

@@ -15,9 +15,14 @@ import 'package:linkschool/modules/providers/admin/student_provider.dart';
 
 import '../../../utils/class_detail/term_comparison_utils.dart';
 
-void showStudentResultOverlay(BuildContext context, {String? classId, String? className}) {
+void showStudentResultOverlay(
+  BuildContext context, {
+  String? classId,
+  String? className,
+  bool isFromResultScreen = false, // New parameter to track origin
+}) {
   final studentProvider = Provider.of<StudentProvider>(context, listen: false);
-    
+
   if (classId != null) {
     studentProvider.fetchStudents(classId);
   }
@@ -67,7 +72,7 @@ void showStudentResultOverlay(BuildContext context, {String? classId, String? cl
                               child: CircularProgressIndicator(),
                             );
                           }
-                                                    
+
                           if (provider.errorMessage.isNotEmpty) {
                             return Center(
                               child: Text(
@@ -76,25 +81,27 @@ void showStudentResultOverlay(BuildContext context, {String? classId, String? cl
                               ),
                             );
                           }
-                                                    
+
                           if (provider.students.isEmpty) {
                             return const Center(
                               child: Text('No students available in this class'),
                             );
                           }
-                                                    
+
                           return ListView.separated(
                             controller: controller,
                             itemCount: provider.students.length,
                             separatorBuilder: (context, index) => const Divider(),
                             itemBuilder: (context, index) {
                               final student = provider.students[index];
-                              final firstLetter = student.fullName.isNotEmpty ?
-                                   student.fullName[0].toUpperCase() : 'S';
-                                                            
+                              final firstLetter = student.fullName.isNotEmpty
+                                  ? student.fullName[0].toUpperCase()
+                                  : 'S';
+
                               return ListTile(
                                 leading: CircleAvatar(
-                                  backgroundColor: Colors.primaries[index % Colors.primaries.length],
+                                  backgroundColor: Colors.primaries[
+                                      index % Colors.primaries.length],
                                   child: Text(
                                     firstLetter,
                                     style: const TextStyle(color: Colors.white),
@@ -103,18 +110,35 @@ void showStudentResultOverlay(BuildContext context, {String? classId, String? cl
                                 title: Text(student.name),
                                 onTap: () {
                                   provider.fetchStudentResultTerms(student.id);
-                                  Navigator.pop(context);
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) => StudentResultScreen(
-                                        studentName: student.fullName,
-                                        className: className,
-                                        studentId: student.id,
-                                        classId: classId,
+                                  Navigator.pop(context); // Close overlay
+
+                                  if (isFromResultScreen) {
+                                    // If called from StudentResultScreen, replace current route
+                                    Navigator.pushReplacement(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) => StudentResultScreen(
+                                          studentName: student.fullName,
+                                          className: className,
+                                          studentId: student.id,
+                                          classId: classId,
+                                        ),
                                       ),
-                                    ),
-                                  );
+                                    );
+                                  } else {
+                                    // If called from elsewhere, push normally
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) => StudentResultScreen(
+                                          studentName: student.fullName,
+                                          className: className,
+                                          studentId: student.id,
+                                          classId: classId,
+                                        ),
+                                      ),
+                                    );
+                                  }
                                 },
                               );
                             },
@@ -132,6 +156,10 @@ void showStudentResultOverlay(BuildContext context, {String? classId, String? cl
     },
   );
 }
+
+
+
+
 
 void showTermOverlay(BuildContext context, {
   required String classId, 

@@ -42,11 +42,13 @@ class _AddViewCourseResultScreenState extends State<AddViewCourseResultScreen> {
   Map<String, int> maxScores = {};
   Map<String, TextEditingController> _controllers = {};
   Set<String> _editingFields = {};
+  String? _problematicFieldKey;
 
   @override
   void initState() {
     super.initState();
     print('Initializing AddViewCourseResultScreen');
+  _problematicFieldKey = null;
     fetchCourseResults();
     fetchAssessments();
   }
@@ -168,131 +170,142 @@ class _AddViewCourseResultScreenState extends State<AddViewCourseResultScreen> {
   }
 
   Future<void> saveEditedResult(int resultId) async {
-    if (!editedScores.containsKey(resultId)) {
-      print('No edits for resultId: $resultId');
-      return;
-    }
+  if (!editedScores.containsKey(resultId)) {
+    print('No edits for resultId: $resultId');
+    return;
+  }
 
-    try {
-      final apiService = locator<ApiService>();
-      final userBox = Hive.box('userData');
-      final dbName = userBox.get('_db') ?? 'aalmgzmy_linkskoo_practice';
-      final userData = userBox.get('userData');
-      final staffId = userData != null && userData['data'] != null
-          ? userData['data']['profile']['staff_id'] ?? 0
-          : 0;
+ _checkAndSetProblematicField();
+  if (_problematicFieldKey != null) {
+    CustomToaster.toastWarning(
+      context,
+      'Validation Error',
+      'Please fix all exceeded scores before saving',
+    );
+    return;
+  }
+  try {
+    // ... rest of your existing saveEditedResult code
+    final apiService = locator<ApiService>();
+    final userBox = Hive.box('userData');
+    final dbName = userBox.get('_db') ?? 'aalmgzmy_linkskoo_practice';
+    final userData = userBox.get('userData');
+    final staffId = userData != null && userData['data'] != null
+        ? userData['data']['profile']['staff_id'] ?? 0
+        : 0;
 
-      if (staffId == 0) {
-        CustomToaster.toastError(
-          context,
-          'Error',
-          'Staff ID not found',
-        );
-        print('Staff ID not found');
-        return;
-      }
-
-      final editedResult = editedScores[resultId]!;
-      final result = courseResults.firstWhere((r) => r['result_id'] == resultId);
-      final assessments = <Map<String, dynamic>>[];
-
-      double totalScore = 0;
-      for (var assessmentName in assessmentNames) {
-        final scoreStr = editedResult[assessmentName] ?? result['assessments'].firstWhere(
-              (a) => a['assessment_name'] == assessmentName,
-              orElse: () => {'score': ''},
-            )['score'].toString();
-        final score = double.tryParse(scoreStr) ?? 0;
-        final maxScore = maxScores[assessmentName] ?? 0;
-
-        if (score > maxScore) {
-          CustomToaster.toastWarning(
-            context,
-            'Validation Error',
-            'Score for $assessmentName exceeds max score of $maxScore',
-          );
-          print('Validation failed: Score $score for $assessmentName exceeds max $maxScore');
-          return;
-        }
-
-        totalScore += score;
-        assessments.add({
-          'assessment_name': assessmentName,
-          'score': score,
-          'max_score': maxScore,
-        });
-      }
-
-      final payload = {
-        'course_results': [
-          {
-            'result_id': resultId,
-            'staff_id': staffId,
-            'total_score': totalScore,
-            'assessments': assessments,
-          }
-        ],
-        '_db': dbName,
-      };
-
-      print('Saving for resultId: $resultId with payload: $payload');
-
-      final response = await apiService.put(
-        endpoint: 'portal/result/class-result',
-        body: payload,
-      );
-
-      if (response.success) {
-        setState(() {
-          final resultIndex = courseResults.indexWhere((r) => r['result_id'] == resultId);
-          if (resultIndex != -1) {
-            courseResults[resultIndex]['total_score'] = totalScore.toString();
-            courseResults[resultIndex]['assessments'] = assessments.map((a) => {
-                  'assessment_name': a['assessment_name'],
-                  'score': a['score'].toString(),
-                  'max_score': a['max_score'].toString(),
-                }).toList();
-          }
-          
-          editedScores.remove(resultId);
-          
-          for (var assessmentName in assessmentNames) {
-            final controllerKey = '$resultId-$assessmentName';
-            final newScore = assessments.firstWhere(
-              (a) => a['assessment_name'] == assessmentName,
-              orElse: () => {'score': 0},
-            )['score'].toString();
-            
-            if (_controllers.containsKey(controllerKey)) {
-              _controllers[controllerKey]!.text = newScore;
-            }
-            _editingFields.remove(controllerKey);
-          }
-        });
-        
-        CustomToaster.toastSuccess(
-          context,
-          'Success',
-          'Result updated successfully',
-        );
-        print('Result updated successfully for resultId: $resultId');
-      } else {
-        CustomToaster.toastError(
-          context,
-          'Update Failed',
-          'Failed to update result: ${response.message}',
-        );
-        print('Failed to update result: ${response.message}');
-      }
-    } catch (e) {
+    if (staffId == 0) {
       CustomToaster.toastError(
         context,
         'Error',
-        'Error updating result: $e',
+        'Staff ID not found',
       );
-      print('Error updating result: $e');
+      print('Staff ID not found');
+      return;
     }
+
+    final editedResult = editedScores[resultId]!;
+    final result = courseResults.firstWhere((r) => r['result_id'] == resultId);
+    final assessments = <Map<String, dynamic>>[];
+
+    double totalScore = 0;
+    for (var assessmentName in assessmentNames) {
+      final scoreStr = editedResult[assessmentName] ?? result['assessments'].firstWhere(
+            (a) => a['assessment_name'] == assessmentName,
+            orElse: () => {'score': ''},
+          )['score'].toString();
+      final score = double.tryParse(scoreStr) ?? 0;
+      final maxScore = maxScores[assessmentName] ?? 0;
+
+      if (score > maxScore) {
+        CustomToaster.toastWarning(
+          context,
+          'Validation Error',
+          'Score for $assessmentName exceeds max score of $maxScore',
+        );
+        print('Validation failed: Score $score for $assessmentName exceeds max $maxScore');
+        return;
+      }
+
+      totalScore += score;
+      assessments.add({
+        'assessment_name': assessmentName,
+        'score': score,
+        'max_score': maxScore,
+      });
+    }
+
+    // ... rest of your existing payload and API call
+    final payload = {
+      'course_results': [
+        {
+          'result_id': resultId,
+          'staff_id': staffId,
+          'total_score': totalScore,
+          'assessments': assessments,
+        }
+      ],
+      '_db': dbName,
+    };
+
+    print('Saving for resultId: $resultId with payload: $payload');
+
+    final response = await apiService.put(
+      endpoint: 'portal/result/class-result',
+      body: payload,
+    );
+
+    if (response.success) {
+      setState(() {
+        final resultIndex = courseResults.indexWhere((r) => r['result_id'] == resultId);
+        if (resultIndex != -1) {
+          courseResults[resultIndex]['total_score'] = totalScore.toString();
+          courseResults[resultIndex]['assessments'] = assessments.map((a) => {
+                'assessment_name': a['assessment_name'],
+                'score': a['score'].toString(),
+                'max_score': a['max_score'].toString(),
+              }).toList();
+        }
+        
+        editedScores.remove(resultId);
+        
+        for (var assessmentName in assessmentNames) {
+          final controllerKey = '$resultId-$assessmentName';
+          final newScore = assessments.firstWhere(
+            (a) => a['assessment_name'] == assessmentName,
+            orElse: () => {'score': 0},
+          )['score'].toString();
+          
+          if (_controllers.containsKey(controllerKey)) {
+            _controllers[controllerKey]!.text = newScore;
+          }
+          _editingFields.remove(controllerKey);
+        }
+      });
+      
+      CustomToaster.toastSuccess(
+        context,
+        'Success',
+        'Result updated successfully',
+      );
+      print('Result updated successfully for resultId: $resultId');
+    } else {
+      CustomToaster.toastError(
+        context,
+        'Update Failed',
+        'Failed to update result: ${response.message}',
+      );
+      print('Failed to update result: ${response.message}');
+    }
+  } catch (e) {
+    CustomToaster.toastError(
+      context,
+      'Error',
+      'Error updating result: $e',
+    );
+    print('Error updating result: $e');
   }
+}
 
   String getGradeForScore(String totalScore) {
     if (totalScore.isEmpty || totalScore == '') return 'N/A';
@@ -429,52 +442,152 @@ class _AddViewCourseResultScreenState extends State<AddViewCourseResultScreen> {
     );
   }
 
-  Widget _buildSubjectsTable() {
-    if (courseResults.isEmpty) {
-      return const Padding(
-        padding: EdgeInsets.all(16.0),
-        child: Text('No results available'),
-      );
-    }
+ Widget _buildSubjectsTable() {
+  if (courseResults.isEmpty) {
+    return const Padding(
+      padding: EdgeInsets.all(16.0),
+      child: Text('No results available'),
+    );
+  }
 
-    return Padding(
-      padding: const EdgeInsets.all(16.0),
-      child: Container(
-        decoration: BoxDecoration(
-          border: Border.all(color: Colors.grey[300]!),
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Fixed Student Name Column
-            Container(
-              width: 150, // Fixed width for student name column
-              decoration: BoxDecoration(
-                border: Border(
-                  right: BorderSide(color: Colors.grey[300]!, width: 1),
-                ),
+  return Padding(
+    padding: const EdgeInsets.all(16.0),
+    child: Container(
+      decoration: BoxDecoration(
+        border: Border.all(color: Colors.grey[300]!),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Fixed Student Name Column (unchanged)
+          Container(
+            width: 150,
+            decoration: BoxDecoration(
+              border: Border(
+                right: BorderSide(color: Colors.grey[300]!, width: 1),
               ),
+            ),
+            child: Column(
+              children: [
+                Container(
+                  height: 48,
+                  color: AppColors.eLearningBtnColor1,
+                  child: const Center(
+                    child: Text(
+                      'Student Name',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                ),
+                ...courseResults.asMap().entries.map((entry) {
+                  final result = entry.value;
+                  return Container(
+                    height: 50,
+                    decoration: BoxDecoration(
+                      border: Border(
+                        bottom: BorderSide(color: Colors.grey[300]!, width: 1),
+                      ),
+                    ),
+                    child: Center(
+                      child: Text(
+                        result['student_name']?.toString() ?? 'N/A',
+                        style: const TextStyle(fontSize: 14),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  );
+                }).toList(),
+              ],
+            ),
+          ),
+          // Scrollable Columns
+          Expanded(
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
               child: Column(
                 children: [
-                  // Header
+                  // Header Row with max scores
                   Container(
                     height: 48,
                     color: AppColors.eLearningBtnColor1,
-                    child: const Center(
-                      child: Text(
-                        'Student Name',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                          color: Colors.white,
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 120,
+                          child: const Center(
+                            child: Text(
+                              'Reg Number',
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
                         ),
-                      ),
+                        ...assessmentNames.map((name) => Container(
+                              width: 100,
+                              child: Center(
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Text(
+                                      name,
+                                      style: const TextStyle(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w500,
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                    Text(
+                                      '(Max: ${maxScores[name] ?? 0})',
+                                      style: const TextStyle(
+                                        fontSize: 10,
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            )),
+                        Container(
+                          width: 80,
+                          child: const Center(
+                            child: Text(
+                              'Total',
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
+                        ),
+                        Container(
+                          width: 80,
+                          child: const Center(
+                            child: Text(
+                              'Grade',
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                   // Data Rows
                   ...courseResults.asMap().entries.map((entry) {
                     final result = entry.value;
+                    final resultId = result['result_id'] as int;
                     return Container(
                       height: 50,
                       decoration: BoxDecoration(
@@ -482,201 +595,188 @@ class _AddViewCourseResultScreenState extends State<AddViewCourseResultScreen> {
                           bottom: BorderSide(color: Colors.grey[300]!, width: 1),
                         ),
                       ),
-                      child: Center(
-                        child: Text(
-                          result['student_name']?.toString() ?? 'N/A',
-                          style: const TextStyle(fontSize: 14),
-                          textAlign: TextAlign.center,
-                        ),
-                      ),
-                    );
-                  }).toList(),
-                ],
-              ),
-            ),
-            // Scrollable Columns
-            Expanded(
-              child: SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: Column(
-                  children: [
-                    // Header Row
-                    Container(
-                      height: 48,
-                      color: AppColors.eLearningBtnColor1,
                       child: Row(
                         children: [
                           Container(
                             width: 120,
-                            child: const Center(
+                            child: Center(
                               child: Text(
-                                'Reg Number',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w500,
-                                  color: Colors.white,
-                                ),
+                                result['reg_no']?.toString() ?? 'N/A',
+                                style: const TextStyle(fontSize: 14),
                               ),
                             ),
                           ),
-                          ...assessmentNames.map((name) => Container(
-                                width: 100,
-                                child: Center(
-                                  child: Text(
-                                    name,
-                                    style: const TextStyle(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w500,
-                                      color: Colors.white,
-                                    ),
+                          ...assessmentNames.map((assessmentName) {
+                            final controllerKey = '$resultId-$assessmentName';
+                            String currentScore;
+                            if (editedScores.containsKey(resultId) &&
+                                editedScores[resultId]!.containsKey(assessmentName)) {
+                              currentScore = editedScores[resultId]![assessmentName]!;
+                            } else {
+                              final assessmentData = (result['assessments'] as List).firstWhere(
+                                (a) => a['assessment_name'] == assessmentName,
+                                orElse: () => {'score': ''},
+                              );
+                              currentScore = assessmentData['score']?.toString() ?? '';
+                            }
+
+                            if (!_controllers.containsKey(controllerKey)) {
+                              _controllers[controllerKey] = TextEditingController(text: currentScore);
+                            } else if (!_editingFields.contains(controllerKey)) {
+                              _controllers[controllerKey]!.text = currentScore;
+                            }
+
+                            final maxScore = maxScores[assessmentName] ?? 0;
+                            final currentValue = double.tryParse(_controllers[controllerKey]!.text) ?? 0;
+                            final isThisFieldProblematic = _problematicFieldKey == controllerKey;
+                            final hasProblematicField = _problematicFieldKey != null;
+                            final isFieldEnabled = !hasProblematicField || isThisFieldProblematic;
+
+                            return Container(
+                              width: 100,
+                              child: TextField(
+                                controller: _controllers[controllerKey],
+                                textAlign: TextAlign.center,
+                                keyboardType: TextInputType.number,
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: (currentValue > maxScore) ? Colors.red : Colors.black,
+                                ),
+                                decoration: InputDecoration(
+                                  border: InputBorder.none,
+                                  contentPadding: EdgeInsets.zero,
+                                  hintText: '0/$maxScore',
+                                  hintStyle: TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.grey[400],
                                   ),
+                                  filled: !isFieldEnabled,
+                                  fillColor: !isFieldEnabled ? Colors.grey[100] : Colors.transparent,
                                 ),
-                              )),
+                                enabled: isFieldEnabled,
+                                onTap: () {
+                                  // If there's already a problematic field and this isn't it, show warning
+                                  if (_problematicFieldKey != null && _problematicFieldKey != controllerKey) {
+                                    CustomToaster.toastWarning(
+                                      context,
+                                      'Fix Required',
+                                      'Please fix the score for the highlighted field first',
+                                    );
+                                    return;
+                                  }
+
+                                  setState(() {
+                                    editedScores[resultId] ??= {};
+                                    _editingFields.add(controllerKey);
+                                  });
+                                },
+                                onChanged: (value) {
+                                  final newScore = double.tryParse(value) ?? 0;
+                                  final maxScore = maxScores[assessmentName] ?? 0;
+                                  
+                                  setState(() {
+                                    editedScores[resultId] ??= {};
+                                    editedScores[resultId]![assessmentName] = value;
+
+                                    // Check if this field exceeds max score
+                                    if (newScore > maxScore) {
+                                      _problematicFieldKey = controllerKey;
+                                    } else {
+                                      // If this was the problematic field and is now fixed, clear it
+                                      if (_problematicFieldKey == controllerKey) {
+                                        _problematicFieldKey = null;
+                                      }
+                                    }
+                                  });
+
+                                  // Show warning if score exceeds max
+                                  if (newScore > maxScore) {
+                                    CustomToaster.toastWarning(
+                                      context,
+                                      'Score Limit Exceeded',
+                                      'Score for $assessmentName cannot exceed $maxScore. Fix this field to continue.',
+                                    );
+                                  }
+                                },
+                                onSubmitted: (value) {
+                                  setState(() {
+                                    _editingFields.remove(controllerKey);
+                                  });
+                                },
+                                onEditingComplete: () {
+                                  setState(() {
+                                    _editingFields.remove(controllerKey);
+                                  });
+                                },
+                              ),
+                            );
+                          }),
                           Container(
                             width: 80,
-                            child: const Center(
+                            child: Center(
                               child: Text(
-                                'Total',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w500,
-                                  color: Colors.white,
-                                ),
+                                _calculateTotal(result, resultId),
+                                style: const TextStyle(fontSize: 14),
                               ),
                             ),
                           ),
                           Container(
                             width: 80,
-                            child: const Center(
+                            child: Center(
                               child: Text(
-                                'Grade',
-                                style: TextStyle(
+                                getGradeForScore(_calculateTotal(result, resultId)),
+                                style: const TextStyle(
                                   fontSize: 14,
-                                  fontWeight: FontWeight.w500,
-                                  color: Colors.white,
+                                  fontWeight: FontWeight.w600,
                                 ),
                               ),
                             ),
                           ),
                         ],
                       ),
-                    ),
-                    // Data Rows
-                    ...courseResults.asMap().entries.map((entry) {
-                      final result = entry.value;
-                      final resultId = result['result_id'] as int;
-                      return Container(
-                        height: 50,
-                        decoration: BoxDecoration(
-                          border: Border(
-                            bottom: BorderSide(color: Colors.grey[300]!, width: 1),
-                          ),
-                        ),
-                        child: Row(
-                          children: [
-                            Container(
-                              width: 120,
-                              child: Center(
-                                child: Text(
-                                  result['reg_no']?.toString() ?? 'N/A',
-                                  style: const TextStyle(fontSize: 14),
-                                ),
-                              ),
-                            ),
-                            ...assessmentNames.map((assessmentName) {
-                              final controllerKey = '$resultId-$assessmentName';
-                              String currentScore;
-                              if (editedScores.containsKey(resultId) &&
-                                  editedScores[resultId]!.containsKey(assessmentName)) {
-                                currentScore = editedScores[resultId]![assessmentName]!;
-                              } else {
-                                final assessmentData = (result['assessments'] as List).firstWhere(
-                                  (a) => a['assessment_name'] == assessmentName,
-                                  orElse: () => {'score': ''},
-                                );
-                                currentScore = assessmentData['score']?.toString() ?? '';
-                              }
-
-                              if (!_controllers.containsKey(controllerKey)) {
-                                _controllers[controllerKey] = TextEditingController(text: currentScore);
-                              } else if (!_editingFields.contains(controllerKey)) {
-                                _controllers[controllerKey]!.text = currentScore;
-                              }
-
-                              print('Score for resultId $resultId, $assessmentName: $currentScore');
-
-                              return Container(
-                                width: 100,
-                                child: TextField(
-                                  controller: _controllers[controllerKey],
-                                  textAlign: TextAlign.center,
-                                  keyboardType: TextInputType.number,
-                                  style: const TextStyle(fontSize: 14),
-                                  decoration: const InputDecoration(
-                                    border: InputBorder.none,
-                                    contentPadding: EdgeInsets.zero,
-                                  ),
-                                  onTap: () {
-                                    setState(() {
-                                      editedScores[resultId] ??= {};
-                                      _editingFields.add(controllerKey);
-                                      print('Tapped assessment: $assessmentName for resultId: $resultId - field ready for editing');
-                                    });
-                                  },
-                                  onChanged: (value) {
-                                    setState(() {
-                                      editedScores[resultId] ??= {};
-                                      editedScores[resultId]![assessmentName] = value;
-                                      print('Changed $assessmentName for resultId: $resultId to: $value');
-                                    });
-                                  },
-                                  onSubmitted: (value) {
-                                    setState(() {
-                                      _editingFields.remove(controllerKey);
-                                    });
-                                  },
-                                  onEditingComplete: () {
-                                    setState(() {
-                                      _editingFields.remove(controllerKey);
-                                    });
-                                  },
-                                ),
-                              );
-                            }),
-                            Container(
-                              width: 80,
-                              child: Center(
-                                child: Text(
-                                  _calculateTotal(result, resultId),
-                                  style: const TextStyle(fontSize: 14),
-                                ),
-                              ),
-                            ),
-                            Container(
-                              width: 80,
-                              child: Center(
-                                child: Text(
-                                  getGradeForScore(_calculateTotal(result, resultId)),
-                                  style: const TextStyle(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      );
-                    }).toList(),
-                  ],
-                ),
+                    );
+                  }).toList(),
+                ],
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
-    );
+    ),
+  );
+}
+
+void _checkAndSetProblematicField() {
+  // Clear existing problematic field
+  _problematicFieldKey = null;
+  
+  // Find the first field that exceeds max score
+  for (var resultId in editedScores.keys) {
+    final resultScores = editedScores[resultId]!;
+    for (var assessmentName in resultScores.keys) {
+      final score = double.tryParse(resultScores[assessmentName] ?? '0') ?? 0;
+      final maxScore = maxScores[assessmentName] ?? 0;
+      if (score > maxScore) {
+        _problematicFieldKey = '$resultId-$assessmentName';
+        return; // Return after finding the first problematic field
+      }
+    }
   }
+}
+
+bool _hasExceededLimitFields() {
+  for (var resultId in editedScores.keys) {
+    final resultScores = editedScores[resultId]!;
+    for (var assessmentName in resultScores.keys) {
+      final score = double.tryParse(resultScores[assessmentName] ?? '0') ?? 0;
+      final maxScore = maxScores[assessmentName] ?? 0;
+      if (score > maxScore) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
 
   String _calculateTotal(Map<String, dynamic> result, int resultId) {
     if (editedScores.containsKey(resultId)) {

@@ -357,6 +357,7 @@ class _ClassDetailScreenState extends State<ClassDetailScreen> {
                                         context,
                                         classId: widget.classId,
                                         className: widget.className,
+                                        isFromResultScreen: false,
                                       ),
                                 ),
                               ),

@@ -8,7 +8,14 @@ class PortalNewsItem extends StatefulWidget {
   final String profileImageUrl;
   final String name;
   final String newsContent;
+  final String title;
   final String time;
+  final int likes;
+  final int comments;
+  final int shares;
+  final VoidCallback? edit;
+  final VoidCallback? delete;
+
 
   const PortalNewsItem({
     super.key,
@@ -16,6 +23,12 @@ class PortalNewsItem extends StatefulWidget {
     required this.name,
     required this.newsContent,
     required this.time,
+    this.title = '',
+    this.likes = 0,
+    this.comments = 0,
+    this.shares = 0,
+    this.edit,
+    this.delete
   });
 
   @override
@@ -65,8 +78,21 @@ class _PortalNewsItemState extends State<PortalNewsItem> {
                     ],
                   ),
                   const SizedBox(height: 10.0),
+                  Padding(
+                    padding: const EdgeInsets.only(right: 16.0),
+                    child: Text(
+                      widget.title,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      
+                      style: AppTextStyles.normal500(fontSize: 16.0, color: AppColors.text2Light),
+                    ),
+                  ),
+                  const SizedBox(height: 10.0),
                   Text(
                     widget.newsContent,
+                    maxLines: 3,
+                    overflow: TextOverflow.ellipsis,
                     style: AppTextStyles.normal500(fontSize: 14.0, color: AppColors.text4Light),
                   ),
                   const SizedBox(height: 10.0),
@@ -77,12 +103,12 @@ class _PortalNewsItemState extends State<PortalNewsItem> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.start,
                     children: [
-                      Text('14'),
+                      Text(widget.likes.toString()),
                       IconButton(
                         icon: const Icon(Icons.favorite_outline),
                         onPressed: () {},
                       ),
-                      Text('64'),
+                      Text(widget.comments.toString()),
                       IconButton(
                         icon: SvgPicture.asset(
                           'assets/icons/comment.svg',
@@ -91,15 +117,21 @@ class _PortalNewsItemState extends State<PortalNewsItem> {
                         ),
                         onPressed: () {},
                       ),
-                      Text('22'),
+                      
+
                       IconButton(
-                        icon: SvgPicture.asset(
-                          'assets/icons/share.svg',
-                          height: 22.0,
-                          width: 22.0,
-                        ),
-                        onPressed: () {},
+                        icon: Icon(Icons.edit_note_outlined),
+                        onPressed:widget.edit,
                       ),
+                    
+                      
+
+                      IconButton(
+                        icon: Icon(Icons.delete),
+                        onPressed:widget.delete,
+                      ),
+                    
+
                     ],
                   ),
                 ],

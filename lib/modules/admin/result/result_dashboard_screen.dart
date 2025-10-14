@@ -114,51 +114,56 @@ class _ResultDashboardScreenState extends State<ResultDashboardScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: widget.appBar,
-      body: Container(
-        decoration: Constants.customBoxDecoration(context),
-        child: CustomScrollView(
-          physics: const BouncingScrollPhysics(),
-          slivers: [
-            const SliverToBoxAdapter(child: SizedBox(height: 16.0)),
-            SliverToBoxAdapter(
-              child: Constants.heading600(
-                title: 'Overall Performance',
-                titleSize: 18.0,
-                titleColor: AppColors.resultColor1,
+      body: RefreshIndicator(
+         onRefresh: ()async {
+          
+         },
+        child: Container(
+          decoration: Constants.customBoxDecoration(context),
+          child: CustomScrollView(
+            physics: const BouncingScrollPhysics(),
+            slivers: [
+              const SliverToBoxAdapter(child: SizedBox(height: 16.0)),
+              SliverToBoxAdapter(
+                child: Constants.heading600(
+                  title: 'Overall Performance',
+                  titleSize: 18.0,
+                  titleColor: AppColors.resultColor1,
+                ),
               ),
-            ),
-            const SliverToBoxAdapter(child: SizedBox(height: 24.0)),
-            const SliverToBoxAdapter(child: PerformanceChart()),
-            const SliverToBoxAdapter(child: SizedBox(height: 28.0)),
-            SliverToBoxAdapter(
-              child: Constants.heading600(
-                title: 'Settings',
-                titleSize: 18.0,
-                titleColor: AppColors.resultColor1,
+              const SliverToBoxAdapter(child: SizedBox(height: 24.0)),
+              const SliverToBoxAdapter(child: PerformanceChart()),
+              const SliverToBoxAdapter(child: SizedBox(height: 28.0)),
+              SliverToBoxAdapter(
+                child: Constants.heading600(
+                  title: 'Settings',
+                  titleSize: 18.0,
+                  titleColor: AppColors.resultColor1,
+                ),
               ),
-            ),
-            const SliverToBoxAdapter(child: SettingsSection()),
-            const SliverToBoxAdapter(child: SizedBox(height: 48.0)),
-            SliverToBoxAdapter(
-              child: Constants.heading600(
-                title: 'Select Level',
-                titleSize: 18.0,
-                titleColor: AppColors.resultColor1,
+              const SliverToBoxAdapter(child: SettingsSection()),
+              const SliverToBoxAdapter(child: SizedBox(height: 48.0)),
+              SliverToBoxAdapter(
+                child: Constants.heading600(
+                  title: 'Select Level',
+                  titleSize: 18.0,
+                  titleColor: AppColors.resultColor1,
+                ),
               ),
-            ),
-            SliverToBoxAdapter(
-              child: LevelSelection(
-                levelNames: levelsWithClasses, // Use filtered levels list
-                classNames: classNames, 
-                isSecondScreen: false,
-                subjects: [
-                  'Math',
-                  'Science',
-                  'English'
-                ], 
+              SliverToBoxAdapter(
+                child: LevelSelection(
+                  levelNames: levelsWithClasses, // Use filtered levels list
+                  classNames: classNames, 
+                  isSecondScreen: false,
+                  subjects: [
+                    'Math',
+                    'Science',
+                    'English'
+                  ], 
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

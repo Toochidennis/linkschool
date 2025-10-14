@@ -3,8 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
-import 'package:linkschool/modules/explore/home/explore_dashboard.dart';
-import 'app_navigation_flow.dart';
+import 'app_navigation_flow.dart'; // Import AppNavigationFlow
 import 'package:smooth_page_indicator/smooth_page_indicator.dart';
 
 class Onboardingscreen extends StatefulWidget {
@@ -35,6 +34,18 @@ class _OnboardingscreenState extends State<Onboardingscreen> {
             'Take a step towards making your school better. We are here to support you on your journey to paperless learning.')
   ];
 
+  // Method to handle onboarding completion
+  Future<void> _completeOnboarding() async {
+    final userBox = Hive.box('userData');
+    await userBox.put('hasSeenOnboarding', true);
+    
+    if (mounted) {
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (context) => const AppNavigationFlow())
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -64,7 +75,7 @@ class _OnboardingscreenState extends State<Onboardingscreen> {
             right: 0,
             child: Center(
               child: SmoothPageIndicator(
-                  effect: WormEffect(dotHeight: 10, dotWidth: 10),
+                  effect: const WormEffect(dotHeight: 10, dotWidth: 10),
                   controller: _pageController,
                   count: _pages.length),
             ),
@@ -77,44 +88,19 @@ class _OnboardingscreenState extends State<Onboardingscreen> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   TextButton(
-                      onPressed: () async {
-                        // Mark onboarding as completed
-                        final userBox = Hive.box('userData');
-                        await userBox.put('hasSeenOnboarding', true);
-                        
-                        Navigator.of(context).pushReplacement(
-                            MaterialPageRoute(
-                                builder: (context) => ExploreDashboard(
-                                      onSwitch: (bool value) {},
-                                      selectedIndex: 0,
-                                      onTabSelected: (int index) {},
-                                    )));
-                      },
-                      child: Text(
+                      onPressed: _completeOnboarding, // Use the method
+                      child: const Text(
                         'Skip',
                         style: TextStyle(fontSize: 20),
                       )),
                   if (onLastPage)
                     ElevatedButton(
-                      onPressed: () async {
-                        // Mark onboarding as completed
-                        final userBox = Hive.box('userData');
-                        await userBox.put('hasSeenOnboarding', true);
-                        
-                        Navigator.pushReplacement(
-                            context,
-                            MaterialPageRoute(
-                                builder: (context) => ExploreDashboard(
-                                      onSwitch: (bool value) {},
-                                      selectedIndex: 0,
-                                      onTabSelected: (int index) {},
-                                    )));
-                      },
+                      onPressed: _completeOnboarding, // Use the method
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.buttonColor,
-                        shape: CircleBorder(),
+                        shape: const CircleBorder(),
                       ),
-                      child: Icon(
+                      child: const Icon(
                         Icons.arrow_forward,
                         color: Colors.white,
                         size: 34,
@@ -124,14 +110,14 @@ class _OnboardingscreenState extends State<Onboardingscreen> {
                     ElevatedButton(
                       onPressed: () {
                         _pageController.nextPage(
-                            duration: Duration(milliseconds: 500),
+                            duration: const Duration(milliseconds: 500),
                             curve: Curves.easeIn);
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.buttonColor,
-                        shape: CircleBorder(),
+                        shape: const CircleBorder(),
                       ),
-                      child: Icon(
+                      child: const Icon(
                         Icons.arrow_forward,
                         color: Colors.white,
                         size: 34,
@@ -158,7 +144,7 @@ Widget OnbordingItems({
           margin: const EdgeInsets.only(top: 180),
           child: SvgPicture.asset(image),
         ),
-        SizedBox(
+        const SizedBox(
           height: 10,
         ),
         Column(

@@ -355,7 +355,8 @@ class _CompositeResultScreenState extends State<CompositeResultScreen> {
             } else if (isTotal) {
               value = stud['total_score']?.toString() ?? '0';
             } else if (isAverage) {
-              value = stud['avg_score']?.toString() ?? '0';
+             
+              value = stud['average']?.toString() ?? '0';
             } else if (isPosition) {
               value = _formatPosition(stud['position']);
             }

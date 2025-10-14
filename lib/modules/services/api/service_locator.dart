@@ -20,12 +20,18 @@ import 'package:linkschool/modules/providers/admin/e_learning/topic_provider.dar
 import 'package:linkschool/modules/providers/admin/grade_provider.dart';
 import 'package:linkschool/modules/providers/admin/home/add_course_provider.dart';
 import 'package:linkschool/modules/providers/admin/home/add_staff_provider.dart';
+import 'package:linkschool/modules/providers/admin/home/all_feeds.provider.dart';
 import 'package:linkschool/modules/providers/admin/home/assign_course_provider.dart';
+import 'package:linkschool/modules/providers/admin/home/dashboard_feed_provider.dart';
 import 'package:linkschool/modules/providers/admin/home/level_class_provider.dart';
 import 'package:linkschool/modules/providers/admin/home/manage_student_provider.dart';
+import 'package:linkschool/modules/providers/admin/payment/account_provider.dart';
+import 'package:linkschool/modules/providers/admin/payment/fee_provider.dart';
 import 'package:linkschool/modules/providers/admin/skills_behavior_table_provider.dart';
 import 'package:linkschool/modules/providers/staff/streams_provider.dart';
 import 'package:linkschool/modules/providers/staff/syllabus_provider.dart';
+import 'package:linkschool/modules/providers/student/dashboard_provider.dart';
+import 'package:linkschool/modules/providers/student/payment_provider.dart';
 import 'package:linkschool/modules/services/admin/attendance_service.dart';
 import 'package:linkschool/modules/services/admin/e_learning/activity_service.dart';
 import 'package:linkschool/modules/services/admin/e_learning/admin_comment_service.dart';
@@ -42,9 +48,15 @@ import 'package:linkschool/modules/services/admin/e_learning/syllabus_service.da
 import 'package:linkschool/modules/services/admin/e_learning/topic_service.dart';
 import 'package:linkschool/modules/services/admin/home/add_course_service.dart';
 import 'package:linkschool/modules/services/admin/home/add_staff_service.dart';
+import 'package:linkschool/modules/services/admin/home/all_feeds.dart';
 import 'package:linkschool/modules/services/admin/home/assign_course_service.dart';
+import 'package:linkschool/modules/services/admin/home/dashboard_feed_service.dart';
 import 'package:linkschool/modules/services/admin/home/level_class_service.dart';
 import 'package:linkschool/modules/services/admin/home/manage_student_service.dart';
+import 'package:linkschool/modules/services/admin/payment/account_service.dart';
+import 'package:linkschool/modules/services/admin/payment/expenditure_service.dart';
+import 'package:linkschool/modules/services/admin/payment/fee_service.dart';
+import 'package:linkschool/modules/services/admin/payment/vendor_service.dart';
 import 'package:linkschool/modules/services/api/api_service.dart';
 import 'package:linkschool/modules/services/admin/class_service.dart';
 import 'package:linkschool/modules/services/admin/grade_service.dart';
@@ -58,6 +70,8 @@ import 'package:linkschool/modules/services/admin/behaviour_service.dart';
 import 'package:linkschool/modules/services/staff/overview_service.dart';
 import 'package:linkschool/modules/services/staff/streams_service.dart';
 import 'package:linkschool/modules/services/staff/syllabus_service.dart';
+import 'package:linkschool/modules/services/student/payment_services.dart';
+import 'package:linkschool/modules/services/student/student_dasboard_service.dart';
 
 
 final GetIt locator = GetIt.instance;
@@ -81,6 +95,25 @@ locator.registerLazySingleton<CourseService>(
   );
   locator.registerLazySingleton<CourseProvider>(
     () => CourseProvider(locator<CourseService>())
+  );
+
+  // Add news feed
+// Add news feed
+  locator.registerLazySingleton<DashboardFeedService>(
+    () => DashboardFeedService(locator<ApiService>()),
+  );
+
+  // Feed Providers (ChangeNotifiers)
+  locator.registerFactory<DashboardFeedProvider>(
+    () => DashboardFeedProvider(locator<DashboardFeedService>()),
+  );
+
+  // Add news feed with pagination service and provider
+  locator.registerLazySingleton<FeedsPaginationService>(
+    () => FeedsPaginationService(locator<ApiService>()),
+  );
+  locator.registerFactory<FeedsPaginationProvider>(
+    () => FeedsPaginationProvider(locator<FeedsPaginationService>()),
   );
 
 // Add student
@@ -110,6 +143,14 @@ locator.registerLazySingleton<ManageStudentService>(
   
 
 // ******************////************************************* */
+
+// ************** Admin payment*****************************/
+locator.registerLazySingleton<ExpenditureService>(
+  () => ExpenditureService(locator<ApiService>()),
+);
+
+
+
 // admin comment  Api with ApiService dependency
  locator.registerLazySingleton<AdminCommentService>(
     () => AdminCommentService(locator<ApiService>())
@@ -130,7 +171,14 @@ locator.registerLazySingleton<ManageStudentService>(
   );
 
 
+  locator.registerLazySingleton<DashboardService>(
+    () => DashboardService(locator<ApiService>())
+  );
 
+  // Register DashboardProvider with DashboardService dependency
+  locator.registerLazySingleton<DashboardProvider>(
+    () => DashboardProvider()
+  );
 
   // Register CommentService with ApiService dependency
   locator.registerLazySingleton<CommentService>(
@@ -226,6 +274,13 @@ locator.registerLazySingleton<DeleteSyllabusProvider>(() => DeleteSyllabusProvid
     () => StudentProvider(locator<StudentService>())
   );
 
+//  Rgister invoice service and provider
+  locator.registerLazySingleton<InvoiceService>(
+    () => InvoiceService(locator<ApiService>())
+  );
+  locator.registerLazySingleton<InvoiceProvider>(
+    () => InvoiceProvider(locator<InvoiceService>())
+  );
   // Register GradeService with ApiService dependency
   locator.registerLazySingleton<GradeService>(
     () => GradeService(locator<ApiService>())
@@ -280,6 +335,25 @@ locator.registerLazySingleton<DeleteSyllabusProvider>(() => DeleteSyllabusProvid
     () => AttendanceProvider()
   );
 
+  // Admin account settings provider and service 
+  locator.registerLazySingleton<AccountService>(
+    () => AccountService(locator<ApiService>())
+  );
+
+  locator.registerLazySingleton<AccountProvider>(
+    () => AccountProvider(locator<AccountService>())
+  );
+
+  // Register feeSettings Service and provider
+  locator.registerLazySingleton<FeeService>(
+    () => FeeService(locator<ApiService>())
+  );
+  locator.registerLazySingleton<FeeProvider>(
+    () => FeeProvider(locator<FeeService>())
+  );
+
+  // register vendor service and provider
+locator.registerSingleton<VendorService>(VendorService(locator<ApiService>()));
   //Register Staff Provider and service api 
   
 

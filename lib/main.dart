@@ -25,7 +25,9 @@ import 'package:linkschool/modules/providers/admin/course_result_provider.dart';
 import 'package:linkschool/modules/providers/admin/e_learning/topic_provider.dart';
 import 'package:linkschool/modules/providers/admin/home/add_staff_provider.dart';
 import 'package:linkschool/modules/providers/admin/home/add_course_provider.dart';
+import 'package:linkschool/modules/providers/admin/home/all_feeds.provider.dart';
 import 'package:linkschool/modules/providers/admin/home/assign_course_provider.dart';
+import 'package:linkschool/modules/providers/admin/home/dashboard_feed_provider.dart';
 import 'package:linkschool/modules/providers/admin/home/level_class_provider.dart';
 import 'package:linkschool/modules/providers/admin/home/manage_student_provider.dart';
 import 'package:linkschool/modules/providers/admin/level_provider.dart';
@@ -41,6 +43,7 @@ import 'package:linkschool/modules/providers/explore/exam_provider.dart';
 import 'package:linkschool/modules/providers/explore/for_you_provider.dart';
 import 'package:linkschool/modules/providers/explore/home/news_provider.dart';
 import 'package:linkschool/modules/providers/explore/subject_provider.dart';
+import 'package:linkschool/modules/providers/login/schools_provider.dart';
 import 'package:linkschool/modules/providers/staff/overview.dart';
 import 'package:linkschool/modules/providers/staff/streams_provider.dart';
 import 'package:linkschool/modules/providers/staff/syllabus_provider.dart';
@@ -54,6 +57,7 @@ import 'package:linkschool/modules/providers/student/streams_provider.dart';
 import 'package:linkschool/modules/providers/student/student_comment_provider.dart';
 import 'package:linkschool/modules/providers/student/student_result_provider.dart';
 import 'package:linkschool/modules/services/admin/e_learning/activity_service.dart';
+import 'package:linkschool/modules/services/admin/payment/vendor_service.dart';
 import 'package:linkschool/modules/services/explore/cbt_service.dart';
 import 'package:linkschool/modules/services/staff/overview_service.dart';
 import 'package:linkschool/routes/onboardingScreen.dart';
@@ -64,6 +68,8 @@ import 'modules/providers/admin/registered_terms_provider.dart';
 import 'modules/providers/explore/game/game_provider.dart';
 import 'modules/providers/admin/grade_provider.dart';
 import 'modules/providers/student/dashboard_provider.dart';
+
+final RouteObserver<ModalRoute<void>> routeObserver = RouteObserver<ModalRoute<void>>();
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -81,6 +87,10 @@ Future<void> main() async {
   await EnvConfig.init();
   setupServiceLocator();
 
+
+   final userDataBox = Hive.box('userData');
+  final hasCompletedOnboarding = userDataBox.get('hasCompletedOnboarding', defaultValue: false);
+
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(
       statusBarColor: Colors.transparent,
@@ -89,12 +99,17 @@ Future<void> main() async {
     ),
   );
 
+if (hasCompletedOnboarding) {
+    print('User has completed onboarding.');
+  } else {
+    print('User has NOT completed onboarding.');
+  }
   runApp(
     MultiProvider(
       providers: [
         // Core providers
         ChangeNotifierProvider(create: (_) => locator<AuthProvider>()),
-
+        ChangeNotifierProvider(create: (_) => SchoolProvider()),
         // Explore
         ChangeNotifierProvider(create: (_) => NewsProvider()),
         ChangeNotifierProvider(create: (_) => SubjectProvider()),
@@ -109,6 +124,8 @@ Future<void> main() async {
          ChangeNotifierProvider(create: (_) => locator<AssignCourseProvider>(),), 
          ChangeNotifierProvider(create: (_) => locator<ManageStudentProvider>()),
          ChangeNotifierProvider(create: (_) => locator<CourseProvider>()),
+    ChangeNotifierProvider(create: (_) => locator<DashboardFeedProvider>()),
+    ChangeNotifierProvider(create: (_) => locator<FeedsPaginationProvider>()),
 
         // Admin E-Learning
         ChangeNotifierProvider(create: (_) => locator<SyllabusProvider>()),
@@ -157,6 +174,7 @@ Future<void> main() async {
         ChangeNotifierProvider(create: (_) => locator<StreamsProvider>()),
         ChangeNotifierProvider(create: (_) => locator<MarkedAssignmentProvider>()),
         ChangeNotifierProvider(create: (_) => locator<StudentResultProvider>()),
+        ChangeNotifierProvider(create: (_) => locator<InvoiceProvider>()),
         // Staff
         ChangeNotifierProvider(create: (_) => locator<StaffSyllabusProvider>()),
         ChangeNotifierProvider(create: (_) => StaffOverviewProvider( locator<StaffOverviewService>())),
@@ -180,6 +198,7 @@ class MyApp extends StatelessWidget {
       darkTheme: AppThemes.darkTheme,
       themeMode: ThemeMode.system,
       home: const AppInitializer(),
+      navigatorObservers: [routeObserver],
     );
   }
 }
@@ -241,6 +260,8 @@ class _AppInitializerState extends State<AppInitializer> {
     }
 
     return AppNavigationFlow();
+    
+
   }
 }
 

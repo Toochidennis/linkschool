@@ -929,6 +929,7 @@ class _RecentAssignmentState extends State<RecentAssignment> with SingleTickerPr
                         ],
                       ),
                     ),
+                    if (comment.userId == creatorId)
                     PopupMenuButton<String>(
                       icon: const Icon(Icons.more_vert, size: 20, color: AppColors.primaryLight),
                       onSelected: (value) {

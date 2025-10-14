@@ -4,6 +4,7 @@ import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/providers/admin/student_provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../model/admin/student_model.dart';
 
@@ -93,7 +94,9 @@ class _SingleTermResultState extends State<SingleTermResult> {
         actions: [
           TextButton.icon(
             onPressed: () {
+              
               // Implement download functionality
+              _downloadTermResults();
             },
             icon: const Icon(Icons.download, color: AppColors.eLearningBtnColor1),
             label: const Text(
@@ -160,6 +163,37 @@ class _SingleTermResultState extends State<SingleTermResult> {
     );
   }
 
+  Future<void> _downloadTermResults() async {
+  final url = 'https://linkskool.net/api/v1/students/${widget.studentId}/terms/${widget.termId}/results/download';
+  
+  try {
+    if (await canLaunchUrl(Uri.parse(url))) {
+      await launchUrl(
+        Uri.parse(url),
+        mode: LaunchMode.externalApplication, // Opens in browser
+      );
+    } else {
+      // Show error if URL can't be launched
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Could not launch $url'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  } catch (e) {
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error launching URL: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+}
   Widget _buildProfileImage(Student? student) {
     if (student?.pictureUrl != null && student!.pictureUrl!.isNotEmpty) {
       return Container(

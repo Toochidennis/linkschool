@@ -191,21 +191,29 @@ class Staff {
   }
 
   // Convert to display map for UI compatibility
-  Map<String, dynamic> toDisplayMap() {
-    return {
-      'id': staffNo,
-      'name': fullName,
-      'email': emailAddress ?? '',
-      'phone': phoneNumber ?? '',
-      'gender': gender ?? 'Male',
-      'role': accessLevel == 'admin' ? 'Admin Staff' : 'Teacher',
-      'courses': <String>[], 
-      'level': '',
-      'class': '',
-      'status': isActive ? 'Active' : 'Inactive',
-      'joinDate': employmentDate ?? '',
-      'salary': '',
-      'address': address ?? '',
-    };
+ Map<String, dynamic> toDisplayMap() {
+  // Map access level to role with a simpler approach
+  String displayRole;
+  if (accessLevel == 'admin') {
+    displayRole = 'Admin';
+  } else {
+    displayRole = 'Staff';
   }
+  
+  return {
+    'id': staffNo,
+    'name': fullName,
+    'email': emailAddress ?? 'No email',
+    'phone': phoneNumber ?? 'No phone',
+    'gender': gender ?? 'male',
+    'role': displayRole,  // Now returns either 'Admin' or 'Staff'
+    'courses': <String>[], 
+    'level': '',
+    'class': '',
+    'status': isActive ? 'Active' : 'Inactive',
+    'joinDate': employmentDate ?? '',
+    'salary': '',
+    'address': address ?? '',
+  };
+}
 }

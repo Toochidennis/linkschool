@@ -248,14 +248,17 @@ await _syllabusProvider.fetchSyllabus(levelId, term,courseId);
           ),
         ),
       ),
-      body: Container(
-        decoration: Constants.customBoxDecoration(context),
-        child: 
-        isLoading
-            ? const Center(child: CircularProgressIndicator())
-            : _syllabusList.isEmpty
-                ? _buildEmptyState()
-                : _buildSyllabusList(),
+    body: RefreshIndicator(
+     onRefresh: _loadSyllabuses,
+        child: Container(
+          decoration: Constants.customBoxDecoration(context),
+          child: 
+          isLoading
+              ? const Center(child: CircularProgressIndicator())
+              : _syllabusList.isEmpty
+                  ? _buildEmptyState()
+                  : _buildSyllabusList(),
+        ),
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: _addNewSyllabus(), 

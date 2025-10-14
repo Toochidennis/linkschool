@@ -638,18 +638,7 @@ class _ManageStaffScreenState extends State<ManageStaffScreen> with TickerProvid
                 ),
               ),
               const SizedBox(width: 12),
-              Expanded(
-                child: _buildDropdown(
-                  label: 'Role',
-                  value: _selectedRole,
-                  items: _staffRoles,
-                  onChanged: (value) {
-                    setState(() {
-                      _selectedRole = value!;
-                    });
-                  },
-                ),
-              ),
+             
             ],
           ),
           const SizedBox(height: 12),
@@ -1410,8 +1399,8 @@ class _ManageStaffScreenState extends State<ManageStaffScreen> with TickerProvid
                               const SizedBox(width: 12),
                               Expanded(
                                 child: _buildStatsCard(
-                                  title: 'Teachers',
-                                  value: provider.staffList.where((s) => s.accessLevel != 'admin').length.toString(),
+                                  title: 'Admins',
+                                  value: provider.staffList.where((s) => s.accessLevel == 'admin').length.toString(),
                                   icon: Icons.school,
                                   iconColor: AppColors.secondaryLight,
                                   backgroundColor: AppColors.boxColor3,
@@ -1478,15 +1467,11 @@ class _ManageStaffScreenState extends State<ManageStaffScreen> with TickerProvid
                             scrollDirection: Axis.horizontal,
                             child: Row(
                               children: [
-                                _buildFilterChip('All', _selectedFilter == 'All'),
-                                const SizedBox(width: 8),
-                                _buildFilterChip('Teacher', _selectedFilter == 'Teacher'),
-                                const SizedBox(width: 8),
-                                _buildFilterChip('Principal', _selectedFilter == 'Principal'),
-                                const SizedBox(width: 8),
-                                _buildFilterChip('Vice Principal', _selectedFilter == 'Vice Principal'),
-                                const SizedBox(width: 8),
-                                _buildFilterChip('Admin Staff', _selectedFilter == 'Admin Staff'),
+                               _buildFilterChip('All', _selectedFilter == 'All'),
+      const SizedBox(width: 8),
+      _buildFilterChip('Staff', _selectedFilter == 'Staff'),
+      const SizedBox(width: 8),
+      _buildFilterChip('Admin', _selectedFilter == 'Admin'),
                               ],
                             ),
                           ),

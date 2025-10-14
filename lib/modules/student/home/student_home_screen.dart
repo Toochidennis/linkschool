@@ -39,6 +39,8 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
   SingleElearningContentData? elearningContentData;
 
   bool isLoading = true;
+  bool hasError = false;
+  String errorMessage = '';
 
   int currentAssessmentIndex = 0;
   int currentActivityIndex = 0;
@@ -81,75 +83,114 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
   @override
   void initState() {
     super.initState();
-    _startAutoScroll();
     activityController = PageController(viewportFraction: 0.90);
+    _initializeData();
+  }
 
+  void _initializeData() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      
+      fetchDashboard();
+    });
+  }
 
-      final dashboardProvider = Provider.of<DashboardProvider>(context, listen: false);
-      dashboardProvider.fetchDashboardData(
-        class_id: getuserdata()['profile']['class_id'].toString(), level_id: getuserdata()['profile']['level_id'], term: getuserdata()['settings']['term'],
-      );
-
-
+  Future<void> fetchDashboard() async {
+    if (!mounted) return;
+    
+    setState(() {
+      isLoading = true;
+      hasError = false;
+      errorMessage = '';
     });
 
+    try {
+      final provider = Provider.of<DashboardProvider>(context, listen: false);
+      final data = await provider.fetchDashboardData(
+        class_id: getuserdata()['profile']['class_id'].toString(),
+        level_id: getuserdata()['profile']['level_id'].toString(),
+        term: getuserdata()['settings']['term'].toString(),
+      );
+      
+      if (!mounted) return;
+      
+      setState(() {
+        dashboardData = data;
+        isLoading = false;
+      });
 
+      // Start auto-scroll only if we have data
+      if (data?.recentActivities?.isNotEmpty == true) {
+        _startActivityAutoScroll();
+      }
+      _startAutoScroll();
+      
+    } catch (e) {
+      if (!mounted) return;
+      
+      setState(() {
+        isLoading = false;
+        hasError = true;
+        errorMessage = 'Failed to load dashboard: $e';
+      });
+    }
+  }
 
+  void _startActivityAutoScroll() {
+    // Cancel existing timer
+    activityTimer?.cancel();
+    
+    final activities = dashboardData?.recentActivities ?? [];
+    if (activities.isEmpty) return;
 
     activityTimer = Timer.periodic(const Duration(seconds: 7), (_) {
-      final dashboardProvider = Provider.of<DashboardProvider>(context, listen: false);
-      final activities = dashboardProvider.dashboardData?.recentActivities ?? [];
-      if (activityController.hasClients) {
+      if (!mounted) return;
+      
+      if (activities.isEmpty) {
+        activityTimer?.cancel();
+        return;
+      }
+      
+      if (activityController.hasClients && activityController.positions.isNotEmpty) {
         setState(() {
           currentActivityIndex = (currentActivityIndex + 1) % activities.length;
-          activityController.animateToPage(
-            currentActivityIndex,
-            duration: const Duration(milliseconds: 900),
-            curve: Curves.easeIn,
-          );
         });
+        
+        activityController.animateToPage(
+          currentActivityIndex,
+          duration: const Duration(milliseconds: 900),
+          curve: Curves.easeIn,
+        );
       }
-    });
-    fetchDashboard();
-
-  }
-  Future<void> fetchDashboard() async {
-    final provider = Provider.of<DashboardProvider>(context, listen: false);
-    final data = await provider.fetchDashboardData(
-      class_id: getuserdata()['profile']['class_id'].toString(),
-      level_id: getuserdata()['profile']['level_id'].toString(),
-      term: getuserdata()['settings']['term'].toString(),
-    );
-    setState(() {
-      dashboardData = data;
-      isLoading = false;
     });
   }
 
   Future<void> fetchSingleElearning(int contentid) async {
-
+    if (!mounted) return;
+    
     final provider = Provider.of<SingleelearningcontentProvider>(context, listen: false);
-    final data = await provider.fetchElearningContentData(
-        contentid
-    );
+    final data = await provider.fetchElearningContentData(contentid);
+    
+    if (!mounted) return;
+    
     setState(() {
       elearningContentData = data;
-      isLoading = false;
     });
   }
 
   @override
   void dispose() {
     _timer?.cancel();
+    activityTimer?.cancel();
+    assessmentTimer?.cancel();
     _pageController.dispose();
+    activityController.dispose();
     super.dispose();
   }
 
-  getuserdata(){
+  Map<String, dynamic> getuserdata() {
     final userBox = Hive.box('userData');
-    final storedUserData =
-        userBox.get('userData') ?? userBox.get('loginResponse');
+    final storedUserData = userBox.get('userData') ?? userBox.get('loginResponse');
     final processedData = storedUserData is String
         ? json.decode(storedUserData)
         : storedUserData;
@@ -157,6 +198,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
     final data = response['data'] ?? response;
     return data;
   }
+
   void _showNewPostDialog() {
     showDialog(
       context: context,
@@ -167,7 +209,22 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
   }
 
   void _startAutoScroll() {
+    if (!_pageController.hasClients) {
+      Future.delayed(const Duration(milliseconds: 100), () {
+        if (mounted && _pageController.hasClients) {
+          _startAutoScroll();
+        }
+      });
+      return;
+    }
+
+    _timer?.cancel();
     _timer = Timer.periodic(const Duration(seconds: 3), (timer) {
+      if (!mounted || !_pageController.hasClients) {
+        timer.cancel();
+        return;
+      }
+
       if (_currentPage < notifications.length - 1) {
         _currentPage++;
       } else {
@@ -182,26 +239,75 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
     });
   }
 
-
-
   @override
   Widget build(BuildContext context) {
-    if (isLoading || dashboardData == null) {
+    // Show loading state
+    if (isLoading) {
       return const Scaffold(
         body: Center(
           child: CircularProgressIndicator(),
         ),
       );
     }
-    final activities= dashboardData!.recentActivities;
+
+    // Show error state
+    if (hasError) {
+      return Scaffold(
+        appBar: CustomStudentAppBar(
+          title: 'Welcome',
+          subtitle: getuserdata()['profile']['name'] ?? 'Guest',
+          showNotification: true,
+          showPostInput: true,
+          onNotificationTap: () {},
+          onPostTap: _showNewPostDialog,
+        ),
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.error_outline,
+                size: 64,
+                color: Colors.red[300],
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Unable to Load Data',
+                style: AppTextStyles.normal600(
+                  fontSize: 18,
+                  color: AppColors.primaryLight,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                errorMessage,
+                textAlign: TextAlign.center,
+                style: AppTextStyles.normal400(
+                  fontSize: 14,
+                  color: AppColors.text5Light,
+                ),
+              ),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: fetchDashboard,
+                child: const Text('Try Again'),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    // Main content with proper empty state handling
+    final activities = dashboardData?.recentActivities ?? [];
     final Brightness brightness = Theme.of(context).brightness;
     opacity = brightness == Brightness.light ? 0.1 : 0.15;
-    final userName =getuserdata()['profile']['name'] ?? 'Guest'; // Use the logged-in user's name
+    final userName = getuserdata()['profile']['name'] ?? 'Guest';
 
     return Scaffold(
       appBar: CustomStudentAppBar(
-          title: 'Welcome',
-          subtitle: userName,
+        title: 'Welcome',
+        subtitle: userName,
         showNotification: true,
         showPostInput: true,
         onNotificationTap: () {},
@@ -213,262 +319,27 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
           children: [
             Padding(
               padding: const EdgeInsets.only(bottom: 120.0),
-              child:
-              ListView(
+              child: ListView(
                 padding: const EdgeInsets.all(16.0),
                 children: [
-                  /*SizedBox(
-                    height: 140,
-                    child: PageView.builder(
-                      controller: activityController,
-                      itemCount: activities.length,
-                      onPageChanged: (index) {
-                        setState(() {
-                          _currentPage = index;
-                        });
-                      },
-                      itemBuilder: (context, index) {
-                        return AnimatedBuilder(
-                          animation: _pageController,
-                          builder: (context, child) {
-                            double scale = 1.0;
-                            if (_pageController.position.haveDimensions) {
-                              num pageOffset =
-                                  _pageController.page ?? _currentPage;
-                              scale = (1 - ((pageOffset - index).abs() * 0.2))
-                                  .clamp(0.8, 1.0);
-                            }
-                            return Transform.scale(
-                              scale: scale,
-                              child: _buildNotificationCard(
-                                activities[index].createdBy,
-                                "posted a ${activities[index].type} on ${activities[index].title}",
-                                activities[index].datePosted,
-                                notifications[index]['avatar']!,
-                              ),
-                            );
-                          },
-                        );
-                      },
+                  const SizedBox(height: 8),
+                  const SizedBox(height: 16),
+                  
+                  // Activities Section with Empty State
+                  _buildActivitiesSection(activities),
+                  
+                  const SizedBox(height: 24),
+                  Text(
+                    'You can...',
+                    style: AppTextStyles.normal600(
+                      fontSize: 20,
+                      color: AppColors.primaryLight,
                     ),
-                  ),*/
-
-                  const SizedBox(height: 8),
-                  // Add dots indicator
-
-                const SizedBox(height: 16),
-                SizedBox(
-                  height: 125,
-                  child: PageView.builder(
-                    controller: activityController,
-                    itemCount: activities.length,
-                    itemBuilder: (context, index) {
-                      final activity = activities[index];
-                      return GestureDetector(
-                        onTap: () async {
-                          await fetchSingleElearning(activity?.id ??0);
-                          if (elearningContentData?.settings != null) {
-                            final userBox = Hive.box('userData');
-                            final List<dynamic> quizzestaken = userBox.get('quizzes', defaultValue: []);
-                            final int? quizId = elearningContentData?.settings!.id;
-                            if (quizzestaken.contains(quizId)) {
-                              Navigator.push(
-                                context,MaterialPageRoute(
-                                builder: (context) => SingleQuizScoreView(childContent: elearningContentData,year:int.parse(getuserdata()['settings']['year']), term:getuserdata()['settings']['term']),),
-                              );
-                            } else {
-                              Navigator.push(
-                                context,MaterialPageRoute(
-                                builder: (context) => SingleQuizIntroPage(childContent: elearningContentData,),),
-                              );
-                            }
-
-                          }
-                          else if (elearningContentData?.type == 'material') {
-                            Navigator.push(
-                              context,MaterialPageRoute(
-                              builder: (context) => SingleMaterialDetailScreen(childContent: elearningContentData,),),
-                            );
-                          }
-                          else if (elearningContentData?.type=="assignment") {
-
-
-                            final userBox = Hive.box('userData');
-                            final List<dynamic> assignmentssubmitted = userBox.get('assignments', defaultValue: []);
-                            final int? assignmentId = elearningContentData?.id;
-
-                            if (assignmentssubmitted.contains(assignmentId)) {
-                              Navigator.push(
-                                context,MaterialPageRoute(
-                                builder: (context) => SingleAssignmentScoreView(childContent: elearningContentData,year:int.parse(getuserdata()['settings']['year']), term:getuserdata()['settings']['term'], attachedMaterials: [""],),),
-                              );
-                            } else {
-                              Navigator.push(
-                                context,MaterialPageRoute(
-                                builder: (context) => SingleAssignmentDetailsScreen(childContent: elearningContentData, title: elearningContentData?.title, id: elearningContentData?.id ?? 0),),
-                              );
-                            }
-
-
-
-                          }
-
-                          else {
-                            SizedBox.shrink(); // If neither condition is met
-                          }
-
-
-                        },
-                        child:
-                        Card(
-                          elevation: 2,
-                          child:
-                          Container(
-                            // width: 300,
-                            width: double.infinity,
-                            padding: const EdgeInsets.all(12),
-                            child: Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                CircleAvatar(
-                                  backgroundImage: NetworkImage(profileImageUrl),
-                                  radius: 16.0,
-                                ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text( activities[index].createdBy,
-
-                                          style: AppTextStyles.normal500(
-                                              fontSize: 16, color: AppColors.studentTxtColor2)),
-                                      const SizedBox(height: 4),
-                                      Text(
-                                        "posted a ${activities[index].type} on ${activities[index].title}",
-                                        style: const TextStyle(fontSize: 14),
-                                        maxLines: 2,
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                      const SizedBox(height: 8),
-                                      Text(
-                                          activities[index].datePosted,
-
-                                          style: AppTextStyles.normal500(
-                                              fontSize: 16, color: AppColors.text5Light)),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        )
-                      );
-                    },
-                  ),
-                ),
-                  const SizedBox(height: 24),
-                  Text('You can...',
-                      style: AppTextStyles.normal600(
-                          fontSize: 20, color: AppColors.primaryLight)),
-                  const SizedBox(height: 12),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Expanded(
-                        child: CustomButtonItem(//
-                          backgroundColor: AppColors.studentCtnColor3,
-                          borderColor: AppColors.portalButton1BorderLight,
-                          textColor: AppColors.paymentBtnColor1,
-                          label: 'Check\nResults',
-                          iconPath: 'assets/icons/result.svg',
-                          iconHeight: 40.0,
-                          iconWidth: 36.0,
-                          destination: StudentResultScreen(studentName: getuserdata()['profile']['name'], className: getuserdata()['profile']['class_name']),
-                        ),
-                      ),
-                      const SizedBox(width: 14.0),
-                      Expanded(
-                        child: Builder(
-                          builder: (context) {
-                            final invoiceProvider = Provider.of<InvoiceProvider>(context);
-                            final invoices = invoiceProvider.invoices ?? [];
-                            return GestureDetector(
-                              onTap: () {
-                                if (invoices.isNotEmpty && invoices[0].amount > 0) {
-                                  showDialog(
-                                    context: context,
-                                    builder: (context) => StudentViewDetailPaymentDialog(invoice: invoices[0]),
-                                  );
-                                } else {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(content: Text('No invoice available for payment.')),
-                                  );
-                                }
-                              },
-                              child: CustomButtonItem(
-                                backgroundColor: AppColors.studentCtnColor4,
-                                borderColor: AppColors.portalButton2BorderLight,
-                                textColor: AppColors.paymentTxtColor2,
-                                label: 'Make\nPayment',
-                                iconPath: 'assets/icons/payment.svg',
-                                iconHeight: 40.0,
-                                iconWidth: 36.0,
-                                destination: null,
-                              ),
-                            );
-                          },
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 24),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        'Feed',
-                        style: AppTextStyles.normal600(
-                            fontSize: 20, color: AppColors.primaryLight),
-                      ),
-                      TextButton(
-                        onPressed: () {},
-                        child: const Text(
-                          'See all',
-                          style: TextStyle(
-                            decoration:
-                                TextDecoration.underline,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  SizedBox(
-                    width: double.infinity,
-                    child: _buildFeedCard(
-                        'This is a mock data showing the info details of a recording.',
-                        '30 minutes ago',
-                        14,
-                        0),
-                  ),
-                  const SizedBox(height: 8),
-                  SizedBox(
-                    width: double.infinity,
-                    child: _buildFeedCard(
-                        'This is a mock data showing the info details of a recording.',
-                        '45 minutes ago',
-                        18,
-                        1),
                   ),
                   const SizedBox(height: 12),
-                  SizedBox(
-                    width: double.infinity,
-                    child: _buildFeedCard(
-                        'This is a mock data showing the info details of a recording.',
-                        '1 hour ago',
-                        22,
-                        2),
-                  ),
+                  _buildActionButtons(),
+                  const SizedBox(height: 24),
+                  _buildFeedSection(),
                 ],
               ),
             ),
@@ -489,14 +360,291 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
     );
   }
 
+  Widget _buildActivitiesSection(List<dynamic> activities) {
+    if (activities.isEmpty) {
+      return Container(
+        height: 125,
+        decoration: BoxDecoration(
+          color: Colors.grey[50],
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.grey[200]!),
+        ),
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.notifications_none,
+                size: 40,
+                color: Colors.grey[400],
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'No recent activities',
+                style: AppTextStyles.normal500(
+                  fontSize: 16,
+                  color: Colors.grey,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    return SizedBox(
+      height: 125,
+      child: PageView.builder(
+        controller: activityController,
+        itemCount: activities.length,
+        itemBuilder: (context, index) {
+          final activity = activities[index];
+          return GestureDetector(
+            onTap: () => _handleActivityTap(activity),
+            child: Card(
+              elevation: 2,
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(12),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    CircleAvatar(
+                      backgroundImage: NetworkImage(profileImageUrl),
+                      radius: 16.0,
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            activity?.createdBy ?? 'Unknown',
+                            style: AppTextStyles.normal500(
+                              fontSize: 16,
+                              color: AppColors.studentTxtColor2,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            "posted a ${activity?.type ?? 'activity'} on ${activity?.title ?? 'Untitled'}",
+                            style: const TextStyle(fontSize: 14),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            activity?.datePosted ?? 'Unknown date',
+                            style: AppTextStyles.normal500(
+                              fontSize: 16,
+                              color: AppColors.text5Light,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildActionButtons() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Expanded(
+          child: CustomButtonItem(
+            backgroundColor: AppColors.studentCtnColor3,
+            borderColor: AppColors.portalButton1BorderLight,
+            textColor: AppColors.paymentBtnColor1,
+            label: 'Check\nResults',
+            iconPath: 'assets/icons/result.svg',
+            iconHeight: 40.0,
+            iconWidth: 36.0,
+            destination: StudentResultScreen(
+              studentName: getuserdata()['profile']['name'],
+              className: getuserdata()['profile']['class_name'],
+            ),
+          ),
+        ),
+        const SizedBox(width: 14.0),
+        Expanded(
+          child: Builder(
+            builder: (context) {
+              final invoiceProvider = Provider.of<InvoiceProvider>(context);
+              final invoices = invoiceProvider.invoices ?? [];
+              return GestureDetector(
+                onTap: () {
+                  if (invoices.isNotEmpty && invoices[0].amount > 0) {
+                    showDialog(
+                      context: context,
+                      builder: (context) => StudentViewDetailPaymentDialog(invoice: invoices[0]),
+                    );
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('No invoice available for payment.')),
+                    );
+                  }
+                },
+                child: CustomButtonItem(
+                  backgroundColor: AppColors.studentCtnColor4,
+                  borderColor: AppColors.portalButton2BorderLight,
+                  textColor: AppColors.paymentTxtColor2,
+                  label: 'Make\nPayment',
+                  iconPath: 'assets/icons/payment.svg',
+                  iconHeight: 40.0,
+                  iconWidth: 36.0,
+                  destination: null,
+                ),
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildFeedSection() {
+    return Column(
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              'Feed',
+              style: AppTextStyles.normal600(
+                fontSize: 20,
+                color: AppColors.primaryLight,
+              ),
+            ),
+            TextButton(
+              onPressed: () {},
+              child: const Text(
+                'See all',
+                style: TextStyle(
+                  decoration: TextDecoration.underline,
+                ),
+              ),
+            ),
+          ],
+        ),
+        SizedBox(
+          width: double.infinity,
+          child: _buildFeedCard(
+            'This is a mock data showing the info details of a recording.',
+            '30 minutes ago',
+            14,
+            0,
+          ),
+        ),
+        const SizedBox(height: 8),
+        SizedBox(
+          width: double.infinity,
+          child: _buildFeedCard(
+            'This is a mock data showing the info details of a recording.',
+            '45 minutes ago',
+            18,
+            1,
+          ),
+        ),
+        const SizedBox(height: 12),
+        SizedBox(
+          width: double.infinity,
+          child: _buildFeedCard(
+            'This is a mock data showing the info details of a recording.',
+            '1 hour ago',
+            22,
+            2,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Future<void> _handleActivityTap(dynamic activity) async {
+    if (activity?.id == null) return;
+    
+    await fetchSingleElearning(activity.id ?? 0);
+    if (!mounted) return;
+    
+    // Your existing navigation logic...
+    if (elearningContentData?.settings != null) {
+      final userBox = Hive.box('userData');
+      final List<dynamic> quizzestaken = userBox.get('quizzes', defaultValue: []);
+      final int? quizId = elearningContentData?.settings!.id;
+      if (quizzestaken.contains(quizId)) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => SingleQuizScoreView(
+              childContent: elearningContentData,
+              year: int.parse(getuserdata()['settings']['year'].toString()),
+              term: getuserdata()['settings']['term'],
+            ),
+          ),
+        );
+      } else {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => SingleQuizIntroPage(
+              childContent: elearningContentData,
+            ),
+          ),
+        );
+      }
+    } else if (elearningContentData?.type == 'material') {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => SingleMaterialDetailScreen(
+            childContent: elearningContentData,
+          ),
+        ),
+      );
+    } else if (elearningContentData?.type == "assignment") {
+      final userBox = Hive.box('userData');
+      final List<dynamic> assignmentssubmitted = userBox.get('assignments', defaultValue: []);
+      final int? assignmentId = elearningContentData?.id;
+
+      if (assignmentssubmitted.contains(assignmentId)) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => SingleAssignmentScoreView(
+              childContent: elearningContentData,
+              year: int.parse(getuserdata()['settings']['year'].toString()),
+              term: getuserdata()['settings']['term'],
+              attachedMaterials: [""],
+            ),
+          ),
+        );
+      } else {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => SingleAssignmentDetailsScreen(
+              childContent: elearningContentData,
+              title: elearningContentData?.title,
+              id: elearningContentData?.id ?? 0,
+            ),
+          ),
+        );
+      }
+    }
+  }
+
+  // ... rest of your existing _buildNotificationCard, _buildActionContainer, _buildFeedCard methods
   Widget _buildNotificationCard(
       String name, String message, String time, String avatarPath) {
-    return
-      Card(
+    return Card(
       elevation: 2,
-      child:
-      Container(
-        // width: 300,
+      child: Container(
         width: double.infinity,
         padding: const EdgeInsets.all(12),
         child: Row(
@@ -511,9 +659,13 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(name,
-                      style: AppTextStyles.normal500(
-                          fontSize: 16, color: AppColors.studentTxtColor2)),
+                  Text(
+                    name,
+                    style: AppTextStyles.normal500(
+                      fontSize: 16,
+                      color: AppColors.studentTxtColor2,
+                    ),
+                  ),
                   const SizedBox(height: 4),
                   Text(
                     message,
@@ -522,9 +674,13 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
                     overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 8),
-                  Text(time,
-                      style: AppTextStyles.normal500(
-                          fontSize: 16, color: AppColors.text5Light)),
+                  Text(
+                    time,
+                    style: AppTextStyles.normal500(
+                      fontSize: 16,
+                      color: AppColors.text5Light,
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -535,7 +691,6 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
   }
 
   Widget _buildActionContainer(String text, String iconPath, Color bgColor) {
-    // Split the text if it contains a space
     List<String> textParts = text.split(' ');
 
     return Container(
@@ -584,11 +739,12 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
           context,
           MaterialPageRoute(
             builder: (context) => FeedDetailsScreen(
-                name: feedCardNames[index],
-                content: content,
-                time: time,
-                interactions: interactions,
-                profileImageUrl: profileImageUrl),
+              name: feedCardNames[index],
+              content: content,
+              time: time,
+              interactions: interactions,
+              profileImageUrl: profileImageUrl,
+            ),
           ),
         );
       },
@@ -619,9 +775,13 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
                         radius: 16.0,
                       ),
                       const SizedBox(width: 8),
-                      Text(feedCardNames[index],
-                          style: AppTextStyles.normal500(
-                              fontSize: 16, color: AppColors.primaryLight)),
+                      Text(
+                        feedCardNames[index],
+                        style: AppTextStyles.normal500(
+                          fontSize: 16,
+                          color: AppColors.primaryLight,
+                        ),
+                      ),
                     ],
                   ),
                   const SizedBox(height: 8),
@@ -633,9 +793,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
                         icon: const Icon(Icons.favorite_outline),
                         onPressed: () {},
                       ),
-                      Text(
-                        '$interactions',
-                      ),
+                      Text('$interactions'),
                       const SizedBox(width: 16),
                       IconButton(
                         icon: SvgPicture.asset(
@@ -645,17 +803,19 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
                         ),
                         onPressed: () {},
                       ),
-                      Text(
-                        '$interactions',
-                      ),
+                      Text('$interactions'),
                     ],
                   ),
                 ],
               ),
             ),
-            Text(time,
-                style: AppTextStyles.normal500(
-                    fontSize: 12, color: AppColors.primaryLight)),
+            Text(
+              time,
+              style: AppTextStyles.normal500(
+                fontSize: 12,
+                color: AppColors.primaryLight,
+              ),
+            ),
           ],
         ),
       ),

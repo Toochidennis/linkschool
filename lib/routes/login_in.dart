@@ -5,7 +5,9 @@ import "package:linkschool/modules/common/constants.dart";
 import "package:linkschool/modules/common/text_styles.dart";
 
 class LoginScreens extends StatefulWidget {
-  const LoginScreens({super.key});
+  final String schoolCode;
+
+  const LoginScreens({super.key, required this.schoolCode});
 
   @override
   State<LoginScreens> createState() => _LoginScreensState();
@@ -27,7 +29,7 @@ class _LoginScreensState extends State<LoginScreens> {
               left: 0,
               child: Container(
                   child: InkWell(
-                onTap: () => (Navigator.pop(context)),
+                onTap: () => Navigator.pop(context),
                 child: Icon(
                   Icons.arrow_back,
                   size: 16,
@@ -185,7 +187,7 @@ class loginpage extends StatelessWidget {
                     height: 20,
                   ),
                   CustomBlueElevatedButton(
-                    text: 'Login',
+                    text: 'Loginssss',
                     onPressed: () {},
                     backgroundColor: AppColors.aicircle,
                     textStyle: AppTextStyles.italicTitle700(

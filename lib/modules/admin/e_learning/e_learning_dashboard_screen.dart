@@ -170,46 +170,55 @@ Future<void> _loadUserData() async {
 
     return Scaffold(
       appBar: widget.appBar,
-      body: Container(
-        decoration: Constants.customBoxDecoration(context),
-        child: CustomScrollView(
-          slivers: [
-            SliverToBoxAdapter(
-              child: _buildTopContainers(recentProvider,
-            ),),
-            const SliverToBoxAdapter(child: SizedBox(height: 24.0)),
-            SliverPadding(
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              sliver: SliverToBoxAdapter(
-                child: _buildRecentActivity(recentProvider,
-              ),)
-            ),
-            const SliverToBoxAdapter(child: SizedBox(height: 24.0)),
-            SliverToBoxAdapter(
-  child: Constants.heading600(
-    title: 'Select Class',
-    titleSize: 18.0,
-    titleColor: AppColors.resultColor1,
-  ),
-),
-SliverToBoxAdapter(
-  child: LevelSelection(
-    isSecondScreen: true,
-    term: academicTerm, // Pass the actual term
-    levelNames: levelNames, // Pass all classes directly
-    courseNames: courseNames,
-    levelId: selectedLevelId,
-    courseId: selectedCourseId,
-    subjects: [
-      'Civic Education',
-      'Mathematics',
-      'English',
-      'Physics',
-      'Chemistry'
-    ], 
-  ),
-),
-          ],
+      body: RefreshIndicator(
+        onRefresh: () async {
+          try {
+            await recentProvider.fetchOverview(academicTerm); // Pass the actual term
+          } catch (e) {
+            print('Error refreshing dashboard data: $e');
+          }
+        },
+        child: Container(
+          decoration: Constants.customBoxDecoration(context),
+          child: CustomScrollView(
+            slivers: [
+              SliverToBoxAdapter(
+                child: _buildTopContainers(recentProvider,
+              ),),
+              const SliverToBoxAdapter(child: SizedBox(height: 24.0)),
+              SliverPadding(
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                sliver: SliverToBoxAdapter(
+                  child: _buildRecentActivity(recentProvider,
+                ),)
+              ),
+              const SliverToBoxAdapter(child: SizedBox(height: 24.0)),
+              SliverToBoxAdapter(
+          child: Constants.heading600(
+            title: 'Select Class',
+            titleSize: 18.0,
+            titleColor: AppColors.resultColor1,
+          ),
+        ),
+        SliverToBoxAdapter(
+          child: LevelSelection(
+            isSecondScreen: true,
+            term: academicTerm, // Pass the actual term
+            levelNames: levelNames, // Pass all classes directly
+            courseNames: courseNames,
+            levelId: selectedLevelId,
+            courseId: selectedCourseId,
+            subjects: [
+        'Civic Education',
+        'Mathematics',
+        'English',
+        'Physics',
+        'Chemistry'
+            ], 
+          ),
+        ),
+            ],
+          ),
         ),
       ),
     );

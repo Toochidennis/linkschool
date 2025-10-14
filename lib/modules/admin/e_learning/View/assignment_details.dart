@@ -860,7 +860,7 @@ Widget _buildCommentItem(Comment comment) {
                     ),
                   ),
                   
-
+                  if (comment.userId == creatorId)
                   // Popup menu button for actions
                   PopupMenuButton<String>(
                     icon: const Icon(Icons.more_vert, size: 20, color: AppColors.primaryLight,),
