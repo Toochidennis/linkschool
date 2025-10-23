@@ -1,4 +1,7 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
+import 'package:hive/hive.dart';
 import 'package:linkschool/modules/providers/admin/home/all_feeds.provider.dart';
 import 'package:provider/provider.dart';
 
@@ -22,6 +25,11 @@ class _AllFeedsScreenState extends State<AllFeedsScreen> {
   int? _editingFeedId;
   Map<String, dynamic>? _editingFeedData;
 
+  int? creatorId;
+   String? creatorName;
+   int? academicTerm;
+   String? userRole;
+
   @override
   void initState() {
     super.initState();
@@ -35,6 +43,50 @@ class _AllFeedsScreenState extends State<AllFeedsScreen> {
       Provider.of<FeedsPaginationProvider>(context, listen: false)
           .fetchFeeds(refresh: true);
     });
+  }
+
+  Future<void> _loadUserData() async {
+    try {
+      final userBox = Hive.box('userData');
+      final storedUserData =
+          userBox.get('userData') ?? userBox.get('loginResponse');
+
+      if (storedUserData != null) {
+        final dataMap = storedUserData is String
+            ? json.decode(storedUserData)
+            : storedUserData as Map<String, dynamic>;
+
+        final data = dataMap['response']?['data'] ?? dataMap['data'] ?? {};
+        final profile = data['profile'] ?? {};
+        final settings = data['settings'] ?? {};
+
+        setState(() {
+          creatorId = profile['staff_id'] is int
+              ? profile['staff_id']
+              : int.tryParse(profile['staff_id'].toString());
+          
+          userRole = profile['role']?.toString() ?? 'admin';
+
+
+
+          creatorName = profile['name']?.toString() ?? '';
+
+          academicTerm = settings['term'] is int
+              ? settings['term']
+              : int.tryParse(settings['term'].toString());
+        });
+
+        debugPrint(
+            '✅ User loaded: ID=$creatorId, Name=$creatorName, Term=$academicTerm');
+      } else {
+        debugPrint('⚠️ No stored user data found.');
+      }
+    } catch (e, stack) {
+      debugPrint(stack.toString());
+      if (mounted) {
+        CustomToaster.toastError(context, 'Error', 'Failed to load user data');
+      }
+    }
   }
 
   void _handleScroll() {
@@ -408,6 +460,9 @@ class _AllFeedsScreenState extends State<AllFeedsScreen> {
                                     edit: () => _startEditing(feed),
                                     delete: () => _confirmDelete(feed),
                                     comments: feed.replies.length,
+                                    CreatorId: creatorId.toString(),
+                                    authorId: feed.authorId,
+                                    role: userRole,
                                   ),
                                 ],
                               ),

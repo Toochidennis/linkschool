@@ -1,14 +1,28 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:linkschool/modules/admin/result/class_detail/student_result/student_result.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/model/admin/home/manage_student_model.dart';
+import 'package:provider/provider.dart';
+import 'package:linkschool/modules/providers/admin/student_provider.dart'; // ✅ ADD THIS IMPORT
 
 class StudentProfileScreen extends StatelessWidget {
   final Students student;
+  final int levelId;
+  final String studentName;
+  final String className;
+  final String classId;
 
-  const StudentProfileScreen({super.key, required this.student});
+  const StudentProfileScreen({
+    super.key,
+    required this.student,
+    required this.levelId,
+    required this.studentName,
+    required this.className,
+    required this.classId
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -31,7 +45,10 @@ class StudentProfileScreen extends StatelessWidget {
         title: const Text(
           'Profile',
           style: TextStyle(
-              color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
+            color: Colors.white,
+            fontSize: 20,
+            fontWeight: FontWeight.bold
+          ),
         ),
         centerTitle: true,
       ),
@@ -49,7 +66,6 @@ class StudentProfileScreen extends StatelessWidget {
             ),
             child: Column(
               children: [
-                // Student photo OR initials
                 CircleAvatar(
                   radius: 50,
                   backgroundColor: Colors.white,
@@ -66,8 +82,6 @@ class StudentProfileScreen extends StatelessWidget {
                       : null,
                 ),
                 const SizedBox(height: 10.0),
-
-                // Student full name
                 Text(
                   "${student.surname} ${student.firstName} ${student.middle}",
                   style: const TextStyle(
@@ -77,8 +91,6 @@ class StudentProfileScreen extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 5.0),
-
-                // Mobile number (guardian phone if student has none)
                 Text(
                   "Mobile ${student.guardianPhoneNo ?? 'N/A'}",
                   style: const TextStyle(
@@ -87,8 +99,6 @@ class StudentProfileScreen extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 20.0),
-
-                // Call / SMS / WhatsApp row
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -110,8 +120,7 @@ class StudentProfileScreen extends StatelessWidget {
                         width: 20,
                       ),
                     ),
-                    _buildIconColumn(
-                        'assets/icons/staff/whatsapp_call_icon.svg'),
+                    _buildIconColumn('assets/icons/staff/whatsapp_call_icon.svg'),
                   ],
                 ),
               ],
@@ -126,7 +135,6 @@ class StudentProfileScreen extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 20.0),
               child: ListView(
                 children: [
-                  // Email
                   _buildSectionHeader('Email address'),
                   _buildRowWithIcon(
                     svgIcon: 'assets/icons/staff/email_icon.svg',
@@ -134,7 +142,6 @@ class StudentProfileScreen extends StatelessWidget {
                   ),
                   const Divider(),
 
-                  // Guardian
                   _buildSectionHeader('Guardian Information'),
                   const SizedBox(height: 5.0),
                   _buildSubText('Name'),
@@ -149,39 +156,63 @@ class StudentProfileScreen extends StatelessWidget {
                   ),
                   const Divider(),
 
-                  // Guardian phone
                   _buildSubText('Phone number'),
                   const SizedBox(height: 5.0),
                   Text(
                     student.guardianPhoneNo ?? "N/A",
-                    style: const TextStyle(
-                      fontSize: 16,
-                      color: Colors.black,
-                    ),
+                    style: const TextStyle(fontSize: 16, color: Colors.black),
                   ),
                   const Divider(),
 
-                  // Address
                   _buildSubText('Address'),
                   const SizedBox(height: 5.0),
                   Text(
                     student.address ?? "N/A",
-                    style: const TextStyle(
-                      fontSize: 16,
-                      color: Colors.black,
-                    ),
+                    style: const TextStyle(fontSize: 16, color: Colors.black),
                   ),
                   const Divider(),
 
-                  // Button
+                  // ✅ FIXED: Properly fetch student data before navigation
                   ElevatedButton(
-                    onPressed: () {
-                      // Navigate to results page with this student
+                    onPressed: () async {
+                      // ✅ Get the provider
+                      final studentProvider = Provider.of<StudentProvider>(
+                        context,
+                        listen: false
+                      );
+                      
+                      // ✅ Fetch student result terms BEFORE navigation
+                      await studentProvider.fetchStudentResultTerms(student.id ?? 0);
+                      
+                      // ✅ Debug prints
+                      print('ClassId: $classId');
+                      print('LevelId: $levelId');
+                      print('ClassName: $className');
+                      print('StudentName: $studentName');
+                      print('StudentId: ${student.id}');
+                      
+                      // ✅ Navigate after data is fetched
+                      if (context.mounted) {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => StudentResultScreen(
+                              studentName: studentName,
+                              classId: classId,
+                              className: className ?? "Unknown Class",
+                              levelId: levelId.toString(), // ✅ Pass as string
+                              studentId: student.id ?? 0,
+                            ),
+                          ),
+                        );
+                      }
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.staffCtnColor2,
                       padding: const EdgeInsets.symmetric(
-                          vertical: 15.0, horizontal: 8.0),
+                        vertical: 15.0,
+                        horizontal: 8.0
+                      ),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(10.0),
                       ),
@@ -214,19 +245,19 @@ class StudentProfileScreen extends StatelessWidget {
     );
   }
 
-  /// ✅ Helper to get student photo source
   ImageProvider? _getStudentImage() {
-    if (student.photo?.file != null && student.photo!.file!.isNotEmpty) {
-      // Base64 image
-      return MemoryImage(base64Decode(student.photo!.file!));
-    } else if (student.photoPath != null && student.photoPath!.isNotEmpty) {
-      // Network image
-      return NetworkImage("https://linkskool.net/${student.photoPath}");
+    try {
+      if (student.photo?.file != null && student.photo!.file!.isNotEmpty) {
+        return MemoryImage(base64Decode(student.photo!.file!));
+      } else if (student.photoPath != null && student.photoPath!.isNotEmpty) {
+        return NetworkImage("https://linkskool.net/${student.photoPath}");
+      }
+    } catch (e) {
+      print('Error loading student image: $e');
     }
-    return null; // fallback to initials
+    return null;
   }
 
-  // === Reusable Widgets ===
   Widget _buildIconColumn(String svgPath) {
     return SvgPicture.asset(svgPath);
   }

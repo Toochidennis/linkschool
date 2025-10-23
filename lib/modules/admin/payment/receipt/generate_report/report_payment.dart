@@ -69,6 +69,7 @@ class _ReportPaymentScreenState extends State<ReportPaymentScreen> {
         actions: [
           TextButton(
             onPressed: () {
+              print("dddd ${widget.initialParams}");
               // Handle download action
             },
             child: Text(

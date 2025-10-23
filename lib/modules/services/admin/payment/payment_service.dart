@@ -285,6 +285,8 @@ class PaymentService {
     body: params,
   );
 
+  print("me and $params");
+
   if (response.success && response.rawData != null) {
     final data = response.rawData!['data'];
     return IncomeReport.fromJson(data);

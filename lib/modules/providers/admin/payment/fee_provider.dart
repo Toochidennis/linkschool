@@ -83,6 +83,7 @@ class FeeProvider with ChangeNotifier {
         isMandatory: isMandatory,
       );
 
+print("kkkk ${feeName}, $isMandatory");
       final response = await _feeService.addFeeName(request);
       if (response.success) {
         // Refresh the fee names list to get the updated data from server
@@ -116,6 +117,8 @@ class FeeProvider with ChangeNotifier {
         feeName: feeName,
         isMandatory: isMandatory,
       );
+
+      print("kkkk ${feeName}, $isMandatory");
 
       final response = await _feeService.updateFeeName(feeNameId, request);
       if (response.success) {

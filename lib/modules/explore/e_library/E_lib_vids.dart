@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/common/constants.dart';
+import 'package:linkschool/modules/model/explore/home/subject_model2.dart';
 import 'package:linkschool/modules/model/explore/home/video_model.dart';
 // import 'package:linkschool/modules/model/explore/home/subject_model.dart';
 // import 'package:chewie/chewie.dart';
@@ -34,6 +35,9 @@ class _E_lib_vidsState extends State<E_lib_vids> {
     super.initState();
     initializePlayer();
     _startLoading();
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+    Provider.of<SubjectProvider>(context, listen: false).fetchSubjects();
+  });
   }
 
   Future<void> _startLoading() async {
@@ -90,10 +94,8 @@ class _E_lib_vidsState extends State<E_lib_vids> {
       ),
       body: Consumer<SubjectProvider>(
         builder: (context, subjectProvider, child) {
-          final allVideos = subjectProvider.subjects
-              .expand((subject) => subject.categories)
-              .expand((category) => category.videos)
-              .toList();
+          final allVideos = subjectProvider.subjects;
+
 
           return Container(
             decoration: Constants.customBoxDecoration(context),
@@ -237,7 +239,7 @@ class _E_lib_vidsState extends State<E_lib_vids> {
     );
   }
 
-  Widget _buildLessonsList(List<Video> videos) {
+Widget _buildLessonsList(List<SubjectModel2> videos) {
     return ListView.builder(
       padding: EdgeInsets.zero,
       shrinkWrap: true,
@@ -249,11 +251,21 @@ class _E_lib_vidsState extends State<E_lib_vids> {
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (context) => E_lib_vids(video: videos[index]),
+                builder: (context) => E_lib_vids(
+                  video: Video(
+                    title: videos[index].title,
+                    url: videos[index].videoUrl,
+                    thumbnail: videos[index].posterPortrait,
+                  ),
+                ),
               ),
             );
           },
-          child: _buildVideoCard(videos[index]),
+          child: _buildVideoCard(Video(
+            title: videos[index].title,
+            url: videos[index].videoUrl,
+            thumbnail: videos[index].posterPortrait,
+          )),
         );
       },
     );

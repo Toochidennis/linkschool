@@ -199,8 +199,9 @@ class _ELibSubjectDetailState extends State<ELibSubjectDetail>
                     indicatorColor: AppColors.bgBorder,
                     tabs: [
                       Tab(
-                          text:
-                              'Lessons(${widget.subject?.categories.isEmpty ?? true ? 0 : widget.subject?.categories[0].videos.length})'),
+                         // text:'Lessons(${widget.subject?.categories.isEmpty ?? true ? 0 : widget.subject?.categories[0].videos.length})'
+                         text: '',
+                         ),
                       Tab(text: 'Reviews'),
                     ],
                   ),
@@ -227,7 +228,7 @@ class _ELibSubjectDetailState extends State<ELibSubjectDetail>
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            widget.subject?.name ?? 'Subject Name',
+            widget.subject?.title ?? 'Subject Name',
             style: AppTextStyles.normal700(
                 fontSize: 22, color: AppColors.aboutTitle),
           ),
@@ -309,11 +310,11 @@ class _ELibSubjectDetailState extends State<ELibSubjectDetail>
               fontSize: 14, color: AppColors.admissionTitle),
         ),
         SizedBox(width: 8),
-        Text(
-          '. ${widget.subject?.categories.fold<int>(0, (sum, category) => sum + (category.videos.length)) ?? 0} Lessons',
-          style: AppTextStyles.normal400(
-              fontSize: 16, color: AppColors.admissionTitle),
-        ),
+        // Text(
+        //   '. ${widget.subject?.categories.fold<int>(0, (sum, category) => sum + (category.videos.length)) ?? 0} Lessons',
+        //   style: AppTextStyles.normal400(
+        //       fontSize: 16, color: AppColors.admissionTitle),
+        // ),
       ],
     );
   }
@@ -334,8 +335,8 @@ class _ELibSubjectDetailState extends State<ELibSubjectDetail>
           indicatorColor: AppColors.bgBorder,
           tabs: [
             Tab(
-                text:
-                    'Lessons(${widget.subject?.categories.isEmpty ?? true ? 0 : widget.subject?.categories[0].videos.length})'),
+                // 
+                ),
             Tab(text: 'Reviews'),
           ],
         ),
@@ -374,43 +375,45 @@ class _ELibSubjectDetailState extends State<ELibSubjectDetail>
       );
     }
 
-    if (widget.subject?.categories.isEmpty ?? true) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.video_library_outlined,
-                size: 48, color: AppColors.assessmentColor2),
-            SizedBox(height: 16),
-            Text(
-              '',
-              style: AppTextStyles.normal500(
-                fontSize: 16,
-                color: AppColors.assessmentColor2,
-              ),
-            ),
-            SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: _loadData,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.bgBorder,
-              ),
-              child: Text(''),
-            ),
-          ],
-        ),
-      );
-    }
+    // if (widget.subject?.categories.isEmpty ?? true) {
+    //   return Center(
+    //     child: Column(
+    //       mainAxisAlignment: MainAxisAlignment.center,
+    //       children: [
+    //         Icon(Icons.video_library_outlined,
+    //             size: 48, color: AppColors.assessmentColor2),
+    //         SizedBox(height: 16),
+    //         Text(
+    //           '',
+    //           style: AppTextStyles.normal500(
+    //             fontSize: 16,
+    //             color: AppColors.assessmentColor2,
+    //           ),
+    //         ),
+    //         SizedBox(height: 16),
+    //         ElevatedButton(
+    //           onPressed: _loadData,
+    //           style: ElevatedButton.styleFrom(
+    //             backgroundColor: AppColors.bgBorder,
+    //           ),
+    //           child: Text(''),
+    //         ),
+    //       ],
+    //     ),
+    //   );
+    // }
 
-    return ListView(
-      padding: EdgeInsets.all(16),
-      children: [
-        _buildLessonSection(
-            'Elementary', widget.subject?.categories[0].videos ?? []),
-        _buildLessonSection(
-            'Junior Secondary', widget.subject?.categories[1].videos ?? []),
-      ],
-    );
+    // return ListView(
+    //   padding: EdgeInsets.all(16),
+    //   children: [
+    //     _buildLessonSection(
+    //         'Elementary', widget.subject?.categories[0].videos ?? []),
+    //     _buildLessonSection(
+    //         'Junior Secondary', widget.subject?.categories[1].videos ?? []),
+    //   ],
+    // );
+
+    return Container();
   }
 
  Widget _buildLessonSection(String title, List<Video> videos) {

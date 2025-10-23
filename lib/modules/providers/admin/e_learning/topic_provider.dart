@@ -77,6 +77,53 @@ class TopicProvider extends ChangeNotifier {
     }
   }
 
+   Future<void> updateTopic({
+
+    required String topicId,
+    required int syllabusId,
+    required String topic,
+    required String creatorName,
+    required String objective,
+    required String courseId,
+    required String levelId,
+    required String courseName,
+    required String term,
+    required int creatorId,
+    required List<ClassModel> classes,
+  }) async {
+    _isLoading = true;
+    _error = '';
+    notifyListeners();
+
+    try {
+      await topicService.UpdateTopic(
+        topicId: topicId,
+        syllabusId: syllabusId,
+        topic: topic,
+        courseName:courseName,
+        courseId:courseId,
+        levelId: levelId,
+        creatorName: creatorName,
+        objective: objective,
+        creatorId: creatorId,
+        classes: classes,
+       term:term,
+      );
+      
+      // Refresh the topics list after adding
+      await fetchTopic(syllabusId: syllabusId);
+    } catch (e) {
+      print('TopicProvider: Error adding topic: $e');
+      _error = e.toString();
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+
+
+
   void clearTopics() {
     _topics = [];
     _error = '';

@@ -39,15 +39,19 @@ import 'package:linkschool/modules/providers/admin/student_provider.dart';
 import 'package:linkschool/modules/providers/admin/term_provider.dart';
 import 'package:linkschool/modules/providers/admin/view_course_result_provider.dart';
 import 'package:linkschool/modules/providers/explore/cbt_provider.dart';
+import 'package:linkschool/modules/providers/explore/ebook_provider.dart';
 import 'package:linkschool/modules/providers/explore/exam_provider.dart';
 import 'package:linkschool/modules/providers/explore/for_you_provider.dart';
+import 'package:linkschool/modules/providers/explore/home/ebook_provider.dart';
 import 'package:linkschool/modules/providers/explore/home/news_provider.dart';
 import 'package:linkschool/modules/providers/explore/subject_provider.dart';
 import 'package:linkschool/modules/providers/login/schools_provider.dart';
 import 'package:linkschool/modules/providers/staff/overview.dart';
+import 'package:linkschool/modules/providers/staff/staff_dashboard_provider.dart';
 import 'package:linkschool/modules/providers/staff/streams_provider.dart';
 import 'package:linkschool/modules/providers/staff/syllabus_provider.dart';
 import 'package:linkschool/modules/providers/student/elearningcontent_provider.dart';
+import 'package:linkschool/modules/providers/student/home/student_dashboard_feed_provider.dart';
 import 'package:linkschool/modules/providers/student/payment_provider.dart';
 import 'package:linkschool/modules/providers/student/payment_submission_provider.dart';
 import 'package:linkschool/modules/providers/student/marked_assignment_provider.dart';
@@ -111,12 +115,16 @@ if (hasCompletedOnboarding) {
         ChangeNotifierProvider(create: (_) => locator<AuthProvider>()),
         ChangeNotifierProvider(create: (_) => SchoolProvider()),
         // Explore
-        ChangeNotifierProvider(create: (_) => NewsProvider()),
+ChangeNotifierProvider<NewsProvider>(
+      create: (_) => NewsProvider()),
+    
         ChangeNotifierProvider(create: (_) => SubjectProvider()),
         ChangeNotifierProvider(create: (_) => CBTProvider(CBTService())),
         ChangeNotifierProvider(create: (_) => GameProvider()),
         ChangeNotifierProvider(create: (_) => ExamProvider()),
         ChangeNotifierProvider(create: (_) => ForYouProvider()),
+      ChangeNotifierProvider(create: (_) => locator<BookProvider>()),
+      ChangeNotifierProvider(create: (_) => locator<EbookProvider>()),
         
         // Admin HomeScreen 
          ChangeNotifierProvider(create: (_) => locator<AddStaffProvider>()), 
@@ -175,11 +183,15 @@ if (hasCompletedOnboarding) {
         ChangeNotifierProvider(create: (_) => locator<MarkedAssignmentProvider>()),
         ChangeNotifierProvider(create: (_) => locator<StudentResultProvider>()),
         ChangeNotifierProvider(create: (_) => locator<InvoiceProvider>()),
+        ChangeNotifierProvider(create: (_) => locator<StudentDashboardFeedProvider>()),
+        ChangeNotifierProvider(create: (_) => locator<SingleelearningcontentProvider>()),
+        ChangeNotifierProvider(create: (_) => locator<SingleelearningcontentProvider>()),
         // Staff
         ChangeNotifierProvider(create: (_) => locator<StaffSyllabusProvider>()),
         ChangeNotifierProvider(create: (_) => StaffOverviewProvider( locator<StaffOverviewService>())),
         ChangeNotifierProvider(create: (_) => locator<StaffStreamsProvider>()),
-        
+        ChangeNotifierProvider(create: (_) => locator<StaffDashboardProvider>()),
+       
       ],
       child: const MyApp(),
     ),

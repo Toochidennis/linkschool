@@ -29,6 +29,7 @@ class _ManageStudentsScreenState extends State<ManageStudentsScreen> {
   @override
   void initState() {
     super.initState();
+    
     WidgetsBinding.instance.addPostFrameCallback((_) {
       Provider.of<ManageStudentProvider>(context, listen: false).fetchStudents();
       Provider.of<LevelClassProvider>(context, listen: false).fetchLevels();
@@ -43,6 +44,8 @@ class _ManageStudentsScreenState extends State<ManageStudentsScreen> {
       return levelMatch && classMatch;
     }).toList();
   }
+
+  
 
   bool _showAddForm = false;
   Students? _editingStudent;
@@ -214,12 +217,25 @@ class _ManageStudentsScreenState extends State<ManageStudentsScreen> {
 
                                 return GestureDetector(
                                   onTap: () {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (context) => StudentProfileScreen(student: student),
-                                      ),
-                                    );
+                                    final fullName = '${student.firstName} ${student.surname}';
+                                    print(fullName);
+                                    print(student.levelId );
+                                    print(className);
+                                    print(student.classId);
+                                 
+
+  Navigator.push(
+    context,
+    MaterialPageRoute(
+      builder: (context) => StudentProfileScreen(
+        student: student,
+        classId:student.classId.toString(),
+        levelId: student.levelId,
+        className: className,
+        studentName: fullName,
+      ),
+    ),
+  );
                                   },
                                   child: Card(
                                     margin: const EdgeInsets.only(bottom: 8),
@@ -365,8 +381,7 @@ class StudentFormWidget extends StatefulWidget {
 }
 
 class _StudentFormWidgetState extends State<StudentFormWidget> {
-  late final TextEditingController surnameController;
-  late final TextEditingController firstNameController;
+late final TextEditingController _fullNameController;
   late final TextEditingController middleNameController;
   late final TextEditingController birthDateController;
   late final TextEditingController addressController;
@@ -401,8 +416,9 @@ class _StudentFormWidgetState extends State<StudentFormWidget> {
     
     final student = widget.student;
     
-    surnameController = TextEditingController(text: student?.surname ?? '');
-    firstNameController = TextEditingController(text: student?.firstName ?? '');
+    final fullName = '${student?.surname ?? ''} ${student?.firstName ?? ''}'.trim();
+    _fullNameController = TextEditingController(text: fullName);
+
     middleNameController = TextEditingController(text: student?.middle ?? '');
     birthDateController = TextEditingController(text: student?.birthDate ?? '');
     addressController = TextEditingController(text: student?.address ?? '');
@@ -437,8 +453,7 @@ class _StudentFormWidgetState extends State<StudentFormWidget> {
 
   @override
   void dispose() {
-    surnameController.dispose();
-    firstNameController.dispose();
+    _fullNameController.dispose();
     middleNameController.dispose();
     birthDateController.dispose();
     addressController.dispose();
@@ -484,112 +499,164 @@ class _StudentFormWidgetState extends State<StudentFormWidget> {
     }
   }
 
-  Future<void> _saveStudent() async {
-    if (surnameController.text.trim().isEmpty ) {
+Future<void> _saveStudent() async {
+  final fullName = _fullNameController.text.trim();
+  
+  // Validate full name first
+  if (fullName.isEmpty) {
+    if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Please surname field required fields'),
-          backgroundColor: Colors.red,
-        ),
-      );
-      return;
-    }
-
-    if( firstNameController.text.trim().isEmpty ){
-       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please firstName field required fields'),
-          backgroundColor: Colors.red,
-        ),
-      );
-      return;}
-
-      if(gender == null ){
-       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-           content: Text('Please first Gender field required fields'),
-          backgroundColor: Colors.red,
-        ),);
-      return;
-      }
-
-      if(birthDateController.text.trim().isEmpty){
-       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please select Birth Date field required fields'),
-          backgroundColor: Colors.red,
-        ),
-      );
-      return;
-      }
-
-    final studentProvider = Provider.of<ManageStudentProvider>(context, listen: false);
-
-    String? base64Image;
-    if (tempImage != null) {
-      final bytes = await tempImage!.readAsBytes();
-      base64Image = base64Encode(bytes);
-    }
-
-    final studentData = {
-      "photo": tempImage != null
-          ? {
-              "file": base64Image,
-              "file_name": path.basename(tempImage!.path),
-              "old_file_name": oldFileName,
-            }
-          : (isEditing ? widget.student!.photo ?? "" : ""),
-      'surname': surnameController.text.trim(),
-      'first_name': firstNameController.text.trim(),
-      'middle': middleNameController.text.trim(),
-      'gender': gender,
-      'birth_date': birthDateController.text.trim(),
-      'address': addressController.text.trim(),
-      'city': int.tryParse(cityController.text) ?? 0,
-      'state': int.tryParse(stateController.text) ?? 0,
-      'country': int.tryParse(countryController.text) ?? 0,
-      'email': emailController.text.trim(),
-      'religion': religionController.text.trim(),
-      'guardian_name': guardianNameController.text.trim(),
-      'guardian_address': guardianAddressController.text.trim(),
-      'guardian_phone_no': guardianPhoneController.text.trim(),
-      'lga_origin': lgaOriginController.text.trim(),
-      'state_origin': stateOriginController.text.trim(),
-      'nationality': nationalityController.text.trim(),
-      'health_status': healthStatusController.text.trim(),
-      'student_status': studentStatusController.text.trim(),
-      'past_record': pastRecordController.text.trim(),
-      'academic_result': academicResultController.text.trim(),
-      'level_id': dialogLevelId,
-      'class_id': dialogClassId,
-      'registration_no': registrationNoController.text.trim(),
-    };
-
-    bool success;
-    if (isEditing) {
-      success = await studentProvider.updateStudent(widget.student!.id.toString(), studentData);
-    } else {
-      success = await studentProvider.createStudent(studentData);
-    }
-
-    if (success) {
-      widget.onSaved();
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(isEditing ? 'Student updated successfully' : 'Student added successfully'),
-          backgroundColor: AppColors.attCheckColor2,
-        ),
-      );
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(studentProvider.error ?? 'Failed to save student'),
+          content: Text('Please enter full name'),
           backgroundColor: Colors.red,
         ),
       );
     }
+    return;
   }
 
+  // Parse name
+  final nameParts = fullName.split(' ').where((part) => part.isNotEmpty).toList();
+  String surname = '';
+  String firstName = '';
+
+  if (nameParts.length < 2) {
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please enter both surname and first name (e.g., Smith John)'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+    return;
+  }
+
+  surname = nameParts[0]; // First part is surname
+  firstName = nameParts.sublist(1).join(' '); // Rest is first name
+
+  // Validate gender
+  if (gender == null) {
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please select Gender'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+    return;
+  }
+
+  // Validate birth date
+  if (birthDateController.text.trim().isEmpty) {
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please select Birth Date'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+    return;
+  }
+
+  final studentProvider = Provider.of<ManageStudentProvider>(context, listen: false);
+
+  // Handle photo upload
+  String? base64Image;
+  String? newFileName;
+  
+  if (tempImage != null) {
+    final bytes = await tempImage!.readAsBytes();
+    base64Image = base64Encode(bytes);
+    newFileName = path.basename(tempImage!.path);
+  }
+
+  // Build student data
+  final studentData = <String, dynamic>{
+    'surname': surname,
+    'first_name': firstName,
+    'middle': middleNameController.text.trim(),
+    'gender': gender,
+    'birth_date': birthDateController.text.trim(),
+    'address': addressController.text.trim(),
+    'city': int.tryParse(cityController.text) ?? 0,
+    'state': int.tryParse(stateController.text) ?? 0,
+    'country': int.tryParse(countryController.text) ?? 0,
+    'email': emailController.text.trim(),
+    'religion': religionController.text.trim(),
+    'guardian_name': guardianNameController.text.trim(),
+    'guardian_address': guardianAddressController.text.trim(),
+    'guardian_phone_no': guardianPhoneController.text.trim(),
+    'lga_origin': lgaOriginController.text.trim(),
+    'state_origin': stateOriginController.text.trim(),
+    'nationality': nationalityController.text.trim(),
+    'health_status': healthStatusController.text.trim(),
+    'student_status': studentStatusController.text.trim(),
+    'past_record': pastRecordController.text.trim(),
+    'academic_result': academicResultController.text.trim(),
+    'level_id': dialogLevelId,
+    'class_id': dialogClassId,
+    'registration_no': registrationNoController.text.trim(),
+  };
+
+  // CRITICAL FIX: Always send photo as an object/map structure
+  if (tempImage != null && base64Image != null) {
+    // New image selected - send with base64
+    studentData['photo'] = {
+      "file": base64Image,
+      "file_name": newFileName,
+      "old_file_name": oldFileName.isNotEmpty ? oldFileName : "",
+    };
+  } else if (isEditing) {
+    // Editing without new image - send existing path in proper structure
+    studentData['photo'] = {
+      "file": widget.student?.photoPath ?? "",
+      "file_name": oldFileName.isNotEmpty ? oldFileName : "",
+      "old_file_name": "",
+    };
+  } else {
+    // Creating new student without photo - send empty structure
+    studentData['photo'] = {
+      "file": "",
+      "file_name": "",
+      "old_file_name": "",
+    };
+  }
+
+  bool success;
+  if (isEditing) {
+    success = await studentProvider.updateStudent(
+      widget.student!.id.toString(), 
+      studentData
+    );
+  } else {
+    success = await studentProvider.createStudent(studentData);
+  }
+
+  // Check if widget is still mounted before showing snackbar
+  if (!mounted) return;
+
+  if (success) {
+    widget.onSaved();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          isEditing ? 'Student updated successfully' : 'Student added successfully'
+        ),
+        backgroundColor: AppColors.attCheckColor2,
+      ),
+    );
+  } else {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(studentProvider.error ?? 'Failed to save student'),
+        backgroundColor: Colors.red,
+      ),
+    );
+  }
+}
   @override
   Widget build(BuildContext context) {
     final studentProvider = Provider.of<ManageStudentProvider>(context);
@@ -652,13 +719,13 @@ class _StudentFormWidgetState extends State<StudentFormWidget> {
             const SizedBox(height: 20),
 
             // Form fields
-            Row(
-              children: [
-                Expanded(child: _buildTextField(controller: surnameController, label: 'Surname', icon: Icons.badge)),
-                const SizedBox(width: 12),
-                Expanded(child: _buildTextField(controller: firstNameController, label: 'First Name', icon: Icons.person)),
-              ],
-            ),
+           _buildTextField(
+  controller: _fullNameController,
+  label: 'Full Name * (Surname First)',
+  icon: Icons.person,
+  hintText: 'e.g., Smith John David',
+),
+const SizedBox(height: 12),
             const SizedBox(height: 12),
             _buildTextField(controller: middleNameController, label: 'Middle Name', icon: Icons.person_outline),
             const SizedBox(height: 12),
@@ -777,6 +844,7 @@ class _StudentFormWidgetState extends State<StudentFormWidget> {
     required TextEditingController controller,
     required String label,
     required IconData icon,
+      String? hintText, 
     TextInputType keyboardType = TextInputType.text,
     bool readOnly = false,
   }) {
@@ -786,6 +854,7 @@ class _StudentFormWidgetState extends State<StudentFormWidget> {
       readOnly: readOnly,
       decoration: InputDecoration(
         labelText: label,
+        hintText: hintText,
         prefixIcon: Icon(icon, color: AppColors.text2Light),
         labelStyle: const TextStyle(
           color: AppColors.text5Light,

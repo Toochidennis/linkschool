@@ -1,34 +1,51 @@
-import 'dart:convert';
-import 'package:flutter/foundation.dart';
-import 'package:http/http.dart' as http;
+import 'package:hive/hive.dart';
 import 'package:linkschool/modules/model/explore/home/book_model.dart';
-
+import 'package:linkschool/modules/services/api/api_service.dart';
 
 class BookService {
-  final String _baseUrl = kIsWeb
-      ? 'https://cors-anywhere.herokuapp.com/http://cbtportal.linkskool.com/api/getBooks.php'
-      : 'http://cbtportal.linkskool.com/api/getBooks.php';
-
-  // EbookService({required this._baseUrl});
+  final ApiService _apiService;
+  BookService(this._apiService);
 
   Future<Map<String, dynamic>> fetchBooks() async {
-    final response = await http.get(Uri.parse(_baseUrl));
+    final userBox = Hive.box('userData');
+    final loginData = userBox.get('userData') ?? userBox.get('loginResponse');
+    final dbName = userBox.get('_db') ?? 'aalmgzmy_linkskoo_practice';
+    
+    if (loginData == null || loginData['token'] == null) {
+      throw Exception("No valid login data or token found");
+    }
 
-    if (response.statusCode == 200) {
-      return json.decode(response.body);
-    } else {
-      throw Exception('Failed to load books');
+    final token = loginData['token'] as String;
+    _apiService.setAuthToken(token);
+
+    try {
+      final response = await _apiService.get<Map<String, dynamic>>(
+        endpoint: 'public/books',
+        queryParams: {
+          '_db': dbName,
+        },
+      );
+
+      if (response.statusCode == 200) {
+        print("Books fetched successfully");
+        return response.rawData?['response'] ?? {};
+      }
+
+      throw Exception("Failed to load books: ${response.message}");
+    } catch (e) {
+      print("Error fetching books: $e");
+      throw Exception("Failed to load books: $e");
     }
   }
 
   Future<List<Book>> getEbooks() async {
     final data = await fetchBooks();
-    final List<dynamic> booksJson = data['books'];
+    final List<dynamic> booksJson = data['books'] ?? [];
     return booksJson.map((json) => Book.fromJson(json)).toList();
   }
 
   Future<List<String>> getCategories() async {
     final data = await fetchBooks();
-    return List<String>.from(data['categories']);
+    return List<String>.from(data['categories'] ?? []);
   }
 }

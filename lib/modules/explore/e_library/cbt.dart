@@ -172,7 +172,7 @@ class _E_CBTDashboardState extends State<E_CBTDashboard> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Constants.headingWithSeeAll600(
-                    title: 'Choose subject',
+                    title: 'Choossse subject',
                     titleSize: 18.0,
                     titleColor: AppColors.text4Light,
                   ),
@@ -205,6 +205,7 @@ class _E_CBTDashboardState extends State<E_CBTDashboard> {
                       _yearDialog(context);
                     },
                     child: _buildChooseSubjectCard(
+                      
                       subject: item.subject,
                       year: item.year,
                       cardColor: item.cardColor,
@@ -423,6 +424,7 @@ void _yearDialog(BuildContext context) {
                             context,
                             MaterialPageRoute(
                                 builder: (context) => CbtDetailScreen(
+                                  examTypeId: "",
                                       year: selectedYear!,
                                       subject: 'Mathematics',
                                       subjectIcon: 'maths',

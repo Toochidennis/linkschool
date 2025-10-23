@@ -144,6 +144,11 @@ class _FeeSettingScreenState extends State<FeeSettingScreen> {
                         },
                       ),
                     ),
+                     SizedBox(
+                           
+                              height: 80,
+                              
+                            ),
                   ],
                 ),
               ),

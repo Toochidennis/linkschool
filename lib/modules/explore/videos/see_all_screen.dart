@@ -27,10 +27,11 @@ class _SeeallScreenState extends State<SeeallScreen> {
   Widget build(BuildContext context) {
     return Consumer<SubjectProvider>(
       builder: (context, subjectProvider, child) {
-        final allVideos = subjectProvider.subjects
-            .expand((subject) => subject.categories)
-            .expand((category) => category.videos)
-            .toList();
+        final allvidoes = [];
+        // final allVideos = subjectProvider.subjects
+        //     .expand((subject) => subject.genres)
+        //     .expand((category) => category.videos)
+        //     .toList();
 
         return Scaffold(
           appBar: Constants.customAppBar(context: context),
@@ -52,12 +53,16 @@ class _SeeallScreenState extends State<SeeallScreen> {
                         const BouncingScrollPhysics(), // Optional: for better scrolling
                     itemCount: 10, // Show all videos
                     itemBuilder: (context, index) => GestureDetector(
-                        onTap: () => Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                                builder: (context) =>
-                                    E_lib_vids(video: allVideos[index]))),
-                        child: _watchHistory(allVideos[index])),
+                        // onTap: () => Navigator.push(
+                        //     context,
+                        //     MaterialPageRoute(
+                        //         builder: (context) =>(){}
+                        //             // E_lib_vids(video: allVideos[index])
+                                    
+                        //             )
+                        //   ),
+                        // child: _watchHistory(allVideos[index])
+                        ),
                   ),
                 ),
               ],

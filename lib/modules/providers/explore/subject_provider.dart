@@ -1,9 +1,8 @@
 import 'package:flutter/foundation.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 import '../../model/explore/home/subject_model2.dart';
 import '../../services/explore/subject_service.dart';
-
-
 
 class SubjectProvider with ChangeNotifier {
   final SubjectService _subjectService = SubjectService();
@@ -14,52 +13,25 @@ class SubjectProvider with ChangeNotifier {
   bool get isLoading => _isLoading;
 
   Future<void> fetchSubjects() async {
+    // ✅ Avoid multiple unnecessary rebuilds during initState
+    if (_isLoading) return;
+
     _isLoading = true;
     notifyListeners();
 
     try {
-      _subjects = await _subjectService.getAllSubject();
-    } catch (error) {
-      print('Error fetching subjects: $error');
-    }
+      final apiKey = dotenv.env['API_KEY'] ?? '';
+      if (apiKey.isEmpty) {
+        debugPrint('⚠️ API_KEY not found in .env file.');
+      }
 
-    _isLoading = false;
-    notifyListeners();
+      _subjects = await _subjectService.getAllSubject();
+      debugPrint('✅ Subjects fetched successfully: ${_subjects.length}');
+    } catch (error) {
+      debugPrint('❌ Error fetching subjects: $error');
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
   }
 }
-
-
-
-// import 'package:flutter/foundation.dart';
-
-// import '../../model/explore/home/subject_model2.dart';
-// import '../../services/explore/subject_service.dart';
-
-
-
-// class SubjectProvider with ChangeNotifier {
-//   final SubjectService _subjectService = SubjectService();
-//   List<SubjectModel2> _subjects = [];
-//   bool _isLoading = false;
-
-//   List<SubjectModel2> get subjects => _subjects;
-//   bool get isLoading => _isLoading;
-//     String get errorMessage => _errorMessage;
-
-// final SubjectService _subjectService = SubjectService();
-//   Future<void> fetchSubject() async {
-//     _isLoading = true;
-//     _errorMessage = '';
-//     notifyListeners();
-
-//     try {
-//       _subjects = await _subjectService.getAllSubjects();
-//       print('Fetched News: $_subjects');
-//     } catch (error) {
-//       print('Error fetching subjects: $error');
-//     }
-
-//     _isLoading = false;
-//     notifyListeners();
-//   }
-// }

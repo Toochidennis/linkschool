@@ -6,7 +6,8 @@ import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 
 class TestScreen extends StatefulWidget {
-  const TestScreen({super.key});
+  final String examTypeId;
+  const TestScreen({super.key, required this.examTypeId});
 
   @override
   _TestScreenState createState() => _TestScreenState();
@@ -14,13 +15,16 @@ class TestScreen extends StatefulWidget {
 
 class _TestScreenState extends State<TestScreen> {
   @override
-  void initState() {
-    super.initState();
-    // Fetch exam data when screen initializes
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<ExamProvider>().fetchExamData();
-    });
-  }
+ @override
+void initState() {
+  super.initState();
+  // Fetch exam data when screen initializes
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    final provider = Provider.of<ExamProvider>(context, listen: false);
+    provider.fetchExamData(widget.examTypeId);
+    print("Fetching exam data...");
+  });
+}
 
   @override
   Widget build(BuildContext context) {

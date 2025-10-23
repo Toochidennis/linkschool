@@ -37,7 +37,7 @@ class _StaffAddViewCourseResultState extends State<StaffAddViewCourseResult> {
   Map<String, int> maxScores = {};
   Map<String, TextEditingController> _controllers = {};
   Set<String> _editingFields = {};
-  
+  String? _problematicFieldKey;
   // Settings from local storage
   String year = '';
   int term = 0;
@@ -46,6 +46,7 @@ class _StaffAddViewCourseResultState extends State<StaffAddViewCourseResult> {
   @override
   void initState() {
     super.initState();
+    _problematicFieldKey = null;
     print('Initializing StaffAddViewCourseResultFixed');
     _loadSettingsFromStorage();
   }
@@ -55,6 +56,41 @@ class _StaffAddViewCourseResultState extends State<StaffAddViewCourseResult> {
     _controllers.forEach((_, controller) => controller.dispose());
     super.dispose();
   }
+
+
+  void _checkAndSetProblematicField() {
+  // Clear existing problematic field
+  _problematicFieldKey = null;
+  
+  // Find the first field that exceeds max score
+  for (var resultId in editedScores.keys) {
+    final resultScores = editedScores[resultId]!;
+    for (var assessmentName in resultScores.keys) {
+      final score = double.tryParse(resultScores[assessmentName] ?? '0') ?? 0;
+      final maxScore = maxScores[assessmentName] ?? 0;
+      if (score > maxScore) {
+        _problematicFieldKey = '$resultId-$assessmentName';
+        return; // Return after finding the first problematic field
+      }
+    }
+  }
+}
+
+bool _hasExceededLimitFields() {
+  for (var resultId in editedScores.keys) {
+    final resultScores = editedScores[resultId]!;
+    for (var assessmentName in resultScores.keys) {
+      final score = double.tryParse(resultScores[assessmentName] ?? '0') ?? 0;
+      final maxScore = maxScores[assessmentName] ?? 0;
+      if (score > maxScore) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+
 
   Future<void> _loadSettingsFromStorage() async {
     try {
@@ -224,6 +260,17 @@ class _StaffAddViewCourseResultState extends State<StaffAddViewCourseResult> {
       print('No edits for resultId: $resultId');
       return;
     }
+
+
+        _checkAndSetProblematicField();
+  if (_problematicFieldKey != null) {
+    CustomToaster.toastWarning(
+      context,
+      'Validation Error',
+      'Please fix all exceeded scores before saving',
+    );
+    return;
+  }
 
     try {
       final apiService = locator<ApiService>();
@@ -661,77 +708,127 @@ class _StaffAddViewCourseResultState extends State<StaffAddViewCourseResult> {
                 ),
               );
             } else if (isAssessment) {
-              // Assessment Scores - Editable
-              final controllerKey = '$resultId-$title';
-              String currentScore;
-              if (editedScores.containsKey(resultId) &&
-                  editedScores[resultId]!.containsKey(title)) {
-                currentScore = editedScores[resultId]![title]!;
-              } else {
-                final assessmentData = (result['assessments'] as List).firstWhere(
-                  (a) => a['assessment_name'] == title,
-                  orElse: () => {'score': ''},
-                );
-                currentScore = assessmentData['score']?.toString() ?? '';
-              }
+  // Assessment Scores - Editable
+  final controllerKey = '$resultId-$title';
+  String currentScore;
+  if (editedScores.containsKey(resultId) &&
+      editedScores[resultId]!.containsKey(title)) {
+    currentScore = editedScores[resultId]![title]!;
+  } else {
+    final assessmentData = (result['assessments'] as List).firstWhere(
+      (a) => a['assessment_name'] == title,
+      orElse: () => {'score': ''},
+    );
+    currentScore = assessmentData['score']?.toString() ?? '';
+  }
 
-              if (!_controllers.containsKey(controllerKey)) {
-                _controllers[controllerKey] = TextEditingController(text: currentScore);
-              } else if (!_editingFields.contains(controllerKey)) {
-                _controllers[controllerKey]!.text = currentScore;
-              }
+  if (!_controllers.containsKey(controllerKey)) {
+    _controllers[controllerKey] = TextEditingController(text: currentScore);
+  } else if (!_editingFields.contains(controllerKey)) {
+    _controllers[controllerKey]!.text = currentScore;
+  }
 
-              return Container(
-                constraints: const BoxConstraints(
-                  minHeight: 60, // Match the height of student name cells
-                ),
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  color: Colors.grey[100],
-                  border: Border(
-                    top: BorderSide(color: Colors.grey[300]!),
-                    right: BorderSide(color: Colors.grey[300]!),
-                  ),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 4),
-                  child: TextField(
-                    controller: _controllers[controllerKey],
-                    textAlign: TextAlign.center,
-                    keyboardType: TextInputType.number,
-                    style: const TextStyle(fontSize: 14),
-                    decoration: const InputDecoration(
-                      border: InputBorder.none,
-                      contentPadding: EdgeInsets.zero,
-                    ),
-                    onTap: () {
-                      setState(() {
-                        editedScores[resultId] ??= {};
-                        _editingFields.add(controllerKey);
-                        print('Tapped assessment: $title for resultId: $resultId - field ready for editing');
-                      });
-                    },
-                    onChanged: (value) {
-                      setState(() {
-                        editedScores[resultId] ??= {};
-                        editedScores[resultId]![title] = value;
-                        print('Changed $title for resultId: $resultId to: $value');
-                      });
-                    },
-                    onSubmitted: (value) {
-                      setState(() {
-                        _editingFields.remove(controllerKey);
-                      });
-                    },
-                    onEditingComplete: () {
-                      setState(() {
-                        _editingFields.remove(controllerKey);
-                      });
-                    },
-                  ),
-                ),
-              );
-            } else if (isTotal) {
+  // Add validation variables
+  final maxScore = maxScores[title] ?? 0;
+  final currentValue = double.tryParse(_controllers[controllerKey]!.text) ?? 0;
+  final isThisFieldProblematic = _problematicFieldKey == controllerKey;
+  final hasProblematicField = _problematicFieldKey != null;
+  final isFieldEnabled = !hasProblematicField || isThisFieldProblematic;
+
+  return Container(
+    constraints: const BoxConstraints(
+      minHeight: 60,
+    ),
+    alignment: Alignment.center,
+    decoration: BoxDecoration(
+      color: !isFieldEnabled ? Colors.grey[100] : Colors.white,
+      border: Border(
+        top: BorderSide(color: Colors.grey[300]!),
+        right: BorderSide(color: Colors.grey[300]!),
+      ),
+    ),
+    child: Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 4),
+      child: TextField(
+        controller: _controllers[controllerKey],
+        textAlign: TextAlign.center,
+        keyboardType: TextInputType.number,
+        style: TextStyle(
+          fontSize: 14,
+          color: (currentValue > maxScore) ? Colors.red : Colors.black,
+        ),
+        decoration: InputDecoration(
+          border: InputBorder.none,
+          contentPadding: EdgeInsets.zero,
+          hintText: '0/$maxScore',
+          hintStyle: TextStyle(
+            fontSize: 12,
+            color: Colors.grey[400],
+          ),
+          filled: !isFieldEnabled,
+          fillColor: !isFieldEnabled ? Colors.grey[100] : Colors.transparent,
+        ),
+        enabled: isFieldEnabled,
+        onTap: () {
+          // If there's already a problematic field and this isn't it, show warning
+          if (_problematicFieldKey != null && _problematicFieldKey != controllerKey) {
+            CustomToaster.toastWarning(
+              context,
+              'Fix Required',
+              'Please fix the score for the highlighted field first',
+            );
+            return;
+          }
+
+          setState(() {
+            editedScores[resultId] ??= {};
+            _editingFields.add(controllerKey);
+            print('Tapped assessment: $title for resultId: $resultId - field ready for editing');
+          });
+        },
+        onChanged: (value) {
+          final newScore = double.tryParse(value) ?? 0;
+          final maxScore = maxScores[title] ?? 0;
+          
+          setState(() {
+            editedScores[resultId] ??= {};
+            editedScores[resultId]![title] = value;
+
+            // Check if this field exceeds max score
+            if (newScore > maxScore) {
+              _problematicFieldKey = controllerKey;
+            } else {
+              // If this was the problematic field and is now fixed, clear it
+              if (_problematicFieldKey == controllerKey) {
+                _problematicFieldKey = null;
+              }
+            }
+            print('Changed $title for resultId: $resultId to: $value');
+          });
+
+          // Show warning if score exceeds max
+          if (newScore > maxScore) {
+            CustomToaster.toastWarning(
+              context,
+              'Score Limit Exceeded',
+              'Score for $title cannot exceed $maxScore. Fix this field to continue.',
+            );
+          }
+        },
+        onSubmitted: (value) {
+          setState(() {
+            _editingFields.remove(controllerKey);
+          });
+        },
+        onEditingComplete: () {
+          setState(() {
+            _editingFields.remove(controllerKey);
+          });
+        },
+      ),
+    ),
+  );
+} else if (isTotal) {
               // Total Score - Calculated
               return Container(
                 constraints: const BoxConstraints(

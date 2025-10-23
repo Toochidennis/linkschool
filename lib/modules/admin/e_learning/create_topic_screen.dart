@@ -99,108 +99,124 @@ void _populateFormForEdit(){
     }
   }
 
-  void _addTopic() async {
-    // Validation
-    if (_titleController.text.trim().isEmpty) {
-      CustomToaster.toastError(
-        context,
-        'Error',
-        'Please enter a topic title.',
+ void _addTopic() async {
+  // Validation
+  if (_titleController.text.trim().isEmpty) {
+    CustomToaster.toastError(
+      context,
+      'Error',
+      'Please enter a topic title.',
+    );
+    return;
+  }
+  if (_objectiveController.text.trim().isEmpty) {
+    CustomToaster.toastError(
+      context,
+      'Error',
+      'Please enter an objective.',
+    );
+    return;
+  }
+  if (_selectedClass == 'Select classes' || _selectedClass.trim().isEmpty) {
+    CustomToaster.toastError(
+      context,
+      'Error',
+      'Please select at least one class.',
+    );
+    return;
+  }
+
+  setState(() {
+    _isSaving = true;
+  });
+
+  try {
+    final userBox = Hive.box('userData');
+    final storedUserData =
+        userBox.get('userData') ?? userBox.get('loginResponse');
+    final processedData = storedUserData is String
+        ? json.decode(storedUserData)
+        : storedUserData;
+    final response = processedData['response'] ?? processedData;
+    final data = response['data'] ?? response;
+    final classes = data['classes'] ?? [];
+    final selectedClassIds = userBox.get('selectedClassIds') ?? [];
+
+    // Build the class list as List<ClassModel>
+    final classModelList = selectedClassIds.map<ClassModel>((classId) {
+      final classIdStr = classId.toString();
+      final classData = classes.firstWhere(
+        (cls) => cls['id'].toString() == classIdStr,
+        orElse: () => {'id': classIdStr, 'class_name': 'Unknown'},
       );
-      return;
-    }
-    if (_objectiveController.text.trim().isEmpty) {
-      CustomToaster.toastError(
-        context,
-        'Error',
-        'Please enter an objective.',
+      return ClassModel(
+        id: int.parse(classIdStr),
+        name: classData['class_name']?.toString() ?? 'Unknown',
       );
-      return;
-    }
-    if (_selectedClass == 'Select classes' || _selectedClass.trim().isEmpty) {
-      CustomToaster.toastError(
-        context,
-        'Error',
-        'Please select at least one class.',
+    }).toList();
+
+    // Get the topicProvider from Provider
+    final topicProvider = Provider.of<TopicProvider>(context, listen: false);
+
+    if (widget.editMode && widget.topicToEdit != null) {
+      // EDIT MODE: Update existing topic
+      await topicProvider.updateTopic(
+        topicId: widget.topicToEdit!.id!.toString(), // Make sure your TopicContent model has an id field
+        syllabusId: widget.syllabusId ?? 0,
+        topic: _titleController.text,
+        creatorName: creatorName ?? 'Unknown',
+        objective: _objectiveController.text,
+        term: academicYear ?? '',
+        courseId: widget.courseId ?? '',
+        levelId: widget.levelId ?? "",
+        courseName: widget.courseName ?? "",
+        creatorId: creatorId ?? 0,
+        classes: classModelList,
       );
-      return;
-    }
 
-    setState(() {
-      _isSaving = true;
-    });
-
-    try {
-      final userBox = Hive.box('userData');
-      final storedUserData =
-          userBox.get('userData') ?? userBox.get('loginResponse');
-      final processedData = storedUserData is String
-          ? json.decode(storedUserData)
-          : storedUserData;
-      final response = processedData['response'] ?? processedData;
-      final data = response['data'] ?? response;
-      final classes = data['classes'] ?? [];
-      final selectedClassIds = userBox.get('selectedClassIds') ?? [];
-
-      // Build the class list as List<ClassModel>
-      final classModelList = selectedClassIds.map<ClassModel>((classId) {
-        final classIdStr = classId.toString();
-        final classData = classes.firstWhere(
-          (cls) => cls['id'].toString() == classIdStr,
-          orElse: () => {'id': classIdStr, 'class_name': 'Unknown'},
-        );
-        return ClassModel(
-          id: int.parse(classIdStr),
-          name: classData['class_name']?.toString() ?? 'Unknown',
-        );
-      }).toList();
-
-      // Get the topicProvider from Provider
-      final topicProvider = Provider.of<TopicProvider>(context, listen: false);
-
-      // Only the required fields
-      final topicData = {
-        'syllabus_id': widget.syllabusId ?? 0,
-        'topic': _titleController.text,
-        'creator_name': creatorName ?? 'Unknown',
-        'objective': _objectiveController.text,
-        'creator_id': creatorId ?? 0,
-        'classes': classModelList,
-        'course_name':widget.courseName,
-        'term':academicYear ?? 0,
-        'course_id':widget.courseId
-      };
-
+      CustomToaster.toastSuccess(
+        context,
+        'Success',
+        'Topic updated successfully!',
+      );
+    } else {
+      // CREATE MODE: Add new topic
       await topicProvider.addTopic(
         syllabusId: widget.syllabusId ?? 0,
         topic: _titleController.text,
         creatorName: creatorName ?? 'Unknown',
         objective: _objectiveController.text,
-        term:academicYear ?? '',
-        courseId: widget.courseId ??'' ,
-        levelId: widget.levelId ??"",
-        courseName:widget.courseName  ??"",
+        term: academicYear ?? '',
+        courseId: widget.courseId ?? '',
+        levelId: widget.levelId ?? "",
+        courseName: widget.courseName ?? "",
         creatorId: creatorId ?? 0,
         classes: classModelList,
       );
 
-    
-      print('Topieeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeec Data to POST: $topicData');
-
-      Navigator.of(context).pop();
-    } catch (e) {
-      print('Error packaging topic data: $e');
-      CustomToaster.toastError(
+      CustomToaster.toastSuccess(
         context,
-        'Error',
-        'Failed to create topic: ${e.toString()}',
+        'Success',
+        'Topic created successfully!',
       );
-    } finally {
-      setState(() {
-        _isSaving = false;
-      });
     }
+
+    // Navigate back after successful save
+    Navigator.of(context).pop(true); // Pass true to indicate success
+
+  } catch (e) {
+    print('Error ${widget.editMode ? 'updating' : 'creating'} topic: $e');
+    CustomToaster.toastError(
+      context,
+      'Error',
+      'Failed to ${widget.editMode ? 'update' : 'create'} topic: ${e.toString()}',
+    );
+  } finally {
+    setState(() {
+      _isSaving = false;
+    });
   }
+}
 
   void _editObjective() {
     showDialog(

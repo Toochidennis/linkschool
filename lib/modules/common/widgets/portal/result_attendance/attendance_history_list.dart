@@ -10,17 +10,18 @@ import 'package:hive/hive.dart';
 
 class AttendanceHistoryList extends StatefulWidget {
   final String classId;
-
+   final VoidCallback? onRefresh; 
   const AttendanceHistoryList({
     super.key,
     required this.classId,
+    this.onRefresh
   });
 
   @override
-  State<AttendanceHistoryList> createState() => _AttendanceHistoryListState();
+  State<AttendanceHistoryList> createState() => AttendanceHistoryListState();
 }
 
-class _AttendanceHistoryListState extends State<AttendanceHistoryList> {
+class AttendanceHistoryListState extends State<AttendanceHistoryList> {
   final List<String> subjects = [
     'English Language',
     'Mathematics',
@@ -31,6 +32,13 @@ class _AttendanceHistoryListState extends State<AttendanceHistoryList> {
     'Geography',
     'Literature'
   ];
+
+Future<void> refreshData() async {
+    await _fetchAttendanceHistory();
+    setState(() {}); 
+  }
+
+
 
   @override
   void initState() {
@@ -115,6 +123,9 @@ class _AttendanceHistoryListState extends State<AttendanceHistoryList> {
   Widget build(BuildContext context) {
     return Consumer<AttendanceProvider>(
       builder: (context, attendanceProvider, child) {
+
+       
+
         if (attendanceProvider.isLoading) {
           return const Center(child: CircularProgressIndicator());
         }

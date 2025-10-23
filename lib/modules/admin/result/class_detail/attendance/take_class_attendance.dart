@@ -71,64 +71,49 @@ class _TakeClassAttendanceState extends State<TakeClassAttendance> {
   }
 
   Future<void> _onSavePressed() async {
-    final provider = context.read<StudentProvider>();
-    final now = DateTime.now();
-    final formatter = DateFormat('yyyy-MM-dd HH:mm:ss');
-    final formattedDate = formatter.format(now);
-    final dateForApi = "${formattedDate.split(' ')[0]} 00:00:00";
+  final provider = context.read<StudentProvider>();
+  final now = DateTime.now();
+  final formatter = DateFormat('yyyy-MM-dd HH:mm:ss');
+  final formattedDate = formatter.format(now);
+  final dateForApi = "${formattedDate.split(' ')[0]} 00:00:00";
 
-    bool success;
-    
-    if (provider.hasExistingAttendance && provider.currentAttendanceId != null) {
-      success = await provider.updateAttendance(
-        attendanceId: provider.currentAttendanceId!,
-      );
-      
-      if (success) {
-        CustomToaster.toastSuccess(
-          context,
-          'Success',
-          'Class attendance updated successfully',
-        );
-        await provider.fetchAttendance(
-          classId: widget.classId!,
-          date: dateForApi,
-          courseId: '0',
-        );
-      }
-    } else {
-      success = await provider.saveAttendance(
-        classId: widget.classId,
-        courseId: '0',
-        date: formattedDate,
-      );
-      
-      if (success) {
-        await provider.saveLocalAttendance(
-          classId: widget.classId!,
-          date: formattedDate,
-          courseId: '0',
-          studentIds: provider.selectedStudentIds,
-        );
-        
-        CustomToaster.toastSuccess(
-          context,
-          'Success',
-          'Class attendance saved successfully',
-        );
-      }
-    }
-    
-    if (!success) {
-      CustomToaster.toastError(
-        context,
-        'Error',
-        provider.errorMessage.isNotEmpty
-            ? provider.errorMessage
-            : 'Failed to save class attendance',
-      );
-    }
+  bool success = await provider.saveAttendance(
+    classId: widget.classId,
+    courseId: '0',
+    date: formattedDate,
+  );
+
+  if (success) {
+    await provider.saveLocalAttendance(
+      classId: widget.classId!,
+      date: formattedDate,
+      courseId: '0',
+      studentIds: provider.selectedStudentIds,
+    );
+
+    CustomToaster.toastSuccess(
+      context,
+      'Success',
+      'Class attendance saved successfully',
+    );
+
+    // Optional: refresh attendance list if needed
+    await provider.fetchAttendance(
+      classId: widget.classId!,
+      date: dateForApi,
+      courseId: '0',
+    );
+  } else {
+    CustomToaster.toastError(
+      context,
+      'Error',
+      provider.errorMessage.isNotEmpty
+          ? provider.errorMessage
+          : 'Failed to save class attendance',
+    );
   }
+}
+
 
   @override
   Widget build(BuildContext context) {

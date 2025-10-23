@@ -56,7 +56,7 @@ Map<String, dynamic>? _editingFeedData;
   int? creatorId;
   String? creatorName;
   int? academicTerm;
-
+  String? userRole;
   @override
   void initState() {
     super.initState();
@@ -159,6 +159,10 @@ Map<String, dynamic>? _editingFeedData;
           creatorId = profile['staff_id'] is int
               ? profile['staff_id']
               : int.tryParse(profile['staff_id'].toString());
+          
+          userRole = profile['role']?.toString() ?? 'admin';
+
+
 
           creatorName = profile['name']?.toString() ?? '';
 
@@ -423,62 +427,25 @@ Map<String, dynamic>? _editingFeedData;
             ),
             child: Row(
               children: [
+                
                 Expanded(
-                  child: GestureDetector(
-                    onTap: () {
-                      setState(() {
-                        _selectedType = 'question';
-                      });
-                    },
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 200),
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      decoration: BoxDecoration(
-                        color: _selectedType == 'question'
-                            ? AppColors.text2Light
-                            : Colors.transparent,
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Text(
-                        'Announcement',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          color: _selectedType == 'question'
-                              ? Colors.white
-                              : AppColors.text5Light,
-                          fontWeight: FontWeight.w600,
-                          fontFamily: 'Urbanist',
-                        ),
-                      ),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    decoration: BoxDecoration(
+                      color:  AppColors.text2Light,
+                          
+                      borderRadius: BorderRadius.circular(10),
                     ),
-                  ),
-                ),
-                Expanded(
-                  child: GestureDetector(
-                    onTap: () {
-                      setState(() {
-                        _selectedType = 'news';
-                      });
-                    },
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 200),
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      decoration: BoxDecoration(
-                        color: _selectedType == 'news'
-                            ? AppColors.text2Light
-                            : Colors.transparent,
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Text(
-                        'News Feed',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          color: _selectedType == 'news'
-                              ? Colors.white
-                              : AppColors.text5Light,
-                          fontWeight: FontWeight.w600,
-                          fontFamily: 'Urbanist',
-                        ),
+                    child: Text(
+                      'News Feed',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color:
+                             Colors.white,
+                          
+                        fontWeight: FontWeight.w600,
+                        fontFamily: 'Urbanist',
                       ),
                     ),
                   ),
@@ -506,14 +473,10 @@ Map<String, dynamic>? _editingFeedData;
           ),
           const SizedBox(height: 12),
           TextField(
-            controller: _selectedType == 'question'
-                ? _questionController
-                : _newsController,
+            controller: _newsController,
             maxLines: 4,
             decoration: InputDecoration(
-              hintText: _selectedType == 'question'
-                  ? 'Enter announcement here...'
-                  : 'Enter news content here...',
+              hintText:'Enter news content here...',
               hintStyle: const TextStyle(
                 color: AppColors.text5Light,
                 fontSize: 14,
@@ -551,7 +514,7 @@ Map<String, dynamic>? _editingFeedData;
                 elevation: 0,
               ),
               child: Text(
-                'Add ${_selectedType == 'question' ? 'Announcement' : 'News Feed'}',
+                'Add News Feed',
                 style: const TextStyle(
                   color: Colors.white,
                   fontSize: 16,
@@ -567,56 +530,95 @@ Map<String, dynamic>? _editingFeedData;
   }
 
   void _handleSubmit() async {
-    final controller =
-        _selectedType == 'question' ? _questionController : _newsController;
-    final title = _titleController.text.trim();
-    final content = controller.text.trim();
+  final title = _titleController.text.trim();
+  final content = _newsController.text.trim(); // Always use newsController
 
-    final provider = Provider.of<DashboardFeedProvider>(context, listen: false);
+  final provider = Provider.of<DashboardFeedProvider>(context, listen: false);
 
-    try {
-      if (content.isNotEmpty) {
-        final payload = {
-          'title': title,
-          'type': _selectedType == 'question' ? 'announcement' : 'news',
-          'parent_id': 0,
-          'content': content,
-          'author_name': creatorName,
-          'author_id': creatorId,
-          'term': academicTerm,
-          'files': <Map<String, dynamic>>[],
-        };
-        await provider.createFeed(payload);
-        final jsonPayload = jsonEncode(payload);
-        // ignore: avoid_print
-        print(jsonPayload);
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-                '${_selectedType == 'question' ? 'Announcement' : 'News feed'} added successfully!'),
-            backgroundColor: AppColors.text2Light,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10),
-            ),
-          ),
-        );
-
-        _titleController.clear();
-        controller.clear();
-        setState(() {
-          _showAddForm = false;
-        });
-      }
-    } catch (e) {
+  try {
+    // Validate input
+    if (title.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-            content: Text(
-                'Failed to add ${_selectedType == 'question' ? 'Announcement' : 'News Feed'}: $e')),
+          content: const Text('Please enter a title'),
+          backgroundColor: Colors.red,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+        ),
+      );
+      return;
+    }
+    
+    if (content.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Please enter content'),
+          backgroundColor: Colors.red,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+        ),
+      );
+      return;
+    }
+
+    // Ensure user data is loaded
+    if (creatorId == null || creatorName == null) {
+      await _loadUserData();
+      if (creatorId == null || creatorName == null) {
+        throw Exception('User data not available');
+      }
+    }
+
+    final payload = {
+      'title': title,
+      'type': 'news',
+      'parent_id': 0,
+      'content': content,
+      'author_name': creatorName,
+      'author_id': creatorId,
+      'term': academicTerm,
+      'files': <Map<String, dynamic>>[],
+    };
+    
+    debugPrint('Creating feed with payload: $payload');
+    
+    await provider.createFeed(payload);
+
+    if (mounted) {
+       CustomToaster.toastSuccess(context, 'Success ', 'Feed added successfully');
+
+      _titleController.clear();
+      _newsController.clear();
+      
+      setState(() {
+        _showAddForm = false;
+      });
+      
+      // Refresh the feed list
+      await provider.fetchDashboardData();
+    }
+  } catch (e, stackTrace) {
+    debugPrint('Error creating feed: $e');
+    debugPrint('Stack trace: $stackTrace');
+    
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to add News Feed: ${e.toString()}'),
+          backgroundColor: Colors.red,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+        ),
       );
     }
   }
+}
 
   @override
   Widget build(BuildContext context) {
@@ -1065,6 +1067,9 @@ Map<String, dynamic>? _editingFeedData;
   newsContent: feed.content,
   time: feed.createdAt,
   title: feed.title ?? '',
+  CreatorId: creatorId.toString(),
+  authorId: feed.authorId ?? 0,
+  role: userRole,
   edit: () => _startEditing(feed), // Direct function call
   delete: () => _confirmDelete(feed), // Direct function call
   comments: feed.replies.length,

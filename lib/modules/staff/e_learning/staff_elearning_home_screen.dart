@@ -57,6 +57,9 @@ class _StaffElearningScreenState extends State<StaffElearningScreen> {
   String selectedLevelId = '';
   String selectedCourseId = '';
   String academicTerm = '';
+  String academicYear ='';
+  String staffIds ='';
+
 
   @override
   void initState() {
@@ -215,6 +218,8 @@ Future<void> _loadUserData() async {
         userData = processedData;
         levelsWithCourses = grouped;
         academicTerm = term;
+        academicYear = year;
+        staffIds = staffId;
       });
 
       final provider = Provider.of<StaffOverviewProvider>(context, listen: false);
@@ -240,468 +245,475 @@ Future<void> _loadUserData() async {
         showNotification: true,
         onNotificationTap: () {},
       ),
-      body: Container(
-        decoration: Constants.customBoxDecoration(context),
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 8.0),
+      body: RefreshIndicator(
+              onRefresh: () async {
+                await Provider.of<StaffOverviewProvider>(context, listen: false)
+                    .fetchOverview(academicTerm, academicYear ,staffIds);
+              },
+
+        child: Container(
+          decoration: Constants.customBoxDecoration(context),
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 8.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                provider.isLoading
+          ? const Center(
+        child: CircularProgressIndicator(),
+            )
+          : provider.recentQuizzes.isEmpty
+        ? const Center(child: Text("No quizzes available"))
+        : CarouselSlider(
+                  items:provider.recentQuizzes.map((quiz) {
+          return GestureDetector(
+            onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => StaffRecentQuiz(
+              levelId: quiz.levelId,
+              syllabusId: quiz.syllabusId.toString(),
+              courseName: quiz.courseName,
+              courseId: quiz.courseId.toString(),
+             quizId: quiz.id.toString(),
+            ),
+          ),
+        );
+            },
+            child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 8.0),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(12.0),
+          color: AppColors.paymentTxtColor1,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 8,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              provider.isLoading
-  ? const Center(
-      child: CircularProgressIndicator(),
-    )
-  : provider.recentQuizzes.isEmpty
-      ? const Center(child: Text("No quizzes available"))
-      : CarouselSlider(
-                items:provider.recentQuizzes.map((quiz) {
-  return GestureDetector(
-    onTap: () {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => StaffRecentQuiz(
-            levelId: quiz.levelId,
-            syllabusId: quiz.syllabusId.toString(),
-            courseName: quiz.courseName,
-            courseId: quiz.courseId.toString(),
-           quizId: quiz.id.toString(),
-          ),
-        ),
-      );
-    },
-    child: Container(
-      margin: const EdgeInsets.symmetric(horizontal: 8.0),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(12.0),
-        color: AppColors.paymentTxtColor1,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 8,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(8.0),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(8.0),
-                color: Colors.white,
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Expanded(
-                    child: Text(
-                      '${quiz.courseName} ${quiz.title}',
-                      style: const TextStyle(
-                        color: Colors.black,
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 8.0, vertical: 4.0),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(8.0),
-                      color: AppColors.paymentTxtColor1,
-                    ),
-                    child: Row(
-                      children: [
-                        SvgPicture.asset(
-                          'assets/icons/student/calender-icon.svg',
-                          width: 16,
-                          height: 16,
-                          colorFilter: const ColorFilter.mode(
-                            Colors.white,
-                            BlendMode.srcIn,
-                          ),
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          quiz.datePosted,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 12,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 48),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                const Column(
-                  children: [
-                    Text(
-                      'Time',
-                      style: TextStyle(
-                        color: AppColors.backgroundLight,
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    SizedBox(height: 4),
-                    Text(
-                      '08:00 AM', // TODO: replace if backend gives exact time
-                      style: TextStyle(
-                        color: AppColors.backgroundLight,
-                        fontSize: 14,
-                      ),
-                    ),
-                  ],
-                ),
-                Container(
-                  height: 40,
-                  width: 1,
+              Container(
+                padding: const EdgeInsets.all(8.0),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(8.0),
                   color: Colors.white,
-                  margin: const EdgeInsets.symmetric(horizontal: 8.0),
                 ),
-                Column(
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text(
-                      'Classes',
-                      style: TextStyle(
-                        color: AppColors.backgroundLight,
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
+                    Expanded(
+                      child: Text(
+                        '${quiz.courseName} ${quiz.title}',
+                        style: const TextStyle(
+                          color: Colors.black,
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
-                    const SizedBox(height: 4),
-                    Text(
-                      quiz.classes.map((c) => c.name).join(", "),
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(
-                        color: AppColors.backgroundLight,
-                        fontSize: 14,
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8.0, vertical: 4.0),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(8.0),
+                        color: AppColors.paymentTxtColor1,
+                      ),
+                      child: Row(
+                        children: [
+                          SvgPicture.asset(
+                            'assets/icons/student/calender-icon.svg',
+                            width: 16,
+                            height: 16,
+                            colorFilter: const ColorFilter.mode(
+                              Colors.white,
+                              BlendMode.srcIn,
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            quiz.datePosted,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ],
-                ),
-                Container(
-                  height: 40,
-                  width: 1,
-                  color: Colors.white,
-                  margin: const EdgeInsets.symmetric(horizontal: 8.0),
-                ),
-                const Column(
-                  children: [
-                    Text(
-                      'Duration',
-                      style: TextStyle(
-                        color: AppColors.backgroundLight,
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    SizedBox(height: 4),
-                    Text(
-                      '2h 30m', // TODO: replace if backend provides duration
-                      style: TextStyle(
-                        color: AppColors.backgroundLight,
-                        fontSize: 14,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    ),
-  );
-}).toList(),
-
-                options: CarouselOptions(
-                  height: 185,
-                  viewportFraction: 0.90,
-                  enableInfiniteScroll: false,
-                  autoPlay: true,
-                  autoPlayInterval: const Duration(seconds: 5),
-                  autoPlayCurve: Curves.easeIn,
-                  enlargeCenterPage: false,
-                  onPageChanged: (index, reason) {
-                    setState(() {
-                      currentAssessmentIndex = index;
-                    });
-                  },
                 ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 48),
               Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: List.generate(
-                   provider.recentQuizzes.length,
-                  (index) => Container(
-                    width: 8,
-                    height: 8,
-                    margin: const EdgeInsets.symmetric(horizontal: 4),
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: currentAssessmentIndex == index
-                          ? Colors.blue
-                          : Colors.grey,
-                    ),
-                  ),
-                ),
-              ),
-             
-              const SizedBox(height: 16),
-           Consumer<StaffOverviewProvider>(
-  builder: (context, provider, child) {
-    final activities = provider.recentActivities;
-
-    if (provider.isLoading && activities.isEmpty) {
-      return const Center(child: CircularProgressIndicator());
-    }
-
-    // filter out incomplete activity objects
-    final displayActivities = activities
-        .where((activity) =>
-            activity.createdBy.isNotEmpty &&
-            activity.type.isNotEmpty &&
-            activity.courseName.isNotEmpty &&
-            activity.datePosted.isNotEmpty)
-        .toList();
-
-    if (displayActivities.isEmpty) {
-      return const Center(child: Text("No recent activities available"));
-    }
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Padding(
-          padding: EdgeInsets.symmetric(horizontal: 16),
-          child: Text(
-            "Recent activity",
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
-          ),
-        ),
-        const SizedBox(height: 16),
-        SizedBox(
-          height: 110,
-          child: PageView.builder(
-            controller: activityController,
-            itemCount: displayActivities.length,
-            itemBuilder: (context, index) {
-              final activity = displayActivities[index];
-
-              return GestureDetector(
-                onTap: () {
-                  if (activity.type.toLowerCase() == 'material') {
-                    print("syllabus classes ${activity.classes.map((e) => e.toJson()).toList()}");
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => StaffRecentMaterial(
-                          itemId: activity.id,
-                          syllabusId: activity.syllabusId,
-                          courseId: activity.courseId.toString(),
-                          syllabusClasses: activity.classes.map((e) => e.toJson()).toList(),
-                          levelId: activity.levelId,
-                          //classId: activity.classes.first.id,
-                          courseName: activity.courseName,
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  const Column(
+                    children: [
+                      Text(
+                        'Time',
+                        style: TextStyle(
+                          color: AppColors.backgroundLight,
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
-                    );
-                  } else if (activity.type.toLowerCase() == 'assignment') {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => StaffRecentAssignment(
-                          itemId: activity.id,
-                          syllabusClasses: activity.classes.map((e) => e.toJson()).toList(),
-                          syllabusId: activity.syllabusId,
-                          courseId: activity.courseId.toString(),
-                          levelId: activity.levelId,
-                          courseName: activity.courseName,
-                          // if it’s the Assignment model
+                      SizedBox(height: 4),
+                      Text(
+                        '08:00 AM', // TODO: replace if backend gives exact time
+                        style: TextStyle(
+                          color: AppColors.backgroundLight,
+                          fontSize: 14,
                         ),
-                      ),
-                    );
-                  }else if (activity.type.toLowerCase() == 'quiz') {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => StaffRecentQuiz(
-                          levelId: activity.levelId,
-            syllabusId: activity.syllabusId.toString(),
-            courseName: activity.courseName,
-            courseId: activity.courseId.toString(),
-           quizId: activity.id.toString(),
-                        ),
-                      ),
-                    );
-                  }
-                },
-                child: Container(
-                  margin:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(12),
-                    color: Colors.white,
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.2),
-                        blurRadius: 12,
-                        spreadRadius: 2,
-                        offset: const Offset(0, 4),
                       ),
                     ],
                   ),
-                  child: Padding(
-                    padding: const EdgeInsets.all(12.0),
-                    child: Row(
-                      children: [
-                        const CircleAvatar(
-                          radius: 20,
-                          backgroundImage:
-                              AssetImage("assets/images/student/avatar3.png"),
+                  Container(
+                    height: 40,
+                    width: 1,
+                    color: Colors.white,
+                    margin: const EdgeInsets.symmetric(horizontal: 8.0),
+                  ),
+                  Column(
+                    children: [
+                      const Text(
+                        'Classes',
+                        style: TextStyle(
+                          color: AppColors.backgroundLight,
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
                         ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              RichText(
-                                text: TextSpan(
-                                  style: const TextStyle(
-                                      color: Colors.black, fontSize: 14),
-                                  children: [
-                                    TextSpan(text: "${activity.createdBy} "),
-                                    TextSpan(
-                                        text: "${activity.type} ",
-                                        style: const TextStyle(
-                                            fontWeight: FontWeight.normal)),
-                                    TextSpan(
-                                        text: activity.courseName,
-                                        style: const TextStyle(
-                                            fontWeight: FontWeight.bold)),
-                                  ],
-                                ),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                activity.datePosted,
-                                style: const TextStyle(
-                                    color: Colors.grey, fontSize: 12),
-                              ),
-                            ],
-                          ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        quiz.classes.map((c) => c.name).join(", "),
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          color: AppColors.backgroundLight,
+                          fontSize: 14,
                         ),
-                      ],
+                      ),
+                    ],
+                  ),
+                  Container(
+                    height: 40,
+                    width: 1,
+                    color: Colors.white,
+                    margin: const EdgeInsets.symmetric(horizontal: 8.0),
+                  ),
+                  const Column(
+                    children: [
+                      Text(
+                        'Duration',
+                        style: TextStyle(
+                          color: AppColors.backgroundLight,
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      SizedBox(height: 4),
+                      Text(
+                        '2h 30m', // TODO: replace if backend provides duration
+                        style: TextStyle(
+                          color: AppColors.backgroundLight,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+            ),
+          );
+        }).toList(),
+        
+                  options: CarouselOptions(
+                    height: 185,
+                    viewportFraction: 0.90,
+                    enableInfiniteScroll: false,
+                    autoPlay: true,
+                    autoPlayInterval: const Duration(seconds: 5),
+                    autoPlayCurve: Curves.easeIn,
+                    enlargeCenterPage: false,
+                    onPageChanged: (index, reason) {
+                      setState(() {
+                        currentAssessmentIndex = index;
+                      });
+                    },
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: List.generate(
+                     provider.recentQuizzes.length,
+                    (index) => Container(
+                      width: 8,
+                      height: 8,
+                      margin: const EdgeInsets.symmetric(horizontal: 4),
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: currentAssessmentIndex == index
+                            ? Colors.blue
+                            : Colors.grey,
+                      ),
                     ),
                   ),
                 ),
-              );
-            },
+               
+                const SizedBox(height: 16),
+             Consumer<StaffOverviewProvider>(
+          builder: (context, provider, child) {
+            final activities = provider.recentActivities;
+        
+            if (provider.isLoading && activities.isEmpty) {
+        return const Center(child: CircularProgressIndicator());
+            }
+        
+            // filter out incomplete activity objects
+            final displayActivities = activities
+          .where((activity) =>
+              activity.createdBy.isNotEmpty &&
+              activity.type.isNotEmpty &&
+              activity.courseName.isNotEmpty &&
+              activity.datePosted.isNotEmpty)
+          .toList();
+        
+            if (displayActivities.isEmpty) {
+        return const Center(child: Text("No recent activities available"));
+            }
+        
+            return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 16),
+            child: Text(
+              "Recent activity",
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+            ),
+          ),
+          const SizedBox(height: 16),
+          SizedBox(
+            height: 110,
+            child: PageView.builder(
+              controller: activityController,
+              itemCount: displayActivities.length,
+              itemBuilder: (context, index) {
+                final activity = displayActivities[index];
+        
+                return GestureDetector(
+                  onTap: () {
+                    if (activity.type.toLowerCase() == 'material') {
+                      print("syllabus classes ${activity.classes.map((e) => e.toJson()).toList()}");
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => StaffRecentMaterial(
+                            itemId: activity.id,
+                            syllabusId: activity.syllabusId,
+                            courseId: activity.courseId.toString(),
+                            syllabusClasses: activity.classes.map((e) => e.toJson()).toList(),
+                            levelId: activity.levelId,
+                            //classId: activity.classes.first.id,
+                            courseName: activity.courseName,
+                          ),
+                        ),
+                      );
+                    } else if (activity.type.toLowerCase() == 'assignment') {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => StaffRecentAssignment(
+                            itemId: activity.id,
+                            syllabusClasses: activity.classes.map((e) => e.toJson()).toList(),
+                            syllabusId: activity.syllabusId,
+                            courseId: activity.courseId.toString(),
+                            levelId: activity.levelId,
+                            courseName: activity.courseName,
+                            // if it’s the Assignment model
+                          ),
+                        ),
+                      );
+                    }else if (activity.type.toLowerCase() == 'quiz') {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => StaffRecentQuiz(
+                            levelId: activity.levelId,
+              syllabusId: activity.syllabusId.toString(),
+              courseName: activity.courseName,
+              courseId: activity.courseId.toString(),
+             quizId: activity.id.toString(),
+                          ),
+                        ),
+                      );
+                    }
+                  },
+                  child: Container(
+                    margin:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(12),
+                      color: Colors.white,
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.2),
+                          blurRadius: 12,
+                          spreadRadius: 2,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(12.0),
+                      child: Row(
+                        children: [
+                          const CircleAvatar(
+                            radius: 20,
+                            backgroundImage:
+                                AssetImage("assets/images/student/avatar3.png"),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                RichText(
+                                  text: TextSpan(
+                                    style: const TextStyle(
+                                        color: Colors.black, fontSize: 14),
+                                    children: [
+                                      TextSpan(text: "${activity.createdBy} "),
+                                      TextSpan(
+                                          text: "${activity.type} ",
+                                          style: const TextStyle(
+                                              fontWeight: FontWeight.normal)),
+                                      TextSpan(
+                                          text: activity.courseName,
+                                          style: const TextStyle(
+                                              fontWeight: FontWeight.bold)),
+                                    ],
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  activity.datePosted,
+                                  style: const TextStyle(
+                                      color: Colors.grey, fontSize: 12),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
+            );
+          },
+        ),
+        
+                const SizedBox(height: 24),
+                const Padding(
+                  padding: EdgeInsets.only(left: 8.0),
+                  child: Text(
+                    'Courses',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+                ),
+                const SizedBox(height: 16),
+              
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            for (var classData in levelsWithCourses) ...[
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8.0),
+          child: Text(
+            classData['class_name'] ?? '',
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
           ),
         ),
-      ],
-    );
-  },
-),
-
-              const SizedBox(height: 24),
-              const Padding(
-                padding: EdgeInsets.only(left: 8.0),
+        GridView.builder(
+            padding: const EdgeInsets.only(bottom: 8.0),
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 2,
+            mainAxisSpacing: 14,
+            crossAxisSpacing: 14,
+            childAspectRatio: 3,
+          ),
+          itemCount: classData['courses'].length,
+          itemBuilder: (context, index) {
+            final course = classData['courses'][index];
+            final svgBackground =
+                courseBackgrounds[index % courseBackgrounds.length];
+        
+           return GestureDetector(
+          onTap: () => _navigateToCourseDetail(course, classData['class_id'].toString()),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(12.0),
+            child: Stack(
+        alignment: Alignment.center,
+        children: [
+          SvgPicture.asset(svgBackground,
+              fit: BoxFit.cover,
+              width: double.infinity,
+              height: double.infinity),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              SvgPicture.asset(
+                courseIcon,
+                width: 24,
+                height: 24,
+                colorFilter: const ColorFilter.mode(
+                  Colors.white,
+                  BlendMode.srcIn,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Flexible(
                 child: Text(
-                  'Courses',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  course['course_name'] ?? '',
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
-              const SizedBox(height: 16),
-            
-Column(
-  crossAxisAlignment: CrossAxisAlignment.start,
-  children: [
-    for (var classData in levelsWithCourses) ...[
-      Padding(
-        padding: const EdgeInsets.symmetric(vertical: 8.0),
-        child: Text(
-          classData['class_name'] ?? '',
-          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-        ),
-      ),
-      GridView.builder(
-          padding: const EdgeInsets.only(bottom: 8.0),
-        shrinkWrap: true,
-        physics: const NeverScrollableScrollPhysics(),
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 2,
-          mainAxisSpacing: 14,
-          crossAxisSpacing: 14,
-          childAspectRatio: 3,
-        ),
-        itemCount: classData['courses'].length,
-        itemBuilder: (context, index) {
-          final course = classData['courses'][index];
-          final svgBackground =
-              courseBackgrounds[index % courseBackgrounds.length];
-
-         return GestureDetector(
-  onTap: () => _navigateToCourseDetail(course, classData['class_id'].toString()),
-  child: ClipRRect(
-    borderRadius: BorderRadius.circular(12.0),
-    child: Stack(
-      alignment: Alignment.center,
-      children: [
-        SvgPicture.asset(svgBackground,
-            fit: BoxFit.cover,
-            width: double.infinity,
-            height: double.infinity),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            SvgPicture.asset(
-              courseIcon,
-              width: 24,
-              height: 24,
-              colorFilter: const ColorFilter.mode(
-                Colors.white,
-                BlendMode.srcIn,
-              ),
+            ],
+          ),
+        ],
             ),
-            const SizedBox(width: 8),
-            Flexible(
-              child: Text(
-                course['course_name'] ?? '',
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
+          ),
+        );
+        
+          },
+        ),
+            ],
           ],
         ),
-      ],
-    ),
-  ),
-);
-
-        },
-      ),
-    ],
-  ],
-),
-SizedBox(height:100)
-            ],
+        SizedBox(height:100)
+              ],
+            ),
           ),
         ),
       ),

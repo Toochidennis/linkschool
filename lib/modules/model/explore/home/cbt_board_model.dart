@@ -17,22 +17,22 @@ class CBTBoardModel {
     required this.subjects,
   });
 
-  factory CBTBoardModel.fromJson(Map<String, dynamic> json) {
-    final String title = json['t'] ?? '';
-    final String boardCode = json['c'] ?? _getBoardCodeFromTitle(title);
+ factory CBTBoardModel.fromJson(Map<String, dynamic> json) {
+  final String title = json['exam_title'] ?? '';
+  final String boardCode = json['exam_shortname'] ?? _getBoardCodeFromTitle(title);
 
-    return CBTBoardModel(
-      id: json['i'] ?? '',
-      pictureUrl: json['p'] ?? '',
-      title: title,
-      boardCode: boardCode,
-      shortName: json['s'] ?? '',
-      subjects: (json['d'] as List<dynamic>?)
-              ?.map((subject) => SubjectModel.fromJson(subject))
-              .toList() ??
-          [],
-    );
-  }
+  return CBTBoardModel(
+    id: json['exam_type_id'].toString() ?? '',
+    pictureUrl: json['exam_image'] ?? '',
+    title: title,
+    boardCode: boardCode,
+    shortName: json['exam_shortname'] ?? '',
+    subjects: (json['courses'] as List<dynamic>?)
+            ?.map((subject) => SubjectModel.fromJson(subject))
+            .toList() ??
+        [],
+  );
+}
 
   static String _getBoardCodeFromTitle(String title) {
     switch (title) {

@@ -110,6 +110,66 @@ class _StaffViewQuestionScreenState extends State<StaffViewQuestionScreen> {
       print('Error loading user data: $e');
     }
   }
+
+
+  List<String> _validateQuestions() {
+  List<String> invalidQuestions = [];
+  
+  for (int i = 0; i < createdQuestions.length; i++) {
+    final question = createdQuestions[i];
+    final questionType = question['type'];
+    final questionText = question['questionController'].text;
+    final displayNumber = i + 1;
+    
+    // Check if question text is empty
+    if (questionText.trim().isEmpty) {
+      invalidQuestions.add('Question $displayNumber: Question text is empty');
+      continue;
+    }
+    
+    if (questionType == 'multiple_choice') {
+      final optionControllers = question['optionControllers'] as List<TextEditingController>;
+      final correctOptions = question['correctOptions'] as List<int>;
+      
+      // Check if any options are empty
+      bool hasEmptyOptions = false;
+      for (int j = 0; j < optionControllers.length; j++) {
+        if (optionControllers[j].text.trim().isEmpty) {
+          hasEmptyOptions = true;
+          break;
+        }
+      }
+      
+      if (hasEmptyOptions) {
+        invalidQuestions.add('Question $displayNumber: Some options are empty');
+      }
+      
+      // Check if correct option is selected
+      if (correctOptions.isEmpty) {
+        invalidQuestions.add('Question $displayNumber: No correct answer selected');
+      } else {
+        // Validate that the selected correct option index is valid
+        final selectedOption = correctOptions.first;
+        if (selectedOption < 0 || selectedOption >= optionControllers.length) {
+          invalidQuestions.add('Question $displayNumber: Invalid correct answer selection');
+        } else if (optionControllers[selectedOption].text.trim().isEmpty) {
+          invalidQuestions.add('Question $displayNumber: Selected correct answer is empty');
+        }
+      }
+      
+    } else if (questionType == 'short_answer') {
+      final correctAnswerController = question['correctAnswerController'] as TextEditingController?;
+      
+      // Check if correct answer is provided
+      if (correctAnswerController == null || correctAnswerController.text.trim().isEmpty) {
+        invalidQuestions.add('Question $displayNumber: Correct answer is empty');
+      }
+    }
+  }
+  
+  return invalidQuestions;
+}
+
  
   
 
@@ -362,6 +422,15 @@ void _initializeQuestions() {
   }
 
  Future<void> _saveQuestions() async {
+
+   final validationErrors = _validateQuestions();
+
+  if (validationErrors.isNotEmpty) {
+    final errorMessage = validationErrors.join('\n');
+    CustomToaster.toastError(context, "Validation Error", errorMessage);
+    return;
+  }
+  
   setState(() {
     
     List<Map<String, dynamic>> updatedQuestions = [];

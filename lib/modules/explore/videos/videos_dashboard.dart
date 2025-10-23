@@ -22,7 +22,11 @@ class _VideosDashboardState extends State<VideosDashboard> {
   @override
   void initState() {
     super.initState();
-    Provider.of<SubjectProvider>(context, listen: false).fetchSubjects();
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    if (mounted) {
+      Provider.of<SubjectProvider>(context, listen: false).fetchSubjects();
+    }
+  });
   }
 
   _navigateToSeeall() {
@@ -206,14 +210,16 @@ class _VideosDashboardState extends State<VideosDashboard> {
                         subjectName[subjectProvider.subjects.indexOf(subject)],
                     subjectIcon:
                         subjectIcons[subjectProvider.subjects.indexOf(subject)],
-                    backgroundColor: _getSubjectColor(subject.name),
+                    backgroundColor: _getSubjectColor(subject.title),
                   ))
               .toList();
 
-          final allVideos = subjectProvider.subjects
-              .expand((subject) => subject.categories)
-              .expand((category) => category.videos)
-              .toList();
+              final allVideos = [];
+
+          // final allVideos = subjectProvider.subjects.
+          //    // .expand((subject) => subject.categories)
+          //     // .expand((category) => category.videos)
+          //     // .toList();
 
           final recommendationVideos = allVideos.length > 4
               ? allVideos.getRange(0, 6).toList()

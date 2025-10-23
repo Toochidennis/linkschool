@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:linkschool/modules/admin/home/quick_actions/course_assignment_screen.dart';
+import 'package:linkschool/modules/admin/home/quick_actions/staff_details.dart';
 import 'package:linkschool/modules/model/admin/home/add_staff_model.dart';
 import 'package:linkschool/modules/providers/admin/home/add_staff_provider.dart';
+
 
 import 'package:provider/provider.dart';
 import '../../../common/app_colors.dart';
@@ -22,13 +24,13 @@ class _ManageStaffScreenState extends State<ManageStaffScreen> with TickerProvid
   late Animation<double> _fadeAnimation;
   String? _editingStaffId;
   final TextEditingController _searchController = TextEditingController();
-  final TextEditingController _nameController = TextEditingController();
+final TextEditingController _fullNameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _phoneController = TextEditingController();
   final TextEditingController _addressController = TextEditingController();
   final TextEditingController _salaryController = TextEditingController();
-  final TextEditingController _surnameController = TextEditingController();
-  final TextEditingController _firstNameController = TextEditingController();
+
+
   final TextEditingController _middleNameController = TextEditingController();
   final TextEditingController _birthDateController = TextEditingController();
   final TextEditingController _cityController = TextEditingController();
@@ -104,13 +106,13 @@ class _ManageStaffScreenState extends State<ManageStaffScreen> with TickerProvid
     _fadeController.dispose();
     _slideController.dispose();
     _searchController.dispose();
-    _nameController.dispose();
+  _fullNameController.dispose();
     _emailController.dispose();
     _phoneController.dispose();
     _addressController.dispose();
     _salaryController.dispose();
-    _surnameController.dispose();
-    _firstNameController.dispose();
+   
+  
     _middleNameController.dispose();
     _birthDateController.dispose();
     _cityController.dispose();
@@ -279,196 +281,213 @@ class _ManageStaffScreenState extends State<ManageStaffScreen> with TickerProvid
   }
 
   Widget _buildStaffCard(Map<String, dynamic> staff, int index) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12.0),
-      padding: const EdgeInsets.all(16.0),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16.0),
-        border: Border.all(color: AppColors.text6Light, width: 1),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.text2Light.withOpacity(0.05),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                width: 50,
-                height: 50,
-                decoration: BoxDecoration(
-                  color: AppColors.text2Light.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(25),
+    final provider = Provider.of<AddStaffProvider>(context, listen: false);
+  final staffModel = provider.staffList.firstWhere(
+    (s) => s.staffNo == staff['id'],
+    orElse: () => throw Exception('Staff not found'),
+  );
+
+    return GestureDetector(
+      onTap: () {
+      // Navigate to staff profile
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => StaffProfileScreen(staff: staffModel),
+        ),
+      );
+    },
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 12.0),
+        padding: const EdgeInsets.all(16.0),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16.0),
+          border: Border.all(color: AppColors.text6Light, width: 1),
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.text2Light.withOpacity(0.05),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  width: 50,
+                  height: 50,
+                  decoration: BoxDecoration(
+                    color: AppColors.text2Light.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(25),
+                  ),
+                  child: Icon(
+                    (staff['gender']?.toString().toLowerCase() ?? 'male') == 'male' ? Icons.man : Icons.woman,
+                    color: AppColors.text2Light,
+                    size: 30,
+                  ),
                 ),
-                child: Icon(
-                  (staff['gender']?.toString().toLowerCase() ?? 'male') == 'male' ? Icons.man : Icons.woman,
-                  color: AppColors.text2Light,
-                  size: 30,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      staff['name'],
-                      style: AppTextStyles.normal600(
-                        fontSize: 16,
-                        color: AppColors.text2Light,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      staff['id'],
-                      style: AppTextStyles.normal400(
-                        fontSize: 12,
-                        color: AppColors.text7Light,
-                      ),
-                    ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: staff['status'] == 'Active'
-                            ? AppColors.attCheckColor2.withOpacity(0.1)
-                            : Colors.red.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Text(
-                        staff['status'],
-                        style: TextStyle(
-                          color: staff['status'] == 'Active'
-                              ? AppColors.attCheckColor2
-                              : Colors.red,
-                          fontSize: 10,
-                          fontWeight: FontWeight.w600,
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        staff['name'],
+                        style: AppTextStyles.normal600(
+                          fontSize: 16,
+                          color: AppColors.text2Light,
                         ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        staff['id'],
+                        style: AppTextStyles.normal400(
+                          fontSize: 12,
+                          color: AppColors.text7Light,
+                        ),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: staff['status'] == 'Active'
+                              ? AppColors.attCheckColor2.withOpacity(0.1)
+                              : Colors.red.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Text(
+                          staff['status'],
+                          style: TextStyle(
+                            color: staff['status'] == 'Active'
+                                ? AppColors.attCheckColor2
+                                : Colors.red,
+                            fontSize: 10,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                PopupMenuButton<String>(
+                  onSelected: (value) {
+                    if (value == 'edit') {
+                      _editStaff(index);
+                    } else if (value == 'delete') {
+                      _deleteStaff(index);
+                    } else if (value == 'assign_courses') {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => AssignCoursesScreen(staffId: staff['id']),
+                        ),
+                      );
+                    }
+                  },
+                  itemBuilder: (context) => [
+                    const PopupMenuItem(
+                      value: 'edit',
+                      child: Row(
+                        children: [
+                          Icon(Icons.edit, size: 16, color: AppColors.text2Light),
+                          SizedBox(width: 8),
+                          Text('Edit'),
+                        ],
+                      ),
+                    ),
+                    const PopupMenuItem(
+                      value: 'assign_courses',
+                      child: Row(
+                        children: [
+                          Icon(Icons.book, size: 16, color: AppColors.text2Light),
+                          SizedBox(width: 8),
+                          Text('Assign Courses'),
+                        ],
+                      ),
+                    ),
+                    const PopupMenuItem(
+                      value: 'delete',
+                      child: Row(
+                        children: [
+                          Icon(Icons.delete, size: 16, color: Colors.red),
+                          SizedBox(width: 8),
+                          Text('Delete', style: TextStyle(color: Colors.red)),
+                        ],
                       ),
                     ),
                   ],
                 ),
-              ),
-              PopupMenuButton<String>(
-                onSelected: (value) {
-                  if (value == 'edit') {
-                    _editStaff(index);
-                  } else if (value == 'delete') {
-                    _deleteStaff(index);
-                  } else if (value == 'assign_courses') {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => AssignCoursesScreen(staffId: staff['id']),
-                      ),
-                    );
-                  }
-                },
-                itemBuilder: (context) => [
-                  const PopupMenuItem(
-                    value: 'edit',
-                    child: Row(
-                      children: [
-                        Icon(Icons.edit, size: 16, color: AppColors.text2Light),
-                        SizedBox(width: 8),
-                        Text('Edit'),
-                      ],
+              ],
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Icon(Icons.email, size: 14, color: AppColors.text7Light),
+                const SizedBox(width: 4),
+                Expanded(
+                  child: Text(
+                    staff['email'],
+                    style: AppTextStyles.normal400(
+                      fontSize: 12,
+                      color: AppColors.text7Light,
                     ),
                   ),
-                  const PopupMenuItem(
-                    value: 'assign_courses',
-                    child: Row(
-                      children: [
-                        Icon(Icons.book, size: 16, color: AppColors.text2Light),
-                        SizedBox(width: 8),
-                        Text('Assign Courses'),
-                      ],
-                    ),
-                  ),
-                  const PopupMenuItem(
-                    value: 'delete',
-                    child: Row(
-                      children: [
-                        Icon(Icons.delete, size: 16, color: Colors.red),
-                        SizedBox(width: 8),
-                        Text('Delete', style: TextStyle(color: Colors.red)),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              Icon(Icons.email, size: 14, color: AppColors.text7Light),
-              const SizedBox(width: 4),
-              Expanded(
-                child: Text(
-                  staff['email'],
+                ),
+              ],
+            ),
+            const SizedBox(height: 4),
+            Row(
+              children: [
+                Icon(Icons.phone, size: 14, color: AppColors.text7Light),
+                const SizedBox(width: 4),
+                Text(
+                  staff['phone'],
                   style: AppTextStyles.normal400(
                     fontSize: 12,
                     color: AppColors.text7Light,
                   ),
                 ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 4),
-          Row(
-            children: [
-              Icon(Icons.phone, size: 14, color: AppColors.text7Light),
-              const SizedBox(width: 4),
-              Text(
-                staff['phone'],
-                style: AppTextStyles.normal400(
-                  fontSize: 12,
-                  color: AppColors.text7Light,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 4),
-          Row(
-            children: [
-              Icon(Icons.work, size: 14, color: AppColors.text7Light),
-              const SizedBox(width: 4),
-              Text(
-                staff['role'],
-                style: AppTextStyles.normal500(
-                  fontSize: 12,
-                  color: AppColors.text2Light,
-                ),
-              ),
-            ],
-          ),
-          if (staff['courses'].isNotEmpty) ...[
-            const SizedBox(height: 8),
-            Text(
-              'Courses: ${staff['courses'].join(', ')}',
-              style: AppTextStyles.normal400(
-                fontSize: 11,
-                color: AppColors.attCheckColor2,
-              ),
+              ],
             ),
-          ],
-          if (staff['class'].isNotEmpty) ...[
             const SizedBox(height: 4),
-            Text(
-              'Class: ${staff['class']} (${staff['level']})',
-              style: AppTextStyles.normal400(
-                fontSize: 11,
-                color: AppColors.secondaryLight,
-              ),
+            Row(
+              children: [
+                Icon(Icons.work, size: 14, color: AppColors.text7Light),
+                const SizedBox(width: 4),
+                Text(
+                  staff['role'],
+                  style: AppTextStyles.normal500(
+                    fontSize: 12,
+                    color: AppColors.text2Light,
+                  ),
+                ),
+              ],
             ),
+            if (staff['courses'].isNotEmpty) ...[
+              const SizedBox(height: 8),
+              Text(
+                'Courses: ${staff['courses'].join(', ')}',
+                style: AppTextStyles.normal400(
+                  fontSize: 11,
+                  color: AppColors.attCheckColor2,
+                ),
+              ),
+            ],
+            if (staff['class'].isNotEmpty) ...[
+              const SizedBox(height: 4),
+              Text(
+                'Class: ${staff['class']} (${staff['level']})',
+                style: AppTextStyles.normal400(
+                  fontSize: 11,
+                  color: AppColors.secondaryLight,
+                ),
+              ),
+            ],
           ],
-        ],
+        ),
       ),
     );
   }
@@ -520,25 +539,12 @@ class _ManageStaffScreenState extends State<ManageStaffScreen> with TickerProvid
             ],
           ),
           const SizedBox(height: 16),
-          Row(
-            children: [
-              Expanded(
-                child: _buildTextField(
-                  controller: _surnameController,
-                  label: 'Surname *',
-                  icon: Icons.badge,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _buildTextField(
-                  controller: _firstNameController,
-                  label: 'First Name *',
-                  icon: Icons.person,
-                ),
-              ),
-            ],
-          ),
+         _buildTextField(
+  controller: _fullNameController,
+  label: 'Full Name * (Surname First)',
+  icon: Icons.person,
+  hintText: 'e.g., Smith John',
+),
           const SizedBox(height: 12),
           _buildTextField(
             controller: _middleNameController,
@@ -906,40 +912,47 @@ class _ManageStaffScreenState extends State<ManageStaffScreen> with TickerProvid
     );
   }
 
-  Widget _buildTextField({
-    required TextEditingController controller,
-    required String label,
-    required IconData icon,
-    TextInputType keyboardType = TextInputType.text,
-  }) {
-    return TextField(
-      controller: controller,
-      keyboardType: keyboardType,
-      decoration: InputDecoration(
-        labelText: label,
-        prefixIcon: Icon(icon, color: AppColors.text7Light),
-        labelStyle: const TextStyle(
-          color: AppColors.text5Light,
-          fontSize: 14,
-          fontFamily: 'Urbanist',
-        ),
-        filled: true,
-        fillColor: AppColors.textFieldLight,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16.0),
-          borderSide: BorderSide(color: AppColors.textFieldBorderLight),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16.0),
-          borderSide: BorderSide(color: AppColors.textFieldBorderLight),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16.0),
-          borderSide: BorderSide(color: AppColors.text2Light, width: 2),
-        ),
+ Widget _buildTextField({
+  required TextEditingController controller,
+  required String label,
+  required IconData icon,
+  TextInputType keyboardType = TextInputType.text,
+  String? hintText, // Add this parameter
+}) {
+  return TextField(
+    controller: controller,
+    keyboardType: keyboardType,
+    decoration: InputDecoration(
+      labelText: label,
+      hintText: hintText, // Add this
+      prefixIcon: Icon(icon, color: AppColors.text7Light),
+      labelStyle: const TextStyle(
+        color: AppColors.text5Light,
+        fontSize: 14,
+        fontFamily: 'Urbanist',
       ),
-    );
-  }
+      hintStyle: const TextStyle( // Add hint style
+        color: AppColors.text9Light,
+        fontSize: 14,
+        fontFamily: 'Urbanist',
+      ),
+      filled: true,
+      fillColor: AppColors.textFieldLight,
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(16.0),
+        borderSide: BorderSide(color: AppColors.textFieldBorderLight),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(16.0),
+        borderSide: BorderSide(color: AppColors.textFieldBorderLight),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(16.0),
+        borderSide: BorderSide(color: AppColors.text2Light, width: 2),
+      ),
+    ),
+  );
+}
 
   Widget _buildDropdown({
     required String label,
@@ -982,13 +995,13 @@ class _ManageStaffScreenState extends State<ManageStaffScreen> with TickerProvid
   }
 
   void _clearForm() {
-    _nameController.clear();
+ 
     _emailController.clear();
     _phoneController.clear();
     _addressController.clear();
     _salaryController.clear();
-    _surnameController.clear();
-    _firstNameController.clear();
+     _fullNameController.clear();
+
     _middleNameController.clear();
     _birthDateController.clear();
     _cityController.clear();
@@ -1028,32 +1041,19 @@ class _ManageStaffScreenState extends State<ManageStaffScreen> with TickerProvid
   void _handleSubmit() async {
     // Form validation
     final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
-    if (_surnameController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Please enter Surname'),
-          backgroundColor: Colors.red,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
-          ),
-        ),
-      );
-      return;
-    }
-    if (_firstNameController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Please enter First Name'),
-          backgroundColor: Colors.red,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
-          ),
-        ),
-      );
-      return;
-    }
+   if (_fullNameController.text.trim().isEmpty) {
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(
+      content: Text('Please enter Full Name'),
+      backgroundColor: Colors.red,
+      behavior: SnackBarBehavior.floating,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(10),
+      ),
+    ),
+  );
+  return;
+}
     if (_selectedGender.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -1119,9 +1119,24 @@ class _ManageStaffScreenState extends State<ManageStaffScreen> with TickerProvid
       );
       return;
     }
+    final fullName = _fullNameController.text.trim();
+final nameParts = fullName.split(' ');
+
+String surname = '';
+String firstName = '';
+
+if (nameParts.isNotEmpty) {
+  surname = nameParts[0]; // First part is surname
+  if (nameParts.length > 1) {
+    firstName = nameParts.sublist(1).join(' '); // Rest is first name
+  }
+}
+
+
+
    final newStaff = {
-    'surname': _surnameController.text.trim(),
-    'first_name': _firstNameController.text.trim(),
+    'surname': surname,
+    'first_name': firstName,
     'middle_name': _middleNameController.text.trim(),
     'gender': _selectedGender.toLowerCase(),
     'email_address': _emailController.text.trim(),
@@ -1207,12 +1222,14 @@ class _ManageStaffScreenState extends State<ManageStaffScreen> with TickerProvid
       (s) => s.staffNo == staffMap['id'],
       orElse: () => throw Exception('Staff not found'),
     );
+
+      final fullName = '${staff.lastName ?? ''} ${staff.firstName ?? ''}'.trim();
     setState(() {
       _isEditing = true;
       _showAddForm = true;
       _editingStaffId = staff.staffNo;
-      _surnameController.text = staff.lastName ?? '';
-      _firstNameController.text = staff.firstName ?? '';
+       _fullNameController.text = fullName;
+    
       _middleNameController.text = staff.middleName ?? '';
       _emailController.text = staff.emailAddress ?? '';
       _phoneController.text = staff.phoneNumber ?? '';

@@ -1,37 +1,56 @@
 import 'dart:convert';
-import 'package:flutter/foundation.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
-
 import '../../../model/explore/home/game_model.dart';
 
- // Ensure the path is correct
-
 class GameService {
-   final String _baseUrl = kIsWeb
- ? 'https://cors-anywhere.herokuapp.com/http://www.cbtportal.linkskool.com/api/getGame.php'
-      : 'http://www.cbtportal.linkskool.com/api/getGame.php';
-  
+  final String _baseUrl = "https://linkskool.net/api/v3/public/games";
+
   Future<Games?> fetchGames() async {
     try {
-      final response = await http.get(Uri.parse(_baseUrl));
+      // Load API key from .env file
+      final apiKey = dotenv.env['API_KEY'];
+
+      if (apiKey == null || apiKey.isEmpty) {
+        throw Exception("❌ API key not found in .env file");
+      }
+
+      print("🕹️ Fetching games from $_baseUrl...");
+
+      final response = await http.get(
+        Uri.parse("https://linkskool.net/api/v3/public/games"),
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'X-API-KEY': apiKey, // ✅ Include your API key
+        },
+      );
 
       if (response.statusCode == 200) {
-        print(response.body);
-        final Map<String, dynamic> data = json.decode(response.body);
-        return Games.fromJson(data);
+        print("✅ Games fetched successfully!");
+        print("Response: ${response.body}");
+
+        final decoded = json.decode(response.body);
+
+        // If the API returns a JSON object directly
+        if (decoded is Map<String, dynamic>) {
+          return Games.fromJson(decoded);
+        }
+
+        // If the API returns a list of games (rare, but check API response)
+        if (decoded is List && decoded.isNotEmpty) {
+          return Games.fromJson(decoded.first);
+        }
+
+        throw Exception("Unexpected response format: $decoded");
       } else {
-        print("Failed to load games. Status Code: ${response.statusCode}");
-     
+        print("❌ Failed to load games: ${response.statusCode}");
+        print("Response: ${response.body}");
+        throw Exception("Failed to load games: ${response.statusCode}");
       }
     } catch (e) {
-      print("Error fetching games: $e");
-
+      print("❌ Error fetching games: $e");
+      throw Exception("Error fetching games: $e");
     }
-    return null;
   }
 }
-
-
-
-
-

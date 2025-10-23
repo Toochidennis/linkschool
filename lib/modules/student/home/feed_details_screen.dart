@@ -17,7 +17,7 @@ class FeedDetailsScreen extends StatefulWidget {
   final String content;
   final String time;
   final int interactions;
-  final List<Feed> replies;
+  final List<Feed> replies; // ✅ New: dynamic replies list
   final int? parentId;
 
   const FeedDetailsScreen({
@@ -43,6 +43,7 @@ class _FeedDetailsScreenState extends State<FeedDetailsScreen> {
   int? creatorId;
   String? creatorName;
   int? academicTerm;
+  String? userRole;
 
   @override
   void initState() {
@@ -76,9 +77,18 @@ class _FeedDetailsScreenState extends State<FeedDetailsScreen> {
         final settings = data['settings'] ?? {};
 
         setState(() {
+          
+          userRole = profile['role']?.toString() ?? '';  
           creatorId = profile['staff_id'] is int
               ? profile['staff_id']
               : int.tryParse(profile['staff_id'].toString());
+              if (userRole == 'student') {
+                creatorId = profile['id'] is int ? profile['id'] : int.tryParse(profile['id'].toString());
+              }else if (userRole == 'Admin' || userRole == 'admin' || userRole == 'staff' || userRole == 'teacher') {
+                creatorId = profile['staff_id'] is int
+              ? profile['staff_id']
+              : int.tryParse(profile['staff_id'].toString());
+              }
 
           creatorName = profile['name']?.toString() ?? '';
 
@@ -88,7 +98,7 @@ class _FeedDetailsScreenState extends State<FeedDetailsScreen> {
         });
 
         debugPrint(
-            '✅ User loaded: ID=$creatorId, Name=$creatorName, Term=$academicTerm');
+            '✅ User loaded: ID=$creatorId, Name=$creatorName, Term=$academicTerm Role=$userRole');
       } else {
         debugPrint('⚠️ No stored user data found.');
       }
@@ -100,10 +110,29 @@ class _FeedDetailsScreenState extends State<FeedDetailsScreen> {
     }
   }
 
+bool _canEdit(Feed reply) {
+  // Admin can edit their own posts
+  if (userRole == 'admin') {
+    return creatorId == reply.authorId;
+  }
+  // Others can edit only their own posts
+  return creatorId == reply.authorId;
+}
+
+ bool _canDelete(Feed reply) {
+  // Admin can delete any post
+  if (userRole == 'admin') {
+    return true;
+  }
+  // Others can delete only their own posts
+  return creatorId == reply.authorId;
+}
+
   @override
   Widget build(BuildContext context) {
     final brightness = Theme.of(context).brightness;
     final opacity = brightness == Brightness.light ? 0.1 : 0.15;
+    
 
     return Scaffold(
       appBar: AppBar(
@@ -238,6 +267,8 @@ class _FeedDetailsScreenState extends State<FeedDetailsScreen> {
 
   // ✅ ISSUE #3 FIX: No nested replies display
   Widget _buildModernReply(Feed reply) {
+      final canEdit = _canEdit(reply);
+  final canDelete = _canDelete(reply);
     return Container(
       margin: const EdgeInsets.only(top: 8, bottom: 8),
       decoration: BoxDecoration(
@@ -297,6 +328,8 @@ class _FeedDetailsScreenState extends State<FeedDetailsScreen> {
                 ),
               ),
               const SizedBox(width: 12),
+               if (canEdit) ...[
+              const SizedBox(width: 12),
               GestureDetector(
                 onTap: () => _showEditInput(reply),
                 child: Row(
@@ -309,7 +342,10 @@ class _FeedDetailsScreenState extends State<FeedDetailsScreen> {
                   ],
                 ),
               ),
+            ],
               SizedBox(width: 12),
+                if (canDelete) ...[
+              const SizedBox(width: 12),
               GestureDetector(
                 onTap: () => _confirmDelete(reply),
                 child: Row(
@@ -320,7 +356,9 @@ class _FeedDetailsScreenState extends State<FeedDetailsScreen> {
                         style:
                             TextStyle(fontSize: 12, color: Colors.grey[600])),
                   ],
-                ),),
+                ),
+              ),
+            ],
               const Spacer(),
               // ✅ ISSUE #3 FIX: Display reply count, click to open same page
               if (reply.replies.isNotEmpty)

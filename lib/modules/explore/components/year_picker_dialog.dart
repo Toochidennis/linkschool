@@ -3,19 +3,18 @@ import 'package:flutter/material.dart';
 import 'package:bottom_picker/bottom_picker.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/explore/e_library/cbt.details.dart';
-// import 'package:linkschool/modules/common/app_colors.dart';
 
 class YearPickerDialog {
   static void show(
     BuildContext context, {
     required String title,
-    // required String subtitle,
     required int startYear,
     required int numberOfYears,
     required String subject,
     required String subjectIcon,
     required Color cardColor,
     required List<String> subjectList,
+    required String examTypeId, 
   }) {
     final List<int> years = List.generate(
       numberOfYears,
@@ -62,15 +61,18 @@ class YearPickerDialog {
       onSubmit: (index) {
         Navigator.pop(context);
         Future.delayed(const Duration(milliseconds: 10), () {
+          print("ssss :$examTypeId");
           Navigator.push(
             context,
             MaterialPageRoute(
               builder: (context) => CbtDetailScreen(
                 year: years[index],
                 subject: subject,
+        
                 subjectIcon: subjectIcon,
                 cardColor: cardColor,
                 subjectList: subjectList,
+                examTypeId: examTypeId, // Pass examTypeId to CbtDetailScreen
               ),
             ),
           );

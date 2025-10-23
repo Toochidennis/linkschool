@@ -7,6 +7,8 @@ import 'package:linkschool/modules/common/buttons/custom_long_elevated_button.da
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/explore/e_library/e_library_ebooks/book_screen.dart';
 import 'package:linkschool/modules/model/explore/home/news/ebook_model.dart';
+import 'package:linkschool/modules/providers/explore/home/ebook_provider.dart';
+import 'package:provider/provider.dart';
 
 class MybookPage extends StatefulWidget {
   final Ebook suggestedbook;
@@ -20,7 +22,7 @@ class MybookPage extends StatefulWidget {
 class _MybookPageState extends State<MybookPage> {
   @override
   Widget build(BuildContext context) {
-    // final bookProvider = Provider.of<EbookProvider>(context);
+     final bookProvider = Provider.of<EbookProvider>(context);
     // final startreading_suggested = bookProvider.ebooks;
     return Scaffold(
       appBar: AppBar(

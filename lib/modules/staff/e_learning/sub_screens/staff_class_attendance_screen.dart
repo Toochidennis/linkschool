@@ -215,6 +215,7 @@ class _StaffTakeClassAttendanceState extends State<StaffTakeClassAttendance> {
                       ],
                     ),
                   ),
+                  
                 GestureDetector(
                   onTap: () => provider.toggleSelectAll(),
                   child: Container(

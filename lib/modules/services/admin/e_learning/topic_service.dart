@@ -155,6 +155,85 @@ class TopicService {
       rethrow;
     }
   }
+  Future<void> UpdateTopic({
+    required String topicId,
+    required String topic,
+    required String objective,
+    required int creatorId,
+    required String courseName,
+    required String courseId,
+    required String creatorName,
+    required String levelId,
+    required String term,
+    required List<ClassModel> classes,
+    required int syllabusId
+  }) async {
+    try {
+      final userBox = Hive.box('userData');
+      final loginData = userBox.get('userData') ?? userBox.get('loginResponse');
+      
+      if (loginData == null) {
+        throw Exception('No login data available');
+      }
+
+      // Get database name
+      String dbName = 'aalmgzmy_linkskoo_practice';
+      try {
+        final processedData = loginData is String 
+            ? json.decode(loginData) 
+            : loginData;
+        final response = processedData['response'] ?? processedData;
+        final data = response['data'] ?? response;
+        final settings = data['settings'] ?? {};
+        dbName = settings['db_name']?.toString() ?? dbName;
+      } catch (e) {
+        print('TopicService: Could not extract db_name, using default: $e');
+      }
+
+      final token = loginData is Map 
+          ? (loginData['token'] ?? userBox.get('token'))
+          : userBox.get('token');
+      
+      if (token != null) {
+        _apiService.setAuthToken(token);
+        print('TopicService: Token set for create topic: $token');
+      }
+
+      final classesJson = classes.map((classModel) => classModel.toJson()).toList();
+
+    final requestBody = {
+      'syllabus_id': syllabusId,
+      'topic': topic,
+      'creator_name': creatorName,
+      'objective': objective,
+      'creator_id': creatorId,
+      'course_name':courseName,
+      'course_id':courseId,
+      'level_id': levelId,
+      'term':term,
+      'classes': classesJson,
+      '_db': dbName,
+    };
+
+      print('TopicService: Create topic request body: ${const JsonEncoder.withIndent('  ').convert(requestBody)}');
+
+    final response = await _apiService.post<Map<String, dynamic>>(
+      endpoint: 'portal/elearning/topic/$topicId',
+      body: requestBody,
+    );
+
+      if (!response.success) {
+        print('TopicService: Failed to create topic: ${response.message}');
+        throw Exception('Failed to create topic: ${response.message}');
+      } else {
+        print('TopicService: Topic created successfully: ${response.message}');
+      }
+    } catch (e, stackTrace) {
+      print('TopicService: Error creating topic: $e');
+      print('TopicService: Stack trace: $stackTrace');
+      rethrow;
+    }
+  }
 }
 
 

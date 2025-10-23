@@ -75,12 +75,17 @@ class _VendorSettingsScreenState extends State<VendorSettingsScreen> {
     final formKey = GlobalKey<FormState>();
 
     showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (BuildContext context) {
+  context: context,
+  isScrollControlled: true,
+  backgroundColor: Colors.transparent,
+  builder: (BuildContext context) {
+    return DraggableScrollableSheet(
+      expand: false,
+      initialChildSize: 0.8, // height when opened
+      maxChildSize: 0.95, // can drag almost full screen
+      minChildSize: 0.5, // minimum collapsed size
+      builder: (context, scrollController) {
         return Container(
-          height: MediaQuery.of(context).size.height * 0.75,
           decoration: const BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.only(
@@ -90,6 +95,7 @@ class _VendorSettingsScreenState extends State<VendorSettingsScreen> {
           ),
           child: Column(
             children: [
+              // Header
               Padding(
                 padding: const EdgeInsets.all(16.0),
                 child: Row(
@@ -110,9 +116,17 @@ class _VendorSettingsScreenState extends State<VendorSettingsScreen> {
                   ],
                 ),
               ),
+
+              // Scrollable content
               Expanded(
                 child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(16.0),
+                  controller: scrollController,
+                  padding: EdgeInsets.only(
+                    left: 16,
+                    right: 16,
+                    bottom: MediaQuery.of(context).viewInsets.bottom + 16, // ✅ adjusts for keyboard
+                    top: 8,
+                  ),
                   child: Form(
                     key: formKey,
                     child: Column(
@@ -198,18 +212,25 @@ class _VendorSettingsScreenState extends State<VendorSettingsScreen> {
                                 );
                                 if (response.success) {
                                   CustomToaster.toastSuccess(
-                                      context, 'Success', 'Vendor added successfully');
+                                    context,
+                                    'Success',
+                                    'Vendor added successfully',
+                                  );
                                   Navigator.pop(context);
                                   _fetchVendors();
                                 } else {
                                   CustomToaster.toastError(
-                                      context, 'Error', response.message);
+                                    context,
+                                    'Error',
+                                    response.message,
+                                  );
                                 }
                               }
                             },
                             style: ElevatedButton.styleFrom(
                               backgroundColor: AppColors.paymentTxtColor1,
-                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              padding:
+                                  const EdgeInsets.symmetric(vertical: 16),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(8),
                               ),
@@ -233,6 +254,9 @@ class _VendorSettingsScreenState extends State<VendorSettingsScreen> {
         );
       },
     );
+  },
+);
+
   }
 
   Future<void> _deleteVendor(int vendorId, String vendorName) async {

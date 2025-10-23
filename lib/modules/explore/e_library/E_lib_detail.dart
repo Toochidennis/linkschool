@@ -205,18 +205,19 @@ class _VideoDisplayState extends State<VideoDisplay> {
                         subjectName[subjectProvider.subjects.indexOf(subject)],
                     subjectIcon:
                         subjectIcons[subjectProvider.subjects.indexOf(subject)],
-                    backgroundColor: _getSubjectColor(subject.name),
+                    backgroundColor: _getSubjectColor(subject.title),
                   ))
               .toList();
+               final allvidoes = [];
 
-          final allVideos = subjectProvider.subjects
-              .expand((subject) => subject.categories)
-              .expand((category) => category.videos)
-              .toList();
-
-          final recommendationVideos = allVideos.length > 4
-              ? allVideos.getRange(0, 6).toList()
-              : allVideos;
+          // final allVideos = subjectProvider.subjects
+          //     .expand((subject) => subject.categories)
+          //     .expand((category) => category.videos)
+          //     .toList();
+               final recommendationVideos = [];
+          // final recommendationVideos = allVideos.length > 4
+          //     ? allVideos.getRange(0, 6).toList()
+          //     : allVideos;
 
           return Scaffold(
             body: Container(
@@ -237,28 +238,28 @@ class _VideoDisplayState extends State<VideoDisplay> {
                             onPressed: _navigateToSeeall
                           ),
                         ),
-                        SliverToBoxAdapter(
-                          child: SizedBox(
-                            height: 150.0,
-                            child: ListView.builder(
-                              itemCount: allVideos.length,
-                              scrollDirection: Axis.horizontal,
-                              itemBuilder: (context, index) {
-                                return GestureDetector(
-                                    onTap: () {
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                            builder: (context) => E_lib_vids(
-                                                video: allVideos[index])),
-                                      );
-                                    },
-                                    child: _buildWatchHistoryCard(
-                                        allVideos[index]));
-                              },
-                            ),
-                          ),
-                        ),
+                        // SliverToBoxAdapter(
+                        //   child: SizedBox(
+                        //     height: 150.0,
+                        //     child: ListView.builder(
+                        //       itemCount: allVideos.length,
+                        //       scrollDirection: Axis.horizontal,
+                        //       itemBuilder: (context, index) {
+                        //         return GestureDetector(
+                        //             onTap: () {
+                        //               Navigator.push(
+                        //                 context,
+                        //                 MaterialPageRoute(
+                        //                     builder: (context) => E_lib_vids(
+                        //                         video: allVideos[index])),
+                        //               );
+                        //             },
+                        //             child: _buildWatchHistoryCard(
+                        //                 allVideos[index]));
+                        //       },
+                        //     ),
+                        //   ),
+                        // ),
                         SliverToBoxAdapter(
                             child: Constants.heading600(
                           title: 'Categories',

@@ -209,7 +209,7 @@ class SkillsBehaviorTableProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      final response = await _apiService.put(
+      final response = await _apiService.post(
         endpoint: 'portal/students/skill-behavior',
         body: skillsPayload,
         fromJson: (json) => json,

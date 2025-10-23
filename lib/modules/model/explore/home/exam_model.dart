@@ -1,5 +1,3 @@
-// lib/modules/models/exam_model.dart
-
 import 'dart:convert';
 
 class ExamModel {
@@ -23,14 +21,21 @@ class ExamModel {
 
   factory ExamModel.fromJson(Map<String, dynamic> json) {
     return ExamModel(
-      id: json['id'] ?? '',
-      title: json['title'] ?? '',
-      description: json['description'] ?? '',
-      courseName: json['course_name'] ?? '',
-      courseId: json['course_id'] ?? '',
-      body: json['body'],
-      url: json['url'],
+      id: _safeToString(json['id']),
+      title: _safeToString(json['title']),
+      description: _safeToString(json['description']),
+      courseName: _safeToString(json['course_name']),
+      courseId: _safeToString(json['course_id']),
+      body: _safeToString(json['body']),
+      url: _safeToString(json['url']),
     );
+  }
+
+  // Helper method to safely convert any type to String
+  static String _safeToString(dynamic value) {
+    if (value == null) return '';
+    if (value is String) return value;
+    return value.toString();
   }
 }
 

@@ -8,15 +8,20 @@ import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:hive/hive.dart';
 import 'package:linkschool/modules/common/utils/registration/registration_utils.dart';
 
-class TakeAttendanceButton extends StatelessWidget {
+class TakeAttendanceButton extends StatefulWidget {
   final String classId;
 
   const TakeAttendanceButton({super.key, required this.classId});
 
   @override
+  State<TakeAttendanceButton> createState() => _TakeAttendanceButtonState();
+}
+
+class _TakeAttendanceButtonState extends State<TakeAttendanceButton> {
+  @override
   Widget build(BuildContext context) {
     return CustomLongElevatedButton(
-      text: 'Take attendance',
+      text: 'Take attendancess',
       onPressed: () => _showTakeAttendanceDialog(context),
       backgroundColor: AppColors.videoColor4,
       textStyle: AppTextStyles.normal600(
@@ -34,12 +39,12 @@ class TakeAttendanceButton extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
               _buildAttendanceButton('Take class attendance', () {
-                Navigator.pop(context); // Close the bottom sheet
+                Navigator.pop(context);
                 Navigator.push(
                   context,
                   MaterialPageRoute(
                       builder: (context) =>
-                          TakeClassAttendance(classId: classId)),
+                          TakeClassAttendance(classId: widget.classId)),
                 );
               }),
               const SizedBox(height: 16),
@@ -57,7 +62,6 @@ class TakeAttendanceButton extends StatelessWidget {
   void _showSelectCourseDialog(BuildContext context) {
     final courseRegistrationService = CourseRegistrationService();
 
-    // Get settings from Hive for year and term
     final userDataBox = Hive.box('userData');
     final dynamic rawSettings = userDataBox.get('settings');
     int year;
@@ -76,97 +80,122 @@ class TakeAttendanceButton extends StatelessWidget {
 
     showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
       builder: (BuildContext context) {
-        return FutureBuilder<List<Map<String, dynamic>>>(
-          future: courseRegistrationService.getRegisteredCourses(
-            classId: classId,
-            year: year,
-            term: term,
-          ),
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return const Center(
-                child: CircularProgressIndicator(
-                  color: AppColors.primaryLight,
-                ),
-              );
+        return StatefulBuilder(
+          builder: (BuildContext context, StateSetter setModalState) {
+            Future<List<Map<String, dynamic>>>? coursesFuture;
+            
+            // Initialize the future
+            coursesFuture = courseRegistrationService.getRegisteredCourses(
+              classId: widget.classId,
+              year: year,
+              term: term,
+            );
+
+            Future<void> _refreshCourses() async {
+              setModalState(() {
+                coursesFuture = courseRegistrationService.getRegisteredCourses(
+                  classId: widget.classId,
+                  year: year,
+                  term: term,
+                );
+              });
             }
 
-            if (snapshot.hasError || !snapshot.hasData || snapshot.data!.isEmpty) {
-              return Container(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      'No courses available',
-                      style: AppTextStyles.normal600(
-                        fontSize: 18,
-                        color: AppColors.backgroundDark,
-                      ),
+            return FutureBuilder<List<Map<String, dynamic>>>(
+              future: coursesFuture,
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(
+                    child: CircularProgressIndicator(
+                      color: AppColors.primaryLight,
                     ),
-                    const SizedBox(height: 16),
-                    ElevatedButton(
-                      onPressed: () => Navigator.pop(context),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primaryLight,
-                      ),
-                      child: Text(
-                        'Close',
+                  );
+                }
+
+                if (snapshot.hasError || !snapshot.hasData || snapshot.data!.isEmpty) {
+                  return Container(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          'No courses available',
+                          style: AppTextStyles.normal600(
+                            fontSize: 18,
+                            color: AppColors.backgroundDark,
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        ElevatedButton(
+                          onPressed: () => Navigator.pop(context),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.primaryLight,
+                          ),
+                          child: Text(
+                            'Close',
+                            style: AppTextStyles.normal600(
+                              fontSize: 14,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                }
+
+                final courses = snapshot.data!;
+
+                return Container(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      Text(
+                        'Select course to take attendance',
                         style: AppTextStyles.normal600(
-                          fontSize: 14,
-                          color: Colors.white,
+                          fontSize: 18,
+                          color: AppColors.backgroundDark,
                         ),
                       ),
-                    ),
-                  ],
-                ),
-              );
-            }
-
-            final courses = snapshot.data!;
-
-            return Container(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  Text(
-                    'Select course to take attendance',
-                    style: AppTextStyles.normal600(
-                      fontSize: 18,
-                      color: AppColors.backgroundDark,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Flexible(
-                    child: SingleChildScrollView(
-                      child: Column(
-                        children: courses.map<Widget>((course) {
-                          final courseId = course['id']?.toString();
-                          final courseName = course['course_name']?.toString() ?? 'Unknown Course';
-                          return Padding(
-                            padding: const EdgeInsets.only(bottom: 8.0),
-                            child: _buildAttendanceButton(courseName, () {
-                              Navigator.pop(context); // Close dialog
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => TakeCourseAttendance(
-                                    courseId: courseId ?? '',
-                                    classId: classId,
-                                  ),
-                                ),
-                              );
-                            }),
-                          );
-                        }).toList(),
+                      const SizedBox(height: 16),
+                      Flexible(
+                        child: RefreshIndicator(
+                          onRefresh: _refreshCourses,
+                          color: AppColors.primaryLight,
+                          child: SingleChildScrollView(
+                            physics: const AlwaysScrollableScrollPhysics(),
+                            child: Column(
+                              children: courses.map<Widget>((course) {
+                                final courseId = course['id']?.toString();
+                                final courseName = course['course_name']?.toString() ?? 'Unknown Course';
+                                return Padding(
+                                  padding: const EdgeInsets.only(bottom: 8.0),
+                                  child: _buildAttendanceButton(courseName, () {
+                                    Navigator.pop(context);
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) => TakeCourseAttendance(
+                                          courseId: courseId ?? '',
+                                          classId: widget.classId,
+                                        ),
+                                      ),
+                                    );
+                                  }),
+                                );
+                              }).toList(),
+                            ),
+                          ),
+                        ),
                       ),
-                    ),
+                    ],
                   ),
-                ],
-              ),
+                );
+              },
             );
           },
         );
@@ -214,7 +243,6 @@ class TakeAttendanceButton extends StatelessWidget {
     );
   }
 }
-
 
 
 

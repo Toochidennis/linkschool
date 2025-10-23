@@ -9,34 +9,46 @@ import 'cbt_board_model.dart';
 class SubjectModel {
   final String id;
   final String name;
-  final List<YearModel>? years;
-  final List<Category>? categories;
   String? subjectIcon;
   Color? cardColor;
+  final List<YearModel>? years;
 
   SubjectModel({
     required this.id,
     required this.name,
-    this.categories,
+    this.subjectIcon,
+    this.cardColor,
     this.years,
-    this.subjectIcon = 'N/A',
-    this.cardColor = AppColors.cbtCardColor1,
   });
 
   factory SubjectModel.fromJson(Map<String, dynamic> json) {
     return SubjectModel(
-      id: json['i'],
-      name: json['c'],
-      years: (json['y'] as List?)
-          ?.map((year) => YearModel.fromJson(year))
-          .toList(),
-      categories: (json['category'] as List?)
-          ?.map((category) => Category.fromJson(category))
-          .toList(),
+      id: json['course_id'].toString() ?? '',
+      name: json['course_name'] ?? '',
+      years: (json['years'] as List<dynamic>?)
+              ?.map((year) => YearModel.fromJson(year))
+              .toList() ??
+          [],
     );
   }
 }
 
+class YearModel {
+  final String id;
+  final String year;
+
+  YearModel({
+    required this.id,
+    required this.year,
+  });
+
+  factory YearModel.fromJson(Map<String, dynamic> json) {
+    return YearModel(
+      id: json['exam_id'].toString() ?? '',
+      year: json['year'] ?? '',
+    );
+  }
+}
 // class Category {
 //   final String id;
 //   final String level;

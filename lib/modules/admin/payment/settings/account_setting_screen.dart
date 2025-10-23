@@ -708,11 +708,11 @@ class _AccountSettingScreenState extends State<AccountSettingScreen> {
                         TextField(
                           controller: accountNumberController,
                           decoration: const InputDecoration(
-                            hintText: 'Account number (4 digits)',
+                            hintText: 'Account number (5 digits)',
                             border: OutlineInputBorder(),
                           ),
                           keyboardType: TextInputType.number,
-                          maxLength: 4,
+                          maxLength: 5,
                         ),
                         const SizedBox(height: 16),
                         DropdownButtonFormField<String>(

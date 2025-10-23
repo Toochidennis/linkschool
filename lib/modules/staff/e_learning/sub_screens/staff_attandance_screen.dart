@@ -9,10 +9,8 @@ import 'package:linkschool/modules/common/widgets/portal/result_attendance/atten
 import 'package:linkschool/modules/common/widgets/portal/result_attendance/info_card.dart';
 import 'package:linkschool/modules/staff/e_learning/sub_screens/staff_class_attendance_screen.dart';
 import 'package:linkschool/modules/staff/home/staff_take_attandance_screen.dart';
-// import 'package:linkschool/modules/staff/home/staff_take_attendance_screen.dart';
-// import 'package:linkschool/modules/staff/home/staff_take_class_attendance.dart';
 
-class StaffAttandanceScreen extends StatelessWidget {
+class StaffAttandanceScreen extends StatefulWidget {
   final String classId;
   final String? courseId;
   final String className;
@@ -27,6 +25,40 @@ class StaffAttandanceScreen extends StatelessWidget {
     this.courseName,
     this.isFromFormClasses = false,
   });
+
+  @override
+  State<StaffAttandanceScreen> createState() => _StaffAttandanceScreenState();
+}
+
+class _StaffAttandanceScreenState extends State<StaffAttandanceScreen> {
+  final GlobalKey<RefreshIndicatorState> _refreshIndicatorKey = GlobalKey<RefreshIndicatorState>();
+  final GlobalKey<AttendanceHistoryListState> _attendanceHistoryKey = GlobalKey();
+
+  // Add a refresh counter to force rebuild of the entire widget tree
+  int _refreshCounter = 0;
+
+  Future<void> _handleRefresh() async {
+    // This will refresh the entire page by forcing a rebuild
+    setState(() {
+      _refreshCounter++;
+    });
+
+    // Also refresh the AttendanceHistoryList specifically
+    if (_attendanceHistoryKey.currentState != null) {
+      await _attendanceHistoryKey.currentState!.refreshData();
+    }
+
+    // You can add other refresh logic here for other components
+    // For example, refresh InfoCard data, etc.
+    
+    // Simulate a delay for better UX
+    await Future.delayed(const Duration(milliseconds: 1000));
+  }
+
+  void _refreshAfterAttendance() {
+    // Refresh after taking attendance
+    _handleRefresh();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -50,6 +82,13 @@ class StaffAttandanceScreen extends StatelessWidget {
           ),
         ),
         actions: [
+          // Add refresh button in app bar
+          IconButton(
+            onPressed: () {
+              _refreshIndicatorKey.currentState?.show();
+            },
+            icon: const Icon(Icons.refresh, color: AppColors.backgroundLight),
+          ),
           IconButton(
             onPressed: () {},
             icon: SvgPicture.asset(
@@ -59,50 +98,65 @@ class StaffAttandanceScreen extends StatelessWidget {
           ),
         ],
       ),
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            Container(
-              height: MediaQuery.of(context).size.height * 0.20,
-              decoration: const BoxDecoration(
-                color: AppColors.paymentTxtColor1,
-                borderRadius: BorderRadius.only(
-                  bottomLeft: Radius.circular(28),
-                  bottomRight: Radius.circular(28),
+      body: RefreshIndicator(
+        key: _refreshIndicatorKey,
+        onRefresh: _handleRefresh,
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(), // Important for RefreshIndicator
+          child: Column(
+            children: [
+              Container(
+                height: MediaQuery.of(context).size.height * 0.20,
+                decoration: const BoxDecoration(
+                  color: AppColors.paymentTxtColor1,
+                  borderRadius: BorderRadius.only(
+                    bottomLeft: Radius.circular(28),
+                    bottomRight: Radius.circular(28),
+                  ),
                 ),
               ),
-            ),
-            Transform.translate(
-              offset: Offset(0, -MediaQuery.of(context).size.height * 0.15),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Column(
-                  children: [
-                    InfoCard(className: className, classId: classId),
-                    const SizedBox(height: 20),
-                    CustomLongElevatedButton(
-                      text: 'Take attendance',
-                      onPressed: () => _showTakeAttendanceDialog(context),
-                      backgroundColor: AppColors.videoColor4,
-                      textStyle: AppTextStyles.normal600(
-                          fontSize: 16, color: AppColors.backgroundLight),
-                    ),
-                    const SizedBox(height: 44),
-                    AttendanceHistoryHeader(),
-                    const SizedBox(height: 16),
-                    AttendanceHistoryList(classId: classId),
-                  ],
+              Transform.translate(
+                offset: Offset(0, -MediaQuery.of(context).size.height * 0.15),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: Column(
+                    children: [
+                      // Add key to InfoCard to force rebuild on refresh
+                      InfoCard(
+                        key: ValueKey('info_card_$_refreshCounter'),
+                        className: widget.className, 
+                        classId: widget.classId
+                      ),
+                      const SizedBox(height: 20),
+                      CustomLongElevatedButton(
+                        text: 'Take attendance',
+                        onPressed: () => _showTakeAttendanceDialog(context),
+                        backgroundColor: AppColors.videoColor4,
+                        textStyle: AppTextStyles.normal600(
+                            fontSize: 16, color: AppColors.backgroundLight),
+                      ),
+                      const SizedBox(height: 44),
+                      // Add key to AttendanceHistoryHeader to force rebuild
+                      AttendanceHistoryHeader(key: ValueKey('header_$_refreshCounter')),
+                      const SizedBox(height: 16),
+                      AttendanceHistoryList(
+                        key: _attendanceHistoryKey,
+                        classId: widget.classId,
+                        onRefresh: _refreshAfterAttendance,
+                      ),
+                    ],
+                  ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
   }
 
   void _showTakeAttendanceDialog(BuildContext context) {
-    if (isFromFormClasses) {
+    if (widget.isFromFormClasses) {
       showModalBottomSheet(
         context: context,
         builder: (BuildContext context) {
@@ -112,22 +166,25 @@ class StaffAttandanceScreen extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: <Widget>[
                 _buildAttendanceButton('Take class attendance', () {
-                  Navigator.pop(context); // Close the bottom sheet
+                  Navigator.pop(context);
                   Navigator.push(
                     context,
                     MaterialPageRoute(
                       builder: (context) => StaffTakeClassAttendance(
-                        classId: classId,
-                        className: className,
+                        classId: widget.classId,
+                        className: widget.className,
                       ),
                     ),
-                  );
+                  ).then((_) {
+                    // Refresh entire page when returning from attendance
+                    _refreshAfterAttendance();
+                  });
                 }),
                 const SizedBox(height: 16),
-                _buildAttendanceButton('Take course attendance', () {
-                  Navigator.pop(context);
-                  _showSelectCourseDialog(context);
-                }),
+                // _buildAttendanceButton('Take course attendance', () {
+                //   Navigator.pop(context);
+                //   _showSelectCourseDialog(context);
+                // }),
               ],
             ),
           );
@@ -138,13 +195,16 @@ class StaffAttandanceScreen extends StatelessWidget {
         context,
         MaterialPageRoute(
           builder: (context) => StaffTakeAttendanceScreen(
-            classId: classId,
-            courseId: courseId!,
-            className: className,
-            courseName: courseName!,
+            classId: widget.classId,
+            courseId: widget.courseId!,
+            className: widget.className,
+            courseName: widget.courseName!,
           ),
         ),
-      );
+      ).then((_) {
+        // Refresh entire page when returning from attendance
+        _refreshAfterAttendance();
+      });
     }
   }
 
@@ -153,7 +213,7 @@ class StaffAttandanceScreen extends StatelessWidget {
     final userData = userDataBox.get('userData');
     final List<dynamic> staffCourses = userData?['data']['courses'] ?? [];
     final filteredCourses = staffCourses
-        .where((courseData) => courseData['class_id'].toString() == classId)
+        .where((courseData) => courseData['class_id'].toString() == widget.classId)
         .toList();
 
     showModalBottomSheet(
@@ -177,18 +237,21 @@ class StaffAttandanceScreen extends StatelessWidget {
                       return Padding(
                         padding: const EdgeInsets.only(bottom: 8.0),
                         child: _buildAttendanceButton(courseName, () {
-                          Navigator.pop(context); // Close dialog first
+                          Navigator.pop(context);
                           Navigator.push(
                             context,
                             MaterialPageRoute(
                               builder: (context) => StaffTakeAttendanceScreen(
-                                classId: classId,
+                                classId: widget.classId,
                                 courseId: courseId,
-                                className: className,
+                                className: widget.className,
                                 courseName: courseName,
                               ),
                             ),
-                          );
+                          ).then((_) {
+                            // Refresh entire page when returning from attendance
+                            _refreshAfterAttendance();
+                          });
                         }),
                       );
                     }).toList(),
@@ -235,116 +298,3 @@ class StaffAttandanceScreen extends StatelessWidget {
     );
   }
 }
-
-
-
-
-// import 'package:flutter/material.dart';
-// import 'package:flutter_svg/svg.dart';
-// import 'package:linkschool/modules/common/app_colors.dart';
-// import 'package:linkschool/modules/common/buttons/custom_long_elevated_button.dart';
-// import 'package:linkschool/modules/common/text_styles.dart';
-// import 'package:linkschool/modules/common/widgets/portal/result_attendance/attendance_history_header.dart';
-// import 'package:linkschool/modules/common/widgets/portal/result_attendance/attendance_history_list.dart';
-// import 'package:linkschool/modules/common/widgets/portal/result_attendance/info_card.dart';
-// import 'package:linkschool/modules/staff/home/staff_take_attandance_screen.dart';
-// // import 'package:linkschool/modules/staff/home/staff_take_attendance_screen.dart';
-
-// class StaffAttandanceScreen extends StatelessWidget {
-//   final String classId;
-//   final String courseId;
-//   final String className;
-//   final String courseName;
-
-//   const StaffAttandanceScreen({
-//     super.key,
-//     required this.classId,
-//     required this.courseId,
-//     required this.className,
-//     required this.courseName,
-//   });
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return Scaffold(
-//       backgroundColor: Colors.grey[200],
-//       appBar: AppBar(
-//         backgroundColor: AppColors.paymentTxtColor1,
-//         elevation: 0,
-//         title: Text(
-//           'Attendance',
-//           style: AppTextStyles.normal600(
-//               fontSize: 20, color: AppColors.backgroundLight),
-//         ),
-//         leading: IconButton(
-//           onPressed: () => Navigator.of(context).pop(),
-//           icon: Image.asset(
-//             'assets/icons/arrow_back.png',
-//             color: AppColors.backgroundLight,
-//             width: 34.0,
-//             height: 34.0,
-//           ),
-//         ),
-//         actions: [
-//           IconButton(
-//             onPressed: () {},
-//             icon: SvgPicture.asset(
-//               'assets/icons/result/search.svg',
-//               color: AppColors.backgroundLight,
-//             ),
-//           ),
-//         ],
-//       ),
-//       body: SingleChildScrollView(
-//         child: Column(
-//           children: [
-//             Container(
-//               height: MediaQuery.of(context).size.height * 0.20,
-//               decoration: const BoxDecoration(
-//                 color: AppColors.paymentTxtColor1,
-//                 borderRadius: BorderRadius.only(
-//                   bottomLeft: Radius.circular(28),
-//                   bottomRight: Radius.circular(28),
-//                 ),
-//               ),
-//             ),
-//             Transform.translate(
-//               offset: Offset(0, -MediaQuery.of(context).size.height * 0.15),
-//               child: Padding(
-//                 padding: const EdgeInsets.symmetric(horizontal: 20),
-//                 child: Column(
-//                   children: [
-//                     InfoCard(className: className, classId: classId),
-//                     const SizedBox(height: 20),
-//                     CustomLongElevatedButton(
-//                       text: 'Take attendance',
-//                       onPressed: () {
-//                         Navigator.of(context).push(
-//                           MaterialPageRoute(
-//                             builder: (context) => StaffTakeAttendanceScreen(
-//                               classId: classId,
-//                               courseId: courseId,
-//                               className: className,
-//                               courseName: courseName,
-//                             ),
-//                           ),
-//                         );
-//                       },
-//                       backgroundColor: AppColors.videoColor4,
-//                       textStyle: AppTextStyles.normal600(
-//                           fontSize: 16, color: AppColors.backgroundLight),
-//                     ),
-//                     const SizedBox(height: 44),
-//                     AttendanceHistoryHeader(),
-//                     const SizedBox(height: 16),
-//                     AttendanceHistoryList(classId: classId),
-//                   ],
-//                 ),
-//               ),
-//             ),
-//           ],
-//         ),
-//       ),
-//     );
-//   }
-// }

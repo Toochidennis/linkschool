@@ -14,6 +14,7 @@ class CbtDetailScreen extends StatefulWidget {
   final String subjectIcon;
   final Color cardColor;
   final List<String> subjectList;
+   final String examTypeId;
 
   const CbtDetailScreen({
     super.key,
@@ -22,6 +23,8 @@ class CbtDetailScreen extends StatefulWidget {
     required this.subjectIcon,
     required this.cardColor,
     required this.subjectList,
+    required this.examTypeId,
+
   });
 
   @override
@@ -96,6 +99,7 @@ class _CbtDetailScreenState extends State<CbtDetailScreen> {
       YearPickerDialog.show(
         context,
         title: 'Choose Year',
+        examTypeId: widget.examTypeId,
         startYear: yearsList.first,
         numberOfYears: yearsList.length,
         subject: selectedSubject,
@@ -119,7 +123,7 @@ class _CbtDetailScreenState extends State<CbtDetailScreen> {
       builder: (context, provider, child) {
         return Scaffold(
           appBar: Constants.customAppBar(
-              context: context, title: 'WAEC/SSCE', centerTitle: true),
+              context: context, title: 'WAEC/SSCE', centerTitle: true ,showBackButton: false),
           body: Container(
             decoration: Constants.customBoxDecoration(context),
             child: Padding(
@@ -220,7 +224,9 @@ class _CbtDetailScreenState extends State<CbtDetailScreen> {
                       onPressed: () => Navigator.push(
                           context,
                           MaterialPageRoute(
-                              builder: (context) => const TestScreen())),
+                              builder: (context) => TestScreen(
+                                examTypeId:widget.examTypeId, 
+                              ))),
                       backgroundColor: AppColors.bookText1,
                       textStyle: AppTextStyles.normal500(
                           fontSize: 18.0, color: AppColors.bookText2),

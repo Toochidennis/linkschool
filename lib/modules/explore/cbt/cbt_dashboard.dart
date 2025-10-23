@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:linkschool/modules/model/explore/home/subject_model.dart';
 import 'package:linkschool/modules/providers/explore/cbt_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:skeletonizer/skeletonizer.dart';
@@ -354,105 +355,101 @@ class _CBTDashboardState extends State<CBTDashboard> {
     );
   }
 
-  Widget _buildChooseSubjectCard({
-    required String subject,
-    required String year,
-    required Color cardColor,
-    required String subjectIcon,
-  }) {
-    return Consumer<CBTProvider>(
-      builder: (context, provider, child) {
-        // final subjectModel = provider.currentBoardSubjects.firstWhere(
-        //   (s) => s.name == subject,
-        //   orElse: () => SubjectModel(name: subject, years: []),
-        // );
-        final years = provider.getYearsForSubject(subject);
+Widget _buildChooseSubjectCard({
+  required String subject,
+  required String year,
+  required Color cardColor,
+  required String subjectIcon,
+}) {
+  return Consumer<CBTProvider>(
+    builder: (context, provider, child) {
+      final years = provider.getYearsForSubject(subject);
+      final yearDisplay = years.isNotEmpty
+          ? "${years.first}-${years.last}"
+          : "N/A";
 
-        return GestureDetector(
-          onTap: () {
-            if (years.isNotEmpty) {
-              final yearsList = years
-                  .map((y) => int.tryParse(y))
-                  .whereType<int>()
-                  .toList()
-                ..sort((a, b) => b.compareTo(a));
+      return GestureDetector(
+        onTap: () {
+          if (years.isNotEmpty) {
+            final yearsList = years
+                .map((y) => int.tryParse(y))
+                .whereType<int>()
+                .toList()
+              ..sort((a, b) => b.compareTo(a));
 
-              YearPickerDialog.show(
-                context,
-                title: 'Choose Year',
-                // title: 'Choose $subject Year',
-                // subtitle: 'Select a year to practice $subject questions',
-                startYear: yearsList.first,
-                numberOfYears: yearsList.length,
-                subject: subject,
-                subjectIcon: provider.getSubjectIcon(subject),
-                cardColor: provider.getSubjectColor(subject),
-                subjectList: provider.getOtherSubjects(
-                    subject), // This now expects a non-nullable List<String>
-              );
-            } else {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('No years available for this subject'),
-                  duration: Duration(seconds: 2),
-                ),
-              );
-            }
-          },
-          child: Container(
-            width: double.infinity,
-            height: 70,
-            padding:
-                const EdgeInsets.symmetric(horizontal: 16.0, vertical: 5.0),
-            decoration: const BoxDecoration(
-              border: Border(top: BorderSide(color: AppColors.cbtColor5)),
-            ),
-            child: Row(
-              children: [
-                Container(
-                  width: 60,
-                  decoration: BoxDecoration(
-                    color: cardColor,
-                    borderRadius: BorderRadius.circular(4.0),
-                  ),
-                  child: Center(
-                    child: Image.asset(
-                      'assets/icons/$subjectIcon.png',
-                      width: 24.0,
-                      height: 24.0,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 10.0),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        subject,
-                        style: AppTextStyles.normal600(
-                          fontSize: 16.0,
-                          color: AppColors.backgroundDark,
-                        ),
-                      ),
-                      const SizedBox(height: 8.0),
-                      Text(
-                        year,
-                        style: AppTextStyles.normal600(
-                          fontSize: 12.0,
-                          color: AppColors.text9Light,
-                        ),
-                      ),
-                    ],
-                  ),
-                )
-              ],
-            ),
+            YearPickerDialog.show(
+              context,
+              examTypeId: provider.selectedBoard?.id ?? '', // Changed from examTypeId to id
+              title: 'Choose Year',
+              startYear: yearsList.first,
+              numberOfYears: yearsList.length,
+              subject: subject,
+              subjectIcon: provider.getSubjectIcon(subject),
+              cardColor: provider.getSubjectColor(subject),
+              subjectList: provider.getOtherSubjects(subject),
+            );
+          } else {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('No years available for this subject'),
+                duration: Duration(seconds: 2),
+              ),
+            );
+          }
+        },
+        child: Container(
+          width: double.infinity,
+          height: 70,
+          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 5.0),
+          decoration: const BoxDecoration(
+            border: Border(top: BorderSide(color: AppColors.cbtColor5)),
           ),
-        );
-      },
-    );
-  }
+          child: Row(
+            children: [
+              Container(
+                width: 60,
+                decoration: BoxDecoration(
+                  color: cardColor,
+                  borderRadius: BorderRadius.circular(4.0),
+                ),
+                child: Center(
+                  child: Image.asset(
+                    'assets/icons/$subjectIcon.png',
+                    width: 24.0,
+                    height: 24.0,
+                    errorBuilder: (context, error, stackTrace) => const Icon(Icons.error),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10.0),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      subject,
+                      style: AppTextStyles.normal600(
+                        fontSize: 16.0,
+                        color: AppColors.backgroundDark,
+                      ),
+                    ),
+                    const SizedBox(height: 8.0),
+                    Text(
+                      yearDisplay,
+                      style: AppTextStyles.normal600(
+                        fontSize: 12.0,
+                        color: AppColors.text9Light,
+                      ),
+                    ),
+                  ],
+                ),
+              )
+            ],
+          ),
+        ),
+      );
+    },
+  );
 }
 
 
@@ -856,4 +853,4 @@ class _CBTDashboardState extends State<CBTDashboard> {
 //       ),
 //     );
 //   }
-// }
+ }

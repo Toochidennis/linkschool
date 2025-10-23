@@ -161,7 +161,7 @@ class StudentResultScreen extends StatelessWidget {
                           profileImage,
                           const SizedBox(height: 10),
                           Text(
-                            student.name,
+                           studentName ?? student.name,
                             style: AppTextStyles.normal700(
                               fontSize: 20,
                               color: AppColors.primaryLight,
@@ -338,9 +338,9 @@ class StudentResultScreen extends StatelessWidget {
                     builder: (context) => SingleTermResult(
                       studentId: studentId,
                       termId: termData['term'],
-                      classId: classId ?? '66', // Fallback for testing
+                      classId: classId ?? '', // Fallback for testing
                       year: year,
-                      levelId: levelId ?? '69', // Fallback for testing
+                      levelId: levelId ?? '', // Fallback for testing
                       termName: termData['termName'],
                     ),
                   ),

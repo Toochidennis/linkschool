@@ -80,7 +80,7 @@ class SkillService {
   Future<void> deleteSkill(String id) async {
     final response = await _apiService.delete<void>(
       endpoint: 'portal/skill-behavior/$id',
-      queryParams: {'_db': _db},
+      body: {'_db': _db},
     );
 
     if (!response.success) {

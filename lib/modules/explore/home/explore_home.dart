@@ -369,9 +369,9 @@ class _ExploreHomeState extends State<ExploreHome> {
           return const Center(child: CircularProgressIndicator());
         }
 
-        if (newsProvider.errorMessage.isNotEmpty) {
-          return Center(child: Text('Error: ${newsProvider.errorMessage}'));
-        }
+        // if (newsProvider.errorMessage.isEmpty) {
+        //   return Center(child: Text('Error: ${newsProvider.errorMessage}'));
+        // }
 
         if (newsProvider.newsmodel.isEmpty) {
           return const Center(child: Text('No news available'));

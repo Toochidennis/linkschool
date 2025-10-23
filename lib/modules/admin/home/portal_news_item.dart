@@ -5,6 +5,9 @@ import '../../common/app_colors.dart';
 import '../../common/text_styles.dart';
 
 class PortalNewsItem extends StatefulWidget {
+  final String? CreatorId;
+  final int? authorId;
+  final String? role;
   final String profileImageUrl;
   final String name;
   final String newsContent;
@@ -23,6 +26,9 @@ class PortalNewsItem extends StatefulWidget {
     required this.name,
     required this.newsContent,
     required this.time,
+    required this.CreatorId,
+    required this.authorId,
+    required this.role,
     this.title = '',
     this.likes = 0,
     this.comments = 0,
@@ -36,6 +42,24 @@ class PortalNewsItem extends StatefulWidget {
 }
 
 class _PortalNewsItemState extends State<PortalNewsItem> {
+    bool get canEdit {
+    // Admin can edit only their own posts
+    if (widget.role == 'admin') {
+      return widget.authorId.toString() == widget.CreatorId;
+    }
+    // Staff, teacher, or student can edit only their own posts
+    return widget.authorId.toString() == widget.CreatorId;
+  }
+
+  // Check if user can delete this post
+  bool get canDelete {
+    // Admin can delete anybody's post
+    if (widget.role == 'admin') {
+      return true;
+    }
+    // Staff, teacher, or student can delete only their own posts
+    return widget.authorId.toString() == widget.CreatorId;
+  }
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -118,14 +142,14 @@ class _PortalNewsItemState extends State<PortalNewsItem> {
                         onPressed: () {},
                       ),
                       
-
+                     if (canEdit && widget.edit != null)
                       IconButton(
                         icon: Icon(Icons.edit_note_outlined),
                         onPressed:widget.edit,
                       ),
                     
                       
-
+                      if (canDelete && widget.delete != null)
                       IconButton(
                         icon: Icon(Icons.delete),
                         onPressed:widget.delete,

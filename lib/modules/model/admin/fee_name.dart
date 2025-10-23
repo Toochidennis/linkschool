@@ -9,13 +9,20 @@ class FeeName {
     required this.isMandatory,
   });
 
-  factory FeeName.fromJson(Map<String, dynamic> json) {
-    return FeeName(
-      id: json['id'] ?? 0,
-      feeName: json['fee_name'] ?? '',
-      isMandatory: (json['is_mandatory'] ?? 0) == 1,
-    );
-  }
+ factory FeeName.fromJson(Map<String, dynamic> json) {
+  final dynamic mandatoryValue = json['is_mandatory'];
+  final bool isMandatory = mandatoryValue == 1 ||
+      mandatoryValue == true ||
+      mandatoryValue == '1' ||
+      mandatoryValue == 'true';
+
+  return FeeName(
+    id: json['id'] ?? 0,
+    feeName: json['fee_name'] ?? '',
+    isMandatory: isMandatory,
+  );
+}
+
 
   Map<String, dynamic> toJson() {
     return {

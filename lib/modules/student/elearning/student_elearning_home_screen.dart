@@ -6,7 +6,6 @@ import 'package:hive/hive.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/widgets/portal/student/student_customized_appbar.dart';
-import 'package:linkschool/modules/model/student/elearningcontent_model.dart';
 import 'package:linkschool/modules/model/student/single_elearningcontentmodel.dart';
 import 'package:linkschool/modules/providers/student/single_elearningcontent_provider.dart';
 import 'package:linkschool/modules/student/elearning/course_detail_screen.dart';
@@ -15,10 +14,8 @@ import 'package:linkschool/modules/student/elearning/single_assignment_score_vie
 import 'package:linkschool/modules/student/elearning/single_material_detail_screen.dart';
 import 'package:linkschool/modules/student/elearning/single_quiz_intro_page.dart';
 import 'package:linkschool/modules/student/elearning/single_quiz_score_page.dart';
-import 'package:linkschool/modules/student/home/new_post_dialog.dart';
 import 'package:provider/provider.dart';
 
-import '../../auth/provider/auth_provider.dart';
 import '../../model/student/dashboard_model.dart';
 import '../../providers/student/dashboard_provider.dart';
 
@@ -45,32 +42,7 @@ class _StudentElearningScreenState extends State<StudentElearningScreen> {
 
   final String courseIcon = 'assets/icons/course-icon.svg';
 
-
-  final List<Map<String, String>> assessments = [
-    {
-      'date': '11TH FEB 2026',
-      'title': 'First C A',
-      'subject': 'Mathematics',
-      'classes': 'JSS 1, JSS3, SS3',
-    },
-    {
-      'date': '10TH JAN 2025',
-      'title': 'Third C A',
-      'subject': 'Civic Edu..',
-      'classes': 'JSS 1, JSS3, SS3',
-    },
-    {
-      'date': '19TH OCT 2024',
-      'title': 'Second C A',
-      'subject': 'English Language',
-      'classes': 'SSS 1, SSS2, SSS3',
-    },
-  ];
-
-
-
-
-
+  // Remove the hardcoded assessments to avoid conflict
   final List<String> courseBackgrounds = [
     'assets/images/student/bg-light-blue.svg',
     'assets/images/student/bg-light-blue.svg',
@@ -85,60 +57,31 @@ class _StudentElearningScreenState extends State<StudentElearningScreen> {
     'assets/images/student/bg-purple.svg',
     'assets/images/student/bg-purple.svg',
   ];
+
   String extractTime(String datetime) {
     DateTime dt = DateTime.parse(datetime);
     return "${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}:${dt.second.toString().padLeft(2, '0')}";
   }
+
   @override
   void initState() {
     super.initState();
 
     assessmentController = PageController(viewportFraction: 0.90);
     activityController = PageController(viewportFraction: 0.90);
-  WidgetsBinding.instance.addPostFrameCallback((_) {
-
+    
+    WidgetsBinding.instance.addPostFrameCallback((_) {
       final dashboardProvider = Provider.of<DashboardProvider>(context, listen: false);
       dashboardProvider.fetchDashboardData(
-          class_id: getuserdata()['profile']['class_id'].toString(), level_id: getuserdata()['profile']['level_id'], term: getuserdata()['settings']['term'],
+        class_id: getuserdata()['profile']['class_id'].toString(), 
+        level_id: getuserdata()['profile']['level_id'], 
+        term: getuserdata()['settings']['term'],
       );
-
-
     });
 
-
-    // Start timers for auto-scrolling
-
-    assessmentTimer = Timer.periodic(const Duration(seconds: 5), (_) {
-      if (assessmentController.hasClients) {
-        setState(() {
-          currentAssessmentIndex =
-              (currentAssessmentIndex + 1) % assessments.length;
-          assessmentController.animateToPage(
-            currentAssessmentIndex,
-            duration: const Duration(milliseconds: 800),
-            curve: Curves.easeIn,
-          );
-        });
-      }
-    });
-
-    activityTimer = Timer.periodic(const Duration(seconds: 7), (_) {
-      final dashboardProvider = Provider.of<DashboardProvider>(context, listen: false);
-      final activities = dashboardProvider.dashboardData?.recentActivities ?? [];
-      if (activityController.hasClients) {
-        setState(() {
-          currentActivityIndex = (currentActivityIndex + 1) % activities.length;
-          activityController.animateToPage(
-            currentActivityIndex,
-            duration: const Duration(milliseconds: 900),
-            curve: Curves.easeIn,
-          );
-        });
-      }
-    });
     fetchDashboard();
-
   }
+
   Future<void> fetchDashboard() async {
     final provider = Provider.of<DashboardProvider>(context, listen: false);
     final data = await provider.fetchDashboardData(
@@ -152,16 +95,129 @@ class _StudentElearningScreenState extends State<StudentElearningScreen> {
     });
   }
 
-  Future<void> fetchSingleElearning(int contentid) async {
+  // FIXED: Use Consumer pattern to safely access provider
+  Future<void> _handleAssessmentTap(int contentId, BuildContext context) async {
+    try {
+      final provider = Provider.of<SingleelearningcontentProvider>(context, listen: false);
+      final data = await provider.fetchElearningContentData(contentId);
+      
+      if (mounted) {
+        setState(() {
+          elearningContentData = data;
+        });
+      }
 
-    final provider = Provider.of<SingleelearningcontentProvider>(context, listen: false);
-    final data = await provider.fetchElearningContentData(
-      contentid
-    );
-    setState(() {
-      elearningContentData = data;
-      isLoading = false;
-    });
+      final userBox = Hive.box('userData');
+      final List<dynamic> quizzestaken = userBox.get('quizzes', defaultValue: []);
+      int? theid = data?.id;
+      
+      if (quizzestaken.contains(theid)) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => SingleQuizScoreView(
+              childContent: data,
+              year: int.parse(getuserdata()['settings']['year']), 
+              term: getuserdata()['settings']['term']
+            ),
+          ),
+        );
+      } else {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => SingleQuizIntroPage(childContent: data),
+          ),
+        );
+      }
+    } catch (e) {
+      print('Error handling assessment tap: $e');
+      // Show error message to user
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to load content: $e')),
+      );
+    }
+  }
+
+  // FIXED: Handle activity tap with proper provider access
+  Future<void> _handleActivityTap(dynamic activity, BuildContext context) async {
+    try {
+      final provider = Provider.of<SingleelearningcontentProvider>(context, listen: false);
+      final data = await provider.fetchElearningContentData(activity.id);
+      
+      if (mounted) {
+        setState(() {
+          elearningContentData = data;
+        });
+      }
+
+      if (data?.settings != null) {
+        final userBox = Hive.box('userData');
+        final List<dynamic> quizzestaken = userBox.get('quizzes', defaultValue: []);
+        final int? quizId = data?.settings!.id;
+        
+        if (quizzestaken.contains(quizId)) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => SingleQuizScoreView(
+                childContent: data,
+                year: int.parse(getuserdata()['settings']['year']), 
+                term: getuserdata()['settings']['term']
+              ),
+            ),
+          );
+        } else {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => SingleQuizIntroPage(childContent: data),
+            ),
+          );
+        }
+      } else if (data?.type == 'material') {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => SingleMaterialDetailScreen(childContent: data),
+          ),
+        );
+      } else if (data?.type == "assignment") {
+        final userBox = Hive.box('userData');
+        final List<dynamic> assignmentssubmitted = userBox.get('assignments', defaultValue: []);
+        final int? assignmentId = data?.id;
+
+        if (assignmentssubmitted.contains(assignmentId)) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => SingleAssignmentScoreView(
+                childContent: data,
+                year: int.parse(getuserdata()['settings']['year']), 
+                term: getuserdata()['settings']['term'], 
+                attachedMaterials: [""]
+              ),
+            ),
+          );
+        } else {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => SingleAssignmentDetailsScreen(
+                childContent: data, 
+                title: data?.title, 
+                id: data?.id ?? 0
+              ),
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      print('Error handling activity tap: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to load content: $e')),
+      );
+    }
   }
 
   @override
@@ -172,36 +228,30 @@ class _StudentElearningScreenState extends State<StudentElearningScreen> {
     activityTimer?.cancel();
     super.dispose();
   }
- getuserdata(){
-  final userBox = Hive.box('userData');
-  final storedUserData =
-      userBox.get('userData') ?? userBox.get('loginResponse');
-  final processedData = storedUserData is String
-      ? json.decode(storedUserData)
-      : storedUserData;
-  final response = processedData['response'] ?? processedData;
-  final data = response['data'] ?? response;
-  return data;
-}
-  void _showNewPostDialog() {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return const NewPostDialog();
-      },
-    );
+
+  getuserdata() {
+    final userBox = Hive.box('userData');
+    final storedUserData = userBox.get('userData') ?? userBox.get('loginResponse');
+    final processedData = storedUserData is String
+        ? json.decode(storedUserData)
+        : storedUserData;
+    final response = processedData['response'] ?? processedData;
+    final data = response['data'] ?? response;
+    return data;
   }
 
   void _navigateToCourseDetail(String courseTitle, DashboardData dashboardata, int syllabusid) {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => CourseDetailScreen(courseTitle: courseTitle, dashboardData: dashboardata, syllabusid:syllabusid),
+        builder: (context) => CourseDetailScreen(
+          courseTitle: courseTitle, 
+          dashboardData: dashboardata, 
+          syllabusid: syllabusid
+        ),
       ),
     );
   }
-
-//
 
   @override
   Widget build(BuildContext context) {
@@ -212,61 +262,45 @@ class _StudentElearningScreenState extends State<StudentElearningScreen> {
         ),
       );
     }
-  final activities= dashboardData!.recentActivities;
 
+    final activities = dashboardData!.recentActivities;
     final courses = dashboardData!.availableCourses;
-final assessments=dashboardData!.recentQuizzes;
+    final recentQuizzes = dashboardData!.recentQuizzes; // FIXED: Renamed to avoid conflict
 
-    final userName =getuserdata()['profile']['name'] ?? 'Guest'; // Use the logged-in user's name
+    final userName = getuserdata()['profile']['name'] ?? 'Guest';
 
     final Brightness brightness = Theme.of(context).brightness;
     opacity = brightness == Brightness.light ? 0.1 : 0.15;
+    
     return Scaffold(
       appBar: CustomStudentAppBar(
         title: 'Welcome',
         subtitle: userName,
         showNotification: true,
-        // showPostInput: true,
         onNotificationTap: () {},
-        // onPostTap: _showNewPostDialog,
       ),
-      body:isLoading?const Center(child: CircularProgressIndicator(),): Container(
+      body: Container(
         decoration: Constants.customBoxDecoration(context),
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 8.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // Assessments Carousel
               SizedBox(
-                height: 180, // Adjust height to fit design
+                height: 180,
                 child: PageView.builder(
                   controller: assessmentController,
-                  itemCount: assessments.length,
+                  itemCount: recentQuizzes.length,
                   onPageChanged: (index) {
                     setState(() {
                       currentAssessmentIndex = index;
                     });
                   },
                   itemBuilder: (context, index) {
-                    final assessment = assessments[index];
+                    final assessment = recentQuizzes[index];
                     return GestureDetector(
-                      onTap: () async {
-                        await fetchSingleElearning(assessment.id);
-                        final userBox = Hive.box('userData');
-                        final List<dynamic> quizzestaken = userBox.get('quizzes', defaultValue: []);
-                       int? theid= elearningContentData?.id;
-                        if (quizzestaken.contains(theid)) {
-                          Navigator.push(
-                            context,MaterialPageRoute(
-                            builder: (context) => SingleQuizScoreView(childContent: elearningContentData,year:int.parse(getuserdata()['settings']['year']), term:getuserdata()['settings']['term']),),
-                          );
-                        } else {
-                          Navigator.push(
-                            context,MaterialPageRoute(
-                            builder: (context) => SingleQuizIntroPage(childContent: elearningContentData,),),
-                          );
-                        }
-                      },
+                      onTap: () => _handleAssessmentTap(assessment.id, context), // FIXED: Use the new method
                       child: Container(
                         margin: const EdgeInsets.symmetric(horizontal: 8.0),
                         decoration: BoxDecoration(
@@ -290,14 +324,11 @@ final assessments=dashboardData!.recentQuizzes;
                                 padding: const EdgeInsets.all(8.0),
                                 decoration: BoxDecoration(
                                   borderRadius: BorderRadius.circular(8.0),
-                                  color: Colors
-                                      .white, // White container wrapping everything
+                                  color: Colors.white,
                                 ),
                                 child: Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                   children: [
-                                    // Subject and Title Section
                                     Expanded(
                                       child: Text(
                                         '${assessment.title} ${assessment.courseName}',
@@ -308,18 +339,14 @@ final assessments=dashboardData!.recentQuizzes;
                                         ),
                                       ),
                                     ),
-                                    // Date Section in a Blue Container
-
                                   ],
                                 ),
                               ),
                               Container(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 8.0, vertical: 4.0),
+                                padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
                                 decoration: BoxDecoration(
                                   borderRadius: BorderRadius.circular(8.0),
-                                  color: AppColors
-                                      .paymentTxtColor1, // Blue background
+                                  color: AppColors.paymentTxtColor1,
                                 ),
                                 child: Row(
                                   children: [
@@ -344,12 +371,10 @@ final assessments=dashboardData!.recentQuizzes;
                                 ),
                               ),
                               const SizedBox(height: 24),
-                              // Bottom Section: Time, Classes, Duration
                               Row(
                                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                                 children: [
-                                  // Time
-                                   Column(
+                                  Column(
                                     children: [
                                       Text(
                                         'Time',
@@ -359,7 +384,7 @@ final assessments=dashboardData!.recentQuizzes;
                                           fontWeight: FontWeight.bold,
                                         ),
                                       ),
-                                      SizedBox(height: 4),
+                                      const SizedBox(height: 4),
                                       Text(
                                         extractTime(assessment.datePosted),
                                         style: TextStyle(
@@ -369,13 +394,11 @@ final assessments=dashboardData!.recentQuizzes;
                                       ),
                                     ],
                                   ),
-                                  // Vertical Divider
                                   Container(
                                     height: 40,
                                     width: 1,
-                                    color: Colors.white, // White line
-                                    margin: const EdgeInsets.symmetric(
-                                        horizontal: 16.0),
+                                    color: Colors.white,
+                                    margin: const EdgeInsets.symmetric(horizontal: 16.0),
                                   ),
                                   Column(
                                     children: [
@@ -387,7 +410,7 @@ final assessments=dashboardData!.recentQuizzes;
                                           fontWeight: FontWeight.bold,
                                         ),
                                       ),
-                                      SizedBox(height: 4),
+                                      const SizedBox(height: 4),
                                       Text(
                                         getuserdata()['profile']['class_name'],
                                         style: TextStyle(
@@ -397,27 +420,23 @@ final assessments=dashboardData!.recentQuizzes;
                                       ),
                                     ],
                                   ),
-
-                                  // Classes
-                                  // Vertical Divider
                                   Container(
                                     height: 40,
                                     width: 1,
-                                    color: Colors.white, // White line
-                                    margin: const EdgeInsets.symmetric(
-                                        horizontal: 16.0),
+                                    color: Colors.white,
+                                    margin: const EdgeInsets.symmetric(horizontal: 16.0),
                                   ),
                                   Column(
                                     children: [
                                       Text(
-                                        'Time',
+                                        'Duration',
                                         style: TextStyle(
                                           color: AppColors.backgroundLight,
                                           fontSize: 12,
                                           fontWeight: FontWeight.bold,
                                         ),
                                       ),
-                                      SizedBox(height: 4),
+                                      const SizedBox(height: 4),
                                       Text(
                                         "20 Minutes",
                                         style: TextStyle(
@@ -427,8 +446,6 @@ final assessments=dashboardData!.recentQuizzes;
                                       ),
                                     ],
                                   ),
-                                  // Duration
-
                                 ],
                               ),
                             ],
@@ -440,12 +457,12 @@ final assessments=dashboardData!.recentQuizzes;
                 ),
               ),
 
-// Carousel Dots
+              // Carousel Dots
               const SizedBox(height: 16),
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: List.generate(
-                  assessments.length,
+                  recentQuizzes.length,
                   (index) => Container(
                     width: 8,
                     height: 8,
@@ -454,14 +471,14 @@ final assessments=dashboardData!.recentQuizzes;
                       shape: BoxShape.circle,
                       color: currentAssessmentIndex == index
                           ? Colors.blue
-                          : Colors.grey, // Highlight current page
+                          : Colors.grey,
                     ),
                   ),
                 ),
               ),
 
               const SizedBox(height: 24),
-              // Recent Activity Carousel with Peek Effect
+              // Recent Activity Carousel
               const Padding(
                 padding: EdgeInsets.only(left: 8.0),
                 child: Text(
@@ -478,60 +495,7 @@ final assessments=dashboardData!.recentQuizzes;
                   itemBuilder: (context, index) {
                     final activity = activities?[index];
                     return GestureDetector(
-                      onTap: () async {
-                        await fetchSingleElearning(activity.id);
-                        if (elearningContentData?.settings != null) {
-                          final userBox = Hive.box('userData');
-                          final List<dynamic> quizzestaken = userBox.get('quizzes', defaultValue: []);
-                          final int? quizId = elearningContentData?.settings!.id;
-                          if (quizzestaken.contains(quizId)) {
-                            Navigator.push(
-                              context,MaterialPageRoute(
-                              builder: (context) => SingleQuizScoreView(childContent: elearningContentData,year:int.parse(getuserdata()['settings']['year']), term:getuserdata()['settings']['term']),),
-                            );
-                          } else {
-                            Navigator.push(
-                              context,MaterialPageRoute(
-                              builder: (context) => SingleQuizIntroPage(childContent: elearningContentData,),),
-                            );
-                          }
-
-                        }
-                        else if (elearningContentData?.type == 'material') {
-                                Navigator.push(
-                                  context,MaterialPageRoute(
-                                  builder: (context) => SingleMaterialDetailScreen(childContent: elearningContentData,),),
-                                );
-                        }
-                        else if (elearningContentData?.type=="assignment") {
-
-
-                                final userBox = Hive.box('userData');
-                                final List<dynamic> assignmentssubmitted = userBox.get('assignments', defaultValue: []);
-                                final int? assignmentId = elearningContentData?.id;
-
-                                if (assignmentssubmitted.contains(assignmentId)) {
-                                  Navigator.push(
-                                    context,MaterialPageRoute(
-                                    builder: (context) => SingleAssignmentScoreView(childContent: elearningContentData,year:int.parse(getuserdata()['settings']['year']), term:getuserdata()['settings']['term'], attachedMaterials: [""],),),
-                                  );
-                                } else {
-                                  Navigator.push(
-                                    context,MaterialPageRoute(
-                                    builder: (context) => SingleAssignmentDetailsScreen(childContent: elearningContentData, title: elearningContentData?.title, id: elearningContentData?.id ?? 0),),
-                                  );
-                                }
-
-
-
-                        }
-
-                       else {
-                           SizedBox.shrink(); // If neither condition is met
-                        }
-
-
-                      },
+                      onTap: () => _handleActivityTap(activity, context), // FIXED: Use the new method
                       child: Container(
                         margin: const EdgeInsets.symmetric(horizontal: 8.0),
                         child: Card(
@@ -541,9 +505,10 @@ final assessments=dashboardData!.recentQuizzes;
                             padding: const EdgeInsets.all(8.0),
                             child: Row(
                               children: [
+                                // FIXED: Replace invalid asset with placeholder
                                 CircleAvatar(
-                                  backgroundImage:
-                                      AssetImage("Non rc"),
+                                  backgroundColor: Colors.grey[300],
+                                  child: Icon(Icons.person, color: Colors.grey[600]),
                                 ),
                                 const SizedBox(width: 8),
                                 Expanded(
@@ -553,28 +518,24 @@ final assessments=dashboardData!.recentQuizzes;
                                     children: [
                                       RichText(
                                         text: TextSpan(
-                                          style: const TextStyle(
-                                              color: Colors.black, fontSize: 14),
+                                          style: const TextStyle(color: Colors.black, fontSize: 14),
                                           children: [
+                                            TextSpan(text: '${activity?.createdBy} '),
                                             TextSpan(
-                                                text: '${activity?.createdBy} '),
+                                              text: '${activity?.type} ',
+                                              style: const TextStyle(fontWeight: FontWeight.normal)
+                                            ),
                                             TextSpan(
-                                                text: '${activity?.type} ',
-                                                style: const TextStyle(
-                                                    fontWeight:
-                                                        FontWeight.normal)),
-                                            TextSpan(
-                                                text: '${activity?.courseName}',
-                                                style: const TextStyle(
-                                                    fontWeight: FontWeight.bold)),
+                                              text: '${activity?.courseName}',
+                                              style: const TextStyle(fontWeight: FontWeight.bold)
+                                            ),
                                           ],
                                         ),
                                       ),
                                       const SizedBox(height: 4),
                                       Text(
                                         activity!.datePosted,
-                                        style: const TextStyle(
-                                            color: Colors.grey, fontSize: 12),
+                                        style: const TextStyle(color: Colors.grey, fontSize: 12),
                                       ),
                                     ],
                                   ),
@@ -588,8 +549,9 @@ final assessments=dashboardData!.recentQuizzes;
                   },
                 ),
               ),
+
               const SizedBox(height: 24),
-              // Courses Grid with Navigation
+              // Courses Grid
               const Padding(
                 padding: EdgeInsets.only(left: 8.0),
                 child: Text(
@@ -610,10 +572,9 @@ final assessments=dashboardData!.recentQuizzes;
                 itemCount: courses.length,
                 itemBuilder: (context, index) {
                   final course = courses[index];
-                  final svgBackground =
-                      courseBackgrounds[index % courseBackgrounds.length];
+                  final svgBackground = courseBackgrounds[index % courseBackgrounds.length];
                   return GestureDetector(
-                    onTap: () => _navigateToCourseDetail(course.courseName, dashboardData!,course.syllabusId),
+                    onTap: () => _navigateToCourseDetail(course.courseName, dashboardData!, course.syllabusId),
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(12.0),
                       child: Stack(
@@ -628,7 +589,6 @@ final assessments=dashboardData!.recentQuizzes;
                           Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              // Add course icon
                               SvgPicture.asset(
                                 courseIcon,
                                 width: 24,
@@ -638,9 +598,7 @@ final assessments=dashboardData!.recentQuizzes;
                                   BlendMode.srcIn,
                                 ),
                               ),
-                              const SizedBox(
-                                  width:
-                                      8), // Add some spacing between icon and text
+                              const SizedBox(width: 8),
                               Text(
                                 course.courseName,
                                 style: const TextStyle(
