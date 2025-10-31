@@ -63,7 +63,8 @@ class StudentService {
 
       // Database parameter will be automatically added by ApiService
       final response = await _apiService.get<List<Student>>(
-        endpoint: 'portal/students/$classId',
+       
+        endpoint: 'portal/classes/$classId/students',
         fromJson: (json) {
           if (json['students'] is List) {
             return (json['students'] as List)

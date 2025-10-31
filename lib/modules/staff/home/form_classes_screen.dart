@@ -476,13 +476,18 @@ class _FormClassesScreenState extends State<FormClassesScreen> {
                         term: term.toString(),
                         db: dbName,
                       ),
-                      StaffAttandanceScreen(
+                      StaffAttendanceScreen(
                         classId: classId,
                         className: className,
                         isFromFormClasses: true,
                       ),
-                      StaffCoursesScreen(classId: classId,),
-                    ];
+                      StaffCoursesScreen(
+
+                        classId: classId,
+                        levelId: levelId,
+                        className: className,
+                        ),
+                    ]; 
 
                     return GestureDetector(
                       onTap: () {

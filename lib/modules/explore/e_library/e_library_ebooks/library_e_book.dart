@@ -4,12 +4,7 @@ import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/providers/explore/home/ebook_provider.dart';
 import 'package:provider/provider.dart';
-// import 'package:linkschool/modules/E_library/books_button_item.dart';
 import 'package:linkschool/modules/explore/ebooks/all_tab.dart';
-// import '../../common/app_colors.dart';
-// import '../../common/constants.dart';
-// import '../../common/text_styles.dart';
-// import '../providers/explore/home/e_book_provider.dart'; // Import the EbookProvider
 
 class LibraryEbook extends StatefulWidget {
   const LibraryEbook({super.key});
@@ -24,9 +19,8 @@ class _LibraryEbookState extends State<LibraryEbook> {
   @override
   void initState() {
     super.initState();
-    // Fetch books data when the widget is initialized
-    final bookProvider = Provider.of<EbookProvider>(context, listen: false);
-    bookProvider.fetchBooks();
+    Future.microtask(() =>
+        Provider.of<EbookProvider>(context, listen: false).fetchBooks());
   }
 
   @override
@@ -35,38 +29,43 @@ class _LibraryEbookState extends State<LibraryEbook> {
     final categories = bookProvider.categories;
 
     return Scaffold(
-      body: SingleChildScrollView(
-        // Wrap the entire screen with a SingleChildScrollView
-        child: Container(
-          decoration: Constants.customBoxDecoration(context),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16.0),
+      body: Container(
+        decoration: Constants.customBoxDecoration(context),
+        child: bookProvider.isLoading
+            ? const Center(
+                child: CircularProgressIndicator(
+                  color: AppColors.text2Light,
+                  strokeWidth: 3.0,
+                ),
+              )
+            : SingleChildScrollView(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      'What do you want to\nread today?',
-                      style: AppTextStyles.normal600(
-                        fontSize: 24.0,
-                        color: Colors.black,
+                    // Header + Categories
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'What do you want to\nread today?',
+                            style: AppTextStyles.normal600(
+                              fontSize: 24.0,
+                              color: Colors.black,
+                            ),
+                          ),
+                          const SizedBox(height: 16.0),
+                          _buildCategoryButtons(categories),
+                          const SizedBox(height: 16.0),
+                        ],
                       ),
                     ),
-                    const SizedBox(
-                        height:
-                            16.0), // Add spacing between title and categories
-                    _buildCategoryButtons(
-                        categories), // Styled category buttons
-                    const SizedBox(height: 16.0),
+                    // Tabs
+                    _buildTabController(),
                   ],
                 ),
-              ), // Add spacing before the TabBar
-              _buildTabController(),
-            ],
-          ),
-        ),
+              ),
       ),
     );
   }
@@ -74,8 +73,8 @@ class _LibraryEbookState extends State<LibraryEbook> {
   /// *Builds the Styled Book Category Buttons*
   Widget _buildCategoryButtons(List<String> categories) {
     return Wrap(
-      spacing: 12.0, // Space between buttons horizontally
-      runSpacing: 12.0, // Space between rows of buttons
+      spacing: 12.0,
+      runSpacing: 12.0,
       alignment: WrapAlignment.start,
       children: List.generate(categories.length, (index) {
         bool isSelected = _selectedBookCategoriesIndex == index;
@@ -92,8 +91,8 @@ class _LibraryEbookState extends State<LibraryEbook> {
             decoration: BoxDecoration(
               color: isSelected
                   ? AppColors.bgXplore3
-                  : AppColors.booksButtonColor, // Selected color
-              borderRadius: BorderRadius.circular(6), // Rounded corners
+                  : AppColors.booksButtonColor,
+              borderRadius: BorderRadius.circular(6),
             ),
             child: Text(
               categories[index].toUpperCase(),
@@ -135,15 +134,11 @@ class _LibraryEbookState extends State<LibraryEbook> {
               ],
             ),
             SizedBox(
-              height: MediaQuery.of(context).size.height *
-                  0.7, // Adjust height dynamically
+              height: MediaQuery.of(context).size.height * 0.7,
               child: TabBarView(
-                physics:
-                    const NeverScrollableScrollPhysics(), // Disable horizontal scrolling
+                physics: const NeverScrollableScrollPhysics(),
                 children: [
-                  AllTab(
-                      selectedCategoryIndex:
-                          _selectedBookCategoriesIndex), // Pass selected category index
+                  AllTab(selectedCategoryIndex: _selectedBookCategoriesIndex),
                   Container(
                     color: Colors.orange,
                     child: const Center(

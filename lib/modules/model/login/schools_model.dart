@@ -17,12 +17,12 @@ class School {
 
   factory School.fromJson(Map<String, dynamic> json) {
     return School(
-      id: json['id'],
-      schoolName: json['school_name'] ?? '',
+      id: json['id'] ?? 0,  // Added default for safety
+      schoolName: json['school_name'] ?? 'Unknown School',
       schoolCode: json['school_code'] ?? 0,
-      address: json['address'] ?? '',
-      email: json['email'] ?? '',
-      website: json['website'] ?? '',
+      address: json['address'],  // Keep null if not present
+      email: json['email'],
+      website: json['website'],
     );
   }
 

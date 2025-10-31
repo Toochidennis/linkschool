@@ -36,6 +36,7 @@ class _CourseResultScreenState extends State<CourseResultScreen> {
   @override
   void initState() {
     super.initState();
+    print("leee");
     WidgetsBinding.instance.addPostFrameCallback((_) {
       Provider.of<CourseResultProvider>(context, listen: false)
           .fetchAverageScores(widget.classId, widget.year, widget.term);

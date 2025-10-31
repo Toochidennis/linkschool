@@ -10,7 +10,10 @@ import '../components/year_picker_dialog.dart';
 import '../ebooks/books_button_item.dart';
 
 class CBTDashboard extends StatefulWidget {
-  const CBTDashboard({super.key});
+  /// Whether to show the AppBar. Defaults to true.
+  final bool showAppBar;
+
+  const CBTDashboard({super.key, this.showAppBar = true});
 
   @override
   State<CBTDashboard> createState() => _CBTDashboardState();
@@ -29,7 +32,9 @@ class _CBTDashboardState extends State<CBTDashboard> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: Constants.customAppBar(context: context, showBackButton: true),
+      appBar: widget.showAppBar
+          ? Constants.customAppBar(context: context, showBackButton: true)
+          : null,
       body: Consumer<CBTProvider>(
         builder: (context, provider, child) {
           return Skeletonizer(
@@ -82,6 +87,8 @@ class _CBTDashboardState extends State<CBTDashboard> {
       ),
     );
   }
+}
+
 
   Widget _buildCBTCategories(CBTProvider provider) {
     if (provider.isLoading) {
@@ -853,4 +860,4 @@ Widget _buildChooseSubjectCard({
 //       ),
 //     );
 //   }
- }
+ 

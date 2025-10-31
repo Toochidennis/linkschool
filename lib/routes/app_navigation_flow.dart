@@ -185,23 +185,7 @@ class _AppNavigationFlowState extends State<AppNavigationFlow> {
       }
     }
 
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Text('Something went wrong'),
-          ElevatedButton(
-            onPressed: () {
-              setState(() {
-                _showSchoolSelection = true;
-                _showLogin = false;
-              });
-            },
-            child: Text('Try Again'),
-          ),
-        ],
-      ),
-    );
+    return const SizedBox.shrink();
   }
 
   @override

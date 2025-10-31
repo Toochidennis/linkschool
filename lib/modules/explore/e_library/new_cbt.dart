@@ -5,6 +5,7 @@ import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 
 import 'package:linkschool/modules/explore/e_library/e_games/gamesTab.dart';
+import 'package:linkschool/modules/explore/e_library/e_library_ebooks/library_e_book.dart';
 // import 'package:linkschool/modules/explore/e_library/e_library_ebooks/library_ebook.dart';
 
 import 'package:linkschool/modules/explore/ebooks/subject_item.dart';
@@ -314,9 +315,9 @@ class _NewCbtScreenState extends State<NewCbtScreen> {
                         ),
                       ),
                     ),
-                    // Expanded(
-                    //   child: LibraryEbook(),
-                    // ),
+                    Expanded(
+                      child: LibraryEbook(),
+                    ),
                     Expanded(
                       child: GamesTab(),
                     ),

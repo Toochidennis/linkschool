@@ -521,7 +521,7 @@ class _StaffResultScreenState extends State<StaffResultScreen> {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => StaffAttandanceScreen(
+                      builder: (context) => StaffAttendanceScreen(
                         classId: classId.toString(),
                         courseId: courseData['course_id'].toString(),
                         className: className,

@@ -12,7 +12,8 @@ import 'package:skeletonizer/skeletonizer.dart';
 import '../e_library/e_lib_subject_detail.dart';
 
 class VideosDashboard extends StatefulWidget {
-  const VideosDashboard({super.key});
+    final bool showAppBar;
+  const VideosDashboard({super.key, this.showAppBar=true});
 
   @override
   State<VideosDashboard> createState() => _VideosDashboardState();
@@ -22,11 +23,7 @@ class _VideosDashboardState extends State<VideosDashboard> {
   @override
   void initState() {
     super.initState();
-  WidgetsBinding.instance.addPostFrameCallback((_) {
-    if (mounted) {
-      Provider.of<SubjectProvider>(context, listen: false).fetchSubjects();
-    }
-  });
+    Provider.of<SubjectProvider>(context, listen: false).fetchSubjects();
   }
 
   _navigateToSeeall() {
@@ -77,11 +74,14 @@ class _VideosDashboardState extends State<VideosDashboard> {
     return Consumer<SubjectProvider>(
       builder: (context, subjectProvider, child) {
         if (subjectProvider.isLoading) {
+          
           return Scaffold(
-            appBar: Constants.customAppBar(
+            appBar: widget.showAppBar
+             ? Constants.customAppBar(
                 context: context,
                 iconPath: 'assets/icons/search.png',
-                iconSize: 20.0),
+                iconSize: 20.0)
+              : null,
             body: Skeletonizer(
               child: Container(
                 decoration: Constants.customBoxDecoration(context),
@@ -210,16 +210,14 @@ class _VideosDashboardState extends State<VideosDashboard> {
                         subjectName[subjectProvider.subjects.indexOf(subject)],
                     subjectIcon:
                         subjectIcons[subjectProvider.subjects.indexOf(subject)],
-                    backgroundColor: _getSubjectColor(subject.title),
+                    backgroundColor: _getSubjectColor(subject.name),
                   ))
               .toList();
 
-              final allVideos = [];
-
-          // final allVideos = subjectProvider.subjects.
-          //    // .expand((subject) => subject.categories)
-          //     // .expand((category) => category.videos)
-          //     // .toList();
+          final allVideos = subjectProvider.subjects
+              .expand((subject) => subject.categories)
+              .expand((category) => category.videos)
+              .toList();
 
           final recommendationVideos = allVideos.length > 4
               ? allVideos.getRange(0, 6).toList()

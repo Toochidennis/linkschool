@@ -92,9 +92,6 @@ Future<void> main() async {
   setupServiceLocator();
 
 
-   final userDataBox = Hive.box('userData');
-  final hasCompletedOnboarding = userDataBox.get('hasCompletedOnboarding', defaultValue: false);
-
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(
       statusBarColor: Colors.transparent,
@@ -102,12 +99,6 @@ Future<void> main() async {
       statusBarBrightness: Brightness.dark,
     ),
   );
-
-if (hasCompletedOnboarding) {
-    print('User has completed onboarding.');
-  } else {
-    print('User has NOT completed onboarding.');
-  }
   runApp(
     MultiProvider(
       providers: [
@@ -183,6 +174,7 @@ ChangeNotifierProvider<NewsProvider>(
         ChangeNotifierProvider(create: (_) => locator<MarkedAssignmentProvider>()),
         ChangeNotifierProvider(create: (_) => locator<StudentResultProvider>()),
         ChangeNotifierProvider(create: (_) => locator<InvoiceProvider>()),
+         ChangeNotifierProvider(create: (_) =>locator< PaymentProvider>()),
         ChangeNotifierProvider(create: (_) => locator<StudentDashboardFeedProvider>()),
         ChangeNotifierProvider(create: (_) => locator<SingleelearningcontentProvider>()),
         ChangeNotifierProvider(create: (_) => locator<SingleelearningcontentProvider>()),
@@ -215,6 +207,7 @@ class MyApp extends StatelessWidget {
   }
 }
 
+
 class AppInitializer extends StatefulWidget {
   const AppInitializer({super.key});
 
@@ -234,28 +227,66 @@ class _AppInitializerState extends State<AppInitializer> {
 
   Future<void> _initializeApp() async {
     try {
-      final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      await authProvider.checkLoginStatus();
-
-      // Check if user has completed onboarding
+      print('=== Starting App Initialization ===');
+      
+      // Get Hive box first
       final userBox = Hive.box('userData');
       
+      // Check onboarding status
       final hasSeenOnboarding = userBox.get('hasSeenOnboarding', defaultValue: false);
-      print('hasSeenOnboarding value: $hasSeenOnboarding'); 
-      setState(() {
-        _showOnboarding = !hasSeenOnboarding && !authProvider.isLoggedIn;
-      });
-    } catch (e) {
-      print('Error initializing app: $e');
-      setState(() {
-        _showOnboarding = true;
-      });
+      print('hasSeenOnboarding: $hasSeenOnboarding');
+      
+      // CRITICAL: Wait for the next frame to ensure Provider is ready
+      await Future.delayed(const Duration(milliseconds: 50));
+      
+      // Get AuthProvider from Provider context
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      
+      // Check login status
+      await authProvider.checkLoginStatus();
+      
+      // Give state time to settle
+      await Future.delayed(const Duration(milliseconds: 100));
+      
+      print('Auth Status:');
+      print('  - isLoggedIn: ${authProvider.isLoggedIn}');
+      print('  - user: ${authProvider.user?.name ?? "null"}');
+      print('  - role: ${authProvider.user?.role ?? "null"}');
+      print('  - token exists: ${authProvider.token != null}');
+      
+      // Verify from Hive directly as backup
+      final isLoggedInHive = userBox.get('isLoggedIn', defaultValue: false);
+      final sessionValid = userBox.get('sessionValid', defaultValue: false);
+      print('Hive Verification:');
+      print('  - isLoggedIn: $isLoggedInHive');
+      print('  - sessionValid: $sessionValid');
+
+      if (mounted) {
+        setState(() {
+          // Show onboarding only if user hasn't seen it AND isn't logged in
+          _showOnboarding = !hasSeenOnboarding && !authProvider.isLoggedIn;
+          print('Decision: Show onboarding = $_showOnboarding');
+        });
+      }
+    } catch (e, stackTrace) {
+      print('❌ Error initializing app: $e');
+      print('Stack trace: $stackTrace');
+      
+      if (mounted) {
+        setState(() {
+          final userBox = Hive.box('userData');
+          final hasSeenOnboarding = userBox.get('hasSeenOnboarding', defaultValue: false);
+          _showOnboarding = !hasSeenOnboarding;
+          print('Error fallback: Show onboarding = $_showOnboarding');
+        });
+      }
     } finally {
       if (mounted) {
         setState(() {
           _isInitialized = true;
         });
       }
+      print('=== App Initialization Complete ===\n');
     }
   }
 
@@ -263,17 +294,20 @@ class _AppInitializerState extends State<AppInitializer> {
   Widget build(BuildContext context) {
     if (!_isInitialized) {
       return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
+        backgroundColor: Colors.white,
+        body: Center(
+          child: CircularProgressIndicator(),
+        ),
       );
     }
 
+    print('🏗️ Building: showOnboarding=$_showOnboarding');
+    
     if (_showOnboarding) {
-      return Onboardingscreen();
+      return const Onboardingscreen();
     }
 
-    return AppNavigationFlow();
-    
-
+    return const AppNavigationFlow();
   }
 }
 

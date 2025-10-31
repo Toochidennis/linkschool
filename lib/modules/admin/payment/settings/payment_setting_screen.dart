@@ -105,7 +105,9 @@ class _PaymentSettingScreenState extends State<PaymentSettingScreen> {
                 onTap: () async {
                   final authProvider = Provider.of<AuthProvider>(context, listen: false);
                   await authProvider.logout(); // Clear user data from Hive
-                  widget.onLogout(); // Trigger the logout callback
+                  widget.onLogout(); 
+                    Navigator.of(context).pop();
+                  // Trigger the logout callback
                 },
               ),
             ],

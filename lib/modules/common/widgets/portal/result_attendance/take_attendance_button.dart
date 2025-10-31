@@ -21,7 +21,7 @@ class _TakeAttendanceButtonState extends State<TakeAttendanceButton> {
   @override
   Widget build(BuildContext context) {
     return CustomLongElevatedButton(
-      text: 'Take attendancess',
+      text: 'Take attendance',
       onPressed: () => _showTakeAttendanceDialog(context),
       backgroundColor: AppColors.videoColor4,
       textStyle: AppTextStyles.normal600(

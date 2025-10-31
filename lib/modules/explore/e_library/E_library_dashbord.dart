@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:linkschool/modules/explore/cbt/cbt_dashboard.dart';
+import 'package:linkschool/modules/explore/e_library/e_library_ebooks/library_e_book.dart';
+import 'package:linkschool/modules/explore/games/games_home.dart';
+import 'package:linkschool/modules/explore/videos/videos_dashboard.dart';
 import 'package:linkschool/modules/model/explore/home/book_model.dart';
 import 'package:linkschool/modules/model/explore/home/game_model.dart';
 import 'package:provider/provider.dart';
@@ -6,8 +10,7 @@ import 'package:skeletonizer/skeletonizer.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
-import 'package:linkschool/modules/explore/e_library/cbt.dart';
-import 'package:linkschool/modules/explore/e_library/e_games/gamesTab.dart';
+
 import 'package:linkschool/modules/explore/e_library/e_lib_vids.dart'; // Import the E_lib_vids screen
 import '../../model/explore/home/video_model.dart';
 import '../../providers/explore/for_you_provider.dart';
@@ -216,10 +219,16 @@ class _ElibraryDashboardState extends State<ElibraryDashboard> {
                             },
                           ),
                         ),
-                        Expanded(child: E_CBTDashboard()),
-                        Center(child: Text('page for E-books')),
-                        Expanded(child: GamesTab()),
-                        Center(child: Text('page for Videos')),
+                         Expanded(child:CBTDashboard(showAppBar: false,)),
+                       Expanded(
+                      child: LibraryEbook(),
+                    ),
+                    Expanded(
+                      child: GamesDashboard( showAppBar: false,),
+                    ),
+                    Expanded(
+                      child: VideosDashboard(showAppBar: false,),
+                    ),
                       ],
                     ),
                   ),

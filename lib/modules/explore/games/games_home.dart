@@ -13,7 +13,8 @@ import '../../common/app_colors.dart';
 import '../../model/explore/home/game_model.dart';
 
 class GamesDashboard extends StatefulWidget {
-  const GamesDashboard({super.key});
+    final bool showAppBar;
+  const GamesDashboard({super.key, this.showAppBar = true});
 
   @override
   State<GamesDashboard> createState() => _GamesDashboardState();
@@ -31,7 +32,9 @@ class _GamesDashboardState extends State<GamesDashboard> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: Constants.customAppBar(context: context, showBackButton: true),
+        appBar: widget.showAppBar
+          ? Constants.customAppBar(context: context, showBackButton: true)
+          : null,
       body: Consumer<GameProvider>(
         builder: (context, gameProvider, child) {
           final games = gameProvider.games;

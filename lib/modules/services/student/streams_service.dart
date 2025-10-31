@@ -8,43 +8,42 @@ class StreamsService {
   StreamsService(this._apiService);
 
   Future<Map<String, dynamic>> getStreams({
-    required int syllabusid,
+  required int syllabusid,
+  String? db, // make it optional
+}) async {
+  final userBox = Hive.box('userData');
+  final loginData = userBox.get('userData') ?? userBox.get('loginResponse');
 
-    String db = 'aalmgzmy_linkskoo_practice',
-  }) async {
-    final userBox = Hive.box('userData');
-    final loginData = userBox.get('userData') ?? userBox.get('loginResponse');
-    if (loginData == null || loginData['token'] == null) {
-      throw Exception("No valid login data or token found");
-    }
-
-    final token = loginData['token'] as String;
-    _apiService.setAuthToken(token);
-
-    try {
-      final response = await _apiService.get<Map<String, dynamic>>(
-        endpoint: 'portal/elearning/${syllabusid}/comments/streams',
-        queryParams: {
-          '_db': db,
-        },
-      );
-
-
-      if(response.statusCode == 200) {
-        final data = response.rawData?['data'] as List<dynamic> ?? [];
-        if (data.isNotEmpty) {
-          return {
-            'streams': data.map((json) => StreamsModel.fromJson(json)).toList(),
-          };}
-
-      }
-
-      throw Exception("Failed to Fetch Streams: ${response.message}");
-    } catch (e) {
-      print("Error fetching Streams: $e");
-      throw Exception("Failed to Fetch Streams: $e");
-    }
+  if (loginData == null || loginData['token'] == null) {
+    throw Exception("No valid login data or token found");
   }
+
+  // ✅ Fetch token
+  final token = loginData['token'] as String;
+  _apiService.setAuthToken(token);
+
+  // ✅ Get _db dynamically
+  final dbName = db ??
+      userBox.get('_db') ?? // stored earlier from login
+      loginData['_db'] ?? // fallback if not saved separately
+      loginData['response']?['_db'] ?? // some apps store under 'response'
+      'aalmgzmy_linkskoo_practice'; // final fallback
+
+  print("✅ Using DB: $dbName");
+
+  // ✅ Then use dbName in your API call
+  final response = await _apiService.get<Map<String, dynamic>>(
+    endpoint: 'portal/elearning/${syllabusid}/comments/streams',
+    queryParams: {'_db': dbName},
+  );
+
+  if (response.statusCode != 200) {
+    throw Exception('API request failed with status ${response.statusCode}');
+  }
+
+  return response.rawData ?? {};
+}
+
 
 // // Example method to delete a comment
 // Future<void> deleteComment(String commentId) async {

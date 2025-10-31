@@ -31,26 +31,36 @@ class InvoiceService {
         throw Exception('API request failed with status ${response.statusCode}');
       }
 
-      final raw = response.rawData;
+     final raw = response.rawData;
 
-      if (raw == null || raw['response'] == null || raw['response'] is! Map<String, dynamic>) {
-        throw Exception("Invalid response format: 'response' key is missing or malformed.");
-      }
+if (raw == null || raw['response'] == null) {
+  throw Exception("Invalid response format: Missing 'response' key.");
+}
 
-      final responseBody = raw['response'] as Map<String, dynamic>;
+final responseBody = raw['response'];
 
-      // Transform the response to match your model
-      final transformedResponse = Map<String, dynamic>.from(responseBody);
-      if (transformedResponse.containsKey('invoice')) {
-        transformedResponse['invoices'] = transformedResponse.remove('invoice');
-      }
+// ✅ Handle when the API returns an empty array instead of a map
+Map<String, dynamic> transformedResponse;
+if (responseBody is List && responseBody.isEmpty) {
+  transformedResponse = {
+    'invoices': [],
+    'payments': [],
+  };
+} else if (responseBody is Map<String, dynamic>) {
+  transformedResponse = Map<String, dynamic>.from(responseBody);
+  if (transformedResponse.containsKey('invoice')) {
+    transformedResponse['invoices'] = transformedResponse.remove('invoice');
+  }
+} else {
+  throw Exception("Invalid response type for 'response': ${responseBody.runtimeType}");
+}
 
-      // Pass the entire raw response (including statusCode, success, response)
-      return InvoiceResponse.fromJson({
-        'success': raw['success'] ?? true,
-        'statusCode': raw['statusCode'] ?? response.statusCode,
-        'response': transformedResponse,
-      });
+return InvoiceResponse.fromJson({
+  'success': raw['success'] ?? true,
+  'statusCode': raw['statusCode'] ?? response.statusCode,
+  'response': transformedResponse,
+});
+
 
     } catch (e) {
       print("Error fetching invoices: $e");

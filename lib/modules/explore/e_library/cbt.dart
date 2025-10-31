@@ -172,7 +172,7 @@ class _E_CBTDashboardState extends State<E_CBTDashboard> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Constants.headingWithSeeAll600(
-                    title: 'Choossse subject',
+                    title: 'Choose subject',
                     titleSize: 18.0,
                     titleColor: AppColors.text4Light,
                   ),

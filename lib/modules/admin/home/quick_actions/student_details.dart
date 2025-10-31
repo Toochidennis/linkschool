@@ -17,7 +17,7 @@ class StudentProfileScreen extends StatelessWidget {
 
   const StudentProfileScreen({
     super.key,
-    required this.student,
+ required this.student,
     required this.levelId,
     required this.studentName,
     required this.className,
@@ -72,7 +72,7 @@ class StudentProfileScreen extends StatelessWidget {
                   backgroundImage: _getStudentImage(),
                   child: _getStudentImage() == null
                       ? Text(
-                          student.getInitials(),
+                          student!.getInitials(),
                           style: const TextStyle(
                             fontSize: 30,
                             fontWeight: FontWeight.bold,
@@ -83,7 +83,7 @@ class StudentProfileScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 10.0),
                 Text(
-                  "${student.surname} ${student.firstName} ${student.middle}",
+                  "${student?.surname} ${student?.firstName} ${student?.middle}",
                   style: const TextStyle(
                     fontSize: 22,
                     fontWeight: FontWeight.bold,
@@ -92,7 +92,7 @@ class StudentProfileScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 5.0),
                 Text(
-                  "Mobile ${student.guardianPhoneNo ?? 'N/A'}",
+                  "Mobile ${student?.guardianPhoneNo ?? 'N/A'}",
                   style: const TextStyle(
                     fontSize: 14,
                     color: Colors.white70,
@@ -138,7 +138,7 @@ class StudentProfileScreen extends StatelessWidget {
                   _buildSectionHeader('Email address'),
                   _buildRowWithIcon(
                     svgIcon: 'assets/icons/staff/email_icon.svg',
-                    text: student.email ?? "N/A",
+                    text: student?.email ?? "N/A",
                   ),
                   const Divider(),
 
@@ -147,7 +147,7 @@ class StudentProfileScreen extends StatelessWidget {
                   _buildSubText('Name'),
                   const SizedBox(height: 5.0),
                   Text(
-                    student.guardianName ?? "N/A",
+                    student?.guardianName ?? "N/A",
                     style: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w500,
@@ -159,7 +159,7 @@ class StudentProfileScreen extends StatelessWidget {
                   _buildSubText('Phone number'),
                   const SizedBox(height: 5.0),
                   Text(
-                    student.guardianPhoneNo ?? "N/A",
+                    student?.guardianPhoneNo ?? "N/A",
                     style: const TextStyle(fontSize: 16, color: Colors.black),
                   ),
                   const Divider(),
@@ -167,7 +167,7 @@ class StudentProfileScreen extends StatelessWidget {
                   _buildSubText('Address'),
                   const SizedBox(height: 5.0),
                   Text(
-                    student.address ?? "N/A",
+                    student?.address ?? "N/A",
                     style: const TextStyle(fontSize: 16, color: Colors.black),
                   ),
                   const Divider(),
@@ -182,14 +182,9 @@ class StudentProfileScreen extends StatelessWidget {
                       );
                       
                       // ✅ Fetch student result terms BEFORE navigation
-                      await studentProvider.fetchStudentResultTerms(student.id ?? 0);
+                      await studentProvider.fetchStudentResultTerms(student?.id ?? 0);
                       
-                      // ✅ Debug prints
-                      print('ClassId: $classId');
-                      print('LevelId: $levelId');
-                      print('ClassName: $className');
-                      print('StudentName: $studentName');
-                      print('StudentId: ${student.id}');
+                     
                       
                       // ✅ Navigate after data is fetched
                       if (context.mounted) {
@@ -201,7 +196,7 @@ class StudentProfileScreen extends StatelessWidget {
                               classId: classId,
                               className: className ?? "Unknown Class",
                               levelId: levelId.toString(), // ✅ Pass as string
-                              studentId: student.id ?? 0,
+                              studentId: student?.id ?? 0,
                             ),
                           ),
                         );
@@ -247,10 +242,10 @@ class StudentProfileScreen extends StatelessWidget {
 
   ImageProvider? _getStudentImage() {
     try {
-      if (student.photo?.file != null && student.photo!.file!.isNotEmpty) {
-        return MemoryImage(base64Decode(student.photo!.file!));
-      } else if (student.photoPath != null && student.photoPath!.isNotEmpty) {
-        return NetworkImage("https://linkskool.net/${student.photoPath}");
+      if (student?.photo?.file != null && student!.photo!.file!.isNotEmpty) {
+        return MemoryImage(base64Decode(student!.photo!.file!));
+      } else if (student?.photoPath != null && student!.photoPath!.isNotEmpty) {
+        return NetworkImage("https://linkskool.net/${student?.photoPath}");
       }
     } catch (e) {
       print('Error loading student image: $e');

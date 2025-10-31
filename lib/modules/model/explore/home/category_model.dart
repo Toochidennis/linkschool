@@ -2,7 +2,7 @@ import 'video_model.dart';
 
 class Category {
   final String id;
-  final String level;
+  final int level;
   final String levelName;
   final String name;
   final List<Video> videos;
@@ -18,10 +18,12 @@ class Category {
   factory Category.fromJson(Map<String, dynamic> json) {
     return Category(
       id: json['id'] ?? '',
-      level: json['level'] ?? '',
+      level: json['level'] is int
+          ? json['level']
+          : int.tryParse(json['level'].toString()) ?? 0,
       levelName: json['level_name'] ?? '',
       name: json['name'] ?? '',
-      videos: (json['videos'] as List)
+      videos: (json['videos'] as List<dynamic>)
           .map((video) => Video.fromJson(video))
           .toList(),
     );

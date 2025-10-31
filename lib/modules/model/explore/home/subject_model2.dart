@@ -1,31 +1,23 @@
+import 'category_model.dart';
+
 class SubjectModel2 {
-  final String id;
-  final String title;
-  final String description;
-  final List<String> genres;
-  final String posterPortrait;
-  final String posterLandscape;
-  final String videoUrl;
+  final int id;
+  final String name;
+  final List<Category> categories;
 
   SubjectModel2({
     required this.id,
-    required this.title,
-    required this.description,
-    required this.genres,
-    required this.posterPortrait,
-    required this.posterLandscape,
-    required this.videoUrl,
+    required this.name,
+    required this.categories,
   });
 
   factory SubjectModel2.fromJson(Map<String, dynamic> json) {
     return SubjectModel2(
-      id: json['id'].toString(), // Convert int → String safely
-      title: json['title'] ?? '',
-      description: json['description'] ?? '',
-      genres: (json['genres'] as List?)?.map((g) => g.toString()).toList() ?? [],
-      posterPortrait: json['poster_portrait'] ?? '',
-      posterLandscape: json['poster_landscape'] ?? '',
-      videoUrl: json['video_url'] ?? '',
+      id: json['id'] ?? 0,
+      name: json['name'] ?? '',
+      categories: (json['category'] as List<dynamic>)
+          .map((category) => Category.fromJson(category))
+          .toList(),
     );
   }
 }

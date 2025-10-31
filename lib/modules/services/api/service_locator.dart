@@ -37,7 +37,9 @@ import 'package:linkschool/modules/providers/staff/syllabus_provider.dart';
 import 'package:linkschool/modules/providers/student/dashboard_provider.dart';
 import 'package:linkschool/modules/providers/student/home/student_dashboard_feed_provider.dart';
 import 'package:linkschool/modules/providers/student/payment_provider.dart';
+import 'package:linkschool/modules/providers/student/payment_submission_provider.dart';
 import 'package:linkschool/modules/providers/student/single_elearningcontent_provider.dart';
+import 'package:linkschool/modules/providers/student/streams_provider.dart';
 import 'package:linkschool/modules/providers/student/student_comment_provider.dart';
 import 'package:linkschool/modules/services/admin/attendance_service.dart';
 import 'package:linkschool/modules/services/admin/e_learning/activity_service.dart';
@@ -85,7 +87,9 @@ import 'package:linkschool/modules/services/staff/syllabus_service.dart';
 import 'package:linkschool/modules/services/student/elearningcontent_service.dart';
 import 'package:linkschool/modules/services/student/home/student_dashboard_feed_service.dart';
 import 'package:linkschool/modules/services/student/payment_services.dart';
+import 'package:linkschool/modules/services/student/payment_submission_services.dart';
 import 'package:linkschool/modules/services/student/single_elearningcontentservice.dart';
+import 'package:linkschool/modules/services/student/streams_service.dart';
 import 'package:linkschool/modules/services/student/student_comment_service.dart';
 import 'package:linkschool/modules/services/student/student_dasboard_service.dart';
 
@@ -398,4 +402,19 @@ void setupServiceLocator() {
       () => StaffStreamsProvider(locator<StaffStreamsService>()));
   locator.registerLazySingleton<StaffStreamsService>(
       () => StaffStreamsService(locator<ApiService>()));
+
+      locator.registerLazySingleton< PaymentSubmissionService>(
+    () =>  PaymentSubmissionService(locator<ApiService>())
+  );
+  // Register InvoiceProvider with InvoiceService dependency
+  locator.registerLazySingleton<PaymentProvider>(
+    () => PaymentProvider(locator< PaymentSubmissionService>() )
+  );
+
+
+
+  locator.registerLazySingleton<StreamsProvider>(
+      () => StreamsProvider(locator<StreamsService>()));
+  locator.registerLazySingleton<StreamsService>(
+      () => StreamsService(locator<ApiService>()));
 }

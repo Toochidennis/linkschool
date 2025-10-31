@@ -2,7 +2,6 @@
 
 // StudentViewDetailPaymentDialog.dart
 
-import 'package:dotted_line/dotted_line.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:hive/hive.dart';
@@ -11,7 +10,7 @@ import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/common/widgets/portal/profile/naira_icon.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-// import 'package:dotted_line/dotted_line.dart';
+import 'package:dotted_line/dotted_line.dart';
 
 import 'package:linkschool/modules/model/student/payment_model.dart';
 import 'package:linkschool/modules/providers/student/payment_submission_provider.dart';
@@ -62,6 +61,17 @@ class _StudentViewDetailPaymentDialogState
     return total;
   }
 
+
+  double _calculateUnselectedTotal() {
+  double total = 0;
+  for (int i = 0; i < widget.invoice.details.length; i++) {
+    if (!_selectedFees[i]) {  // Note the ! (NOT operator)
+      total += widget.invoice.details[i].feeAmount;
+    }
+  }
+  return total;
+}
+
   getuserdata() {
     final userBox = Hive.box('userData');
     final storedUserData =
@@ -85,6 +95,17 @@ class _StudentViewDetailPaymentDialogState
     final settings = data['settings'] ?? data;
     return settings;
   }
+
+  getUserDb() {
+  final userBox = Hive.box('userData');
+  final storedUserData =
+      userBox.get('userData') ?? userBox.get('loginResponse');
+  final processedData =
+      storedUserData is String ? json.decode(storedUserData) : storedUserData;
+  final response = processedData['response'] ?? processedData;
+  final db = response['_db'] ?? '';
+  return db;
+}
 
   bool get _hasSelection => _selectedFees.contains(true);
 
@@ -238,11 +259,11 @@ class _StudentViewDetailPaymentDialogState
             builder: (_) => PaystackWebView(
               checkoutUrl: paymentUrl,
               reference: paystackReference, // ✅ fixed
-              dbName: 'aalmgzmy_linkskoo_practice',
+              dbName: getUserDb(),
               invoiceId: widget.invoice.id.toString(),
               regNo: user['registration_no'] ?? '',
               name: user['name'] ?? '',
-              amount: _calculateSelectedTotal().toInt(),
+              amount: unpaidFeesTotal.toInt(),
               invoiceDetails: widget.invoice.details
                   .asMap()
                   .entries
@@ -370,7 +391,7 @@ class _StudentViewDetailPaymentDialogState
                                   children: [
                                     const NairaSvgIcon(
                                       color: AppColors.backgroundDark,
-                                      width: 13,
+                                      size: 13,
                                     ),
                                     const SizedBox(width: 4),
                                     Text(
@@ -406,7 +427,7 @@ class _StudentViewDetailPaymentDialogState
                             children: [
                               const NairaSvgIcon(
                                 color: AppColors.backgroundDark,
-                                width: 16,
+                                size: 16,
                               ),
                               const SizedBox(width: 4),
                               Text(

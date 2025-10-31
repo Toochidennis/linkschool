@@ -69,32 +69,41 @@ class _PaystackWebViewState extends State<PaystackWebView> {
   }
 
   Future<void> _postPaymentData() async {
-    if (_posted) return; // prevent multiple posts
-    _posted = true;
+  if (_posted) return;
+  _posted = true;
 
-    try {
-      final paymentProvider = Provider.of<PaymentProvider>(context, listen: false);
+  try {
+    final paymentProvider = Provider.of<PaymentProvider>(context, listen: false);
 
-      await paymentProvider.initializePayment(
-        invoiceId: widget.invoiceId,
-        reference: widget.reference,
-        regNo: widget.regNo,
-        name: widget.name,
-        amount: widget.amount.toDouble(),
-        invoiceDetails: widget.invoiceDetails,
-        classId: widget.classId,
-        levelId: widget.levelId,
-        year: widget.year,
-        term: widget.term,
-        email: widget.email,
-        studentId: widget.studentId,
-      );
+    await paymentProvider.initializePayment(
+      invoiceId: widget.invoiceId,
+      reference: widget.reference,
+      regNo: widget.regNo,
+      name: widget.name,
+      amount: widget.amount.toDouble(),
+      invoiceDetails: widget.invoiceDetails,
+      classId: widget.classId,
+      levelId: widget.levelId,
+      year: widget.year,
+      term: widget.term,
+      email: widget.email,
+      studentId: widget.studentId,
+    );
 
-      print("✅ Payment data posted before closing Paystack WebView");
-    } catch (e) {
-      print("❌ Error posting payment data: $e");
-    }
+    print("✅ Payment data posted before closing Paystack WebView");
+
+    if (!mounted) return;
+
+   Navigator.popUntil(
+      context,
+      (route) => route.settings.name == StudentPaymentHomeScreen.routeName ||
+          route.isFirst, // Fallback to first route if StudentPaymentHomeScreen not found
+    );
+  } catch (e) {
+    print("❌ Error posting payment data: $e");
   }
+}
+
 
   void _navigateBackToHomeScreen() async {
     await _postPaymentData();
@@ -118,7 +127,7 @@ class _PaystackWebViewState extends State<PaystackWebView> {
           title: const Text('Complete Payment'),
           leading: IconButton(
             icon: const Icon(Icons.arrow_back),
-            onPressed: _navigateBackToHomeScreen,
+            onPressed: _postPaymentData,
           ),
         ),
   body: WebViewWidget(controller: _controller),

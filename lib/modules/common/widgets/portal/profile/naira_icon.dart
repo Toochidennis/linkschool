@@ -5,12 +5,14 @@ class NairaSvgIcon extends StatelessWidget {
   final Color? color;
   final double width;
   final double height;
+  final double? size;
 
   const NairaSvgIcon({
     super.key,
     this.color,
     this.width = 16.0,
     this.height = 16.0,
+    this.size
   });
 
   @override

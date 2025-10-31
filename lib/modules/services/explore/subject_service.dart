@@ -1,64 +1,69 @@
-import 'dart:async';
 import 'dart:convert';
-import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
+import 'package:flutter/foundation.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 import '../../model/explore/home/subject_model2.dart';
 
 class SubjectService {
-  // Try these alternative endpoints
-  final String _baseUrl = 'https://linkskool.net/api/v3/public/movies/all';
+  static const String _baseUrl = 'https://linkskool.net/api/v3/public/videos';
 
-  // Alternative: 'https://linkskool.net/api/v3/movies/all'
-  // Alternative: 'https://linkskool.net/api/movies/all'
-    
-  Future<List<SubjectModel2>> getAllSubject() async {
+  Future<List<SubjectModel2>> getAllSubjects() async {
     try {
+      final apiKey = dotenv.env['API_KEY'];
+      if (apiKey == null || apiKey.isEmpty) {
+        throw Exception("❌ API key not found in .env file");
+      }
+
+      debugPrint('🌐 Making request to: $_baseUrl');
+
       final response = await http.get(
-        Uri.parse("https://linkskool.net/api/v3/public/movies/all"),
+        Uri.parse(_baseUrl),
         headers: {
-          'Accept': 'application/json',
           'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'X-API-KEY': apiKey, // ✅ Include API key here
         },
       );
 
-      print(_baseUrl);
-      
-      debugPrint('API Status Code: ${response.statusCode}');
-      debugPrint('API Response: ${response.body}');
-      
-      if (response.statusCode == 200) {
-        final jsonResponse = json.decode(response.body);
-        
-        // Handle different response structures
-        if (jsonResponse is Map<String, dynamic>) {
-          // Try different possible keys
-    final dynamic dataField = jsonResponse['data'] ??
-                          jsonResponse['movies'] ??
-                          jsonResponse['subjects'] ??
-                          jsonResponse['results'];
+      debugPrint('📡 Response Status: ${response.statusCode}');
 
-if (dataField is List) {
-  return dataField.map((item) => SubjectModel2.fromJson(item)).toList();
-} else if (dataField is Map<String, dynamic>) {
-  return dataField.values
-      .map((item) => SubjectModel2.fromJson(item))
-      .toList();
-} else {
-  throw Exception('Unexpected data format: ${dataField.runtimeType}');
-}
-        } else if (jsonResponse is List) {
-          return jsonResponse.map((data) => SubjectModel2.fromJson(data)).toList();
+      if (response.statusCode == 200) {
+        final decoded = json.decode(response.body);
+        debugPrint('📊 Response Body Type: ${decoded.runtimeType}');
+
+        if (decoded is List) {
+          // ✅ When the response is a List
+          return decoded.map((e) => SubjectModel2.fromJson(e)).toList();
+        } else if (decoded is Map<String, dynamic>) {
+          // ✅ Handle different JSON keys like data/movies/subjects/results
+          final data = decoded['data'] ??
+              decoded['movies'] ??
+              decoded['subjects'] ??
+              decoded['results'];
+
+          if (data is List) {
+            return data.map((e) => SubjectModel2.fromJson(e)).toList();
+          } else if (data is Map<String, dynamic>) {
+            return data.values
+                .map((e) => SubjectModel2.fromJson(e))
+                .toList();
+          } else {
+            throw Exception(
+                'Unexpected data format inside response: ${data.runtimeType}');
+          }
         } else {
-          throw Exception('Unexpected response format: ${jsonResponse.runtimeType}');
+          throw Exception(
+              'Unexpected response format: ${decoded.runtimeType}');
         }
-      } else if (response.statusCode == 404) {
-        throw Exception('API endpoint not found (404). Please check the URL.');
       } else {
-        throw Exception('Failed to load subjects: ${response.statusCode}');
+        debugPrint('🚨 API Error: ${response.statusCode} - ${response.body}');
+        throw Exception(
+            'Failed to load subjects: ${response.statusCode} ${response.reasonPhrase}');
       }
-    } catch (e) {
-      debugPrint('❌ Service Error: $e');
+    } catch (e, stackTrace) {
+      debugPrint('💥 Service Error: $e');
+      debugPrint(stackTrace.toString());
       throw Exception('Error fetching subjects: $e');
     }
   }

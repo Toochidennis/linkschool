@@ -116,33 +116,38 @@ Widget _selectSchoolItems({
   required String title,
   required String address,
 }) {
-  return GestureDetector(
-    child: Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Image.asset(image, height: 25, width: 25),
-        const SizedBox(width: 8),
-        Column(
+  return Row(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Image.asset(image, height: 25, width: 25),
+      const SizedBox(width: 8),
+      Expanded(  // ✅ Added Expanded to constrain width
+        child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
               title,
               style: AppTextStyles.normal500(
-    
-                  fontSize: 14, color: AppColors.backgroundDark),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-            ),
-            Text(
-              address,
-              style: AppTextStyles.normal500(
-                  fontSize: 10, color: AppColors.backgroundDark),
+                fontSize: 14, 
+                color: AppColors.backgroundDark,
+              ),
               maxLines: 2,
+              overflow: TextOverflow.ellipsis,
             ),
+            if (address.isNotEmpty)  // ✅ Only show if address exists
+              Text(
+                address,
+                style: AppTextStyles.normal500(
+                  fontSize: 10, 
+                  color: AppColors.backgroundDark,
+                ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
           ],
         ),
-      ],
-    ),
+      ),
+    ],
   );
 }
 

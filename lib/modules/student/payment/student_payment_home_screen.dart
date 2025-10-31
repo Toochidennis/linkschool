@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:carousel_slider/carousel_slider.dart';
+import 'package:linkschool/modules/common/custom_toaster.dart';
 import 'package:linkschool/modules/model/student/payment_model.dart';
 import 'package:linkschool/modules/providers/student/payment_provider.dart';
 import 'package:linkschool/modules/student/payment/see_all_payments.dart';
@@ -38,8 +39,18 @@ class _StudentPaymentHomeScreenState extends State<StudentPaymentHomeScreen>
     with RouteAware {
   int _currentCardIndex = 0;
   late double opacity;
-  final String studentId = '277';
+  int? studentId = 0;
   String studentName = 'Student'; // Default fallback name
+    int? creatorId;
+  String? creatorName;
+  int? academicTerm;
+  String? userRole;
+
+
+
+   
+
+
 
   String _formatSchoolSession(String year) {
     // Example: "2024" -> "2023/2024"
@@ -54,13 +65,42 @@ class _StudentPaymentHomeScreenState extends State<StudentPaymentHomeScreen>
     )}';
   }
 
+   Future<void> _loadUserData() async {
+    try {
+      final userBox = Hive.box('userData');
+      final storedUserData = userBox.get('userData') ?? userBox.get('loginResponse');
+      final dataMap = storedUserData is String
+          ? json.decode(storedUserData)
+          : storedUserData as Map<String, dynamic>;
+      final data = dataMap['response']?['data'] ?? dataMap['data'] ?? {};
+      final profile = data['profile'] ?? {};
+      final settings = data['settings'] ?? {};
+
+      setState(() {
+        studentId = int.tryParse(profile['id'].toString()) ?? 0; // Adjust to student ID
+        creatorName = profile['name']?.toString() ?? 'Student';
+        userRole = profile['role']?.toString() ?? 'student';
+        academicTerm = int.tryParse(settings['term'].toString()) ?? 0;
+      });
+         print("✅ Student ID: $studentId");
+    print("✅ Student Name: $creatorName");
+    print("✅ Term: $academicTerm");
+    print("✅ Role: $userRole");
+    } catch (e) {
+      if (mounted) {
+        CustomToaster.toastError(context, 'Error', 'Failed to load user data');
+      }
+    }
+  }
+
   @override
   void initState() {
     super.initState();
+    _loadUserData();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _fetchStudentName();
       Provider.of<InvoiceProvider>(context, listen: false)
-          .fetchInvoiceData(studentId);
+          .fetchInvoiceData(studentId.toString());
     });
   }
 
@@ -91,7 +131,7 @@ class _StudentPaymentHomeScreenState extends State<StudentPaymentHomeScreen>
 
   Future<void> _refreshData() async {
     final provider = Provider.of<InvoiceProvider>(context, listen: false);
-    await provider.fetchInvoiceData(studentId);
+    await provider.fetchInvoiceData(studentId.toString());
     setState(() {
       _currentCardIndex = 0;
     });
@@ -188,7 +228,9 @@ class _StudentPaymentHomeScreenState extends State<StudentPaymentHomeScreen>
     final invoiceProvider = Provider.of<InvoiceProvider>(context);
     final Brightness brightness = Theme.of(context).brightness;
     opacity = brightness == Brightness.light ? 0.1 : 0.15;
-
+    String getFirstName(String fullName) {
+  return fullName.trim().split(' ').last;
+}
     // Create a dummy invoice if none exists
     final invoices = (invoiceProvider.invoices == null ||
             invoiceProvider.invoices!.isEmpty)
@@ -207,7 +249,8 @@ class _StudentPaymentHomeScreenState extends State<StudentPaymentHomeScreen>
       backgroundColor: Colors.white,
       appBar: CustomStudentAppBar(
         title: 'Welcome',
-        subtitle: studentName, // Use dynamic name here
+        subtitle:getFirstName(creatorName.toString()),
+         // Use dynamic name here
         showNotification: true,
         showSettings: true,
         onNotificationTap: () {},
@@ -302,7 +345,8 @@ class _StudentPaymentHomeScreenState extends State<StudentPaymentHomeScreen>
                                               children: [
                                                 const NairaSvgIcon(
                                                   color: Colors.white,
-                                                  width: 25,
+
+                                                  size: 25,
                                                 ),
                                                 Text(
                                                   _formatAmount(invoice.amount),
@@ -515,8 +559,7 @@ class PaymentHistoryItem extends StatelessWidget {
               children: [
                 const NairaSvgIcon(
                   color: AppColors.paymentTxtColor5,
-                  width: 16,
-                  // size: 16,
+                  size: 16,
                 ),
                 const SizedBox(width: 2),
                 Text(

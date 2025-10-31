@@ -12,8 +12,11 @@ import '../../providers/admin/student_provider.dart';
 
 class StaffCoursesScreen extends StatefulWidget {
   final String classId;
+  final String className;
+  final String levelId;
 
-  const StaffCoursesScreen({super.key, required this.classId});
+
+  const StaffCoursesScreen({super.key, required this.classId, required this.className, required this.levelId});
 
   @override
   State<StaffCoursesScreen> createState() => _StaffCoursesScreenState();
@@ -134,7 +137,13 @@ class _StaffCoursesScreenState extends State<StaffCoursesScreen> {
                                         Navigator.of(context).push(
                                           MaterialPageRoute(
                                             builder: (context) => StaffProfileScreen(
+                                              
                                               name: student.name,
+                                              className:widget.className,
+                                              studentId:student.id ,
+                                              studentName:student.name ,
+                                              levelId:widget.levelId,
+                                              classId:widget.classId,
                                             ),
                                           ),
                                         );

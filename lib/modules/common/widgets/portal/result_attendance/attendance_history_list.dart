@@ -35,7 +35,7 @@ class AttendanceHistoryListState extends State<AttendanceHistoryList> {
 
 Future<void> refreshData() async {
     await _fetchAttendanceHistory();
-    setState(() {}); 
+   
   }
 
 
@@ -44,9 +44,10 @@ Future<void> refreshData() async {
   void initState() {
     super.initState();
     // Defer the API call until after the build phase
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _fetchAttendanceHistory();
-    });
+    // WidgetsBinding.instance.addPostFrameCallback((_) {
+    //   _fetchAttendanceHistory();
+      
+    // });
   }
 
   Future<void> _fetchAttendanceHistory() async {

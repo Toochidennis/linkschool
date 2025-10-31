@@ -5,6 +5,8 @@
 list(APPEND FLUTTER_PLUGIN_LIST
   file_saver
   file_selector_windows
+  flutter_inappwebview_windows
+  flutter_secure_storage_windows
   permission_handler_windows
   printing
   share_plus

@@ -15,6 +15,7 @@ import 'package:linkschool/modules/explore/home/custom_button_item.dart';
 import 'package:linkschool/modules/model/admin/home/dashboard_feed_model.dart' show Feed;
 import 'package:linkschool/modules/student/home/feed_details_screen.dart';
 import 'package:linkschool/modules/student/home/new_post_dialog.dart';
+import 'package:linkschool/modules/student/payment/student_payment_home_screen.dart';
 import 'package:linkschool/modules/student/result/student_result_screen.dart';
 import 'package:linkschool/modules/admin/home/portal_news_item.dart'; // Reuse for feed items
 import 'package:provider/provider.dart';
@@ -33,7 +34,8 @@ import 'package:linkschool/modules/providers/student/payment_provider.dart';
 import 'package:linkschool/modules/providers/student/home/student_dashboard_feed_provider.dart';
 
 class StudentHomeScreen extends StatefulWidget {
-  const StudentHomeScreen({super.key});
+  final  VoidCallback logout;
+  const StudentHomeScreen({super.key, required this.logout});
 
   @override
   State<StudentHomeScreen> createState() => _StudentHomeScreenState();
@@ -169,6 +171,7 @@ final TextEditingController _questionContentController = TextEditingController()
         userRole = profile['role']?.toString() ?? 'student';
         academicTerm = int.tryParse(settings['term'].toString()) ?? 0;
       });
+      print("sssss$creatorId");
     } catch (e) {
       if (mounted) {
         CustomToaster.toastError(context, 'Error', 'Failed to load user data');
@@ -1022,7 +1025,9 @@ void _handleSubmit(TextEditingController titleController, TextEditingController 
                   iconPath: 'assets/icons/payment.svg',
                   iconHeight: 40.0,
                   iconWidth: 36.0,
-                  destination: null,
+                  destination: StudentPaymentHomeScreen(
+                    logout:widget.logout ,
+                  ),
                 ),
               );
             },

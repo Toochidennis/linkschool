@@ -1,6 +1,7 @@
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
+import 'package:linkschool/main.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'app_navigation_flow.dart'; // Import AppNavigationFlow
@@ -35,14 +36,45 @@ class _OnboardingscreenState extends State<Onboardingscreen> {
   ];
 
   // Method to handle onboarding completion
-  Future<void> _completeOnboarding() async {
-    final userBox = Hive.box('userData');
-    await userBox.put('hasSeenOnboarding', true);
+  // Future<void> _completeOnboarding() async {
+  //   final userBox = Hive.box('userData');
+  //   await userBox.put('hasSeenOnboarding', true);
     
-    if (mounted) {
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (context) => const AppNavigationFlow())
-      );
+  //   if (mounted) {
+  //     Navigator.of(context).pushReplacement(
+  //       MaterialPageRoute(builder: (context) => const AppNavigationFlow())
+  //     );
+  //   }
+  // }
+
+  // Method to handle onboarding completion
+ Future<void> _completeOnboarding() async {
+    try {
+      print('🎯 Completing onboarding...');
+      
+      final userBox = Hive.box('userData');
+      await userBox.put('hasSeenOnboarding', true);
+      
+      // Verify it was saved
+      final saved = userBox.get('hasSeenOnboarding', defaultValue: false);
+      print('✅ Onboarding completed and saved: $saved');
+      
+      if (mounted) {
+        // Navigate and remove all previous routes
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (context) => const AppNavigationFlow()),
+          (route) => false,
+        );
+      }
+    } catch (e) {
+      print('❌ Error completing onboarding: $e');
+      // Still try to navigate even if save fails
+      if (mounted) {
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (context) => const AppNavigationFlow()),
+          (route) => false,
+        );
+      }
     }
   }
 

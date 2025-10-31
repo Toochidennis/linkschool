@@ -15,15 +15,14 @@ class Video {
 
   factory Video.fromJson(Map<String, dynamic> json) {
     return Video(
-      id: json['id'] ?? '',
+      id: json['id']?.toString(), // ✅ convert int -> String
       title: json['title'] ?? '',
       url: json['url'] ?? '',
       thumbnail: json['thumbnail'] ?? '',
-      author: json['author'] ?? '',
+      author: json['author']?.toString() ?? '',
     );
   }
 
-  // Add empty constructor
   factory Video.empty() {
     return Video(
       id: '',
@@ -34,6 +33,9 @@ class Video {
     );
   }
 }
+
+
+ 
 
 
 // class Video {

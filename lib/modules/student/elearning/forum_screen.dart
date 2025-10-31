@@ -174,13 +174,26 @@ class _ForumScreenState extends State<ForumScreen> {
   }
   @override
   Widget build(BuildContext context) {
-    if (isLoading || streams?['streams'] == null) {
-      return const Scaffold(
-        body: Center(
-          child: CircularProgressIndicator(),
-        ),
-      );
-    }
+    if (isLoading) {
+  return const Scaffold(
+    body: Center(
+      child: CircularProgressIndicator(),
+    ),
+  );
+}
+
+final streamList = (streams?['streams'] ?? []) as List;
+
+if (streamList.isEmpty) {
+  return const Scaffold(
+    body: Center(
+      child: Text(
+        'No streams available.',
+        style: TextStyle(fontSize: 16, color: Colors.grey),
+      ),
+    ),
+  );
+}
     final streamsList = streams!['streams'] as List<StreamsModel>;
     String termString = getTermString(getuserdata()['settings']['term']);
     String sessionString = deduceSession(widget.dashboardData.recentActivities.last.datePosted);

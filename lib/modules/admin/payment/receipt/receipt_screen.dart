@@ -307,14 +307,15 @@ class _ReceiptScreenState extends State<ReceiptScreen> with TickerProviderStateM
                                               return const Text('');
                                             }
                                             String title = xLabels[idx];
-                                            if (isDateFormat) {
-                                              try {
-                                                final date = DateTime.parse(title);
-                                                title = DateFormat('MMM yyyy').format(date);
-                                              } catch (e) {
-                                                title = title.substring(5);
-                                              }
-                                            }
+                                           if (isDateFormat) {
+  try {
+    final date = DateTime.parse(title);
+    title = DateFormat('MMM yyyy').format(date);
+  } catch (e) {
+   
+    title = title.length > 5 ? title.substring(5) : title;
+  }
+}
                                             return Padding(
                                               padding: const EdgeInsets.only(top: 4),
                                               child: Text(title, style: const TextStyle(fontSize: 10)),
@@ -629,6 +630,7 @@ class _FilterOverlayState extends State<FilterOverlay> {
   Map<String, List<int>> selectedFilters = {};
 
   final List<String> reportTypes = ['Termly', 'Session', 'Monthly', 'Custom'];
+  
   final List<String> customTypes = [
     'Range',
     'Today',

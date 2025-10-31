@@ -268,6 +268,9 @@ class _StudentElearningScreenState extends State<StudentElearningScreen> {
     final recentQuizzes = dashboardData!.recentQuizzes; // FIXED: Renamed to avoid conflict
 
     final userName = getuserdata()['profile']['name'] ?? 'Guest';
+      String getFirstName(String fullName) {
+  return fullName.trim().split(' ').last;
+}
 
     final Brightness brightness = Theme.of(context).brightness;
     opacity = brightness == Brightness.light ? 0.1 : 0.15;

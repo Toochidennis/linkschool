@@ -1,9 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:linkschool/modules/admin/result/class_detail/student_result/student_result.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/constants.dart';
+import 'package:linkschool/modules/providers/admin/student_provider.dart';
+import 'package:provider/provider.dart';
 
 class StaffProfileScreen extends StatelessWidget {
+
+
+  final String studentName;
+  final String classId;
+  final String className;
+  final String levelId; // ✅ Pass as string
+  final int? studentId;
   late double opacity;
   final String name;
   final String mobile = '+234 819 567 000'; // Sample mobile number
@@ -16,7 +26,7 @@ class StaffProfileScreen extends StatelessWidget {
   ]; // Sample phone numbers
   final String address = '425 Wallaby Way, Sydney, Australia'; // Sample address
 
-  StaffProfileScreen({super.key, required this.name});
+  StaffProfileScreen({super.key, required this.name, required this.studentName, required this.classId, required this.className, required this.levelId, required this.studentId});
 
   @override
   Widget build(BuildContext context) {
@@ -169,9 +179,33 @@ class StaffProfileScreen extends StatelessWidget {
 
                   // Button
                   ElevatedButton(
-                    onPressed: () {
-                      // Action for the button
-                    },
+                   onPressed: () async {
+                      // ✅ Get the provider
+                      final studentProvider = Provider.of<StudentProvider>(
+                        context,
+                        listen: false
+                      );
+                      
+                      // ✅ Fetch student result terms BEFORE navigation
+                      await studentProvider.fetchStudentResultTerms(studentId ?? 0);
+                      
+                     
+                      
+                      // ✅ Navigate after data is fetched
+                      if (context.mounted) {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => StudentResultScreen(
+                              studentName: studentName,
+                              classId: classId,
+                              className: className ?? "Unknown Class",
+                              levelId: levelId.toString(), // ✅ Pass as string
+                              studentId: studentId ?? 0,
+                            ),
+                          ),
+                        );
+                      }},
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.staffCtnColor2,
                       padding: const EdgeInsets.symmetric(

@@ -16,6 +16,7 @@ dependencies:
   flutter_rating_bar: ^4.0.1
   carousel_slider: ^5.1.1
   flip_card: ^0.7.0
+  flutter_secure_storage: ^9.0.0
   percent_indicator: ^4.0.1
   intl: ^0.20.1
   image_picker: ^1.1.2
@@ -25,6 +26,7 @@ dependencies:
   flutter_plugin_android_lifecycle: ^2.0.24
   smooth_page_indicator: ^1.2.0+3
   dropdown_flutter: 1.0.1
+  youtube_player_flutter: ^9.0.3
   flutter_chat_types: ^3.4.3
   flutter_chat_ui: ^1.6.4
   uuid: ^4.5.1

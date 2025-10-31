@@ -1,7 +1,11 @@
 // import 'package:curved_nav_bar/fab_bar/fab_bottom_app_bar_item.dart';
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
+import 'package:hive/hive.dart';
 import 'package:linkschool/modules/common/bottom_navigation_bar.dart';
 import 'package:linkschool/modules/common/bottom_nav_item.dart';
+import 'package:linkschool/modules/common/custom_toaster.dart';
 import 'package:linkschool/modules/student/elearning/student_elearning_home_screen.dart';
 import 'package:linkschool/modules/student/home/student_home_screen.dart';
 import 'package:linkschool/modules/student/payment/student_payment_home_screen.dart';
@@ -28,19 +32,71 @@ class StudentDashboard extends StatefulWidget {
 
 class _StudentDashboardState extends State<StudentDashboard> {
   late int _selectedIndex;
+  int? studentId = 0;
+  String studentName = 'Student'; // Default fallback name
+    int? creatorId;
+  String? creatorName;
+  int? academicTerm;
+  String? userRole;
+
+
+
 
   @override
   void initState() {
     super.initState();
+    _loadUserData();
     _selectedIndex = widget.selectedIndex;
   }
+
+
+
+
+  Future<void> _loadUserData() async {
+  try {
+    final userBox = Hive.box('userData');
+    final storedUserData = userBox.get('userData') ?? userBox.get('loginResponse');
+
+    if (storedUserData == null) {
+      throw Exception('No user data found in Hive');
+    }
+
+    final dataMap = storedUserData is String
+        ? json.decode(storedUserData)
+        : Map<String, dynamic>.from(storedUserData);
+
+    // 🔍 handle all possible nesting patterns safely
+    final response = dataMap['response'] ?? dataMap;
+    final data = response['data'] ?? {};
+    final profile = data['profile'] ?? {};
+    final settings = data['settings'] ?? {};
+
+    setState(() {
+      studentId = int.tryParse(profile['id']?.toString() ?? '0');
+      creatorName = profile['name']?.toString() ?? 'Student';
+      userRole = profile['role']?.toString() ?? 'student';
+      academicTerm = int.tryParse(settings['term']?.toString() ?? '0');
+    });
+
+    print("✅ Student ID: $studentId");
+    print("✅ Student Name: $creatorName");
+    print("✅ Term: $academicTerm");
+    print("✅ Role: $userRole");
+  } catch (e, stack) {
+    debugPrint('❌ Error loading user data: $e');
+    debugPrint(stack.toString());
+    if (mounted) {
+      CustomToaster.toastError(context, 'Error', 'Failed to load user data');
+    }
+  }
+}
 
   Widget _buildBodyItem(int index) {
     switch (index) {
       case 0:
-        return const StudentHomeScreen();
+        return  StudentHomeScreen(logout: widget.onLogout);
       case 1:
-        return const StudentResultScreen(studentName: 'Tochukwu Dennis', className: 'JSS 1',);
+        return  StudentResultScreen(studentName: creatorName ?? '', className: '',);
       case 2:
         return  StudentElearningScreen();
       case 3:

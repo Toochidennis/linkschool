@@ -46,7 +46,7 @@ class CustomStudentAppBar extends StatelessWidget implements PreferredSizeWidget
           text: TextSpan(
             text: '$title, ',
             style: AppTextStyles.normal700(
-                fontSize: 22, color: AppColors.backgroundLight),
+                fontSize: 20, color: AppColors.backgroundLight),
             children: [
               TextSpan(
                 text: subtitle,
