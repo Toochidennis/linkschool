@@ -58,7 +58,7 @@ class PaymentSubmissionService {
       'year': year,
      "type": "online",
       'term': term,
-      '_db': 'aalmgzmy_linkskoo_practice',
+      '_db': dbName,
       'email': email,
       'student_id': studentId,
     };

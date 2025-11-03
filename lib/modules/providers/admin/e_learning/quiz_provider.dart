@@ -72,30 +72,4 @@ class QuizProvider extends ChangeNotifier {
       isLoading = false;
       notifyListeners();
     }
-  }
-
-  // Future<void> loadContent(int syllabusId) async {
-  //   // Prevent multiple simultaneous loads
-  //   if (_isLoadingContent) return;
-    
-  //   _isLoadingContent = true;
-  //   isLoading = true;
-  //   error = null;
-  //   contentResponse = null;
-  //   notifyListeners();
-
-  //   try {
-  //     final response = await _quizService.fetchContent(syllabusId);
-  //     contentResponse = response;
-  //     print('Content loaded successfully: ${contentResponse?.response.length} items');
-  //   } catch (e) {
-  //     print('Error loading content: $e');
-  //     error = e.toString();
-  //   } finally {
-  //     isLoading = false;
-  //     _isLoadingContent = false;
-  //     notifyListeners();
-  //   }
-  }
-
-
+  }}

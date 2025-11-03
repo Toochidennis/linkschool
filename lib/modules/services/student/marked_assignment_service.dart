@@ -16,6 +16,7 @@ class MarkedAssignmentService {
   }) async {
     final userBox = Hive.box('userData');
     final loginData = userBox.get('userData') ?? userBox.get('loginResponse');
+    final dbName = userBox.get('_db') ?? 'aalmgzmy_linkskoo_practice';
     if (loginData == null || loginData['token'] == null) {
       throw Exception("No valid login data or token found");
     }
@@ -27,7 +28,7 @@ class MarkedAssignmentService {
       final response = await _apiService.get<Map<String, dynamic>>(
         endpoint: 'portal/students/${contentid}/assignment-submissions',
         queryParams: {
-          '_db': db,
+          '_db': dbName,
           'year':year,
           'term': term,
           'content_id':contentid

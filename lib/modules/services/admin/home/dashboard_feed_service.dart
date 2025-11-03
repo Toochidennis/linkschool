@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
 import 'package:linkschool/modules/model/admin/home/dashboard_feed_model.dart';
@@ -17,6 +19,16 @@ class DashboardFeedService {
       throw Exception("No valid login data or token found");
     }
 
+    final processedData = loginData is String
+        ? json.decode(loginData)
+        : loginData as Map<String, dynamic>;
+    final responseData = processedData['response'] ?? processedData;
+    final data = responseData['data'] ?? responseData;
+    final profile = data['profile'] ?? {};
+    final settings = data['settings'] ?? {};
+    final academicYear = settings['year']?.toString();
+    final academicTerm = settings['term'] as int?;
+
     final token = loginData['token'] as String;
     _apiService.setAuthToken(token);
 
@@ -24,7 +36,7 @@ class DashboardFeedService {
       final response = await _apiService.get<Map<String, dynamic>>(
         endpoint: 'portal/dashboard/admin',
         queryParams: {
-          'term': 3,
+          'term': academicTerm,
         },
       );
 

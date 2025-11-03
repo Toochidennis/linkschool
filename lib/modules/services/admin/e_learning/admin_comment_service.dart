@@ -14,10 +14,13 @@ class AdminCommentService {
     String db = 'aalmgzmy_linkskoo_practice',
   }) async {
     final userBox = Hive.box('userData');
-    final loginData = userBox.get('userData') ?? userBox.get('loginResponse');
-    if (loginData == null || loginData['token'] == null) {
-      throw Exception("No valid login data or token found");
-    }
+  final loginData = userBox.get('userData') ?? userBox.get('loginResponse');
+  final dbName = userBox.get('_db') ?? 'aalmgzmy_linkskoo_practice';
+  
+  if (loginData == null || loginData['token'] == null) {
+    throw Exception("No valid login data or token found");
+  }
+
 
     final token = loginData['token'] as String;
     _apiService.setAuthToken(token);
@@ -26,7 +29,7 @@ class AdminCommentService {
       final response = await _apiService.get<Map<String, dynamic>>(
         endpoint: 'portal/elearning/$contentId/comments',
         queryParams: {
-          '_db': db,
+          '_db': dbName,
           'page': page.toString(),
           'limit': limit.toString(),
         },

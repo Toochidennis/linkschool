@@ -89,37 +89,3 @@ class Game {
   }
 }
 
-
-
-
-// class Game {
-//   final String id;
-//   final String gameUrl;
-//   final String thumbnail;
-//   final String rating;
-//   final String date;
-//   final String title;
-//   final String description;
-
-//   Game({
-//     required this.id,
-//     required this.gameUrl,
-//     required this.thumbnail,
-//     required this.rating,
-//     required this.date,
-//     required this.title,
-//     required this.description,
-//   });
-
-//   factory Game.fromJson(Map<String, dynamic> json) {
-//     return Game(
-//       id: json['id'] ?? '',
-//       gameUrl: json['gameUrl'] ?? '',
-//       thumbnail: json['thumbnail'] ?? '',
-//       rating: json['rating'] ?? '',
-//       date: json['date'] ?? '',
-//       title: json['title'] ?? '',
-//       description: json['description'] ?? '',
-//     );
-//   }
-// }

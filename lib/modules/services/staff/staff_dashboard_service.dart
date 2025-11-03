@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
 
@@ -18,6 +20,16 @@ class StaffDashboardService {
       throw Exception("No valid login data or token found");
     }
 
+     final processedData = loginData is String
+        ? json.decode(loginData)
+        : loginData as Map<String, dynamic>;
+    final responseData = processedData['response'] ?? processedData;
+    final data = responseData['data'] ?? responseData;
+    final profile = data['profile'] ?? {};
+    final settings = data['settings'] ?? {};
+    final academicYear = settings['year']?.toString();
+    final academicTerm = settings['term'] as int?;
+
     final token = loginData['token'] as String;
     _apiService.setAuthToken(token);
 
@@ -25,8 +37,8 @@ class StaffDashboardService {
       final response = await _apiService.get<Map<String, dynamic>>(
         endpoint: 'portal/dashboard/staff/42',
         queryParams: {
-          'term': 3,
-          'year': 2025,
+          'term': academicTerm,
+          'year': academicYear,
         },
       );
 

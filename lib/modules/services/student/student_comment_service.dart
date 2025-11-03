@@ -15,6 +15,7 @@ class StudentCommentService {
   }) async {
     final userBox = Hive.box('userData');
     final loginData = userBox.get('userData') ?? userBox.get('loginResponse');
+          final dbName = userBox.get('_db') ?? 'aalmgzmy_linkskoo_practice';
     if (loginData == null || loginData['token'] == null) {
       throw Exception("No valid login data or token found");
     }
@@ -26,7 +27,7 @@ class StudentCommentService {
       final response = await _apiService.get<Map<String, dynamic>>(
         endpoint: 'portal/elearning/$contentId/comments',
         queryParams: {
-          '_db': db,
+          '_db': dbName,
           'page': page.toString(),
           'limit': limit.toString(),
         },

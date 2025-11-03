@@ -33,10 +33,7 @@ class MarkingService {
     }
     print("Set token: $token");
     _apiService.setAuthToken(token);
-  print('portal/elearning/assignment/$academicTerm');
-  print('portal/elearning/assignment/$academicYear');
-  print('portal/elearning/assignment/$itemId');
-  print('portal/elearning/assignment/');
+
     final response = await _apiService.get<Map<String, dynamic>>(
       endpoint: 'portal/elearning/assignment/$itemId/submissions',
       

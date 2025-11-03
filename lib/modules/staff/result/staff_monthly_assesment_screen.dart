@@ -3,21 +3,16 @@ import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 
 class MonthlyStaffAssessmentScreen extends StatefulWidget {
-    // final String classId;
-    // final String year;
-    // final int term;
-    // final String termName;
-    // final String subject;
-    // final Map<String, dynamic> courseData;
+    final String classId;
+    final String year;
+    final int term;
+    final String termName;
+    final String subject;
+    final Map<String, dynamic> courseData;
 
   const MonthlyStaffAssessmentScreen({
-    super.key, required String classId, required String year, required String term, required String termName, required String subject, required Map<String, dynamic> courseData,
-    // required this.classId,
-    // required this.year,
-    // required this.term,
-    // required this.termName,
-    // required this.subject,
-    // required this.courseData,
+    super.key, required this.classId, required this.year, required this.term, required this.termName, required this.subject, required this.courseData, 
+   
   });
 
   @override

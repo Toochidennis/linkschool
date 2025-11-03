@@ -36,6 +36,7 @@ class StudentResultService {
 
     final userBox = Hive.box('userData');
     final loginData = userBox.get('userData') ?? userBox.get('loginResponse');
+    final dbName = userBox.get('_db') ?? 'aalmgzmy_linkskoo_practice';
     if (loginData == null || loginData['token'] == null) {
       throw Exception("No valid login data or token found");
     }
@@ -47,7 +48,7 @@ class StudentResultService {
       final response = await _apiService.get<Map<String, dynamic>>(
         endpoint: 'portal/students/${studentid}/result/${term}',
         queryParams: {
-          '_db': db,
+          '_db': dbName,
           'year':year,
           'term': term,
           'class_id':classid,

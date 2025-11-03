@@ -156,61 +156,6 @@ Future<void> fetchAttendanceDetails({
 }
 
 
-  // Future<void> fetchAttendanceDetails({
-  //   required String attendanceId,
-  //   required String dbName,
-  // }) async {
-  //   // Validate required parameters
-  //   if (attendanceId.isEmpty) {
-  //     _error = 'Attendance ID cannot be empty';
-  //     notifyListeners();
-  //     return;
-  //   }
-
-  //   if (dbName.isEmpty) {
-  //     _error = 'Database name cannot be empty';
-  //     notifyListeners();
-  //     return;
-  //   }
-
-  //   _isLoading = true;
-  //   _error = '';
-  //   _attendanceDetails = null;
-  //   notifyListeners();
-
-  //   try {
-  //     print('AttendanceProvider: Fetching attendance details for ID: $attendanceId');
-      
-  //     final response = await _attendanceService.getAttendanceDetails(
-  //       attendanceId: attendanceId,
-  //       dbName: dbName,
-  //     );
-
-  //     if (response.success && response.data != null) {
-  //       _attendanceDetails = response.data;
-  //       _error = ''; // Clear any previous errors
-  //       print('AttendanceProvider: Attendance details loaded successfully');
-  //     } else {
-  //       _error = response.message.isNotEmpty 
-  //         ? response.message 
-  //         : 'Failed to load attendance details';
-  //       print('AttendanceProvider: Error loading details - $_error');
-  //     }
-  //   } catch (e) {
-  //     _error = 'Failed to fetch attendance details: ${e.toString()}';
-  //     print('AttendanceProvider: Exception loading details - $_error');
-      
-  //     // More specific error handling
-  //     if (e.toString().contains('Network')) {
-  //       _error = 'Network error. Please check your internet connection.';
-  //     } else if (e.toString().contains('401') || e.toString().contains('Unauthorized')) {
-  //       _error = 'Session expired. Please login again.';
-  //     }
-  //   } finally {
-  //     _isLoading = false;
-  //     notifyListeners();
-  //   }
-  // }
 
   String formatDate(DateTime date) {
     return DateFormat('EEEE, d MMMM, yyyy').format(date);

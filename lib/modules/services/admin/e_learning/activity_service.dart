@@ -22,7 +22,7 @@ class OverviewService {
     final response = await _apiService.get<Map<String, dynamic>>(
       endpoint: 'portal/elearning/overview',
       queryParams: {
-        '_db': 'aalmgzmy_linkskoo_practice',
+        '_db': dbName,
         'term': term,
       },
       fromJson: (json) {

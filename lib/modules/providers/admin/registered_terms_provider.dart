@@ -1,9 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:linkschool/modules/services/api/api_service.dart';
-import 'package:provider/provider.dart';
-import 'package:linkschool/modules/common/app_colors.dart';
-import 'package:linkschool/modules/common/text_styles.dart';
-import 'package:linkschool/modules/providers/admin/term_provider.dart';
+
 // import 'package:linkschool/modules/services/api_service.dart';
 
 class RegisteredTermsProvider extends ChangeNotifier {

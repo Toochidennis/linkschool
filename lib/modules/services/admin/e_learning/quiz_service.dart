@@ -105,39 +105,6 @@ class QuizService {
     }
   }
 
-  // Future<ContentResponse> fetchContent(int syllabusId) async {
-  //   final userBox = Hive.box('userData');
-  //   final loginData = userBox.get('userData') ?? userBox.get('loginResponse');
-  //   final dbName = userBox.get('_db') ?? 'aalmgzmy_linkskoo_practice';
-
-  //   if (loginData == null || loginData['token'] == null) {
-  //     throw Exception("No valid login data or token found");
-  //   }
-
-  //   final token = loginData['token'] ?? userBox.get('token');
-
-  //   print("Set token: $token");
-  //   _apiService.setAuthToken(token);
-
-  //   final response = await _apiService.get(
-  //     endpoint: 'portal/elearning/syllabus/contents/$syllabusId',
-  //     queryParams: {
-  //       "_db": dbName,
-  //     },
-  //   );
-
-  //   if (response.statusCode == 200) {
-  //     final jsonData =
-  //         response.data ?? response.message; // Adjust based on your _apiService
-  //     if (jsonData['success'] == true && jsonData['response'] is List) {
-  //       return ContentResponse.fromJson(jsonData);
-  //     } else {
-  //       throw Exception('API call succeeded but response format is invalid');
-  //     }
-  //   } else {
-  //     throw Exception('Failed to load content');
-  //   }
-  // }
 
   Future<void> DeleteQuiz(int id) async {
     final userBox = Hive.box('userData');

@@ -431,23 +431,6 @@ class _SubmissionPreview extends StatelessWidget {
 
 
 
-//   BoxDecoration _cardDecoration(BuildContext context) {
-//     final isDark = Theme.of(context).brightness == Brightness.dark;
-//     return BoxDecoration(
-//       color: isDark ? const Color(0xFF17191E) : Colors.white,
-//       borderRadius: BorderRadius.circular(14),
-//       border: Border.all(color: Colors.white10),
-//       boxShadow: [
-//         BoxShadow(
-//           color: Colors.black.withOpacity(0.08),
-//           blurRadius: 10,
-//           offset: const Offset(0, 4),
-//         ),
-//       ],
-//     );
-//   }
-// }
-
   BoxDecoration _cardDecoration(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return BoxDecoration(

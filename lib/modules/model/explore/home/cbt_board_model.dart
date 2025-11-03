@@ -76,17 +76,3 @@ class YearModel {
     );
   }
 }
-
-
-  // factory CBTBoardModel.fromJson(Map<String, dynamic> json) {
-  //   return CBTBoardModel(
-  //     id: json['i'] ?? '',
-  //     pictureUrl: json['p'] ?? '',
-  //     title: json['t'] ?? '',
-  //     boardCode: json['c'] ?? '',
-  //     shortName: json['s'] ?? '',
-  //     subjects: (json['d'] as List<dynamic>?)
-  //         ?.map((subject) => SubjectModel.fromJson(subject))
-  //         .toList() ?? [],
-  //   );
-  // }

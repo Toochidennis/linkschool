@@ -1,14 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:linkschool/modules/admin/e_learning/View/question/assessment_screen.dart';
-import 'package:linkschool/modules/admin/e_learning/View/question/view_question_screen.dart';
-import 'package:linkschool/modules/admin/e_learning/e_learning_dashboard_screen.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/buttons/custom_long_elevated_button.dart';
 import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/custom_toaster.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/common/widgets/portal/quiz/answer_tab_widget.dart';
-import 'package:linkschool/modules/common/widgets/portal/student/student_customized_appbar.dart';
 import 'package:linkschool/modules/providers/admin/e_learning/delete_sylabus_content.dart';
 import 'package:linkschool/modules/providers/admin/e_learning/single_content_provider.dart';
 import 'package:linkschool/modules/services/api/service_locator.dart';

@@ -1,14 +1,10 @@
 
 
 import 'package:flutter/cupertino.dart';
-import 'package:linkschool/modules/model/student/elearningcontent_model.dart';
 import 'package:linkschool/modules/model/student/single_elearningcontentmodel.dart';
-import 'package:linkschool/modules/services/student/elearningcontent_service.dart';
 import 'package:linkschool/modules/services/student/single_elearningcontentservice.dart';
 
-import '../../model/student/dashboard_model.dart';
 import '../../services/api/service_locator.dart';
-import '../../services/student/student_dasboard_service.dart';
 
 class SingleelearningcontentProvider with ChangeNotifier {
   final SingleElearningcontentservice _elearningContentService = locator<SingleElearningcontentservice>();

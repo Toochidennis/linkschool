@@ -38,31 +38,3 @@ class Vendor {
   }
 }
 
-
-
-
-// import 'package:json_annotation/json_annotation.dart';
-
-// part 'vendor.g.dart';
-
-// @JsonSerializable()
-// class Vendor {
-//   final int id;
-//   final String vendorName;
-//   final String reference;
-//   final String phoneNumber;
-//   final String email;
-//   final String? address;
-
-//   Vendor({
-//     required this.id,
-//     required this.vendorName,
-//     required this.reference,
-//     required this.phoneNumber,
-//     required this.email,
-//     this.address,
-//   });
-
-//   factory Vendor.fromJson(Map<String, dynamic> json) => _$VendorFromJson(json);
-//   Map<String, dynamic> toJson() => _$VendorToJson(this);
-// }

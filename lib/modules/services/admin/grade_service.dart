@@ -11,9 +11,9 @@ class GradeService {
   Future<List<Grade>> getGrades() async {
     final userBox = Hive.box('userData');
     final loginData = userBox.get('userData') ?? userBox.get('loginResponse');
-
-    if (loginData == null) {
-      throw Exception('No login data available');
+    final dbName = userBox.get('_db') ?? 'aalmgzmy_linkskoo_practice';
+    if (loginData == null || loginData['token'] == null) {
+      throw Exception("No valid login data or token found");
     }
 
     final token = loginData['token'] ?? userBox.get('token');
@@ -26,7 +26,7 @@ class GradeService {
     final response = await _apiService.get<List<Grade>>(
       endpoint: 'portal/grades',
       queryParams: {
-        '_db': 'aalmgzmy_linkskoo_practice',
+        '_db':dbName,
       },
       fromJson: (json) {
         if (json['success'] == true && json['grades'] is List) {

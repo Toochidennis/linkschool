@@ -2,8 +2,6 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:hive/hive.dart';
-import 'package:linkschool/modules/admin/e_learning/View/question/view_question_screen.dart';
-import 'package:linkschool/modules/admin/e_learning/empty_subject_screen.dart';
 import 'package:linkschool/modules/admin/e_learning/select_topic_screen.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/buttons/custom_outline_button..dart';
@@ -12,7 +10,6 @@ import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/custom_toaster.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/common/utils/duration_picker_dialog.dart';
-import 'package:linkschool/modules/common/widgets/portal/e_learning/select_classes_dialog.dart';
 import 'package:linkschool/modules/model/e-learning/question_model.dart';
 import 'package:linkschool/modules/staff/e_learning/view/staffview_question.dart';
 
