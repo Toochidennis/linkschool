@@ -17,7 +17,8 @@ class CourseResultData {
     required this.grade,
   });
 
-  factory CourseResultData.fromJson(Map<String, dynamic> json, List<GradeData> grades) {
+  factory CourseResultData.fromJson(
+      Map<String, dynamic> json, List<GradeData> grades) {
     List<AssessmentData> assessments = [];
     if (json['assessments'] != null) {
       assessments = (json['assessments'] as List)
@@ -42,9 +43,9 @@ class CourseResultData {
       return '';
     }
 
-    double score = totalScore is String ? 
-        (double.tryParse(totalScore) ?? 0.0) : 
-        (totalScore as num).toDouble();
+    double score = totalScore is String
+        ? (double.tryParse(totalScore) ?? 0.0)
+        : (totalScore as num).toDouble();
 
     // Sort grades by start value in descending order
     List<GradeData> sortedGrades = List.from(grades);
@@ -135,7 +136,7 @@ class ViewCourseResultProvider with ChangeNotifier {
 
       if (response.success && response.rawData != null) {
         final data = response.rawData!['response'];
-        
+
         // Parse grades
         _grades = [];
         if (data['grades'] != null) {
@@ -171,13 +172,13 @@ class ViewCourseResultProvider with ChangeNotifier {
 
   void _extractAssessmentNames() {
     Set<String> uniqueNames = {};
-    
+
     for (CourseResultData result in _courseResults) {
       for (AssessmentData assessment in result.assessments) {
         uniqueNames.add(assessment.assessmentName);
       }
     }
-    
+
     _assessmentNames = uniqueNames.toList();
   }
 

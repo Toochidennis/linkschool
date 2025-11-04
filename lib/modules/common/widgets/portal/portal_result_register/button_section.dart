@@ -7,9 +7,9 @@ import 'package:linkschool/modules/common/utils/registration/registration_utils.
 
 class ButtonSection extends StatelessWidget {
   final String classId;
-  
+
   const ButtonSection({super.key, required this.classId});
-  
+
   @override
   Widget build(BuildContext context) {
     return Padding(
@@ -21,7 +21,8 @@ class ButtonSection extends StatelessWidget {
             onPressed: () => Navigator.push(
                 context,
                 MaterialPageRoute(
-                    builder: (context) => BulkRegistrationScreen(classId: classId))),
+                    builder: (context) =>
+                        BulkRegistrationScreen(classId: classId))),
             backgroundColor: AppColors.videoColor4,
             textStyle: AppTextStyles.normal600(
                 fontSize: 16, color: AppColors.backgroundLight),
@@ -51,7 +52,8 @@ class ButtonSection extends StatelessWidget {
                 child: OutlinedButton(
                   style: OutlinedButton.styleFrom(
                     backgroundColor: AppColors.regBtnColor2,
-                    side: const BorderSide(color: Color.fromRGBO(251, 146, 60, 1)),
+                    side: const BorderSide(
+                        color: Color.fromRGBO(251, 146, 60, 1)),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(4),
                     ),
@@ -61,7 +63,8 @@ class ButtonSection extends StatelessWidget {
                           fontSize: 12, color: AppColors.videoColor4)),
                   onPressed: () {
                     // Pass classId directly to the showRegistrationDialog function
-                    print('ButtonSection: Calling showRegistrationDialog with classId: $classId');
+                    print(
+                        'ButtonSection: Calling showRegistrationDialog with classId: $classId');
                     showRegistrationDialog(context, classId: classId);
                   },
                 ),

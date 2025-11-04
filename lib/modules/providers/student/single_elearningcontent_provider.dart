@@ -1,5 +1,3 @@
-
-
 import 'package:flutter/cupertino.dart';
 import 'package:linkschool/modules/model/student/single_elearningcontentmodel.dart';
 import 'package:linkschool/modules/services/student/single_elearningcontentservice.dart';
@@ -7,7 +5,8 @@ import 'package:linkschool/modules/services/student/single_elearningcontentservi
 import '../../services/api/service_locator.dart';
 
 class SingleelearningcontentProvider with ChangeNotifier {
-  final SingleElearningcontentservice _elearningContentService = locator<SingleElearningcontentservice>();
+  final SingleElearningcontentservice _elearningContentService =
+      locator<SingleElearningcontentservice>();
 
   late SingleElearningContentData _elearningContentData;
   bool _isLoading = false;
@@ -27,12 +26,14 @@ class SingleelearningcontentProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  Future<SingleElearningContentData?> fetchElearningContentData( int contentid) async {
+  Future<SingleElearningContentData?> fetchElearningContentData(
+      int contentid) async {
     _setLoading(true);
     _setError(null);
 
     try {
-      final response = await _elearningContentService.getElearningContentData(contentid);
+      final response =
+          await _elearningContentService.getElearningContentData(contentid);
       _elearningContentData = response;
 
       return response; // Return DashboardData directly
@@ -43,5 +44,4 @@ class SingleelearningcontentProvider with ChangeNotifier {
       _setLoading(false);
     }
   }
-
 }

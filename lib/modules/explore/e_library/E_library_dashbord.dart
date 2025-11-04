@@ -219,16 +219,23 @@ class _ElibraryDashboardState extends State<ElibraryDashboard> {
                             },
                           ),
                         ),
-                         Expanded(child:CBTDashboard(showAppBar: false,)),
-                       Expanded(
-                      child: LibraryEbook(),
-                    ),
-                    Expanded(
-                      child: GamesDashboard( showAppBar: false,),
-                    ),
-                    Expanded(
-                      child: VideosDashboard(showAppBar: false,),
-                    ),
+                        Expanded(
+                            child: CBTDashboard(
+                          showAppBar: false,
+                        )),
+                        Expanded(
+                          child: LibraryEbook(),
+                        ),
+                        Expanded(
+                          child: GamesDashboard(
+                            showAppBar: false,
+                          ),
+                        ),
+                        Expanded(
+                          child: VideosDashboard(
+                            showAppBar: false,
+                          ),
+                        ),
                       ],
                     ),
                   ),
@@ -491,6 +498,3 @@ Widget _ContinueWatching(
     ),
   );
 }
-
-
-

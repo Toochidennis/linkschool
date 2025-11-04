@@ -93,8 +93,8 @@ class _NewsDetailsState extends State<NewsDetails> {
                         ],
                       ),
                       TextButton(
-                          onPressed: () => (Share.share(
-                              'dream ict/${widget.news.title}')),
+                          onPressed: () =>
+                              (Share.share('dream ict/${widget.news.title}')),
                           style: TextButton.styleFrom(
                             backgroundColor:
                                 Colors.white, // Button background color

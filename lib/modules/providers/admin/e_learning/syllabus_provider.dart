@@ -14,13 +14,18 @@ class SyllabusProvider with ChangeNotifier {
   bool get isLoading => _isLoading;
   String get error => _error;
 
- Future<void> fetchSyllabus(String levelId, String term,String courseId,) async {
+  Future<void> fetchSyllabus(
+    String levelId,
+    String term,
+    String courseId,
+  ) async {
     _isLoading = true;
     _error = '';
     notifyListeners();
 
     try {
-      _syllabusList = await _syllabusService.getSyllabus( levelId, term, courseId);
+      _syllabusList =
+          await _syllabusService.getSyllabus(levelId, term, courseId);
       _error = '';
     } catch (e) {
       _error = e.toString();
@@ -40,8 +45,8 @@ class SyllabusProvider with ChangeNotifier {
     required String term,
     required String courseId,
     required String courseName,
-  required List<ClassModel> classes,
-    required  levelId,
+    required List<ClassModel> classes,
+    required levelId,
     required String creatorId,
   }) async {
     _isLoading = true;
@@ -55,15 +60,17 @@ class SyllabusProvider with ChangeNotifier {
         description: description,
         authorName: authorName,
         term: term,
-        levelId:levelId,
-        creatorId:creatorId,
-        classes:classes,
+        levelId: levelId,
+        creatorId: creatorId,
+        classes: classes,
         courseId: courseId,
-         courseName:courseName, uploadDate: '',
+        courseName: courseName,
+        uploadDate: '',
       );
 
       await _syllabusService.addSyllabus(newSyllabus);
-      await fetchSyllabus(levelId,term,courseId); // Refresh the list from the server
+      await fetchSyllabus(
+          levelId, term, courseId); // Refresh the list from the server
       print("Syllabus added and list refreshed");
     } catch (e) {
       _error = e.toString();
@@ -74,14 +81,14 @@ class SyllabusProvider with ChangeNotifier {
       notifyListeners();
     }
   }
+
   Future<void> UpdateSyllabus({
     required String title,
     required String description,
     required String term,
     required String levelId,
     required int syllabusId,
-  required List<ClassModel> classes,
-  
+    required List<ClassModel> classes,
   }) async {
     _isLoading = true;
     _error = '';
@@ -91,12 +98,12 @@ class SyllabusProvider with ChangeNotifier {
       final newSyllabus = SyllabusModel(
         title: title,
         description: description,
-        classes:classes,
+        classes: classes,
         term: term,
-        levelId:levelId,
+        levelId: levelId,
       );
 
-      await _syllabusService.UpdateSyllabus(newSyllabus,syllabusId);
+      await _syllabusService.UpdateSyllabus(newSyllabus, syllabusId);
       // await fetchSyllabus(levelId,term); // Refresh the list from the server
       print("Syllabus added and list refreshed");
     } catch (e) {
@@ -109,14 +116,15 @@ class SyllabusProvider with ChangeNotifier {
     }
   }
 
-  Future<void> deletesyllabus(int syllabusId,String levelId, String term,String courseId) async {
+  Future<void> deletesyllabus(
+      int syllabusId, String levelId, String term, String courseId) async {
     _isLoading = true;
     _error = '';
     notifyListeners();
 
     try {
       await _syllabusService.deletesyllabus(syllabusId);
-      await fetchSyllabus(levelId,term,courseId); 
+      await fetchSyllabus(levelId, term, courseId);
       print("Syllabus deleted successfully");
     } catch (e) {
       _error = e.toString();

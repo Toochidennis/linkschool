@@ -36,24 +36,26 @@ class _AssessmentSettingScreenState extends State<AssessmentSettingScreen> {
   }
 
   Future<void> _loadInitialData() async {
-    final assessmentProvider = Provider.of<AssessmentProvider>(context, listen: false);
+    final assessmentProvider =
+        Provider.of<AssessmentProvider>(context, listen: false);
     final levelProvider = Provider.of<LevelProvider>(context, listen: false);
-    
+
     try {
       // Verify we have a token
       final userBox = Hive.box('userData');
       final token = userBox.get('token');
-      
+
       if (token == null) {
         throw Exception('User not authenticated');
       }
 
       await assessmentProvider.fetchAssessments();
-      
+
       // Load levels from local storage
       final levels = userBox.get('levels');
       if (levels != null && levels is List) {
-        levelProvider.updateLevels(levels.map((level) => Level.fromJson(level)).toList());
+        levelProvider.updateLevels(
+            levels.map((level) => Level.fromJson(level)).toList());
       }
     } catch (e) {
       debugPrint('Initialization error: ${e.toString()}');
@@ -154,15 +156,16 @@ class _AssessmentSettingScreenState extends State<AssessmentSettingScreen> {
                     child: ListView(
                       children: [
                         ...assessmentProvider.assessments
-                            .where((assessment) => assessment.levelId.toString() == _selectedLevelId)
+                            .where((assessment) =>
+                                assessment.levelId.toString() ==
+                                _selectedLevelId)
                             .toList()
                             .asMap()
                             .entries
                             .map(
                               (entry) => buildAssessmentCard(
                                   entry.value, entry.key, assessmentProvider),
-                            )
-                            .toList(),
+                            ),
                         const SizedBox(height: 24.0),
                         if (!_isEditingCard) buildInputCard(assessmentProvider),
                       ],
@@ -188,9 +191,11 @@ class _AssessmentSettingScreenState extends State<AssessmentSettingScreen> {
           try {
             await assessmentProvider.saveAssessments(context, _selectedLevelId);
             // Show toast only for the floating save button action
-            CustomToaster.toastSuccess(context, 'Success', 'Assessments saved successfully');
+            CustomToaster.toastSuccess(
+                context, 'Success', 'Assessments saved successfully');
           } catch (e) {
-            CustomToaster.toastError(context, 'Error', 'Failed to save assessments');
+            CustomToaster.toastError(
+                context, 'Error', 'Failed to save assessments');
           }
         },
       ),
@@ -201,12 +206,12 @@ class _AssessmentSettingScreenState extends State<AssessmentSettingScreen> {
     if (_selectedLevelId == "0") {
       return "General (All Levels)";
     }
-    
+
     final selectedLevel = levelProvider.levels.firstWhere(
       (level) => level.id == _selectedLevelId,
       orElse: () => Level(id: '', levelName: 'Select Level'),
     );
-    
+
     return selectedLevel.levelName ?? 'Select Level';
   }
 
@@ -267,7 +272,9 @@ class _AssessmentSettingScreenState extends State<AssessmentSettingScreen> {
                           color: AppColors.textGray,
                         ),
                       ),
-                      tileColor: _selectedLevelId == level.id ? Colors.grey[100] : null,
+                      tileColor: _selectedLevelId == level.id
+                          ? Colors.grey[100]
+                          : null,
                       onTap: () {
                         setState(() => _selectedLevelId = level.id);
                         Navigator.pop(context);
@@ -390,7 +397,7 @@ class _AssessmentSettingScreenState extends State<AssessmentSettingScreen> {
       _assessmentNameController.clear();
       _assessmentScoreController.clear();
       _selectedAssessmentType = null;
-      
+
       // Removed toast as per requirement
     } catch (e) {
       // Removed toast as per requirement
@@ -421,14 +428,23 @@ class _AssessmentSettingScreenState extends State<AssessmentSettingScreen> {
               children: [
                 IconButton(
                   icon: Icon(
-                    _isEditingCard && _editingIndex == index ? Icons.save : Icons.edit,
+                    _isEditingCard && _editingIndex == index
+                        ? Icons.save
+                        : Icons.edit,
                     color: AppColors.primaryDark,
                   ),
-                  onPressed: () => _handleEditAssessment(index, provider, assessment, nameController, scoreController, selectedType),
+                  onPressed: () => _handleEditAssessment(
+                      index,
+                      provider,
+                      assessment,
+                      nameController,
+                      scoreController,
+                      selectedType),
                 ),
                 IconButton(
                   icon: const Icon(Icons.delete, color: AppColors.primaryDark),
-                  onPressed: () => _handleDeleteAssessment(assessment, provider),
+                  onPressed: () =>
+                      _handleDeleteAssessment(assessment, provider),
                 ),
               ],
             ),
@@ -521,37 +537,50 @@ class _AssessmentSettingScreenState extends State<AssessmentSettingScreen> {
     );
   }
 
-  void _handleEditAssessment(int index, AssessmentProvider provider, Assessment assessment, 
-      TextEditingController nameController, TextEditingController scoreController, String selectedType) async {
+  void _handleEditAssessment(
+      int index,
+      AssessmentProvider provider,
+      Assessment assessment,
+      TextEditingController nameController,
+      TextEditingController scoreController,
+      String selectedType) async {
     if (_isEditingCard && _editingIndex == index) {
       // Save changes - check if this is a newly added assessment or an existing one
       final isNewlyAdded = provider.newlyAddedAssessments.contains(assessment);
       bool success = false;
-      
+
       if (isNewlyAdded) {
         // Update locally for newly added assessment
-        success = await provider.editAssessment(assessment, nameController.text, 
-            int.tryParse(scoreController.text) ?? assessment.assessmentScore, 
+        success = await provider.editAssessment(
+            assessment,
+            nameController.text,
+            int.tryParse(scoreController.text) ?? assessment.assessmentScore,
             int.tryParse(selectedType) ?? assessment.assessmentType);
-        
+
         if (success) {
-          CustomToaster.toastSuccess(context, 'Success', 'Assessment updated successfully');
+          CustomToaster.toastSuccess(
+              context, 'Success', 'Assessment updated successfully');
         } else {
-          CustomToaster.toastError(context, 'Error', 'Failed to update assessment');
+          CustomToaster.toastError(
+              context, 'Error', 'Failed to update assessment');
         }
       } else {
         // Update using API for existing assessment
-        success = await provider.editAssessment(assessment, nameController.text, 
-            int.tryParse(scoreController.text) ?? assessment.assessmentScore, 
+        success = await provider.editAssessment(
+            assessment,
+            nameController.text,
+            int.tryParse(scoreController.text) ?? assessment.assessmentScore,
             int.tryParse(selectedType) ?? assessment.assessmentType);
-        
+
         if (success) {
-          CustomToaster.toastSuccess(context, 'Success', 'Assessment updated successfully');
+          CustomToaster.toastSuccess(
+              context, 'Success', 'Assessment updated successfully');
         } else {
-          CustomToaster.toastError(context, 'Error', provider.errorMessage ?? 'Failed to update assessment');
+          CustomToaster.toastError(context, 'Error',
+              provider.errorMessage ?? 'Failed to update assessment');
         }
       }
-      
+
       setState(() {
         _isEditingCard = false;
         _editingIndex = null;
@@ -565,38 +594,48 @@ class _AssessmentSettingScreenState extends State<AssessmentSettingScreen> {
     }
   }
 
-  void _updateLocalAssessment(AssessmentProvider provider, Assessment assessment, 
-      TextEditingController nameController, TextEditingController scoreController, String selectedType) {
+  void _updateLocalAssessment(
+      AssessmentProvider provider,
+      Assessment assessment,
+      TextEditingController nameController,
+      TextEditingController scoreController,
+      String selectedType) {
     final filteredAssessments = provider.assessments
         .where((a) => a.levelId.toString() == _selectedLevelId)
         .toList();
-    
+
     final originalIndex = provider.assessments.indexOf(assessment);
-    
+
     if (originalIndex != -1) {
       // Update the assessment in both lists
       final updatedAssessment = Assessment(
         id: assessment.id,
         assessmentName: nameController.text,
-        assessmentScore: int.tryParse(scoreController.text) ?? assessment.assessmentScore,
+        assessmentScore:
+            int.tryParse(scoreController.text) ?? assessment.assessmentScore,
         assessmentType: int.tryParse(selectedType) ?? assessment.assessmentType,
         levelId: assessment.levelId,
       );
-      
+
       provider.assessments[originalIndex] = updatedAssessment;
-      
+
       // Update in newly added list as well
-      final newlyAddedIndex = provider.newlyAddedAssessments.indexOf(assessment);
+      final newlyAddedIndex =
+          provider.newlyAddedAssessments.indexOf(assessment);
       if (newlyAddedIndex != -1) {
         provider.newlyAddedAssessments[newlyAddedIndex] = updatedAssessment;
       }
-      
+
       provider.notifyListeners();
     }
   }
 
-  void _updateExistingAssessment(AssessmentProvider provider, Assessment assessment, 
-      TextEditingController nameController, TextEditingController scoreController, String selectedType) {
+  void _updateExistingAssessment(
+      AssessmentProvider provider,
+      Assessment assessment,
+      TextEditingController nameController,
+      TextEditingController scoreController,
+      String selectedType) {
     // Call the edit API for existing assessments
     provider.editAssessment(
       assessment,
@@ -606,25 +645,26 @@ class _AssessmentSettingScreenState extends State<AssessmentSettingScreen> {
     );
   }
 
-  void _handleDeleteAssessment(Assessment assessment, AssessmentProvider provider) async {
+  void _handleDeleteAssessment(
+      Assessment assessment, AssessmentProvider provider) async {
     // Check if this is a newly added assessment or an existing one
     final isNewlyAdded = provider.newlyAddedAssessments.contains(assessment);
-    
+
     if (isNewlyAdded) {
       // Delete locally for newly added assessment
       provider.removeAssessment(assessment);
-      CustomToaster.toastSuccess(context, 'Success', 'Assessment deleted successfully');
+      CustomToaster.toastSuccess(
+          context, 'Success', 'Assessment deleted successfully');
     } else {
       // Delete using API for existing assessment
       final success = await provider.deleteAssessment(assessment);
       if (success) {
-        CustomToaster.toastSuccess(context, 'Success', 'Assessment deleted successfully');
+        CustomToaster.toastSuccess(
+            context, 'Success', 'Assessment deleted successfully');
       } else {
-        CustomToaster.toastError(context, 'Error', provider.errorMessage ?? 'Failed to delete assessment');
+        CustomToaster.toastError(context, 'Error',
+            provider.errorMessage ?? 'Failed to delete assessment');
       }
     }
   }
 }
-
-
-

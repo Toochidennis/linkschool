@@ -5,11 +5,11 @@ import 'package:linkschool/modules/services/api/api_service.dart';
 
 class RegisteredTermsProvider extends ChangeNotifier {
   final ApiService _apiService = ApiService();
-  
+
   List<Map<String, dynamic>>? _sessions;
   bool _isLoading = false;
   String _error = '';
-  
+
   List<Map<String, dynamic>>? get sessions => _sessions;
   bool get isLoading => _isLoading;
   String get error => _error;
@@ -19,7 +19,7 @@ class RegisteredTermsProvider extends ChangeNotifier {
     _isLoading = true;
     _error = '';
     notifyListeners();
-    
+
     try {
       final response = await _apiService.get(
         endpoint: 'portal/course-registrations/terms',
@@ -29,8 +29,10 @@ class RegisteredTermsProvider extends ChangeNotifier {
           'year': '2025', // This can be dynamic if needed
         },
       );
-      
-      if (response.success && response.rawData != null && response.rawData!['success'] == true) {
+
+      if (response.success &&
+          response.rawData != null &&
+          response.rawData!['success'] == true) {
         final List<dynamic> sessionsList = response.rawData!['sessions'] ?? [];
         _sessions = List<Map<String, dynamic>>.from(sessionsList);
         _isLoading = false;
@@ -46,7 +48,7 @@ class RegisteredTermsProvider extends ChangeNotifier {
       notifyListeners();
     }
   }
-  
+
   // Reset provider state
   void reset() {
     _sessions = null;

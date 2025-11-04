@@ -7,8 +7,7 @@ class CourseRegistrationService {
   final ApiService _apiService = locator<ApiService>();
 
   Future<ApiResponse<List<CourseRegistrationModel>>> fetchRegisteredCourses(
-    String classId, String term, String year) async {
-    
+      String classId, String term, String year) async {
     final response = await _apiService.get(
       endpoint: 'portal/classes/$classId/registered-students',
       queryParams: {
@@ -19,11 +18,12 @@ class CourseRegistrationService {
     );
 
     if (response.success && response.rawData != null) {
-      final List<dynamic> studentsJson = response.rawData!['registered_students'] ?? [];
+      final List<dynamic> studentsJson =
+          response.rawData!['registered_students'] ?? [];
       final students = studentsJson
           .map((json) => CourseRegistrationModel.fromJson(json))
           .toList();
-      
+
       return ApiResponse<List<CourseRegistrationModel>>(
         success: true,
         message: 'Registered students fetched successfully',
@@ -32,7 +32,7 @@ class CourseRegistrationService {
         rawData: response.rawData,
       );
     }
-    
+
     return ApiResponse<List<CourseRegistrationModel>>(
       success: false,
       message: response.message ?? 'Failed to fetch registered students',
@@ -43,7 +43,8 @@ class CourseRegistrationService {
   }
 
   // New method to fetch registered courses for a single student
-  Future<ApiResponse<List<Map<String, dynamic>>>> fetchStudentRegisteredCourses({
+  Future<ApiResponse<List<Map<String, dynamic>>>>
+      fetchStudentRegisteredCourses({
     required int studentId,
     required String classId,
     required String year,
@@ -65,11 +66,11 @@ class CourseRegistrationService {
         success: true,
         message: 'Student registered courses fetched successfully',
         statusCode: response.statusCode,
-        data: [],  // We'll handle data extraction in the provider
+        data: [], // We'll handle data extraction in the provider
         rawData: response.rawData,
       );
     }
-    
+
     return ApiResponse<List<Map<String, dynamic>>>(
       success: false,
       message: response.message ?? 'Failed to fetch student registered courses',
@@ -89,7 +90,7 @@ class CourseRegistrationService {
         endpoint: 'portal/students/${course.studentId}/course-registrations',
         body: payload,
       );
-      
+
       return ApiResponse<bool>(
         success: response.success,
         message: response.message,
@@ -104,7 +105,7 @@ class CourseRegistrationService {
       endpoint: 'courseRegistration.php',
       body: course.toJson(),
     );
-    
+
     return ApiResponse<bool>(
       success: response.success,
       message: response.message,
@@ -115,7 +116,6 @@ class CourseRegistrationService {
   }
 }
 
-
 // import 'package:linkschool/modules/model/admin/course_registration_model.dart';
 // import 'package:linkschool/modules/services/api/api_service.dart';
 // import 'package:linkschool/modules/services/api/service_locator.dart';
@@ -125,7 +125,7 @@ class CourseRegistrationService {
 
 //   Future<ApiResponse<List<CourseRegistrationModel>>> fetchRegisteredCourses(
 //     String classId, String term, String year) async {
-    
+
 //     final response = await _apiService.get(
 //       endpoint: 'portal/classes/$classId/registered-students',
 //       queryParams: {
@@ -140,7 +140,7 @@ class CourseRegistrationService {
 //       final students = studentsJson
 //           .map((json) => CourseRegistrationModel.fromJson(json))
 //           .toList();
-      
+
 //       return ApiResponse<List<CourseRegistrationModel>>(
 //         success: true,
 //         message: 'Registered students fetched successfully',
@@ -149,7 +149,7 @@ class CourseRegistrationService {
 //         rawData: response.rawData,
 //       );
 //     }
-    
+
 //     return ApiResponse<List<CourseRegistrationModel>>(
 //       success: false,
 //       message: response.message ?? 'Failed to fetch registered students',
@@ -169,7 +169,7 @@ class CourseRegistrationService {
 //         endpoint: 'portal/students/${course.studentId}/course-registrations',
 //         body: payload,
 //       );
-      
+
 //       return ApiResponse<bool>(
 //         success: response.success,
 //         message: response.message,
@@ -184,7 +184,7 @@ class CourseRegistrationService {
 //       endpoint: 'courseRegistration.php',
 //       body: course.toJson(),
 //     );
-    
+
 //     return ApiResponse<bool>(
 //       success: response.success,
 //       message: response.message,

@@ -25,7 +25,9 @@ class Levels {
       levelName: levelName,
       schoolType: json['school_type'] as String,
       rank: json['rank'] as int,
-      resultTemplate: (json['result_template'] as String?)?.isEmpty ?? true ? null : json['result_template'] as String?,
+      resultTemplate: (json['result_template'] as String?)?.isEmpty ?? true
+          ? null
+          : json['result_template'] as String?,
       admit: json['admit'] as int,
     );
   }
@@ -53,10 +55,13 @@ class Class {
     // }
     return Class(
       id: json['id'] as int,
-       className: json['class_name'] as String,
+      className: json['class_name'] as String,
       levelId: json['level_id'] as int,
-      resultTemplate: (json['result_template'] as String?)?.isEmpty ?? true ? null : json['result_template'] as String?,
-      formTeacherIds: (json['form_teacher_ids'] as List<dynamic>?)?.cast<String>() ?? [],
+      resultTemplate: (json['result_template'] as String?)?.isEmpty ?? true
+          ? null
+          : json['result_template'] as String?,
+      formTeacherIds:
+          (json['form_teacher_ids'] as List<dynamic>?)?.cast<String>() ?? [],
     );
   }
 }

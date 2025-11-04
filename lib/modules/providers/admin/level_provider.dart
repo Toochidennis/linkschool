@@ -23,16 +23,17 @@ class LevelProvider with ChangeNotifier {
       // First try to load from local storage
       final userBox = Hive.box('userData');
       final localLevels = userBox.get('levels');
-      
+
       if (localLevels != null && localLevels is List) {
         _levels = localLevels.map((level) => Level.fromJson(level)).toList();
       }
 
       // Then fetch from API
       _levels = await _levelService.fetchLevels();
-      
+
       // Save to local storage
-      await userBox.put('levels', _levels.map((level) => level.toJson()).toList());
+      await userBox.put(
+          'levels', _levels.map((level) => level.toJson()).toList());
     } catch (e) {
       _error = e.toString();
     } finally {

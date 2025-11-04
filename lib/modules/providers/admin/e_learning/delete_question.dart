@@ -1,7 +1,6 @@
 import 'package:linkschool/modules/services/admin/e_learning/delete_question.dart';
 
 import 'package:flutter/material.dart';
-import 'package:linkschool/modules/services/admin/e_learning/delete_question.dart';
 
 class DeleteQuestionProvider with ChangeNotifier {
   final DeleteQuestionService _deleteQuestionService;

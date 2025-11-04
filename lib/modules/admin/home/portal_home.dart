@@ -41,18 +41,16 @@ class _PortalHomeState extends State<PortalHome>
   late Animation<Offset> _slideAnimation;
   late Animation<double> _bounceAnimation;
 
-late TextEditingController _editTitleController;
-late TextEditingController _editContentController;
-
-
+  late TextEditingController _editTitleController;
+  late TextEditingController _editContentController;
 
   final TextEditingController _questionController = TextEditingController();
   final TextEditingController _newsController = TextEditingController();
   final TextEditingController _titleController = TextEditingController();
   int? _editingFeedId;
-Map<String, dynamic>? _editingFeedData;
+  Map<String, dynamic>? _editingFeedData;
   bool _showAddForm = false;
-  String _selectedType = 'question';
+  final String _selectedType = 'question';
   int? creatorId;
   String? creatorName;
   int? academicTerm;
@@ -159,10 +157,8 @@ Map<String, dynamic>? _editingFeedData;
           creatorId = profile['staff_id'] is int
               ? profile['staff_id']
               : int.tryParse(profile['staff_id'].toString());
-          
+
           userRole = profile['role']?.toString() ?? 'admin';
-
-
 
           creatorName = profile['name']?.toString() ?? '';
 
@@ -427,23 +423,19 @@ Map<String, dynamic>? _editingFeedData;
             ),
             child: Row(
               children: [
-                
                 Expanded(
                   child: AnimatedContainer(
                     duration: const Duration(milliseconds: 200),
                     padding: const EdgeInsets.symmetric(vertical: 12),
                     decoration: BoxDecoration(
-                      color:  AppColors.text2Light,
-                          
+                      color: AppColors.text2Light,
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: Text(
                       'News Feed',
                       textAlign: TextAlign.center,
                       style: TextStyle(
-                        color:
-                             Colors.white,
-                          
+                        color: Colors.white,
                         fontWeight: FontWeight.w600,
                         fontFamily: 'Urbanist',
                       ),
@@ -476,7 +468,7 @@ Map<String, dynamic>? _editingFeedData;
             controller: _newsController,
             maxLines: 4,
             decoration: InputDecoration(
-              hintText:'Enter news content here...',
+              hintText: 'Enter news content here...',
               hintStyle: const TextStyle(
                 color: AppColors.text5Light,
                 fontSize: 14,
@@ -530,95 +522,96 @@ Map<String, dynamic>? _editingFeedData;
   }
 
   void _handleSubmit() async {
-  final title = _titleController.text.trim();
-  final content = _newsController.text.trim(); // Always use newsController
+    final title = _titleController.text.trim();
+    final content = _newsController.text.trim(); // Always use newsController
 
-  final provider = Provider.of<DashboardFeedProvider>(context, listen: false);
+    final provider = Provider.of<DashboardFeedProvider>(context, listen: false);
 
-  try {
-    // Validate input
-    if (title.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('Please enter a title'),
-          backgroundColor: Colors.red,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
+    try {
+      // Validate input
+      if (title.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Please enter a title'),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
           ),
-        ),
-      );
-      return;
-    }
-    
-    if (content.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('Please enter content'),
-          backgroundColor: Colors.red,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
-          ),
-        ),
-      );
-      return;
-    }
+        );
+        return;
+      }
 
-    // Ensure user data is loaded
-    if (creatorId == null || creatorName == null) {
-      await _loadUserData();
+      if (content.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Please enter content'),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+          ),
+        );
+        return;
+      }
+
+      // Ensure user data is loaded
       if (creatorId == null || creatorName == null) {
-        throw Exception('User data not available');
+        await _loadUserData();
+        if (creatorId == null || creatorName == null) {
+          throw Exception('User data not available');
+        }
+      }
+
+      final payload = {
+        'title': title,
+        'type': 'news',
+        'parent_id': 0,
+        'content': content,
+        'author_name': creatorName,
+        'author_id': creatorId,
+        'term': academicTerm,
+        'files': <Map<String, dynamic>>[],
+      };
+
+      debugPrint('Creating feed with payload: $payload');
+
+      await provider.createFeed(payload);
+
+      if (mounted) {
+        CustomToaster.toastSuccess(
+            context, 'Success ', 'Feed added successfully');
+
+        _titleController.clear();
+        _newsController.clear();
+
+        setState(() {
+          _showAddForm = false;
+        });
+
+        // Refresh the feed list
+        await provider.fetchDashboardData();
+      }
+    } catch (e, stackTrace) {
+      debugPrint('Error creating feed: $e');
+      debugPrint('Stack trace: $stackTrace');
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to add News Feed: ${e.toString()}'),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+          ),
+        );
       }
     }
-
-    final payload = {
-      'title': title,
-      'type': 'news',
-      'parent_id': 0,
-      'content': content,
-      'author_name': creatorName,
-      'author_id': creatorId,
-      'term': academicTerm,
-      'files': <Map<String, dynamic>>[],
-    };
-    
-    debugPrint('Creating feed with payload: $payload');
-    
-    await provider.createFeed(payload);
-
-    if (mounted) {
-       CustomToaster.toastSuccess(context, 'Success ', 'Feed added successfully');
-
-      _titleController.clear();
-      _newsController.clear();
-      
-      setState(() {
-        _showAddForm = false;
-      });
-      
-      // Refresh the feed list
-      await provider.fetchDashboardData();
-    }
-  } catch (e, stackTrace) {
-    debugPrint('Error creating feed: $e');
-    debugPrint('Stack trace: $stackTrace');
-    
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Failed to add News Feed: ${e.toString()}'),
-          backgroundColor: Colors.red,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
-          ),
-        ),
-      );
-    }
   }
-}
 
   @override
   Widget build(BuildContext context) {
@@ -956,26 +949,26 @@ Map<String, dynamic>? _editingFeedData;
                                   const SizedBox(width: 8),
                                   // See All button
 
-                    TextButton(
-  onPressed: () {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => AllFeedsScreen(),
-      ),
-    );
-  },
-  child: const Text(
-    'See all',
-    style: TextStyle(
-      decoration: TextDecoration.underline,
-      color: AppColors.text2Light,
-      fontFamily: 'Urbanist',
-      fontWeight: FontWeight.w500,
-    ),
-  ),
-),
-
+                                  TextButton(
+                                    onPressed: () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) =>
+                                              AllFeedsScreen(),
+                                        ),
+                                      );
+                                    },
+                                    child: const Text(
+                                      'See all',
+                                      style: TextStyle(
+                                        decoration: TextDecoration.underline,
+                                        color: AppColors.text2Light,
+                                        fontFamily: 'Urbanist',
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ),
                                 ],
                               ),
                             ],
@@ -1021,12 +1014,15 @@ Map<String, dynamic>? _editingFeedData;
                                 Column(
                                   children: [
                                     // Show only first 3 feeds
-                                     ...provider.feeds.asMap().entries.map((entry) {
+                                    ...provider.feeds
+                                        .asMap()
+                                        .entries
+                                        .map((entry) {
                                       final index = entry.key;
                                       final feed = entry.value;
 
-                                      if(_editingFeedId == feed.id){
-                                      return _buildEditForm(feed, index);
+                                      if (_editingFeedId == feed.id) {
+                                        return _buildEditForm(feed, index);
                                       }
                                       return TweenAnimationBuilder<double>(
                                         tween: Tween<double>(begin: 0, end: 1),
@@ -1054,34 +1050,38 @@ Map<String, dynamic>? _editingFeedData;
                                                           feed.replies.length,
                                                       time: feed.createdAt,
                                                       parentId: feed.id,
-
                                                     ),
                                                   ),
                                                 );
                                               },
                                               child: Column(
                                                 children: [
-                                                 PortalNewsItem(
-  profileImageUrl: 'https://img.freepik.com/free-vector/gradient-human-rights-day-background_52683-149974.jpg',
-  name: feed.authorName,
-  newsContent: feed.content,
-  time: feed.createdAt,
-  title: feed.title ?? '',
-  CreatorId: creatorId.toString(),
-  authorId: feed.authorId ?? 0,
-  role: userRole,
-  edit: () => _startEditing(feed), // Direct function call
-  delete: () => _confirmDelete(feed), // Direct function call
-  comments: feed.replies.length,
-),
-                                                
+                                                  PortalNewsItem(
+                                                    profileImageUrl:
+                                                        'https://img.freepik.com/free-vector/gradient-human-rights-day-background_52683-149974.jpg',
+                                                    name: feed.authorName,
+                                                    newsContent: feed.content,
+                                                    time: feed.createdAt,
+                                                    title: feed.title ?? '',
+                                                    CreatorId:
+                                                        creatorId.toString(),
+                                                    authorId:
+                                                        feed.authorId ?? 0,
+                                                    role: userRole,
+                                                    edit: () => _startEditing(
+                                                        feed), // Direct function call
+                                                    delete: () => _confirmDelete(
+                                                        feed), // Direct function call
+                                                    comments:
+                                                        feed.replies.length,
+                                                  ),
                                                 ],
                                               ),
                                             ),
                                           );
                                         },
                                       );
-                                    }).toList(),
+                                    }),
                                   ],
                                 ),
                             ],
@@ -1100,186 +1100,184 @@ Map<String, dynamic>? _editingFeedData;
   }
 
   void _startEditing(feed) {
-  _editTitleController = TextEditingController(text: feed.title ?? '');
-  _editContentController = TextEditingController(text: feed.content ?? '');
-  
-  setState(() {
-    _editingFeedId = feed.id;
-    _editingFeedData = {
-      'title': feed.title ?? '',
-      'content': feed.content ?? '',
-    };
-  });
-}
+    _editTitleController = TextEditingController(text: feed.title ?? '');
+    _editContentController = TextEditingController(text: feed.content ?? '');
+
+    setState(() {
+      _editingFeedId = feed.id;
+      _editingFeedData = {
+        'title': feed.title ?? '',
+        'content': feed.content ?? '',
+      };
+    });
+  }
 
 // Modify _cancelEditing method
-void _cancelEditing() {
-  _editTitleController.dispose();
-  _editContentController.dispose();
-  
-  setState(() {
-    _editingFeedId = null;
-    _editingFeedData = null;
-  });
-}
+  void _cancelEditing() {
+    _editTitleController.dispose();
+    _editContentController.dispose();
 
+    setState(() {
+      _editingFeedId = null;
+      _editingFeedData = null;
+    });
+  }
 
+  void _saveEditing(feed) async {
+    final provider = Provider.of<DashboardFeedProvider>(context, listen: false);
 
-void _saveEditing(feed) async {
-  final provider = Provider.of<DashboardFeedProvider>(context, listen: false);
-  
-  try {
-    final updatedFeed = {
-      'id': feed.id,
-      'title': _editingFeedData?['title'] ?? '',
-      'content': _editingFeedData?['content'] ?? '',
-      "author_id": feed.authorId,
-      'author_name': feed.authorName,
-      'type': feed.type,
-      'term': academicTerm,  // Use the global academicTerm instead
-    };
-print('Updated Feed Data: $updatedFeed'); // Debug print
-    await provider.updateFeed(updatedFeed, feed.id.toString());
-    
-    if (mounted) {
-      CustomToaster.toastSuccess(context, 'Updated', 'Feed updated successfully');
-      _cancelEditing();
-    }
-  } catch (e) {
-    if (mounted) {
-      CustomToaster.toastError(context, 'Error', 'Failed to update feed: $e');
-      debugPrint('Error updating feed: ${feed.id}, Error: $e');
+    try {
+      final updatedFeed = {
+        'id': feed.id,
+        'title': _editingFeedData?['title'] ?? '',
+        'content': _editingFeedData?['content'] ?? '',
+        "author_id": feed.authorId,
+        'author_name': feed.authorName,
+        'type': feed.type,
+        'term': academicTerm, // Use the global academicTerm instead
+      };
+      print('Updated Feed Data: $updatedFeed'); // Debug print
+      await provider.updateFeed(updatedFeed, feed.id.toString());
+
+      if (mounted) {
+        CustomToaster.toastSuccess(
+            context, 'Updated', 'Feed updated successfully');
+        _cancelEditing();
+      }
+    } catch (e) {
+      if (mounted) {
+        CustomToaster.toastError(context, 'Error', 'Failed to update feed: $e');
+        debugPrint('Error updating feed: ${feed.id}, Error: $e');
+      }
     }
   }
-}
 
-
-
-Widget _buildEditForm(feed, int index) {
-  return AnimatedContainer(
-    duration: const Duration(milliseconds: 300),
-    curve: Curves.easeInOut,
-    margin: const EdgeInsets.symmetric(vertical: 8.0),
-    padding: const EdgeInsets.all(16.0),
-    decoration: BoxDecoration(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(16.0),
-      border: Border.all(color: AppColors.text2Light.withOpacity(0.3), width: 2),
-      boxShadow: [
-        BoxShadow(
-          color: AppColors.text2Light.withOpacity(0.1),
-          blurRadius: 10,
-          offset: const Offset(0, 4),
-        ),
-      ],
-    ),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              'Edit ${feed.type == 'announcement' ? 'Announcement' : 'News'}',
-              style: AppTextStyles.normal600(
-                fontSize: 16,
-                color: AppColors.text2Light,
+  Widget _buildEditForm(feed, int index) {
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeInOut,
+      margin: const EdgeInsets.symmetric(vertical: 8.0),
+      padding: const EdgeInsets.all(16.0),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16.0),
+        border:
+            Border.all(color: AppColors.text2Light.withOpacity(0.3), width: 2),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.text2Light.withOpacity(0.1),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Edit ${feed.type == 'announcement' ? 'Announcement' : 'News'}',
+                style: AppTextStyles.normal600(
+                  fontSize: 16,
+                  color: AppColors.text2Light,
+                ),
               ),
-            ),
-            IconButton(
-              onPressed: _cancelEditing,
-              icon: const Icon(Icons.close, color: AppColors.text5Light),
-              iconSize: 20,
-            ),
-          ],
-        ),
-        const SizedBox(height: 12),
-        TextField(
-          controller: _editTitleController,
-          onChanged: (value) {
-            setState(() {
-              _editingFeedData?['title'] = value;
-            });
-          },
-          decoration: InputDecoration(
-            hintText: 'Title',
-            hintStyle: const TextStyle(color: AppColors.text5Light),
-            filled: true,
-            fillColor: AppColors.textFieldLight,
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12.0),
-              borderSide: BorderSide(color: AppColors.textFieldBorderLight),
-            ),
-          ),
-        ),
-        const SizedBox(height: 12),
-        TextField(
-          controller: _editContentController,
-          onChanged: (value) {
-            setState(() {
-              _editingFeedData?['content'] = value;
-            });
-          },
-          maxLines: 4,
-          decoration: InputDecoration(
-            hintText: 'Content',
-            hintStyle: const TextStyle(color: AppColors.text5Light),
-            filled: true,
-            fillColor: AppColors.textFieldLight,
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12.0),
-              borderSide: BorderSide(color: AppColors.textFieldBorderLight),
-            ),
-          ),
-        ),
-        const SizedBox(height: 16),
-        Row(
-          children: [
-            Expanded(
-              child: OutlinedButton(
+              IconButton(
                 onPressed: _cancelEditing,
-                style: OutlinedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+                icon: const Icon(Icons.close, color: AppColors.text5Light),
+                iconSize: 20,
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          TextField(
+            controller: _editTitleController,
+            onChanged: (value) {
+              setState(() {
+                _editingFeedData?['title'] = value;
+              });
+            },
+            decoration: InputDecoration(
+              hintText: 'Title',
+              hintStyle: const TextStyle(color: AppColors.text5Light),
+              filled: true,
+              fillColor: AppColors.textFieldLight,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12.0),
+                borderSide: BorderSide(color: AppColors.textFieldBorderLight),
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+          TextField(
+            controller: _editContentController,
+            onChanged: (value) {
+              setState(() {
+                _editingFeedData?['content'] = value;
+              });
+            },
+            maxLines: 4,
+            decoration: InputDecoration(
+              hintText: 'Content',
+              hintStyle: const TextStyle(color: AppColors.text5Light),
+              filled: true,
+              fillColor: AppColors.textFieldLight,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12.0),
+                borderSide: BorderSide(color: AppColors.textFieldBorderLight),
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: _cancelEditing,
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    side: BorderSide(color: AppColors.text5Light),
                   ),
-                  side: BorderSide(color: AppColors.text5Light),
-                ),
-                child: Text(
-                  'Cancel',
-                  style: TextStyle(
-                    color: AppColors.text5Light,
-                    fontWeight: FontWeight.w600,
+                  child: Text(
+                    'Cancel',
+                    style: TextStyle(
+                      color: AppColors.text5Light,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ),
               ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: ElevatedButton(
-                onPressed: () => _saveEditing(feed),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.text2Light,
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+              const SizedBox(width: 12),
+              Expanded(
+                child: ElevatedButton(
+                  onPressed: () => _saveEditing(feed),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.text2Light,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                   ),
-                ),
-                child: const Text(
-                  'Save',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w600,
+                  child: const Text(
+                    'Save',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ),
               ),
-            ),
-          ],
-        ),
-      ],
-    ),
-  );
-}
+            ],
+          ),
+        ],
+      ),
+    );
+  }
 
   Future<void> _confirmDelete(feed) async {
     final confirm = await showDialog<bool>(
@@ -1318,6 +1316,4 @@ Widget _buildEditForm(feed, int index) {
       }
     }
   }
-
- 
 }

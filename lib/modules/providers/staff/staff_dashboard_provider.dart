@@ -94,7 +94,7 @@ class StaffDashboardProvider with ChangeNotifier {
       for (var feedList in [_newsFeeds, _questionFeeds]) {
         final parentIndex = feedList.indexWhere((f) => f.id == parentId);
         if (parentIndex != -1) {
-          feedList[parentIndex].replies?.add(StafFeed.fromJson(replyData));
+          feedList[parentIndex].replies.add(StafFeed.fromJson(replyData));
           break;
         }
       }
@@ -112,7 +112,8 @@ class StaffDashboardProvider with ChangeNotifier {
   }
 
   /// Update feed content
-  Future<bool> updateFeed(String feedId, Map<String, dynamic> updatedFeed) async {
+  Future<bool> updateFeed(
+      String feedId, Map<String, dynamic> updatedFeed) async {
     _isLoading = true;
     notifyListeners();
 

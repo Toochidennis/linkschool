@@ -2,14 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 
-class SeeAllHistory extends StatefulWidget{
+class SeeAllHistory extends StatefulWidget {
   const SeeAllHistory({super.key});
 
   @override
   State<SeeAllHistory> createState() => _SeeAllHistoryState();
 }
 
-class _SeeAllHistoryState extends State<SeeAllHistory>{
+class _SeeAllHistoryState extends State<SeeAllHistory> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -51,7 +51,8 @@ class _SeeAllHistoryState extends State<SeeAllHistory>{
       ),
       padding: const EdgeInsets.all(10),
       decoration: const BoxDecoration(
-        borderRadius: BorderRadius.only(topLeft: Radius.circular(10), topRight: Radius.circular(10)),
+        borderRadius: BorderRadius.only(
+            topLeft: Radius.circular(10), topRight: Radius.circular(10)),
         color: AppColors.regBgColor1,
       ),
       child: Column(

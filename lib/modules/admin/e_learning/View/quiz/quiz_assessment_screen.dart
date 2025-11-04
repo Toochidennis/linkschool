@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:linkschool/modules/admin/e_learning/View/quiz/preview_quiz_assessment_screen.dart';
@@ -10,12 +9,12 @@ import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/model/e-learning/question_model.dart';
 
-
 class QuizAssessmentScreen extends StatefulWidget {
-    final List<Map<String, dynamic>> questions;
+  final List<Map<String, dynamic>> questions;
   final Question question;
 
-  const QuizAssessmentScreen({super.key, required this.question, required this.questions});
+  const QuizAssessmentScreen(
+      {super.key, required this.question, required this.questions});
 
   @override
   _QuizAssessmentScreenState createState() => _QuizAssessmentScreenState();
@@ -35,7 +34,9 @@ class _QuizAssessmentScreenState extends State<QuizAssessmentScreen> {
     opacity = brightness == Brightness.light ? 0.1 : 0.15;
 
     // Use the passed-in questions
-    final currentQuestionData = widget.questions.isNotEmpty ? widget.questions[_currentQuestionIndex] : null;
+    final currentQuestionData = widget.questions.isNotEmpty
+        ? widget.questions[_currentQuestionIndex]
+        : null;
 
     return Scaffold(
       backgroundColor: AppColors.eLearningBtnColor1,
@@ -55,23 +56,26 @@ class _QuizAssessmentScreenState extends State<QuizAssessmentScreen> {
         elevation: 0,
       ),
       body: widget.questions.isEmpty
-          ? const Center(child: Text('No questions available.', style: TextStyle(color: Colors.white)))
+          ? const Center(
+              child: Text('No questions available.',
+                  style: TextStyle(color: Colors.white)))
           : Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: SingleChildScrollView(
-          child: Column(
-            children: [
-              _buildTimerRow(),
-              const SizedBox(height: 16),
-              _buildProgressSection(),
-              const SizedBox(height: 16),
-              if (currentQuestionData != null) _buildQuestionCard(currentQuestionData),
-              const SizedBox(height: 16),
-              _buildNavigationButtons(),
-            ],
-          ),
-        ),
-      ),
+              padding: const EdgeInsets.all(16.0),
+              child: SingleChildScrollView(
+                child: Column(
+                  children: [
+                    _buildTimerRow(),
+                    const SizedBox(height: 16),
+                    _buildProgressSection(),
+                    const SizedBox(height: 16),
+                    if (currentQuestionData != null)
+                      _buildQuestionCard(currentQuestionData),
+                    const SizedBox(height: 16),
+                    _buildNavigationButtons(),
+                  ],
+                ),
+              ),
+            ),
     );
   }
 
@@ -204,7 +208,8 @@ class _QuizAssessmentScreenState extends State<QuizAssessmentScreen> {
               style: const TextStyle(fontWeight: FontWeight.bold)),
           const SizedBox(height: 8),
           // Handle image display if available
-          if (questionData['question_files'] != null && (questionData['question_files'] as List).isNotEmpty)
+          if (questionData['question_files'] != null &&
+              (questionData['question_files'] as List).isNotEmpty)
             Image.network(
               // Assuming the file is a URL, adjust if it's base64 or a local path
               "https://your-base-url.com/${questionData['question_files'][0]['file_name']}",
@@ -411,9 +416,9 @@ class _QuizAssessmentScreenState extends State<QuizAssessmentScreen> {
                           MaterialPageRoute(
                             builder: (context) => PreviewQuizAssessmentScreen(
                               correctAnswers: [],
-                              question:[], 
+                              question: [],
                               userAnswer: [],
-                             // You need to define and maintain this map/list in your state to track correct answers
+                              // You need to define and maintain this map/list in your state to track correct answers
                             ),
                           ),
                         );

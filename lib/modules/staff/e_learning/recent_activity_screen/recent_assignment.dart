@@ -1,4 +1,3 @@
-
 import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
@@ -8,7 +7,6 @@ import 'package:hive/hive.dart';
 import 'package:intl/intl.dart';
 import 'package:linkschool/modules/admin/e_learning/View/mark_assignment.dart';
 
-import 'package:linkschool/modules/admin/e_learning/admin_assignment_screen.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/custom_toaster.dart';
@@ -55,7 +53,8 @@ class StaffRecentAssignment extends StatefulWidget {
   _StaffRecentAssignmentState createState() => _StaffRecentAssignmentState();
 }
 
-class _StaffRecentAssignmentState extends State<StaffRecentAssignment> with SingleTickerProviderStateMixin {
+class _StaffRecentAssignmentState extends State<StaffRecentAssignment>
+    with SingleTickerProviderStateMixin {
   late TabController _tabController;
   final FocusNode _commentFocusNode = FocusNode();
   final TextEditingController _commentController = TextEditingController();
@@ -83,10 +82,12 @@ class _StaffRecentAssignmentState extends State<StaffRecentAssignment> with Sing
     _tabController = TabController(length: 2, vsync: this);
     locator<CommentProvider>().fetchComments(widget.itemId.toString());
     _scrollController.addListener(() {
-      if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent * 0.9 &&
+      if (_scrollController.position.pixels >=
+              _scrollController.position.maxScrollExtent * 0.9 &&
           !locator<CommentProvider>().isLoading &&
           locator<CommentProvider>().hasNext) {
-        Provider.of<CommentProvider>(context, listen: false).fetchComments(widget.itemId.toString());
+        Provider.of<CommentProvider>(context, listen: false)
+            .fetchComments(widget.itemId.toString());
       }
     });
     _tabController.addListener(_handleTabChange);
@@ -116,13 +117,16 @@ class _StaffRecentAssignmentState extends State<StaffRecentAssignment> with Sing
     }
 
     try {
-      final singleContentProvider = Provider.of<SingleContentProvider>(context, listen: false);
+      final singleContentProvider =
+          Provider.of<SingleContentProvider>(context, listen: false);
       print('Fetching assignment for ID: ${widget.itemId}');
-      final content = await singleContentProvider.fetchAssignment(widget.itemId!);
+      final content =
+          await singleContentProvider.fetchAssignment(widget.itemId!);
       if (content == null) {
         setState(() {
           isLoading = false;
-          errorMessage = singleContentProvider.errorMessage ?? 'Failed to load assignment';
+          errorMessage =
+              singleContentProvider.errorMessage ?? 'Failed to load assignment';
         });
         print('Error: ${singleContentProvider.errorMessage}');
         CustomToaster.toastError(context, 'Error', errorMessage!);
@@ -147,7 +151,8 @@ class _StaffRecentAssignmentState extends State<StaffRecentAssignment> with Sing
   Future<void> _loadUserData() async {
     try {
       final userBox = Hive.box('userData');
-      final storedUserData = userBox.get('userData') ?? userBox.get('loginResponse');
+      final storedUserData =
+          userBox.get('userData') ?? userBox.get('loginResponse');
       if (storedUserData != null) {
         final processedData = storedUserData is String
             ? json.decode(storedUserData)
@@ -207,7 +212,8 @@ class _StaffRecentAssignmentState extends State<StaffRecentAssignment> with Sing
         actions: [
           if (!isLoading && errorMessage == null)
             PopupMenuButton<String>(
-              icon: const Icon(Icons.more_vert, color: AppColors.paymentTxtColor1),
+              icon: const Icon(Icons.more_vert,
+                  color: AppColors.paymentTxtColor1),
               onSelected: (String result) {
                 switch (result) {
                   case 'edit':
@@ -227,14 +233,17 @@ class _StaffRecentAssignmentState extends State<StaffRecentAssignment> with Sing
                             id: assignmentData?.id ?? 0,
                             title: assignmentData?.title ?? '',
                             description: assignmentData?.description ?? '',
-                            selectedClass: widget.syllabusClasses?.first['class_name'] ?? '',
+                            selectedClass:
+                                widget.syllabusClasses?.first['class_name'] ??
+                                    '',
                             attachments: (assignmentData?.contentFiles ?? [])
                                 .map((file) => AttachmentItem(
                                       fileName: file.fileName,
                                       fileContent: file.file,
-                                      
-                                      iconPath: _getFileType(file.fileName) == 'image' ||
-                                              _getFileType(file.fileName) == 'video'
+                                      iconPath: _getFileType(file.fileName) ==
+                                                  'image' ||
+                                              _getFileType(file.fileName) ==
+                                                  'video'
                                           ? 'assets/icons/e_learning/material.svg'
                                           : 'assets/icons/e_learning/link.svg',
                                     ))
@@ -291,13 +300,15 @@ class _StaffRecentAssignmentState extends State<StaffRecentAssignment> with Sing
             Tab(
               child: Text(
                 'Instructions',
-                style: AppTextStyles.normal600(fontSize: 18, color: AppColors.paymentTxtColor1),
+                style: AppTextStyles.normal600(
+                    fontSize: 18, color: AppColors.paymentTxtColor1),
               ),
             ),
             Tab(
               child: Text(
                 'Student work',
-                style: AppTextStyles.normal600(fontSize: 18, color: AppColors.paymentTxtColor1),
+                style: AppTextStyles.normal600(
+                    fontSize: 18, color: AppColors.paymentTxtColor1),
               ),
             ),
           ],
@@ -357,7 +368,8 @@ class _StaffRecentAssignmentState extends State<StaffRecentAssignment> with Sing
                             onTap: () {
                               setState(() {
                                 _isAddingComment = true;
-                                WidgetsBinding.instance.addPostFrameCallback((_) {
+                                WidgetsBinding.instance
+                                    .addPostFrameCallback((_) {
                                   _commentFocusNode.requestFocus();
                                 });
                               });
@@ -367,7 +379,8 @@ class _StaffRecentAssignmentState extends State<StaffRecentAssignment> with Sing
                               child: Text(
                                 'Add class comment',
                                 style: AppTextStyles.normal500(
-                                    fontSize: 16.0, color: AppColors.paymentTxtColor1),
+                                    fontSize: 16.0,
+                                    color: AppColors.paymentTxtColor1),
                               ),
                             ),
                           ),
@@ -381,11 +394,13 @@ class _StaffRecentAssignmentState extends State<StaffRecentAssignment> with Sing
     try {
       final provider = locator<DeleteSyllabusProvider>();
       await provider.deleteAssignment(id);
-      CustomToaster.toastSuccess(context, 'Success', 'Assignment deleted successfully');
+      CustomToaster.toastSuccess(
+          context, 'Success', 'Assignment deleted successfully');
       Navigator.of(context).pop();
     } catch (e) {
       print('Error deleting assignment: $e');
-      CustomToaster.toastError(context, 'Error', 'Failed to delete assignment: $e');
+      CustomToaster.toastError(
+          context, 'Error', 'Failed to delete assignment: $e');
     }
   }
 
@@ -418,16 +433,19 @@ class _StaffRecentAssignmentState extends State<StaffRecentAssignment> with Sing
 
   Widget _buildDueDate() {
     return Padding(
-      padding: const EdgeInsets.only(top: 20.0, bottom: 16.0, right: 16.0, left: 16.0),
+      padding: const EdgeInsets.only(
+          top: 20.0, bottom: 16.0, right: 16.0, left: 16.0),
       child: Row(
         children: [
           Text(
             'Due: ',
-            style: AppTextStyles.normal600(fontSize: 16.0, color: AppColors.eLearningTxtColor1),
+            style: AppTextStyles.normal600(
+                fontSize: 16.0, color: AppColors.eLearningTxtColor1),
           ),
           Text(
             assignmentData?.endDate != null
-                ? DateFormat('E, dd MMM yyyy (hh:mm a)').format(DateTime.parse(assignmentData!.endDate!))
+                ? DateFormat('E, dd MMM yyyy (hh:mm a)')
+                    .format(DateTime.parse(assignmentData!.endDate!))
                 : 'No due date',
             style: AppTextStyles.normal500(fontSize: 16.0, color: Colors.black),
           ),
@@ -440,7 +458,6 @@ class _StaffRecentAssignmentState extends State<StaffRecentAssignment> with Sing
     return Container(
       width: double.infinity,
       decoration: const BoxDecoration(
-     
         border: Border(
           bottom: BorderSide(color: AppColors.paymentTxtColor1, width: 2.0),
         ),
@@ -449,7 +466,8 @@ class _StaffRecentAssignmentState extends State<StaffRecentAssignment> with Sing
         padding: const EdgeInsets.all(16.0),
         child: Text(
           assignmentData?.title ?? 'No Title',
-          style: AppTextStyles.normal600(fontSize: 20.0, color: AppColors.paymentTxtColor1),
+          style: AppTextStyles.normal600(
+              fontSize: 20.0, color: AppColors.paymentTxtColor1),
         ),
       ),
     );
@@ -462,7 +480,8 @@ class _StaffRecentAssignmentState extends State<StaffRecentAssignment> with Sing
         children: [
           Text(
             'Grade : ',
-            style: AppTextStyles.normal600(fontSize: 16.0, color: AppColors.eLearningTxtColor1),
+            style: AppTextStyles.normal600(
+                fontSize: 16.0, color: AppColors.eLearningTxtColor1),
           ),
           Text(
             assignmentData?.grade ?? 'N/A',
@@ -480,12 +499,14 @@ class _StaffRecentAssignmentState extends State<StaffRecentAssignment> with Sing
         children: [
           Text(
             'Description : ',
-            style: AppTextStyles.normal600(fontSize: 16.0, color: AppColors.eLearningTxtColor1),
+            style: AppTextStyles.normal600(
+                fontSize: 16.0, color: AppColors.eLearningTxtColor1),
           ),
           Expanded(
             child: Text(
               assignmentData?.description ?? 'No Description',
-              style: AppTextStyles.normal500(fontSize: 16.0, color: Colors.black),
+              style:
+                  AppTextStyles.normal500(fontSize: 16.0, color: Colors.black),
             ),
           ),
         ],
@@ -497,10 +518,13 @@ class _StaffRecentAssignmentState extends State<StaffRecentAssignment> with Sing
     final attachments = (assignmentData?.contentFiles ?? []).map((file) {
       return AttachmentItem(
         fileName: file.fileName,
-        iconPath: _getFileType(file.fileName) == 'image' || _getFileType(file.fileName) == 'video'
+        iconPath: _getFileType(file.fileName) == 'image' ||
+                _getFileType(file.fileName) == 'video'
             ? 'assets/icons/e_learning/material.svg'
             : 'assets/icons/e_learning/link.svg',
-        fileContent: file.file.isNotEmpty ? file.file : 'https://linkskool.net/${file.fileName}',
+        fileContent: file.file.isNotEmpty
+            ? file.file
+            : 'https://linkskool.net/${file.fileName}',
       );
     }).toList();
 
@@ -514,7 +538,8 @@ class _StaffRecentAssignmentState extends State<StaffRecentAssignment> with Sing
         children: [
           Text(
             'Attachments',
-            style: AppTextStyles.normal600(fontSize: 18.0, color: AppColors.eLearningTxtColor1),
+            style: AppTextStyles.normal600(
+                fontSize: 18.0, color: AppColors.eLearningTxtColor1),
           ),
           const SizedBox(height: 12),
           GridView.builder(
@@ -542,13 +567,15 @@ class _StaffRecentAssignmentState extends State<StaffRecentAssignment> with Sing
     if (['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'].contains(extension)) {
       return 'image';
     }
-    if (['mp4', 'avi', 'mov', 'wmv', 'flv', 'webm', 'm4v', '3gp'].contains(extension)) {
+    if (['mp4', 'avi', 'mov', 'wmv', 'flv', 'webm', 'm4v', '3gp']
+        .contains(extension)) {
       return 'video';
     }
     if (['pdf', 'doc', 'docx', 'txt', 'rtf'].contains(extension)) {
       return 'pdf';
     }
-    if (['.com', '.org', '.net', '.edu', 'http', 'https'].contains(extension) || fileName.startsWith('http')) {
+    if (['.com', '.org', '.net', '.edu', 'http', 'https'].contains(extension) ||
+        fileName.startsWith('http')) {
       return 'url';
     }
     if (['xls', 'xlsx', 'csv'].contains(extension)) {
@@ -697,7 +724,8 @@ class _StaffRecentAssignmentState extends State<StaffRecentAssignment> with Sing
               Expanded(
                 flex: 1,
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 6.0),
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 8.0, vertical: 6.0),
                   child: Text(
                     fileName.length > 17 ? fileName.substring(0, 17) : fileName,
                     style: AppTextStyles.normal500(
@@ -716,7 +744,8 @@ class _StaffRecentAssignmentState extends State<StaffRecentAssignment> with Sing
     );
   }
 
-  Widget _buildPreviewContent(String fileType, String fileUrl, String fileName) {
+  Widget _buildPreviewContent(
+      String fileType, String fileUrl, String fileName) {
     switch (fileType) {
       case 'image':
         return ClipRRect(
@@ -737,7 +766,8 @@ class _StaffRecentAssignmentState extends State<StaffRecentAssignment> with Sing
               return Center(
                 child: CircularProgressIndicator(
                   value: loadingProgress.expectedTotalBytes != null
-                      ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
+                      ? loadingProgress.cumulativeBytesLoaded /
+                          loadingProgress.expectedTotalBytes!
                       : null,
                 ),
               );
@@ -764,7 +794,8 @@ class _StaffRecentAssignmentState extends State<StaffRecentAssignment> with Sing
               children: [
                 Image.file(File(snapshot.data!), fit: BoxFit.cover),
                 const Center(
-                  child: Icon(Icons.play_circle_fill, size: 60, color: Colors.white),
+                  child: Icon(Icons.play_circle_fill,
+                      size: 60, color: Colors.white),
                 ),
               ],
             );
@@ -846,14 +877,16 @@ class _StaffRecentAssignmentState extends State<StaffRecentAssignment> with Sing
                 padding: const EdgeInsets.all(16.0),
                 child: Text(
                   'Class comments',
-                  style: AppTextStyles.normal600(fontSize: 18.0, color: Colors.black),
+                  style: AppTextStyles.normal600(
+                      fontSize: 18.0, color: Colors.black),
                 ),
               ),
               ListView.builder(
                 controller: _scrollController,
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
-                itemCount: commentList.length + (commentProvider.isLoading ? 1 : 0),
+                itemCount:
+                    commentList.length + (commentProvider.isLoading ? 1 : 0),
                 itemBuilder: (context, index) {
                   if (index == commentList.length) {
                     return const Center(child: CircularProgressIndicator());
@@ -929,26 +962,27 @@ class _StaffRecentAssignmentState extends State<StaffRecentAssignment> with Sing
                       ),
                     ),
                     if (comment.userId == creatorId)
-                    PopupMenuButton<String>(
-                      icon: const Icon(Icons.more_vert, size: 20, color: AppColors.primaryLight),
-                      onSelected: (value) {
-                        if (value == 'edit') {
-                          _editComment(comment);
-                        } else if (value == 'delete') {
-                          _deleteComment(comment);
-                        }
-                      },
-                      itemBuilder: (context) => [
-                        const PopupMenuItem(
-                          value: 'edit',
-                          child: Text('Edit'),
-                        ),
-                        const PopupMenuItem(
-                          value: 'delete',
-                          child: Text('Delete'),
-                        ),
-                      ],
-                    ),
+                      PopupMenuButton<String>(
+                        icon: const Icon(Icons.more_vert,
+                            size: 20, color: AppColors.primaryLight),
+                        onSelected: (value) {
+                          if (value == 'edit') {
+                            _editComment(comment);
+                          } else if (value == 'delete') {
+                            _deleteComment(comment);
+                          }
+                        },
+                        itemBuilder: (context) => [
+                          const PopupMenuItem(
+                            value: 'edit',
+                            child: Text('Edit'),
+                          ),
+                          const PopupMenuItem(
+                            value: 'delete',
+                            child: Text('Delete'),
+                          ),
+                        ],
+                      ),
                   ],
                 ),
                 Text(
@@ -996,29 +1030,35 @@ class _StaffRecentAssignmentState extends State<StaffRecentAssignment> with Sing
 
   void _addComment([Map<String, dynamic>? updatedComment]) async {
     if (_commentController.text.isNotEmpty) {
-      final comment = updatedComment ?? {
-        "content_title": assignmentData?.title ?? 'No Title',
-        "user_id": creatorId,
-        "user_name": creatorName,
-        "comment": _commentController.text,
-        "level_id": widget.levelId,
-        "course_id": widget.courseId,
-        "course_name": widget.courseName,
-        "term": academicTerm,
-        if (_isEditing && _editingComment != null) "content_id": widget.itemId.toString(),
-      };
+      final comment = updatedComment ??
+          {
+            "content_title": assignmentData?.title ?? 'No Title',
+            "user_id": creatorId,
+            "user_name": creatorName,
+            "comment": _commentController.text,
+            "level_id": widget.levelId,
+            "course_id": widget.courseId,
+            "course_name": widget.courseName,
+            "term": academicTerm,
+            if (_isEditing && _editingComment != null)
+              "content_id": widget.itemId.toString(),
+          };
 
       try {
-        final commentProvider = Provider.of<CommentProvider>(context, listen: false);
+        final commentProvider =
+            Provider.of<CommentProvider>(context, listen: false);
         final contentId = _editingComment?.id;
         if (_isEditing) {
           comment['content_id'];
           print("printed Comment $comment");
           await commentProvider.UpdateComment(comment, contentId.toString());
-          CustomToaster.toastSuccess(context, 'Success', 'Comment updated successfully');
+          CustomToaster.toastSuccess(
+              context, 'Success', 'Comment updated successfully');
         } else {
-          await commentProvider.createComment(comment, widget.itemId.toString());
-          CustomToaster.toastSuccess(context, 'Success', 'Comment added successfully');
+          await commentProvider.createComment(
+              comment, widget.itemId.toString());
+          CustomToaster.toastSuccess(
+              context, 'Success', 'Comment added successfully');
         }
 
         await commentProvider.fetchComments(widget.itemId.toString());
@@ -1042,18 +1082,21 @@ class _StaffRecentAssignmentState extends State<StaffRecentAssignment> with Sing
           }
         });
       } catch (e) {
-        CustomToaster.toastError(context, 'Error', _isEditing ? 'Failed to update comment' : 'Failed to add comment');
+        CustomToaster.toastError(context, 'Error',
+            _isEditing ? 'Failed to update comment' : 'Failed to add comment');
       }
     }
   }
 
   void _deleteComment(Comment comment) async {
-    final commentProvider = Provider.of<CommentProvider>(context, listen: false);
+    final commentProvider =
+        Provider.of<CommentProvider>(context, listen: false);
     print('Setting up delete for comment ID: ${comment.id}');
     final commentId = comment.id.toString();
     try {
       await commentProvider.DeleteComment(commentId);
-      CustomToaster.toastSuccess(context, 'Success', 'Comment deleted successfully');
+      CustomToaster.toastSuccess(
+          context, 'Success', 'Comment deleted successfully');
     } catch (e) {
       CustomToaster.toastError(context, 'Error', 'Failed to delete comment');
     }
@@ -1061,7 +1104,8 @@ class _StaffRecentAssignmentState extends State<StaffRecentAssignment> with Sing
 
   void _editComment(Comment comment) {
     if (comment.text.isEmpty) {
-      CustomToaster.toastError(context, 'Error', 'Comment text cannot be empty');
+      CustomToaster.toastError(
+          context, 'Error', 'Comment text cannot be empty');
       return;
     }
     print('Setting up edit for comment ID: ${comment.id}');
@@ -1078,7 +1122,8 @@ class _StaffRecentAssignmentState extends State<StaffRecentAssignment> with Sing
       "term": academicTerm,
       "comment_id": comment.id,
     };
-    print('Editing comment: ${updatedComment['comment']} with ID: ${comment.id}');
+    print(
+        'Editing comment: ${updatedComment['comment']} with ID: ${comment.id}');
     setState(() {
       _isAddingComment = true;
       _isEditing = true;
@@ -1093,11 +1138,11 @@ class FullScreenMediaViewer extends StatefulWidget {
   final String fileName;
 
   const FullScreenMediaViewer({
-    Key? key,
+    super.key,
     required this.url,
     required this.type,
     required this.fileName,
-  }) : super(key: key);
+  });
 
   @override
   State<FullScreenMediaViewer> createState() => _FullScreenMediaViewerState();
@@ -1157,7 +1202,9 @@ class _FullScreenMediaViewerState extends State<FullScreenMediaViewer> {
       ),
       body: Center(
         child: widget.type == 'video'
-            ? (_chewieController != null && _chewieController!.videoPlayerController.value.isInitialized)
+            ? (_chewieController != null &&
+                    _chewieController!
+                        .videoPlayerController.value.isInitialized)
                 ? Chewie(controller: _chewieController!)
                 : const CircularProgressIndicator(color: Colors.white)
             : Image.network(
@@ -1239,7 +1286,6 @@ class _VideoThumbnailWidgetState extends State<VideoThumbnailWidget> {
   }
 }
 
-
 class AnswersTabWidget extends StatefulWidget {
   final String itemId;
   const AnswersTabWidget({
@@ -1258,9 +1304,10 @@ class _AnswersTabWidgetState extends State<AnswersTabWidget> {
   void initState() {
     super.initState();
     // Fetch assignments on init using the provider
-     if (mounted) setState(() {});
+    if (mounted) setState(() {});
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final markProvider = Provider.of<MarkAssignmentProvider>(context, listen: false);
+      final markProvider =
+          Provider.of<MarkAssignmentProvider>(context, listen: false);
       markProvider.fetchAssignment(widget.itemId);
     });
   }
@@ -1273,68 +1320,71 @@ class _AnswersTabWidgetState extends State<AnswersTabWidget> {
         final error = markProvider.error;
         final assignmentData = markProvider.assignmentData;
 
-      return Scaffold(
-  body: Container(
-     decoration: Constants.customBoxDecoration(context),
-    child: Column(
-      children: [
-        _buildNavigationRow(assignmentData),
-        Expanded(
-          child: isLoading
-              ? const Center(child: CircularProgressIndicator())
-              : error != null
-                  ? Center(
-                      child: Text(
-                        error,
-                        style: AppTextStyles.normal500(fontSize: 16, color: Colors.red),
-                      ),
-                    )
-                  : _selectedCategory == 'SUBMITTED'
-                      ? _buildSubmittedContent(assignmentData)
-                      : _buildListContent(_selectedCategory, assignmentData),
-        ),
-      ],
-    ),
-  ),
-  floatingActionButton: _selectedCategory == 'MARKED'
-      ? FloatingActionButton(
-        backgroundColor: AppColors.primaryLight,
-          onPressed: ()async {
-              try {
-    final provider = locator<MarkAssignmentProvider>();
+        return Scaffold(
+          body: Container(
+            decoration: Constants.customBoxDecoration(context),
+            child: Column(
+              children: [
+                _buildNavigationRow(assignmentData),
+                Expanded(
+                  child: isLoading
+                      ? const Center(child: CircularProgressIndicator())
+                      : error != null
+                          ? Center(
+                              child: Text(
+                                error,
+                                style: AppTextStyles.normal500(
+                                    fontSize: 16, color: Colors.red),
+                              ),
+                            )
+                          : _selectedCategory == 'SUBMITTED'
+                              ? _buildSubmittedContent(assignmentData)
+                              : _buildListContent(
+                                  _selectedCategory, assignmentData),
+                ),
+              ],
+            ),
+          ),
+          floatingActionButton: _selectedCategory == 'MARKED'
+              ? FloatingActionButton(
+                  backgroundColor: AppColors.primaryLight,
+                  onPressed: () async {
+                    try {
+                      final provider = locator<MarkAssignmentProvider>();
 
-    // grab all marked assignments from your state
-    final markedAssignments = assignmentData!['marked'] ?? [];
+                      // grab all marked assignments from your state
+                      final markedAssignments = assignmentData!['marked'] ?? [];
 
-    for (var assignment in markedAssignments) {
-       final contentId = assignment['content_id'].toString();       // content id
-  final publish = assignment['published'].toString() ?? "";
- 
+                      for (var assignment in markedAssignments) {
+                        final contentId =
+                            assignment['content_id'].toString(); // content id
+                        final publish =
+                            assignment['published'].toString() ?? "";
 
-      await provider.returnAssignment(
-      publish,
-      contentId
-      );
+                        await provider.returnAssignment(publish, contentId);
 
-        CustomToaster.toastSuccess(
-      context,
-      'Success',
-      'Marks published successfully',
-    );
-    }}catch(e){
-      print(e);
-          CustomToaster.toastError(
-      context,
-      'Success',
-      'Marks published $e',
-    
-    );
-    }
-    },
-          child: const Icon(Icons.publish,color: Colors.white,),
-        )
-      : null,
-);
+                        CustomToaster.toastSuccess(
+                          context,
+                          'Success',
+                          'Marks published successfully',
+                        );
+                      }
+                    } catch (e) {
+                      print(e);
+                      CustomToaster.toastError(
+                        context,
+                        'Success',
+                        'Marks published $e',
+                      );
+                    }
+                  },
+                  child: const Icon(
+                    Icons.publish,
+                    color: Colors.white,
+                  ),
+                )
+              : null,
+        );
       },
     );
   }
@@ -1353,7 +1403,8 @@ class _AnswersTabWidgetState extends State<AnswersTabWidget> {
     );
   }
 
-  Widget _buildNavigationContainer(String text, Map<String, dynamic>? assignmentData) {
+  Widget _buildNavigationContainer(
+      String text, Map<String, dynamic>? assignmentData) {
     bool isSelected = _selectedCategory == text;
     int itemCount = _getItemCount(text, assignmentData);
 
@@ -1395,7 +1446,8 @@ class _AnswersTabWidgetState extends State<AnswersTabWidget> {
                     child: Text(
                       '$itemCount',
                       style: const TextStyle(
-                          color: Color.fromRGBO(255, 255, 255, 1), fontSize: 10),
+                          color: Color.fromRGBO(255, 255, 255, 1),
+                          fontSize: 10),
                     ),
                   ),
                 ),
@@ -1417,12 +1469,14 @@ class _AnswersTabWidgetState extends State<AnswersTabWidget> {
     );
   }
 
-  Widget _buildListContent(String category, Map<String, dynamic>? assignmentData) {
+  Widget _buildListContent(
+      String category, Map<String, dynamic>? assignmentData) {
     if (assignmentData == null) {
       return Center(
         child: Text(
           'No $category assignments',
-          style: AppTextStyles.normal500(fontSize: 16, color: AppColors.backgroundDark),
+          style: AppTextStyles.normal500(
+              fontSize: 16, color: AppColors.backgroundDark),
         ),
       );
     }
@@ -1446,7 +1500,8 @@ class _AnswersTabWidgetState extends State<AnswersTabWidget> {
       return Center(
         child: Text(
           'No $category assignments',
-          style: AppTextStyles.normal500(fontSize: 16, color: AppColors.backgroundDark),
+          style: AppTextStyles.normal500(
+              fontSize: 16, color: AppColors.backgroundDark),
         ),
       );
     }
@@ -1458,12 +1513,15 @@ class _AnswersTabWidgetState extends State<AnswersTabWidget> {
         var assignmentJson = assignments[index] as Map<String, dynamic>;
 
         // Defensive extraction of fields from assignmentJson
-        final String studentName = assignmentJson['student_name']?.toString() ?? 'Unknown';
+        final String studentName =
+            assignmentJson['student_name']?.toString() ?? 'Unknown';
         final String score = assignmentJson['score']?.toString() ?? '';
-        final String markingScore = assignmentJson['marking_score']?.toString() ?? '';
-        final List<dynamic> files = assignmentJson['files'] is List ? assignmentJson['files'] : [];
+        final String markingScore =
+            assignmentJson['marking_score']?.toString() ?? '';
+        final List<dynamic> files =
+            assignmentJson['files'] is List ? assignmentJson['files'] : [];
         final String dateStr = assignmentJson['date']?.toString() ?? '';
-      final String Publish = assignmentJson['publish']?.toString() ?? '';
+        final String Publish = assignmentJson['publish']?.toString() ?? '';
         DateTime? date;
         try {
           date = DateTime.parse(dateStr);
@@ -1474,50 +1532,58 @@ class _AnswersTabWidgetState extends State<AnswersTabWidget> {
         return GestureDetector(
           onTap: () {
             // Navigate to QuizResultsScreen with assignment data
-          if(category == 'MARKED') {
-            
-              CustomToaster.toastInfo(context, 'Info', 'This assignment has already been marked.');
+            if (category == 'MARKED') {
+              CustomToaster.toastInfo(
+                  context, 'Info', 'This assignment has already been marked.');
               return;
-          }
+            }
             Navigator.push(
-  context,
-  MaterialPageRoute(
-    builder: (context) => AssignmentGradingScreen(
-      itemId: widget.itemId,
-      assignmentTitle: assignmentJson['assignment_title']?.toString() ?? 'yyyyy',
-      files: files,
-      maxScore: int.tryParse(markingScore) ?? 0,
-      studentName: studentName,
-      assignmentId: assignmentJson['id']?.toString() ?? '',
-      currentScore: int.tryParse(score) ?? 0,
-      turnedInAt: date ?? DateTime.now(),
-      onGraded: (){
-        final provider = Provider.of<MarkAssignmentProvider>(context, listen: false);
-        provider.fetchAssignment(widget.itemId); // refresh from provider
-        final commentProvider = Provider.of<CommentProvider>(context, listen: false);
-  commentProvider.fetchComments(widget.itemId);
-      },
-    ),
-  ),
-).then((value) {
-  setState(() {
-    final provider = Provider.of<MarkAssignmentProvider>(context, listen: false);
-    provider.fetchAssignment(widget.itemId); // refresh from provider
-  });
-});
-
+              context,
+              MaterialPageRoute(
+                builder: (context) => AssignmentGradingScreen(
+                  itemId: widget.itemId,
+                  assignmentTitle:
+                      assignmentJson['assignment_title']?.toString() ?? 'yyyyy',
+                  files: files,
+                  maxScore: int.tryParse(markingScore) ?? 0,
+                  studentName: studentName,
+                  assignmentId: assignmentJson['id']?.toString() ?? '',
+                  currentScore: int.tryParse(score) ?? 0,
+                  turnedInAt: date ?? DateTime.now(),
+                  onGraded: () {
+                    final provider = Provider.of<MarkAssignmentProvider>(
+                        context,
+                        listen: false);
+                    provider.fetchAssignment(
+                        widget.itemId); // refresh from provider
+                    final commentProvider =
+                        Provider.of<CommentProvider>(context, listen: false);
+                    commentProvider.fetchComments(widget.itemId);
+                  },
+                ),
+              ),
+            ).then((value) {
+              setState(() {
+                final provider =
+                    Provider.of<MarkAssignmentProvider>(context, listen: false);
+                provider
+                    .fetchAssignment(widget.itemId); // refresh from provider
+              });
+            });
           },
           child: ListTile(
             leading: CircleAvatar(
               backgroundColor: AppColors.primaryLight,
               child: Text(
                 studentName.isNotEmpty ? studentName[0].toUpperCase() : '?',
-                style: AppTextStyles.normal500(fontSize: 16, color: AppColors.backgroundLight),
+                style: AppTextStyles.normal500(
+                    fontSize: 16, color: AppColors.backgroundLight),
               ),
             ),
             title: Text(
               studentName,
-              style: AppTextStyles.normal600(fontSize: 16, color: Colors.black87),
+              style:
+                  AppTextStyles.normal600(fontSize: 16, color: Colors.black87),
             ),
             subtitle: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -1525,12 +1591,14 @@ class _AnswersTabWidgetState extends State<AnswersTabWidget> {
                 const SizedBox(height: 2),
                 Text(
                   'Score: ${score.isNotEmpty ? score : "N/A"}/${markingScore.isNotEmpty ? markingScore : "N/A"}',
-                  style: AppTextStyles.normal500(fontSize: 14, color: Colors.grey[600]!),
+                  style: AppTextStyles.normal500(
+                      fontSize: 14, color: Colors.grey[600]!),
                 ),
                 const SizedBox(height: 2),
                 Text(
                   'Files: ${files.length} attached',
-                  style: AppTextStyles.normal500(fontSize: 14, color: Colors.grey[600]!),
+                  style: AppTextStyles.normal500(
+                      fontSize: 14, color: Colors.grey[600]!),
                 ),
               ],
             ),
@@ -1539,7 +1607,9 @@ class _AnswersTabWidgetState extends State<AnswersTabWidget> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Text(
-                  date != null ? DateFormat('MMM dd').format(date) : 'Invalid date',
+                  date != null
+                      ? DateFormat('MMM dd').format(date)
+                      : 'Invalid date',
                   style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                 ),
                 const SizedBox(height: 2),

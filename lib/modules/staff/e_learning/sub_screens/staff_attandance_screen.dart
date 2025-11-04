@@ -37,18 +37,19 @@ class StaffAttendanceScreen extends StatefulWidget {
 }
 
 class _StaffAttendanceScreenState extends State<StaffAttendanceScreen> {
-  final GlobalKey<RefreshIndicatorState> _refreshIndicatorKey = GlobalKey<RefreshIndicatorState>();
+  final GlobalKey<RefreshIndicatorState> _refreshIndicatorKey =
+      GlobalKey<RefreshIndicatorState>();
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _searchFocusNode = FocusNode();
 
   bool _isSearching = false;
   String _searchQuery = '';
 
-
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _fetchAttendanceHistory());
+    WidgetsBinding.instance
+        .addPostFrameCallback((_) => _fetchAttendanceHistory());
     _searchController.addListener(_onSearchChanged);
   }
 
@@ -93,9 +94,6 @@ class _StaffAttendanceScreenState extends State<StaffAttendanceScreen> {
       }
 
       final settings = authProvider.settings ?? authProvider.getSettings();
-      if (settings == null) {
-        throw Exception('Settings not available');
-      }
 
       final term = settings['term']?.toString() ?? '';
       final year = settings['year']?.toString() ?? '';
@@ -117,7 +115,6 @@ class _StaffAttendanceScreenState extends State<StaffAttendanceScreen> {
 
   Future<void> _handleRefresh() async {
     await _fetchAttendanceHistory();
-    
   }
 
   List<AttendanceRecord> _getFilteredRecords(List<AttendanceRecord> records) {
@@ -127,8 +124,8 @@ class _StaffAttendanceScreenState extends State<StaffAttendanceScreen> {
 
     return records.where((record) {
       final formattedDate = provider.formatDate(record.date).toLowerCase();
-      final courseName = record.courseName.isEmpty 
-          ? 'general' 
+      final courseName = record.courseName.isEmpty
+          ? 'general'
           : record.courseName.toLowerCase();
 
       final dayName = _getDayName(record.date).toLowerCase();
@@ -137,7 +134,8 @@ class _StaffAttendanceScreenState extends State<StaffAttendanceScreen> {
       final nameMatch = courseName.contains(_searchQuery);
       final dateMatch = formattedDate.contains(_searchQuery);
       final countMatch = record.count.toString().contains(_searchQuery);
-      final dayMatch = dayName.contains(_searchQuery) || shortDay.contains(_searchQuery);
+      final dayMatch =
+          dayName.contains(_searchQuery) || shortDay.contains(_searchQuery);
 
       return nameMatch || dateMatch || countMatch || dayMatch;
     }).toList();
@@ -145,7 +143,13 @@ class _StaffAttendanceScreenState extends State<StaffAttendanceScreen> {
 
   String _getDayName(DateTime date) {
     const days = [
-      'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'
+      'monday',
+      'tuesday',
+      'wednesday',
+      'thursday',
+      'friday',
+      'saturday',
+      'sunday'
     ];
     return days[date.weekday - 1];
   }
@@ -160,39 +164,37 @@ class _StaffAttendanceScreenState extends State<StaffAttendanceScreen> {
       backgroundColor: Colors.grey[200],
       appBar: _buildAppBar(),
       body: Stack(
-          children: [
-            RefreshIndicator(
-              key: _refreshIndicatorKey,
-              onRefresh: _handleRefresh,
-              child: Consumer<AttendanceProvider>(
-                builder: (context, provider, _) {
-                  if (provider.isLoading) {
-                    return const Center(child: CircularProgressIndicator());
-                  }
+        children: [
+          RefreshIndicator(
+            key: _refreshIndicatorKey,
+            onRefresh: _handleRefresh,
+            child: Consumer<AttendanceProvider>(
+              builder: (context, provider, _) {
+                if (provider.isLoading) {
+                  return const Center(child: CircularProgressIndicator());
+                }
 
-                  if (provider.error.isNotEmpty) {
-                    return _buildError(provider.error);
-                  }
+                if (provider.error.isNotEmpty) {
+                  return _buildError(provider.error);
+                }
 
-                  // Show full content when not searching
-                  if (!_isSearching || _searchQuery.isEmpty) {
-                    if (provider.attendanceRecords.isEmpty) {
-                      return _buildEmpty(true);
-                    }
-                    return _buildContent();
+                // Show full content when not searching
+                if (!_isSearching || _searchQuery.isEmpty) {
+                  if (provider.attendanceRecords.isEmpty) {
+                    return _buildEmpty(true);
                   }
+                  return _buildContent();
+                }
 
-                  // When searching, show empty state in background
-                  return const SizedBox.shrink();
-                },
-              ),
+                // When searching, show empty state in background
+                return const SizedBox.shrink();
+              },
             ),
-            // Search results overlay
-            if (_isSearching && _searchQuery.isNotEmpty)
-              _buildSearchResults(),
-          ],
-        ),
-    
+          ),
+          // Search results overlay
+          if (_isSearching && _searchQuery.isNotEmpty) _buildSearchResults(),
+        ],
+      ),
     );
   }
 
@@ -287,7 +289,8 @@ class _StaffAttendanceScreenState extends State<StaffAttendanceScreen> {
                           itemCount: filteredRecords.length,
                           separatorBuilder: (context, index) =>
                               Divider(height: 1, color: Colors.grey[300]),
-                          itemBuilder: (context, index) => _buildHistoryItem(filteredRecords[index]),
+                          itemBuilder: (context, index) =>
+                              _buildHistoryItem(filteredRecords[index]),
                         ),
                       ),
               ),
@@ -338,15 +341,12 @@ class _StaffAttendanceScreenState extends State<StaffAttendanceScreen> {
                     ),
                   ),
                   const SizedBox(height: 30),
-                  AttendanceHistoryHeader(
-                    
-                    
-                  ),
+                  AttendanceHistoryHeader(),
                   const SizedBox(height: 12),
-                AttendanceHistoryList(
-                   onRefresh: _handleRefresh,
-  classId: widget.classId,
-),
+                  AttendanceHistoryList(
+                    onRefresh: _handleRefresh,
+                    classId: widget.classId,
+                  ),
                 ],
               ),
             ),

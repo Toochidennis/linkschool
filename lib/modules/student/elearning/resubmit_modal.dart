@@ -8,20 +8,13 @@ class MaterialSheet extends StatelessWidget {
   final ScrollController scrollController;
 
   const MaterialSheet({
-    Key? key,
+    super.key,
     required this.attachedMaterials,
     required this.scrollController,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
-    if ( attachedMaterials== null) {
-      return const Scaffold(
-        body: Center(
-          child: CircularProgressIndicator(),
-        ),
-      );
-    }
     return ListView.builder(
       controller: scrollController,
       padding: const EdgeInsets.all(16),
@@ -31,11 +24,13 @@ class MaterialSheet extends StatelessWidget {
           child: ListTile(
             leading: const Icon(Icons.picture_as_pdf, color: Colors.blue),
             title: Text(attachedMaterials[index].fileName),
-            onTap: (){
+            onTap: () {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (_) => PdfViewerPage(url:"https://linkskool.net/${attachedMaterials[index].fileName}"),
+                  builder: (_) => PdfViewerPage(
+                      url:
+                          "https://linkskool.net/${attachedMaterials[index].fileName}"),
                 ),
               );
             },

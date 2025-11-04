@@ -183,7 +183,8 @@ class _CourseManagementScreenState extends State<CourseManagementScreen>
                           if (nameController.text.trim().isEmpty) {
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
-                                content: const Text('Please enter the Course Name'),
+                                content:
+                                    const Text('Please enter the Course Name'),
                                 backgroundColor: Colors.red,
                                 behavior: SnackBarBehavior.floating,
                                 shape: RoundedRectangleBorder(
@@ -196,7 +197,8 @@ class _CourseManagementScreenState extends State<CourseManagementScreen>
                           if (courseCodeController.text.trim().isEmpty) {
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
-                                content: const Text('Please enter the Course Code'),
+                                content:
+                                    const Text('Please enter the Course Code'),
                                 backgroundColor: Colors.red,
                                 behavior: SnackBarBehavior.floating,
                                 shape: RoundedRectangleBorder(
@@ -209,7 +211,8 @@ class _CourseManagementScreenState extends State<CourseManagementScreen>
                           if (courseCodeController.text.trim().length > 5) {
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
-                                content: const Text('Course Code must not be more than 5 characters'),
+                                content: const Text(
+                                    'Course Code must not be more than 5 characters'),
                                 backgroundColor: Colors.red,
                                 behavior: SnackBarBehavior.floating,
                                 shape: RoundedRectangleBorder(
@@ -229,9 +232,10 @@ class _CourseManagementScreenState extends State<CourseManagementScreen>
                           bool success;
                           if (isEditing) {
                             success = await courseProvider.updateCourse(
-                                course!.id.toString(), courseData);
+                                course.id.toString(), courseData);
                           } else {
-                            success = await courseProvider.createCourse(courseData);
+                            success =
+                                await courseProvider.createCourse(courseData);
                           }
 
                           if (success) {

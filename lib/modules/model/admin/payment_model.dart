@@ -14,8 +14,9 @@ class PaymentDashboardSummary {
       income: (json['income'] ?? 0).toDouble(),
       invoiced: (json['invoiced'] ?? 0).toDouble(),
       transactions: (json['transactions'] as List?)
-          ?.map((t) => Transaction.fromJson(t))
-          .toList() ?? [],
+              ?.map((t) => Transaction.fromJson(t))
+              .toList() ??
+          [],
     );
   }
 
@@ -123,10 +124,14 @@ class PaidInvoice {
 
   String get termText {
     switch (term) {
-      case 1: return 'First Term Fees Receipt';
-      case 2: return 'Second Term Fees Receipt';
-      case 3: return 'Third Term Fees Receipt';
-      default: return 'Term Fees Receipt';
+      case 1:
+        return 'First Term Fees Receipt';
+      case 2:
+        return 'Second Term Fees Receipt';
+      case 3:
+        return 'Third Term Fees Receipt';
+      default:
+        return 'Term Fees Receipt';
     }
   }
 
@@ -137,10 +142,14 @@ class PaidInvoice {
 
   String get termFeesText {
     switch (term) {
-      case 1: return 'First Term Fees';
-      case 2: return 'Second Term Fees';
-      case 3: return 'Third Term Fees';
-      default: return 'Term Fees';
+      case 1:
+        return 'First Term Fees';
+      case 2:
+        return 'Second Term Fees';
+      case 3:
+        return 'Third Term Fees';
+      default:
+        return 'Term Fees';
     }
   }
 }
@@ -170,8 +179,9 @@ class UnpaidStudent {
       levelId: json['level_id'] ?? 0,
       classId: json['class_id'] ?? 0,
       invoices: (json['invoices'] as List?)
-          ?.map((i) => UnpaidInvoice.fromJson(i))
-          .toList() ?? [],
+              ?.map((i) => UnpaidInvoice.fromJson(i))
+              .toList() ??
+          [],
     );
   }
 
@@ -202,8 +212,9 @@ class UnpaidInvoice {
       id: json['id'] ?? 0,
       reference: json['reference'],
       invoiceDetails: (json['invoice_details'] as List?)
-          ?.map((d) => InvoiceDetail.fromJson(d))
-          .toList() ?? [],
+              ?.map((d) => InvoiceDetail.fromJson(d))
+              .toList() ??
+          [],
       amountDue: json['amount_due'],
       year: json['year'] ?? '',
       term: json['term'] ?? 0,
@@ -216,10 +227,14 @@ class UnpaidInvoice {
 
   String get termText {
     switch (term) {
-      case 1: return 'First Term Fee Charges for';
-      case 2: return 'Second Term Fee Charges for';
-      case 3: return 'Third Term Fee Charges for';
-      default: return 'Term Fee Charges for';
+      case 1:
+        return 'First Term Fee Charges for';
+      case 2:
+        return 'Second Term Fee Charges for';
+      case 3:
+        return 'Third Term Fee Charges for';
+      default:
+        return 'Term Fee Charges for';
     }
   }
 
@@ -328,11 +343,13 @@ class LoginData {
       profile: UserProfile.fromJson(json['data']?['profile'] ?? {}),
       settings: Settings.fromJson(json['data']?['settings'] ?? {}),
       classes: (json['data']?['classes'] as List?)
-          ?.map((c) => ClassModel.fromJson(c))
-          .toList() ?? [],
+              ?.map((c) => ClassModel.fromJson(c))
+              .toList() ??
+          [],
       levels: (json['data']?['levels'] as List?)
-          ?.map((l) => Level.fromJson(l))
-          .toList() ?? [],
+              ?.map((l) => Level.fromJson(l))
+              .toList() ??
+          [],
       token: json['token'] ?? '',
       db: json['_db'] ?? '',
     );
@@ -382,7 +399,6 @@ class Settings {
   }
 }
 
-
 // IncomeReport Models
 
 class IncomeSummary {
@@ -430,7 +446,8 @@ class IncomeTransaction {
         regNo = json['reg_no'],
         description = json['description'],
         name = json['name'] as String,
-        amount = json['amount'] != null ? (json['amount'] as num).toDouble() : null,
+        amount =
+            json['amount'] != null ? (json['amount'] as num).toDouble() : null,
         date = json['date'],
         year = json['year'],
         term = json['term'],
@@ -439,7 +456,9 @@ class IncomeTransaction {
         status = json['status'],
         className = json['class_name'],
         levelName = json['level_name'],
-        totalAmount = json['total_amount'] != null ? (json['total_amount'] as num).toDouble() : null,
+        totalAmount = json['total_amount'] != null
+            ? (json['total_amount'] as num).toDouble()
+            : null,
         totalTransactions = json['total_transactions'],
         uniqueStudents = json['unique_students'];
 
@@ -453,7 +472,9 @@ class IncomeReport {
 
   IncomeReport.fromJson(Map<String, dynamic> json)
       : summary = IncomeSummary.fromJson(json['summary']),
-        chartData = (json['chart_data'] as List).map((e) => ChartPoint.fromJson(e.cast<String, dynamic>())).toList(),
+        chartData = (json['chart_data'] as List)
+            .map((e) => ChartPoint.fromJson(e.cast<String, dynamic>()))
+            .toList(),
         transactions = (json['transactions'] as List)
             .map((e) => IncomeTransaction.fromJson(e.cast<String, dynamic>()))
             .toList();

@@ -6,7 +6,7 @@ import 'package:linkschool/modules/services/student/home/student_dashboard_feed_
 class StudentDashboardFeedProvider with ChangeNotifier {
   final StudentDashboardFeedService _dashboardFeedService;
 
-   StudentDashboardFeedProvider(this._dashboardFeedService) {
+  StudentDashboardFeedProvider(this._dashboardFeedService) {
     debugPrint("✅ DashboardFeedProvider created");
   }
 
@@ -24,7 +24,11 @@ class StudentDashboardFeedProvider with ChangeNotifier {
   List<Feed> get feeds => _feeds;
 
   /// Fetch dashboard data (overview + feeds)
-  Future<void> fetchFeedData({bool refresh = false, required String class_id, required String level_id, required String term}) async {
+  Future<void> fetchFeedData(
+      {bool refresh = false,
+      required String class_id,
+      required String level_id,
+      required String term}) async {
     if (_isLoading) return;
 
     _isLoading = true;
@@ -32,9 +36,8 @@ class StudentDashboardFeedProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      final dashboardData = await _dashboardFeedService.fetchFeedData(
-        class_id, level_id, term
-      );
+      final dashboardData =
+          await _dashboardFeedService.fetchFeedData(class_id, level_id, term);
       _overview = dashboardData.overview;
       _feeds = dashboardData.feeds;
       _message = "Dashboard data loaded successfully";
@@ -48,16 +51,22 @@ class StudentDashboardFeedProvider with ChangeNotifier {
   }
 
   /// Create a new feed
-  Future<bool> createFeed(Map<String, dynamic> newFeed, {required String class_id, required String level_id, required String term}) async {
+  Future<bool> createFeed(Map<String, dynamic> newFeed,
+      {required String class_id,
+      required String level_id,
+      required String term}) async {
     _isLoading = true;
     _error = null;
     _message = null;
     notifyListeners();
 
     try {
-      await _dashboardFeedService.createFeed(newFeed,);
+      await _dashboardFeedService.createFeed(
+        newFeed,
+      );
       _message = "Feed created successfully.";
-      await fetchFeedData(refresh: true, class_id: class_id, level_id: level_id, term: term);
+      await fetchFeedData(
+          refresh: true, class_id: class_id, level_id: level_id, term: term);
       return true;
     } catch (e) {
       _error = "Failed to create feed: $e";
@@ -69,7 +78,8 @@ class StudentDashboardFeedProvider with ChangeNotifier {
   }
 
   /// Update a feed
-  Future<bool> updateFeed(Map<String, dynamic> updatedFeed, String feedId) async {
+  Future<bool> updateFeed(
+      Map<String, dynamic> updatedFeed, String feedId) async {
     _isLoading = true;
     _error = null;
     _message = null;

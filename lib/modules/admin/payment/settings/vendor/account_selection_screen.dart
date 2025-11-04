@@ -28,7 +28,8 @@ class _AccountSelectionScreenState extends State<AccountSelectionScreen> {
       appBar: AppBar(
         title: Text(
           'Select Account',
-          style: AppTextStyles.normal600(fontSize: 24, color: AppColors.paymentTxtColor1),
+          style: AppTextStyles.normal600(
+              fontSize: 24, color: AppColors.paymentTxtColor1),
         ),
         backgroundColor: AppColors.backgroundLight,
         leading: IconButton(
@@ -53,33 +54,38 @@ class _AccountSelectionScreenState extends State<AccountSelectionScreen> {
                 children: [
                   Text(
                     provider.errorMessage,
-                    style: AppTextStyles.normal500(fontSize: 16, color: Colors.red),
+                    style: AppTextStyles.normal500(
+                        fontSize: 16, color: Colors.red),
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 16),
                   ElevatedButton(
                     onPressed: () => provider.fetchAccounts(),
-                    child: const Text('Retry'),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.paymentTxtColor1,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8),
                       ),
                     ),
+                    child: const Text('Retry'),
                   ),
                 ],
               ),
             );
           }
           // Filter for expenditure accounts only (account_type: 23 or 24)
-          final expenditureAccounts = provider.allAccounts.where((acc) => acc.accountType == 23 || acc.accountType == 24).toList();
-          return _buildAccountList(context, expenditureAccounts, 'No expenditure accounts available');
+          final expenditureAccounts = provider.allAccounts
+              .where((acc) => acc.accountType == 23 || acc.accountType == 24)
+              .toList();
+          return _buildAccountList(context, expenditureAccounts,
+              'No expenditure accounts available');
         },
       ),
     );
   }
 
-  Widget _buildAccountList(BuildContext context, List<AccountModel> accounts, String emptyMessage) {
+  Widget _buildAccountList(
+      BuildContext context, List<AccountModel> accounts, String emptyMessage) {
     if (accounts.isEmpty) {
       return Center(
         child: Column(
@@ -93,7 +99,8 @@ class _AccountSelectionScreenState extends State<AccountSelectionScreen> {
             const SizedBox(height: 16),
             Text(
               emptyMessage,
-              style: AppTextStyles.normal500(fontSize: 16, color: AppColors.backgroundDark),
+              style: AppTextStyles.normal500(
+                  fontSize: 16, color: AppColors.backgroundDark),
             ),
           ],
         ),
@@ -112,7 +119,8 @@ class _AccountSelectionScreenState extends State<AccountSelectionScreen> {
           child: ListTile(
             title: Text(
               account.accountName,
-              style: AppTextStyles.normal600(fontSize: 16, color: AppColors.paymentTxtColor1),
+              style: AppTextStyles.normal600(
+                  fontSize: 16, color: AppColors.paymentTxtColor1),
             ),
             subtitle: RichText(
               text: TextSpan(
@@ -126,7 +134,7 @@ class _AccountSelectionScreenState extends State<AccountSelectionScreen> {
                     ),
                   ),
                   TextSpan(
-                    text: '${account.accountNumber}',
+                    text: account.accountNumber,
                     style: TextStyle(color: Colors.grey[600], fontSize: 14),
                   ),
                 ],
@@ -139,9 +147,3 @@ class _AccountSelectionScreenState extends State<AccountSelectionScreen> {
     );
   }
 }
-
-
-
-
-
-

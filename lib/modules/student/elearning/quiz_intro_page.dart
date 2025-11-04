@@ -11,20 +11,20 @@ class QuizIntroPage extends StatelessWidget {
 
   const QuizIntroPage({super.key, required this.childContent});
   String formatDueDate(ChildContent child) {
-    if (child.settings!=null){
+    if (child.settings != null) {
       try {
         final DateTime parsedDate = DateTime.parse(child.settings!.endDate);
-        final String formatted = DateFormat('EEEE, dd MMMM yyyy  HH:mm').format(parsedDate);
-        return '$formatted';
+        final String formatted =
+            DateFormat('EEEE, dd MMMM yyyy  HH:mm').format(parsedDate);
+        return formatted;
       } catch (e) {
         return 'Invalid date';
       }
-
-    }
-    else {
+    } else {
       try {
-      final DateTime parsedDate = DateTime.parse(child.endDate!  );
-        final String formatted = DateFormat('EEEE, dd MMMM yyyy  HH:mm').format(parsedDate);
+        final DateTime parsedDate = DateTime.parse(child.endDate!);
+        final String formatted =
+            DateFormat('EEEE, dd MMMM yyyy  HH:mm').format(parsedDate);
         return 'Due : $formatted';
       } catch (e) {
         return 'Invalid date';
@@ -33,7 +33,7 @@ class QuizIntroPage extends StatelessWidget {
   }
 
   String formatDuration(ChildContent child) {
-    if (child.settings!=null){
+    if (child.settings != null) {
       try {
         final int seconds = int.tryParse(child.settings!.duration) ?? 0;
         final int minutes = seconds % 60;
@@ -42,19 +42,15 @@ class QuizIntroPage extends StatelessWidget {
       } catch (e) {
         return 'Invalid Form';
       }
-
-    }
-    else {
-     
-        return 'Invalid Form';
-      
-
+    } else {
+      return 'Invalid Form';
     }
   }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor:  AppColors.paymentTxtColor1,
+      backgroundColor: AppColors.paymentTxtColor1,
       appBar: AppBar(
         leading: IconButton(
           onPressed: () => Navigator.of(context).pop(),
@@ -67,8 +63,7 @@ class QuizIntroPage extends StatelessWidget {
         ),
         title: Text("Quiz"),
         backgroundColor: AppColors.backgroundLight,
-        actions: [
-        ],
+        actions: [],
       ),
       body: SafeArea(
         child: Padding(
@@ -82,7 +77,6 @@ class QuizIntroPage extends StatelessWidget {
 
               // Placeholder for question mark image
               Center(
-
                 child: Image.asset(
                   'assets/icons/Illustration.png',
                   height: 180,
@@ -93,7 +87,8 @@ class QuizIntroPage extends StatelessWidget {
               // Card with quiz details
               Container(
                 width: double.infinity,
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(20),
@@ -113,7 +108,7 @@ class QuizIntroPage extends StatelessWidget {
 
                     // Quiz title
                     Text(
-                      "${childContent.settings!.title}",
+                      childContent.settings!.title,
                       style: TextStyle(
                         color: Color(0xFF1E50C1),
                         fontSize: 18,
@@ -129,7 +124,7 @@ class QuizIntroPage extends StatelessWidget {
                           "Duration : ",
                           style: TextStyle(fontWeight: FontWeight.bold),
                         ),
-                        Text("${formatDuration(childContent)}"),
+                        Text(formatDuration(childContent)),
                       ],
                     ),
                     const SizedBox(height: 8),
@@ -151,7 +146,8 @@ class QuizIntroPage extends StatelessWidget {
                       child: ElevatedButton(
                         onPressed: () {
                           final userBox = Hive.box('userData');
-                          final List<dynamic> quizzesTaken = userBox.get('quizzes', defaultValue: []);
+                          final List<dynamic> quizzesTaken =
+                              userBox.get('quizzes', defaultValue: []);
                           final int quizId = childContent.settings!.id;
 
                           if (quizzesTaken.contains(quizId)) {
@@ -159,7 +155,8 @@ class QuizIntroPage extends StatelessWidget {
                               context: context,
                               builder: (context) => AlertDialog(
                                 title: Text("Quiz Already Taken"),
-                                content: Text("You've already taken this quiz."),
+                                content:
+                                    Text("You've already taken this quiz."),
                                 actions: [
                                   TextButton(
                                     child: Text("OK"),
@@ -179,17 +176,20 @@ class QuizIntroPage extends StatelessWidget {
                                 builder: (context) => AssessmentScreen(
                                   childContent: childContent,
                                   questions: childContent.questions,
-                                  duration: Duration(minutes: int.tryParse(childContent.settings!.duration) ?? 0),
+                                  duration: Duration(
+                                      minutes: int.tryParse(childContent
+                                              .settings!.duration) ??
+                                          0),
                                   quizTitle: childContent.settings!.title,
                                 ),
                               ),
                             );
                           }
-                        }
-,
+                        },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.paymentTxtColor1,
-                          padding: EdgeInsets.symmetric(horizontal: 40, vertical: 16),
+                          padding: EdgeInsets.symmetric(
+                              horizontal: 40, vertical: 16),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),

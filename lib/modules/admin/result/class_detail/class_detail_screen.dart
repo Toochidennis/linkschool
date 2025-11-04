@@ -32,7 +32,7 @@ class ClassDetailScreen extends StatefulWidget {
 class _ClassDetailScreenState extends State<ClassDetailScreen> {
   late TermProvider _termProvider;
   List<dynamic> classNames = [];
-  List<dynamic> levelNames = [];  
+  List<dynamic> levelNames = [];
 
   @override
   void initState() {
@@ -65,7 +65,8 @@ class _ClassDetailScreenState extends State<ClassDetailScreen> {
   }
 
   Future<void> _loadTerms() async {
-    print('Loading terms for classId: ${widget.classId}, levelId: ${widget.levelId}');
+    print(
+        'Loading terms for classId: ${widget.classId}, levelId: ${widget.levelId}');
     try {
       await _termProvider.fetchTerms(widget.classId);
     } catch (e) {
@@ -101,17 +102,19 @@ class _ClassDetailScreenState extends State<ClassDetailScreen> {
 
         setState(() {
           // Transform levels to match the format [id, level_name]
-          levelNames = levels.map((level) => [
-            (level['id'] ?? '').toString(),
-            level['level_name'] ?? ''
-          ]).toList();
+          levelNames = levels
+              .map((level) =>
+                  [(level['id'] ?? '').toString(), level['level_name'] ?? ''])
+              .toList();
 
           // Transform classes to match the format [id, class_name, level_id]
-          classNames = classes.map((cls) => [
-            (cls['id'] ?? '').toString(),
-            cls['class_name'] ?? '',
-            (cls['level_id'] ?? '').toString()
-          ]).toList();
+          classNames = classes
+              .map((cls) => [
+                    (cls['id'] ?? '').toString(),
+                    cls['class_name'] ?? '',
+                    (cls['level_id'] ?? '').toString()
+                  ])
+              .toList();
 
           print('Loaded Level Names: $levelNames');
           print('Loaded Class Names: $classNames');
@@ -125,7 +128,8 @@ class _ClassDetailScreenState extends State<ClassDetailScreen> {
   void _showClassSelectionDialog() {
     // Filter classes that match the current level
     final filteredClasses = classNames
-        .where((cls) => cls[2] == widget.levelId && cls[1].toString().isNotEmpty)
+        .where(
+            (cls) => cls[2] == widget.levelId && cls[1].toString().isNotEmpty)
         .toList();
 
     showModalBottomSheet(
@@ -171,7 +175,8 @@ class _ClassDetailScreenState extends State<ClassDetailScreen> {
                                 () {
                                   if (!isCurrentClass) {
                                     Navigator.of(context).pop();
-                                    _navigateToClassDetail(cls[0], cls[1]); // class ID, class name
+                                    _navigateToClassDetail(
+                                        cls[0], cls[1]); // class ID, class name
                                   }
                                 },
                               ),
@@ -202,7 +207,8 @@ class _ClassDetailScreenState extends State<ClassDetailScreen> {
     );
   }
 
-  Widget _buildSelectionButton(String text, bool isCurrentClass, VoidCallback onPressed) {
+  Widget _buildSelectionButton(
+      String text, bool isCurrentClass, VoidCallback onPressed) {
     return Container(
       decoration: BoxDecoration(
         boxShadow: [
@@ -214,15 +220,21 @@ class _ClassDetailScreenState extends State<ClassDetailScreen> {
         ],
       ),
       child: Material(
-        color: isCurrentClass ? AppColors.primaryLight.withOpacity(0.1) : AppColors.dialogBtnColor,
+        color: isCurrentClass
+            ? AppColors.primaryLight.withOpacity(0.1)
+            : AppColors.dialogBtnColor,
         child: InkWell(
           onTap: isCurrentClass ? null : onPressed,
           borderRadius: BorderRadius.circular(4),
           child: Ink(
             decoration: BoxDecoration(
-                color: isCurrentClass ? AppColors.primaryLight.withOpacity(0.1) : Colors.white,
-                borderRadius: BorderRadius.circular(4),
-                border: isCurrentClass ? Border.all(color: AppColors.primaryLight, width: 2) : null,
+              color: isCurrentClass
+                  ? AppColors.primaryLight.withOpacity(0.1)
+                  : Colors.white,
+              borderRadius: BorderRadius.circular(4),
+              border: isCurrentClass
+                  ? Border.all(color: AppColors.primaryLight, width: 2)
+                  : null,
             ),
             child: Container(
               width: double.infinity,
@@ -235,7 +247,9 @@ class _ClassDetailScreenState extends State<ClassDetailScreen> {
                     text,
                     style: AppTextStyles.normal600(
                         fontSize: 16,
-                        color: isCurrentClass ? AppColors.primaryLight : AppColors.backgroundDark),
+                        color: isCurrentClass
+                            ? AppColors.primaryLight
+                            : AppColors.backgroundDark),
                   ),
                   if (isCurrentClass) ...[
                     const SizedBox(width: 8),
@@ -352,13 +366,12 @@ class _ClassDetailScreenState extends State<ClassDetailScreen> {
                                   label: 'Student Result',
                                   iconPath:
                                       'assets/icons/result/assessment_icon.svg',
-                                  onTap: () =>
-                                      showStudentResultOverlay(
-                                        context,
-                                        classId: widget.classId,
-                                        className: widget.className,
-                                        isFromResultScreen: false,
-                                      ),
+                                  onTap: () => showStudentResultOverlay(
+                                    context,
+                                    classId: widget.classId,
+                                    className: widget.className,
+                                    isFromResultScreen: false,
+                                  ),
                                 ),
                               ),
                               Expanded(
@@ -372,7 +385,8 @@ class _ClassDetailScreenState extends State<ClassDetailScreen> {
                                         context,
                                         MaterialPageRoute(
                                             builder: (context) =>
-                                                RegistrationScreen(classId: widget.classId)));
+                                                RegistrationScreen(
+                                                    classId: widget.classId)));
                                   },
                                 ),
                               ),
@@ -439,69 +453,75 @@ class _ClassDetailScreenState extends State<ClassDetailScreen> {
     );
   }
 
-List<Widget> _buildTermRows(List<Map<String, dynamic>> terms) {
-  final groupedTerms = <String, List<Map<String, dynamic>>>{};
+  List<Widget> _buildTermRows(List<Map<String, dynamic>> terms) {
+    final groupedTerms = <String, List<Map<String, dynamic>>>{};
 
-  // Group terms by year
-  for (final term in terms) {
-    final year = term['year'].toString();
-    if (!groupedTerms.containsKey(year)) {
-      groupedTerms[year] = [];
+    // Group terms by year
+    for (final term in terms) {
+      final year = term['year'].toString();
+      if (!groupedTerms.containsKey(year)) {
+        groupedTerms[year] = [];
+      }
+      groupedTerms[year]!.add(term);
     }
-    groupedTerms[year]!.add(term);
-  }
 
-  // Determine the current year and term
-  final currentYear = groupedTerms.keys.map(int.parse).reduce((a, b) => a > b ? a : b).toString();
-  final currentTerms = groupedTerms[currentYear] ?? [];
-  final currentTermId = currentTerms.isNotEmpty
-      ? currentTerms.reduce((a, b) => (a['termId'] > b['termId']) ? a : b)['termId']
-      : 0;
+    // Determine the current year and term
+    final currentYear = groupedTerms.keys
+        .map(int.parse)
+        .reduce((a, b) => a > b ? a : b)
+        .toString();
+    final currentTerms = groupedTerms[currentYear] ?? [];
+    final currentTermId = currentTerms.isNotEmpty
+        ? currentTerms
+            .reduce((a, b) => (a['termId'] > b['termId']) ? a : b)['termId']
+        : 0;
 
-  return groupedTerms.entries.map((entry) {
-    final year = entry.key;
-    final yearTerms = entry.value;
-    // Display session as (year-1)/year
-    final sessionYear = int.parse(year);
-    final header = '${sessionYear - 1}/$year Session';
+    return groupedTerms.entries.map((entry) {
+      final year = entry.key;
+      final yearTerms = entry.value;
+      // Display session as (year-1)/year
+      final sessionYear = int.parse(year);
+      final header = '${sessionYear - 1}/$year Session';
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(vertical: 8.0),
-          child: Text(
-            header,
-            style: AppTextStyles.normal700(
-              fontSize: 18,
-              color: AppColors.primaryLight,
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8.0),
+            child: Text(
+              header,
+              style: AppTextStyles.normal700(
+                fontSize: 18,
+                color: AppColors.primaryLight,
+              ),
             ),
           ),
-        ),
-        ...yearTerms.map((term) {
-          String formattedTerm = term['termName'] ?? 'Unknown Term';
-          double percent = (term['averageScore'] ?? 0.0) / 100.0; // Normalize to 0.0-1.0
-          // Check if this is the current term
-          bool isCurrentTerm = year == currentYear && term['termId'] == currentTermId;
-          return TermRow(
-            term: formattedTerm,
-            percent: percent.clamp(0.0, 1.0), // Ensure percent is between 0 and 1
-            indicatorColor: AppColors.primaryLight,
-            onTap: () => showTermOverlay(
-              context,
-              classId: widget.classId,
-              levelId: widget.levelId,
-              year: term['year'],
-              termId: term['termId'],
-              termName: formattedTerm,
-              isCurrentTerm: isCurrentTerm,
-            ),
-          );
-        }).toList(),
-        const SizedBox(height: 10),
-      ],
-    );
-  }).toList();
+          ...yearTerms.map((term) {
+            String formattedTerm = term['termName'] ?? 'Unknown Term';
+            double percent =
+                (term['averageScore'] ?? 0.0) / 100.0; // Normalize to 0.0-1.0
+            // Check if this is the current term
+            bool isCurrentTerm =
+                year == currentYear && term['termId'] == currentTermId;
+            return TermRow(
+              term: formattedTerm,
+              percent:
+                  percent.clamp(0.0, 1.0), // Ensure percent is between 0 and 1
+              indicatorColor: AppColors.primaryLight,
+              onTap: () => showTermOverlay(
+                context,
+                classId: widget.classId,
+                levelId: widget.levelId,
+                year: term['year'],
+                termId: term['termId'],
+                termName: formattedTerm,
+                isCurrentTerm: isCurrentTerm,
+              ),
+            );
+          }),
+          const SizedBox(height: 10),
+        ],
+      );
+    }).toList();
+  }
 }
-}
-

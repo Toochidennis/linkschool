@@ -20,7 +20,7 @@ class StaffDashboardService {
       throw Exception("No valid login data or token found");
     }
 
-     final processedData = loginData is String
+    final processedData = loginData is String
         ? json.decode(loginData)
         : loginData as Map<String, dynamic>;
     final responseData = processedData['response'] ?? processedData;
@@ -89,7 +89,8 @@ class StaffDashboardService {
   }
 
   /// Update feed
-  Future<void> updateFeed(String feedId, Map<String, dynamic> updatedFeed) async {
+  Future<void> updateFeed(
+      String feedId, Map<String, dynamic> updatedFeed) async {
     final userBox = Hive.box('userData');
     final loginData = userBox.get('userData') ?? userBox.get('loginResponse');
     final dbName = userBox.get('_db') ?? 'aalmgzmy_linkskoo_practice';

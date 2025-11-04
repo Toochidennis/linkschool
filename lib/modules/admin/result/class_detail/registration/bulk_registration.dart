@@ -53,7 +53,9 @@ class _BulkRegistrationScreenState extends State<BulkRegistrationScreen> {
     final userBox = Hive.box('userData');
     final userData = userBox.get('userData');
 
-    if (userData != null && userData['data'] != null && userData['data']['settings'] != null) {
+    if (userData != null &&
+        userData['data'] != null &&
+        userData['data']['settings'] != null) {
       setState(() {
         _settings = Map<String, dynamic>.from(userData['data']['settings']);
 
@@ -64,7 +66,8 @@ class _BulkRegistrationScreenState extends State<BulkRegistrationScreen> {
                 ? 'Second term'
                 : 'Third term';
 
-        _academicSession = "${int.parse(_settings['year'] ?? '2023') - 1}/${_settings['year'] ?? '2023'} academic session";
+        _academicSession =
+            "${int.parse(_settings['year'] ?? '2023') - 1}/${_settings['year'] ?? '2023'} academic session";
       });
     }
   }
@@ -76,14 +79,12 @@ class _BulkRegistrationScreenState extends State<BulkRegistrationScreen> {
             ? 2
             : 3;
 
-    debugPrint('Fetching students with classId: ${widget.classId}, term: $termNumber, year: ${_settings['year'] ?? '2023'}');
+    debugPrint(
+        'Fetching students with classId: ${widget.classId}, term: $termNumber, year: ${_settings['year'] ?? '2023'}');
 
     Provider.of<CourseRegistrationProvider>(context, listen: false)
         .fetchRegisteredCourses(
-            widget.classId,
-            termNumber.toString(),
-            _settings['year'] ?? '2023'
-        );
+            widget.classId, termNumber.toString(), _settings['year'] ?? '2023');
   }
 
   String titleCase(String input) {
@@ -289,7 +290,8 @@ class _BulkRegistrationScreenState extends State<BulkRegistrationScreen> {
                         color: AppColors.primaryLight,
                         borderRadius: BorderRadius.circular(8),
                       ),
-                      child: Icon(Icons.person, color: AppColors.backgroundLight),
+                      child:
+                          Icon(Icons.person, color: AppColors.backgroundLight),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
@@ -315,31 +317,31 @@ class _BulkRegistrationScreenState extends State<BulkRegistrationScreen> {
                       ),
                     ),
                     ElevatedButton(
-                        onPressed: () {
-                          Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (context) => CourseRegistrationScreen(
-                                studentName: student.studentName,
-                                coursesRegistered: student.courseCount,
-                                classId: widget.classId,
-                                studentId: student.studentId,
-                              ),
+                      onPressed: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (context) => CourseRegistrationScreen(
+                              studentName: student.studentName,
+                              coursesRegistered: student.courseCount,
+                              classId: widget.classId,
+                              studentId: student.studentId,
                             ),
-                          );
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.videoColor4,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
                           ),
+                        );
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.videoColor4,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
                         ),
-                        child: Text(
-                          (student.courseCount > 0) ? 'Edit' : 'Register',
-                          style: AppTextStyles.normal700(
-                            fontSize: 12,
-                            color: AppColors.backgroundLight,
-                          ),
+                      ),
+                      child: Text(
+                        (student.courseCount > 0) ? 'Edit' : 'Register',
+                        style: AppTextStyles.normal700(
+                          fontSize: 12,
+                          color: AppColors.backgroundLight,
                         ),
+                      ),
                     ),
                   ],
                 ),
@@ -352,5 +354,3 @@ class _BulkRegistrationScreenState extends State<BulkRegistrationScreen> {
     );
   }
 }
-
-

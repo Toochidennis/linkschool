@@ -13,13 +13,16 @@ class VendorTransactionReceiptsScreen extends StatefulWidget {
   final VendorTransactionDetail detail;
   final VendorTransaction? transaction;
 
-  const VendorTransactionReceiptsScreen({super.key, required this.detail, this.transaction});
+  const VendorTransactionReceiptsScreen(
+      {super.key, required this.detail, this.transaction});
 
   @override
-  State<VendorTransactionReceiptsScreen> createState() => _VendorTransactionReceiptsScreenState();
+  State<VendorTransactionReceiptsScreen> createState() =>
+      _VendorTransactionReceiptsScreenState();
 }
 
-class _VendorTransactionReceiptsScreenState extends State<VendorTransactionReceiptsScreen> {
+class _VendorTransactionReceiptsScreenState
+    extends State<VendorTransactionReceiptsScreen> {
   late double opacity;
 
   Widget _buildDetailRow(String label, String value) {
@@ -36,7 +39,8 @@ class _VendorTransactionReceiptsScreenState extends State<VendorTransactionRecei
             child: Text(
               value,
               textAlign: TextAlign.right,
-              style: AppTextStyles.normal400(fontSize: 16, color: AppColors.backgroundDark),
+              style: AppTextStyles.normal400(
+                  fontSize: 16, color: AppColors.backgroundDark),
             ),
           ),
         ],
@@ -49,7 +53,8 @@ class _VendorTransactionReceiptsScreenState extends State<VendorTransactionRecei
     final Brightness brightness = Theme.of(context).brightness;
     opacity = brightness == Brightness.light ? 0.1 : 0.15;
     final displayYear = '${widget.detail.year - 1}/${widget.detail.year}';
-    final formattedAmount = NumberFormat('#,##0.00').format(widget.detail.amount);
+    final formattedAmount =
+        NumberFormat('#,##0.00').format(widget.detail.amount);
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
@@ -177,11 +182,14 @@ class _VendorTransactionReceiptsScreenState extends State<VendorTransactionRecei
                     children: [
                       _buildDetailRow('Date:', widget.detail.date),
                       const Divider(),
-                      _buildDetailRow('Customer Name:', widget.detail.customerName),
+                      _buildDetailRow(
+                          'Customer Name:', widget.detail.customerName),
                       const Divider(),
-                      _buildDetailRow('Customer Reference:', widget.detail.customerReference),
+                      _buildDetailRow('Customer Reference:',
+                          widget.detail.customerReference),
                       const Divider(),
-                      _buildDetailRow('Account Name:', widget.detail.accountName),
+                      _buildDetailRow(
+                          'Account Name:', widget.detail.accountName),
                     ],
                   ),
                 ),

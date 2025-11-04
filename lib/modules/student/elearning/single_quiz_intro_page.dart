@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
 import 'package:intl/intl.dart';
 import 'package:linkschool/modules/model/student/single_elearningcontentmodel.dart';
-import 'package:linkschool/modules/student/elearning/quiz_page.dart';
 import 'package:linkschool/modules/student/elearning/single_quiz_page.dart';
 
 import '../../common/app_colors.dart';
@@ -12,20 +11,20 @@ class SingleQuizIntroPage extends StatelessWidget {
 
   const SingleQuizIntroPage({super.key, required this.childContent});
   String formatDueDate(SingleElearningContentData child) {
-    if (child.settings!=null){
+    if (child.settings != null) {
       try {
         final DateTime parsedDate = DateTime.parse(child.settings!.endDate);
-        final String formatted = DateFormat('EEEE, dd MMMM yyyy  HH:mm').format(parsedDate);
-        return '$formatted';
+        final String formatted =
+            DateFormat('EEEE, dd MMMM yyyy  HH:mm').format(parsedDate);
+        return formatted;
       } catch (e) {
         return 'Invalid date';
       }
-
-    }
-    else {
+    } else {
       try {
-        final DateTime parsedDate = DateTime.parse(child.settings!.endDate  );
-        final String formatted = DateFormat('EEEE, dd MMMM yyyy  HH:mm').format(parsedDate);
+        final DateTime parsedDate = DateTime.parse(child.settings!.endDate);
+        final String formatted =
+            DateFormat('EEEE, dd MMMM yyyy  HH:mm').format(parsedDate);
         return 'Due : $formatted';
       } catch (e) {
         return 'Invalid date';
@@ -34,7 +33,7 @@ class SingleQuizIntroPage extends StatelessWidget {
   }
 
   String formatDuration(SingleElearningContentData child) {
-    if (child.settings!=null){
+    if (child.settings != null) {
       try {
         final int seconds = int.tryParse(child.settings!.duration) ?? 0;
         final int minutes = seconds % 60;
@@ -43,33 +42,32 @@ class SingleQuizIntroPage extends StatelessWidget {
       } catch (e) {
         return 'Invalid Form';
       }
-
-    }
-    else {
-
+    } else {
       return 'Invalid Form';
-
-
     }
   }
+
   @override
   Widget build(BuildContext context) {
-    if ( childContent == null) {
+    if (childContent == null) {
       print(childContent);
       return const Scaffold(
-        body:  Center(
-          child: Column(mainAxisAlignment: MainAxisAlignment.center,
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-
               CircularProgressIndicator(),
-              Text("Loading your  quiz" ,style: TextStyle(color: AppColors.paymentBtnColor1),),
+              Text(
+                "Loading your  quiz",
+                style: TextStyle(color: AppColors.paymentBtnColor1),
+              ),
             ],
           ),
         ),
       );
     }
     return Scaffold(
-      backgroundColor:  AppColors.paymentTxtColor1,
+      backgroundColor: AppColors.paymentTxtColor1,
       appBar: AppBar(
         leading: IconButton(
           onPressed: () => Navigator.of(context).pop(),
@@ -82,8 +80,7 @@ class SingleQuizIntroPage extends StatelessWidget {
         ),
         title: Text("Quiz"),
         backgroundColor: AppColors.backgroundLight,
-        actions: [
-        ],
+        actions: [],
       ),
       body: SafeArea(
         child: Padding(
@@ -97,7 +94,6 @@ class SingleQuizIntroPage extends StatelessWidget {
 
               // Placeholder for question mark image
               Center(
-
                 child: Image.asset(
                   'assets/icons/Illustration.png',
                   height: 180,
@@ -108,7 +104,8 @@ class SingleQuizIntroPage extends StatelessWidget {
               // Card with quiz details
               Container(
                 width: double.infinity,
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(20),
@@ -144,7 +141,7 @@ class SingleQuizIntroPage extends StatelessWidget {
                           "Duration : ",
                           style: TextStyle(fontWeight: FontWeight.bold),
                         ),
-                        Text("${formatDuration(childContent!)}"),
+                        Text(formatDuration(childContent!)),
                       ],
                     ),
                     const SizedBox(height: 8),
@@ -166,7 +163,8 @@ class SingleQuizIntroPage extends StatelessWidget {
                       child: ElevatedButton(
                         onPressed: () {
                           final userBox = Hive.box('userData');
-                          final List<dynamic> quizzesTaken = userBox.get('quizzes', defaultValue: []);
+                          final List<dynamic> quizzesTaken =
+                              userBox.get('quizzes', defaultValue: []);
                           final int quizId = childContent!.settings!.id;
 
                           if (quizzesTaken.contains(quizId)) {
@@ -174,7 +172,8 @@ class SingleQuizIntroPage extends StatelessWidget {
                               context: context,
                               builder: (context) => AlertDialog(
                                 title: Text("Quiz Already Taken"),
-                                content: Text("You've already taken this quiz."),
+                                content:
+                                    Text("You've already taken this quiz."),
                                 actions: [
                                   TextButton(
                                     child: Text("OK"),
@@ -195,17 +194,20 @@ class SingleQuizIntroPage extends StatelessWidget {
                                 builder: (context) => SingleAssessmentScreen(
                                   childContent: childContent,
                                   questions: childContent!.questions,
-                                  duration: Duration(minutes: int.tryParse(childContent!.settings!.duration) ?? 0),
+                                  duration: Duration(
+                                      minutes: int.tryParse(childContent!
+                                              .settings!.duration) ??
+                                          0),
                                   quizTitle: childContent!.settings!.title,
                                 ),
                               ),
                             );
                           }
-                        }
-                        ,
+                        },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.paymentTxtColor1,
-                          padding: EdgeInsets.symmetric(horizontal: 40, vertical: 16),
+                          padding: EdgeInsets.symmetric(
+                              horizontal: 40, vertical: 16),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),

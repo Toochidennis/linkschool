@@ -12,8 +12,12 @@ class AttendanceHistoryHeader extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text('Attendance history', style: AppTextStyles.normal600(fontSize: 18, color: AppColors.primaryLight)),
-          Text('See all', style: AppTextStyles.normal600(fontSize: 14, color: AppColors.primaryLight)),
+          Text('Attendance history',
+              style: AppTextStyles.normal600(
+                  fontSize: 18, color: AppColors.primaryLight)),
+          Text('See all',
+              style: AppTextStyles.normal600(
+                  fontSize: 14, color: AppColors.primaryLight)),
         ],
       ),
     );

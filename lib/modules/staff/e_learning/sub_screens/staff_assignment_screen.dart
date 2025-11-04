@@ -4,9 +4,8 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:hive/hive.dart';
-import 'package:linkschool/modules/providers/admin/e_learning/assignment_provider.dart' as provider;
-
-
+import 'package:linkschool/modules/providers/admin/e_learning/assignment_provider.dart'
+    as provider;
 
 import 'package:image_picker/image_picker.dart';
 import 'package:file_picker/file_picker.dart';
@@ -21,10 +20,6 @@ import 'package:linkschool/modules/staff/e_learning/sub_screens/staff_select_top
 import 'package:provider/provider.dart';
 import '../../../common/widgets/portal/attachmentItem.dart';
 
-
-
-
-
 class StaffAssignmentScreen extends StatefulWidget {
   final Function(Map<String, dynamic>) onSave;
   final String? classId;
@@ -32,7 +27,7 @@ class StaffAssignmentScreen extends StatefulWidget {
   final String? courseName;
   final String? levelId;
   final int? syllabusId;
-  final List<Map<String,dynamic>>? syllabusClasses;
+  final List<Map<String, dynamic>>? syllabusClasses;
   final int? itemId;
   final bool editMode;
   final AssignmentFormData? assignmentToEdit;
@@ -73,7 +68,7 @@ class _StaffAssignmentScreenState extends State<StaffAssignmentScreen> {
   int? academicTerm;
   bool _isSaving = false;
   String? _replacingServerFileName;
-  List<String> _removedServerFileNames = [];
+  final List<String> _removedServerFileNames = [];
 
   @override
   void initState() {
@@ -92,13 +87,15 @@ class _StaffAssignmentScreenState extends State<StaffAssignmentScreen> {
       _selectedTopic = assignment.topic;
       _selectedClass = assignment.selectedClass;
 
-      _attachments = assignment.attachments.map((attachment) => AttachmentItem(
-            fileName: attachment.fileName,
-            iconPath: attachment.iconPath,
-            fileContent: attachment.fileContent,
-            isExisting: true,
-            originalServerFileName: attachment.fileName,
-          )).toList();
+      _attachments = assignment.attachments
+          .map((attachment) => AttachmentItem(
+                fileName: attachment.fileName,
+                iconPath: attachment.iconPath,
+                fileContent: attachment.fileContent,
+                isExisting: true,
+                originalServerFileName: attachment.fileName,
+              ))
+          .toList();
     }
   }
 
@@ -106,7 +103,8 @@ class _StaffAssignmentScreenState extends State<StaffAssignmentScreen> {
     print('ffffffdata: ${widget.syllabusClasses}');
     try {
       final userBox = Hive.box('userData');
-      final storedUserData = userBox.get('userData') ?? userBox.get('loginResponse');
+      final storedUserData =
+          userBox.get('userData') ?? userBox.get('loginResponse');
       if (storedUserData != null) {
         final processedData = storedUserData is String
             ? json.decode(storedUserData)
@@ -189,7 +187,8 @@ class _StaffAssignmentScreenState extends State<StaffAssignmentScreen> {
               children: [
                 Text(
                   'Title:',
-                  style: AppTextStyles.normal600(fontSize: 16.0, color: Colors.black),
+                  style: AppTextStyles.normal600(
+                      fontSize: 16.0, color: Colors.black),
                 ),
                 const SizedBox(height: 8.0),
                 TextField(
@@ -206,7 +205,8 @@ class _StaffAssignmentScreenState extends State<StaffAssignmentScreen> {
                 const SizedBox(height: 16.0),
                 Text(
                   'Description:',
-                  style: AppTextStyles.normal600(fontSize: 16.0, color: Colors.black),
+                  style: AppTextStyles.normal600(
+                      fontSize: 16.0, color: Colors.black),
                 ),
                 const SizedBox(height: 8.0),
                 TextField(
@@ -222,7 +222,6 @@ class _StaffAssignmentScreenState extends State<StaffAssignmentScreen> {
                   ),
                 ),
                 const SizedBox(height: 32.0),
-                
                 Padding(
                   padding: const EdgeInsets.only(bottom: 8.0),
                   child: _buildAttachmentsSection(),
@@ -301,7 +300,9 @@ class _StaffAssignmentScreenState extends State<StaffAssignmentScreen> {
                 child: Container(
                   height: 32,
                   decoration: BoxDecoration(
-                    color: isSelected ? Colors.transparent : AppColors.eLearningBtnColor2,
+                    color: isSelected
+                        ? Colors.transparent
+                        : AppColors.eLearningBtnColor2,
                     borderRadius: BorderRadius.circular(18),
                   ),
                   child: Center(
@@ -323,8 +324,10 @@ class _StaffAssignmentScreenState extends State<StaffAssignmentScreen> {
                 OutlinedButton(
                   onPressed: onTap,
                   style: OutlinedButton.styleFrom(
-                    textStyle: AppTextStyles.normal600(fontSize: 14.0, color: AppColors.backgroundLight),
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    textStyle: AppTextStyles.normal600(
+                        fontSize: 14.0, color: AppColors.backgroundLight),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                     side: const BorderSide(color: AppColors.eLearningBtnColor1),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(10),
@@ -358,7 +361,8 @@ class _StaffAssignmentScreenState extends State<StaffAssignmentScreen> {
               children: [
                 Text(
                   'Set marks',
-                  style: AppTextStyles.normal600(fontSize: 18.0, color: Colors.black),
+                  style: AppTextStyles.normal600(
+                      fontSize: 18.0, color: Colors.black),
                 ),
                 const SizedBox(height: 16),
                 TextField(
@@ -401,7 +405,8 @@ class _StaffAssignmentScreenState extends State<StaffAssignmentScreen> {
                       ),
                       child: Text(
                         'Save',
-                        style: AppTextStyles.normal600(fontSize: 16.0, color: Colors.white),
+                        style: AppTextStyles.normal600(
+                            fontSize: 16.0, color: Colors.white),
                       ),
                     ),
                   ],
@@ -460,7 +465,8 @@ class _StaffAssignmentScreenState extends State<StaffAssignmentScreen> {
                   const SizedBox(width: 8.0),
                   Text(
                     'Add Attachment',
-                    style: AppTextStyles.normal600(fontSize: 16.0, color: AppColors.eLearningBtnColor1),
+                    style: AppTextStyles.normal600(
+                        fontSize: 16.0, color: AppColors.eLearningBtnColor1),
                   ),
                 ],
               )
@@ -470,7 +476,8 @@ class _StaffAssignmentScreenState extends State<StaffAssignmentScreen> {
                   ..._attachments.asMap().entries.map((entry) {
                     final index = entry.key;
                     final attachment = entry.value;
-                    return _buildAttachmentItem(attachment, isFirst: index == 0);
+                    return _buildAttachmentItem(attachment,
+                        isFirst: index == 0);
                   }),
                   const SizedBox(height: 8.0),
                   _buildAddMoreButton(),
@@ -482,7 +489,8 @@ class _StaffAssignmentScreenState extends State<StaffAssignmentScreen> {
     );
   }
 
-  Widget _buildAttachmentItem(AttachmentItem attachment, {bool isFirst = false}) {
+  Widget _buildAttachmentItem(AttachmentItem attachment,
+      {bool isFirst = false}) {
     return Container(
       margin: EdgeInsets.only(bottom: isFirst ? 0 : 8.0),
       child: Row(
@@ -496,7 +504,8 @@ class _StaffAssignmentScreenState extends State<StaffAssignmentScreen> {
           Expanded(
             child: Text(
               attachment.fileName!,
-              style: AppTextStyles.normal400(fontSize: 14.0, color: AppColors.primaryLight),
+              style: AppTextStyles.normal400(
+                  fontSize: 14.0, color: AppColors.primaryLight),
               overflow: TextOverflow.ellipsis,
             ),
           ),
@@ -504,9 +513,11 @@ class _StaffAssignmentScreenState extends State<StaffAssignmentScreen> {
             icon: const Icon(Icons.close, size: 20, color: Colors.red),
             onPressed: () {
               setState(() {
-                if (attachment.isExisting && attachment.originalServerFileName != null) {
+                if (attachment.isExisting &&
+                    attachment.originalServerFileName != null) {
                   _replacingServerFileName = attachment.originalServerFileName;
-                  _removedServerFileNames.add(attachment.originalServerFileName!);
+                  _removedServerFileNames
+                      .add(attachment.originalServerFileName!);
                 }
                 _attachments.remove(attachment);
               });
@@ -530,7 +541,8 @@ class _StaffAssignmentScreenState extends State<StaffAssignmentScreen> {
           OutlinedButton(
             onPressed: _showAttachmentOptions,
             style: OutlinedButton.styleFrom(
-              textStyle: AppTextStyles.normal600(fontSize: 14.0, color: AppColors.backgroundLight),
+              textStyle: AppTextStyles.normal600(
+                  fontSize: 14.0, color: AppColors.backgroundLight),
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               side: const BorderSide(color: AppColors.eLearningBtnColor1),
               shape: RoundedRectangleBorder(
@@ -555,14 +567,19 @@ class _StaffAssignmentScreenState extends State<StaffAssignmentScreen> {
             children: <Widget>[
               Text(
                 'Add attachment',
-                style: AppTextStyles.normal600(fontSize: 20, color: AppColors.backgroundDark),
+                style: AppTextStyles.normal600(
+                    fontSize: 20, color: AppColors.backgroundDark),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 16),
-              _buildAttachmentOption('Insert link', 'assets/icons/e_learning/link3.svg', _showInsertLinkDialog),
-              _buildAttachmentOption('Upload file', 'assets/icons/e_learning/upload_file.svg', _uploadFile),
-              _buildAttachmentOption('Take photo', 'assets/icons/e_learning/take_photo.svg', _takePhoto),
-              _buildAttachmentOption('Record Video', 'assets/icons/e_learning/record_video.svg', _recordVideo),
+              _buildAttachmentOption('Insert link',
+                  'assets/icons/e_learning/link3.svg', _showInsertLinkDialog),
+              _buildAttachmentOption('Upload file',
+                  'assets/icons/e_learning/upload_file.svg', _uploadFile),
+              _buildAttachmentOption('Take photo',
+                  'assets/icons/e_learning/take_photo.svg', _takePhoto),
+              _buildAttachmentOption('Record Video',
+                  'assets/icons/e_learning/record_video.svg', _recordVideo),
             ],
           ),
         );
@@ -581,14 +598,19 @@ class _StaffAssignmentScreenState extends State<StaffAssignmentScreen> {
             children: [
               Text(
                 'Replace attachment',
-                style: AppTextStyles.normal600(fontSize: 20, color: AppColors.backgroundDark),
+                style: AppTextStyles.normal600(
+                    fontSize: 20, color: AppColors.backgroundDark),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 16),
-              _buildAttachmentOption('Upload file', 'assets/icons/e_learning/upload_file.svg', _uploadFile),
-              _buildAttachmentOption('Take photo', 'assets/icons/e_learning/take_photo.svg', _takePhoto),
-              _buildAttachmentOption('Record Video', 'assets/icons/e_learning/record_video.svg', _recordVideo),
-              _buildAttachmentOption('Cancel', 'assets/icons/e_learning/cancel.svg', () {
+              _buildAttachmentOption('Upload file',
+                  'assets/icons/e_learning/upload_file.svg', _uploadFile),
+              _buildAttachmentOption('Take photo',
+                  'assets/icons/e_learning/take_photo.svg', _takePhoto),
+              _buildAttachmentOption('Record Video',
+                  'assets/icons/e_learning/record_video.svg', _recordVideo),
+              _buildAttachmentOption(
+                  'Cancel', 'assets/icons/e_learning/cancel.svg', () {
                 setState(() {
                   _replacingServerFileName = null;
                 });
@@ -601,7 +623,8 @@ class _StaffAssignmentScreenState extends State<StaffAssignmentScreen> {
     );
   }
 
-  Widget _buildAttachmentOption(String text, String iconPath, VoidCallback onTap) {
+  Widget _buildAttachmentOption(
+      String text, String iconPath, VoidCallback onTap) {
     return InkWell(
       onTap: onTap,
       child: Container(
@@ -614,7 +637,8 @@ class _StaffAssignmentScreenState extends State<StaffAssignmentScreen> {
             const SizedBox(width: 16),
             Text(
               text,
-              style: AppTextStyles.normal400(fontSize: 16, color: AppColors.backgroundDark),
+              style: AppTextStyles.normal400(
+                  fontSize: 16, color: AppColors.backgroundDark),
             ),
           ],
         ),
@@ -644,7 +668,8 @@ class _StaffAssignmentScreenState extends State<StaffAssignmentScreen> {
             return AlertDialog(
               title: Text(
                 'Insert Link',
-                style: AppTextStyles.normal600(fontSize: 20, color: AppColors.backgroundDark),
+                style: AppTextStyles.normal600(
+                    fontSize: 20, color: AppColors.backgroundDark),
                 textAlign: TextAlign.center,
               ),
               content: Column(
@@ -687,8 +712,10 @@ class _StaffAssignmentScreenState extends State<StaffAssignmentScreen> {
                 CustomSaveElevatedButton(
                   onPressed: isValid && linkController.text.isNotEmpty
                       ? () {
-                          String fullUrl = linkController.text.replaceAll(' ', '');
-                          _addAttachment(fullUrl, 'assets/icons/e_learning/link3.svg', fullUrl);
+                          String fullUrl =
+                              linkController.text.replaceAll(' ', '');
+                          _addAttachment(fullUrl,
+                              'assets/icons/e_learning/link3.svg', fullUrl);
                           Navigator.of(context).pop();
                           Navigator.of(context).pop();
                         }
@@ -715,7 +742,8 @@ class _StaffAssignmentScreenState extends State<StaffAssignmentScreen> {
         } else if (file.path != null) {
           base64String = base64Encode(await File(file.path!).readAsBytes());
         }
-        _addAttachment(fileName, 'assets/icons/e_learning/upload_file.svg', base64String);
+        _addAttachment(
+            fileName, 'assets/icons/e_learning/upload_file.svg', base64String);
         Navigator.of(context).pop();
       }
     } catch (e) {
@@ -730,7 +758,8 @@ class _StaffAssignmentScreenState extends State<StaffAssignmentScreen> {
     if (photo != null) {
       Uint8List fileBytes = await photo.readAsBytes();
       final base64String = base64Encode(fileBytes);
-      _addAttachment('Photo: ${photo.name}', 'assets/icons/e_learning/take_photo.svg', base64String);
+      _addAttachment('Photo: ${photo.name}',
+          'assets/icons/e_learning/take_photo.svg', base64String);
       Navigator.of(context).pop();
     }
   }
@@ -741,12 +770,14 @@ class _StaffAssignmentScreenState extends State<StaffAssignmentScreen> {
     if (video != null) {
       Uint8List fileBytes = await video.readAsBytes();
       final base64String = base64Encode(fileBytes);
-      _addAttachment('Video: ${video.name}', 'assets/icons/e_learning/record_video.svg', base64String);
+      _addAttachment('Video: ${video.name}',
+          'assets/icons/e_learning/record_video.svg', base64String);
       Navigator.of(context).pop();
     }
   }
 
-  void _addAttachment(String content, String iconPath, [String? base64Content]) {
+  void _addAttachment(String content, String iconPath,
+      [String? base64Content]) {
     setState(() {
       _attachments.add(AttachmentItem(
         fileName: content,
@@ -767,7 +798,7 @@ class _StaffAssignmentScreenState extends State<StaffAssignmentScreen> {
       context,
       MaterialPageRoute(
         builder: (context) => StaffSelectTopicScreen(
-          classes:widget.syllabusClasses,
+          classes: widget.syllabusClasses,
           callingScreen: '',
           syllabusId: widget.syllabusId,
           levelId: widget.levelId!,
@@ -791,18 +822,12 @@ class _StaffAssignmentScreenState extends State<StaffAssignmentScreen> {
   }
 
   void _saveAssignment() async {
-    
     if (_titleController.text.isEmpty) {
       CustomToaster.toastError(context, 'Error', 'Please enter a title');
       return;
     }
     if (_descriptionController.text.isEmpty) {
       CustomToaster.toastError(context, 'Error', 'Please enter a description');
-      return;
-    }
-  
-    if (_startDate == null || _endDate == null) {
-      CustomToaster.toastError(context, 'Error', 'Please select both start and end dates');
       return;
     }
     if (_marksController.text.isEmpty) {
@@ -815,9 +840,11 @@ class _StaffAssignmentScreenState extends State<StaffAssignmentScreen> {
     });
 
     try {
-            final assignmentProvider = Provider.of<provider.AssignmentProvider>(context, listen: false);
+      final assignmentProvider =
+          Provider.of<provider.AssignmentProvider>(context, listen: false);
       final userBox = Hive.box('userData');
-      final storedUserData = userBox.get('userData') ?? userBox.get('loginResponse');
+      final storedUserData =
+          userBox.get('userData') ?? userBox.get('loginResponse');
       final processedData = storedUserData is String
           ? json.decode(storedUserData)
           : storedUserData;
@@ -827,29 +854,28 @@ class _StaffAssignmentScreenState extends State<StaffAssignmentScreen> {
       final selectedClassIds = userBox.get('selectedClassIds') ?? [];
 
       final classIdList = selectedClassIds.map<Map<String, dynamic>>((classId) {
-  final classIdStr = classId.toString();
-  final classData = classes.firstWhere(
-    (cls) => cls['id'].toString() == classIdStr,
-    orElse: () => {'class_id': classIdStr, 'class_name': 'Unknown'},
-  );
-  return {
-    'class_id': classIdStr,
-    'class_name': (classData['class_name']?.toString() ?? 'Unknown'),
-  };
-}).toList();
+        final classIdStr = classId.toString();
+        final classData = classes.firstWhere(
+          (cls) => cls['id'].toString() == classIdStr,
+          orElse: () => {'class_id': classIdStr, 'class_name': 'Unknown'},
+        );
+        return {
+          'class_id': classIdStr,
+          'class_name': (classData['class_name']?.toString() ?? 'Unknown'),
+        };
+      }).toList();
 
-
-    if (classIdList.isEmpty && widget.classId != null) {
-  final classIdStr = widget.classId!;
-  final classData = classes.firstWhere(
-    (cls) => cls['id'].toString() == classIdStr,
-    orElse: () => {'class_id': classIdStr, 'class_name': _selectedClass},
-  );
-  classIdList.add({
-    'class_id': classIdStr,
-    'class_name': (classData['class_name']?.toString() ?? _selectedClass),
-  });
-}
+      if (classIdList.isEmpty && widget.classId != null) {
+        final classIdStr = widget.classId!;
+        final classData = classes.firstWhere(
+          (cls) => cls['id'].toString() == classIdStr,
+          orElse: () => {'class_id': classIdStr, 'class_name': _selectedClass},
+        );
+        classIdList.add({
+          'class_id': classIdStr,
+          'class_name': (classData['class_name']?.toString() ?? _selectedClass),
+        });
+      }
 
       final Map<String, dynamic> assignmentPayload = {
         'title': _titleController.text,
@@ -866,17 +892,20 @@ class _StaffAssignmentScreenState extends State<StaffAssignmentScreen> {
         'start_date': _formatDate(_startDate),
         'end_date': _formatDate(_endDate),
         'grade': _marks.replaceAll(RegExp(r'[^0-9]'), ''),
-        'classes':widget.syllabusClasses,
-    // ? classIdList
-    // : [
-    //     {'class_id': '', 'class_name': ''},
-    //   ],
+        'classes': widget.syllabusClasses,
+        // ? classIdList
+        // : [
+        //     {'class_id': '', 'class_name': ''},
+        //   ],
         'files': _attachments.map((attachment) {
           return {
-            'type': _getAttachmentType(attachment.iconPath!, attachment.fileName!),
+            'type':
+                _getAttachmentType(attachment.iconPath!, attachment.fileName!),
             'file_name': attachment.fileName,
-           'file': attachment.fileContent != null ? attachment.fileContent : null,
-            'old_file_name': attachment.isExisting ? (attachment.originalServerFileName ?? '') : '',
+            'file': attachment.fileContent,
+            'old_file_name': attachment.isExisting
+                ? (attachment.originalServerFileName ?? '')
+                : '',
           };
         }).toList(),
         if (widget.editMode) 'removed_files': _removedServerFileNames,
@@ -897,7 +926,8 @@ class _StaffAssignmentScreenState extends State<StaffAssignmentScreen> {
       Navigator.of(context).pop();
     } catch (e) {
       print('Error saving assignment: $e');
-      CustomToaster.toastError(context, 'Error', 'Failed to save assignment: $e');
+      CustomToaster.toastError(
+          context, 'Error', 'Failed to save assignment: $e');
     } finally {
       setState(() {
         _isSaving = false;
@@ -905,44 +935,65 @@ class _StaffAssignmentScreenState extends State<StaffAssignmentScreen> {
     }
   }
 
-String _getAttachmentType(String iconPath, String content) {
+  String _getAttachmentType(String iconPath, String content) {
     if (iconPath.contains('link')) return 'url';
-    
+
     // Extract file extension from content/filename
     String extension = '';
     if (content.contains('.')) {
       extension = content.split('.').last.toLowerCase();
     }
-    
+
     if (iconPath.contains('upload') || extension.isNotEmpty) {
       // Document types
-      if (['pdf', 'doc', 'docx', 'txt', 'rtf', 'odt'].contains(extension)) return 'pdf';
-      // Spreadsheet types  
+      if (['pdf', 'doc', 'docx', 'txt', 'rtf', 'odt'].contains(extension))
+        return 'pdf';
+      // Spreadsheet types
       if (['xls', 'xlsx', 'csv', 'ods'].contains(extension)) return 'pdf';
       // Presentation types
       if (['ppt', 'pptx', 'odp'].contains(extension)) return 'pdf';
       // Image types
-      if (['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'].contains(extension)) return 'image';
+      if (['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'].contains(extension))
+        return 'image';
       // Video types
-      if (['mp4', 'mov', 'avi', 'wmv', 'flv', 'webm'].contains(extension)) return 'video';
-  
+      if (['mp4', 'mov', 'avi', 'wmv', 'flv', 'webm'].contains(extension))
+        return 'video';
+
       return 'file';
     }
-    
-    if (iconPath.contains('camera') || iconPath.contains('take_photo')) return 'image';
-    if (iconPath.contains('video') || iconPath.contains('record_video')) return 'video';
-    
+
+    if (iconPath.contains('camera') || iconPath.contains('take_photo'))
+      return 'image';
+    if (iconPath.contains('video') || iconPath.contains('record_video'))
+      return 'video';
+
     if (extension.isNotEmpty) {
-      if (['pdf', 'doc', 'docx', 'txt', 'rtf', 'odt', 'xls', 'xlsx', 'csv', 'ods', 'ppt', 'pptx', 'odp'].contains(extension)) return 'pdf';
-      if (['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'].contains(extension)) return 'image';
-      if (['mp4', 'mov', 'avi', 'wmv', 'flv', 'webm'].contains(extension)) return 'video';
+      if ([
+        'pdf',
+        'doc',
+        'docx',
+        'txt',
+        'rtf',
+        'odt',
+        'xls',
+        'xlsx',
+        'csv',
+        'ods',
+        'ppt',
+        'pptx',
+        'odp'
+      ].contains(extension)) return 'pdf';
+      if (['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'].contains(extension))
+        return 'image';
+      if (['mp4', 'mov', 'avi', 'wmv', 'flv', 'webm'].contains(extension))
+        return 'video';
     }
-    
+
     return 'file'; // Default fallback
   }
 }
 
-class  AssignmentFormData  {
+class AssignmentFormData {
   final int? id;
   final String title;
   final String description;
@@ -953,7 +1004,7 @@ class  AssignmentFormData  {
   final String marks;
   final DateTime createdAt;
 
-   AssignmentFormData ({
+  AssignmentFormData({
     this.id,
     required this.title,
     required this.description,

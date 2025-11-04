@@ -15,16 +15,16 @@ class TestScreen extends StatefulWidget {
 
 class _TestScreenState extends State<TestScreen> {
   @override
- @override
-void initState() {
-  super.initState();
-  // Fetch exam data when screen initializes
-  WidgetsBinding.instance.addPostFrameCallback((_) {
-    final provider = Provider.of<ExamProvider>(context, listen: false);
-    provider.fetchExamData(widget.examTypeId);
-    print("Fetching exam data...");
-  });
-}
+  @override
+  void initState() {
+    super.initState();
+    // Fetch exam data when screen initializes
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final provider = Provider.of<ExamProvider>(context, listen: false);
+      provider.fetchExamData(widget.examTypeId);
+      print("Fetching exam data...");
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -60,7 +60,9 @@ void initState() {
                       // Timer Section
                       Row(
                         children: [
-                          Image(image: AssetImage('assets/icons/alarm_clock.png')),
+                          Image(
+                              image:
+                                  AssetImage('assets/icons/alarm_clock.png')),
                           const SizedBox(width: 8),
                           Text(
                             '58:22',
@@ -72,13 +74,13 @@ void initState() {
                         ],
                       ),
                       const SizedBox(height: 16),
-                      
+
                       // Progress Section
                       _buildProgressSection(examProvider),
                     ],
                   ),
                 ),
-                
+
                 // Scrollable content
                 Expanded(
                   child: SingleChildScrollView(
@@ -88,7 +90,7 @@ void initState() {
                         children: [
                           // Question Card
                           _buildQuestionCard(examProvider),
-                          
+
                           // Navigation Buttons
                           const SizedBox(height: 16),
                           _buildNavigationButtons(examProvider),
@@ -109,7 +111,7 @@ void initState() {
   Widget _buildProgressSection(ExamProvider provider) {
     final total = provider.questions.length;
     final current = provider.currentQuestionIndex + 1;
-    
+
     return Container(
       width: 400,
       height: 65,
@@ -157,7 +159,7 @@ void initState() {
 
   Widget _buildQuestionCard(ExamProvider provider) {
     final question = provider.currentQuestion;
-    
+
     return Container(
       width: double.infinity,
       margin: const EdgeInsets.symmetric(vertical: 8.0),
@@ -177,7 +179,7 @@ void initState() {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const SizedBox(height: 16),
-          
+
           // Question Content Section (not scrollable)
           Text(
             question?.content ?? 'Loading question...',
@@ -187,7 +189,7 @@ void initState() {
             ),
           ),
           const SizedBox(height: 16),
-          
+
           // Options Section (not scrollable)
           if (question != null)
             Column(
@@ -201,15 +203,16 @@ void initState() {
   List<Widget> _buildOptions(ExamProvider provider, QuestionModel question) {
     final options = question.getOptions();
     final selectedAnswer = provider.userAnswers[provider.currentQuestionIndex];
-    
+
     return options.asMap().entries.map((entry) {
       final index = entry.key;
       final option = entry.value;
-      
+
       return Padding(
         padding: const EdgeInsets.symmetric(vertical: 8.0),
         child: InkWell(
-          onTap: () => provider.selectAnswer(provider.currentQuestionIndex, index),
+          onTap: () =>
+              provider.selectAnswer(provider.currentQuestionIndex, index),
           child: Container(
             width: double.infinity,
             padding: const EdgeInsets.symmetric(
@@ -232,8 +235,8 @@ void initState() {
                 Radio<int>(
                   value: index,
                   groupValue: selectedAnswer,
-                  onChanged: (value) =>
-                      provider.selectAnswer(provider.currentQuestionIndex, value!),
+                  onChanged: (value) => provider.selectAnswer(
+                      provider.currentQuestionIndex, value!),
                   activeColor: AppColors.attCheckColor2,
                 ),
                 Expanded(
@@ -277,15 +280,17 @@ void initState() {
                 borderRadius: BorderRadius.circular(4),
               ),
             ),
-            child: const Text('Previous', style: TextStyle(color: Colors.white)),
+            child:
+                const Text('Previous', style: TextStyle(color: Colors.white)),
           ),
         ),
         const SizedBox(width: 16),
         Expanded(
           child: ElevatedButton(
-            onPressed: provider.currentQuestionIndex < provider.questions.length - 1
-                ? () => provider.nextQuestion()
-                : null,
+            onPressed:
+                provider.currentQuestionIndex < provider.questions.length - 1
+                    ? () => provider.nextQuestion()
+                    : null,
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.eLearningBtnColor5,
               shape: RoundedRectangleBorder(
@@ -299,4 +304,3 @@ void initState() {
     );
   }
 }
-

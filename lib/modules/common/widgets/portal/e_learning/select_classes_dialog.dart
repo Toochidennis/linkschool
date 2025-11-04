@@ -10,7 +10,8 @@ class SelectClassesDialog extends StatefulWidget {
   List<Map<String, dynamic>>? syllabusClasses;
   final String? levelId; // Changed from 'leveId' to 'levelId'
 
-   SelectClassesDialog({super.key, required this.onSave, this.levelId, this.syllabusClasses});
+  SelectClassesDialog(
+      {super.key, required this.onSave, this.levelId, this.syllabusClasses});
 
   @override
   _SelectClassesDialogState createState() => _SelectClassesDialogState();
@@ -30,68 +31,75 @@ class _SelectClassesDialogState extends State<SelectClassesDialog> {
   }
 
   Future<void> _loadClasses() async {
-  try {
+    try {
+      if (widget.syllabusClasses != null &&
+          widget.syllabusClasses!.isNotEmpty) {
+        setState(() {
+          _classes = widget.syllabusClasses!
+              .map((cls) => [
+                    cls['id']?.toString() ?? '',
+                    cls['name']?.toString() ??
+                        cls['class_name']?.toString() ??
+                        '',
+                  ])
+              .toList();
+          _selectedClasses = List.generate(_classes.length, (_) => true);
+          _selectAll = true;
+          _selectedRowIndices =
+              List.generate(_classes.length, (index) => index);
+        });
+        return;
+      }
+      final userBox = Hive.box('userData');
+      final storedUserData =
+          userBox.get('userData') ?? userBox.get('loginResponse');
+      final selectedClassIds = userBox.get('selectedClassIds') as List? ?? [];
 
-    if (widget.syllabusClasses != null && widget.syllabusClasses!.isNotEmpty) {
-      setState(() {
-        _classes = widget.syllabusClasses!
-            .map((cls) => [
-                  cls['id']?.toString() ?? '',
-                  cls['name']?.toString() ?? cls['class_name']?.toString() ?? '',
-                ])
-            .toList();
-        _selectedClasses = List.generate(_classes.length, (_) => true);
-        _selectAll = true;
-        _selectedRowIndices = List.generate(_classes.length, (index) => index);
-      });
-      return;
-    }
-    final userBox = Hive.box('userData');
-    final storedUserData = userBox.get('userData') ?? userBox.get('loginResponse');
-    final selectedClassIds = userBox.get('selectedClassIds') as List? ?? [];
-    
-    if (storedUserData != null) {
-      final processedData = storedUserData is String
-          ? json.decode(storedUserData)
-          : storedUserData;
-      final response = processedData['response'] ?? processedData;
-      final data = response['data'] ?? response;
-      final classes = data['classes'] ?? [];
+      if (storedUserData != null) {
+        final processedData = storedUserData is String
+            ? json.decode(storedUserData)
+            : storedUserData;
+        final response = processedData['response'] ?? processedData;
+        final data = response['data'] ?? response;
+        final classes = data['classes'] ?? [];
 
-      setState(() {
-        _classes = classes
-            .where((cls) => 
-                cls['class_name'] != null && 
-                cls['class_name'].toString().trim().isNotEmpty &&
-                (widget.levelId == null || cls['level_id']?.toString() == widget.levelId))
-            .map((cls) => [
-                  cls['id'].toString(),
-                  cls['class_name'].toString().trim(),
-                ])
-            .toList();
-            
-        // Preselect classes that were previously selected
-        _selectedClasses = _classes.map((cls) {
-          return selectedClassIds.contains(cls[0]);
-        }).toList();
-        
-        _selectAll = _selectedClasses.every((isSelected) => isSelected);
-        if (_selectAll) {
-          _selectedRowIndices = List.generate(_classes.length, (index) => index);
-        } else {
-          _selectedRowIndices = [];
-          for (int i = 0; i < _selectedClasses.length; i++) {
-            if (_selectedClasses[i]) {
-              _selectedRowIndices.add(i);
+        setState(() {
+          _classes = classes
+              .where((cls) =>
+                  cls['class_name'] != null &&
+                  cls['class_name'].toString().trim().isNotEmpty &&
+                  (widget.levelId == null ||
+                      cls['level_id']?.toString() == widget.levelId))
+              .map((cls) => [
+                    cls['id'].toString(),
+                    cls['class_name'].toString().trim(),
+                  ])
+              .toList();
+
+          // Preselect classes that were previously selected
+          _selectedClasses = _classes.map((cls) {
+            return selectedClassIds.contains(cls[0]);
+          }).toList();
+
+          _selectAll = _selectedClasses.every((isSelected) => isSelected);
+          if (_selectAll) {
+            _selectedRowIndices =
+                List.generate(_classes.length, (index) => index);
+          } else {
+            _selectedRowIndices = [];
+            for (int i = 0; i < _selectedClasses.length; i++) {
+              if (_selectedClasses[i]) {
+                _selectedRowIndices.add(i);
+              }
             }
           }
-        }
-      });
+        });
+      }
+    } catch (e) {
+      print('Error loading classes: $e');
     }
-  } catch (e) {
-    print('Error loading classes: $e');
   }
-}
+
   // Rest of the methods remain exactly the same
   void _toggleSelectAll() {
     setState(() {
@@ -125,8 +133,10 @@ class _SelectClassesDialogState extends State<SelectClassesDialog> {
       await userBox.put('selectedClassIds', classIds);
       widget.onSave('All classes selected');
     } else if (_selectedRowIndices.isNotEmpty) {
-      final selectedClasses = _selectedRowIndices.map((index) => _classes[index][1]).toList();
-      final selectedClassIds = _selectedRowIndices.map((index) => _classes[index][0]).toList();
+      final selectedClasses =
+          _selectedRowIndices.map((index) => _classes[index][1]).toList();
+      final selectedClassIds =
+          _selectedRowIndices.map((index) => _classes[index][0]).toList();
       await userBox.put('selectedClassIds', selectedClassIds);
       final selectedClassesString = _selectedRowIndices.length > 1
           ? '${_selectedRowIndices.length} classes selected'
@@ -216,7 +226,9 @@ class _SelectClassesDialogState extends State<SelectClassesDialog> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
         decoration: BoxDecoration(
-          color: _selectAll ? AppColors.eLearningBtnColor2 : AppColors.backgroundLight,
+          color: _selectAll
+              ? AppColors.eLearningBtnColor2
+              : AppColors.backgroundLight,
           border: Border.all(color: AppColors.attBorderColor1),
         ),
         child: Row(
@@ -232,7 +244,9 @@ class _SelectClassesDialogState extends State<SelectClassesDialog> {
             Container(
               padding: const EdgeInsets.all(4.0),
               decoration: BoxDecoration(
-                color: _selectAll ? AppColors.attCheckColor1 : AppColors.attBgColor1,
+                color: _selectAll
+                    ? AppColors.attCheckColor1
+                    : AppColors.attBgColor1,
                 shape: BoxShape.circle,
                 border: Border.all(color: AppColors.attCheckColor1),
               ),
@@ -258,7 +272,9 @@ class _SelectClassesDialogState extends State<SelectClassesDialog> {
       itemBuilder: (context, index) {
         return ListTile(
           contentPadding: const EdgeInsets.symmetric(horizontal: 16.0),
-          tileColor: _selectedClasses[index] ? AppColors.eLearningBtnColor2 : Colors.transparent,
+          tileColor: _selectedClasses[index]
+              ? AppColors.eLearningBtnColor2
+              : Colors.transparent,
           title: Text(
             _classes[index][1],
             style: AppTextStyles.normal500(

@@ -34,7 +34,8 @@ class _PerformanceChartState extends State<PerformanceChart> {
       if (settings == null || db == null) {
         setState(() {
           isLoading = false;
-          errorMessage = 'No settings or database configuration found. Please login again.';
+          errorMessage =
+              'No settings or database configuration found. Please login again.';
         });
         return;
       }
@@ -98,11 +99,16 @@ class _PerformanceChartState extends State<PerformanceChart> {
     }
 
     if (errorMessage != null) {
-      return Center(child: Text(errorMessage!, style: AppTextStyles.normal400(fontSize: 14, color: Colors.red)));
+      return Center(
+          child: Text(errorMessage!,
+              style: AppTextStyles.normal400(fontSize: 14, color: Colors.red)));
     }
 
     if (performanceData.isEmpty) {
-      return  Center(child: Text('No performance data available', style: AppTextStyles.normal400(fontSize: 14, color: Colors.black)));
+      return Center(
+          child: Text('No performance data available',
+              style:
+                  AppTextStyles.normal400(fontSize: 14, color: Colors.black)));
     }
 
     return Column(
@@ -115,8 +121,10 @@ class _PerformanceChartState extends State<PerformanceChart> {
               BarChartData(
                 maxY: 100,
                 titlesData: FlTitlesData(
-                  rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                  topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                  rightTitles: const AxisTitles(
+                      sideTitles: SideTitles(showTitles: false)),
+                  topTitles: const AxisTitles(
+                      sideTitles: SideTitles(showTitles: false)),
                   bottomTitles: AxisTitles(
                     sideTitles: SideTitles(
                       showTitles: true,
@@ -262,4 +270,3 @@ class _PerformanceChartState extends State<PerformanceChart> {
     );
   }
 }
-

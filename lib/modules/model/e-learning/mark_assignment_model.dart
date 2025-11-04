@@ -86,17 +86,15 @@ class Assignment {
       contentId: json['content_id'] ?? 0,
       studentId: json['student_id'] ?? 0,
       studentName: json['student_name'] ?? '',
-      files: (json['files'] as List<dynamic>?)
-              ?.map((e) {
-                if (e is Map<String, dynamic>) {
-                  return AssignmentFile.fromJson(e);
-                } else if (e is AssignmentFile) {
-                  return e;
-                } else {
-                  throw Exception('Invalid type in files list: ${e.runtimeType}');
-                }
-              })
-              .toList() ??
+      files: (json['files'] as List<dynamic>?)?.map((e) {
+            if (e is Map<String, dynamic>) {
+              return AssignmentFile.fromJson(e);
+            } else if (e is AssignmentFile) {
+              return e;
+            } else {
+              throw Exception('Invalid type in files list: ${e.runtimeType}');
+            }
+          }).toList() ??
           [],
       markingScore: json['marking_score'] ?? '',
       score: json['score'] ?? '',

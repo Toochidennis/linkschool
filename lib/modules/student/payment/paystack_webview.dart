@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:linkschool/modules/student/payment/student_payment_home_screen.dart';
 import 'package:provider/provider.dart';
@@ -23,7 +22,7 @@ class PaystackWebView extends StatefulWidget {
   final String studentId;
 
   const PaystackWebView({
-    Key? key,
+    super.key,
     required this.checkoutUrl,
     required this.reference,
     required this.dbName,
@@ -38,7 +37,7 @@ class PaystackWebView extends StatefulWidget {
     required this.term,
     required this.email,
     required this.studentId,
-  }) : super(key: key);
+  });
 
   @override
   State<PaystackWebView> createState() => _PaystackWebViewState();
@@ -69,48 +68,52 @@ class _PaystackWebViewState extends State<PaystackWebView> {
   }
 
   Future<void> _postPaymentData() async {
-  if (_posted) return;
-  _posted = true;
+    if (_posted) return;
+    _posted = true;
 
-  try {
-    final paymentProvider = Provider.of<PaymentProvider>(context, listen: false);
+    try {
+      final paymentProvider =
+          Provider.of<PaymentProvider>(context, listen: false);
 
-    await paymentProvider.initializePayment(
-      invoiceId: widget.invoiceId,
-      reference: widget.reference,
-      regNo: widget.regNo,
-      name: widget.name,
-      amount: widget.amount.toDouble(),
-      invoiceDetails: widget.invoiceDetails,
-      classId: widget.classId,
-      levelId: widget.levelId,
-      year: widget.year,
-      term: widget.term,
-      email: widget.email,
-      studentId: widget.studentId,
-    );
+      await paymentProvider.initializePayment(
+        invoiceId: widget.invoiceId,
+        reference: widget.reference,
+        regNo: widget.regNo,
+        name: widget.name,
+        amount: widget.amount.toDouble(),
+        invoiceDetails: widget.invoiceDetails,
+        classId: widget.classId,
+        levelId: widget.levelId,
+        year: widget.year,
+        term: widget.term,
+        email: widget.email,
+        studentId: widget.studentId,
+      );
 
-    print("✅ Payment data posted before closing Paystack WebView");
+      print("✅ Payment data posted before closing Paystack WebView");
 
-    if (!mounted) return;
+      if (!mounted) return;
 
-   Navigator.popUntil(
-      context,
-      (route) => route.settings.name == StudentPaymentHomeScreen.routeName ||
-          route.isFirst, // Fallback to first route if StudentPaymentHomeScreen not found
-    );
-  } catch (e) {
-    print("❌ Error posting payment data: $e");
+      Navigator.popUntil(
+        context,
+        (route) =>
+            route.settings.name == StudentPaymentHomeScreen.routeName ||
+            route
+                .isFirst, // Fallback to first route if StudentPaymentHomeScreen not found
+      );
+    } catch (e) {
+      print("❌ Error posting payment data: $e");
+    }
   }
-}
-
 
   void _navigateBackToHomeScreen() async {
     await _postPaymentData();
     Navigator.popUntil(
       context,
-      (route) => route.settings.name == StudentPaymentHomeScreen.routeName ||
-          route.isFirst, // Fallback to first route if StudentPaymentHomeScreen not found
+      (route) =>
+          route.settings.name == StudentPaymentHomeScreen.routeName ||
+          route
+              .isFirst, // Fallback to first route if StudentPaymentHomeScreen not found
     );
   }
 
@@ -130,7 +133,7 @@ class _PaystackWebViewState extends State<PaystackWebView> {
             onPressed: _postPaymentData,
           ),
         ),
-  body: WebViewWidget(controller: _controller),
+        body: WebViewWidget(controller: _controller),
       ),
     );
   }

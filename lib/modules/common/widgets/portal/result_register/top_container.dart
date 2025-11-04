@@ -45,7 +45,9 @@ class _TopContainerState extends State<TopContainer> {
     final userBox = Hive.box('userData');
     final userData = userBox.get('userData');
 
-    if (userData != null && userData['data'] != null && userData['data']['settings'] != null) {
+    if (userData != null &&
+        userData['data'] != null &&
+        userData['data']['settings'] != null) {
       setState(() {
         _settings = Map<String, dynamic>.from(userData['data']['settings']);
 
@@ -56,7 +58,8 @@ class _TopContainerState extends State<TopContainer> {
                 ? 'Second term'
                 : 'Third term';
 
-        _academicSession = "${int.parse(_settings['year'] ?? '2023') - 1}/${_settings['year'] ?? '2023'} academic session";
+        _academicSession =
+            "${int.parse(_settings['year'] ?? '2023') - 1}/${_settings['year'] ?? '2023'} academic session";
       });
     }
   }
@@ -111,8 +114,8 @@ class _TopContainerState extends State<TopContainer> {
                 children: [
                   Container(
                     height: 42,
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 16, vertical: 8),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                     decoration: BoxDecoration(
                       color: AppColors.regBtnColor1,
                       borderRadius: BorderRadius.circular(24),
@@ -142,7 +145,8 @@ class _TopContainerState extends State<TopContainer> {
                     children: [
                       const CircleAvatar(
                         backgroundColor: AppColors.regAvatarColor,
-                        child: Icon(Icons.person, color: AppColors.primaryLight),
+                        child:
+                            Icon(Icons.person, color: AppColors.primaryLight),
                       ),
                       const SizedBox(width: 12),
                       Text(

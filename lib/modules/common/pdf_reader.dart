@@ -89,7 +89,6 @@ class _PdfViewerPageState extends State<PdfViewerPage> {
   }
 }
 
-
 // import 'package:flutter/material.dart';
 // import 'package:flutter_pdfview/flutter_pdfview.dart';
 // import 'package:http/http.dart' as http;
@@ -107,7 +106,6 @@ class _PdfViewerPageState extends State<PdfViewerPage> {
 // class _PdfViewerPageState extends State<PdfViewerPage> {
 //   String? localPath;
 //   bool loading = true;
-  
 
 //   @override
 //   void initState() {

@@ -75,7 +75,8 @@ class _PaymentSettingScreenState extends State<PaymentSettingScreen> {
                 title: 'Account',
                 onTap: () => Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => AccountSettingScreen()),
+                  MaterialPageRoute(
+                      builder: (context) => AccountSettingScreen()),
                 ),
               ),
               _buildSettingsRow(
@@ -96,17 +97,19 @@ class _PaymentSettingScreenState extends State<PaymentSettingScreen> {
                 title: 'Vendor',
                 onTap: () => Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => VendorSettingsScreen()),
+                  MaterialPageRoute(
+                      builder: (context) => VendorSettingsScreen()),
                 ),
               ),
               _buildSettingsRow(
                 icon: 'assets/icons/profile/logout.svg',
                 title: 'Logout',
                 onTap: () async {
-                  final authProvider = Provider.of<AuthProvider>(context, listen: false);
+                  final authProvider =
+                      Provider.of<AuthProvider>(context, listen: false);
                   await authProvider.logout(); // Clear user data from Hive
-                  widget.onLogout(); 
-                    Navigator.of(context).pop();
+                  widget.onLogout();
+                  Navigator.of(context).pop();
                   // Trigger the logout callback
                 },
               ),
@@ -176,6 +179,3 @@ class _PaymentSettingScreenState extends State<PaymentSettingScreen> {
     );
   }
 }
-
-
-

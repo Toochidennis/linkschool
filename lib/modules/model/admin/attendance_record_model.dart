@@ -16,7 +16,8 @@ class AttendanceRecord {
   });
 
   factory AttendanceRecord.fromJson(Map<String, dynamic> json) {
-    final registerData = json['students'] as List<dynamic>?; // Changed from 'register' to 'students'
+    final registerData = json['students']
+        as List<dynamic>?; // Changed from 'register' to 'students'
     return AttendanceRecord(
       id: json['id'],
       count: json['attendance_count'],
@@ -34,11 +35,12 @@ class AttendanceRecord {
       'attendance_date': date.toIso8601String(),
       'course_id': course,
       'course_name': courseName,
-      'students': register?.map((item) => item.toJson()).toList(), // Changed to 'students' for consistency with API
+      'students': register
+          ?.map((item) => item.toJson())
+          .toList(), // Changed to 'students' for consistency with API
     };
   }
 }
-
 
 class Register {
   final String id;
@@ -63,4 +65,3 @@ class Register {
     };
   }
 }
-

@@ -4,7 +4,6 @@ import 'package:flutter_chat_types/flutter_chat_types.dart' as types;
 import 'package:flutter_chat_ui/flutter_chat_ui.dart';
 import 'package:uuid/uuid.dart';
 
-
 class Aichatbot extends StatefulWidget {
   const Aichatbot({super.key});
 
@@ -54,7 +53,8 @@ class _AichatbotState extends State<Aichatbot> {
     Future.delayed(Duration(seconds: 1), () {
       String response;
       if (query.toLowerCase().contains("m4 macbook")) {
-        response = "It costs approximately 2.5 million naira to get an M4 MacBook with 16GB RAM, depending on the vendor.";
+        response =
+            "It costs approximately 2.5 million naira to get an M4 MacBook with 16GB RAM, depending on the vendor.";
       } else {
         response = "I'm not sure about that. Can you ask something else?";
       }
@@ -65,17 +65,15 @@ class _AichatbotState extends State<Aichatbot> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: Constants.customAppBar(context: context, title: 'Ask our Ai anything', centerTitle: true),
-      body:Container(
-        decoration: Constants.customBoxDecoration(context),
-        child: Chat(
-          messages: _messages,
-          onSendPressed: _handleSendPressed,
-          user: _user,
-        ),
-      )
-    );
+        appBar: Constants.customAppBar(
+            context: context, title: 'Ask our Ai anything', centerTitle: true),
+        body: Container(
+          decoration: Constants.customBoxDecoration(context),
+          child: Chat(
+            messages: _messages,
+            onSendPressed: _handleSendPressed,
+            user: _user,
+          ),
+        ));
   }
 }
-
-

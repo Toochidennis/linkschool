@@ -55,7 +55,8 @@ class _AddExpenditureScreenState extends State<AddExpenditureScreen> {
     _isEditMode = widget.expenditure != null;
     _vendorNameController = TextEditingController();
     _amountController = TextEditingController();
-    _dateController = TextEditingController(text: DateFormat('yyyy-MM-dd').format(DateTime.now()));
+    _dateController = TextEditingController(
+        text: DateFormat('yyyy-MM-dd').format(DateTime.now()));
     _referenceController = TextEditingController();
     _accountTypeController = TextEditingController();
     _descriptionController = TextEditingController();
@@ -99,7 +100,8 @@ class _AddExpenditureScreenState extends State<AddExpenditureScreen> {
     _accountTypeController.text = exp.accountName;
 
     // Fetch accounts and set selected account
-    final accountProvider = Provider.of<AccountProvider>(context, listen: false);
+    final accountProvider =
+        Provider.of<AccountProvider>(context, listen: false);
     accountProvider.fetchAccounts().then((_) {
       if (accountProvider.allAccounts.isNotEmpty) {
         setState(() {
@@ -140,11 +142,14 @@ class _AddExpenditureScreenState extends State<AddExpenditureScreen> {
       return;
     }
     if (_selectedAccount == null) {
-      CustomToaster.toastWarning(context, 'Warning', 'Please select an account');
+      CustomToaster.toastWarning(
+          context, 'Warning', 'Please select an account');
       return;
     }
-    if (_amountController.text.isEmpty || double.tryParse(_amountController.text) == null) {
-      CustomToaster.toastWarning(context, 'Warning', 'Please enter a valid amount');
+    if (_amountController.text.isEmpty ||
+        double.tryParse(_amountController.text) == null) {
+      CustomToaster.toastWarning(
+          context, 'Warning', 'Please enter a valid amount');
       return;
     }
     if (_dateController.text.isEmpty) {
@@ -152,7 +157,8 @@ class _AddExpenditureScreenState extends State<AddExpenditureScreen> {
       return;
     }
     if (_descriptionController.text.isEmpty) {
-      CustomToaster.toastWarning(context, 'Warning', 'Please enter a description');
+      CustomToaster.toastWarning(
+          context, 'Warning', 'Please enter a description');
       return;
     }
 
@@ -177,7 +183,8 @@ class _AddExpenditureScreenState extends State<AddExpenditureScreen> {
     setState(() => _isLoading = true);
     ApiResponse<void> response;
     if (_isEditMode) {
-      response = await _expenditureService.updateExpenditure(widget.expenditure!.id, payload);
+      response = await _expenditureService.updateExpenditure(
+          widget.expenditure!.id, payload);
     } else {
       response = await _expenditureService.addExpenditure(payload);
     }
@@ -188,7 +195,9 @@ class _AddExpenditureScreenState extends State<AddExpenditureScreen> {
       CustomToaster.toastSuccess(
         context,
         'Success',
-        _isEditMode ? 'Expenditure updated successfully' : 'Expenditure added successfully',
+        _isEditMode
+            ? 'Expenditure updated successfully'
+            : 'Expenditure added successfully',
       );
       Navigator.pop(context);
     } else {
@@ -212,7 +221,8 @@ class _AddExpenditureScreenState extends State<AddExpenditureScreen> {
         ),
         title: Text(
           _isEditMode ? 'Edit Expenditure' : 'Add Expenditure',
-          style: AppTextStyles.normal600(fontSize: 24, color: AppColors.paymentTxtColor1),
+          style: AppTextStyles.normal600(
+              fontSize: 24, color: AppColors.paymentTxtColor1),
         ),
       ),
       body: _isLoading
@@ -236,7 +246,8 @@ class _AddExpenditureScreenState extends State<AddExpenditureScreen> {
                             setState(() {
                               _selectedVendor = vendor;
                               _vendorNameController.text = vendor.vendorName;
-                              _referenceController.text = vendor.reference ?? '';
+                              _referenceController.text =
+                                  vendor.reference ?? '';
                             });
                           },
                         ),
@@ -250,7 +261,8 @@ class _AddExpenditureScreenState extends State<AddExpenditureScreen> {
                   _buildFormField(
                     label: 'Amount',
                     controller: _amountController,
-                    keyboardType: TextInputType.numberWithOptions(decimal: true),
+                    keyboardType:
+                        TextInputType.numberWithOptions(decimal: true),
                     prefixIcon: SizedBox(
                       width: 16,
                       height: 16,
@@ -295,7 +307,9 @@ class _AddExpenditureScreenState extends State<AddExpenditureScreen> {
                     onTap: () async {
                       final result = await Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (context) => const AccountSelectionScreen()),
+                        MaterialPageRoute(
+                            builder: (context) =>
+                                const AccountSelectionScreen()),
                       );
                       if (result != null && result is AccountModel) {
                         setState(() {
@@ -320,7 +334,8 @@ class _AddExpenditureScreenState extends State<AddExpenditureScreen> {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.paymentTxtColor1,
                       padding: const EdgeInsets.symmetric(vertical: 15),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8)),
                     ),
                     child: Text(
                       _isEditMode ? 'Update Record' : 'Record Expenditure',
@@ -351,7 +366,8 @@ class _AddExpenditureScreenState extends State<AddExpenditureScreen> {
       children: [
         Text(
           label,
-          style: AppTextStyles.normal500(fontSize: 14, color: AppColors.backgroundDark),
+          style: AppTextStyles.normal500(
+              fontSize: 14, color: AppColors.backgroundDark),
         ),
         const SizedBox(height: 12),
         TextField(
@@ -388,5 +404,3 @@ class _AddExpenditureScreenState extends State<AddExpenditureScreen> {
     super.dispose();
   }
 }
-
-

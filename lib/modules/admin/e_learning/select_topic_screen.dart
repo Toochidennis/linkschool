@@ -9,7 +9,6 @@ import 'package:linkschool/modules/model/e-learning/topic_model.dart';
 import 'package:linkschool/modules/providers/admin/e_learning/topic_provider.dart';
 import 'package:provider/provider.dart';
 
-
 class SelectTopicScreen extends StatefulWidget {
   final String callingScreen;
   final VoidCallback? onTopicCreated;
@@ -131,9 +130,12 @@ class _SelectTopicScreenState extends State<SelectTopicScreen> {
                                 const SizedBox(height: 16),
                                 ElevatedButton(
                                   onPressed: () {
-                                    if (widget.syllabusId != null && widget.syllabusId! > 0) {
-                                      Provider.of<TopicProvider>(context, listen: false)
-                                          .fetchTopic(syllabusId: widget.syllabusId!);
+                                    if (widget.syllabusId != null &&
+                                        widget.syllabusId! > 0) {
+                                      Provider.of<TopicProvider>(context,
+                                              listen: false)
+                                          .fetchTopic(
+                                              syllabusId: widget.syllabusId!);
                                     }
                                   },
                                   child: const Text('Retry'),
@@ -176,8 +178,8 @@ class _SelectTopicScreenState extends State<SelectTopicScreen> {
                 .fetchTopic(syllabusId: widget.syllabusId!);
           }
         },
-        child: const Icon(Icons.add, color: AppColors.text6Light),
         backgroundColor: AppColors.primaryLight,
+        child: const Icon(Icons.add, color: AppColors.text6Light),
       ),
     );
   }
@@ -243,7 +245,3 @@ class TopicItem extends StatelessWidget {
     );
   }
 }
-
-
-
-

@@ -88,5 +88,3 @@ class _FullPageState extends State<FullPage> {
     );
   }
 }
-
-

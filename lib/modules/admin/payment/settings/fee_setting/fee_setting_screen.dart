@@ -109,7 +109,8 @@ class _FeeSettingScreenState extends State<FeeSettingScreen> {
                 child: Column(
                   children: [
                     // Show loading indicator at top when processing
-                    if (feeProvider.isLoading && feeProvider.feeNames.isNotEmpty)
+                    if (feeProvider.isLoading &&
+                        feeProvider.feeNames.isNotEmpty)
                       Container(
                         padding: const EdgeInsets.all(8),
                         child: Row(
@@ -144,11 +145,9 @@ class _FeeSettingScreenState extends State<FeeSettingScreen> {
                         },
                       ),
                     ),
-                     SizedBox(
-                           
-                              height: 80,
-                              
-                            ),
+                    SizedBox(
+                      height: 80,
+                    ),
                   ],
                 ),
               ),
@@ -173,15 +172,21 @@ class _FeeSettingScreenState extends State<FeeSettingScreen> {
       margin: EdgeInsets.only(bottom: 8),
       decoration: BoxDecoration(
         border: Border.all(
-          color: isNewlyAdded ? AppColors.eLearningBtnColor1 : Colors.grey.shade300,
+          color: isNewlyAdded
+              ? AppColors.eLearningBtnColor1
+              : Colors.grey.shade300,
           width: isNewlyAdded ? 2 : 1,
         ),
         borderRadius: BorderRadius.circular(8),
-        color: isNewlyAdded ? AppColors.eLearningBtnColor1.withOpacity(0.05) : null,
+        color: isNewlyAdded
+            ? AppColors.eLearningBtnColor1.withOpacity(0.05)
+            : null,
       ),
       child: ListTile(
         leading: CircleAvatar(
-          backgroundColor: isNewlyAdded ? AppColors.eLearningBtnColor1 : AppColors.eLearningBtnColor1,
+          backgroundColor: isNewlyAdded
+              ? AppColors.eLearningBtnColor1
+              : AppColors.eLearningBtnColor1,
           child: SvgPicture.asset('assets/icons/profile/fee.svg',
               color: Colors.white),
         ),
@@ -262,9 +267,11 @@ class _FeeSettingScreenState extends State<FeeSettingScreen> {
           ),
           child: AddFeeOverlay(
             onConfirm: (feeName, isMandatory) async {
-              final feeProvider = Provider.of<FeeProvider>(context, listen: false);
-              final success = await feeProvider.addFeeName(feeName, isMandatory);
-              
+              final feeProvider =
+                  Provider.of<FeeProvider>(context, listen: false);
+              final success =
+                  await feeProvider.addFeeName(feeName, isMandatory);
+
               if (success) {
                 CustomToaster.toastSuccess(
                   context,
@@ -299,13 +306,14 @@ class _FeeSettingScreenState extends State<FeeSettingScreen> {
             initialFeeName: feeName.feeName,
             initialIsMandatory: feeName.isMandatory,
             onConfirm: (newFeeName, newIsMandatory) async {
-              final feeProvider = Provider.of<FeeProvider>(context, listen: false);
+              final feeProvider =
+                  Provider.of<FeeProvider>(context, listen: false);
               final success = await feeProvider.updateFeeName(
                 feeName.id.toString(),
                 newFeeName,
                 newIsMandatory,
               );
-              
+
               if (success) {
                 CustomToaster.toastSuccess(
                   context,
@@ -340,7 +348,8 @@ class _FeeSettingScreenState extends State<FeeSettingScreen> {
           ),
           content: Text(
             'Are you sure you want to delete "${feeName.feeName}"? This action cannot be undone.',
-            style: AppTextStyles.normal400(fontSize: 16, color: AppColors.backgroundDark),
+            style: AppTextStyles.normal400(
+                fontSize: 16, color: AppColors.backgroundDark),
           ),
           actions: [
             TextButton(
@@ -356,10 +365,12 @@ class _FeeSettingScreenState extends State<FeeSettingScreen> {
             TextButton(
               onPressed: () async {
                 Navigator.of(context).pop();
-                
-                final feeProvider = Provider.of<FeeProvider>(context, listen: false);
-                final success = await feeProvider.deleteFeeName(feeName.id.toString());
-                
+
+                final feeProvider =
+                    Provider.of<FeeProvider>(context, listen: false);
+                final success =
+                    await feeProvider.deleteFeeName(feeName.id.toString());
+
                 if (success) {
                   CustomToaster.toastSuccess(
                     context,
@@ -388,9 +399,3 @@ class _FeeSettingScreenState extends State<FeeSettingScreen> {
     );
   }
 }
-
-
-
-
-
-

@@ -9,7 +9,7 @@ class StaffAssignmentProvider extends ChangeNotifier {
 
   Future<void> addAssignment(Map<String, dynamic> assignment) async {
     isLoading = true;
-    error = null; 
+    error = null;
     notifyListeners();
     try {
       await _staffAssignmentService.AddAssignment(assignment);
@@ -21,9 +21,9 @@ class StaffAssignmentProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> UpDateAssignment(Map<String, dynamic> assignment,int id) async {
+  Future<void> UpDateAssignment(Map<String, dynamic> assignment, int id) async {
     isLoading = true;
-    error = null; 
+    error = null;
     notifyListeners();
     try {
       await _staffAssignmentService.UpDateAssignment(assignment, id);
@@ -34,10 +34,10 @@ class StaffAssignmentProvider extends ChangeNotifier {
     isLoading = false;
     notifyListeners();
   }
-  
+
   Future<void> DeleteAssignment(int id) async {
     isLoading = true;
-    error = null; 
+    error = null;
     notifyListeners();
     try {
       await _staffAssignmentService.DeleteAssignment(id);

@@ -1,8 +1,5 @@
-
-
 import 'dart:convert';
 
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
 import 'package:linkschool/modules/model/student/quiz_submission_model.dart';
@@ -24,15 +21,14 @@ class SingleAssessmentScreen extends StatefulWidget {
   final SingleElearningContentData? childContent;
   final List<Question>? questions;
   final correctAnswer;
-  const SingleAssessmentScreen({
-    super.key,
-    this.timer,
-    this.questions,
-    this.duration,
-    this.correctAnswer,
-    this.quizTitle,
-    this.childContent
-  });
+  const SingleAssessmentScreen(
+      {super.key,
+      this.timer,
+      this.questions,
+      this.duration,
+      this.correctAnswer,
+      this.quizTitle,
+      this.childContent});
 
   @override
   _SingleAssesmentScreenState createState() => _SingleAssesmentScreenState();
@@ -47,7 +43,8 @@ class _SingleAssesmentScreenState extends State<SingleAssessmentScreen> {
   bool _isAnswered = false;
   bool _isCorrect = false;
   late double opacity;
-  final String networkImage = 'https://img.freepik.com/free-vector/gradient-human-rights-day-background_52683-149974.jpg?t=st=1717832829~exp=1717833429~hmac=3e938edcacd7fef2a791b36c7d3decbf64248d9760dd7da0a304acee382b8a86';
+  final String networkImage =
+      'https://img.freepik.com/free-vector/gradient-human-rights-day-background_52683-149974.jpg?t=st=1717832829~exp=1717833429~hmac=3e938edcacd7fef2a791b36c7d3decbf64248d9760dd7da0a304acee382b8a86';
 
   List<QuizQuestion> questions = [];
   double? totalscore;
@@ -67,17 +64,18 @@ class _SingleAssesmentScreenState extends State<SingleAssessmentScreen> {
     int remainingSeconds = seconds % 60;
     return '${hours.toString().padLeft(2, '0')}:${minutes.toString().padLeft(2, '0')}:${remainingSeconds.toString().padLeft(2, '0')}';
   }
-  getuserdata(){
+
+  getuserdata() {
     final userBox = Hive.box('userData');
     final storedUserData =
         userBox.get('userData') ?? userBox.get('loginResponse');
-    final processedData = storedUserData is String
-        ? json.decode(storedUserData)
-        : storedUserData;
+    final processedData =
+        storedUserData is String ? json.decode(storedUserData) : storedUserData;
     final response = processedData['response'] ?? processedData;
     final data = response['data'] ?? response;
     return data;
   }
+
   Future<void> _loadQuestions() async {
     try {
       if (widget.questions != null && widget.questions!.isNotEmpty) {
@@ -91,7 +89,7 @@ class _SingleAssesmentScreenState extends State<SingleAssessmentScreen> {
                 ? questionFiles[0]['file_name'] as String?
                 : null;
 
-            final CorrectAnswer? correct = q.correct;
+            final CorrectAnswer correct = q.correct;
 
             if (q.questionType == 'multiple_choice') {
               final List<Option> options = q.options ?? [];
@@ -110,9 +108,7 @@ class _SingleAssesmentScreenState extends State<SingleAssessmentScreen> {
                     'imageUrl': optionImage,
                   };
                 }).toList(),
-                correctAnswers: correct != null && correct.text != null
-                    ? [correct.text]
-                    : [],
+                correctAnswers: correct != null ? [correct.text] : [],
               );
             } else {
               // Handles 'short_answer'
@@ -120,14 +116,14 @@ class _SingleAssesmentScreenState extends State<SingleAssessmentScreen> {
                 topic: topic,
                 questionText: questionText,
                 imageUrl: imagePath,
-                correctAnswer: correct?.text ?? '',
+                correctAnswer: correct.text ?? '',
               );
             }
           }).toList();
 
           _totalQuestions = questions.length;
           userAnswers =
-          List<dynamic>.filled(_totalQuestions, null, growable: false);
+              List<dynamic>.filled(_totalQuestions, null, growable: false);
         });
       } else {
         // fallback demo questions
@@ -135,7 +131,8 @@ class _SingleAssesmentScreenState extends State<SingleAssessmentScreen> {
           questions = [
             TextQuestion(
               topic: "Anti-corruption in the world",
-              questionText: "What is the main reason for corruption in Nigeria?",
+              questionText:
+                  "What is the main reason for corruption in Nigeria?",
               options: [
                 {'text': "Poverty", 'imageUrl': null},
                 {'text': "Lack of education", 'imageUrl': null},
@@ -165,14 +162,13 @@ class _SingleAssesmentScreenState extends State<SingleAssessmentScreen> {
           ];
           _totalQuestions = questions.length;
           userAnswers =
-          List<dynamic>.filled(_totalQuestions, null, growable: false);
+              List<dynamic>.filled(_totalQuestions, null, growable: false);
         });
       }
     } catch (e) {
       debugPrint('Error loading questions: $e');
     }
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -182,7 +178,7 @@ class _SingleAssesmentScreenState extends State<SingleAssessmentScreen> {
       backgroundColor: AppColors.eLearningBtnColor1,
       appBar: AppBar(
         backgroundColor: AppColors.eLearningBtnColor1,
-        title:  Text(
+        title: Text(
           widget.quizTitle ?? 'No title',
           style: TextStyle(color: Colors.white, fontSize: 16),
         ),
@@ -191,21 +187,21 @@ class _SingleAssesmentScreenState extends State<SingleAssessmentScreen> {
       body: questions.isEmpty
           ? const Center(child: CircularProgressIndicator())
           : Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: SingleChildScrollView(
-          child: Column(
-            children: [
-              _buildTimerRow(),
-              const SizedBox(height: 16),
-              _buildProgressSection(),
-              const SizedBox(height: 16),
-              _buildQuestionCard(),
-              const SizedBox(height: 16),
-              _buildNavigationButtons(),
-            ],
-          ),
-        ),
-      ),
+              padding: const EdgeInsets.all(16.0),
+              child: SingleChildScrollView(
+                child: Column(
+                  children: [
+                    _buildTimerRow(),
+                    const SizedBox(height: 16),
+                    _buildProgressSection(),
+                    const SizedBox(height: 16),
+                    _buildQuestionCard(),
+                    const SizedBox(height: 16),
+                    _buildNavigationButtons(),
+                  ],
+                ),
+              ),
+            ),
     );
   }
 
@@ -217,7 +213,8 @@ class _SingleAssesmentScreenState extends State<SingleAssessmentScreen> {
           children: [
             const SizedBox(width: 8),
             TimerWidget(
-              initialSeconds: widget.duration?.inSeconds ?? 3600, // Default to 1 hour
+              initialSeconds:
+                  widget.duration?.inSeconds ?? 3600, // Default to 1 hour
               onTimeUp: _submitQuiz,
             ),
           ],
@@ -277,7 +274,7 @@ class _SingleAssesmentScreenState extends State<SingleAssessmentScreen> {
         children: [
           Row(
             children: [
-              Text('${_currentQuestionIndex } of $_totalQuestions',
+              Text('$_currentQuestionIndex  of $_totalQuestions',
                   style: const TextStyle(color: Colors.white, fontSize: 16)),
               const SizedBox(width: 8),
               const Text('Completed',
@@ -288,7 +285,7 @@ class _SingleAssesmentScreenState extends State<SingleAssessmentScreen> {
           ClipRRect(
             borderRadius: BorderRadius.circular(64),
             child: LinearProgressIndicator(
-              value: (_currentQuestionIndex ) / _totalQuestions,
+              value: (_currentQuestionIndex) / _totalQuestions,
               backgroundColor: AppColors.eLearningContColor2,
               valueColor: const AlwaysStoppedAnimation<Color>(
                   AppColors.eLearningContColor3),
@@ -316,12 +313,11 @@ class _SingleAssesmentScreenState extends State<SingleAssessmentScreen> {
           const SizedBox(height: 8),
           if (question.imageUrl != null)
             Padding(
-              padding: const EdgeInsets.fromLTRB(0,10,0,10),
+              padding: const EdgeInsets.fromLTRB(0, 10, 0, 10),
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(8.0),
-                child:
-                GestureDetector(
-                  onTap: (){
+                child: GestureDetector(
+                  onTap: () {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
@@ -344,27 +340,27 @@ class _SingleAssesmentScreenState extends State<SingleAssessmentScreen> {
                         ),
                       ),
                     );
-
                   },
                   child: Image.network(
-                      "https://linkskool.net/${  question.imageUrl!}",
+                      "https://linkskool.net/${question.imageUrl!}",
                       height: 100,
-
                       width: double.infinity,
                       fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) => Image.network(
-                        networkImage,
-                        height: 100,
-                        width: 100,
-                        fit: BoxFit.cover,
-
-                      )
-                  ),
+                      errorBuilder: (context, error, stackTrace) =>
+                          Image.network(
+                            networkImage,
+                            height: 100,
+                            width: 100,
+                            fit: BoxFit.cover,
+                          )),
                 ),
               ),
             ),
           const SizedBox(height: 8),
-          Text(question.questionText, style: TextStyle(fontSize: 20,fontWeight: FontWeight.w700),),
+          Text(
+            question.questionText,
+            style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
+          ),
           const SizedBox(height: 16),
           Expanded(child: _buildOptions(question)),
         ],
@@ -393,9 +389,11 @@ class _SingleAssesmentScreenState extends State<SingleAssessmentScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   if (option['imageUrl'] == null)
-                    Text(option['text'],style: TextStyle(fontWeight: FontWeight.w600),),
+                    Text(
+                      option['text'],
+                      style: TextStyle(fontWeight: FontWeight.w600),
+                    ),
                   if (option['imageUrl'] != null)
-
                     GestureDetector(
                       onTap: () {
                         Navigator.push(
@@ -420,14 +418,14 @@ class _SingleAssesmentScreenState extends State<SingleAssessmentScreen> {
                             ),
                           ),
                         );
-
                       },
                       child: Image.network(
                         'https://linkskool.net/${option['imageUrl']}',
                         height: 60,
                         width: double.infinity,
                         fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) => Image.network(
+                        errorBuilder: (context, error, stackTrace) =>
+                            Image.network(
                           'https://img.freepik.com/free-vector/gradient-human-rights-day-background_52683-149974.jpg',
                           height: 100,
                           width: 100,
@@ -435,7 +433,6 @@ class _SingleAssesmentScreenState extends State<SingleAssessmentScreen> {
                         ),
                       ),
                     ),
-
                 ],
               ),
               value: option['text'],
@@ -445,10 +442,10 @@ class _SingleAssesmentScreenState extends State<SingleAssessmentScreen> {
                   _selectedOption = value;
                   _isAnswered = true;
                   _isCorrect = question is TextQuestion &&
-                      (question as TextQuestion).correctAnswers.contains(value);
+                      (question).correctAnswers.contains(value);
 
                   userAnswers[_currentQuestionIndex] = value;
-                  print("ansss ${userAnswers}");
+                  print("ansss $userAnswers");
                 });
               },
               activeColor: Colors.blue, // Radio color when selected
@@ -464,9 +461,9 @@ class _SingleAssesmentScreenState extends State<SingleAssessmentScreen> {
             _typedAnswer = value;
             _isAnswered = value.isNotEmpty;
             _isCorrect = question.correctAnswer != null &&
-                value.trim().toLowerCase() == question.correctAnswer!.toLowerCase();
+                value.trim().toLowerCase() ==
+                    question.correctAnswer!.toLowerCase();
             userAnswers[_currentQuestionIndex] = value;
-
           });
         },
         decoration: const InputDecoration(
@@ -486,7 +483,6 @@ class _SingleAssesmentScreenState extends State<SingleAssessmentScreen> {
     return Colors.transparent;
   }
 
-
   Widget _buildNavigationButtons() {
     bool isLastQuestion = _currentQuestionIndex == _totalQuestions - 1;
     return Row(
@@ -494,7 +490,7 @@ class _SingleAssesmentScreenState extends State<SingleAssessmentScreen> {
         Expanded(
           child: OutlinedButton(
             onPressed:
-            _currentQuestionIndex > 0 ? _navigateToPreviousQuestion : null,
+                _currentQuestionIndex > 0 ? _navigateToPreviousQuestion : null,
             style: OutlinedButton.styleFrom(
               side: const BorderSide(color: Colors.white),
               shape: RoundedRectangleBorder(
@@ -502,7 +498,7 @@ class _SingleAssesmentScreenState extends State<SingleAssessmentScreen> {
               ),
             ),
             child:
-            const Text('Previous', style: TextStyle(color: Colors.white)),
+                const Text('Previous', style: TextStyle(color: Colors.white)),
           ),
         ),
         const SizedBox(width: 16),
@@ -549,7 +545,8 @@ class _SingleAssesmentScreenState extends State<SingleAssessmentScreen> {
   }
 
   Future<void> _submitQuiz() async {
-    final List<Map<String, dynamic>> answers = widget.questions!.asMap().entries.map((entry) {
+    final List<Map<String, dynamic>> answers =
+        widget.questions!.asMap().entries.map((entry) {
       int index = entry.key;
       var q = entry.value;
       return {
@@ -564,23 +561,26 @@ class _SingleAssesmentScreenState extends State<SingleAssessmentScreen> {
     Map<String, dynamic> quizpayload = {
       "quiz_id": widget.childContent?.settings!.id,
       "student_id": getuserdata()['profile']['id'],
-      "student_name":getuserdata()['profile']['name'] ,
-      "answers":answers,
+      "student_name": getuserdata()['profile']['name'],
+      "answers": answers,
       "mark": 0,
       "score": 0,
       "level_id": getuserdata()['profile']['level_id'],
       "course_id": widget.childContent?.id ?? 0,
       "class_id": getuserdata()['profile']['class_id'],
-      "course_name":widget.childContent!.title?? "No title",
-      "class_name": (widget.childContent?.classes != null && widget.childContent!.classes!.isNotEmpty)
-          ? widget.childContent!.classes![0].name  : "No class name",
+      "course_name": widget.childContent!.title ?? "No title",
+      "class_name": (widget.childContent?.classes != null &&
+              widget.childContent!.classes.isNotEmpty)
+          ? widget.childContent!.classes[0].name
+          : "No class name",
       "term": getuserdata()['settings']['term'],
       "year": int.parse(getuserdata()['settings']['year']),
       "_db": "aalmgzmy_linkskoo_practice"
     };
 
-    bool success = await service.submitAssignment(QuizSubmissionModel.fromJson(quizpayload));
-    if (success){
+    bool success = await service
+        .submitAssignment(QuizSubmissionModel.fromJson(quizpayload));
+    if (success) {
       showDialog(
         context: context,
         barrierDismissible: false,
@@ -629,12 +629,10 @@ class _SingleAssesmentScreenState extends State<SingleAssessmentScreen> {
           ),
         ),
       );
-    }
-    else{
+    } else {
       //Error
       print("E no goooo ");
     }
-
   }
 }
 

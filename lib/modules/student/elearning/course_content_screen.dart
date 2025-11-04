@@ -5,12 +5,10 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:hive/hive.dart';
 import 'package:linkschool/modules/student/elearning/material_detail_screen.dart';
 import 'package:linkschool/modules/student/elearning/quiz_intro_page.dart';
-import 'package:linkschool/modules/auth/model/user.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/providers/student/elearningcontent_provider.dart';
 import 'package:linkschool/modules/student/elearning/assignment_detail_screen.dart';
-import 'package:linkschool/modules/student/elearning/material_screen.dart';
 import 'package:linkschool/modules/student/elearning/assignment_score_view_page.dart';
 import 'package:linkschool/modules/student/elearning/quiz_score_view_page.dart';
 import 'package:provider/provider.dart';
@@ -19,12 +17,15 @@ import '../../model/student/dashboard_model.dart';
 import '../../model/student/elearningcontent_model.dart';
 
 class CourseContentScreen extends StatefulWidget {
-
   final DashboardData dashboardData;
   final String courseTitle;
   final int syllabusid;
 
-  const CourseContentScreen({super.key, required this.dashboardData,required this.courseTitle, required this.syllabusid});
+  const CourseContentScreen(
+      {super.key,
+      required this.dashboardData,
+      required this.courseTitle,
+      required this.syllabusid});
   @override
   State<CourseContentScreen> createState() => _CourseContentScreenState();
 }
@@ -35,25 +36,29 @@ class _CourseContentScreenState extends State<CourseContentScreen> {
   List<ElearningContentData>? elearningContentData;
   bool isLoading = true;
 
+  @override
   void initState() {
     super.initState();
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final elearningcontentprovider = Provider.of<ElearningContentProvider>(
-          context, listen: false);
+      final elearningcontentprovider =
+          Provider.of<ElearningContentProvider>(context, listen: false);
       elearningcontentprovider.fetchElearningContentData(widget.syllabusid);
     });
     fetchElearningContentData();
-
   }
+
   String ellipsize(String? text, [int maxLength = 44]) {
     if (text == null) return '';
-    return text.length <= maxLength ? text : '${text.substring(0, maxLength).trim()}...';
+    return text.length <= maxLength
+        ? text
+        : '${text.substring(0, maxLength).trim()}...';
   }
+
   Future<void> fetchElearningContentData() async {
-    final provider = Provider.of<ElearningContentProvider>(context, listen: false);
-    final data = await provider.fetchElearningContentData(  widget.syllabusid
-    );
+    final provider =
+        Provider.of<ElearningContentProvider>(context, listen: false);
+    final data = await provider.fetchElearningContentData(widget.syllabusid);
 
     setState(() {
       elearningContentData = data;
@@ -63,7 +68,7 @@ class _CourseContentScreenState extends State<CourseContentScreen> {
 
   @override
   Widget build(BuildContext context) {
-    if ( elearningContentData == null) {
+    if (elearningContentData == null) {
       return const Scaffold(
         body: Center(
           child: CircularProgressIndicator(),
@@ -71,13 +76,15 @@ class _CourseContentScreenState extends State<CourseContentScreen> {
       );
     }
 
-
     String termString = getTermString(getuserdata()['settings']['term']);
-    String sessionString = deduceSession(widget.dashboardData.recentActivities.last.datePosted);
+    String sessionString =
+        deduceSession(widget.dashboardData.recentActivities.last.datePosted);
 
-    AvailableCourse  selectedCourse = widget.dashboardData.availableCourses.firstWhere(
-      (course) => course.courseName.toLowerCase() == widget.courseTitle.toLowerCase(),
-);
+    AvailableCourse selectedCourse =
+        widget.dashboardData.availableCourses.firstWhere(
+      (course) =>
+          course.courseName.toLowerCase() == widget.courseTitle.toLowerCase(),
+    );
     return SingleChildScrollView(
       child: Container(
         constraints:
@@ -88,136 +95,148 @@ class _CourseContentScreenState extends State<CourseContentScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              buildHeader(selectedCourse,sessionString,termString),
+              buildHeader(selectedCourse, sessionString, termString),
               const SizedBox(height: 16),
-
               Column(
                 children: (elearningContentData ?? [])
                     .where((e) => e.type.toLowerCase() == 'no topic')
-                    .map((e) => buildWithNoTopicSection(e
-                ))
+                    .map((e) => buildWithNoTopicSection(e))
                     .toList(),
               ),
               Column(
                 children: (elearningContentData ?? [])
                     .where((e) => e.type.toLowerCase() != 'no topic')
-                    .map((e) => buildWithTopicSection(e
-                ))
+                    .map((e) => buildWithTopicSection(e))
                     .toList(),
               )
-
-
             ],
           ),
         ),
       ),
     );
   }
+
   String deduceSession(String datePosted) {
     DateTime date = DateTime.parse(datePosted);
     int year = date.year;
 
     // If before September, session started the previous year
     if (date.month < 9) {
-      return "${year - 1}/${year} Session";
+      return "${year - 1}/$year Session";
     } else {
-      return "${year}/${year + 1} Session";
+      return "$year/${year + 1} Session";
     }
   }
+
   String getTermString(int term) {
     return {
-      1: "1st",
-      2: "2nd",
-      3: "3rd",
-    }[term] ?? "Unknown";
+          1: "1st",
+          2: "2nd",
+          3: "3rd",
+        }[term] ??
+        "Unknown";
   }
-  Widget buildWithNoTopicSection(ElearningContentData e) {
-    return              Column(
-      children: [
-        // Row 1: What is Punctuality
 
+  Widget buildWithNoTopicSection(ElearningContentData e) {
+    return Column(
+      children: [
         const SizedBox(height: 16),
         ...e.children.map<Widget>((child) {
-          // If it's a quiz with settings
-          if (child.settings!=null) {
+          if (child.settings != null) {
             final settings = child.settings;
-            return
-              buildContentRowWithIconAndProgress(
-                  iconPath: 'assets/icons/student/quiz_icon.svg',
-
-                  title: settings?.title ?? "No title",
-                  description: ellipsize(settings?.description) ?? "No description",
-                  progressBarPercentage: 75,
-                  onTap:(){
-                    final userBox = Hive.box('userData');
-                    final List<dynamic> quizzestaken = userBox.get('quizzes', defaultValue: []);
-                    final int? quizId = child.settings!.id;
-                    if (quizzestaken.contains(quizId)) {
-                      Navigator.push(
-                        context,MaterialPageRoute(
-                        builder: (context) => QuizScoreView(childContent: child,year:int.parse(getuserdata()['settings']['year']), term:getuserdata()['settings']['term']),),
-                      );
-                    } else {
-                      Navigator.push(
-                        context,MaterialPageRoute(
-                        builder: (context) => QuizIntroPage(childContent: child,),),
-                      );
-                    }
-
-                  }
-              );
-          }
-          else if (child.type == 'material') {
             return buildContentRowWithIconAndProgress(
-                iconPath: 'assets/icons/student/note_icon.svg',
-
-                title: child?.title ?? "No title",
-                description: ellipsize(child?.description) ?? "No description",
-                progressBarPercentage: 75,
-                onTap:(){
-                  Navigator.push(
-                    context,MaterialPageRoute(
-                    builder: (context) => MaterialDetailScreen(childContent: child,),),
-                  );
-                }
-            );
-          } else if (child.type=="assignment") {
-            return buildContentRowWithIconAndProgress(
-                iconPath: 'assets/icons/student/assignment_icon.svg',
-
-                title: child?.title ?? "No title",
-                description: ellipsize(child?.description) ?? "No description",
+                iconPath: 'assets/icons/student/quiz_icon.svg',
+                title: settings?.title ?? "No title",
+                description:
+                    ellipsize(settings?.description) ?? "No description",
                 progressBarPercentage: 75,
                 onTap: () {
                   final userBox = Hive.box('userData');
-                  final List<dynamic> assignmentssubmitted = userBox.get('assignments', defaultValue: []);
+                  final List<dynamic> quizzestaken =
+                      userBox.get('quizzes', defaultValue: []);
+                  final int quizId = child.settings!.id;
+                  if (quizzestaken.contains(quizId)) {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => QuizScoreView(
+                            childContent: child,
+                            year: int.parse(getuserdata()['settings']['year']),
+                            term: getuserdata()['settings']['term']),
+                      ),
+                    );
+                  } else {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => QuizIntroPage(
+                          childContent: child,
+                        ),
+                      ),
+                    );
+                  }
+                });
+          } else if (child.type == 'material') {
+            return buildContentRowWithIconAndProgress(
+                iconPath: 'assets/icons/student/note_icon.svg',
+                title: child.title ?? "No title",
+                description: ellipsize(child.description) ?? "No description",
+                progressBarPercentage: 75,
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => MaterialDetailScreen(
+                        childContent: child,
+                      ),
+                    ),
+                  );
+                });
+          } else if (child.type == "assignment") {
+            return buildContentRowWithIconAndProgress(
+                iconPath: 'assets/icons/student/assignment_icon.svg',
+                title: child.title ?? "No title",
+                description: ellipsize(child.description) ?? "No description",
+                progressBarPercentage: 75,
+                onTap: () {
+                  final userBox = Hive.box('userData');
+                  final List<dynamic> assignmentssubmitted =
+                      userBox.get('assignments', defaultValue: []);
                   final int? assignmentId = child.id;
 
                   if (assignmentssubmitted.contains(assignmentId)) {
                     Navigator.push(
-                      context,MaterialPageRoute(
-                      builder: (context) => AssignmentScoreView(childContent: child,year:int.parse(getuserdata()['settings']['year']), term:getuserdata()['settings']['term'], attachedMaterials: [""],),),
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => AssignmentScoreView(
+                          childContent: child,
+                          year: int.parse(getuserdata()['settings']['year']),
+                          term: getuserdata()['settings']['term'],
+                          attachedMaterials: [""],
+                        ),
+                      ),
                     );
                   } else {
                     Navigator.push(
-                      context,MaterialPageRoute(
-                      builder: (context) => AssignmentDetailsScreen(childContent: child, title: e.title, id: e.id ?? 0),),
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => AssignmentDetailsScreen(
+                            childContent: child, title: e.title, id: e.id ?? 0),
+                      ),
                     );
                   }
-                }
-
-            );
+                });
           } else {
-            return SizedBox.shrink(); // If neither condition is met
+            return const SizedBox.shrink();
           }
-        }).toList(),
+        }),
 
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-
             if (e.title == "title" &&
-                e.children.any((child) => child.settings?.type == "assignment")) ...[
+                e.children
+                    .any((child) => child.settings?.type == "assignment")) ...[
               const SizedBox(height: 16),
               Padding(
                 padding: const EdgeInsets.only(bottom: 16.0),
@@ -232,16 +251,13 @@ class _CourseContentScreenState extends State<CourseContentScreen> {
                 ),
               ),
             ]
-
           ],
         ),
 
         const SizedBox(height: 16),
         // Row 3: First C.A
-
       ],
     );
-
   }
 
   Widget buildWithTopicSection(ElearningContentData e) {
@@ -263,7 +279,7 @@ class _CourseContentScreenState extends State<CourseContentScreen> {
                   const EdgeInsets.symmetric(vertical: 8.0, horizontal: 4.0),
               child: Row(
                 children: [
-                   Text(
+                  Text(
                     e.title,
                     style: TextStyle(
                       fontSize: 20,
@@ -294,111 +310,129 @@ class _CourseContentScreenState extends State<CourseContentScreen> {
           if (_isPunctualityExpanded)
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 10.0),
-              child:
-              Column(
+              child: Column(
                 children: [
-                  // Row 1: What is Punctuality
-
                   ...e.children.map<Widget>((child) {
-                    // If it's a quiz with settings
-                    if (child.settings!=null) {
+                    if (child.settings != null) {
                       final settings = child.settings;
-                      return
-                      buildContentRowWithIconAndProgress(
-                        iconPath: 'assets/icons/student/quiz_icon.svg',
-
-                        title: settings?.title ?? "No title",
-                        description: ellipsize(settings?.description) ?? "No description",
-                        progressBarPercentage: 75,
-                        onTap:(){
-                          final userBox = Hive.box('userData');
-                          final List<dynamic> quizzestaken = userBox.get('quizzes', defaultValue: []);
-                          final int? quizId = child.settings!.id;
-                          print("THe quiz id ${quizId}");
-                          if (quizzestaken.contains(quizId)) {
-                            Navigator.push(
-                              context,MaterialPageRoute(
-                              builder: (context) => QuizScoreView(childContent: child,year:int.parse(getuserdata()['settings']['year']), term:getuserdata()['settings']['term']),),
-                            );
-                          } else {
-                            Navigator.push(
-                              context,MaterialPageRoute(
-                              builder: (context) => QuizIntroPage(childContent: child,),),
-                            );
-                          }
-                        }
-                      );
-                    }
-                    else if (child.type == 'material') {
                       return buildContentRowWithIconAndProgress(
-                          iconPath: 'assets/icons/student/note_icon.svg',
-
-                          title: child?.title ?? "No title",
-                          description: ellipsize(child?.description) ?? "No description",
+                          iconPath: 'assets/icons/student/quiz_icon.svg',
+                          title: settings?.title ?? "No title",
+                          description: ellipsize(settings?.description) ??
+                              "No description",
                           progressBarPercentage: 75,
-                          onTap:(){
-                            Navigator.push(
-                              context,MaterialPageRoute(
-                              builder: (context) => MaterialDetailScreen(childContent: child,),),
-                            );
-                          }
-                      );
-                    } else if (child.type=="assignment") {
-                      return buildContentRowWithIconAndProgress(
-                          iconPath: 'assets/icons/student/assignment_icon.svg',
-
-                          title: child?.title ?? "No title",
-                          description: ellipsize(child?.description) ?? "No description",
-                          progressBarPercentage: 75,
-                          onTap:(){
+                          onTap: () {
                             final userBox = Hive.box('userData');
-                            final List<dynamic> assignmentssubmitted = userBox.get('assignments', defaultValue: []);
-                            final int? assignmentId = child.id;
-                            if (assignmentssubmitted.contains(assignmentId)) {
+                            final List<dynamic> quizzestaken =
+                                userBox.get('quizzes', defaultValue: []);
+                            final int quizId = child.settings!.id;
+                            if (quizzestaken.contains(quizId)) {
                               Navigator.push(
-                                context,MaterialPageRoute(
-                                builder: (context) => AssignmentScoreView(childContent: child,year:int.parse(getuserdata()['settings']['year']), term:getuserdata()['settings']['term'], attachedMaterials: [""],),),
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => QuizScoreView(
+                                      childContent: child,
+                                      year: int.parse(
+                                          getuserdata()['settings']['year']),
+                                      term: getuserdata()['settings']['term']),
+                                ),
                               );
                             } else {
                               Navigator.push(
-                                context,MaterialPageRoute(
-                                builder: (context) => AssignmentDetailsScreen(childContent: child, title: e.title, id: e.id ?? 0),),
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => QuizIntroPage(
+                                    childContent: child,
+                                  ),
+                                ),
                               );
                             }
-                          }
-                      );
+                          });
+                    } else if (child.type == 'material') {
+                      return buildContentRowWithIconAndProgress(
+                          iconPath: 'assets/icons/student/note_icon.svg',
+                          title: child.title ?? "No title",
+                          description:
+                              ellipsize(child.description) ?? "No description",
+                          progressBarPercentage: 75,
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => MaterialDetailScreen(
+                                  childContent: child,
+                                ),
+                              ),
+                            );
+                          });
+                    } else if (child.type == "assignment") {
+                      return buildContentRowWithIconAndProgress(
+                          iconPath: 'assets/icons/student/assignment_icon.svg',
+                          title: child.title ?? "No title",
+                          description:
+                              ellipsize(child.description) ?? "No description",
+                          progressBarPercentage: 75,
+                          onTap: () {
+                            final userBox = Hive.box('userData');
+                            final List<dynamic> assignmentssubmitted =
+                                userBox.get('assignments', defaultValue: []);
+                            final int? assignmentId = child.id;
+                            if (assignmentssubmitted.contains(assignmentId)) {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => AssignmentScoreView(
+                                    childContent: child,
+                                    year: int.parse(
+                                        getuserdata()['settings']['year']),
+                                    term: getuserdata()['settings']['term'],
+                                    attachedMaterials: [""],
+                                  ),
+                                ),
+                              );
+                            } else {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => AssignmentDetailsScreen(
+                                      childContent: child,
+                                      title: e.title,
+                                      id: e.id ?? 0),
+                                ),
+                              );
+                            }
+                          });
                     } else {
                       return SizedBox.shrink(); // If neither condition is met
                     }
-                  }).toList(),
+                  }),
 
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-
-                    if (e.title == "title" &&
-                        e.children.any((child) => child.settings?.type == "assignment")) ...[
-                      const SizedBox(height: 16),
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 16.0),
-                        child: buildContentRowWithIconAndProgress(
-                          iconPath: 'assets/icons/student/loading_icon.svg',
-                          title: 'Assignment',
-                          description: 'Due date: 25 June, 2015 08:52am',
-                          progressBarPercentage: 30, // Adjust this value as required
-                          onTap: () {
-                            // Handle tap
-                          },
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      if (e.title == "title" &&
+                          e.children.any((child) =>
+                              child.settings?.type == "assignment")) ...[
+                        const SizedBox(height: 16),
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 16.0),
+                          child: buildContentRowWithIconAndProgress(
+                            iconPath: 'assets/icons/student/loading_icon.svg',
+                            title: 'Assignment',
+                            description: 'Due date: 25 June, 2015 08:52am',
+                            progressBarPercentage:
+                                30, // Adjust this value as required
+                            onTap: () {
+                              // Handle tap
+                            },
+                          ),
                         ),
-                      ),
-                    ]
-
-                  ],
-                ),
+                      ]
+                    ],
+                  ),
 
                   const SizedBox(height: 16),
                   // Row 3: First C.A
-
                 ],
               ),
             ),
@@ -407,18 +441,19 @@ class _CourseContentScreenState extends State<CourseContentScreen> {
     );
   }
 
-  getuserdata(){
+  getuserdata() {
     final userBox = Hive.box('userData');
     final storedUserData =
         userBox.get('userData') ?? userBox.get('loginResponse');
-    final processedData = storedUserData is String
-        ? json.decode(storedUserData)
-        : storedUserData;
+    final processedData =
+        storedUserData is String ? json.decode(storedUserData) : storedUserData;
     final response = processedData['response'] ?? processedData;
     final data = response['data'] ?? response;
     return data;
   }
-  Widget buildHeader(AvailableCourse availableCourse, String session, String term) {
+
+  Widget buildHeader(
+      AvailableCourse availableCourse, String session, String term) {
     return SizedBox(
       width: MediaQuery.of(context).size.width,
       child: ClipRRect(
@@ -431,7 +466,7 @@ class _CourseContentScreenState extends State<CourseContentScreen> {
                 fit: BoxFit.cover,
               ),
             ),
-             Padding(
+            Padding(
               padding: EdgeInsets.all(16.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -453,7 +488,7 @@ class _CourseContentScreenState extends State<CourseContentScreen> {
                     ),
                   ),
                   Text(
-                    '${term} Term',
+                    '$term Term',
                     style: TextStyle(
                       color: Colors.white70,
                       fontSize: 12,
@@ -649,10 +684,10 @@ class _CourseContentScreenState extends State<CourseContentScreen> {
                   LinearProgressIndicator(
                     value: progressBarPercentage / 100,
                     backgroundColor: Colors.grey[300],
-                    valueColor: const AlwaysStoppedAnimation<Color>(Colors.blue),
+                    valueColor:
+                        const AlwaysStoppedAnimation<Color>(Colors.blue),
                   ),
                   const SizedBox(height: 15),
-
                 ],
               ),
             ),

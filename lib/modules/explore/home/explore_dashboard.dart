@@ -9,7 +9,6 @@ import '../../common/bottom_nav_item.dart';
 import 'explore_home.dart';
 import 'package:linkschool/modules/explore/admission/explore_admission.dart';
 
-
 class ExploreDashboard extends StatefulWidget {
   final Function(bool) onSwitch;
   final int selectedIndex;
@@ -28,7 +27,7 @@ class ExploreDashboard extends StatefulWidget {
 
 class _ExploreDashboardState extends State<ExploreDashboard> {
   bool _showSearchIcon = true; // Default to true
-  
+
   late List<Widget> _bodyItems;
 
   //   @override
@@ -46,8 +45,8 @@ class _ExploreDashboardState extends State<ExploreDashboard> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-     _initializeBodyItems();
-    
+    _initializeBodyItems();
+
     // Explicitly set search icon visibility based on selected index
     _updateSearchIconVisibility();
   }

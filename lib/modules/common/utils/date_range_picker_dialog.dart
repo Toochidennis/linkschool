@@ -3,8 +3,6 @@ import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/buttons/custom_outline_button..dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 
-
-
 class DateRangePickerDialog extends StatefulWidget {
   final DateTime initialStartDate;
   final DateTime initialEndDate;
@@ -95,7 +93,8 @@ class _DateRangePickerDialogState extends State<DateRangePickerDialog> {
                   ),
                   child: Text(
                     'Save',
-                    style: AppTextStyles.normal600(fontSize: 16, color: Colors.white),
+                    style: AppTextStyles.normal600(
+                        fontSize: 16, color: Colors.white),
                   ),
                 ),
               ],
@@ -116,7 +115,8 @@ class _DateRangePickerDialogState extends State<DateRangePickerDialog> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: AppTextStyles.normal600(fontSize: 16, color: Colors.black)),
+        Text(label,
+            style: AppTextStyles.normal600(fontSize: 16, color: Colors.black)),
         SizedBox(height: 8),
         Row(
           children: [
@@ -139,7 +139,8 @@ class _DateRangePickerDialogState extends State<DateRangePickerDialog> {
                   ),
                   child: Text(
                     '${date.day} ${_getMonth(date.month)} ${date.year}',
-                    style: AppTextStyles.normal400(fontSize: 14, color: Colors.black),
+                    style: AppTextStyles.normal400(
+                        fontSize: 14, color: Colors.black),
                   ),
                 ),
               ),
@@ -162,7 +163,8 @@ class _DateRangePickerDialogState extends State<DateRangePickerDialog> {
                   ),
                   child: Text(
                     time.format(context),
-                    style: AppTextStyles.normal400(fontSize: 14, color: Colors.black),
+                    style: AppTextStyles.normal400(
+                        fontSize: 14, color: Colors.black),
                   ),
                 ),
               ),
@@ -174,7 +176,20 @@ class _DateRangePickerDialogState extends State<DateRangePickerDialog> {
   }
 
   String _getMonth(int month) {
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec'
+    ];
     return months[month - 1];
   }
 }

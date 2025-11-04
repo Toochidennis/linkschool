@@ -17,11 +17,10 @@ class LevelSelectionOverlay extends StatelessWidget {
 
     // Filter levels that have corresponding classes
     final availableLevels = levels.where((level) {
-      return classes.any((classItem) => 
-        classItem['level_id'] == level['id'] && 
-        classItem['class_name'] != null && 
-        classItem['class_name'].toString().isNotEmpty
-      );
+      return classes.any((classItem) =>
+          classItem['level_id'] == level['id'] &&
+          classItem['class_name'] != null &&
+          classItem['class_name'].toString().isNotEmpty);
     }).toList();
 
     return Padding(
@@ -65,8 +64,9 @@ class LevelSelectionOverlay extends StatelessWidget {
                           itemCount: availableLevels.length,
                           itemBuilder: (context, index) {
                             final level = availableLevels[index];
-                            final levelName = level['level_name'] ?? 'Unknown Level';
-                            
+                            final levelName =
+                                level['level_name'] ?? 'Unknown Level';
+
                             return Padding(
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 24,
@@ -83,7 +83,8 @@ class LevelSelectionOverlay extends StatelessWidget {
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(8),
                                   ),
-                                  padding: const EdgeInsets.symmetric(vertical: 16),
+                                  padding:
+                                      const EdgeInsets.symmetric(vertical: 16),
                                 ),
                                 child: Text(
                                   levelName,

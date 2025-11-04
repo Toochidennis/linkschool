@@ -1,6 +1,5 @@
 import 'dart:convert';
 
-import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
 import 'package:linkschool/modules/model/admin/home/dashboard_feed_model.dart';
 import 'package:linkschool/modules/services/api/api_service.dart';
@@ -54,7 +53,6 @@ class DashboardFeedService {
     }
   }
 
-
   Future<void> createFeed(Map<String, dynamic> newFeed) async {
     final userBox = Hive.box('userData');
     final loginData = userBox.get('userData') ?? userBox.get('loginResponse');
@@ -83,7 +81,8 @@ class DashboardFeedService {
     }
   }
 
-  Future<void> updateFeed(String feedId, Map<String, dynamic> updatedFeed) async {
+  Future<void> updateFeed(
+      String feedId, Map<String, dynamic> updatedFeed) async {
     final userBox = Hive.box('userData');
     final loginData = userBox.get('userData') ?? userBox.get('loginResponse');
     final dbName = userBox.get('_db') ?? 'aalmgzmy_linkskoo_practice';

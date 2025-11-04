@@ -15,7 +15,7 @@ class AccountService {
     try {
       final userBox = Hive.box('userData');
       final token = userBox.get('token');
-      
+
       if (token != null && token.isNotEmpty) {
         _apiService.setAuthToken(token);
         print('Auth token set for AccountService');
@@ -118,7 +118,7 @@ class AccountService {
     try {
       final userBox = Hive.box('userData');
       final db = userBox.get('_db');
-      
+
       final response = await _apiService.delete<Map<String, dynamic>>(
         endpoint: 'portal/payments/accounts/$accountId',
         body: {
@@ -139,10 +139,6 @@ class AccountService {
   }
 }
 
-
-
-
-
 // // import 'package:linkschool/modules/models/account_model.dart';
 // import 'package:linkschool/modules/model/admin/account_model.dart';
 // import 'package:linkschool/modules/services/api/api_service.dart';
@@ -160,7 +156,7 @@ class AccountService {
 //     try {
 //       final userBox = Hive.box('userData');
 //       final token = userBox.get('token');
-      
+
 //       if (token != null && token.isNotEmpty) {
 //         _apiService.setAuthToken(token);
 //         print('Auth token set for AccountService');

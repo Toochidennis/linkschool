@@ -25,9 +25,6 @@ class StudentComment {
     required this.author,
   });
 
-
-
-
   // Factory to create Comment from JSON (if API returns the comment)
   factory StudentComment.fromJson(Map<String, dynamic> json) {
     return StudentComment(
@@ -40,10 +37,11 @@ class StudentComment {
       levelId: json['level_id']?.toString(),
       courseId: json['course_id']?.toString(),
       courseName: json['course_name'] as String?,
-      term: json['term'] is int ? json['term'] : int.tryParse(json['term']?.toString() ?? ''),
+      term: json['term'] is int
+          ? json['term']
+          : int.tryParse(json['term']?.toString() ?? ''),
       date: DateTime.tryParse(json['upload_date'] ?? '') ?? DateTime.now(),
       author: json['author_name'] ?? 'Unknown', // For UI display
     );
   }
-
 }

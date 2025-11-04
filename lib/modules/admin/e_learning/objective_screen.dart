@@ -19,12 +19,18 @@ class _ObjectiveScreenState extends State<ObjectiveScreen> {
   final bool _isFocused = false;
   List<Objective> objectives = [
     Objective("Learn about the concept of punctuality", DateTime.now(), false),
-    Objective("Understand the importance of time management", DateTime.now().subtract(Duration(days: 1)), true),
-    Objective("Practice being on time for appointments", DateTime.now().add(Duration(days: 1)), false),
-    Objective("Analyze the effects of tardiness on productivity", DateTime.now().add(Duration(days: 2)), false),
-    Objective("Develop strategies for improving punctuality", DateTime.now().add(Duration(days: 3)), false),
-    Objective("Create a personal schedule to enhance time management", DateTime.now().add(Duration(days: 4)), false),
-    Objective("Evaluate progress in punctuality improvement", DateTime.now().add(Duration(days: 5)), false),
+    Objective("Understand the importance of time management",
+        DateTime.now().subtract(Duration(days: 1)), true),
+    Objective("Practice being on time for appointments",
+        DateTime.now().add(Duration(days: 1)), false),
+    Objective("Analyze the effects of tardiness on productivity",
+        DateTime.now().add(Duration(days: 2)), false),
+    Objective("Develop strategies for improving punctuality",
+        DateTime.now().add(Duration(days: 3)), false),
+    Objective("Create a personal schedule to enhance time management",
+        DateTime.now().add(Duration(days: 4)), false),
+    Objective("Evaluate progress in punctuality improvement",
+        DateTime.now().add(Duration(days: 5)), false),
   ];
 
   final TextEditingController _objectiveController = TextEditingController();
@@ -71,7 +77,8 @@ class _ObjectiveScreenState extends State<ObjectiveScreen> {
           children: [
             Text(
               'Topic Objectives',
-              style: AppTextStyles.normal600(fontSize: 24.0, color: Colors.black),
+              style:
+                  AppTextStyles.normal600(fontSize: 24.0, color: Colors.black),
             ),
             SizedBox(height: 16.0),
             _buildObjectiveInput(),
@@ -90,55 +97,56 @@ class _ObjectiveScreenState extends State<ObjectiveScreen> {
     );
   }
 
-Widget _buildObjectiveInput() {
-  return Container(
-    width: 351,
-    height: 48,
-    padding: EdgeInsets.symmetric(horizontal: 4.0, vertical: 8.0),
-    decoration: BoxDecoration(
-      border: Border(
-        bottom: BorderSide(
-          color: _isFocused ? AppColors.primaryLight : const Color(0xFFB2B2B2),
-          width: _isFocused ? 2 : 1,
+  Widget _buildObjectiveInput() {
+    return Container(
+      width: 351,
+      height: 48,
+      padding: EdgeInsets.symmetric(horizontal: 4.0, vertical: 8.0),
+      decoration: BoxDecoration(
+        border: Border(
+          bottom: BorderSide(
+            color:
+                _isFocused ? AppColors.primaryLight : const Color(0xFFB2B2B2),
+            width: _isFocused ? 2 : 1,
+          ),
         ),
       ),
-    ),
-    child: Row(
-      children: [
-        GestureDetector(
-          onTap: _addObjective,
-          child: Container(
-            width: 32,
-            height: 32,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: Colors.white,
-              border: Border.all(
+      child: Row(
+        children: [
+          GestureDetector(
+            onTap: _addObjective,
+            child: Container(
+              width: 32,
+              height: 32,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.white,
+                border: Border.all(
+                  color: AppColors.bgGray,
+                  width: 2,
+                ),
+              ),
+              child: const Icon(
+                Icons.add,
                 color: AppColors.bgGray,
-                width: 2,
+                size: 24,
               ),
             ),
-            child: const Icon(
-              Icons.add,
-              color: AppColors.bgGray,
-              size: 24,
+          ),
+          SizedBox(width: 18),
+          Expanded(
+            child: TextField(
+              controller: _objectiveController,
+              decoration: InputDecoration(
+                hintText: 'Add new Objective',
+                border: InputBorder.none,
+              ),
             ),
           ),
-        ),
-        SizedBox(width: 18),
-        Expanded(
-          child: TextField(
-            controller: _objectiveController,
-            decoration: InputDecoration(
-              hintText: 'Add new Objective',
-              border: InputBorder.none,
-            ),
-          ),
-        ),
-      ],
-    ),
-  );
-}
+        ],
+      ),
+    );
+  }
 
   Widget _buildObjectiveItem(Objective objective) {
     return Container(
@@ -165,14 +173,16 @@ Widget _buildObjectiveInput() {
               children: [
                 Text(
                   objective.description,
-                  style: AppTextStyles.normal500(fontSize: 16.0, color: Colors.black),
+                  style: AppTextStyles.normal500(
+                      fontSize: 16.0, color: Colors.black),
                 ),
                 SizedBox(height: 4.0),
                 Row(
                   children: [
                     Text(
                       _getRelativeDate(objective.date),
-                      style: AppTextStyles.normal400(fontSize: 14.0, color: Colors.grey),
+                      style: AppTextStyles.normal400(
+                          fontSize: 14.0, color: Colors.grey),
                     ),
                     SizedBox(width: 8.0),
                     Container(
@@ -186,7 +196,8 @@ Widget _buildObjectiveInput() {
                     SizedBox(width: 8.0),
                     Text(
                       DateFormat('dd-MM-yyyy').format(objective.date),
-                      style: AppTextStyles.normal400(fontSize: 14.0, color: Colors.grey),
+                      style: AppTextStyles.normal400(
+                          fontSize: 14.0, color: Colors.grey),
                     ),
                   ],
                 ),
@@ -201,7 +212,8 @@ Widget _buildObjectiveInput() {
   void _addObjective() {
     if (_objectiveController.text.isNotEmpty) {
       setState(() {
-        objectives.add(Objective(_objectiveController.text, DateTime.now(), false));
+        objectives
+            .add(Objective(_objectiveController.text, DateTime.now(), false));
         _objectiveController.clear();
       });
     }

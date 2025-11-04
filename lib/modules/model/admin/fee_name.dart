@@ -9,20 +9,19 @@ class FeeName {
     required this.isMandatory,
   });
 
- factory FeeName.fromJson(Map<String, dynamic> json) {
-  final dynamic mandatoryValue = json['is_mandatory'];
-  final bool isMandatory = mandatoryValue == 1 ||
-      mandatoryValue == true ||
-      mandatoryValue == '1' ||
-      mandatoryValue == 'true';
+  factory FeeName.fromJson(Map<String, dynamic> json) {
+    final dynamic mandatoryValue = json['is_mandatory'];
+    final bool isMandatory = mandatoryValue == 1 ||
+        mandatoryValue == true ||
+        mandatoryValue == '1' ||
+        mandatoryValue == 'true';
 
-  return FeeName(
-    id: json['id'] ?? 0,
-    feeName: json['fee_name'] ?? '',
-    isMandatory: isMandatory,
-  );
-}
-
+    return FeeName(
+      id: json['id'] ?? 0,
+      feeName: json['fee_name'] ?? '',
+      isMandatory: isMandatory,
+    );
+  }
 
   Map<String, dynamic> toJson() {
     return {
@@ -49,7 +48,6 @@ class AddFeeNameRequest {
     };
   }
 }
-
 
 class UpdateFeeNameRequest {
   final String feeName;

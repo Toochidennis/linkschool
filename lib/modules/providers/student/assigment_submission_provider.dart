@@ -15,18 +15,14 @@ class AssignmentSubmissionProvider with ChangeNotifier {
   AssignmentSubmissionProvider(this._assignmentSubmissionService);
 
   Future<void> submitassignment(AssignmentSubmission submission) async {
-
-
-
     isLoading = true;
     error = null;
     message = null;
     notifyListeners();
 
     try {
-      final result = await _assignmentSubmissionService.submitAssignment(
-        submission
-      );
+      final result =
+          await _assignmentSubmissionService.submitAssignment(submission);
 
       notifyListeners();
     } catch (e) {
@@ -35,7 +31,9 @@ class AssignmentSubmissionProvider with ChangeNotifier {
       notifyListeners();
     }
   }
-  Future<bool> createComment(Map<String, dynamic> commentData, String contentId) async {
+
+  Future<bool> createComment(
+      Map<String, dynamic> commentData, String contentId) async {
     isLoading = true;
     notifyListeners();
     error = null;
@@ -52,7 +50,8 @@ class AssignmentSubmissionProvider with ChangeNotifier {
     }
   }
 
-  Future<bool>UpdateComment(Map<String, dynamic> commentData, String contentId) async {
+  Future<bool> UpdateComment(
+      Map<String, dynamic> commentData, String contentId) async {
     isLoading = true;
     notifyListeners();
     error = null;
@@ -69,4 +68,3 @@ class AssignmentSubmissionProvider with ChangeNotifier {
     }
   }
 }
-

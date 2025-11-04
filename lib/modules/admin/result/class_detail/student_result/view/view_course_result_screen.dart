@@ -59,12 +59,16 @@ class _ViewCourseResultScreenState extends State<ViewCourseResultScreen> {
       final dbName = EnvConfig.dbName;
       final courseId = widget.courseData['course_id'].toString();
       final levelId = widget.courseData['level_id']?.toString() ??
-          authProvider.getLevels().firstWhere(
+          authProvider
+              .getLevels()
+              .firstWhere(
                 (level) => level['level_name'] == 'JSS1',
                 orElse: () => {'id': '66'},
-              )['id'].toString();
+              )['id']
+              .toString();
 
-      final endpoint = 'portal/classes/${widget.classId}/courses/$courseId/results';
+      final endpoint =
+          'portal/classes/${widget.classId}/courses/$courseId/results';
       final queryParams = {
         'term': widget.term.toString(),
         'year': widget.year,
@@ -72,7 +76,8 @@ class _ViewCourseResultScreenState extends State<ViewCourseResultScreen> {
         'level_id': levelId,
       };
 
-      print('Fetching course results from: $endpoint with params: $queryParams');
+      print(
+          'Fetching course results from: $endpoint with params: $queryParams');
 
       final response = await apiService.get(
         endpoint: endpoint,
@@ -86,7 +91,8 @@ class _ViewCourseResultScreenState extends State<ViewCourseResultScreen> {
         final uniqueAssessments = <String>{};
         for (var result in results) {
           final assessments = result['assessments'] as List;
-          print('Result assessments for result_id ${result['result_id']}: $assessments');
+          print(
+              'Result assessments for result_id ${result['result_id']}: $assessments');
           for (var assessment in assessments) {
             uniqueAssessments.add(assessment['assessment_name'] as String);
           }
@@ -98,7 +104,8 @@ class _ViewCourseResultScreenState extends State<ViewCourseResultScreen> {
           assessmentNames = uniqueAssessments.toList();
           isLoading = false;
         });
-        print('Fetched ${courseResults.length} results, ${grades.length} grades, ${assessmentNames.length} assessments');
+        print(
+            'Fetched ${courseResults.length} results, ${grades.length} grades, ${assessmentNames.length} assessments');
       } else {
         setState(() {
           error = response.message;
@@ -137,7 +144,8 @@ class _ViewCourseResultScreenState extends State<ViewCourseResultScreen> {
         for (var assessmentData in assessmentsData) {
           final assessments = assessmentData['assessments'] as List;
           for (var assessment in assessments) {
-            tempMaxScores[assessment['assessment_name']] = assessment['assessment_score'] ?? 0;
+            tempMaxScores[assessment['assessment_name']] =
+                assessment['assessment_score'] ?? 0;
           }
         }
         setState(() {
@@ -221,7 +229,9 @@ class _ViewCourseResultScreenState extends State<ViewCourseResultScreen> {
             child: isLoading
                 ? const Center(child: CircularProgressIndicator())
                 : error != null
-                    ? Center(child: Text(error!, style: const TextStyle(color: Colors.red)))
+                    ? Center(
+                        child: Text(error!,
+                            style: const TextStyle(color: Colors.red)))
                     : SingleChildScrollView(
                         child: Column(
                           children: [
@@ -290,7 +300,8 @@ class _ViewCourseResultScreenState extends State<ViewCourseResultScreen> {
                 scrollDirection: Axis.horizontal,
                 child: Row(
                   children: [
-                    _buildScrollableColumn('Reg Number', 120, -1, isRegNo: true),
+                    _buildScrollableColumn('Reg Number', 120, -1,
+                        isRegNo: true),
                     ...assessmentNames
                         .asMap()
                         .entries
@@ -299,8 +310,7 @@ class _ViewCourseResultScreenState extends State<ViewCourseResultScreen> {
                               100,
                               entry.key,
                               isAssessment: true,
-                            ))
-                        .toList(),
+                            )),
                     _buildScrollableColumn('Total', 100, -2, isTotal: true),
                     _buildScrollableColumn('Grade', 100, -3, isGrade: true),
                   ],
@@ -364,7 +374,10 @@ class _ViewCourseResultScreenState extends State<ViewCourseResultScreen> {
 
   // Build scrollable column for reg number, assessments, total, or grade
   Widget _buildScrollableColumn(String title, double width, int index,
-      {bool isRegNo = false, bool isAssessment = false, bool isTotal = false, bool isGrade = false}) {
+      {bool isRegNo = false,
+      bool isAssessment = false,
+      bool isTotal = false,
+      bool isGrade = false}) {
     return Container(
       width: width,
       decoration: BoxDecoration(

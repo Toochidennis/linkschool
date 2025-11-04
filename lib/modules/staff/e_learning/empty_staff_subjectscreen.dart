@@ -3,16 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:hive/hive.dart';
 import 'package:intl/intl.dart';
-import 'package:linkschool/modules/admin/e_learning/View/assignment_details.dart';
-import 'package:linkschool/modules/admin/e_learning/View/material_details.dart';
-import 'package:linkschool/modules/admin/e_learning/View/question/view_question_screen.dart'
-    hide AttachmentItem;
-import 'package:linkschool/modules/admin/e_learning/View/quiz/quiz_screen.dart';
-import 'package:linkschool/modules/admin/e_learning/add_material_screen.dart'
-    hide AttachmentItem;
 import 'package:linkschool/modules/admin/e_learning/admin_assignment_screen.dart';
-import 'package:linkschool/modules/admin/e_learning/create_topic_screen.dart';
-import 'package:linkschool/modules/admin/e_learning/question_screen.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/buttons/custom_medium_elevated_button.dart';
 import 'package:linkschool/modules/common/constants.dart';
@@ -37,7 +28,8 @@ import 'package:linkschool/modules/staff/e_learning/view/staffview_question.dart
     hide AttachmentItem;
 import 'package:linkschool/modules/services/api/service_locator.dart';
 import 'package:provider/provider.dart';
-import 'package:linkschool/modules/model/e-learning/material_model.dart' as custom;
+import 'package:linkschool/modules/model/e-learning/material_model.dart'
+    as custom;
 import '../../common/widgets/portal/attachmentItem.dart';
 import '../../providers/admin/e_learning/syllabus_content_provider.dart';
 
@@ -76,7 +68,8 @@ class _EmptySubjectScreenState extends State<StaffEmptySubjectScreen>
   List<SyllabusContentItem> _noTopicItems = [];
   bool _shouldRefresh = false;
   int _currentIndex = 0;
-  static const String _courseworkIconPath = 'assets/icons/student/coursework_icon.svg';
+  static const String _courseworkIconPath =
+      'assets/icons/student/coursework_icon.svg';
   static const String _forumIconPath = 'assets/icons/student/forum_icon.svg';
 
   // Forum-related fields
@@ -130,36 +123,35 @@ class _EmptySubjectScreenState extends State<StaffEmptySubjectScreen>
     });
   }
 
- Future<void> _loadUserData() async {
-  try {
-    final userBox = Hive.box('userData');
-    final storedUserData =
-        userBox.get('userData') ?? userBox.get('loginResponse');
+  Future<void> _loadUserData() async {
+    try {
+      final userBox = Hive.box('userData');
+      final storedUserData =
+          userBox.get('userData') ?? userBox.get('loginResponse');
 
-    if (storedUserData != null) {
-      final processedData = storedUserData is String
-          ? json.decode(storedUserData)
-          : storedUserData as Map<String, dynamic>;
+      if (storedUserData != null) {
+        final processedData = storedUserData is String
+            ? json.decode(storedUserData)
+            : storedUserData as Map<String, dynamic>;
 
-      final response = processedData['response'] ?? processedData;
-      final data = response['data'] ?? response;
+        final response = processedData['response'] ?? processedData;
+        final data = response['data'] ?? response;
 
-      final profile = data['profile'] ?? {};
-      final settings = data['settings'] ?? {};
+        final profile = data['profile'] ?? {};
+        final settings = data['settings'] ?? {};
 
-      setState(() {
-        creatorId = profile['staff_id'] as int?; 
-        creatorName = profile['name']?.toString();
-        academicYear = settings['year']?.toString();
-        academicTerm = settings['term'] as int?;
-      });
+        setState(() {
+          creatorId = profile['staff_id'] as int?;
+          creatorName = profile['name']?.toString();
+          academicYear = settings['year']?.toString();
+          academicTerm = settings['term'] as int?;
+        });
+      }
+    } catch (e) {
+      print('Error loading user data: $e');
+      CustomToaster.toastError(context, 'Error', 'Failed to load user data');
     }
-  } catch (e) {
-    print('Error loading user data: $e');
-    CustomToaster.toastError(context, 'Error', 'Failed to load user data');
   }
-}
-
 
   Future<void> fetchStreams() async {
     final provider = locator<StaffStreamsProvider>();
@@ -171,7 +163,8 @@ class _EmptySubjectScreenState extends State<StaffEmptySubjectScreen>
       });
     } catch (e) {
       print('Error fetching streams: $e');
-      CustomToaster.toastError(context, 'Error', 'Failed to load forum streams');
+      CustomToaster.toastError(
+          context, 'Error', 'Failed to load forum streams');
       setState(() {
         isLoading = false;
       });
@@ -186,14 +179,16 @@ class _EmptySubjectScreenState extends State<StaffEmptySubjectScreen>
     try {
       final contentProvider = locator<SyllabusContentProvider>();
       final userBox = Hive.box('userData');
-      final storedUserData = userBox.get('userData') ?? userBox.get('loginResponse');
+      final storedUserData =
+          userBox.get('userData') ?? userBox.get('loginResponse');
       final processedData = storedUserData is String
           ? json.decode(storedUserData)
           : storedUserData;
       final response = processedData['response'] ?? processedData;
       final data = response['data'] ?? response;
       final settings = data['settings'] ?? {};
-      final dbName = settings['db_name']?.toString() ?? 'aalmgzmy_linkskoo_practice';
+      final dbName =
+          settings['db_name']?.toString() ?? 'aalmgzmy_linkskoo_practice';
       await contentProvider.fetchSyllabusContents(widget.syllabusId!, dbName);
 
       if (contentProvider.error.isEmpty) {
@@ -203,7 +198,8 @@ class _EmptySubjectScreenState extends State<StaffEmptySubjectScreen>
       }
     } catch (e) {
       print('Error loading syllabus contents: $e');
-      CustomToaster.toastError(context, 'Error', 'Failed to load syllabus contents: $e');
+      CustomToaster.toastError(
+          context, 'Error', 'Failed to load syllabus contents: $e');
     }
   }
 
@@ -228,7 +224,8 @@ class _EmptySubjectScreenState extends State<StaffEmptySubjectScreen>
               'questions': child['questions'] ?? [],
             }));
           } else {
-            topicChildren.add(SyllabusContentItem.fromJson(child as Map<String, dynamic>));
+            topicChildren.add(
+                SyllabusContentItem.fromJson(child as Map<String, dynamic>));
           }
         }
 
@@ -299,10 +296,14 @@ class _EmptySubjectScreenState extends State<StaffEmptySubjectScreen>
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 20),
-              _buildOptionRow(context, 'Assignment', 'assets/icons/e_learning/assignment.svg'),
-              _buildOptionRow(context, 'Question', 'assets/icons/e_learning/question_icon.svg'),
-              _buildOptionRow(context, 'Material', 'assets/icons/e_learning/material.svg'),
-              _buildOptionRow(context, 'Topic', 'assets/icons/e_learning/topic.svg'),
+              _buildOptionRow(context, 'Assignment',
+                  'assets/icons/e_learning/assignment.svg'),
+              _buildOptionRow(context, 'Question',
+                  'assets/icons/e_learning/question_icon.svg'),
+              _buildOptionRow(
+                  context, 'Material', 'assets/icons/e_learning/material.svg'),
+              _buildOptionRow(
+                  context, 'Topic', 'assets/icons/e_learning/topic.svg'),
               const Padding(
                 padding: EdgeInsets.symmetric(vertical: 10),
                 child: Row(
@@ -316,7 +317,8 @@ class _EmptySubjectScreenState extends State<StaffEmptySubjectScreen>
                   ],
                 ),
               ),
-              _buildOptionRow(context, 'Reuse content', 'assets/icons/e_learning/share.svg'),
+              _buildOptionRow(context, 'Reuse content',
+                  'assets/icons/e_learning/share.svg'),
             ],
           ),
         );
@@ -437,7 +439,9 @@ class _EmptySubjectScreenState extends State<StaffEmptySubjectScreen>
 
   String ellipsize(String? text, [int maxLength = 30]) {
     if (text == null) return '';
-    return text.length <= maxLength ? text : '${text.substring(0, maxLength).trim()}...';
+    return text.length <= maxLength
+        ? text
+        : '${text.substring(0, maxLength).trim()}...';
   }
 
   String _getIconPath(String? type) {
@@ -466,10 +470,11 @@ class _EmptySubjectScreenState extends State<StaffEmptySubjectScreen>
 
   String getTermString(int? term) {
     return {
-      1: "1st",
-      2: "2nd",
-      3: "3rd",
-    }[term] ?? "Unknown";
+          1: "1st",
+          2: "2nd",
+          3: "3rd",
+        }[term] ??
+        "Unknown";
   }
 
   Widget buildCommentBox(StreamsModel sm) {
@@ -498,21 +503,23 @@ class _EmptySubjectScreenState extends State<StaffEmptySubjectScreen>
     );
   }
 
-  Future<void> _addComment(StreamsModel sm, String text, [Map<String, dynamic>? updatedComment]) async {
+  Future<void> _addComment(StreamsModel sm, String text,
+      [Map<String, dynamic>? updatedComment]) async {
     if (text.isNotEmpty) {
-      final comment = updatedComment ?? {
-        "content_title": sm.title,
-        "user_id": creatorId,
-        "user_name": creatorName,
-        "comment": text,
-        "level_id": widget.levelId ?? '',
-        "course_id": widget.courseId ?? '',
-        "course_name": widget.courseName ?? "",
-        "term": academicTerm ?? 0,
-        if (_isEditing && _editingComment != null) "content_id": sm.id.toString(),
-      };
+      final comment = updatedComment ??
+          {
+            "content_title": sm.title,
+            "user_id": creatorId,
+            "user_name": creatorName,
+            "comment": text,
+            "level_id": widget.levelId ?? '',
+            "course_id": widget.courseId ?? '',
+            "course_name": widget.courseName ?? "",
+            "term": academicTerm ?? 0,
+            if (_isEditing && _editingComment != null)
+              "content_id": sm.id.toString(),
+          };
       try {
-
         final commentProvider = locator<CommentProvider>();
         final contentId = _editingComment?.id;
         if (_isEditing) {
@@ -542,7 +549,8 @@ class _EmptySubjectScreenState extends State<StaffEmptySubjectScreen>
           }
         });
       } catch (e) {
-        CustomToaster.toastError(context, 'Error', _isEditing ? 'Failed to update comment' : 'Failed to add comment');
+        CustomToaster.toastError(context, 'Error',
+            _isEditing ? 'Failed to update comment' : 'Failed to add comment');
       }
     }
   }
@@ -620,7 +628,9 @@ class _EmptySubjectScreenState extends State<StaffEmptySubjectScreen>
                 _courseworkIconPath,
                 width: 24,
                 height: 24,
-                color: _currentIndex == 0 ? AppColors.eLearningBtnColor1 : Colors.grey,
+                color: _currentIndex == 0
+                    ? AppColors.eLearningBtnColor1
+                    : Colors.grey,
               ),
               label: 'Coursework',
             ),
@@ -629,7 +639,9 @@ class _EmptySubjectScreenState extends State<StaffEmptySubjectScreen>
                 _forumIconPath,
                 width: 24,
                 height: 24,
-                color: _currentIndex == 1 ? AppColors.eLearningBtnColor1 : Colors.grey,
+                color: _currentIndex == 1
+                    ? AppColors.eLearningBtnColor1
+                    : Colors.grey,
               ),
               label: 'Forum',
             ),
@@ -765,7 +777,8 @@ class _EmptySubjectScreenState extends State<StaffEmptySubjectScreen>
                       CircleAvatar(
                         backgroundColor: AppColors.booksButtonColor,
                         radius: 16,
-                        child: Icon(Icons.person, color: Colors.grey[600], size: 20),
+                        child: Icon(Icons.person,
+                            color: Colors.grey[600], size: 20),
                       ),
                       const SizedBox(width: 12),
                       Expanded(
@@ -909,7 +922,9 @@ class _EmptySubjectScreenState extends State<StaffEmptySubjectScreen>
                   ),
                   const SizedBox(width: 8),
                   Text(
-                    date.isNotEmpty ? DateFormat('dd MMM').format(DateTime.parse(date)) : 'N/A',
+                    date.isNotEmpty
+                        ? DateFormat('dd MMM').format(DateTime.parse(date))
+                        : 'N/A',
                     style: AppTextStyles.normal400(
                       fontSize: 12,
                       color: Colors.grey,
@@ -930,17 +945,20 @@ class _EmptySubjectScreenState extends State<StaffEmptySubjectScreen>
                 children: [
                   TextButton.icon(
                     onPressed: () {},
-                    icon: const Icon(Icons.favorite_border, size: 16, color: Colors.grey),
+                    icon: const Icon(Icons.favorite_border,
+                        size: 16, color: Colors.grey),
                     label: Text(
                       'Like',
-                      style: AppTextStyles.normal400(fontSize: 12, color: Colors.grey),
+                      style: AppTextStyles.normal400(
+                          fontSize: 12, color: Colors.grey),
                     ),
                   ),
                   TextButton(
                     onPressed: () {},
                     child: Text(
                       'Reply',
-                      style: AppTextStyles.normal400(fontSize: 12, color: Colors.grey),
+                      style: AppTextStyles.normal400(
+                          fontSize: 12, color: Colors.grey),
                     ),
                   ),
                 ],
@@ -1226,7 +1244,8 @@ class _EmptySubjectScreenState extends State<StaffEmptySubjectScreen>
     );
   }
 
-  Widget _buildTopicItem(String title, String timestamp, IconData icon, SyllabusContentItem item) {
+  Widget _buildTopicItem(
+      String title, String timestamp, IconData icon, SyllabusContentItem item) {
     return InkWell(
       onTap: () => _navigateToDetails(item),
       child: Container(
@@ -1318,7 +1337,9 @@ class _EmptySubjectScreenState extends State<StaffEmptySubjectScreen>
     final attachments = item.contentFiles.map((file) {
       return AttachmentItem(
         fileName: file.fileName,
-        iconPath: (file.type == 'image' || file.type == 'photo' || file.type == 'video')
+        iconPath: (file.type == 'image' ||
+                file.type == 'photo' ||
+                file.type == 'video')
             ? 'assets/icons/e_learning/material.svg'
             : 'assets/icons/e_learning/link.svg',
         fileContent: file.file.isNotEmpty
@@ -1350,7 +1371,8 @@ class _EmptySubjectScreenState extends State<StaffEmptySubjectScreen>
       description: item.description,
       selectedClass: item.classes.map((c) => c.name).join(', '),
       attachments: attachments,
-      dueDate: item.endDate != null ? DateTime.parse(item.endDate!) : DateTime.now(),
+      dueDate:
+          item.endDate != null ? DateTime.parse(item.endDate!) : DateTime.now(),
       topic: item.topic ?? 'No Topic',
       marks: item.grade ?? '0',
     );
@@ -1426,11 +1448,16 @@ class _EmptySubjectScreenState extends State<StaffEmptySubjectScreen>
                 description: item.description,
                 id: item.id,
                 selectedClass: item.classes.map((c) => c.name).join(', '),
-                startDate: item.startDate != null ? DateTime.parse(item.startDate!) : DateTime.now(),
-                endDate: item.endDate != null ? DateTime.parse(item.endDate!) : DateTime.now(),
+                startDate: item.startDate != null
+                    ? DateTime.parse(item.startDate!)
+                    : DateTime.now(),
+                endDate: item.endDate != null
+                    ? DateTime.parse(item.endDate!)
+                    : DateTime.now(),
                 topic: item.topic ?? 'No Topic',
                 duration: item.duration != null
-                    ? Duration(minutes: int.tryParse(item.duration.toString()) ?? 0)
+                    ? Duration(
+                        minutes: int.tryParse(item.duration.toString()) ?? 0)
                     : Duration.zero,
                 marks: item.grade?.toString() ?? '0',
               ),
@@ -1456,12 +1483,17 @@ class _EmptySubjectScreenState extends State<StaffEmptySubjectScreen>
                 title: item.title,
                 description: item.description,
                 selectedClass: item.classes.map((c) => c.name).join(', '),
-                startDate: item.startDate != null ? DateTime.parse(item.startDate!) : DateTime.now(),
-                endDate: item.endDate != null ? DateTime.parse(item.endDate!) : DateTime.now(),
+                startDate: item.startDate != null
+                    ? DateTime.parse(item.startDate!)
+                    : DateTime.now(),
+                endDate: item.endDate != null
+                    ? DateTime.parse(item.endDate!)
+                    : DateTime.now(),
                 topic: item.topic ?? 'No Topic',
                 attachments: attachments,
                 duration: item.duration != null
-                    ? Duration(minutes: int.tryParse(item.duration.toString()) ?? 0)
+                    ? Duration(
+                        minutes: int.tryParse(item.duration.toString()) ?? 0)
                     : Duration.zero,
                 marks: item.grade?.toString() ?? '0',
               ),
@@ -1568,7 +1600,8 @@ class _EmptySubjectScreenState extends State<StaffEmptySubjectScreen>
                     : DateTime.now(),
                 topic: item.topic ?? 'No Topic',
                 duration: item.duration != null
-                    ? Duration(minutes: int.tryParse(item.duration.toString()) ?? 0)
+                    ? Duration(
+                        minutes: int.tryParse(item.duration.toString()) ?? 0)
                     : Duration.zero,
                 marks: item.grade?.toString() ?? '0',
                 topicId: item.topicId,
@@ -1644,7 +1677,8 @@ class _EmptySubjectScreenState extends State<StaffEmptySubjectScreen>
       default:
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Edit functionality not available for this item type'),
+            content:
+                Text('Edit functionality not available for this item type'),
             backgroundColor: Colors.orange,
           ),
         );
@@ -1713,13 +1747,15 @@ class _EmptySubjectScreenState extends State<StaffEmptySubjectScreen>
       _loadSyllabusContents();
     } catch (e) {
       print('Error during deletion: $e');
-      CustomToaster.toastError(context, 'Error', 'An unexpected error occurred.');
+      CustomToaster.toastError(
+          context, 'Error', 'An unexpected error occurred.');
     }
   }
 
   void _handleEditTopic(TopicContent topic) {
     if (topic.id == null || topic.id.toString().isEmpty) {
-      CustomToaster.toastError(context, 'Error', 'Topic ID is missing or invalid');
+      CustomToaster.toastError(
+          context, 'Error', 'Topic ID is missing or invalid');
       return;
     }
 

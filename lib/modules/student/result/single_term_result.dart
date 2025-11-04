@@ -36,8 +36,10 @@ class _SingleTermResultState extends State<SingleTermResult> {
     super.initState();
     // Fetch term results when the widget is initialized
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final studentProvider = Provider.of<StudentProvider>(context, listen: false);
-      debugPrint('SingleTermResult: Fetching term results for studentId=${widget.studentId}, '
+      final studentProvider =
+          Provider.of<StudentProvider>(context, listen: false);
+      debugPrint(
+          'SingleTermResult: Fetching term results for studentId=${widget.studentId}, '
           'termId=${widget.termId}, classId=${widget.classId}, '
           'year=${widget.year}, levelId=${widget.levelId}');
       studentProvider.fetchStudentTermResults(
@@ -94,11 +96,11 @@ class _SingleTermResultState extends State<SingleTermResult> {
         actions: [
           TextButton.icon(
             onPressed: () {
-              
               // Implement download functionality
               _downloadTermResults();
             },
-            icon: const Icon(Icons.download, color: AppColors.eLearningBtnColor1),
+            icon:
+                const Icon(Icons.download, color: AppColors.eLearningBtnColor1),
             label: const Text(
               'Download',
               style: TextStyle(color: AppColors.eLearningBtnColor1),
@@ -110,7 +112,8 @@ class _SingleTermResultState extends State<SingleTermResult> {
         decoration: Constants.customBoxDecoration(context),
         child: Consumer<StudentProvider>(
           builder: (context, studentProvider, child) {
-            debugPrint('SingleTermResult Consumer: isLoading=${studentProvider.isLoading}, '
+            debugPrint(
+                'SingleTermResult Consumer: isLoading=${studentProvider.isLoading}, '
                 'errorMessage=${studentProvider.errorMessage}, '
                 'termResult=${studentProvider.studentTermResult}');
             if (studentProvider.isLoading) {
@@ -164,36 +167,38 @@ class _SingleTermResultState extends State<SingleTermResult> {
   }
 
   Future<void> _downloadTermResults() async {
-  final url = 'https://linkskool.net/api/v1/students/${widget.studentId}/terms/${widget.termId}/results/download';
-  
-  try {
-    if (await canLaunchUrl(Uri.parse(url))) {
-      await launchUrl(
-        Uri.parse(url),
-        mode: LaunchMode.externalApplication, // Opens in browser
-      );
-    } else {
-      // Show error if URL can't be launched
+    final url =
+        'https://linkskool.net/api/v1/students/${widget.studentId}/terms/${widget.termId}/results/download';
+
+    try {
+      if (await canLaunchUrl(Uri.parse(url))) {
+        await launchUrl(
+          Uri.parse(url),
+          mode: LaunchMode.externalApplication, // Opens in browser
+        );
+      } else {
+        // Show error if URL can't be launched
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Could not launch $url'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Could not launch $url'),
+            content: Text('Error launching URL: $e'),
             backgroundColor: Colors.red,
           ),
         );
       }
     }
-  } catch (e) {
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error launching URL: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
-    }
   }
-}
+
   Widget _buildProfileImage(Student? student) {
     if (student?.pictureUrl != null && student!.pictureUrl!.isNotEmpty) {
       return Container(
@@ -415,8 +420,8 @@ class _SingleTermResultState extends State<SingleTermResult> {
     );
   }
 
-  Widget _buildScrollableColumn(
-      String title, double width, List<dynamic> subjects, String? assessmentName) {
+  Widget _buildScrollableColumn(String title, double width,
+      List<dynamic> subjects, String? assessmentName) {
     return Container(
       width: width,
       decoration: BoxDecoration(
@@ -470,7 +475,8 @@ class _SingleTermResultState extends State<SingleTermResult> {
     );
   }
 
-  String _getDataForColumn(String columnName, Map<String, dynamic> subject, String? assessmentName) {
+  String _getDataForColumn(
+      String columnName, Map<String, dynamic> subject, String? assessmentName) {
     if (assessmentName != null) {
       final assessments = subject['assessments'] as List<dynamic>? ?? [];
       final assessment = assessments.firstWhere(
@@ -495,11 +501,6 @@ class _SingleTermResultState extends State<SingleTermResult> {
     }
   }
 }
-
-
-
-
-// import 'package:flutter/material.dart';
 // import 'package:provider/provider.dart';
 // import 'package:linkschool/modules/common/app_colors.dart';
 // import 'package:linkschool/modules/common/constants.dart';

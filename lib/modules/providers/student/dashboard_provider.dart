@@ -1,5 +1,3 @@
-
-
 import 'package:flutter/cupertino.dart';
 
 import '../../model/student/dashboard_model.dart';
@@ -36,7 +34,8 @@ class DashboardProvider with ChangeNotifier {
     _setError(null);
 
     try {
-      final response = await _dashboardService.getDashboardData(class_id, level_id, term);
+      final response =
+          await _dashboardService.getDashboardData(class_id, level_id, term);
       _dashboardData = response;
       return response; // Return DashboardData directly
     } catch (e) {
@@ -46,5 +45,4 @@ class DashboardProvider with ChangeNotifier {
       _setLoading(false);
     }
   }
-
 }

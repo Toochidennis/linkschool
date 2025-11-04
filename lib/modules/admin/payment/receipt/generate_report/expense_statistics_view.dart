@@ -30,7 +30,8 @@ class _ExpenseStatisticsViewState extends State<ExpenseStatisticsView> {
   @override
   void initState() {
     super.initState();
-    _filterParams = Map.from(widget.initialParams ?? {'report_type': 'monthly'});
+    _filterParams =
+        Map.from(widget.initialParams ?? {'report_type': 'monthly'});
     _loadData();
   }
 
@@ -50,7 +51,8 @@ class _ExpenseStatisticsViewState extends State<ExpenseStatisticsView> {
       }
     } catch (e) {
       setState(() => _isLoading = false);
-      CustomToaster.toastError(context, 'Error', 'Failed to load statistics: $e');
+      CustomToaster.toastError(
+          context, 'Error', 'Failed to load statistics: $e');
     }
   }
 
@@ -58,7 +60,8 @@ class _ExpenseStatisticsViewState extends State<ExpenseStatisticsView> {
   Widget build(BuildContext context) {
     final summary = _expenditureData?['summary'] ?? {};
     final chartData = _expenditureData?['chart_data'] as List<dynamic>? ?? [];
-    final transactions = _expenditureData?['transactions'] as List<dynamic>? ?? [];
+    final transactions =
+        _expenditureData?['transactions'] as List<dynamic>? ?? [];
 
     // Convert chartData to List<double> for dailyPayments
     final List<double> dailyPayments = chartData.map((e) {
@@ -75,7 +78,9 @@ class _ExpenseStatisticsViewState extends State<ExpenseStatisticsView> {
         final date = DateFormat('yyyy-MM-dd').parse(dateStr);
         return DateFormat('MMM d').format(date); // Format as "Sep 11"
       } catch (e) {
-        return dateStr.isNotEmpty ? dateStr.substring(0, dateStr.length > 5 ? 5 : dateStr.length) : '';
+        return dateStr.isNotEmpty
+            ? dateStr.substring(0, dateStr.length > 5 ? 5 : dateStr.length)
+            : '';
       }
     }).toList();
 
@@ -92,7 +97,8 @@ class _ExpenseStatisticsViewState extends State<ExpenseStatisticsView> {
                     child: Container(
                       height: 50,
                       decoration: BoxDecoration(
-                        color: const Color.fromRGBO(209, 219, 255, 1).withOpacity(0.35),
+                        color: const Color.fromRGBO(209, 219, 255, 1)
+                            .withOpacity(0.35),
                         borderRadius: BorderRadius.circular(4),
                       ),
                       padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -100,20 +106,27 @@ class _ExpenseStatisticsViewState extends State<ExpenseStatisticsView> {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Text(
-                            _filterParams['report_type']?.toString().capitalize() ?? 'Termly report',
-                            style: AppTextStyles.normal500(fontSize: 14, color: AppColors.backgroundDark),
+                            _filterParams['report_type']
+                                    ?.toString()
+                                    .capitalize() ??
+                                'Termly report',
+                            style: AppTextStyles.normal500(
+                                fontSize: 14, color: AppColors.backgroundDark),
                           ),
                           GestureDetector(
                             onTap: () {
                               // Handle filter action
                             },
-                            child: SvgPicture.asset('assets/icons/profile/filter_icon.svg', height: 24, width: 24),
+                            child: SvgPicture.asset(
+                                'assets/icons/profile/filter_icon.svg',
+                                height: 24,
+                                width: 24),
                           ),
                         ],
                       ),
                     ),
                   ),
-                  
+
                   Padding(
                     padding: const EdgeInsets.all(16.0),
                     child: Column(
@@ -131,19 +144,26 @@ class _ExpenseStatisticsViewState extends State<ExpenseStatisticsView> {
                         SizedBox(
                           height: 300,
                           child: dailyPayments.isEmpty
-                              ? const Center(child: Text('No chart data available'))
+                              ? const Center(
+                                  child: Text('No chart data available'))
                               : BarChart(
                                   BarChartData(
                                     alignment: BarChartAlignment.spaceAround,
-                                    maxY: dailyPayments.isNotEmpty ? dailyPayments.reduce((a, b) => a > b ? a : b) * 1.1 : 30000,
+                                    maxY: dailyPayments.isNotEmpty
+                                        ? dailyPayments.reduce(
+                                                (a, b) => a > b ? a : b) *
+                                            1.1
+                                        : 30000,
                                     barTouchData: BarTouchData(
                                       enabled: true,
                                       touchTooltipData: BarTouchTooltipData(
                                         // tooltipBgColor: Colors.blueAccent,
-                                        getTooltipItem: (group, groupIndex, rod, rodIndex) {
+                                        getTooltipItem:
+                                            (group, groupIndex, rod, rodIndex) {
                                           return BarTooltipItem(
                                             '₦${rod.toY.toStringAsFixed(2)}\n${dateLabels[groupIndex]}',
-                                            const TextStyle(color: Colors.white),
+                                            const TextStyle(
+                                                color: Colors.white),
                                           );
                                         },
                                       ),
@@ -156,14 +176,18 @@ class _ExpenseStatisticsViewState extends State<ExpenseStatisticsView> {
                                           reservedSize: 30,
                                           getTitlesWidget: (value, meta) {
                                             final index = value.toInt();
-                                            if (index < 0 || index >= dateLabels.length) {
+                                            if (index < 0 ||
+                                                index >= dateLabels.length) {
                                               return const Text('');
                                             }
                                             return Padding(
-                                              padding: const EdgeInsets.all(8.0),
+                                              padding:
+                                                  const EdgeInsets.all(8.0),
                                               child: Text(
                                                 dateLabels[index],
-                                                style: const TextStyle(fontSize: 12, color: Colors.black),
+                                                style: const TextStyle(
+                                                    fontSize: 12,
+                                                    color: Colors.black),
                                               ),
                                             );
                                           },
@@ -176,17 +200,28 @@ class _ExpenseStatisticsViewState extends State<ExpenseStatisticsView> {
                                           getTitlesWidget: (value, meta) {
                                             return Text(
                                               '${(value / 1000).toInt()}k',
-                                              style: const TextStyle(fontSize: 12, color: Colors.black),
+                                              style: const TextStyle(
+                                                  fontSize: 12,
+                                                  color: Colors.black),
                                             );
                                           },
                                         ),
                                       ),
-                                      rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                                      topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                                      rightTitles: const AxisTitles(
+                                          sideTitles:
+                                              SideTitles(showTitles: false)),
+                                      topTitles: const AxisTitles(
+                                          sideTitles:
+                                              SideTitles(showTitles: false)),
                                     ),
                                     gridData: FlGridData(
                                       show: true,
-                                      horizontalInterval: dailyPayments.isNotEmpty ? dailyPayments.reduce((a, b) => a > b ? a : b) / 5 : 5000,
+                                      horizontalInterval:
+                                          dailyPayments.isNotEmpty
+                                              ? dailyPayments.reduce(
+                                                      (a, b) => a > b ? a : b) /
+                                                  5
+                                              : 5000,
                                       drawVerticalLine: false,
                                     ),
                                     borderData: FlBorderData(show: false),
@@ -197,9 +232,11 @@ class _ExpenseStatisticsViewState extends State<ExpenseStatisticsView> {
                                         barRods: [
                                           BarChartRodData(
                                             toY: dailyPayments[index],
-                                            color: const Color.fromRGBO(209, 219, 255, 1),
+                                            color: const Color.fromRGBO(
+                                                209, 219, 255, 1),
                                             width: 20,
-                                            borderRadius: BorderRadius.circular(4),
+                                            borderRadius:
+                                                BorderRadius.circular(4),
                                           ),
                                         ],
                                       ),
@@ -228,13 +265,23 @@ class _ExpenseStatisticsViewState extends State<ExpenseStatisticsView> {
                         SizedBox(
                           height: 200,
                           child: transactions.isEmpty
-                              ? const Center(child: Text('No distribution data available', style: TextStyle(color: Colors.black)))
+                              ? const Center(
+                                  child: Text('No distribution data available',
+                                      style: TextStyle(color: Colors.black)))
                               : PieChart(
                                   PieChartData(
-                                    sections: transactions.take(3).toList().asMap().entries.map((entry) {
+                                    sections: transactions
+                                        .take(3)
+                                        .toList()
+                                        .asMap()
+                                        .entries
+                                        .map((entry) {
                                       final index = entry.key;
-                                      final trans = entry.value as Map<String, dynamic>;
-                                      final value = (trans['total_amount'] ?? trans['amount'] ?? 7000.0) as num;
+                                      final trans =
+                                          entry.value as Map<String, dynamic>;
+                                      final value = (trans['total_amount'] ??
+                                          trans['amount'] ??
+                                          7000.0) as num;
                                       final colors = [
                                         const Color.fromRGBO(209, 219, 255, 1),
                                         const Color.fromRGBO(47, 85, 221, 1),
@@ -276,17 +323,23 @@ class _ExpenseStatisticsViewState extends State<ExpenseStatisticsView> {
                         ),
                         const SizedBox(height: 16),
                         transactions.isEmpty
-                            ? const Center(child: Text('No transactions available'))
+                            ? const Center(
+                                child: Text('No transactions available'))
                             : ListView.builder(
                                 shrinkWrap: true,
                                 physics: const NeverScrollableScrollPhysics(),
                                 itemCount: transactions.take(5).length,
                                 itemBuilder: (context, index) {
-                                  final item = transactions[index] as Map<String, dynamic>;
-                                  final name = item['name']?.toString() ?? 'Unknown';
-                                  final amount = (item['total_amount'] ?? item['amount'] ?? 0.0) as num;
+                                  final item = transactions[index]
+                                      as Map<String, dynamic>;
+                                  final name =
+                                      item['name']?.toString() ?? 'Unknown';
+                                  final amount = (item['total_amount'] ??
+                                      item['amount'] ??
+                                      0.0) as num;
                                   return Padding(
-                                    padding: const EdgeInsets.only(bottom: 12.0),
+                                    padding:
+                                        const EdgeInsets.only(bottom: 12.0),
                                     child: Row(
                                       children: [
                                         Text(
@@ -366,7 +419,3 @@ extension StringExtension on String {
     return "${this[0].toUpperCase()}${substring(1)}";
   }
 }
-
-
-
-

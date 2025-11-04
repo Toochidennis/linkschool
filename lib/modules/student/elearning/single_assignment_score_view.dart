@@ -15,10 +15,8 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../common/app_colors.dart';
 import '../../common/custom_toaster.dart';
 import '../../common/text_styles.dart';
-import '../../model/student/assignment_submissions_model.dart';
 import '../../model/student/comment_model.dart';
 import '../../providers/student/student_comment_provider.dart';
-
 
 class SingleAssignmentScoreView extends StatefulWidget {
   final int year;
@@ -27,16 +25,16 @@ class SingleAssignmentScoreView extends StatefulWidget {
   final SingleElearningContentData? childContent;
 
   const SingleAssignmentScoreView({
-    Key? key,
+    super.key,
     required this.childContent,
     required this.year,
     required this.term,
     required this.attachedMaterials,
-
-  }) : super(key: key);
+  });
 
   @override
-  State<SingleAssignmentScoreView> createState() => _SingleAssignmentScoreViewState();
+  State<SingleAssignmentScoreView> createState() =>
+      _SingleAssignmentScoreViewState();
 }
 
 class _SingleAssignmentScoreViewState extends State<SingleAssignmentScoreView> {
@@ -44,7 +42,6 @@ class _SingleAssignmentScoreViewState extends State<SingleAssignmentScoreView> {
   int? academicTerm;
   int? academicYear;
   bool isLoading = true;
-
 
   @override
   void initState() {
@@ -58,11 +55,10 @@ class _SingleAssignmentScoreViewState extends State<SingleAssignmentScoreView> {
   }
 
   Future<void> _loadUserData() async {
-
-
     try {
       final userBox = Hive.box('userData');
-      final storedUserData = userBox.get('userData') ?? userBox.get('loginResponse');
+      final storedUserData =
+          userBox.get('userData') ?? userBox.get('loginResponse');
       if (storedUserData != null) {
         final processedData = storedUserData is String
             ? json.decode(storedUserData)
@@ -74,23 +70,19 @@ class _SingleAssignmentScoreViewState extends State<SingleAssignmentScoreView> {
 
         setState(() {
           academicYear = settings['year'];
-          academicTerm = settings['term'] ;
+          academicTerm = settings['term'];
         });
       }
-
     } catch (e) {
       print('Error loading user data: $e');
     }
-
   }
-
 
   void _showAttachedMaterials() {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       isDismissible: false,
-
       backgroundColor: Colors.white,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
@@ -102,28 +94,35 @@ class _SingleAssignmentScoreViewState extends State<SingleAssignmentScoreView> {
         maxChildSize: 0.6,
         builder: (context, scrollController) {
           return MaterialSheet(
-            attachedMaterials: markedass?.files ??[],
+            attachedMaterials: markedass?.files ?? [],
             scrollController: scrollController,
           );
         },
       ),
     );
   }
+
   Future<void> fetchMarkedAssignment() async {
-    final provider = Provider.of<MarkedAssignmentProvider>(context, listen: false);
-    final data = await provider.fetchMarkedAssignment(widget.childContent?.id ??0, widget.year , widget.term );
+    final provider =
+        Provider.of<MarkedAssignmentProvider>(context, listen: false);
+    final data = await provider.fetchMarkedAssignment(
+        widget.childContent?.id ?? 0, widget.year, widget.term);
 
     setState(() {
       markedass = data;
       isLoading = false;
     });
   }
+
   void _showAddCommentModal(BuildContext context) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) =>  AddCommentModal( childContent: widget.childContent,title: widget.childContent?.title, id: widget.childContent?.id),
+      builder: (context) => AddCommentModal(
+          childContent: widget.childContent,
+          title: widget.childContent?.title,
+          id: widget.childContent?.id),
     );
   }
 
@@ -132,7 +131,13 @@ class _SingleAssignmentScoreViewState extends State<SingleAssignmentScoreView> {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) =>  YourWorkModal(childContent: widget.childContent, year: widget.year, term: widget.term, attachedMaterials: widget.attachedMaterials,markedass: markedass,),
+      builder: (context) => YourWorkModal(
+        childContent: widget.childContent,
+        year: widget.year,
+        term: widget.term,
+        attachedMaterials: widget.attachedMaterials,
+        markedass: markedass,
+      ),
     );
   }
 
@@ -201,7 +206,7 @@ class _SingleAssignmentScoreViewState extends State<SingleAssignmentScoreView> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  widget.childContent?.title?? "No Title",
+                  widget.childContent?.title ?? "No Title",
                   style: TextStyle(
                     fontSize: 36,
                     fontWeight: FontWeight.w600,
@@ -210,7 +215,7 @@ class _SingleAssignmentScoreViewState extends State<SingleAssignmentScoreView> {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  "${markedass?.score ?? "No"} Points"  "",
+                  "${markedass?.score ?? "No"} Points" "",
                   style: TextStyle(
                     fontSize: 18,
                     color: Colors.grey,
@@ -258,7 +263,7 @@ class _SingleAssignmentScoreViewState extends State<SingleAssignmentScoreView> {
             child: Container(
               width: double.infinity,
               padding: const EdgeInsets.all(32),
-              child:  Column(
+              child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
@@ -277,18 +282,16 @@ class _SingleAssignmentScoreViewState extends State<SingleAssignmentScoreView> {
 
           // Bottom Section
           GestureDetector(
-            onTap: (){
+            onTap: () {
               _showYourWorkModal(context);
-            }
-            ,
+            },
             child: Container(
               padding: const EdgeInsets.all(32),
               decoration: BoxDecoration(
                 color: Colors.grey.shade200,
                 borderRadius: BorderRadius.circular(10),
               ),
-              child:
-              Column(
+              child: Column(
                 children: [
                   // Bottom line indicator
                   Container(
@@ -323,7 +326,7 @@ class _SingleAssignmentScoreViewState extends State<SingleAssignmentScoreView> {
                           color: Colors.grey.withOpacity(0.1),
                           borderRadius: BorderRadius.circular(16),
                         ),
-                        child:  Text(
+                        child: Text(
                           markedass?.score ?? "",
                           style: TextStyle(
                             fontSize: 14,
@@ -372,8 +375,9 @@ class _SingleAssignmentScoreViewState extends State<SingleAssignmentScoreView> {
                         const SizedBox(width: 16),
                         Expanded(
                           child: Text(
-                            widget.childContent?.contentFiles?.isNotEmpty == true
-                                ? widget.childContent?.contentFiles![0]["file_name"]
+                            widget.childContent?.contentFiles.isNotEmpty == true
+                                ? widget.childContent?.contentFiles[0]
+                                    ["file_name"]
                                 : "No file",
                             style: TextStyle(
                               fontSize: 16,
@@ -403,14 +407,13 @@ class YourWorkModal extends StatefulWidget {
   final MarkedAssignmentModel? markedass;
 
   const YourWorkModal({
-    Key? key,
+    super.key,
     required this.childContent,
     required this.year,
     required this.term,
     required this.attachedMaterials,
     required this.markedass,
-
-  }) : super(key: key);
+  });
 
   @override
   State<YourWorkModal> createState() => _YourWorkModalState();
@@ -427,6 +430,7 @@ class _YourWorkModalState extends State<YourWorkModal> {
       CustomToaster.toastError(context, 'Error', 'Invalid URL: $url');
     }
   }
+
   @override
   Widget build(BuildContext context) {
     return DraggableScrollableSheet(
@@ -478,7 +482,7 @@ class _YourWorkModalState extends State<YourWorkModal> {
                               ),
                             ),
                             Container(
-                              padding:  EdgeInsets.symmetric(
+                              padding: EdgeInsets.symmetric(
                                 horizontal: 12,
                                 vertical: 6,
                               ),
@@ -486,7 +490,7 @@ class _YourWorkModalState extends State<YourWorkModal> {
                                 color: Colors.grey.withOpacity(0.1),
                                 borderRadius: BorderRadius.circular(16),
                               ),
-                              child:  Text(
+                              child: Text(
                                 widget.markedass?.score ?? "",
                                 style: TextStyle(
                                   fontSize: 14,
@@ -515,18 +519,21 @@ class _YourWorkModalState extends State<YourWorkModal> {
                         // File preview card
                         Column(
                           children: List.generate(
-                            widget.childContent?.contentFiles?.length ?? 0,
-                                (index) {
-                              final file = widget.childContent?.contentFiles![index];
+                            widget.childContent?.contentFiles.length ?? 0,
+                            (index) {
+                              final file =
+                                  widget.childContent?.contentFiles[index];
 
                               return GestureDetector(
-                                onTap: (){
-                                  final rawFileName = file['file_name'] ?? 'Unknown file';
+                                onTap: () {
+                                  final rawFileName =
+                                      file['file_name'] ?? 'Unknown file';
                                   final fileType = _getFileType(rawFileName);
-                                  final fileUrl = "https://linkskool.net/$rawFileName";
+                                  final fileUrl =
+                                      "https://linkskool.net/$rawFileName";
 
                                   final fileName = rawFileName.split('/').last;
-                                  if(fileType == 'pdf'){
+                                  if (fileType == 'pdf') {
                                     Navigator.push(
                                       context,
                                       MaterialPageRoute(
@@ -569,7 +576,8 @@ class _YourWorkModalState extends State<YourWorkModal> {
                                           height: 24,
                                           decoration: BoxDecoration(
                                             color: Colors.grey.withOpacity(0.2),
-                                            borderRadius: BorderRadius.circular(4),
+                                            borderRadius:
+                                                BorderRadius.circular(4),
                                           ),
                                           child: const Icon(
                                             Icons.description,
@@ -580,7 +588,8 @@ class _YourWorkModalState extends State<YourWorkModal> {
                                         const SizedBox(width: 8),
                                         Expanded(
                                           child: Text(
-                                            file['file_name'] ?? "Unknown file", // <-- dynamic file name
+                                            file['file_name'] ??
+                                                "Unknown file", // <-- dynamic file name
                                             overflow: TextOverflow.ellipsis,
                                             style: const TextStyle(
                                               fontSize: 16,
@@ -592,7 +601,8 @@ class _YourWorkModalState extends State<YourWorkModal> {
                                       ],
                                     ),
 
-                                    const SizedBox(height: 20), // space before next file
+                                    const SizedBox(
+                                        height: 20), // space before next file
                                   ],
                                 ),
                               );
@@ -601,7 +611,6 @@ class _YourWorkModalState extends State<YourWorkModal> {
                         ),
 
                         const SizedBox(height: 48),
-
 
                         const SizedBox(height: 100),
 
@@ -628,11 +637,21 @@ class AddCommentModal extends StatefulWidget {
   final int? itemId;
   final List<Map<String, dynamic>>? syllabusClasses;
   final SingleElearningContentData? childContent;
-  final String ?title;
+  final String? title;
   final int? id;
 
-  const AddCommentModal({super.key,this.childContent,  this.syllabusId, this.courseId, this.levelId, this.classId, this.courseName, this.syllabusClasses, this.itemId, this.title,this.id});
-
+  const AddCommentModal(
+      {super.key,
+      this.childContent,
+      this.syllabusId,
+      this.courseId,
+      this.levelId,
+      this.classId,
+      this.courseName,
+      this.syllabusClasses,
+      this.itemId,
+      this.title,
+      this.id});
 
   @override
   State<AddCommentModal> createState() => _AddCommentModalState();
@@ -645,7 +664,8 @@ class _AddCommentModalState extends State<AddCommentModal> {
   StudentComment? _editingComment;
   late double opacity;
 
-  final String networkImage = 'https://img.freepik.com/free-vector/gradient-human-rights-day-background_52683-149974.jpg?t=st=1717832829~exp=1717833429~hmac=3e938edcacd7fef2a791b36c7d3decbf64248d9760dd7da0a304acee382b8a86';
+  final String networkImage =
+      'https://img.freepik.com/free-vector/gradient-human-rights-day-background_52683-149974.jpg?t=st=1717832829~exp=1717833429~hmac=3e938edcacd7fef2a791b36c7d3decbf64248d9760dd7da0a304acee382b8a86';
   String? creatorName;
   int? creatorId;
   int? academicTerm;
@@ -655,11 +675,10 @@ class _AddCommentModalState extends State<AddCommentModal> {
   final ScrollController _scrollController = ScrollController();
 
   Future<void> _loadUserData() async {
-
-
     try {
       final userBox = Hive.box('userData');
-      final storedUserData = userBox.get('userData') ?? userBox.get('loginResponse');
+      final storedUserData =
+          userBox.get('userData') ?? userBox.get('loginResponse');
       if (storedUserData != null) {
         final processedData = storedUserData is String
             ? json.decode(storedUserData)
@@ -676,12 +695,11 @@ class _AddCommentModalState extends State<AddCommentModal> {
           academicTerm = settings['term'] as int?;
         });
       }
-
     } catch (e) {
       print('Error loading user data: $e');
     }
-
   }
+
   Widget _buildCommentItem(StudentComment comment) {
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 8),
@@ -731,7 +749,6 @@ class _AddCommentModalState extends State<AddCommentModal> {
                         ),
                       ),
                     ),
-
                   ],
                 ),
 
@@ -746,7 +763,6 @@ class _AddCommentModalState extends State<AddCommentModal> {
                   ),
                 ),
                 Row(
-
                   children: [
                     Text(
                       DateFormat('d MMM, HH:mm').format(comment.date),
@@ -755,8 +771,6 @@ class _AddCommentModalState extends State<AddCommentModal> {
                         color: Colors.grey.shade600,
                       ),
                     ),
-
-
                   ],
                 ),
               ],
@@ -769,29 +783,32 @@ class _AddCommentModalState extends State<AddCommentModal> {
 
   void _addComment([Map<String, dynamic>? updatedComment]) async {
     if (_commentController.text.isNotEmpty) {
-      final comment = updatedComment ?? {
-        "content_title": widget.childContent?.title,
-        "user_id": creatorId,
-        "user_name": creatorName,
-        "comment": _commentController.text,
-        "level_id": widget.childContent?.classes?[0].id,
-        "course_id": 25,
-        "course_name": widget.childContent!.title?? "No couresname",
-        "term": academicTerm,
-        if (_isEditing == true && _editingComment != null)
-          "content_id": widget.childContent?.id.toString() , // Use the ID of the comment being edited
-      };
+      final comment = updatedComment ??
+          {
+            "content_title": widget.childContent?.title,
+            "user_id": creatorId,
+            "user_name": creatorName,
+            "comment": _commentController.text,
+            "level_id": widget.childContent?.classes[0].id,
+            "course_id": 25,
+            "course_name": widget.childContent!.title ?? "No couresname",
+            "term": academicTerm,
+            if (_isEditing == true && _editingComment != null)
+              "content_id": widget.childContent?.id
+                  .toString(), // Use the ID of the comment being edited
+          };
 
       try {
 //
-        final commentProvider = Provider.of<StudentCommentProvider>(context, listen: false);
+        final commentProvider =
+            Provider.of<StudentCommentProvider>(context, listen: false);
         final contentId = _editingComment?.id;
         if (_isEditing) {
           comment['content_id'];
-          await commentProvider.UpdateComment(comment,contentId.toString());
+          await commentProvider.UpdateComment(comment, contentId.toString());
         } else {
-
-          await commentProvider.createComment(comment, widget.childContent!.id.toString());
+          await commentProvider.createComment(
+              comment, widget.childContent!.id.toString());
         }
 
         await commentProvider.fetchComments(widget.childContent!.id.toString());
@@ -815,16 +832,19 @@ class _AddCommentModalState extends State<AddCommentModal> {
           }
         });
       } catch (e) {
-        CustomToaster.toastError(context, 'Error', _isEditing ? 'Failed to update comment' : 'Failed to add comment');
+        CustomToaster.toastError(context, 'Error',
+            _isEditing ? 'Failed to update comment' : 'Failed to add comment');
       }
     }
   }
+
   Widget _buildDivider() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0),
       child: Divider(color: Colors.grey.withOpacity(0.5)),
     );
   }
+
   Widget _buildCommentSection() {
     return Consumer<StudentCommentProvider>(
       builder: (context, commentProvider, child) {
@@ -861,14 +881,16 @@ class _AddCommentModalState extends State<AddCommentModal> {
                 padding: const EdgeInsets.all(16.0),
                 child: Text(
                   'Class comments',
-                  style: AppTextStyles.normal600(fontSize: 18.0, color: Colors.black),
+                  style: AppTextStyles.normal600(
+                      fontSize: 18.0, color: Colors.black),
                 ),
               ),
               ListView.builder(
                 controller: _scrollController,
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
-                itemCount: commentList.length + (commentProvider.isLoading ? 1 : 0),
+                itemCount:
+                    commentList.length + (commentProvider.isLoading ? 1 : 0),
                 itemBuilder: (context, index) {
                   if (index == commentList.length) {
                     return const Center(child: CircularProgressIndicator());
@@ -886,7 +908,6 @@ class _AddCommentModalState extends State<AddCommentModal> {
                 ),
               _buildDivider(),
             ],
-
           ],
         );
       },
@@ -1001,7 +1022,8 @@ class _AddCommentModalState extends State<AddCommentModal> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             // Loading skeleton when first fetching
-                            if (commentProvider.isLoading && commentList.isEmpty)
+                            if (commentProvider.isLoading &&
+                                commentList.isEmpty)
                               Skeletonizer(
                                 child: ListView.builder(
                                   controller: _scrollController,
@@ -1042,10 +1064,12 @@ class _AddCommentModalState extends State<AddCommentModal> {
                                 controller: _scrollController,
                                 shrinkWrap: true,
                                 physics: const NeverScrollableScrollPhysics(),
-                                itemCount: commentList.length + (commentProvider.isLoading ? 1 : 0),
+                                itemCount: commentList.length +
+                                    (commentProvider.isLoading ? 1 : 0),
                                 itemBuilder: (context, index) {
                                   if (index == commentList.length) {
-                                    return const Center(child: CircularProgressIndicator());
+                                    return const Center(
+                                        child: CircularProgressIndicator());
                                   }
                                   return _buildCommentItem(commentList[index]);
                                 },
@@ -1096,8 +1120,7 @@ class _AddCommentModalState extends State<AddCommentModal> {
                     );
                   },
                 ),
-              )
-              ,
+              ),
             ],
           ),
         );
@@ -1112,14 +1135,16 @@ String _getFileType(String? fileName) {
   if (['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'].contains(extension)) {
     return 'image';
   }
-  if (['mp4', 'avi', 'mov', 'wmv', 'flv', 'webm', 'm4v', '3gp'].contains(extension)) {
+  if (['mp4', 'avi', 'mov', 'wmv', 'flv', 'webm', 'm4v', '3gp']
+      .contains(extension)) {
     return 'video';
   }
-  if (['pdf','doc', 'docx', 'txt', 'rtf'].contains(extension)) {
+  if (['pdf', 'doc', 'docx', 'txt', 'rtf'].contains(extension)) {
     return 'pdf';
   }
 
-  if (['.com', '.org', '.net', '.edu', 'http', 'https'].contains(extension) || fileName.startsWith('http')) {
+  if (['.com', '.org', '.net', '.edu', 'http', 'https'].contains(extension) ||
+      fileName.startsWith('http')) {
     return 'url';
   }
   if (['xls', 'xlsx', 'csv'].contains(extension)) {

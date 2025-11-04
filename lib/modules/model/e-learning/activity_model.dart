@@ -65,6 +65,7 @@ class RecentQuizModel {
     );
   }
 }
+
 class RecentActivityModel {
   final int id;
   final int? syllabusId; // Made nullable

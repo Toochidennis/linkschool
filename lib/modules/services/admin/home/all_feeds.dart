@@ -1,4 +1,3 @@
-import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
 import 'package:linkschool/modules/model/admin/home/dashboard_feed_model.dart';
 import 'package:linkschool/modules/services/api/api_service.dart';
@@ -9,62 +8,61 @@ class FeedsPaginationService {
   FeedsPaginationService(this._apiService);
 
   /// Fetch dashboard data including overview and feeds
-  
 
   /// Fetch paginated feeds (all feeds with pagination for "See More" screen)
   Future<List<Feed>> fetchFeeds({
-  required int page,
-  int limit = 50,
-}) async {
-  final userBox = Hive.box('userData');
-  final loginData = userBox.get('userData') ?? userBox.get('loginResponse');
+    required int page,
+    int limit = 50,
+  }) async {
+    final userBox = Hive.box('userData');
+    final loginData = userBox.get('userData') ?? userBox.get('loginResponse');
 
-  if (loginData == null || loginData['token'] == null) {
-    throw Exception("No valid login data or token found");
-  }
-
-  final token = loginData['token'] as String;
-  _apiService.setAuthToken(token);
-
-  try {
-    final response = await _apiService.get<Map<String, dynamic>>(
-      endpoint: 'portal/feeds',
-      queryParams: {
-        'page': page.toString(),
-        'limit': limit.toString(),
-        'term': 3, // Make sure this term value is correct
-      },
-    );
-
-    if (!response.success) {
-      throw Exception("Failed to fetch feeds: ${response.message}");
+    if (loginData == null || loginData['token'] == null) {
+      throw Exception("No valid login data or token found");
     }
 
-    // CORRECTED: Access the data properly based on your JSON structure
-    final data = response.rawData?['data'];
-    if (data == null) throw Exception("No feeds data found");
+    final token = loginData['token'] as String;
+    _apiService.setAuthToken(token);
 
-    // Get news and questions from the correct location
-    final news = (data['news'] as List? ?? [])
-        .map((item) => Feed.fromJson(item))
-        .toList();
+    try {
+      final response = await _apiService.get<Map<String, dynamic>>(
+        endpoint: 'portal/feeds',
+        queryParams: {
+          'page': page.toString(),
+          'limit': limit.toString(),
+          'term': 3, // Make sure this term value is correct
+        },
+      );
 
-    final questions = (data['questions'] as List? ?? [])
-        .map((item) => Feed.fromJson(item))
-        .toList();
+      if (!response.success) {
+        throw Exception("Failed to fetch feeds: ${response.message}");
+      }
 
-    // Combine both news and questions
-    final allFeeds = [...news, ...questions];
-    
-    // Sort by creation date if needed (newest first)
-    allFeeds.sort((a, b) => b.createdAt.compareTo(a.createdAt));
-    
-    return allFeeds;
-  } catch (e) {
-    print("Error fetching feeds: $e");
-    throw Exception("Failed to fetch feeds: $e");
+      // CORRECTED: Access the data properly based on your JSON structure
+      final data = response.rawData?['data'];
+      if (data == null) throw Exception("No feeds data found");
+
+      // Get news and questions from the correct location
+      final news = (data['news'] as List? ?? [])
+          .map((item) => Feed.fromJson(item))
+          .toList();
+
+      final questions = (data['questions'] as List? ?? [])
+          .map((item) => Feed.fromJson(item))
+          .toList();
+
+      // Combine both news and questions
+      final allFeeds = [...news, ...questions];
+
+      // Sort by creation date if needed (newest first)
+      allFeeds.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+
+      return allFeeds;
+    } catch (e) {
+      print("Error fetching feeds: $e");
+      throw Exception("Failed to fetch feeds: $e");
+    }
   }
-}
 
   Future<void> createFeed(Map<String, dynamic> newFeed) async {
     final userBox = Hive.box('userData');
@@ -94,7 +92,8 @@ class FeedsPaginationService {
     }
   }
 
-  Future<void> updateFeed(String feedId, Map<String, dynamic> updatedFeed) async {
+  Future<void> updateFeed(
+      String feedId, Map<String, dynamic> updatedFeed) async {
     final userBox = Hive.box('userData');
     final loginData = userBox.get('userData') ?? userBox.get('loginResponse');
     final dbName = userBox.get('_db') ?? 'aalmgzmy_linkskoo_practice';

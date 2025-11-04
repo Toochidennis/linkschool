@@ -14,7 +14,7 @@ class YearPickerDialog {
     required String subjectIcon,
     required Color cardColor,
     required List<String> subjectList,
-    required String examTypeId, 
+    required String examTypeId,
   }) {
     final List<int> years = List.generate(
       numberOfYears,
@@ -34,7 +34,9 @@ class YearPickerDialog {
               ))
           .toList(),
       pickerTitle: Padding(
-        padding: const EdgeInsets.only(top: 16.0,),
+        padding: const EdgeInsets.only(
+          top: 16.0,
+        ),
         child: Column(
           children: [
             Center(
@@ -68,7 +70,7 @@ class YearPickerDialog {
               builder: (context) => CbtDetailScreen(
                 year: years[index],
                 subject: subject,
-        
+
                 subjectIcon: subjectIcon,
                 cardColor: cardColor,
                 subjectList: subjectList,

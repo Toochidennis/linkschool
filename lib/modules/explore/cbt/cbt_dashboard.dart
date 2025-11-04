@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:linkschool/modules/model/explore/home/subject_model.dart';
 import 'package:linkschool/modules/providers/explore/cbt_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:skeletonizer/skeletonizer.dart';
@@ -89,278 +88,277 @@ class _CBTDashboardState extends State<CBTDashboard> {
   }
 }
 
-
-  Widget _buildCBTCategories(CBTProvider provider) {
-    if (provider.isLoading) {
-      return Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16.0),
-        child: GridView.builder(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 3,
-            childAspectRatio: 2.5,
-            crossAxisSpacing: 10,
-            mainAxisSpacing: 10,
-          ),
-          itemCount: 6, // Display 6 placeholder items
-          itemBuilder: (context, index) {
-            return Container(
-              decoration: BoxDecoration(
-                color: Colors.grey[300],
-                borderRadius: BorderRadius.circular(8),
-              ),
-            );
-          },
-        ),
-      );
-    } else {
-      return Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16.0),
-        child: Wrap(
-          spacing: 10.0,
-          runSpacing: 10.0,
-          children: provider.boardCodes.map((code) {
-            return BooksButtonItem(
-              label: code,
-              isSelected: provider.selectedBoard?.boardCode == code,
-              onPressed: () => provider.selectBoard(code),
-            );
-          }).toList(),
-        ),
-      );
-    }
-  }
-
-  Widget _buildPerformanceMetrics() {
+Widget _buildCBTCategories(CBTProvider provider) {
+  if (provider.isLoading) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+      child: GridView.builder(
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 3,
+          childAspectRatio: 2.5,
+          crossAxisSpacing: 10,
+          mainAxisSpacing: 10,
+        ),
+        itemCount: 6, // Display 6 placeholder items
+        itemBuilder: (context, index) {
+          return Container(
+            decoration: BoxDecoration(
+              color: Colors.grey[300],
+              borderRadius: BorderRadius.circular(8),
+            ),
+          );
+        },
+      ),
+    );
+  } else {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+      child: Wrap(
+        spacing: 10.0,
+        runSpacing: 10.0,
+        children: provider.boardCodes.map((code) {
+          return BooksButtonItem(
+            label: code,
+            isSelected: provider.selectedBoard?.boardCode == code,
+            onPressed: () => provider.selectBoard(code),
+          );
+        }).toList(),
+      ),
+    );
+  }
+}
+
+Widget _buildPerformanceMetrics() {
+  return Padding(
+    padding: const EdgeInsets.symmetric(horizontal: 16.0),
+    child: Row(
+      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+      children: [
+        _buildPerformanceCard(
+          imagePath: 'assets/icons/test.png',
+          title: 'Tests',
+          completionRate: '123',
+          backgroundColor: AppColors.cbtColor1,
+          borderColor: AppColors.cbtBorderColor1,
+        ),
+        const SizedBox(width: 16.0),
+        _buildPerformanceCard(
+          imagePath: 'assets/icons/success.png',
+          title: 'Success',
+          completionRate: '123%',
+          backgroundColor: AppColors.cbtColor2,
+          borderColor: AppColors.cbtBorderColor2,
+        ),
+        const SizedBox(width: 16.0),
+        _buildPerformanceCard(
+          imagePath: 'assets/icons/average.png',
+          title: 'Average',
+          completionRate: '123%',
+          backgroundColor: AppColors.cbtColor3,
+          borderColor: AppColors.cbtBorderColor3,
+        ),
+      ],
+    ),
+  );
+}
+
+Widget _buildTestHistory() {
+  return Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Constants.headingWithSeeAll600(
+        title: 'Test history',
+        titleSize: 18.0,
+        titleColor: AppColors.text4Light,
+      ),
+      SizedBox(
+        height: 100,
+        child: ListView(
+          scrollDirection: Axis.horizontal,
+          padding: const EdgeInsets.only(right: 16.0),
+          children: [
+            _buildHistoryCard(
+              courseName: 'Biology',
+              year: '2015',
+              progressValue: 0.5,
+              borderColor: AppColors.cbtColor3,
+            ),
+            _buildHistoryCard(
+              courseName: 'Biology',
+              year: '2015',
+              progressValue: 0.25,
+              borderColor: AppColors.cbtColor4,
+            ),
+          ],
+        ),
+      ),
+    ],
+  );
+}
+
+Widget _buildSubjectList(CBTProvider provider) {
+  return SliverList(
+    delegate: SliverChildBuilderDelegate(
+      (context, index) {
+        if (provider.isLoading) {
+          return _buildChooseSubjectCard(
+            subject: 'Subject Name',
+            year: 'Year Range',
+            cardColor: AppColors.cbtCardColor1,
+            subjectIcon: 'default',
+          );
+        }
+        final subject = provider.currentBoardSubjects[index];
+        return _buildChooseSubjectCard(
+          subject: subject.name,
+          year: subject.years != null && subject.years!.isNotEmpty
+              ? "${subject.years!.first.year}-${subject.years!.last.year}"
+              : "N/A",
+          cardColor: subject.cardColor ?? AppColors.cbtCardColor1,
+          subjectIcon: subject.subjectIcon ?? 'default',
+        );
+      },
+      childCount: provider.isLoading
+          ? 10
+          : provider
+              .currentBoardSubjects.length, // Increased to 10 placeholder items
+    ),
+  );
+}
+
+Widget _buildPerformanceCard({
+  required String title,
+  required String completionRate,
+  required String imagePath,
+  required Color backgroundColor,
+  required Color borderColor,
+}) {
+  return Expanded(
+    child: Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 12.0),
+      height: 130.0,
+      decoration: BoxDecoration(
+        color: backgroundColor,
+        borderRadius: BorderRadius.circular(8.0),
+        border: Border.all(color: borderColor),
+        boxShadow: [
+          BoxShadow(
+            spreadRadius: 0,
+            offset: const Offset(0, 1),
+            blurRadius: 2,
+            color: Colors.black.withOpacity(0.25),
+          )
+        ],
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildPerformanceCard(
-            imagePath: 'assets/icons/test.png',
-            title: 'Tests',
-            completionRate: '123',
-            backgroundColor: AppColors.cbtColor1,
-            borderColor: AppColors.cbtBorderColor1,
+          Image.asset(
+            imagePath,
+            width: 24.0,
+            height: 24.0,
           ),
-          const SizedBox(width: 16.0),
-          _buildPerformanceCard(
-            imagePath: 'assets/icons/success.png',
-            title: 'Success',
-            completionRate: '123%',
-            backgroundColor: AppColors.cbtColor2,
-            borderColor: AppColors.cbtBorderColor2,
+          const SizedBox(height: 4.0),
+          Text(
+            completionRate,
+            style: AppTextStyles.normal600(
+              fontSize: 24.0,
+              color: AppColors.backgroundLight,
+            ),
           ),
-          const SizedBox(width: 16.0),
-          _buildPerformanceCard(
-            imagePath: 'assets/icons/average.png',
-            title: 'Average',
-            completionRate: '123%',
-            backgroundColor: AppColors.cbtColor3,
-            borderColor: AppColors.cbtBorderColor3,
+          const SizedBox(height: 4.0),
+          Text(
+            title,
+            style: AppTextStyles.normal600(
+              fontSize: 16.0,
+              color: AppColors.backgroundLight,
+            ),
           ),
         ],
       ),
-    );
-  }
+    ),
+  );
+}
 
-  Widget _buildTestHistory() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+Widget _buildHistoryCard({
+  required String courseName,
+  required String year,
+  required double progressValue,
+  required Color borderColor,
+}) {
+  return Container(
+    width: 195,
+    margin: const EdgeInsets.only(left: 16.0),
+    padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+    decoration: BoxDecoration(
+      color: AppColors.backgroundLight,
+      borderRadius: BorderRadius.circular(4.0),
+      border: Border.all(color: borderColor),
+    ),
+    child: Row(
+      mainAxisSize: MainAxisSize.min,
       children: [
-        Constants.headingWithSeeAll600(
-          title: 'Test history',
-          titleSize: 18.0,
-          titleColor: AppColors.text4Light,
-        ),
-        SizedBox(
-          height: 100,
-          child: ListView(
-            scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.only(right: 16.0),
-            children: [
-              _buildHistoryCard(
-                courseName: 'Biology',
-                year: '2015',
-                progressValue: 0.5,
-                borderColor: AppColors.cbtColor3,
-              ),
-              _buildHistoryCard(
-                courseName: 'Biology',
-                year: '2015',
-                progressValue: 0.25,
-                borderColor: AppColors.cbtColor4,
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildSubjectList(CBTProvider provider) {
-    return SliverList(
-      delegate: SliverChildBuilderDelegate(
-        (context, index) {
-          if (provider.isLoading) {
-            return _buildChooseSubjectCard(
-              subject: 'Subject Name',
-              year: 'Year Range',
-              cardColor: AppColors.cbtCardColor1,
-              subjectIcon: 'default',
-            );
-          }
-          final subject = provider.currentBoardSubjects[index];
-          return _buildChooseSubjectCard(
-            subject: subject.name,
-            year: subject.years != null && subject.years!.isNotEmpty
-                ? "${subject.years!.first.year}-${subject.years!.last.year}"
-                : "N/A",
-            cardColor: subject.cardColor ?? AppColors.cbtCardColor1,
-            subjectIcon: subject.subjectIcon ?? 'default',
-          );
-        },
-        childCount: provider.isLoading
-            ? 10
-            : provider.currentBoardSubjects
-                .length, // Increased to 10 placeholder items
-      ),
-    );
-  }
-
-  Widget _buildPerformanceCard({
-    required String title,
-    required String completionRate,
-    required String imagePath,
-    required Color backgroundColor,
-    required Color borderColor,
-  }) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 12.0),
-        height: 130.0,
-        decoration: BoxDecoration(
-          color: backgroundColor,
-          borderRadius: BorderRadius.circular(8.0),
-          border: Border.all(color: borderColor),
-          boxShadow: [
-            BoxShadow(
-              spreadRadius: 0,
-              offset: const Offset(0, 1),
-              blurRadius: 2,
-              color: Colors.black.withOpacity(0.25),
-            )
-          ],
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.start,
-          crossAxisAlignment: CrossAxisAlignment.start,
+        Stack(
+          alignment: Alignment.center,
           children: [
-            Image.asset(
-              imagePath,
-              width: 24.0,
-              height: 24.0,
-            ),
-            const SizedBox(height: 4.0),
-            Text(
-              completionRate,
-              style: AppTextStyles.normal600(
-                fontSize: 24.0,
-                color: AppColors.backgroundLight,
+            SizedBox(
+              height: 70.0,
+              width: 70.0,
+              child: CircularProgressIndicator(
+                color: borderColor,
+                value: progressValue,
+                strokeWidth: 7.5,
               ),
             ),
-            const SizedBox(height: 4.0),
             Text(
-              title,
+              '${(progressValue * 100).round()}%',
               style: AppTextStyles.normal600(
                 fontSize: 16.0,
-                color: AppColors.backgroundLight,
+                color: AppColors.text4Light,
               ),
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildHistoryCard({
-    required String courseName,
-    required String year,
-    required double progressValue,
-    required Color borderColor,
-  }) {
-    return Container(
-      width: 195,
-      margin: const EdgeInsets.only(left: 16.0),
-      padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
-      decoration: BoxDecoration(
-        color: AppColors.backgroundLight,
-        borderRadius: BorderRadius.circular(4.0),
-        border: Border.all(color: borderColor),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Stack(
-            alignment: Alignment.center,
+        const SizedBox(width: 10.0),
+        Expanded(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              SizedBox(
-                height: 70.0,
-                width: 70.0,
-                child: CircularProgressIndicator(
-                  color: borderColor,
-                  value: progressValue,
-                  strokeWidth: 7.5,
-                ),
-              ),
               Text(
-                '${(progressValue * 100).round()}%',
+                courseName,
                 style: AppTextStyles.normal600(
                   fontSize: 16.0,
                   color: AppColors.text4Light,
                 ),
               ),
+              const SizedBox(height: 4.0),
+              Text(
+                '($year)',
+                style: AppTextStyles.normal600(
+                  fontSize: 12.0,
+                  color: AppColors.text7Light,
+                ),
+              ),
+              const SizedBox(height: 4.0),
+              Text(
+                'Tap to retake',
+                style: AppTextStyles.normal600(
+                  fontSize: 14.0,
+                  color: AppColors.text8Light,
+                ),
+              ),
             ],
           ),
-          const SizedBox(width: 10.0),
-          Expanded(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              mainAxisAlignment: MainAxisAlignment.start,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  courseName,
-                  style: AppTextStyles.normal600(
-                    fontSize: 16.0,
-                    color: AppColors.text4Light,
-                  ),
-                ),
-                const SizedBox(height: 4.0),
-                Text(
-                  '($year)',
-                  style: AppTextStyles.normal600(
-                    fontSize: 12.0,
-                    color: AppColors.text7Light,
-                  ),
-                ),
-                const SizedBox(height: 4.0),
-                Text(
-                  'Tap to retake',
-                  style: AppTextStyles.normal600(
-                    fontSize: 14.0,
-                    color: AppColors.text8Light,
-                  ),
-                ),
-              ],
-            ),
-          )
-        ],
-      ),
-    );
-  }
+        )
+      ],
+    ),
+  );
+}
 
 Widget _buildChooseSubjectCard({
   required String subject,
@@ -371,9 +369,8 @@ Widget _buildChooseSubjectCard({
   return Consumer<CBTProvider>(
     builder: (context, provider, child) {
       final years = provider.getYearsForSubject(subject);
-      final yearDisplay = years.isNotEmpty
-          ? "${years.first}-${years.last}"
-          : "N/A";
+      final yearDisplay =
+          years.isNotEmpty ? "${years.first}-${years.last}" : "N/A";
 
       return GestureDetector(
         onTap: () {
@@ -386,7 +383,8 @@ Widget _buildChooseSubjectCard({
 
             YearPickerDialog.show(
               context,
-              examTypeId: provider.selectedBoard?.id ?? '', // Changed from examTypeId to id
+              examTypeId: provider.selectedBoard?.id ??
+                  '', // Changed from examTypeId to id
               title: 'Choose Year',
               startYear: yearsList.first,
               numberOfYears: yearsList.length,
@@ -424,7 +422,8 @@ Widget _buildChooseSubjectCard({
                     'assets/icons/$subjectIcon.png',
                     width: 24.0,
                     height: 24.0,
-                    errorBuilder: (context, error, stackTrace) => const Icon(Icons.error),
+                    errorBuilder: (context, error, stackTrace) =>
+                        const Icon(Icons.error),
                   ),
                 ),
               ),
@@ -458,6 +457,3 @@ Widget _buildChooseSubjectCard({
     },
   );
 }
-
-
-

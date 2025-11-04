@@ -41,7 +41,8 @@ class _PortalDashboardState extends State<PortalDashboard> {
 
   PreferredSizeWidget _buildAppBar(BuildContext context) {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    final userName = authProvider.user?.name ?? 'Guest'; // Use the logged-in user's name
+    final userName =
+        authProvider.user?.name ?? 'Guest'; // Use the logged-in user's name
 
     return PreferredSize(
       preferredSize: const Size.fromHeight(kToolbarHeight + 18),
@@ -90,14 +91,15 @@ class _PortalDashboardState extends State<PortalDashboard> {
 
   Widget _buildBodyItem(int index, BuildContext context) {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    final userName = authProvider.user?.name ?? 'Guest'; // Use the logged-in user's name
+    final userName =
+        authProvider.user?.name ?? 'Guest'; // Use the logged-in user's name
 
     switch (index) {
       case 0:
         return PortalHome(
           appBar: CustomStudentAppBar(
             title: 'Welcome',
-            subtitle: userName, 
+            subtitle: userName,
             showNotification: true,
             onNotificationTap: () {},
           ),
@@ -106,7 +108,7 @@ class _PortalDashboardState extends State<PortalDashboard> {
         return ResultDashboardScreen(
           appBar: CustomStudentAppBar(
             title: 'Welcome',
-            subtitle: userName, 
+            subtitle: userName,
             showNotification: true,
             onNotificationTap: () {},
           ),
@@ -115,7 +117,7 @@ class _PortalDashboardState extends State<PortalDashboard> {
         return ELearningDashboardScreen(
           appBar: CustomStudentAppBar(
             title: 'Welcome',
-            subtitle: userName, 
+            subtitle: userName,
             showNotification: true,
             onNotificationTap: () {},
           ),
@@ -142,7 +144,8 @@ class _PortalDashboardState extends State<PortalDashboard> {
     return Scaffold(
       key: const ValueKey('portal_dashboard'),
       appBar: _buildAppBar(context),
-      body: _buildBodyItem(_selectedIndex, context), // Pass context to _buildBodyItem
+      body: _buildBodyItem(
+          _selectedIndex, context), // Pass context to _buildBodyItem
       bottomNavigationBar: CustomNavigationBar(
         actionButtonImagePath: 'assets/icons/explore.svg',
         appBarItems: [
@@ -163,7 +166,8 @@ class _PortalDashboardState extends State<PortalDashboard> {
             text: 'Payment',
           ),
         ],
-        bodyItems: List.generate(4, (index) => _buildBodyItem(index, context)), // Pass context
+        bodyItems: List.generate(
+            4, (index) => _buildBodyItem(index, context)), // Pass context
         onTabSelected: (index) {
           setState(() {
             _selectedIndex = index;
@@ -176,4 +180,3 @@ class _PortalDashboardState extends State<PortalDashboard> {
     );
   }
 }
-

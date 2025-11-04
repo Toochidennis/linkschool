@@ -3,7 +3,6 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 
-
 class SyllabusOutlineScreen extends StatelessWidget {
   final String title;
   final String description;
@@ -22,7 +21,9 @@ class SyllabusOutlineScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Syllabus Outline', style: AppTextStyles.normal600(fontSize: 20.0, color: AppColors.backgroundDark)),
+        title: Text('Syllabus Outline',
+            style: AppTextStyles.normal600(
+                fontSize: 20.0, color: AppColors.backgroundDark)),
         backgroundColor: AppColors.backgroundLight,
         leading: IconButton(
           icon: Icon(Icons.arrow_back),
@@ -43,42 +44,50 @@ class SyllabusOutlineScreen extends StatelessWidget {
               children: [
                 Text(
                   'Title:',
-                  style: AppTextStyles.normal600(fontSize: 16.0, color: Colors.black),
+                  style: AppTextStyles.normal600(
+                      fontSize: 16.0, color: Colors.black),
                 ),
                 const SizedBox(height: 8.0),
                 Text(
                   title,
-                  style: AppTextStyles.normal400(fontSize: 14.0, color: Colors.black),
+                  style: AppTextStyles.normal400(
+                      fontSize: 14.0, color: Colors.black),
                 ),
                 const SizedBox(height: 16.0),
                 Text(
                   'Description:',
-                  style: AppTextStyles.normal600(fontSize: 16.0, color: Colors.black),
+                  style: AppTextStyles.normal600(
+                      fontSize: 16.0, color: Colors.black),
                 ),
                 const SizedBox(height: 8.0),
                 Text(
                   description,
-                  style: AppTextStyles.normal400(fontSize: 14.0, color: Colors.black),
+                  style: AppTextStyles.normal400(
+                      fontSize: 14.0, color: Colors.black),
                 ),
                 const SizedBox(height: 16.0),
                 Text(
                   'Class:',
-                  style: AppTextStyles.normal600(fontSize: 16.0, color: Colors.black),
+                  style: AppTextStyles.normal600(
+                      fontSize: 16.0, color: Colors.black),
                 ),
                 const SizedBox(height: 8.0),
                 Text(
                   selectedClass,
-                  style: AppTextStyles.normal400(fontSize: 14.0, color: Colors.black),
+                  style: AppTextStyles.normal400(
+                      fontSize: 14.0, color: Colors.black),
                 ),
                 const SizedBox(height: 16.0),
                 Text(
                   'Teacher:',
-                  style: AppTextStyles.normal600(fontSize: 16.0, color: Colors.black),
+                  style: AppTextStyles.normal600(
+                      fontSize: 16.0, color: Colors.black),
                 ),
                 const SizedBox(height: 8.0),
                 Text(
                   selectedTeacher,
-                  style: AppTextStyles.normal400(fontSize: 14.0, color: Colors.black),
+                  style: AppTextStyles.normal400(
+                      fontSize: 14.0, color: Colors.black),
                 ),
               ],
             ),

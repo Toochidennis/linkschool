@@ -8,8 +8,8 @@ class QuizProvider extends ChangeNotifier {
   String? error;
   String? message;
   ContentResponse? contentResponse; // Store fetched content
-  bool _isLoadingContent = false; 
-  
+  final bool _isLoadingContent = false;
+
   // Add this flag
 
   QuizProvider(this._quizService);
@@ -34,14 +34,14 @@ class QuizProvider extends ChangeNotifier {
     }
   }
 
-  Future<void> updateTest( Map<String, dynamic> quizPayload) async {
+  Future<void> updateTest(Map<String, dynamic> quizPayload) async {
     isLoading = true;
     error = null;
     message = null;
     notifyListeners();
 
     try {
-      await _quizService.updateTest( quizPayload);
+      await _quizService.updateTest(quizPayload);
       message = 'Test updated successfully';
     } catch (e) {
       print('Error updating test: $e');
@@ -72,4 +72,5 @@ class QuizProvider extends ChangeNotifier {
       isLoading = false;
       notifyListeners();
     }
-  }}
+  }
+}

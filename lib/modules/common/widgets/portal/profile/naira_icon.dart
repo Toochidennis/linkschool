@@ -7,13 +7,12 @@ class NairaSvgIcon extends StatelessWidget {
   final double height;
   final double? size;
 
-  const NairaSvgIcon({
-    super.key,
-    this.color,
-    this.width = 16.0,
-    this.height = 16.0,
-    this.size
-  });
+  const NairaSvgIcon(
+      {super.key,
+      this.color,
+      this.width = 16.0,
+      this.height = 16.0,
+      this.size});
 
   @override
   Widget build(BuildContext context) {
@@ -25,7 +24,3 @@ class NairaSvgIcon extends StatelessWidget {
     );
   }
 }
-
-
-
-

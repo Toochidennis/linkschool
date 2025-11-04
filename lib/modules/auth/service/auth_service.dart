@@ -4,13 +4,10 @@ import 'dart:convert';
 
 class AuthService {
   Future<ApiResponse<Map<String, dynamic>>> login(
-    String username, 
-    String password, 
-    String schoolCode
-  ) async {
+      String username, String password, String schoolCode) async {
     final apiBaseUrl = dotenv.env['API_BASE_URL'] ?? '';
     final apiKey = dotenv.env['API_KEY'] ?? '';
-    
+
     try {
       final response = await http.post(
         Uri.parse('$apiBaseUrl/portal/auth/login'),
@@ -29,33 +26,34 @@ class AuthService {
 
       if (response.statusCode == 200 && responseBody['success'] == true) {
         final responseData = responseBody['response'];
-        
+
         // ========== PRINT DATA STRUCTURE ==========
-        print('\n' + '='*60);
+        print('\n${'=' * 60}');
         print('🔐 LOGIN RESPONSE DATA STRUCTURE');
-        print('='*60);
-        
+        print('=' * 60);
+
         // Print the entire response structure
         print('\n📦 Full Response:');
         print(JsonEncoder.withIndent('  ').convert(responseBody));
-        
+
         print('\n📊 Response Data Keys:');
         if (responseData is Map) {
           responseData.forEach((key, value) {
             print('  - $key: ${value.runtimeType}');
           });
         }
-        
+
         // Print token
         if (responseData['token'] != null) {
-          print('\n🔑 Token: ${responseData['token'].toString().substring(0, 20)}...');
+          print(
+              '\n🔑 Token: ${responseData['token'].toString().substring(0, 20)}...');
         }
-        
+
         // Print database identifier
         if (responseData['_db'] != null) {
           print('💾 Database: ${responseData['_db']}');
         }
-        
+
         // Print user data structure
         if (responseData['data'] != null) {
           final userData = responseData['data'];
@@ -63,22 +61,23 @@ class AuthService {
           if (userData is Map) {
             userData.forEach((key, value) {
               if (value is Map || value is List) {
-                print('  - $key: ${value.runtimeType} (${_getSize(value)} items)');
+                print(
+                    '  - $key: ${value.runtimeType} (${_getSize(value)} items)');
               } else {
                 print('  - $key: $value');
               }
             });
           }
-          
+
           // Print role
           print('\n🎭 User Role: ${userData['role']}');
-          
+
           // Print settings if available
           if (userData['settings'] != null) {
             print('\n⚙️ Settings:');
             print(JsonEncoder.withIndent('  ').convert(userData['settings']));
           }
-          
+
           // Print role-specific data
           if (userData['role'] == 'admin') {
             print('\n👨‍💼 ADMIN DATA:');
@@ -94,7 +93,8 @@ class AuthService {
           } else if (userData['role'] == 'staff') {
             print('\n👨‍🏫 STAFF DATA:');
             if (userData['form_classes'] != null) {
-              print('  - Form Classes: ${_getSize(userData['form_classes'])} items');
+              print(
+                  '  - Form Classes: ${_getSize(userData['form_classes'])} items');
             }
             if (userData['courses'] != null) {
               print('  - Courses: ${_getSize(userData['courses'])} items');
@@ -103,12 +103,13 @@ class AuthService {
             print('\n🎓 STUDENT DATA:');
             if (userData['profile'] != null) {
               print('  - Profile:');
-              print(JsonEncoder.withIndent('    ').convert(userData['profile']));
+              print(
+                  JsonEncoder.withIndent('    ').convert(userData['profile']));
             }
           }
         }
-        
-        print('\n' + '='*60 + '\n');
+
+        print('\n${'=' * 60}\n');
         // ========== END PRINT DATA STRUCTURE ==========
 
         return ApiResponse<Map<String, dynamic>>(
@@ -140,10 +141,7 @@ class AuthService {
 
   // Method to refresh user data (re-fetch with saved credentials)
   Future<ApiResponse<Map<String, dynamic>>> refreshUserData(
-    String username, 
-    String password, 
-    String schoolCode
-  ) async {
+      String username, String password, String schoolCode) async {
     print('🔄 Refreshing user data...');
     return await login(username, password, schoolCode);
   }
@@ -160,5 +158,3 @@ class ApiResponse<T> {
     this.rawData,
   });
 }
-
-

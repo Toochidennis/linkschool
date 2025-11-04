@@ -29,12 +29,11 @@ class AssignCourseService {
         print("Failed to Assigned courses and classes ");
         print("Error: ${response.message ?? 'No error message provided'}");
         SnackBar(
-          content: Text("${response.message}"),
+          content: Text(response.message),
           backgroundColor: Colors.red,
         );
         throw Exception("Failed to Assign course : ${response.message}");
       } else {
-       
         SnackBar(
           content: Text('course assigned  successfully.'),
           backgroundColor: Colors.green,

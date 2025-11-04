@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
-import 'package:hive/hive.dart';
 import '../../../common/app_colors.dart';
 import '../../../common/constants.dart';
 import '../../../common/text_styles.dart';
@@ -11,7 +10,6 @@ import '../../../services/api/api_service.dart';
 import '../../../services/api/service_locator.dart';
 import 'student_payment_detail_screen.dart';
 import 'student_invoice_selection_screen.dart';
-
 
 class PaymentOutstandingScreen extends StatefulWidget {
   final int levelId;
@@ -28,7 +26,8 @@ class PaymentOutstandingScreen extends StatefulWidget {
   });
 
   @override
-  State<PaymentOutstandingScreen> createState() => _PaymentOutstandingScreenState();
+  State<PaymentOutstandingScreen> createState() =>
+      _PaymentOutstandingScreenState();
 }
 
 class _PaymentOutstandingScreenState extends State<PaymentOutstandingScreen> {
@@ -54,31 +53,30 @@ class _PaymentOutstandingScreenState extends State<PaymentOutstandingScreen> {
   }
 
   void _initializeServices() {
-        _paymentService = PaymentService(locator<ApiService>());
+    _paymentService = PaymentService(locator<ApiService>());
     print('PaymentService initialized with shared ApiService instance');
     // try {
     //   final userBox = Hive.box('userData');
     //   final token = userBox.get('token');
-      
+
     //   if (token == null || token.toString().isEmpty) {
     //     print('No authentication token found. User needs to login again.');
     //     return;
     //   }
-      
+
     //   final apiService = ApiService();
     //   apiService.setAuthToken(token.toString());
     //   _paymentService = PaymentService(apiService);
-      
+
     //   print('ApiService initialized with authentication token');
     // } catch (e) {
     //   print('Error initializing services: $e');
     // }
-
   }
 
   Future<void> _loadUnpaidInvoices() async {
     setState(() => _isLoading = true);
-    
+
     try {
       final students = await _paymentService.getUnpaidInvoices(
         levelId: _currentLevelId,
@@ -102,7 +100,7 @@ class _PaymentOutstandingScreenState extends State<PaymentOutstandingScreen> {
 
   void _showClassSelectionOverlay() {
     final classes = _paymentService.getClassesForLevel(_currentLevelId);
-    
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -135,7 +133,8 @@ class _PaymentOutstandingScreenState extends State<PaymentOutstandingScreen> {
                       itemBuilder: (context, index) {
                         final classModel = classes[index];
                         return Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 24, vertical: 8),
                           child: _buildClassButton(classModel),
                         );
                       },
@@ -184,7 +183,7 @@ class _PaymentOutstandingScreenState extends State<PaymentOutstandingScreen> {
   Widget build(BuildContext context) {
     final Brightness brightness = Theme.of(context).brightness;
     opacity = brightness == Brightness.light ? 0.1 : 0.15;
-    
+
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
@@ -288,7 +287,8 @@ class _PaymentOutstandingScreenState extends State<PaymentOutstandingScreen> {
                     const SizedBox(height: 16),
                     Expanded(
                       child: filteredStudents.isEmpty
-                          ? const Center(child: Text('No outstanding payments found'))
+                          ? const Center(
+                              child: Text('No outstanding payments found'))
                           : ListView.builder(
                               itemCount: filteredStudents.length,
                               itemBuilder: (context, index) {
@@ -369,7 +369,3 @@ class _PaymentOutstandingScreenState extends State<PaymentOutstandingScreen> {
     );
   }
 }
-
-
-
-

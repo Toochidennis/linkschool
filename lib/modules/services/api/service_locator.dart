@@ -30,7 +30,6 @@ import 'package:linkschool/modules/providers/admin/payment/fee_provider.dart';
 import 'package:linkschool/modules/providers/admin/skills_behavior_table_provider.dart';
 import 'package:linkschool/modules/providers/explore/ebook_provider.dart';
 import 'package:linkschool/modules/providers/explore/home/ebook_provider.dart';
-import 'package:linkschool/modules/providers/explore/home/news_provider.dart';
 import 'package:linkschool/modules/providers/staff/staff_dashboard_provider.dart';
 import 'package:linkschool/modules/providers/staff/streams_provider.dart';
 import 'package:linkschool/modules/providers/staff/syllabus_provider.dart';
@@ -79,7 +78,6 @@ import 'package:linkschool/modules/providers/admin/student_provider.dart';
 import 'package:linkschool/modules/services/admin/behaviour_service.dart';
 import 'package:linkschool/modules/services/explore/ebook_service.dart';
 import 'package:linkschool/modules/services/explore/home/ebook_service.dart';
-import 'package:linkschool/modules/services/explore/home/news_service.dart';
 import 'package:linkschool/modules/services/staff/overview_service.dart';
 import 'package:linkschool/modules/services/staff/staff_dashboard_service.dart';
 import 'package:linkschool/modules/services/staff/streams_service.dart';
@@ -104,19 +102,18 @@ void setupServiceLocator() {
 
 // _____________Explore portal____________________________
 
+  locator.registerLazySingleton<EbookService>(
+      () => EbookService(locator<ApiService>()));
 
+  locator.registerFactory<EbookProvider>(
+      () => EbookProvider(ebookService: locator<EbookService>()));
 
-  locator.registerLazySingleton<EbookService>(() => EbookService(locator<ApiService>()));
-  
+  locator.registerLazySingleton<BookService>(
+      () => BookService(locator<ApiService>()));
 
-  locator.registerFactory<EbookProvider>(() => EbookProvider(ebookService: locator<EbookService>()));
-
-
-
-  locator.registerLazySingleton<BookService>(() => BookService(locator<ApiService>()));
-  
   // Register BookProvider (if you want to use it directly)
-  locator.registerFactory<BookProvider>(() => BookProvider(ebookService: locator<BookService>()));
+  locator.registerFactory<BookProvider>(
+      () => BookProvider(ebookService: locator<BookService>()));
 
 // ______________admin home screen_____________________________
 
@@ -177,8 +174,8 @@ void setupServiceLocator() {
   locator.registerLazySingleton<ExpenditureService>(
     () => ExpenditureService(locator<ApiService>()),
   );
-  locator.registerLazySingleton<PaymentService >(
-    () => PaymentService (locator<ApiService>()),
+  locator.registerLazySingleton<PaymentService>(
+    () => PaymentService(locator<ApiService>()),
   );
 
 // admin comment  Api with ApiService dependency
@@ -403,15 +400,11 @@ void setupServiceLocator() {
   locator.registerLazySingleton<StaffStreamsService>(
       () => StaffStreamsService(locator<ApiService>()));
 
-      locator.registerLazySingleton< PaymentSubmissionService>(
-    () =>  PaymentSubmissionService(locator<ApiService>())
-  );
+  locator.registerLazySingleton<PaymentSubmissionService>(
+      () => PaymentSubmissionService(locator<ApiService>()));
   // Register InvoiceProvider with InvoiceService dependency
   locator.registerLazySingleton<PaymentProvider>(
-    () => PaymentProvider(locator< PaymentSubmissionService>() )
-  );
-
-
+      () => PaymentProvider(locator<PaymentSubmissionService>()));
 
   locator.registerLazySingleton<StreamsProvider>(
       () => StreamsProvider(locator<StreamsService>()));

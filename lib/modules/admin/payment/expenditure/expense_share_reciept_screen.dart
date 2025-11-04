@@ -17,7 +17,8 @@ class ExpenseShareRecieptScreen extends StatefulWidget {
   });
 
   @override
-  State<ExpenseShareRecieptScreen> createState() => _ExpenseShareRecieptScreenState();
+  State<ExpenseShareRecieptScreen> createState() =>
+      _ExpenseShareRecieptScreenState();
 }
 
 class _ExpenseShareRecieptScreenState extends State<ExpenseShareRecieptScreen> {
@@ -75,7 +76,8 @@ class _ExpenseShareRecieptScreenState extends State<ExpenseShareRecieptScreen> {
                     padding: const EdgeInsets.all(16.0),
                     child: Column(
                       children: [
-                        SvgPicture.asset('assets/icons/profile/rounded_success_icon.svg'),
+                        SvgPicture.asset(
+                            'assets/icons/profile/rounded_success_icon.svg'),
                         const SizedBox(height: 16.0),
                         Text(
                           'Expenditure',
@@ -108,12 +110,22 @@ class _ExpenseShareRecieptScreenState extends State<ExpenseShareRecieptScreen> {
                           size: Size(double.infinity, 1),
                           painter: CustomDashLine(),
                         ),
-                        _buildDetailRow('Date', widget.transaction['date'] ?? '2023-10-23'),
-                        _buildDetailRow('Name', widget.transaction['name'] ?? 'John Doe'),
-                        _buildDetailRow('Phone Number', widget.transaction['phone_number'] ?? '08012345679'),
-                        _buildDetailRow('Session', widget.transaction['session'] ?? '2022/2023'),
-                        _buildDetailRow('Reference No', widget.transaction['reference'] ?? 'ABC123XYZ'),
-                        _buildDetailRow('Description', widget.transaction['description'] ?? 'Clinical medication'),
+                        _buildDetailRow(
+                            'Date', widget.transaction['date'] ?? '2023-10-23'),
+                        _buildDetailRow(
+                            'Name', widget.transaction['name'] ?? 'John Doe'),
+                        _buildDetailRow(
+                            'Phone Number',
+                            widget.transaction['phone_number'] ??
+                                '08012345679'),
+                        _buildDetailRow('Session',
+                            widget.transaction['session'] ?? '2022/2023'),
+                        _buildDetailRow('Reference No',
+                            widget.transaction['reference'] ?? 'ABC123XYZ'),
+                        _buildDetailRow(
+                            'Description',
+                            widget.transaction['description'] ??
+                                'Clinical medication'),
                         const SizedBox(height: 32.0),
                         OutlinedButton(
                           onPressed: () {
@@ -162,11 +174,11 @@ class _ExpenseShareRecieptScreenState extends State<ExpenseShareRecieptScreen> {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(label, style: const TextStyle(color: Colors.grey)),
-          Text(value, style: AppTextStyles.normal500(fontSize: 16, color: AppColors.backgroundDark)),
+          Text(value,
+              style: AppTextStyles.normal500(
+                  fontSize: 16, color: AppColors.backgroundDark)),
         ],
       ),
     );
   }
 }
-
-

@@ -22,20 +22,23 @@ import 'package:url_launcher/url_launcher.dart';
 class SubmissionFile {
   final String name;
   final String url;
- 
-  SubmissionFile({required this.name, required this.url,});
+
+  SubmissionFile({
+    required this.name,
+    required this.url,
+  });
 }
 
 class AssignmentGradingScreen extends StatefulWidget {
   final String assignmentTitle;
   final String studentName;
   final DateTime turnedInAt;
-  final int maxScore;                // e.g. 100
-  final int? currentScore;           // nullable, if ungraded
-  final String assignmentId;         // backend id for this submission
-  final List<dynamic> files;  // attachments
-  final String itemId;              // assignment id
-  final VoidCallback? onGraded;      // callback when graded
+  final int maxScore; // e.g. 100
+  final int? currentScore; // nullable, if ungraded
+  final String assignmentId; // backend id for this submission
+  final List<dynamic> files; // attachments
+  final String itemId; // assignment id
+  final VoidCallback? onGraded; // callback when graded
   const AssignmentGradingScreen({
     super.key,
     required this.assignmentTitle,
@@ -44,12 +47,14 @@ class AssignmentGradingScreen extends StatefulWidget {
     required this.maxScore,
     required this.assignmentId,
     required this.files,
-    this.currentScore, required this.itemId,
+    this.currentScore,
+    required this.itemId,
     this.onGraded,
   });
 
   @override
-  State<AssignmentGradingScreen> createState() => _AssignmentGradingScreenState();
+  State<AssignmentGradingScreen> createState() =>
+      _AssignmentGradingScreenState();
 }
 
 class _AssignmentGradingScreenState extends State<AssignmentGradingScreen> {
@@ -57,7 +62,7 @@ class _AssignmentGradingScreenState extends State<AssignmentGradingScreen> {
   final TextEditingController _scoreCtrl = TextEditingController();
   final FocusNode _scoreFocusNode = FocusNode();
   bool _returning = false;
-  bool _gradingMode = false;
+  final bool _gradingMode = false;
   int? _creatorId;
   String? _creatorName;
 
@@ -73,8 +78,11 @@ class _AssignmentGradingScreenState extends State<AssignmentGradingScreen> {
       final userBox = Hive.box('userData');
       final stored = userBox.get('userData') ?? userBox.get('loginResponse');
       if (stored != null) {
-        final processed = stored is String ? json.decode(stored) : stored as Map<String, dynamic>;
-        final data = (processed['response']?['data']) ?? processed['data'] ?? processed;
+        final processed = stored is String
+            ? json.decode(stored)
+            : stored as Map<String, dynamic>;
+        final data =
+            (processed['response']?['data']) ?? processed['data'] ?? processed;
         final profile = data['profile'] ?? {};
         setState(() {
           _creatorId = profile['staff_id'] as int?;
@@ -97,9 +105,11 @@ class _AssignmentGradingScreenState extends State<AssignmentGradingScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF0E0F12) : AppColors.backgroundLight,
+      backgroundColor:
+          isDark ? const Color(0xFF0E0F12) : AppColors.backgroundLight,
       appBar: AppBar(
-        backgroundColor: isDark ? const Color(0xFF0E0F12) : AppColors.backgroundLight,
+        backgroundColor:
+            isDark ? const Color(0xFF0E0F12) : AppColors.backgroundLight,
         elevation: 0,
         leading: IconButton(
           onPressed: () => Navigator.pop(context),
@@ -107,7 +117,7 @@ class _AssignmentGradingScreenState extends State<AssignmentGradingScreen> {
           color: AppColors.paymentTxtColor1,
         ),
         title: Text(
-            "Assignment",
+          "Assignment",
           overflow: TextOverflow.ellipsis,
           style: AppTextStyles.normal600(
             fontSize: 20,
@@ -116,7 +126,8 @@ class _AssignmentGradingScreenState extends State<AssignmentGradingScreen> {
         ),
         actions: [
           PopupMenuButton<String>(
-            icon: const Icon(Icons.more_vert, color: AppColors.paymentTxtColor1),
+            icon:
+                const Icon(Icons.more_vert, color: AppColors.paymentTxtColor1),
             itemBuilder: (context) => const [
               PopupMenuItem(value: 'refresh', child: Text('Refresh')),
             ],
@@ -124,107 +135,100 @@ class _AssignmentGradingScreenState extends State<AssignmentGradingScreen> {
           )
         ],
       ),
-
-
-    body: Column(
-  children: [
-    Expanded(
-      child: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+      body: Column(
         children: [
-          _StudentHeader(
-            name: widget.studentName,
-            status: 'Turned in',
-            dateText: DateFormat('MMM d, yyyy • hh:mm a').format(widget.turnedInAt),
+          Expanded(
+            child: ListView(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+              children: [
+                _StudentHeader(
+                  name: widget.studentName,
+                  status: 'Turned in',
+                  dateText: DateFormat('MMM d, yyyy • hh:mm a')
+                      .format(widget.turnedInAt),
+                ),
+                const SizedBox(height: 16),
+                _SubmissionPreview(files: widget.files),
+                const SizedBox(height: 24),
+              ],
+            ),
           ),
-          const SizedBox(height: 16),
-          _SubmissionPreview(files: widget.files),
-          const SizedBox(height: 24),
-      
+          SafeArea(
+            minimum: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                _GradeBox(
+                  controller: _scoreCtrl,
+                  maxScore: widget.maxScore,
+                  onChanged: (v) {},
+                  focusNode: _scoreFocusNode,
+                ),
+                const SizedBox(width: 12),
+                SizedBox(
+                    height: 40,
+                    width: 80,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        fixedSize: const Size(80, 40), // 👈 exact size
+                        backgroundColor: AppColors.paymentTxtColor1,
+                        foregroundColor: AppColors.backgroundLight,
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(28)),
+                        padding: EdgeInsets.zero, // avoid extra growth
+                        tapTargetSize: MaterialTapTargetSize
+                            .shrinkWrap, // reduce default tap target
+                      ),
+                      onPressed: _returning ? null : _handleReturnWithGrade,
+                      child: _returning
+                          ? const SizedBox(
+                              height: 20,
+                              width: 20,
+                              child: CircularProgressIndicator(strokeWidth: 2))
+                          : const Text('Return'),
+                    )),
+              ],
+            ),
+          ),
         ],
       ),
-    ),
-
-    SafeArea(
-      minimum: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
-        children: [
-          _GradeBox(
-            controller: _scoreCtrl,
-            maxScore: widget.maxScore,
-            onChanged: (v) {
-              
-            },
-            focusNode: _scoreFocusNode,
-          ),
-          const SizedBox(width: 12),
-         SizedBox(
-           height: 40, 
-           width: 80,
-           child: ElevatedButton(
-         style: ElevatedButton.styleFrom(
-           fixedSize: const Size(80, 40),           // 👈 exact size
-           backgroundColor: AppColors.paymentTxtColor1,
-           foregroundColor: AppColors.backgroundLight,
-           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
-           padding: EdgeInsets.zero,                // avoid extra growth
-           tapTargetSize: MaterialTapTargetSize.shrinkWrap, // reduce default tap target
-         ),
-         onPressed: _returning ? null : _handleReturnWithGrade,
-         child: _returning
-             ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2))
-             : const Text('Return'),
-         )
-         
-         
-         ),
-      
-        ],
-      ),
-    ),
-  ],
-),
-
     );
   }
 
+  Future<void> _handleReturnWithGrade() async {
+    final raw = _scoreCtrl.text.trim();
+    final score = int.tryParse(raw);
 
+    if (score == null) {
+      CustomToaster.toastError(context, 'Hold up', 'Enter a valid number');
+      return;
+    }
+    if (score < 0 || score > 100) {
+      CustomToaster.toastError(
+        context,
+        'Out of range',
+        'Score must be between 0 and ${widget.maxScore}',
+      );
+      return;
+    }
 
- Future<void> _handleReturnWithGrade() async {
-  final raw = _scoreCtrl.text.trim();
-  final score = int.tryParse(raw);
-
-  if (score == null) {
-    CustomToaster.toastError(context, 'Hold up', 'Enter a valid number');
-    return;
+    setState(() => _returning = true);
+    try {
+      final marker = context.read<MarkAssignmentProvider>();
+      await marker.markAssignment(widget.assignmentId, score.toString());
+      print('Marked with score: $score');
+      print('Returning submission id: ${widget.assignmentId}');
+      print('Grader id: ${widget.assignmentId}, name: $_creatorName');
+      CustomToaster.toastSuccess(
+          context, 'Returned', 'Grade shared with student');
+      widget.onGraded?.call();
+      Navigator.pop(context, true);
+    } catch (e) {
+      CustomToaster.toastError(context, 'Error', 'Could not return submission');
+    } finally {
+      if (mounted) setState(() => _returning = false);
+    }
   }
-  if (score < 0 || score > 100) {
-    CustomToaster.toastError(
-      context,
-      'Out of range',
-      'Score must be between 0 and ${widget.maxScore}',
-    );
-    return;
-  }
-
-  setState(() => _returning = true);
-  try {
-    final marker = context.read<MarkAssignmentProvider>();
-    await marker.markAssignment(widget.assignmentId, score.toString());
-    print('Marked with score: $score');
-    print('Returning submission id: ${widget.assignmentId}');
-    print('Grader id: ${widget.assignmentId}, name: $_creatorName');
-    CustomToaster.toastSuccess(context, 'Returned', 'Grade shared with student');
-    widget.onGraded?.call();
-    Navigator.pop(context, true);
-  } catch (e) {
-    CustomToaster.toastError(context, 'Error', 'Could not return submission');
-  } finally {
-    if (mounted) setState(() => _returning = false);
-  }
-}
-
 }
 
 /* ---------- UI pieces ---------- */
@@ -233,7 +237,8 @@ class _StudentHeader extends StatelessWidget {
   final String name;
   final String status;
   final String dateText;
-  const _StudentHeader({required this.name, required this.status, required this.dateText});
+  const _StudentHeader(
+      {required this.name, required this.status, required this.dateText});
 
   @override
   Widget build(BuildContext context) {
@@ -245,17 +250,23 @@ class _StudentHeader extends StatelessWidget {
         CircleAvatar(
           radius: 22,
           backgroundColor: AppColors.paymentTxtColor1,
-          child: Text(initials, style: AppTextStyles.normal600(fontSize: 18, color: AppColors.backgroundLight)),
+          child: Text(initials,
+              style: AppTextStyles.normal600(
+                  fontSize: 18, color: AppColors.backgroundLight)),
         ),
         const SizedBox(width: 12),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(name, style: AppTextStyles.normal600(fontSize: 16, color: isDark ? Colors.white : Colors.black)),
+              Text(name,
+                  style: AppTextStyles.normal600(
+                      fontSize: 16,
+                      color: isDark ? Colors.white : Colors.black)),
               const SizedBox(height: 2),
               Text('$status • $dateText',
-                  style: AppTextStyles.normal500(fontSize: 12, color: Colors.grey.shade500)),
+                  style: AppTextStyles.normal500(
+                      fontSize: 12, color: Colors.grey.shade500)),
             ],
           ),
         ),
@@ -263,7 +274,6 @@ class _StudentHeader extends StatelessWidget {
     );
   }
 }
-
 
 class _SubmissionPreview extends StatelessWidget {
   final List<dynamic> files;
@@ -333,7 +343,8 @@ class _SubmissionPreview extends StatelessWidget {
                   MaterialPageRoute(
                     builder: (_) => Scaffold(
                       appBar: AppBar(),
-                      body: Center(child: Image.network("https://linkskool.net/$name")),
+                      body: Center(
+                          child: Image.network("https://linkskool.net/$name")),
                     ),
                   ),
                 );
@@ -342,12 +353,14 @@ class _SubmissionPreview extends StatelessWidget {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (_) => PdfViewerPage(url:"https://linkskool.net/$name"),
+                    builder: (_) =>
+                        PdfViewerPage(url: "https://linkskool.net/$name"),
                   ),
                 );
               } else if (url.isNotEmpty) {
                 final uri = Uri.parse(url);
-                if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
+                if (!await launchUrl(uri,
+                    mode: LaunchMode.externalApplication)) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(content: Text('Could not open file')),
                   );
@@ -368,35 +381,41 @@ class _SubmissionPreview extends StatelessWidget {
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: isImg
-                        ? Image.network(url, fit: BoxFit.cover,
+                        ? Image.network(url,
+                            fit: BoxFit.cover,
                             errorBuilder: (_, __, ___) =>
                                 const Icon(Icons.image_not_supported))
                         : isPdf
-        ? FutureBuilder<String>(
-            future: _downloadPdf(url), // Download to local temp file
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return const Center(child: CircularProgressIndicator(strokeWidth: 2));
-              } else if (snapshot.hasError || !snapshot.hasData) {
-                return const Icon(Icons.picture_as_pdf, size: 36);
-              } else {
-                return PDFView(
-                  filePath: snapshot.data!,
-                  enableSwipe: false,
-                  swipeHorizontal: false,
-                  pageSnap: false,
-                  autoSpacing: false,
-                  defaultPage: 0, // only first page
-                );
-              }
-            },
-          )
-        : const Icon(Icons.insert_drive_file, size: 36),
+                            ? FutureBuilder<String>(
+                                future: _downloadPdf(
+                                    url), // Download to local temp file
+                                builder: (context, snapshot) {
+                                  if (snapshot.connectionState ==
+                                      ConnectionState.waiting) {
+                                    return const Center(
+                                        child: CircularProgressIndicator(
+                                            strokeWidth: 2));
+                                  } else if (snapshot.hasError ||
+                                      !snapshot.hasData) {
+                                    return const Icon(Icons.picture_as_pdf,
+                                        size: 36);
+                                  } else {
+                                    return PDFView(
+                                      filePath: snapshot.data!,
+                                      enableSwipe: false,
+                                      swipeHorizontal: false,
+                                      pageSnap: false,
+                                      autoSpacing: false,
+                                      defaultPage: 0, // only first page
+                                    );
+                                  }
+                                },
+                              )
+                            : const Icon(Icons.insert_drive_file, size: 36),
                   ),
                   const SizedBox(height: 6),
                   Text(
                     name.split('/').last,
-
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     textAlign: TextAlign.center,
@@ -414,41 +433,36 @@ class _SubmissionPreview extends StatelessWidget {
         },
       ),
     );
-    
   }
+
   Future<String> _downloadPdf(String url) async {
-  final response = await http.get(Uri.parse("https://linkskool.net/$url"));
-  if (response.statusCode == 200) {
-    final dir = await getTemporaryDirectory();
-    final file = File("${dir.path}/${url.split('/').last}");
-    await file.writeAsBytes(response.bodyBytes);
-    return file.path;
-  } else {
-    throw Exception("Failed to load PDF");
+    final response = await http.get(Uri.parse("https://linkskool.net/$url"));
+    if (response.statusCode == 200) {
+      final dir = await getTemporaryDirectory();
+      final file = File("${dir.path}/${url.split('/').last}");
+      await file.writeAsBytes(response.bodyBytes);
+      return file.path;
+    } else {
+      throw Exception("Failed to load PDF");
+    }
   }
 }
+
+BoxDecoration _cardDecoration(BuildContext context) {
+  final isDark = Theme.of(context).brightness == Brightness.dark;
+  return BoxDecoration(
+    color: isDark ? const Color(0xFF17191E) : Colors.white,
+    borderRadius: BorderRadius.circular(14),
+    border: Border.all(color: Colors.white10),
+    boxShadow: [
+      BoxShadow(
+        color: Colors.black.withOpacity(0.08),
+        blurRadius: 10,
+        offset: const Offset(0, 4),
+      ),
+    ],
+  );
 }
-
-
-
-  BoxDecoration _cardDecoration(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    return BoxDecoration(
-      color: isDark ? const Color(0xFF17191E) : Colors.white,
-      borderRadius: BorderRadius.circular(14),
-      border: Border.all(color: Colors.white10),
-      boxShadow: [
-        BoxShadow(
-          color: Colors.black.withOpacity(0.08),
-          blurRadius: 10,
-          offset: const Offset(0, 4),
-        ),
-      ],
-    );
-  }
-
-
-
 
 class _GradeBox extends StatelessWidget {
   final TextEditingController controller;
@@ -466,43 +480,43 @@ class _GradeBox extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-   return Container(
-     height: 44,
-     padding: const EdgeInsets.symmetric(horizontal: 12),
-     decoration: BoxDecoration(
-       color: isDark ? const Color(0xFF17191E) : Colors.white,
-       borderRadius: BorderRadius.circular(12),
-       border: Border.all(
-         color: focusNode?.hasFocus == true 
-             ? Colors.blue 
-             : (isDark ? Colors.grey.shade700 : Colors.grey.shade400),
-         width: 1.5,
-       ),
-     ),
-     child: Row(
-       mainAxisSize: MainAxisSize.min,
-       children: [
-         SizedBox(
-          width: 180,
-           child: TextField(
-             controller: controller,
-             keyboardType: TextInputType.number,
-             onChanged: onChanged,
-             decoration: const InputDecoration(border: InputBorder.none),
-             style: AppTextStyles.normal600(
-               fontSize: 16,
-               color: isDark ? Colors.white : Colors.black,
-             ),
-             textAlign: TextAlign.center,
-             focusNode: focusNode,
-           ),
-         ),
-         Text('/', style: AppTextStyles.normal600(fontSize: 16, color: Colors.grey)),
-         Text(maxScore.toString(),
-             style: AppTextStyles.normal600(fontSize: 16, color: Colors.grey)),
-       ],
-     ),
-   );
-
+    return Container(
+      height: 44,
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF17191E) : Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: focusNode?.hasFocus == true
+              ? Colors.blue
+              : (isDark ? Colors.grey.shade700 : Colors.grey.shade400),
+          width: 1.5,
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          SizedBox(
+            width: 180,
+            child: TextField(
+              controller: controller,
+              keyboardType: TextInputType.number,
+              onChanged: onChanged,
+              decoration: const InputDecoration(border: InputBorder.none),
+              style: AppTextStyles.normal600(
+                fontSize: 16,
+                color: isDark ? Colors.white : Colors.black,
+              ),
+              textAlign: TextAlign.center,
+              focusNode: focusNode,
+            ),
+          ),
+          Text('/',
+              style: AppTextStyles.normal600(fontSize: 16, color: Colors.grey)),
+          Text(maxScore.toString(),
+              style: AppTextStyles.normal600(fontSize: 16, color: Colors.grey)),
+        ],
+      ),
+    );
   }
 }

@@ -5,7 +5,7 @@ import 'package:linkschool/modules/services/admin/performance_service.dart';
 
 class PerformanceProvider with ChangeNotifier {
   final PerformanceService _performanceService;
-  
+
   List<PerformanceData> _performanceData = [];
   bool _isLoading = false;
   String? _error;
@@ -25,7 +25,7 @@ class PerformanceProvider with ChangeNotifier {
       // Get year and term from Hive storage
       final userBox = Hive.box('userData');
       final settings = userBox.get('settings');
-      
+
       if (settings == null) {
         throw Exception('No settings found. Please login again.');
       }

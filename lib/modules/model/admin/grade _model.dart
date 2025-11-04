@@ -15,7 +15,7 @@ class Grade {
     return Grade(
       id: json['id'].toString(),
       grade_Symbol: json['grade_symbol'] ?? "",
-     start: json['start']?.toString() ?? "",
+      start: json['start']?.toString() ?? "",
       remark: json['remark'] ?? "",
     );
   }

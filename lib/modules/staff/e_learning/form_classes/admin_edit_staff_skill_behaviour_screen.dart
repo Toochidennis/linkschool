@@ -1,4 +1,3 @@
-
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
@@ -27,7 +26,8 @@ class EditSkillsBehaviourScreen extends StatefulWidget {
   });
 
   @override
-  State<EditSkillsBehaviourScreen> createState() => _EditSkillsBehaviourScreenState();
+  State<EditSkillsBehaviourScreen> createState() =>
+      _EditSkillsBehaviourScreenState();
 }
 
 class _EditSkillsBehaviourScreenState extends State<EditSkillsBehaviourScreen> {
@@ -38,7 +38,8 @@ class _EditSkillsBehaviourScreenState extends State<EditSkillsBehaviourScreen> {
   void initState() {
     super.initState();
     _loadUserData();
-    final skillsProvider = Provider.of<SkillsBehaviorTableProvider>(context, listen: false);
+    final skillsProvider =
+        Provider.of<SkillsBehaviorTableProvider>(context, listen: false);
     skillsProvider.fetchSkillsAndBehaviours(
       classId: widget.classId,
       levelId: widget.levelId,
@@ -56,42 +57,42 @@ class _EditSkillsBehaviourScreenState extends State<EditSkillsBehaviourScreen> {
   String? schoolName;
   String? databaseName;
 
-Future<void> _loadUserData() async {
-  try {
-    final userBox = Hive.box('userData');
-    final storedUserData = userBox.get('userData') ?? userBox.get('loginResponse');
+  Future<void> _loadUserData() async {
+    try {
+      final userBox = Hive.box('userData');
+      final storedUserData =
+          userBox.get('userData') ?? userBox.get('loginResponse');
 
-    if (storedUserData == null) return;
+      if (storedUserData == null) return;
 
-    final processedData = storedUserData is String
-        ? json.decode(storedUserData)
-        : Map<String, dynamic>.from(storedUserData);
+      final processedData = storedUserData is String
+          ? json.decode(storedUserData)
+          : Map<String, dynamic>.from(storedUserData);
 
-    final response = processedData['response'] ?? processedData;
-    final data = response['data'] ?? response;
+      final response = processedData['response'] ?? processedData;
+      final data = response['data'] ?? response;
 
-    final profile = data['profile'] ?? {};
-    final settings = data['settings'] ?? {};
+      final profile = data['profile'] ?? {};
+      final settings = data['settings'] ?? {};
 
-    setState(() {
-      creatorId = profile['staff_id'] as int?;
-      creatorName = profile['name']?.toString();
-      creatorRole = profile['role']?.toString();
+      setState(() {
+        creatorId = profile['staff_id'] as int?;
+        creatorName = profile['name']?.toString();
+        creatorRole = profile['role']?.toString();
 
-      academicYear = settings['year']?.toString();
-      academicTerm = settings['term'] as int?;
-      schoolName = settings['school_name']?.toString();
+        academicYear = settings['year']?.toString();
+        academicTerm = settings['term'] as int?;
+        schoolName = settings['school_name']?.toString();
 
-
-      debugPrint('User data loaded: creatorId=$creatorId, academicTerm=$academicTerm');
-      // ✅ Extract DB name from response (not inside data)
-      databaseName = response['_db']?.toString();
-    });
-  } catch (e) {
-    debugPrint('Error loading user data: $e');
+        debugPrint(
+            'User data loaded: creatorId=$creatorId, academicTerm=$academicTerm');
+        // ✅ Extract DB name from response (not inside data)
+        databaseName = response['_db']?.toString();
+      });
+    } catch (e) {
+      debugPrint('Error loading user data: $e');
+    }
   }
-}
-
 
   @override
   void dispose() {
@@ -191,7 +192,8 @@ Future<void> _loadUserData() async {
   }
 
   void _saveChanges() async {
-    final provider = Provider.of<SkillsBehaviorTableProvider>(context, listen: false);
+    final provider =
+        Provider.of<SkillsBehaviorTableProvider>(context, listen: false);
     final skillsPayload = {
       'skills': <Map<String, dynamic>>[],
       'year': widget.year,
@@ -271,7 +273,8 @@ Future<void> _loadUserData() async {
     }
   }
 
-  Widget _buildSubjectsTable(List<SkillsBehaviorTable> skills, List<StudentSkillBehaviorTable> students) {
+  Widget _buildSubjectsTable(List<SkillsBehaviorTable> skills,
+      List<StudentSkillBehaviorTable> students) {
     return Padding(
       padding: const EdgeInsets.all(16.0),
       child: Container(
@@ -355,7 +358,8 @@ Future<void> _loadUserData() async {
     );
   }
 
-  Widget _buildScrollableColumn(String title, double width, List<StudentSkillBehaviorTable> students, int skillId, int skillIndex) {
+  Widget _buildScrollableColumn(String title, double width,
+      List<StudentSkillBehaviorTable> students, int skillId, int skillIndex) {
     return Container(
       width: width,
       decoration: BoxDecoration(
@@ -386,7 +390,10 @@ Future<void> _loadUserData() async {
             final studentIndex = entry.key;
             final student = entry.value;
             _controllers.putIfAbsent(studentIndex, () => {});
-            _controllers[studentIndex]!.putIfAbsent(skillId, () => TextEditingController(text: student.skills[skillId] ?? ''));
+            _controllers[studentIndex]!.putIfAbsent(
+                skillId,
+                () =>
+                    TextEditingController(text: student.skills[skillId] ?? ''));
 
             return Container(
               height: 50,
@@ -443,5 +450,3 @@ class CustomToaster {
     ).show(context);
   }
 }
-
-

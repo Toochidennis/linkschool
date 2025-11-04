@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'package:hive/hive.dart';
 import 'package:linkschool/modules/services/api/api_service.dart';
-import '../../../model/e-learning/mark_assignment_model.dart';
 
 class MarkingService {
   final ApiService _apiService;
@@ -27,7 +26,8 @@ class MarkingService {
     final academicYear = settings['year']?.toString();
     final academicTerm = settings['term'] as int?;
 
-    final token = processedData['token'] as String? ?? loginData['token'] as String?;
+    final token =
+        processedData['token'] as String? ?? loginData['token'] as String?;
     if (token == null) {
       throw Exception('No auth token found');
     }
@@ -36,7 +36,6 @@ class MarkingService {
 
     final response = await _apiService.get<Map<String, dynamic>>(
       endpoint: 'portal/elearning/assignment/$itemId/submissions',
-      
       queryParams: {
         "term": academicTerm,
         "year": academicYear,
@@ -63,7 +62,7 @@ class MarkingService {
     return response.data ?? {};
   }
 
-  Future<void> markAssignment(String itemId ,String score) async {
+  Future<void> markAssignment(String itemId, String score) async {
     final userBox = Hive.box('userData');
     final loginData = userBox.get('userData') ?? userBox.get('loginResponse');
     final dbName = userBox.get('_db') ?? 'aalmgzmy_linkskoo_practice';
@@ -77,8 +76,8 @@ class MarkingService {
         : loginData as Map<String, dynamic>;
     final responseData = processedData['response'] ?? processedData;
 
-
-    final token = processedData['token'] as String? ?? loginData['token'] as String?;
+    final token =
+        processedData['token'] as String? ?? loginData['token'] as String?;
     if (token == null) {
       throw Exception('No auth token found');
     }
@@ -89,7 +88,7 @@ class MarkingService {
       endpoint: 'portal/elearning/assignment/mark',
       body: {
         'id': itemId,
-        'score':score,
+        'score': score,
         '_db': dbName,
       },
       fromJson: (json) {
@@ -105,11 +104,8 @@ class MarkingService {
     }
   }
 
-  Future<void> returnAssignment(
-String publish,
-String contentId
-  ) async {
-      final userBox = Hive.box('userData');
+  Future<void> returnAssignment(String publish, String contentId) async {
+    final userBox = Hive.box('userData');
     final loginData = userBox.get('userData') ?? userBox.get('loginResponse');
     final dbName = userBox.get('_db') ?? 'aalmgzmy_linkskoo_practice';
 
@@ -124,10 +120,11 @@ String contentId
     final data = responseData['data'] ?? responseData;
     final profile = data['profile'] ?? data;
     final settings = data['settings'] ?? profile;
-    final academicYear = settings['year']?.toString();  
+    final academicYear = settings['year']?.toString();
     final academicTerm = settings['term'] as int?;
 
-    final token = processedData['token'] as String? ?? loginData['token'] as String?;
+    final token =
+        processedData['token'] as String? ?? loginData['token'] as String?;
     if (token == null) {
       throw Exception('No auth token found');
     }
@@ -140,10 +137,8 @@ String contentId
         '_db': dbName,
         "term": academicTerm,
         "year": academicYear,
-        "publish": publish, 
+        "publish": publish,
       },
-
-    
       fromJson: (json) {
         if (json['success'] == true) {
           return json;
@@ -151,12 +146,11 @@ String contentId
         throw Exception('Failed to submit marking data');
       },
     );
-    
   }
 
   // ---------------quiz--------------------------------
 
-    Future<Map<String, dynamic>> getQuiz(String itemId) async {
+  Future<Map<String, dynamic>> getQuiz(String itemId) async {
     final userBox = Hive.box('userData');
     final loginData = userBox.get('userData') ?? userBox.get('loginResponse');
     final dbName = userBox.get('_db') ?? 'aalmgzmy_linkskoo_practice';
@@ -175,36 +169,35 @@ String contentId
     final academicYear = settings['year']?.toString();
     final academicTerm = settings['term'] as int?;
 
-    final token = processedData['token'] as String? ?? loginData['token'] as String?;
+    final token =
+        processedData['token'] as String? ?? loginData['token'] as String?;
     if (token == null) {
       throw Exception('No auth token found');
     }
     print("Set token: $token");
     _apiService.setAuthToken(token);
-  print('portal/elearning/assignment/$academicTerm');
-  print('portal/elearning/assignment/$academicYear');
-  print('portal/elearning/assignment/$itemId');
-  print('portal/elearning/assignment/');
+    print('portal/elearning/assignment/$academicTerm');
+    print('portal/elearning/assignment/$academicYear');
+    print('portal/elearning/assignment/$itemId');
+    print('portal/elearning/assignment/');
     final response = await _apiService.get<Map<String, dynamic>>(
       endpoint: 'portal/elearning/quiz/$itemId/submissions',
-      
       queryParams: {
         "term": academicTerm,
         "year": academicYear,
         '_db': dbName,
       },
-    fromJson: (json) {
-  if (json['success'] == true && json['data'] is Map) {
-    final responseData = json['data'] as Map<String, dynamic>;
-    return {
-      'submitted': responseData['submitted'] ?? [],
-      'unmarked': responseData['unmarked'] ?? [],
-      'marked': responseData['marked'] ?? [],
-    };
-  }
-  throw Exception('Failed to load quiz data');
-},
-
+      fromJson: (json) {
+        if (json['success'] == true && json['data'] is Map) {
+          final responseData = json['data'] as Map<String, dynamic>;
+          return {
+            'submitted': responseData['submitted'] ?? [],
+            'unmarked': responseData['unmarked'] ?? [],
+            'marked': responseData['marked'] ?? [],
+          };
+        }
+        throw Exception('Failed to load quiz data');
+      },
     );
 
     if (!response.success) {
@@ -214,8 +207,7 @@ String contentId
     return response.data ?? {};
   }
 
-
-    Future<void> markQuiz(String itemId ,String score) async {
+  Future<void> markQuiz(String itemId, String score) async {
     final userBox = Hive.box('userData');
     final loginData = userBox.get('userData') ?? userBox.get('loginResponse');
     final dbName = userBox.get('_db') ?? 'aalmgzmy_linkskoo_practice';
@@ -229,8 +221,8 @@ String contentId
         : loginData as Map<String, dynamic>;
     final responseData = processedData['response'] ?? processedData;
 
-
-    final token = processedData['token'] as String? ?? loginData['token'] as String?;
+    final token =
+        processedData['token'] as String? ?? loginData['token'] as String?;
     if (token == null) {
       throw Exception('No auth token found');
     }
@@ -241,7 +233,7 @@ String contentId
       endpoint: 'portal/elearning/quiz/mark',
       body: {
         'id': itemId,
-        'score':score,
+        'score': score,
         '_db': dbName,
       },
       fromJson: (json) {
@@ -257,11 +249,8 @@ String contentId
     }
   }
 
-   Future<void> returnQuiz(
-String publish,
-String contentId
-  ) async {
-      final userBox = Hive.box('userData');
+  Future<void> returnQuiz(String publish, String contentId) async {
+    final userBox = Hive.box('userData');
     final loginData = userBox.get('userData') ?? userBox.get('loginResponse');
     final dbName = userBox.get('_db') ?? 'aalmgzmy_linkskoo_practice';
 
@@ -276,10 +265,11 @@ String contentId
     final data = responseData['data'] ?? responseData;
     final profile = data['profile'] ?? data;
     final settings = data['settings'] ?? profile;
-    final academicYear = settings['year']?.toString();  
+    final academicYear = settings['year']?.toString();
     final academicTerm = settings['term'] as int?;
 
-    final token = processedData['token'] as String? ?? loginData['token'] as String?;
+    final token =
+        processedData['token'] as String? ?? loginData['token'] as String?;
     if (token == null) {
       throw Exception('No auth token found');
     }
@@ -292,10 +282,8 @@ String contentId
         '_db': dbName,
         "term": academicTerm,
         "year": academicYear,
-        "publish": publish, 
+        "publish": publish,
       },
-
-    
       fromJson: (json) {
         if (json['success'] == true) {
           return json;
@@ -303,8 +291,5 @@ String contentId
         throw Exception('Failed to submit marking data');
       },
     );
-    
   }
-
-
 }

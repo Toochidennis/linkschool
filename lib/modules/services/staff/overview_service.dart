@@ -7,7 +7,8 @@ class StaffOverviewService {
 
   StaffOverviewService(this._apiService);
 
-  Future<DashboardResponse> getOverview(String term, String year ,String staffId) async {
+  Future<DashboardResponse> getOverview(
+      String term, String year, String staffId) async {
     final userBox = Hive.box('userData');
     final loginData = userBox.get('userData') ?? userBox.get('loginResponse');
     final dbName = userBox.get('_db') ?? 'aalmgzmy_linkskoo_practice';

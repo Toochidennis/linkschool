@@ -15,8 +15,11 @@ class StaffCoursesScreen extends StatefulWidget {
   final String className;
   final String levelId;
 
-
-  const StaffCoursesScreen({super.key, required this.classId, required this.className, required this.levelId});
+  const StaffCoursesScreen(
+      {super.key,
+      required this.classId,
+      required this.className,
+      required this.levelId});
 
   @override
   State<StaffCoursesScreen> createState() => _StaffCoursesScreenState();
@@ -30,7 +33,8 @@ class _StaffCoursesScreenState extends State<StaffCoursesScreen> {
     super.initState();
     // Fetch students for the given classId when the screen initializes
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final studentProvider = Provider.of<StudentProvider>(context, listen: false);
+      final studentProvider =
+          Provider.of<StudentProvider>(context, listen: false);
       studentProvider.fetchStudents(widget.classId);
     });
   }
@@ -130,26 +134,28 @@ class _StaffCoursesScreenState extends State<StaffCoursesScreen> {
                                   separatorBuilder: (context, index) =>
                                       Divider(height: 1),
                                   itemBuilder: (context, index) {
-                                    final student = studentProvider.students[index];
+                                    final student =
+                                        studentProvider.students[index];
                                     return ListTile(
                                       onTap: () {
                                         // Navigate to ProfileScreen with the selected student name
                                         Navigator.of(context).push(
                                           MaterialPageRoute(
-                                            builder: (context) => StaffProfileScreen(
+                                            builder: (context) =>
+                                                StaffProfileScreen(
                                               name: student.name,
-                                              className:widget.className,
-                                              studentId:student.id ,
-                                              studentName:student.name ,
-                                              levelId:widget.levelId,
-                                              classId:widget.classId,
+                                              className: widget.className,
+                                              studentId: student.id,
+                                              studentName: student.name,
+                                              levelId: widget.levelId,
+                                              classId: widget.classId,
                                             ),
-
                                           ),
                                         );
                                       },
                                       leading: CircleAvatar(
-                                        backgroundColor: _getCircleColor(student.name),
+                                        backgroundColor:
+                                            _getCircleColor(student.name),
                                         child: Text(
                                           student.name.isNotEmpty
                                               ? student.name[0]
@@ -192,6 +198,3 @@ class _StaffCoursesScreenState extends State<StaffCoursesScreen> {
     return colors[name.hashCode % colors.length];
   }
 }
-
-
-

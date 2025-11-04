@@ -22,7 +22,7 @@ class StaffRecentQuiz extends StatefulWidget {
   final String courseName;
 
   const StaffRecentQuiz({
-    super.key, 
+    super.key,
     required this.quizId,
     required this.levelId,
     required this.syllabusId,
@@ -55,28 +55,31 @@ class _StaffRecentQuizState extends State<StaffRecentQuiz> {
 
   Future<void> _fetchQuizData() async {
     try {
-      final singleContentProvider = Provider.of<SingleContentProvider>(context, listen: false);
+      final singleContentProvider =
+          Provider.of<SingleContentProvider>(context, listen: false);
       print('Fetching quiz for ID: ${widget.quizId}');
-      
-      final content = await singleContentProvider.fetchQuiz(int.parse(widget.quizId));
-      
+
+      final content =
+          await singleContentProvider.fetchQuiz(int.parse(widget.quizId));
+
       if (content == null) {
         setState(() {
           isLoading = false;
-          errorMessage = singleContentProvider.errorMessage ?? 'Failed to load quiz';
+          errorMessage =
+              singleContentProvider.errorMessage ?? 'Failed to load quiz';
         });
         print('Error: ${singleContentProvider.errorMessage}');
         CustomToaster.toastError(context, 'Error', errorMessage!);
         return;
       }
-      
+
       setState(() {
         quizData = content;
         _prepareFormattedData();
         isLoading = false;
         errorMessage = null;
       });
-      
+
       print('Fetched quiz: ${quizData?.title}');
       print('Questions count: ${questions?.length ?? 0}');
       print('Correct answers count: ${correctAnswers?.length ?? 0}');
@@ -90,100 +93,105 @@ class _StaffRecentQuizState extends State<StaffRecentQuiz> {
     }
   }
 
-   void _prepareFormattedData() {
-  if (quizData == null) return;
+  void _prepareFormattedData() {
+    if (quizData == null) return;
 
-  questions = quizData!.questions.map((q) {
-    return {
-      'question_id': q.questionId,
-      'question_text': q.questionText,
-      'question_type': q.questionType,
-      'question_grade': q.questionGrade,
-      'question_files': q.questionFiles.map((f) => f.toJson()).toList(),
-      'options': q.options.map((opt) => {
-        'text': opt.text,
-        'order': opt.order,
-        'option_files': opt.optionFiles.map((f) => f.toJson()).toList(),
-      }).toList(),
-      // 👇 include correct in the same structure you handle in _initializeQuestions
-      'correct': {
-        'text': q.correct.text,
-        'order': q.correct.order,
-      },
+    questions = quizData!.questions.map((q) {
+      return {
+        'question_id': q.questionId,
+        'question_text': q.questionText,
+        'question_type': q.questionType,
+        'question_grade': q.questionGrade,
+        'question_files': q.questionFiles.map((f) => f.toJson()).toList(),
+        'options': q.options
+            .map((opt) => {
+                  'text': opt.text,
+                  'order': opt.order,
+                  'option_files':
+                      opt.optionFiles.map((f) => f.toJson()).toList(),
+                })
+            .toList(),
+        // 👇 include correct in the same structure you handle in _initializeQuestions
+        'correct': {
+          'text': q.correct.text,
+          'order': q.correct.order,
+        },
+      };
+    }).toList();
+
+    // Correct answers list (if you still want a flat structure for AssessmentScreen)
+    correctAnswers = quizData!.questions
+        .map((q) => {
+              'question_id': q.questionId.toString(),
+              'correct_answer': q.correct.text,
+              'correct_order': q.correct.order,
+            })
+        .toList();
+
+    // Build Question model for edit screen
+    questionModel = Question(
+      id: quizData!.id ?? 0,
+      title: quizData!.title,
+      description: quizData!.description,
+      selectedClass: quizData!.classes.map((c) => c.name).join(', '),
+      endDate: quizData!.endDate != null
+          ? DateTime.tryParse(quizData!.endDate!) ?? DateTime.now()
+          : DateTime.now(),
+      startDate: quizData!.startDate != null
+          ? DateTime.tryParse(quizData!.startDate!) ?? DateTime.now()
+          : DateTime.now(),
+      topic: quizData!.topic ?? 'No Topic',
+      duration: quizData!.duration != null
+          ? Duration(minutes: int.tryParse(quizData!.duration.toString()) ?? 0)
+          : Duration.zero,
+      marks: quizData!.grade ?? '0',
+      topicId: quizData!.topicId,
+    );
+
+    questiondata = {
+      'id': quizData!.id,
+      'title': quizData!.title,
+      'description': quizData!.description,
+      'duration': quizData!.duration,
+      'marks': 0,
+      'start_date': quizData!.startDate,
+      'end_date': quizData!.endDate,
+      'type': quizData!.type,
+      'rank': quizData!.rank,
+      'topic_id': quizData!.topicId,
+      'topic': quizData!.topic,
+      'date_posted': quizData!.datePosted,
+      'course_name': widget.courseName,
+      'course_id': widget.courseId,
+      'level_id': widget.levelId,
+      'syllabus_id': widget.syllabusId,
+      'term': quizData!.id ?? 1,
+      'classes': quizData!.classes.map((c) => c.id).toList(),
     };
-  }).toList();
 
-  // Correct answers list (if you still want a flat structure for AssessmentScreen)
-  correctAnswers = quizData!.questions.map((q) => {
-    'question_id': q.questionId.toString(),
-    'correct_answer': q.correct.text,
-    'correct_order': q.correct.order,
-  }).toList();
-
-  // Build Question model for edit screen
-  questionModel = Question(
-    id: quizData!.id ?? 0,
-    title: quizData!.title,
-    description: quizData!.description,
-    selectedClass: quizData!.classes.map((c) => c.name).join(', '),
-    endDate: quizData!.endDate != null
-        ? DateTime.tryParse(quizData!.endDate!) ?? DateTime.now()
-        : DateTime.now(),
-    startDate: quizData!.startDate != null
-        ? DateTime.tryParse(quizData!.startDate!) ?? DateTime.now()
-        : DateTime.now(),
-    topic: quizData!.topic ?? 'No Topic',
-    duration: quizData!.duration != null
-        ? Duration(minutes: int.tryParse(quizData!.duration.toString()) ?? 0)
-        : Duration.zero,
-    marks: quizData!.grade ?? '0',
-    topicId: quizData!.topicId,
-  );
-
-  questiondata = {
-    'id': quizData!.id,
-    'title': quizData!.title,
-    'description': quizData!.description,
-    'duration': quizData!.duration,
-    'marks':0,
-    'start_date': quizData!.startDate,
-    'end_date': quizData!.endDate,
-    'type': quizData!.type,
-    'rank': quizData!.rank,
-    'topic_id': quizData!.topicId,
-    'topic': quizData!.topic,
-    'date_posted': quizData!.datePosted,
-    'course_name': widget.courseName,
-    'course_id': widget.courseId,
-    'level_id': widget.levelId,
-    'syllabus_id': widget.syllabusId,
-    'term': quizData!.id ?? 1,
-    'classes': quizData!.classes.map((c) => c.id).toList(),
-  };
-
-  classIds = quizData!.classes.map((c) => {
-    'id': c.id,
-    'name': c.name,
-  }).toList();
-}
+    classIds = quizData!.classes
+        .map((c) => {
+              'id': c.id,
+              'name': c.name,
+            })
+        .toList();
+  }
 
   @override
   Widget build(BuildContext context) {
     final Brightness brightness = Theme.of(context).brightness;
     opacity = brightness == Brightness.light ? 0.1 : 0.15;
-    
+
     return DefaultTabController(
-      length: 2, 
+      length: 2,
       child: Scaffold(
         appBar: AppBar(
           leading: IconButton(
-            onPressed: (){
-       
-    print("Popping back to dashboard...");
-    //Navigator.pop(context);
-  
-              Navigator.of(context).pop();
+            onPressed: () {
+              print("Popping back to dashboard...");
+              //Navigator.pop(context);
 
+              Navigator.of(context).pop();
             },
             icon: Image.asset(
               'assets/icons/arrow_back.png',
@@ -202,7 +210,8 @@ class _StaffRecentQuizState extends State<StaffRecentQuiz> {
           actions: [
             if (!isLoading && errorMessage == null)
               PopupMenuButton<String>(
-                icon: const Icon(Icons.more_vert, color: AppColors.primaryLight),
+                icon:
+                    const Icon(Icons.more_vert, color: AppColors.primaryLight),
                 onSelected: (String result) {
                   switch (result) {
                     case 'edit':
@@ -269,7 +278,8 @@ class _StaffRecentQuizState extends State<StaffRecentQuiz> {
                       children: [
                         Text(
                           errorMessage!,
-                          style: const TextStyle(color: Colors.red, fontSize: 16),
+                          style:
+                              const TextStyle(color: Colors.red, fontSize: 16),
                           textAlign: TextAlign.center,
                         ),
                         const SizedBox(height: 16),
@@ -301,10 +311,11 @@ class _StaffRecentQuizState extends State<StaffRecentQuiz> {
 
   void _navigateToEditScreen() {
     if (questionModel == null || questions == null || classIds == null) {
-      CustomToaster.toastError(context, 'Error', 'Quiz data not available for editing');
+      CustomToaster.toastError(
+          context, 'Error', 'Quiz data not available for editing');
       return;
     }
-    
+
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -327,7 +338,8 @@ class _StaffRecentQuizState extends State<StaffRecentQuiz> {
     try {
       final provider = locator<DeleteSyllabusProvider>();
       await provider.DeleteQuiz(widget.quizId.toString());
-      CustomToaster.toastSuccess(context, 'Success', 'Quiz deleted successfully');
+      CustomToaster.toastSuccess(
+          context, 'Success', 'Quiz deleted successfully');
       Navigator.of(context).pop();
     } catch (e) {
       print('Error deleting quiz: $e');
@@ -340,18 +352,19 @@ class _StaffRecentQuizState extends State<StaffRecentQuiz> {
       return const Center(child: Text('No quiz data available'));
     }
 
-    final endDate = quizData!.endDate != null 
-        ? DateTime.tryParse(quizData!.endDate!) 
+    final endDate = quizData!.endDate != null
+        ? DateTime.tryParse(quizData!.endDate!)
         : null;
-    
-    final duration = quizData!.duration != null 
-        ? Duration(minutes: int.tryParse(quizData!.duration.toString()) ?? 0) 
+
+    final duration = quizData!.duration != null
+        ? Duration(minutes: int.tryParse(quizData!.duration.toString()) ?? 0)
         : Duration.zero;
 
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
-        _buildInfoRow('Due:', endDate != null ? _formatDate(endDate) : 'No due date'),
+        _buildInfoRow(
+            'Due:', endDate != null ? _formatDate(endDate) : 'No due date'),
         const Divider(color: Colors.grey),
         Text(
           quizData!.title,
@@ -361,16 +374,18 @@ class _StaffRecentQuizState extends State<StaffRecentQuiz> {
         const Divider(color: AppColors.eLearningBtnColor1),
         _buildInfoRow('Duration:', '${duration.inMinutes} minutes'),
         const Divider(color: Colors.grey),
-        _buildInfoRow('Description:', quizData!.description.isNotEmpty ? quizData!.description : 'No Description'),
+        _buildInfoRow(
+            'Description:',
+            quizData!.description.isNotEmpty
+                ? quizData!.description
+                : 'No Description'),
         const Divider(color: Colors.grey),
-      
-        
-      
         const SizedBox(height: 20),
         CustomLongElevatedButton(
           onPressed: () {
             if (questions == null || correctAnswers == null) {
-              CustomToaster.toastError(context, 'Error', 'Quiz questions not loaded properly');
+              CustomToaster.toastError(
+                  context, 'Error', 'Quiz questions not loaded properly');
               return;
             }
 
@@ -378,8 +393,10 @@ class _StaffRecentQuizState extends State<StaffRecentQuiz> {
             print("Questions: ${questions!.length}");
             print("Correct Answers: ${correctAnswers!.length}");
             print("Quiz duration: $duration");
-            print("Sample question: ${questions!.isNotEmpty ? questions!.first : 'None'}");
-            print("Sample correct answer: ${correctAnswers!.isNotEmpty ? correctAnswers!.first : 'None'}");
+            print(
+                "Sample question: ${questions!.isNotEmpty ? questions!.first : 'None'}");
+            print(
+                "Sample correct answer: ${correctAnswers!.isNotEmpty ? correctAnswers!.first : 'None'}");
 
             Navigator.push(
               context,
@@ -439,8 +456,18 @@ class _StaffRecentQuizState extends State<StaffRecentQuiz> {
 
   String _getMonth(int month) {
     const months = [
-      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec'
     ];
     return months[month - 1];
   }

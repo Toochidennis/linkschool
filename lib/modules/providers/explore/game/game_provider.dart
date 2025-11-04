@@ -3,7 +3,6 @@ import 'package:linkschool/modules/services/explore/game/games_services.dart';
 
 import '../../../model/explore/home/game_model.dart';
 
-
 class GameProvider with ChangeNotifier {
   final GameService _gameService = GameService();
   Games? _games;

@@ -7,8 +7,6 @@ import 'package:linkschool/modules/admin/result/grading_settings.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 
-
-
 class SettingsSection extends StatelessWidget {
   const SettingsSection({super.key});
 
@@ -23,7 +21,10 @@ class SettingsSection extends StatelessWidget {
               'assets/icons/result/assessment.svg',
               'Assessment',
               AppColors.boxColor1,
-              () => Navigator.push(context, MaterialPageRoute(builder: (context) => const AssessmentSettingScreen())),
+              () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (context) => const AssessmentSettingScreen())),
             ),
           ),
           Expanded(
@@ -31,7 +32,10 @@ class SettingsSection extends StatelessWidget {
               'assets/icons/result/grading.svg',
               'Grading',
               AppColors.boxColor2,
-              () => Navigator.push(context, MaterialPageRoute(builder: (context) => const GradingSettingsScreen())),
+              () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (context) => const GradingSettingsScreen())),
             ),
           ),
           Expanded(
@@ -39,7 +43,10 @@ class SettingsSection extends StatelessWidget {
               'assets/icons/result/behaviour.svg',
               'Behaviour',
               AppColors.boxColor3,
-              () => Navigator.push(context, MaterialPageRoute(builder: (context) => const BehaviourSettingScreen())),
+              () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (context) => const BehaviourSettingScreen())),
             ),
           ),
           Expanded(
@@ -55,7 +62,8 @@ class SettingsSection extends StatelessWidget {
     );
   }
 
-  Widget _buildSettingsBox(String iconPath, String text, Color color, VoidCallback onTap) {
+  Widget _buildSettingsBox(
+      String iconPath, String text, Color color, VoidCallback onTap) {
     return GestureDetector(
       onTap: onTap,
       child: Container(

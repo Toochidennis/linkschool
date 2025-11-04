@@ -11,7 +11,6 @@ import 'package:linkschool/modules/student/home/student_home_screen.dart';
 import 'package:linkschool/modules/student/payment/student_payment_home_screen.dart';
 import 'package:linkschool/modules/student/result/student_result_screen.dart';
 
-
 class StudentDashboard extends StatefulWidget {
   final Function(bool) onSwitch;
   final int selectedIndex;
@@ -34,13 +33,10 @@ class _StudentDashboardState extends State<StudentDashboard> {
   late int _selectedIndex;
   int? studentId = 0;
   String studentName = 'Student'; // Default fallback name
-    int? creatorId;
+  int? creatorId;
   String? creatorName;
   int? academicTerm;
   String? userRole;
-
-
-
 
   @override
   void initState() {
@@ -49,56 +45,57 @@ class _StudentDashboardState extends State<StudentDashboard> {
     _selectedIndex = widget.selectedIndex;
   }
 
-
-
-
   Future<void> _loadUserData() async {
-  try {
-    final userBox = Hive.box('userData');
-    final storedUserData = userBox.get('userData') ?? userBox.get('loginResponse');
+    try {
+      final userBox = Hive.box('userData');
+      final storedUserData =
+          userBox.get('userData') ?? userBox.get('loginResponse');
 
-    if (storedUserData == null) {
-      throw Exception('No user data found in Hive');
-    }
+      if (storedUserData == null) {
+        throw Exception('No user data found in Hive');
+      }
 
-    final dataMap = storedUserData is String
-        ? json.decode(storedUserData)
-        : Map<String, dynamic>.from(storedUserData);
+      final dataMap = storedUserData is String
+          ? json.decode(storedUserData)
+          : Map<String, dynamic>.from(storedUserData);
 
-    // 🔍 handle all possible nesting patterns safely
-    final response = dataMap['response'] ?? dataMap;
-    final data = response['data'] ?? {};
-    final profile = data['profile'] ?? {};
-    final settings = data['settings'] ?? {};
+      // 🔍 handle all possible nesting patterns safely
+      final response = dataMap['response'] ?? dataMap;
+      final data = response['data'] ?? {};
+      final profile = data['profile'] ?? {};
+      final settings = data['settings'] ?? {};
 
-    setState(() {
-      studentId = int.tryParse(profile['id']?.toString() ?? '0');
-      creatorName = profile['name']?.toString() ?? 'Student';
-      userRole = profile['role']?.toString() ?? 'student';
-      academicTerm = int.tryParse(settings['term']?.toString() ?? '0');
-    });
+      setState(() {
+        studentId = int.tryParse(profile['id']?.toString() ?? '0');
+        creatorName = profile['name']?.toString() ?? 'Student';
+        userRole = profile['role']?.toString() ?? 'student';
+        academicTerm = int.tryParse(settings['term']?.toString() ?? '0');
+      });
 
-    print("✅ Student ID: $studentId");
-    print("✅ Student Name: $creatorName");
-    print("✅ Term: $academicTerm");
-    print("✅ Role: $userRole");
-  } catch (e, stack) {
-    debugPrint('❌ Error loading user data: $e');
-    debugPrint(stack.toString());
-    if (mounted) {
-      CustomToaster.toastError(context, 'Error', 'Failed to load user data');
+      print("✅ Student ID: $studentId");
+      print("✅ Student Name: $creatorName");
+      print("✅ Term: $academicTerm");
+      print("✅ Role: $userRole");
+    } catch (e, stack) {
+      debugPrint('❌ Error loading user data: $e');
+      debugPrint(stack.toString());
+      if (mounted) {
+        CustomToaster.toastError(context, 'Error', 'Failed to load user data');
+      }
     }
   }
-}
 
   Widget _buildBodyItem(int index) {
     switch (index) {
       case 0:
-        return  StudentHomeScreen(logout: widget.onLogout);
+        return StudentHomeScreen(logout: widget.onLogout);
       case 1:
-        return  StudentResultScreen(studentName: creatorName ?? '', className: '',);
+        return StudentResultScreen(
+          studentName: creatorName ?? '',
+          className: '',
+        );
       case 2:
-        return  StudentElearningScreen();
+        return StudentElearningScreen();
       case 3:
         return StudentPaymentHomeScreen(logout: widget.onLogout);
       default:
@@ -152,7 +149,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
           _buildBodyItem(_selectedIndex),
           Positioned(
             top: 16.0,
-            right: 16.0,  // Place the FAB in the upper right corner
+            right: 16.0, // Place the FAB in the upper right corner
             child: FloatingActionButton(
               onPressed: () {
                 print("FAB pressed");

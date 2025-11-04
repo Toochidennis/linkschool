@@ -4,7 +4,8 @@ import 'package:linkschool/modules/services/admin/e_learning/single-content_serv
 import 'package:linkschool/modules/services/api/service_locator.dart';
 
 class SingleContentProvider with ChangeNotifier {
-  final SingleAssessmentService _assessmentService = locator<SingleAssessmentService>();
+  final SingleAssessmentService _assessmentService =
+      locator<SingleAssessmentService>();
 
   AssessmentContentItem? _assessment;
   bool _isLoading = false;

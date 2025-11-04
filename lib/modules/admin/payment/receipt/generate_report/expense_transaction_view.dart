@@ -27,7 +27,8 @@ class _ExpenseTransactionViewState extends State<ExpenseTransactionView> {
   @override
   void initState() {
     super.initState();
-    _filterParams = Map.from(widget.initialParams ?? {'report_type': 'monthly'});
+    _filterParams =
+        Map.from(widget.initialParams ?? {'report_type': 'monthly'});
     _filterParams.remove('group_by'); // To get individual transactions
     _loadData();
   }
@@ -67,7 +68,8 @@ class _ExpenseTransactionViewState extends State<ExpenseTransactionView> {
                   child: Container(
                     height: 50,
                     decoration: BoxDecoration(
-                      color: const Color.fromRGBO(209, 219, 255, 1).withOpacity(0.35),
+                      color: const Color.fromRGBO(209, 219, 255, 1)
+                          .withOpacity(0.35),
                       borderRadius: BorderRadius.circular(4),
                     ),
                     padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -76,9 +78,11 @@ class _ExpenseTransactionViewState extends State<ExpenseTransactionView> {
                       children: [
                         Text(
                           'Termly report', // Update based on _filterParams['report_type']
-                          style: AppTextStyles.normal500(fontSize: 14, color: AppColors.backgroundDark),
+                          style: AppTextStyles.normal500(
+                              fontSize: 14, color: AppColors.backgroundDark),
                         ),
-                        SvgPicture.asset('assets/icons/profile/filter_icon.svg', height: 24, width: 24),
+                        SvgPicture.asset('assets/icons/profile/filter_icon.svg',
+                            height: 24, width: 24),
                       ],
                     ),
                   ),
@@ -138,15 +142,19 @@ class _ExpenseTransactionViewState extends State<ExpenseTransactionView> {
                               padding: const EdgeInsets.symmetric(vertical: 16),
                               child: Row(
                                 children: [
-                                  SvgPicture.asset('assets/icons/profile/payment_icon.svg'),
+                                  SvgPicture.asset(
+                                      'assets/icons/profile/payment_icon.svg'),
                                   const SizedBox(width: 12),
                                   Expanded(
                                     child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
                                       children: [
                                         Text(
                                           transaction['name'] ?? 'Unknown',
-                                          style: AppTextStyles.normal600(fontSize: 16, color: AppColors.backgroundDark),
+                                          style: AppTextStyles.normal600(
+                                              fontSize: 16,
+                                              color: AppColors.backgroundDark),
                                         ),
                                         Text(
                                           transaction['date'] ?? '',
@@ -160,11 +168,15 @@ class _ExpenseTransactionViewState extends State<ExpenseTransactionView> {
                                   ),
                                   Row(
                                     children: [
-                                      const NairaSvgIcon(color: AppColors.backgroundDark),
+                                      const NairaSvgIcon(
+                                          color: AppColors.backgroundDark),
                                       const SizedBox(width: 2),
                                       Text(
-                                        (transaction['amount'] ?? 0).toStringAsFixed(2),
-                                        style: AppTextStyles.normal600(fontSize: 16, color: AppColors.backgroundDark),
+                                        (transaction['amount'] ?? 0)
+                                            .toStringAsFixed(2),
+                                        style: AppTextStyles.normal600(
+                                            fontSize: 16,
+                                            color: AppColors.backgroundDark),
                                       ),
                                     ],
                                   ),
@@ -179,5 +191,3 @@ class _ExpenseTransactionViewState extends State<ExpenseTransactionView> {
     );
   }
 }
-
-

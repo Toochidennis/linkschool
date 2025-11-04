@@ -45,14 +45,14 @@ class CBTProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  List<String> get boardCodes => 
-    _boards.where((board) => board.boardCode != null)
-           .map((board) => board.boardCode)
-           .toList();
+  List<String> get boardCodes => _boards
+      .where((board) => board.boardCode != null)
+      .map((board) => board.boardCode)
+      .toList();
 
   List<SubjectModel> get currentBoardSubjects {
     if (_selectedBoard == null) return [];
-    
+
     final subjectIcons = {
       'MATHEMATICS': 'maths',
       'ENGLISH LANGUAGE': 'english',
@@ -94,8 +94,10 @@ class CBTProvider extends ChangeNotifier {
     ];
 
     return _selectedBoard!.subjects.map((subject) {
-      subject.subjectIcon = subjectIcons[subject.name.toUpperCase()] ?? 'default';
-      subject.cardColor = colors[_selectedBoard!.subjects.indexOf(subject) % colors.length];
+      subject.subjectIcon =
+          subjectIcons[subject.name.toUpperCase()] ?? 'default';
+      subject.cardColor =
+          colors[_selectedBoard!.subjects.indexOf(subject) % colors.length];
       return subject;
     }).toList();
   }

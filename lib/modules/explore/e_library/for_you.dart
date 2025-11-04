@@ -16,8 +16,6 @@ import '../../model/explore/home/video_model.dart';
 import '../../providers/explore/for_you_provider.dart';
 import '../games/game_card.dart';
 
-
-
 class ForYouScreen extends StatefulWidget {
   const ForYouScreen({super.key, required this.height});
   final double height;
@@ -52,7 +50,8 @@ class _ForYouScreenState extends State<ForYouScreen> {
             onPressed: () {},
             icon: SvgPicture.asset(
               'assets/icons/notifications.svg',
-              colorFilter: const ColorFilter.mode(Colors.white, BlendMode.srcIn),
+              colorFilter:
+                  const ColorFilter.mode(Colors.white, BlendMode.srcIn),
             ),
           )
         ],
@@ -68,11 +67,31 @@ class _ForYouScreenState extends State<ForYouScreen> {
                 indicatorColor: AppColors.text2Light,
                 labelColor: AppColors.text2Light,
                 tabs: [
-                  Tab(child: FittedBox(child: Text('For you', style: AppTextStyles.normal600(fontSize: 14, color: AppColors.text2Light)))),
-                  Tab(child: FittedBox(child: Text('CBT', style: AppTextStyles.normal600(fontSize: 14, color: AppColors.text2Light)))),
-                  Tab(child: FittedBox(child: Text('E-books', style: AppTextStyles.normal600(fontSize: 14, color: AppColors.text2Light)))),
-                  Tab(child: FittedBox(child: Text('Games', style: AppTextStyles.normal600(fontSize: 14, color: AppColors.text2Light)))),
-                  Tab(child: Flexible(child: Text('Videos', style: AppTextStyles.normal600(fontSize: 14, color: AppColors.text2Light)))),
+                  Tab(
+                      child: FittedBox(
+                          child: Text('For you',
+                              style: AppTextStyles.normal600(
+                                  fontSize: 14, color: AppColors.text2Light)))),
+                  Tab(
+                      child: FittedBox(
+                          child: Text('CBT',
+                              style: AppTextStyles.normal600(
+                                  fontSize: 14, color: AppColors.text2Light)))),
+                  Tab(
+                      child: FittedBox(
+                          child: Text('E-books',
+                              style: AppTextStyles.normal600(
+                                  fontSize: 14, color: AppColors.text2Light)))),
+                  Tab(
+                      child: FittedBox(
+                          child: Text('Games',
+                              style: AppTextStyles.normal600(
+                                  fontSize: 14, color: AppColors.text2Light)))),
+                  Tab(
+                      child: Flexible(
+                          child: Text('Videos',
+                              style: AppTextStyles.normal600(
+                                  fontSize: 14, color: AppColors.text2Light)))),
                 ],
               ),
               Expanded(
@@ -163,7 +182,8 @@ class ForYouContent extends StatelessWidget {
           child: ListView.builder(
             scrollDirection: Axis.horizontal,
             itemCount: videos.isEmpty ? 3 : videos.length,
-            itemBuilder: (context, index) => _ContinueWatching(video: videos.isEmpty ? Video.empty() : videos[index]),
+            itemBuilder: (context, index) => _ContinueWatching(
+                video: videos.isEmpty ? Video.empty() : videos[index]),
           ),
         ),
       ],
@@ -207,7 +227,8 @@ class ForYouContent extends StatelessWidget {
           child: ListView.builder(
             scrollDirection: Axis.horizontal,
             itemCount: books.isEmpty ? 3 : books.length,
-            itemBuilder: (context, index) => _books(book: books.isEmpty ? Book.empty() : books[index]),
+            itemBuilder: (context, index) =>
+                _books(book: books.isEmpty ? Book.empty() : books[index]),
           ),
         ),
       ],
@@ -215,8 +236,8 @@ class ForYouContent extends StatelessWidget {
   }
 }
 
-
-Widget _buildCategoriesCard({required String subjectName, required String examIcon}) {
+Widget _buildCategoriesCard(
+    {required String subjectName, required String examIcon}) {
   return Padding(
     padding: const EdgeInsets.only(top: 16, left: 8, right: 8),
     child: Column(
@@ -326,11 +347,13 @@ class _books extends StatelessWidget {
               ),
               Text(
                 book.title,
-                style: AppTextStyles.normal600(fontSize: 16, color: AppColors.libText),
+                style: AppTextStyles.normal600(
+                    fontSize: 16, color: AppColors.libText),
               ),
               Text(
                 book.author,
-                style: AppTextStyles.normal400(fontSize: 14, color: AppColors.libtitle),
+                style: AppTextStyles.normal400(
+                    fontSize: 14, color: AppColors.libtitle),
               ),
               SizedBox(height: 20),
             ],
@@ -353,10 +376,14 @@ class headingWithAdvert extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 16.0),
       child: Row(
         children: [
-          Text(tag, style: AppTextStyles.normal400(fontSize: 12, color: AppColors.libtitle)),
+          Text(tag,
+              style: AppTextStyles.normal400(
+                  fontSize: 12, color: AppColors.libtitle)),
           Icon(Icons.circle, size: 4, color: AppColors.libtitle),
           SizedBox(width: 10),
-          Text(title, style: AppTextStyles.normal500(fontSize: 16, color: AppColors.libText))
+          Text(title,
+              style: AppTextStyles.normal500(
+                  fontSize: 16, color: AppColors.libText))
         ],
       ),
     );
@@ -375,15 +402,16 @@ class blueHeading extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 16.0),
       child: Row(
         children: [
-          Text(tag, style: AppTextStyles.normal500(fontSize: 14, color: AppColors.libtitle)),
+          Text(tag,
+              style: AppTextStyles.normal500(
+                  fontSize: 14, color: AppColors.libtitle)),
           Icon(Icons.circle, size: 8, color: AppColors.libtitle),
           SizedBox(width: 10),
-          Text(title, style: AppTextStyles.normal700(fontSize: 18, color: AppColors.titleColor))
+          Text(title,
+              style: AppTextStyles.normal700(
+                  fontSize: 18, color: AppColors.titleColor))
         ],
       ),
     );
   }
 }
-
-
-

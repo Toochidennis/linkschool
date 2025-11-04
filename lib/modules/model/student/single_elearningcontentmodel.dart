@@ -66,7 +66,8 @@ class SingleElearningContentData {
 
   factory SingleElearningContentData.fromJson(Map<String, dynamic> json) {
     // Handle the case where settings and questions are at root level
-    if (json.containsKey('settings') && json.containsKey('questions') &&
+    if (json.containsKey('settings') &&
+        json.containsKey('questions') &&
         !json.containsKey('id')) {
       return SingleElearningContentData.fromRootLevelData(json);
     }
@@ -83,29 +84,30 @@ class SingleElearningContentData {
       start_date: json['start_date'] ?? '',
       end_date: json['end_date'] ?? '',
       grade: json['topic'] ?? "",
-
       classes: (json['classes'] as List?)
-          ?.map((cls) => ClassInfo.fromJson(cls))
-          .toList() ?? [],
+              ?.map((cls) => ClassInfo.fromJson(cls))
+              .toList() ??
+          [],
       contentFiles: json['content_files'] ?? [],
       datePosted: json['date_posted'] ?? '',
-      settings: json['settings'] != null
-          ? Settings.fromJson(json['settings'])
-          : null,
+      settings:
+          json['settings'] != null ? Settings.fromJson(json['settings']) : null,
       questions: json['questions'] != null
           ? (json['questions'] as List)
-          .map((q) => Question.fromJson(q))
-          .toList()
+              .map((q) => Question.fromJson(q))
+              .toList()
           : [],
     );
   }
 
   // Special constructor for when settings and questions are at root level
-  factory SingleElearningContentData.fromRootLevelData(Map<String, dynamic> json) {
+  factory SingleElearningContentData.fromRootLevelData(
+      Map<String, dynamic> json) {
     final settingsData = json['settings'] as Map<String, dynamic>?;
     final questionsData = json['questions'] as List<dynamic>?;
 
-    final settings = settingsData != null ? Settings.fromJson(settingsData) : null;
+    final settings =
+        settingsData != null ? Settings.fromJson(settingsData) : null;
     final questions = questionsData != null
         ? questionsData.map((q) => Question.fromJson(q)).toList()
         : <Question>[];
@@ -125,8 +127,8 @@ class SingleElearningContentData {
       grade: json['topic'] ?? "",
       classes: settingsData?['classes'] != null
           ? (settingsData!['classes'] as List)
-          .map((cls) => ClassInfo.fromJson(cls))
-          .toList()
+              .map((cls) => ClassInfo.fromJson(cls))
+              .toList()
           : [],
       contentFiles: [],
       datePosted: settingsData?['date_posted'] ?? '',
@@ -145,9 +147,9 @@ class SingleElearningContentData {
       'rank': rank,
       'topic_id': topicId,
       'topic': topic,
-      'start_date':start_date,
-      'end_date':end_date,
-      'grade':grade,
+      'start_date': start_date,
+      'end_date': end_date,
+      'grade': grade,
       'classes': classes.map((cls) => cls.toJson()).toList(),
       'content_files': contentFiles,
       'date_posted': datePosted,
@@ -203,8 +205,8 @@ class Settings {
     final datePosted = json['date_posted'];
 
     final classes = (json['classes'] as List<dynamic>?)
-        ?.map((e) => ClassInfo.fromJson(e as Map<String, dynamic>))
-        .toList() ??
+            ?.map((e) => ClassInfo.fromJson(e as Map<String, dynamic>))
+            .toList() ??
         [];
 
     return Settings(
@@ -275,12 +277,12 @@ class Question {
     final questionType = json['question_type'] ?? '';
 
     final options = (json['options'] as List<dynamic>?)
-        ?.map((e) => Option.fromJson(e as Map<String, dynamic>))
-        .toList() ??
+            ?.map((e) => Option.fromJson(e as Map<String, dynamic>))
+            .toList() ??
         [];
 
-    final correct = CorrectAnswer.fromJson(
-        json['correct'] as Map<String, dynamic>? ?? {});
+    final correct =
+        CorrectAnswer.fromJson(json['correct'] as Map<String, dynamic>? ?? {});
 
     return Question(
       questionId: questionId,
@@ -418,7 +420,8 @@ void main() {
       "id": 862,
       "syllabus_id": 858,
       "title": "Computer Studies Quiz",
-      "description": "Answer all questions. write clearly. Multiple choices questions require only one correct answer unless stated otherwise",
+      "description":
+          "Answer all questions. write clearly. Multiple choices questions require only one correct answer unless stated otherwise",
       "type": "quiz",
       "rank": 0,
       "topic_id": 859,

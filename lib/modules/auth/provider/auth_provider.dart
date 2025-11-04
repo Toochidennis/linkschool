@@ -7,11 +7,10 @@ import 'package:linkschool/modules/services/api/service_locator.dart';
 import 'package:linkschool/modules/services/api/api_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-
 class AuthProvider with ChangeNotifier {
   final AuthService _authService = locator<AuthService>();
   final _secureStorage = const FlutterSecureStorage();
-  
+
   User? _user;
   String? _token;
   bool _isLoggedIn = false;
@@ -26,16 +25,17 @@ class AuthProvider with ChangeNotifier {
   bool get isSilentLoginInProgress => _isSilentLoginInProgress;
 
   /// Main login method - saves credentials for future silent login
-  Future<void> login(String username, String password, String schoolCode) async {
+  Future<void> login(
+      String username, String password, String schoolCode) async {
     try {
       final response = await _authService.login(username, password, schoolCode);
       if (response.success && response.rawData != null) {
         // Save login credentials securely for silent re-login
         await _saveLoginCredentials(username, password, schoolCode);
-        
+
         // Process and save login data
         await _processLoginResponse(response.rawData!);
-        
+
         print('✅ Login successful - User role: ${_user!.role}');
         notifyListeners();
       } else {
@@ -47,20 +47,21 @@ class AuthProvider with ChangeNotifier {
   }
 
   /// Save login credentials securely
-  Future<void> _saveLoginCredentials(String username, String password, String schoolCode) async {
+  Future<void> _saveLoginCredentials(
+      String username, String password, String schoolCode) async {
     try {
       // Use flutter_secure_storage for sensitive data
-      
+
       await _secureStorage.write(key: 'saved_username', value: username);
       await _secureStorage.write(key: 'saved_password', value: password);
       await _secureStorage.write(key: 'saved_school_code', value: schoolCode);
-      
+
       // Also save in Hive for quick access (non-sensitive flags)
       final userBox = Hive.box('userData');
       await userBox.put('has_saved_credentials', true);
       await userBox.put('saved_username', username); // For display purposes
       await userBox.put('saved_school_code', schoolCode);
-      
+
       print('🔐 Login credentials saved securely');
     } catch (e) {
       print('⚠️ Warning: Could not save credentials: $e');
@@ -70,14 +71,14 @@ class AuthProvider with ChangeNotifier {
   /// Process login response and save all data
   Future<void> _processLoginResponse(Map<String, dynamic> responseData) async {
     final userBox = Hive.box('userData');
-    
+
     // Convert response to proper Map<String, dynamic>
     final convertedData = _deepConvertMap(responseData);
-    
+
     // Save the entire API response to Hive
     await userBox.put('userData', convertedData);
     await userBox.put('loginResponse', convertedData);
-    
+
     // Extract user data
     final userData = convertedData!['data'];
     _user = User.fromJson(userData);
@@ -119,7 +120,8 @@ class AuthProvider with ChangeNotifier {
   }
 
   /// Save role-specific data based on user type
-  Future<void> _saveRoleSpecificData(Map<String, dynamic> userData, Box userBox) async {
+  Future<void> _saveRoleSpecificData(
+      Map<String, dynamic> userData, Box userBox) async {
     if (_user!.role == 'admin') {
       if (userData.containsKey('levels')) {
         await userBox.put('levels', userData['levels']);
@@ -140,12 +142,13 @@ class AuthProvider with ChangeNotifier {
     } else if (_user!.role == 'student') {
       final profile = userData['profile'] ?? {};
       await userBox.put('student_profile', profile);
-      
-      await userBox.put('student_id', profile['id']?.toString() ?? profile['staff_id']?.toString());
+
+      await userBox.put('student_id',
+          profile['id']?.toString() ?? profile['staff_id']?.toString());
       await userBox.put('class_id', profile['class_id']?.toString());
       await userBox.put('level_id', profile['level_id']?.toString());
       await userBox.put('registration_no', profile['registration_no']);
-      
+
       if (_settings != null && _settings!.containsKey('year')) {
         await userBox.put('current_year', _settings!['year'].toString());
       }
@@ -156,17 +159,18 @@ class AuthProvider with ChangeNotifier {
   Future<void> checkLoginStatus() async {
     try {
       print('🔍 Checking login status...');
-      
+
       final userBox = Hive.box('userData');
       final prefs = await SharedPreferences.getInstance();
-      
+
       // Check if we have saved credentials for silent login
-      final hasSavedCredentials = userBox.get('has_saved_credentials', defaultValue: false);
-      
+      final hasSavedCredentials =
+          userBox.get('has_saved_credentials', defaultValue: false);
+
       if (hasSavedCredentials) {
         print('🔑 Found saved credentials - attempting silent login');
         final success = await _attemptSilentLogin();
-        
+
         if (success) {
           print('✅ Silent login successful');
           return;
@@ -174,10 +178,9 @@ class AuthProvider with ChangeNotifier {
           print('⚠️ Silent login failed - will try session restore');
         }
       }
-      
+
       // Fallback: Try to restore from saved session (old behavior)
       await _restoreFromSavedSession();
-      
     } catch (e, stackTrace) {
       print('❌ Error checking login status: $e');
       print('Stack trace: $stackTrace');
@@ -190,36 +193,35 @@ class AuthProvider with ChangeNotifier {
     try {
       _isSilentLoginInProgress = true;
       notifyListeners();
-      
+
       // Retrieve saved credentials
       final username = await _secureStorage.read(key: 'saved_username');
       final password = await _secureStorage.read(key: 'saved_password');
       final schoolCode = await _secureStorage.read(key: 'saved_school_code');
-      
+
       if (username == null || password == null || schoolCode == null) {
         print('❌ Missing credentials for silent login');
         return false;
       }
-      
+
       print('🔄 Performing silent login for user: $username');
-      
+
       // Perform login in background
       final response = await _authService.login(username, password, schoolCode);
-      
+
       if (response.success && response.rawData != null) {
         // Process the fresh login data
         await _processLoginResponse(response.rawData!);
-        
+
         _isSilentLoginInProgress = false;
         notifyListeners();
-        
+
         print('✅ Silent login completed - Fresh data loaded');
         return true;
       } else {
         print('❌ Silent login failed: ${response.message}');
         return false;
       }
-      
     } catch (e) {
       print('❌ Silent login error: $e');
       return false;
@@ -232,13 +234,13 @@ class AuthProvider with ChangeNotifier {
   Future<void> _restoreFromSavedSession() async {
     final userBox = Hive.box('userData');
     final prefs = await SharedPreferences.getInstance();
-    
+
     final isLoggedInHive = userBox.get('isLoggedIn', defaultValue: false);
     final isLoggedInPrefs = prefs.getBool('isLoggedIn') ?? false;
     final sessionValid = userBox.get('sessionValid', defaultValue: false);
     final userData = userBox.get('userData');
     final token = userBox.get('token');
-    
+
     print('📊 Session Status:');
     print('  - Hive isLoggedIn: $isLoggedInHive');
     print('  - Prefs isLoggedIn: $isLoggedInPrefs');
@@ -246,12 +248,11 @@ class AuthProvider with ChangeNotifier {
     print('  - Has userData: ${userData != null}');
     print('  - Has token: ${token != null}');
 
-    if ((isLoggedInHive || isLoggedInPrefs) && 
-        userData != null && 
+    if ((isLoggedInHive || isLoggedInPrefs) &&
+        userData != null &&
         token != null) {
-      
       final userDataMap = _deepConvertMap(userData);
-      
+
       if (userDataMap == null || !userDataMap.containsKey('data')) {
         print('❌ Invalid userData format, clearing session');
         await _clearCorruptedSession();
@@ -278,20 +279,19 @@ class AuthProvider with ChangeNotifier {
           _settings = _deepConvertMap(settings);
         }
 
-        await userBox.put('lastLoginTime', DateTime.now().millisecondsSinceEpoch);
+        await userBox.put(
+            'lastLoginTime', DateTime.now().millisecondsSinceEpoch);
 
         print('✅ Session restored from cache');
         print('   - User: ${_user!.name}');
         print('   - Role: ${_user!.role}');
-        
+
         notifyListeners();
-        
       } catch (e, stackTrace) {
         print('❌ Error restoring session: $e');
         print('Stack trace: $stackTrace');
         await _clearCorruptedSession();
       }
-      
     } else {
       print('⚠️ No valid session found');
       _isLoggedIn = false;
@@ -306,7 +306,7 @@ class AuthProvider with ChangeNotifier {
   Future<void> logout({bool clearSavedCredentials = false}) async {
     try {
       final userBox = Hive.box('userData');
-      
+
       if (clearSavedCredentials) {
         // Clear saved credentials from secure storage
         await _secureStorage.delete(key: 'saved_username');
@@ -314,7 +314,7 @@ class AuthProvider with ChangeNotifier {
         await _secureStorage.delete(key: 'saved_school_code');
         print('🔐 Saved credentials cleared');
       }
-      
+
       await userBox.clear();
 
       final prefs = await SharedPreferences.getInstance();
@@ -343,20 +343,20 @@ class AuthProvider with ChangeNotifier {
   /// Deep convert map helper
   Map<String, dynamic>? _deepConvertMap(dynamic value) {
     if (value == null) return null;
-    
+
     if (value is Map<String, dynamic>) {
       return value.map((key, val) => MapEntry(key, _deepConvertValue(val)));
     }
-    
+
     if (value is Map) {
       return Map<String, dynamic>.from(
         value.map((key, val) => MapEntry(
-          key.toString(),
-          _deepConvertValue(val),
-        )),
+              key.toString(),
+              _deepConvertValue(val),
+            )),
       );
     }
-    
+
     return null;
   }
 
@@ -471,7 +471,8 @@ class AuthProvider with ChangeNotifier {
     final studentProfile = userBox.get('student_profile');
     if (studentProfile != null) {
       if (studentProfile is Map<String, dynamic>) return studentProfile;
-      if (studentProfile is Map) return Map<String, dynamic>.from(studentProfile);
+      if (studentProfile is Map)
+        return Map<String, dynamic>.from(studentProfile);
     }
     return {};
   }

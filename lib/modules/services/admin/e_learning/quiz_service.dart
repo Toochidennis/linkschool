@@ -1,9 +1,5 @@
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
-import 'package:linkschool/modules/common/custom_toaster.dart';
-import 'package:linkschool/modules/model/e-learning/quiz_model.dart';
 import 'package:linkschool/modules/services/api/api_service.dart';
 
 class QuizService {
@@ -38,7 +34,7 @@ class QuizService {
 
         print("Error: ${response.message ?? 'No error message provided'}");
         SnackBar(
-          content: Text("${response.message}"),
+          content: Text(response.message),
           backgroundColor: Colors.red,
         );
         throw Exception("Failed to Add Test: ${response.message}");
@@ -49,7 +45,7 @@ class QuizService {
           content: Text('Test added successfully.'),
           backgroundColor: Colors.green,
         );
-        print('${response.message}');
+        print(response.message);
       }
     } catch (e) {
       print("Error adding test: $e");
@@ -57,7 +53,7 @@ class QuizService {
     }
   }
 
-  Future<void> updateTest( Map<String, dynamic> QuizPayload) async {
+  Future<void> updateTest(Map<String, dynamic> QuizPayload) async {
     final userBox = Hive.box('userData');
     final loginData = userBox.get('userData') ?? userBox.get('loginResponse');
     final dbName = userBox.get('_db') ?? 'aalmgzmy_linkskoo_practice';
@@ -86,7 +82,7 @@ class QuizService {
 
         print("Error: ${response.message ?? 'No error message provided'}");
         SnackBar(
-          content: Text("${response.message}"),
+          content: Text(response.message),
           backgroundColor: Colors.red,
         );
         throw Exception("Failed to Update Test: ${response.message}");
@@ -97,7 +93,7 @@ class QuizService {
           content: Text('Test updated successfully.'),
           backgroundColor: Colors.green,
         );
-        print('${response.message}');
+        print(response.message);
       }
     } catch (e) {
       print("Error updating test: $e");
@@ -105,12 +101,10 @@ class QuizService {
     }
   }
 
-
   Future<void> DeleteQuiz(int id) async {
     final userBox = Hive.box('userData');
     final loginData = userBox.get('userData') ?? userBox.get('loginResponse');
     final dbName = userBox.get('_db') ?? 'aalmgzmy_linkskoo_practice';
-    ;
 
     if (loginData == null || loginData['token'] == null) {
       throw Exception("No valid login data or token found");
@@ -133,7 +127,7 @@ class QuizService {
 
         print("Error: ${response.message ?? 'No error message provided'}");
         SnackBar(
-          content: Text("${response.message}"),
+          content: Text(response.message),
           backgroundColor: Colors.red,
         );
         throw Exception("Failed to delete: ${response.message}");
@@ -144,7 +138,7 @@ class QuizService {
           content: Text('question deleted successfully.'),
           backgroundColor: Colors.green,
         );
-        print('${response.message}');
+        print(response.message);
       }
     } catch (e) {
       print("Error deleting questions: $e");

@@ -19,8 +19,8 @@ class _LibraryEbookState extends State<LibraryEbook> {
   @override
   void initState() {
     super.initState();
-    Future.microtask(() =>
-        Provider.of<EbookProvider>(context, listen: false).fetchBooks());
+    Future.microtask(
+        () => Provider.of<EbookProvider>(context, listen: false).fetchBooks());
   }
 
   @override
@@ -89,9 +89,8 @@ class _LibraryEbookState extends State<LibraryEbook> {
             duration: const Duration(milliseconds: 300),
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: isSelected
-                  ? AppColors.bgXplore3
-                  : AppColors.booksButtonColor,
+              color:
+                  isSelected ? AppColors.bgXplore3 : AppColors.booksButtonColor,
               borderRadius: BorderRadius.circular(6),
             ),
             child: Text(
@@ -154,4 +153,3 @@ class _LibraryEbookState extends State<LibraryEbook> {
     );
   }
 }
-

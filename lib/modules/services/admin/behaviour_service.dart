@@ -16,15 +16,16 @@ class SkillService {
         if (json.containsKey('response')) {
           final List<dynamic> data = json['response'];
           final userBox = Hive.box('userData');
-          final levels = List<Map<String, dynamic>>.from(userBox.get('levels') ?? []);
-          
+          final levels =
+              List<Map<String, dynamic>>.from(userBox.get('levels') ?? []);
+
           return data.map((skillJson) {
             final levelId = skillJson['level']?.toString();
             final level = levels.firstWhere(
               (level) => level['id'].toString() == levelId,
               orElse: () => {'level_name': 'General (All level)'},
             );
-            
+
             return Skills.fromJson({
               ...skillJson,
               'level_name': level['level_name'],
@@ -89,9 +90,6 @@ class SkillService {
   }
 }
 
-
-
-
 // import 'package:linkschool/modules/model/admin/behaviour_model.dart';
 // import 'package:linkschool/modules/services/api/api_service.dart';
 
@@ -99,7 +97,7 @@ class SkillService {
 //   final ApiService _apiService;
 
 //   SkillService(this._apiService);
-  
+
 //   Future<List<Skills>> getSkills() async {
 //     final response = await _apiService.get<List<Skills>>(
 //       endpoint: 'skills.php',
@@ -118,7 +116,7 @@ class SkillService {
 //       throw Exception('Failed to load skills: ${response.message}');
 //     }
 //   }
-  
+
 //   Future<void> addSkill(Skills skill) async {
 //     final response = await _apiService.post<Map<String, dynamic>>(
 //       endpoint: 'skills.php',
@@ -129,7 +127,7 @@ class SkillService {
 //       throw Exception('Failed to add skill: ${response.message}');
 //     }
 //   }
-  
+
 //   Future<void> deleteSkill(String id) async {
 //     final response = await _apiService.delete<Map<String, dynamic>>(
 //       endpoint: 'skills.php',

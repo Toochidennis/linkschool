@@ -6,8 +6,6 @@ import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 
-
-
 class ExpenseSelectVendor extends StatefulWidget {
   final String name;
 
@@ -104,14 +102,18 @@ class _ExpenseSelectVendorState extends State<ExpenseSelectVendor> {
 
   Widget _buildStudentItem(BuildContext context) {
     return Container(
-    margin: const EdgeInsets.only(bottom: 8),
-    decoration: BoxDecoration(
-      border: Border.all(color: Colors.grey.shade300),
-      borderRadius: BorderRadius.circular(8),
-    ),
+      margin: const EdgeInsets.only(bottom: 8),
+      decoration: BoxDecoration(
+        border: Border.all(color: Colors.grey.shade300),
+        borderRadius: BorderRadius.circular(8),
+      ),
       child: ListTile(
         leading: SvgPicture.asset('assets/icons/profile/payment_icon.svg'),
-        title: Text(widget.name, style: AppTextStyles.normal500(fontSize: 18, color: AppColors.backgroundDark),),
+        title: Text(
+          widget.name,
+          style: AppTextStyles.normal500(
+              fontSize: 18, color: AppColors.backgroundDark),
+        ),
         onTap: () {
           _showReceiptOverlay(context);
         },
@@ -119,7 +121,7 @@ class _ExpenseSelectVendorState extends State<ExpenseSelectVendor> {
     );
   }
 
- void _showReceiptOverlay(BuildContext context) {
+  void _showReceiptOverlay(BuildContext context) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true, // This allows the bottom sheet to be taller
@@ -149,19 +151,24 @@ class _ExpenseSelectVendorState extends State<ExpenseSelectVendor> {
                       ),
                     ),
                     const SizedBox(height: 24),
-                    SvgPicture.asset('assets/icons/profile/success_receipt_icon.svg', height: 60),
+                    SvgPicture.asset(
+                        'assets/icons/profile/success_receipt_icon.svg',
+                        height: 60),
                     const SizedBox(height: 24),
-                    const Text('Second Term Fees Receipt', 
-                      style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                    const Text('Second Term Fees Receipt',
+                        style: TextStyle(
+                            fontSize: 20, fontWeight: FontWeight.bold)),
                     const SizedBox(height: 16),
                     const SizedBox(height: 24),
                     Divider(thickness: 1, color: Colors.grey.withOpacity(0.5)),
                     const SizedBox(height: 16),
                     _buildReceiptDetail('Date', '2023-10-23'),
-                    _buildReceiptDetail('Registration number', 'REG${DateTime.now().millisecondsSinceEpoch}'),
+                    _buildReceiptDetail('Registration number',
+                        'REG${DateTime.now().millisecondsSinceEpoch}'),
                     _buildReceiptDetail('Session', '2023/2024'),
                     _buildReceiptDetail('Term', '2nd Term Fees'),
-                    _buildReceiptDetail('Reference number', 'REF${DateTime.now().millisecondsSinceEpoch}'),
+                    _buildReceiptDetail('Reference number',
+                        'REF${DateTime.now().millisecondsSinceEpoch}'),
                     const SizedBox(height: 32),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -170,14 +177,20 @@ class _ExpenseSelectVendorState extends State<ExpenseSelectVendor> {
                           child: OutlinedButton(
                             onPressed: () {},
                             style: OutlinedButton.styleFrom(
-                              side: const BorderSide(color: Color.fromRGBO(47, 85, 221, 1),),
+                              side: const BorderSide(
+                                color: Color.fromRGBO(47, 85, 221, 1),
+                              ),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(8),
                               ),
                             ),
                             child: Padding(
                               padding: EdgeInsets.symmetric(vertical: 12),
-                              child: Text('Share', style: AppTextStyles.normal500(fontSize: 18, color: const Color.fromRGBO(47, 85, 221, 1),)),
+                              child: Text('Share',
+                                  style: AppTextStyles.normal500(
+                                    fontSize: 18,
+                                    color: const Color.fromRGBO(47, 85, 221, 1),
+                                  )),
                             ),
                           ),
                         ),
@@ -186,14 +199,18 @@ class _ExpenseSelectVendorState extends State<ExpenseSelectVendor> {
                           child: ElevatedButton(
                             onPressed: () {},
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color.fromRGBO(47, 85, 221, 1),
+                              backgroundColor:
+                                  const Color.fromRGBO(47, 85, 221, 1),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(8),
                               ),
                             ),
                             child: Padding(
                               padding: EdgeInsets.symmetric(vertical: 12),
-                              child: Text('Download', style: AppTextStyles.normal500(fontSize: 16.0, color: AppColors.backgroundLight)),
+                              child: Text('Download',
+                                  style: AppTextStyles.normal500(
+                                      fontSize: 16.0,
+                                      color: AppColors.backgroundLight)),
                             ),
                           ),
                         ),

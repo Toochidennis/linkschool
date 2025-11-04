@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:linkschool/modules/model/admin/home/dashboard_feed_model.dart';
 import 'package:linkschool/modules/services/admin/home/all_feeds.dart';
@@ -14,7 +13,7 @@ class FeedsPaginationProvider with ChangeNotifier {
   bool _isLoadingMore = false;
   String? _message;
   String? _error;
-  List<Feed> _feeds = [];
+  final List<Feed> _feeds = [];
   int _currentPage = 1;
   bool _hasNextPage = true;
 
@@ -66,8 +65,8 @@ class FeedsPaginationProvider with ChangeNotifier {
     }
   }
 
-
-   Future<bool> updateFeed(Map<String, dynamic> updatedFeed, String feedId) async {
+  Future<bool> updateFeed(
+      Map<String, dynamic> updatedFeed, String feedId) async {
     _isLoading = true;
     _error = null;
     _message = null;

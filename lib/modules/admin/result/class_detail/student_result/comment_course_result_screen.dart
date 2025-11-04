@@ -30,7 +30,8 @@ class CommentCourseResultScreen extends StatefulWidget {
   });
 
   @override
-  State<CommentCourseResultScreen> createState() => _CommentCourseResultScreenState();
+  State<CommentCourseResultScreen> createState() =>
+      _CommentCourseResultScreenState();
 }
 
 class _CommentCourseResultScreenState extends State<CommentCourseResultScreen> {
@@ -42,9 +43,9 @@ class _CommentCourseResultScreenState extends State<CommentCourseResultScreen> {
   int _currentStudentIndex = 0;
   final SwiperController _swiperController = SwiperController();
   String? userRole;
-    
+
   // Comment modal state
-  bool _isCommentModalOpen = false;
+  final bool _isCommentModalOpen = false;
   final TextEditingController _modalCommentController = TextEditingController();
   bool _isSubmittingComment = false;
   bool _isEditing = false;
@@ -72,7 +73,8 @@ class _CommentCourseResultScreenState extends State<CommentCourseResultScreen> {
 
   // Check if user can post/edit comments based on term comparison
   bool _canUserPostOrEditComments() {
-    return widget.isUserCurrentTerm; // Only allow if user's term matches selected term
+    return widget
+        .isUserCurrentTerm; // Only allow if user's term matches selected term
   }
 
   // Fetch student results from API
@@ -117,7 +119,8 @@ class _CommentCourseResultScreenState extends State<CommentCourseResultScreen> {
           for (var subject in subjects) {
             final assessments = subject['assessments'] as List<dynamic>? ?? [];
             for (var assessment in assessments) {
-              uniqueAssessments.add(assessment['assessment_name'] as String? ?? '');
+              uniqueAssessments
+                  .add(assessment['assessment_name'] as String? ?? '');
             }
           }
           // Ensure comments field is a Map or null
@@ -195,15 +198,17 @@ class _CommentCourseResultScreenState extends State<CommentCourseResultScreen> {
           if (studentResults[_currentStudentIndex]['comments'] == null) {
             studentResults[_currentStudentIndex]['comments'] = {};
           }
-                    
+
           if (role == 'admin') {
-            studentResults[_currentStudentIndex]['comments']['principal_comment'] = comment;
+            studentResults[_currentStudentIndex]['comments']
+                ['principal_comment'] = comment;
           } else {
-            studentResults[_currentStudentIndex]['comments']['teacher_comment'] = comment;
+            studentResults[_currentStudentIndex]['comments']
+                ['teacher_comment'] = comment;
           }
           _isEditing = false; // Reset editing state after submission
         });
-                
+
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Comment submitted successfully!'),
@@ -239,7 +244,7 @@ class _CommentCourseResultScreenState extends State<CommentCourseResultScreen> {
     final currentStudent = studentResults[_currentStudentIndex];
     final comments = currentStudent['comments'];
     final canPostOrEdit = _canUserPostOrEditComments();
-        
+
     String existingComment = '';
     if (comments is Map<String, dynamic>) {
       if (userRole == 'admin') {
@@ -250,7 +255,7 @@ class _CommentCourseResultScreenState extends State<CommentCourseResultScreen> {
     } else if (comments is String && comments.isNotEmpty) {
       existingComment = comments;
     }
-        
+
     if (!_isEditing) {
       _modalCommentController.text = '';
     }
@@ -283,7 +288,7 @@ class _CommentCourseResultScreenState extends State<CommentCourseResultScreen> {
                 ),
               ),
               const SizedBox(height: 20),
-                            
+
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -307,7 +312,7 @@ class _CommentCourseResultScreenState extends State<CommentCourseResultScreen> {
                   ),
                 ],
               ),
-                            
+
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
@@ -318,12 +323,14 @@ class _CommentCourseResultScreenState extends State<CommentCourseResultScreen> {
                   children: [
                     CircleAvatar(
                       radius: 20,
-                      backgroundColor: Colors.primaries[_currentStudentIndex % Colors.primaries.length],
+                      backgroundColor: Colors.primaries[
+                          _currentStudentIndex % Colors.primaries.length],
                       child: Text(
                         currentStudent['student_name']?.isNotEmpty == true
                             ? currentStudent['student_name'][0].toUpperCase()
                             : 'S',
-                        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                        style: const TextStyle(
+                            color: Colors.white, fontWeight: FontWeight.bold),
                       ),
                     ),
                     const SizedBox(width: 12),
@@ -351,7 +358,7 @@ class _CommentCourseResultScreenState extends State<CommentCourseResultScreen> {
                   ],
                 ),
               ),
-                            
+
               const SizedBox(height: 20),
 
               // Show restriction message if user cannot post/edit
@@ -381,7 +388,7 @@ class _CommentCourseResultScreenState extends State<CommentCourseResultScreen> {
                 ),
                 const SizedBox(height: 20),
               ],
-                            
+
               // Show Post a comment input field only if no comments exist AND user can post
               if (!_hasExistingComment() && canPostOrEdit) ...[
                 Text(
@@ -412,30 +419,32 @@ class _CommentCourseResultScreenState extends State<CommentCourseResultScreen> {
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
-                    onPressed: _isSubmittingComment ? null : () async {
-                      if (_modalCommentController.text.trim().isEmpty) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Please enter a comment'),
-                            backgroundColor: Colors.orange,
-                          ),
-                        );
-                        return;
-                      }
-                                            
-                      setModalState(() {
-                        _isSubmittingComment = true;
-                      });
-                                            
-                      await submitComment(
-                        currentStudent['student_id'],
-                        _modalCommentController.text.trim(),
-                      );
-                                            
-                      setModalState(() {
-                        _isSubmittingComment = false;
-                      });
-                    },
+                    onPressed: _isSubmittingComment
+                        ? null
+                        : () async {
+                            if (_modalCommentController.text.trim().isEmpty) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Please enter a comment'),
+                                  backgroundColor: Colors.orange,
+                                ),
+                              );
+                              return;
+                            }
+
+                            setModalState(() {
+                              _isSubmittingComment = true;
+                            });
+
+                            await submitComment(
+                              currentStudent['student_id'],
+                              _modalCommentController.text.trim(),
+                            );
+
+                            setModalState(() {
+                              _isSubmittingComment = false;
+                            });
+                          },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.eLearningBtnColor1,
                       foregroundColor: Colors.white,
@@ -450,7 +459,8 @@ class _CommentCourseResultScreenState extends State<CommentCourseResultScreen> {
                             width: 20,
                             child: CircularProgressIndicator(
                               strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                              valueColor:
+                                  AlwaysStoppedAnimation<Color>(Colors.white),
                             ),
                           )
                         : const Text(
@@ -464,36 +474,40 @@ class _CommentCourseResultScreenState extends State<CommentCourseResultScreen> {
                 ),
                 const SizedBox(height: 20),
               ],
-                            
+
               // Show existing comments
               if (comments != null) ...[
                 if (comments is Map<String, dynamic>) ...[
-                  if (comments['principal_comment'] != null && comments['principal_comment'].toString().isNotEmpty)
+                  if (comments['principal_comment'] != null &&
+                      comments['principal_comment'].toString().isNotEmpty)
                     _buildCommentCard(
                       'Principal Comment',
                       comments['principal_comment'].toString(),
                       Colors.blue,
-                      canEdit: userRole == 'admin' && canPostOrEdit, // Only allow edit if user can post/edit
+                      canEdit: userRole == 'admin' &&
+                          canPostOrEdit, // Only allow edit if user can post/edit
                       onEdit: () {
                         setModalState(() {
                           _isEditing = true;
-                          _modalCommentController.text = comments['principal_comment'].toString();
+                          _modalCommentController.text =
+                              comments['principal_comment'].toString();
                         });
                       },
                     ),
-                                    
                   const SizedBox(height: 12),
-                                    
-                  if (comments['teacher_comment'] != null && comments['teacher_comment'].toString().isNotEmpty)
+                  if (comments['teacher_comment'] != null &&
+                      comments['teacher_comment'].toString().isNotEmpty)
                     _buildCommentCard(
                       'Teacher Comment',
                       comments['teacher_comment'].toString(),
                       Colors.green,
-                      canEdit: userRole == 'teacher' && canPostOrEdit, // Only allow edit if user can post/edit
+                      canEdit: userRole == 'teacher' &&
+                          canPostOrEdit, // Only allow edit if user can post/edit
                       onEdit: () {
                         setModalState(() {
                           _isEditing = true;
-                          _modalCommentController.text = comments['teacher_comment'].toString();
+                          _modalCommentController.text =
+                              comments['teacher_comment'].toString();
                         });
                       },
                     ),
@@ -506,7 +520,7 @@ class _CommentCourseResultScreenState extends State<CommentCourseResultScreen> {
                   ),
                 ],
                 const SizedBox(height: 20),
-                                
+
                 // Show edit comment field only if there is an existing comment AND user can edit
                 if (_hasExistingComment() && canPostOrEdit) ...[
                   Text(
@@ -537,30 +551,32 @@ class _CommentCourseResultScreenState extends State<CommentCourseResultScreen> {
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
-                      onPressed: _isSubmittingComment || !_isEditing ? null : () async {
-                        if (_modalCommentController.text.trim().isEmpty) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Please enter a comment'),
-                              backgroundColor: Colors.orange,
-                            ),
-                          );
-                          return;
-                        }
-                                                
-                        setModalState(() {
-                          _isSubmittingComment = true;
-                        });
-                                                
-                        await submitComment(
-                          currentStudent['student_id'],
-                          _modalCommentController.text.trim(),
-                        );
-                                                
-                        setModalState(() {
-                          _isSubmittingComment = false;
-                        });
-                      },
+                      onPressed: _isSubmittingComment || !_isEditing
+                          ? null
+                          : () async {
+                              if (_modalCommentController.text.trim().isEmpty) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text('Please enter a comment'),
+                                    backgroundColor: Colors.orange,
+                                  ),
+                                );
+                                return;
+                              }
+
+                              setModalState(() {
+                                _isSubmittingComment = true;
+                              });
+
+                              await submitComment(
+                                currentStudent['student_id'],
+                                _modalCommentController.text.trim(),
+                              );
+
+                              setModalState(() {
+                                _isSubmittingComment = false;
+                              });
+                            },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.eLearningBtnColor1,
                         foregroundColor: Colors.white,
@@ -575,7 +591,8 @@ class _CommentCourseResultScreenState extends State<CommentCourseResultScreen> {
                               width: 20,
                               child: CircularProgressIndicator(
                                 strokeWidth: 2,
-                                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                valueColor:
+                                    AlwaysStoppedAnimation<Color>(Colors.white),
                               ),
                             )
                           : const Text(
@@ -597,7 +614,8 @@ class _CommentCourseResultScreenState extends State<CommentCourseResultScreen> {
   }
 
   // Build comment card for displaying existing comments
-  Widget _buildCommentCard(String title, String comment, Color color, {bool canEdit = false, VoidCallback? onEdit}) {
+  Widget _buildCommentCard(String title, String comment, Color color,
+      {bool canEdit = false, VoidCallback? onEdit}) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(12),
@@ -650,22 +668,24 @@ class _CommentCourseResultScreenState extends State<CommentCourseResultScreen> {
   // Check if there is an existing comment for the current user role
   bool _hasExistingComment() {
     if (studentResults.isEmpty) return false;
-        
+
     final currentStudent = studentResults[_currentStudentIndex];
     final comments = currentStudent['comments'];
-        
+
     if (comments == null) return false;
-        
+
     if (comments is Map<String, dynamic>) {
       if (userRole == 'admin') {
-        return comments['principal_comment'] != null && comments['principal_comment'].toString().isNotEmpty;
+        return comments['principal_comment'] != null &&
+            comments['principal_comment'].toString().isNotEmpty;
       } else {
-        return comments['teacher_comment'] != null && comments['teacher_comment'].toString().isNotEmpty;
+        return comments['teacher_comment'] != null &&
+            comments['teacher_comment'].toString().isNotEmpty;
       }
     } else if (comments is String) {
       return comments.isNotEmpty;
     }
-        
+
     return false;
   }
 
@@ -737,7 +757,8 @@ class _CommentCourseResultScreenState extends State<CommentCourseResultScreen> {
                                   children: [
                                     Text(
                                       error!,
-                                      style: const TextStyle(color: Colors.red, fontSize: 16),
+                                      style: const TextStyle(
+                                          color: Colors.red, fontSize: 16),
                                     ),
                                     ElevatedButton(
                                       onPressed: fetchStudentResults,
@@ -763,7 +784,9 @@ class _CommentCourseResultScreenState extends State<CommentCourseResultScreen> {
                                           child: Column(
                                             children: [
                                               _buildSubjectsTable(student),
-                                              const SizedBox(height: 150), // Space for bottom sheet
+                                              const SizedBox(
+                                                  height:
+                                                      150), // Space for bottom sheet
                                             ],
                                           ),
                                         );
@@ -821,14 +844,17 @@ class _CommentCourseResultScreenState extends State<CommentCourseResultScreen> {
                         : null,
                     icon: Icon(
                       Icons.arrow_back_ios,
-                      color: _currentStudentIndex > 0 ? AppColors.eLearningBtnColor1 : Colors.grey,
+                      color: _currentStudentIndex > 0
+                          ? AppColors.eLearningBtnColor1
+                          : Colors.grey,
                     ),
                   ),
                   Row(
                     children: [
                       CircleAvatar(
                         radius: 16,
-                        backgroundColor: Colors.primaries[_currentStudentIndex % Colors.primaries.length],
+                        backgroundColor: Colors.primaries[
+                            _currentStudentIndex % Colors.primaries.length],
                         child: Text(
                           student['student_name']?.isNotEmpty == true
                               ? student['student_name'][0].toUpperCase()
@@ -894,7 +920,8 @@ class _CommentCourseResultScreenState extends State<CommentCourseResultScreen> {
     if (subjects.isEmpty) {
       return const Padding(
         padding: EdgeInsets.all(16.0),
-        child: Text('No subjects available', style: TextStyle(color: Colors.black)),
+        child: Text('No subjects available',
+            style: TextStyle(color: Colors.black)),
       );
     }
 
@@ -922,11 +949,13 @@ class _CommentCourseResultScreenState extends State<CommentCourseResultScreen> {
                               subjects,
                               entry.key,
                               isAssessment: true,
-                            ))
-                        .toList(),
-                    _buildScrollableColumn('Total', 100, subjects, -1, isTotal: true),
-                    _buildScrollableColumn('Grade', 100, subjects, -2, isGrade: true),
-                    _buildScrollableColumn('Remark', 100, subjects, -3, isRemark: true),
+                            )),
+                    _buildScrollableColumn('Total', 100, subjects, -1,
+                        isTotal: true),
+                    _buildScrollableColumn('Grade', 100, subjects, -2,
+                        isGrade: true),
+                    _buildScrollableColumn('Remark', 100, subjects, -3,
+                        isRemark: true),
                   ],
                 ),
               ),
@@ -988,8 +1017,12 @@ class _CommentCourseResultScreenState extends State<CommentCourseResultScreen> {
   }
 
   // Build scrollable column for assessments, total, grade, or remark
-  Widget _buildScrollableColumn(String title, double width, List subjects, int index,
-      {bool isAssessment = false, bool isTotal = false, bool isGrade = false, bool isRemark = false}) {
+  Widget _buildScrollableColumn(
+      String title, double width, List subjects, int index,
+      {bool isAssessment = false,
+      bool isTotal = false,
+      bool isGrade = false,
+      bool isRemark = false}) {
     return Container(
       width: width,
       decoration: BoxDecoration(
@@ -1020,7 +1053,8 @@ class _CommentCourseResultScreenState extends State<CommentCourseResultScreen> {
             final subject = entry.value;
             String value = '-';
             if (isAssessment) {
-              final assessmentData = (subject['assessments'] as List? ?? []).firstWhere(
+              final assessmentData =
+                  (subject['assessments'] as List? ?? []).firstWhere(
                 (a) => a['assessment_name'] == title,
                 orElse: () => {'score': ''},
               );
@@ -1058,7 +1092,3 @@ class _CommentCourseResultScreenState extends State<CommentCourseResultScreen> {
     );
   }
 }
-
-
-
-

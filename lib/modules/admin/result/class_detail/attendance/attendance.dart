@@ -42,7 +42,8 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _fetchAttendanceHistory());
+    WidgetsBinding.instance
+        .addPostFrameCallback((_) => _fetchAttendanceHistory());
     _searchController.addListener(_onSearchChanged);
   }
 
@@ -74,9 +75,6 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
       }
 
       final settings = authProvider.settings ?? authProvider.getSettings();
-      if (settings == null) {
-        throw Exception('Settings not available');
-      }
 
       final term = settings['term']?.toString() ?? '';
       final year = settings['year']?.toString() ?? '';
@@ -103,8 +101,8 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
 
     return records.where((record) {
       final formattedDate = provider.formatDate(record.date).toLowerCase();
-      final courseName = record.courseName.isEmpty 
-          ? 'general' 
+      final courseName = record.courseName.isEmpty
+          ? 'general'
           : record.courseName.toLowerCase();
 
       final dayName = _getDayName(record.date).toLowerCase();
@@ -113,7 +111,8 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
       final nameMatch = courseName.contains(_searchQuery);
       final dateMatch = formattedDate.contains(_searchQuery);
       final countMatch = record.count.toString().contains(_searchQuery);
-      final dayMatch = dayName.contains(_searchQuery) || shortDay.contains(_searchQuery);
+      final dayMatch =
+          dayName.contains(_searchQuery) || shortDay.contains(_searchQuery);
 
       return nameMatch || dateMatch || countMatch || dayMatch;
     }).toList();
@@ -121,7 +120,13 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
 
   String _getDayName(DateTime date) {
     const days = [
-      'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'
+      'monday',
+      'tuesday',
+      'wednesday',
+      'thursday',
+      'friday',
+      'saturday',
+      'sunday'
     ];
     return days[date.weekday - 1];
   }
@@ -169,7 +174,8 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                     return _buildError(provider.error);
                   }
 
-                  final filteredRecords = _getFilteredRecords(provider.attendanceRecords);
+                  final filteredRecords =
+                      _getFilteredRecords(provider.attendanceRecords);
 
                   // Show full content when not searching
                   if (!_isSearching || _searchQuery.isEmpty) {
@@ -185,8 +191,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
               ),
             ),
             // Search results overlay
-            if (_isSearching && _searchQuery.isNotEmpty)
-              _buildSearchResults(),
+            if (_isSearching && _searchQuery.isNotEmpty) _buildSearchResults(),
           ],
         ),
       ),
@@ -230,8 +235,8 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
         IconButton(
           onPressed: _toggleSearch,
           icon: SvgPicture.asset(
-            _isSearching 
-                ? 'assets/icons/close.svg' 
+            _isSearching
+                ? 'assets/icons/close.svg'
                 : 'assets/icons/result/search.svg',
             color: AppColors.backgroundLight,
           ),
@@ -282,7 +287,8 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                           itemCount: filteredRecords.length,
                           separatorBuilder: (context, index) =>
                               Divider(height: 1, color: Colors.grey[300]),
-                          itemBuilder: (context, index) => _buildHistoryItem(filteredRecords[index]),
+                          itemBuilder: (context, index) =>
+                              _buildHistoryItem(filteredRecords[index]),
                         ),
                       ),
               ),
@@ -295,7 +301,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
 
   Widget _buildContent(List<AttendanceRecord> filteredRecords) {
     final screenHeight = MediaQuery.of(context).size.height;
-    
+
     return SingleChildScrollView(
       physics: const AlwaysScrollableScrollPhysics(),
       child: Column(
@@ -313,7 +319,8 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
           Transform.translate(
             offset: Offset(0, -screenHeight * _headerTranslateRatio),
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: _horizontalPadding),
+              padding:
+                  const EdgeInsets.symmetric(horizontal: _horizontalPadding),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [

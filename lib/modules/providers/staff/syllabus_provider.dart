@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:linkschool/modules/model/staff/syllabus_model.dart';
 import 'package:linkschool/modules/services/staff/syllabus_service.dart';
@@ -103,7 +102,7 @@ class StaffSyllabusProvider with ChangeNotifier {
         title: title,
         description: description,
         term: term,
-        levelId:levelId,
+        levelId: levelId,
         classes: classes,
         // The following fields are not provided in the update, so set to null or empty
         authorName: null,
@@ -113,7 +112,7 @@ class StaffSyllabusProvider with ChangeNotifier {
         creatorId: null,
       );
 
-     await _staffSyllabusService.UpdateSyllabus(updatedSyllabus, syllabusId);
+      await _staffSyllabusService.UpdateSyllabus(updatedSyllabus, syllabusId);
       print("Syllabus updated and list refreshed");
     } catch (e) {
       _error = e.toString();
@@ -125,8 +124,8 @@ class StaffSyllabusProvider with ChangeNotifier {
     }
   }
 
-  Future<void> deletesyllabus(
-      int syllabusId, String levelId, String term, String courseId, String classId) async {
+  Future<void> deletesyllabus(int syllabusId, String levelId, String term,
+      String courseId, String classId) async {
     _isLoading = true;
     _error = '';
     notifyListeners();

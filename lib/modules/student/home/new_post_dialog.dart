@@ -58,7 +58,8 @@ class _NewPostDialogState extends State<NewPostDialog> {
               ),
               child: Text(
                 'Post',
-                style:AppTextStyles.normal500(fontSize: 14, color: AppColors.backgroundLight),
+                style: AppTextStyles.normal500(
+                    fontSize: 14, color: AppColors.backgroundLight),
               ),
             ),
           ),
@@ -95,10 +96,9 @@ class _NewPostDialogState extends State<NewPostDialog> {
                         child: Icon(Icons.person, color: Colors.grey[600]),
                       ),
                       const SizedBox(width: 12),
-                      Text(
-                        'Tochukwu Dennis',
-                        style: AppTextStyles.normal500(fontSize: 16, color: AppColors.backgroundDark)
-                      ),
+                      Text('Tochukwu Dennis',
+                          style: AppTextStyles.normal500(
+                              fontSize: 16, color: AppColors.backgroundDark)),
                     ],
                   ),
                 ),

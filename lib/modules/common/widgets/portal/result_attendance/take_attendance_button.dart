@@ -85,7 +85,7 @@ class _TakeAttendanceButtonState extends State<TakeAttendanceButton> {
         return StatefulBuilder(
           builder: (BuildContext context, StateSetter setModalState) {
             Future<List<Map<String, dynamic>>>? coursesFuture;
-            
+
             // Initialize the future
             coursesFuture = courseRegistrationService.getRegisteredCourses(
               classId: widget.classId,
@@ -93,7 +93,7 @@ class _TakeAttendanceButtonState extends State<TakeAttendanceButton> {
               term: term,
             );
 
-            Future<void> _refreshCourses() async {
+            Future<void> refreshCourses() async {
               setModalState(() {
                 coursesFuture = courseRegistrationService.getRegisteredCourses(
                   classId: widget.classId,
@@ -114,7 +114,9 @@ class _TakeAttendanceButtonState extends State<TakeAttendanceButton> {
                   );
                 }
 
-                if (snapshot.hasError || !snapshot.hasData || snapshot.data!.isEmpty) {
+                if (snapshot.hasError ||
+                    !snapshot.hasData ||
+                    snapshot.data!.isEmpty) {
                   return Container(
                     padding: const EdgeInsets.all(16),
                     child: Column(
@@ -164,14 +166,16 @@ class _TakeAttendanceButtonState extends State<TakeAttendanceButton> {
                       const SizedBox(height: 16),
                       Flexible(
                         child: RefreshIndicator(
-                          onRefresh: _refreshCourses,
+                          onRefresh: refreshCourses,
                           color: AppColors.primaryLight,
                           child: SingleChildScrollView(
                             physics: const AlwaysScrollableScrollPhysics(),
                             child: Column(
                               children: courses.map<Widget>((course) {
                                 final courseId = course['id']?.toString();
-                                final courseName = course['course_name']?.toString() ?? 'Unknown Course';
+                                final courseName =
+                                    course['course_name']?.toString() ??
+                                        'Unknown Course';
                                 return Padding(
                                   padding: const EdgeInsets.only(bottom: 8.0),
                                   child: _buildAttendanceButton(courseName, () {
@@ -179,7 +183,8 @@ class _TakeAttendanceButtonState extends State<TakeAttendanceButton> {
                                     Navigator.push(
                                       context,
                                       MaterialPageRoute(
-                                        builder: (context) => TakeCourseAttendance(
+                                        builder: (context) =>
+                                            TakeCourseAttendance(
                                           courseId: courseId ?? '',
                                           classId: widget.classId,
                                         ),

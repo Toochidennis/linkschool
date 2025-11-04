@@ -5,7 +5,6 @@ import 'package:linkschool/modules/services/explore/for_you_service.dart';
 import '../../model/explore/home/book_model.dart';
 import '../../model/explore/home/video_model.dart';
 
-
 class ForYouProvider with ChangeNotifier {
   final ForYouService _apiService = ForYouService();
   List<Game> _games = [];

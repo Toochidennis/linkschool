@@ -41,10 +41,22 @@ class QuizData {
 
   factory QuizData.fromJson(Map<String, dynamic> json) {
     return QuizData(
-      submitted: (json['submitted'] as List<dynamic>?)?.map((e) => QuizSubmission.fromJson(e as Map<String, dynamic>)).toList() ?? [],
-      unmarked: (json['unmarked'] as List<dynamic>?)?.map((e) => QuizSubmission.fromJson(e as Map<String, dynamic>)).toList() ?? [],
-      marked: (json['marked'] as List<dynamic>?)?.map((e) => QuizSubmission.fromJson(e as Map<String, dynamic>)).toList() ?? [],
-      notSubmitted: (json['not_submitted'] as List<dynamic>?)?.map((e) => QuizSubmission.fromJson(e as Map<String, dynamic>)).toList() ?? [],
+      submitted: (json['submitted'] as List<dynamic>?)
+              ?.map((e) => QuizSubmission.fromJson(e as Map<String, dynamic>))
+              .toList() ??
+          [],
+      unmarked: (json['unmarked'] as List<dynamic>?)
+              ?.map((e) => QuizSubmission.fromJson(e as Map<String, dynamic>))
+              .toList() ??
+          [],
+      marked: (json['marked'] as List<dynamic>?)
+              ?.map((e) => QuizSubmission.fromJson(e as Map<String, dynamic>))
+              .toList() ??
+          [],
+      notSubmitted: (json['not_submitted'] as List<dynamic>?)
+              ?.map((e) => QuizSubmission.fromJson(e as Map<String, dynamic>))
+              .toList() ??
+          [],
     );
   }
 
@@ -87,7 +99,10 @@ class QuizSubmission {
       contentId: json['content_id'] as int,
       studentId: json['student_id'] as int,
       studentName: json['student_name'] as String,
-      answers: (json['answers'] as List<dynamic>?)?.map((e) => QuizAnswer.fromJson(e as Map<String, dynamic>)).toList() ?? [],
+      answers: (json['answers'] as List<dynamic>?)
+              ?.map((e) => QuizAnswer.fromJson(e as Map<String, dynamic>))
+              .toList() ??
+          [],
       markingScore: json['marking_score'] as String,
       published: json['published'] as String?,
       score: json['score'] as String,

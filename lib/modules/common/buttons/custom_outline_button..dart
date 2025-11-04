@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 class CustomOutlineButton extends StatelessWidget {
   final VoidCallback onPressed;
   final String text;
-  final Color borderColor; 
+  final Color borderColor;
   final Color textColor;
   final double? height;
   final double? width;
@@ -15,7 +15,7 @@ class CustomOutlineButton extends StatelessWidget {
     required this.textColor,
     this.height,
     this.width,
-    super.key, 
+    super.key,
   });
 
   @override

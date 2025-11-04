@@ -9,7 +9,7 @@ import 'package:linkschool/modules/common/utils/dash_line_utils.dart';
 class InfoCard extends StatefulWidget {
   final String? className;
   final String? classId;
-  
+
   const InfoCard({super.key, this.className, this.classId});
 
   @override
@@ -17,20 +17,23 @@ class InfoCard extends StatefulWidget {
 }
 
 class _InfoCardState extends State<InfoCard> {
-    String _academicSession = '';
-   Map<String, dynamic> _settings = {};
-   String _selectedTerm = 'First term';
+  String _academicSession = '';
+  Map<String, dynamic> _settings = {};
+  String _selectedTerm = 'First term';
 
-    @override
+  @override
   void initState() {
     super.initState();
     _loadSettingsFromHive();
   }
-    void _loadSettingsFromHive() {
+
+  void _loadSettingsFromHive() {
     final userBox = Hive.box('userData');
     final userData = userBox.get('userData');
 
-    if (userData != null && userData['data'] != null && userData['data']['settings'] != null) {
+    if (userData != null &&
+        userData['data'] != null &&
+        userData['data']['settings'] != null) {
       setState(() {
         _settings = Map<String, dynamic>.from(userData['data']['settings']);
 
@@ -41,11 +44,11 @@ class _InfoCardState extends State<InfoCard> {
                 ? 'Second term'
                 : 'Third term';
 
-        _academicSession = "${int.parse(_settings['year'] ?? '2023') - 1}/${_settings['year'] ?? '2023'} academic session";
+        _academicSession =
+            "${int.parse(_settings['year'] ?? '2023') - 1}/${_settings['year'] ?? '2023'} academic session";
       });
     }
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -85,8 +88,11 @@ class _InfoCardState extends State<InfoCard> {
     return Container(
       width: 60,
       height: 60,
-      decoration: const BoxDecoration(color: AppColors.primaryLight, shape: BoxShape.circle),
-      child: Center(child: SvgPicture.asset('assets/icons/result/study_book.svg', width: 30, height: 30)),
+      decoration: const BoxDecoration(
+          color: AppColors.primaryLight, shape: BoxShape.circle),
+      child: Center(
+          child: SvgPicture.asset('assets/icons/result/study_book.svg',
+              width: 30, height: 30)),
     );
   }
 
@@ -96,9 +102,13 @@ class _InfoCardState extends State<InfoCard> {
       children: [
         _buildTermContainer(),
         const SizedBox(height: 4),
-        Text(_getClassName(), style: AppTextStyles.normal600(fontSize: 22, color: AppColors.primaryLight)),
+        Text(_getClassName(),
+            style: AppTextStyles.normal600(
+                fontSize: 22, color: AppColors.primaryLight)),
         const SizedBox(height: 4),
-        Text(_academicSession, style: AppTextStyles.normal500(fontSize: 14, color: AppColors.textGray)),
+        Text(_academicSession,
+            style: AppTextStyles.normal500(
+                fontSize: 14, color: AppColors.textGray)),
       ],
     );
   }
@@ -112,7 +122,9 @@ class _InfoCardState extends State<InfoCard> {
         borderRadius: BorderRadius.circular(10),
       ),
       child: Center(
-        child: Text(_getTermText(), style: AppTextStyles.normal600(fontSize: 12, color: AppColors.videoColor4)),
+        child: Text(_getTermText(),
+            style: AppTextStyles.normal600(
+                fontSize: 12, color: AppColors.videoColor4)),
       ),
     );
   }
@@ -123,11 +135,15 @@ class _InfoCardState extends State<InfoCard> {
       children: [
         Padding(
           padding: const EdgeInsets.only(left: 16.0),
-          child: Text('Date :', style: AppTextStyles.normal500(fontSize: 16, color: AppColors.textGray)),
+          child: Text('Date :',
+              style: AppTextStyles.normal500(
+                  fontSize: 16, color: AppColors.textGray)),
         ),
         Padding(
           padding: const EdgeInsets.only(left: 20.0),
-          child: Text(_getCurrentDate(), style: AppTextStyles.normal600(fontSize: 18, color: AppColors.primaryLight)),
+          child: Text(_getCurrentDate(),
+              style: AppTextStyles.normal600(
+                  fontSize: 18, color: AppColors.primaryLight)),
         ),
       ],
     );
@@ -138,7 +154,7 @@ class _InfoCardState extends State<InfoCard> {
     if (widget.className != null && widget.className!.isNotEmpty) {
       return widget.className!;
     }
-    
+
     // Fallback: try to get from Hive storage if not provided
     try {
       final userBox = Hive.box('userData');
@@ -150,7 +166,7 @@ class _InfoCardState extends State<InfoCard> {
     } catch (e) {
       print('Error getting class name from Hive: $e');
     }
-    
+
     return 'Unknown Class';
   }
 
@@ -159,10 +175,10 @@ class _InfoCardState extends State<InfoCard> {
     try {
       final userBox = Hive.box('userData');
       final settings = userBox.get('settings');
-      
+
       if (settings != null && settings is Map<String, dynamic>) {
         final term = settings['term'];
-        
+
         if (term != null) {
           switch (term.toString()) {
             case '1':
@@ -179,7 +195,7 @@ class _InfoCardState extends State<InfoCard> {
     } catch (e) {
       print('Error getting term from Hive: $e');
     }
-    
+
     return 'Third Term'; // Fallback to original dummy data
   }
 
@@ -188,10 +204,10 @@ class _InfoCardState extends State<InfoCard> {
     try {
       final userBox = Hive.box('userData');
       final settings = userBox.get('settings');
-      
+
       if (settings != null && settings is Map<String, dynamic>) {
         final year = settings['year'];
-        
+
         if (year != null) {
           final currentYear = int.tryParse(year.toString());
           if (currentYear != null) {
@@ -203,7 +219,7 @@ class _InfoCardState extends State<InfoCard> {
     } catch (e) {
       print('Error getting year from Hive: $e');
     }
-    
+
     return '2015/2016 Academic session'; // Fallback to original dummy data
   }
 
@@ -219,4 +235,3 @@ class _InfoCardState extends State<InfoCard> {
     }
   }
 }
-

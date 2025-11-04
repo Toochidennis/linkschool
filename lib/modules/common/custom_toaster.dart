@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:motion_toast/motion_toast.dart';
 
 class CustomToaster {
-
   static void toastSuccess(BuildContext context, String title, String message) {
     MotionToast.success(
       // icon: Icons.check_circle, // Success icon
@@ -10,7 +9,6 @@ class CustomToaster {
       description: Text(message, style: TextStyle(color: Colors.white)),
       animationType: AnimationType.fromTop,
       contentPadding: const EdgeInsets.all(10),
-
     ).show(context);
   }
 
@@ -18,7 +16,8 @@ class CustomToaster {
     MotionToast.warning(
       title: Text(title, style: TextStyle(color: Colors.white)),
       description: Text(message, style: TextStyle(color: Colors.white)),
-      animationType: AnimationType.fromTop,      contentPadding: const EdgeInsets.all(10),
+      animationType: AnimationType.fromTop,
+      contentPadding: const EdgeInsets.all(10),
     ).show(context);
   }
 
@@ -26,7 +25,8 @@ class CustomToaster {
     MotionToast.info(
       title: Text(title, style: TextStyle(color: Colors.white)),
       description: Text(message, style: TextStyle(color: Colors.white)),
-      animationType: AnimationType.fromTop,      contentPadding: const EdgeInsets.all(10),
+      animationType: AnimationType.fromTop,
+      contentPadding: const EdgeInsets.all(10),
     ).show(context);
   }
 
@@ -34,7 +34,8 @@ class CustomToaster {
     MotionToast.error(
       title: Text(title, style: TextStyle(color: Colors.white)),
       description: Text(message, style: TextStyle(color: Colors.white)),
-      animationType: AnimationType.fromTop,      contentPadding: const EdgeInsets.all(10), // // Adjust animation direction
+      animationType: AnimationType.fromTop,
+      contentPadding: const EdgeInsets.all(10), // // Adjust animation direction
     ).show(context);
   }
 }

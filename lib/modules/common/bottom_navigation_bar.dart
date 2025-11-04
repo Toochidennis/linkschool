@@ -77,11 +77,13 @@ class _CustomNavigationBarState extends State<CustomNavigationBar>
                     ),
                   ),
                   child: SvgPicture.asset(
+                    width: 24.0,
+                    height: 24.0,
                     widget.actionButtonImagePath,
                   ),
                 ),
                 inActiveIcon: Container(
-                  padding: const EdgeInsets.all(24.0),
+                  padding: const EdgeInsets.all(20.0),
                   decoration: BoxDecoration(
                     color: AppColors.paymentTxtColor1,
                     shape: BoxShape.circle,
@@ -102,7 +104,7 @@ class _CustomNavigationBarState extends State<CustomNavigationBar>
                   : AppColors.backgroundDark,
               appBarItems: widget.appBarItems,
               // ignore: avoid_types_as_parameter_names
-              bodyItems: widget.bodyItems, 
+              bodyItems: widget.bodyItems,
               // onTabSelected: (int ) {  },
               // onTabSelected: widget.onTabSelected,
             ),
@@ -112,4 +114,3 @@ class _CustomNavigationBarState extends State<CustomNavigationBar>
     );
   }
 }
-

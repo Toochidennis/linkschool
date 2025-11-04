@@ -9,10 +9,9 @@ import 'package:hive/hive.dart';
 import 'dart:convert';
 import 'package:linkschool/modules/common/custom_toaster.dart';
 
-
 class CourseRegistrationService {
   final ApiService _apiService = locator<ApiService>();
-  
+
   Future<bool> registerCourses({
     required String classId,
     required int year,
@@ -25,21 +24,21 @@ class CourseRegistrationService {
         print('Error: Class ID is empty');
         return false;
       }
-      
+
       // Debug the incoming courses
       print('Raw courses received: $courses');
-      
+
       // Transform and ensure courses match API expected format with proper types
       List<Map<String, dynamic>> registeredCourses = [];
-      
+
       for (var rawCourse in courses) {
         // Explicitly convert each course to the right format
         Map<String, dynamic> typedCourse = Map<String, dynamic>.from(rawCourse);
-        
+
         // Extract course_id carefully
         dynamic courseIdValue = typedCourse["id"] ?? typedCourse["course_id"];
         int courseId;
-        
+
         if (courseIdValue is int) {
           courseId = courseIdValue;
         } else if (courseIdValue is String) {
@@ -48,35 +47,32 @@ class CourseRegistrationService {
           print('Invalid course ID type: ${courseIdValue.runtimeType}');
           continue; // Skip this course
         }
-        
+
         // Extract course name
         String courseName = typedCourse["name"]?.toString() ?? "";
-        
+
         // Add to registered courses list
-        registeredCourses.add({
-          "course_id": courseId,
-          "name": courseName
-        });
+        registeredCourses.add({"course_id": courseId, "name": courseName});
       }
-      
+
       final Map<String, dynamic> payload = {
         "year": year,
         "term": term,
         "registered_courses": registeredCourses,
         "_db": EnvConfig.dbName
       };
-      
+
       // Print payload for debugging
       print('Sending payload: ${json.encode(payload)}');
-      
+
       final response = await _apiService.post(
         endpoint: 'portal/classes/$classId/course-registrations',
         body: payload,
       );
-      
+
       // Print response for debugging
       print('Response: ${response.statusCode} - ${response.message}');
-      
+
       return response.success;
     } catch (e) {
       print('Error registering courses: $e');
@@ -111,7 +107,8 @@ class CourseRegistrationService {
         queryParams: queryParams,
       );
 
-      print('Get registered courses response: ${response.statusCode} - ${response.message}');
+      print(
+          'Get registered courses response: ${response.statusCode} - ${response.message}');
 
       if (response.success && response.rawData != null) {
         final data = response.rawData!['data'];
@@ -128,7 +125,7 @@ class CourseRegistrationService {
           }).toList();
         }
       }
-      
+
       return [];
     } catch (e) {
       print('Error fetching registered courses: $e');
@@ -141,7 +138,7 @@ void showRegistrationDialog(BuildContext context, {required String classId}) {
   // Initialize selected courses list with proper typing
   List<Map<String, dynamic>> selectedCourses = [];
   final courseRegistrationService = CourseRegistrationService();
-  
+
   // Validate class ID before proceeding
   if (classId.isEmpty) {
     CustomToaster.toastError(
@@ -151,9 +148,9 @@ void showRegistrationDialog(BuildContext context, {required String classId}) {
     );
     return;
   }
-  
+
   print('Opening registration dialog for class ID: $classId');
-  
+
   showModalBottomSheet(
     context: context,
     isScrollControlled: true,
@@ -162,16 +159,20 @@ void showRegistrationDialog(BuildContext context, {required String classId}) {
       return StatefulBuilder(
         builder: (BuildContext context, StateSetter setState) {
           return FutureBuilder<List<Map<String, dynamic>>>(
-            future: _getRegisteredCoursesWithSettings(courseRegistrationService, classId),
+            future: _getRegisteredCoursesWithSettings(
+                courseRegistrationService, classId),
             builder: (context, snapshot) {
-              final List<Map<String, dynamic>> registeredCourses = snapshot.data ?? [];
-              
+              final List<Map<String, dynamic>> registeredCourses =
+                  snapshot.data ?? [];
+
               return Padding(
-                padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+                padding: EdgeInsets.only(
+                    bottom: MediaQuery.of(context).viewInsets.bottom),
                 child: Container(
                   decoration: const BoxDecoration(
                     color: Colors.white,
-                    borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+                    borderRadius:
+                        BorderRadius.vertical(top: Radius.circular(20)),
                   ),
                   padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
                   child: Column(
@@ -190,14 +191,13 @@ void showRegistrationDialog(BuildContext context, {required String classId}) {
                         onCoursesSelected: (courses) {
                           // Ensure we're working with List<Map<String, dynamic>>
                           selectedCourses = List<Map<String, dynamic>>.from(
-                            courses.map((dynamic course) {
-                              if (course is Map) {
-                                return Map<String, dynamic>.from(course);
-                              }
-                              return <String, dynamic>{}; // Empty map as fallback
-                            }).toList()
-                          );
-                          
+                              courses.map((dynamic course) {
+                            if (course is Map) {
+                              return Map<String, dynamic>.from(course);
+                            }
+                            return <String, dynamic>{}; // Empty map as fallback
+                          }).toList());
+
                           // Debug the selected courses
                           print('Selected courses (updated): $selectedCourses');
                         },
@@ -226,7 +226,7 @@ void showRegistrationDialog(BuildContext context, {required String classId}) {
                             );
                             return;
                           }
-                          
+
                           // Show loading indicator
                           showDialog(
                             context: context,
@@ -237,43 +237,47 @@ void showRegistrationDialog(BuildContext context, {required String classId}) {
                               );
                             },
                           );
-                          
+
                           try {
                             // Get settings data from Hive
                             final userBox = Hive.box('userData');
                             final dynamic rawSettings = userBox.get('settings');
-                            
+
                             if (rawSettings == null) {
                               throw Exception('Settings data not found');
                             }
-                            
+
                             // Ensure proper type casting from Hive
                             // This is critical as Hive often returns Map<dynamic, dynamic>
                             final Map<String, dynamic> typedSettings;
-                            
+
                             if (rawSettings is Map) {
-                              typedSettings = Map<String, dynamic>.from(rawSettings);
+                              typedSettings =
+                                  Map<String, dynamic>.from(rawSettings);
                             } else {
                               throw Exception('Invalid settings format');
                             }
-                            
+
                             // Get the year and term with proper error handling
                             int year;
                             int term;
-                            
+
                             try {
                               // Handle year
                               if (typedSettings['year'] is int) {
                                 year = typedSettings['year'];
                               } else {
-                                year = int.parse(typedSettings['year']?.toString() ?? '2025');
+                                year = int.parse(
+                                    typedSettings['year']?.toString() ??
+                                        '2025');
                               }
-                              
+
                               // Handle term
                               if (typedSettings['term'] is int) {
                                 term = typedSettings['term'];
                               } else {
-                                term = int.parse(typedSettings['term']?.toString() ?? '3');
+                                term = int.parse(
+                                    typedSettings['term']?.toString() ?? '3');
                               }
                             } catch (e) {
                               // Fallback values if parsing fails
@@ -281,27 +285,28 @@ void showRegistrationDialog(BuildContext context, {required String classId}) {
                               year = 2025;
                               term = 3;
                             }
-                            
+
                             // Print debug information
                             print('Registering courses for class ID: $classId');
                             print('Year: $year, Term: $term');
                             print('Selected courses: $selectedCourses');
-                            
+
                             // Call API to register courses
-                            final success = await courseRegistrationService.registerCourses(
+                            final success =
+                                await courseRegistrationService.registerCourses(
                               classId: classId,
                               year: year,
                               term: term,
                               courses: selectedCourses,
                             );
-                            
+
                             // Close loading dialog
                             Navigator.pop(context);
-                            
+
                             if (success) {
                               // Close registration dialog
                               Navigator.pop(context);
-                              
+
                               // Show success toast
                               CustomToaster.toastSuccess(
                                 context,
@@ -319,14 +324,14 @@ void showRegistrationDialog(BuildContext context, {required String classId}) {
                           } catch (e) {
                             // Close loading dialog
                             Navigator.pop(context);
-                            
+
                             // Show error toast with detailed error message for debugging
                             CustomToaster.toastError(
                               context,
                               'Error',
                               'Error: ${e.toString()}',
                             );
-                            
+
                             // Print the full error to the console
                             print('Registration error: $e');
                           }
@@ -346,14 +351,12 @@ void showRegistrationDialog(BuildContext context, {required String classId}) {
 
 // Helper function to get registered courses with settings
 Future<List<Map<String, dynamic>>> _getRegisteredCoursesWithSettings(
-  CourseRegistrationService service, 
-  String classId
-) async {
+    CourseRegistrationService service, String classId) async {
   try {
     // Get settings data from Hive
     final userBox = Hive.box('userData');
     final dynamic rawSettings = userBox.get('settings');
-    
+
     if (rawSettings == null) {
       print('Settings data not found, using default values');
       return await service.getRegisteredCourses(
@@ -362,10 +365,10 @@ Future<List<Map<String, dynamic>>> _getRegisteredCoursesWithSettings(
         term: 3,
       );
     }
-    
+
     // Ensure proper type casting from Hive
     final Map<String, dynamic> typedSettings;
-    
+
     if (rawSettings is Map) {
       typedSettings = Map<String, dynamic>.from(rawSettings);
     } else {
@@ -376,11 +379,11 @@ Future<List<Map<String, dynamic>>> _getRegisteredCoursesWithSettings(
         term: 3,
       );
     }
-    
+
     // Get the year and term with proper error handling
     int year;
     int term;
-    
+
     try {
       // Handle year
       if (typedSettings['year'] is int) {
@@ -388,7 +391,7 @@ Future<List<Map<String, dynamic>>> _getRegisteredCoursesWithSettings(
       } else {
         year = int.parse(typedSettings['year']?.toString() ?? '2025');
       }
-      
+
       // Handle term
       if (typedSettings['term'] is int) {
         term = typedSettings['term'];
@@ -401,7 +404,7 @@ Future<List<Map<String, dynamic>>> _getRegisteredCoursesWithSettings(
       year = 2025;
       term = 3;
     }
-    
+
     return await service.getRegisteredCourses(
       classId: classId,
       year: year,
@@ -412,8 +415,3 @@ Future<List<Map<String, dynamic>>> _getRegisteredCoursesWithSettings(
     return [];
   }
 }
-
-
-
-
-

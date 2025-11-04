@@ -5,7 +5,8 @@ class DashedLine extends StatelessWidget {
   final double width;
   final Color color;
 
-  const DashedLine({super.key, 
+  const DashedLine({
+    super.key,
     this.height = 1,
     this.width = 5,
     this.color = Colors.black,

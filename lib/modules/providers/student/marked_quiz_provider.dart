@@ -1,9 +1,7 @@
-
 import 'package:flutter/cupertino.dart';
 import 'package:linkschool/modules/model/student/streams_model.dart';
 import 'package:linkschool/modules/model/student/submitted_quiz_model.dart';
 import 'package:linkschool/modules/services/student/marked_quiz_service.dart';
-import 'package:linkschool/modules/services/student/streams_service.dart';
 
 class MarkedQuizProvider with ChangeNotifier {
   final MarkedQuizService _markedQuizService;
@@ -17,10 +15,8 @@ class MarkedQuizProvider with ChangeNotifier {
   int limit = 10;
   MarkedQuizProvider(this._markedQuizService);
 
-  Future<MarkedQuizModel?> fetchMarkedQuiz(int contentid, int year, int term) async {
-
-
-
+  Future<MarkedQuizModel?> fetchMarkedQuiz(
+      int contentid, int year, int term) async {
     isLoading = true;
     error = null;
     message = null;
@@ -33,7 +29,7 @@ class MarkedQuizProvider with ChangeNotifier {
         year: year,
       );
 
-      print ("Quest ${result}");
+      print("Quest $result");
       isLoading = false;
       notifyListeners();
       return result;
@@ -42,8 +38,6 @@ class MarkedQuizProvider with ChangeNotifier {
       error = e.toString();
       notifyListeners();
       return null;
-
     }
   }
-
 }

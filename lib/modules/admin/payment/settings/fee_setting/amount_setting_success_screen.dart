@@ -18,7 +18,8 @@ class AmountSettingSuccessScreen extends StatefulWidget {
   });
 
   @override
-  State<AmountSettingSuccessScreen> createState() => _AmountSettingSuccessScreenState();
+  State<AmountSettingSuccessScreen> createState() =>
+      _AmountSettingSuccessScreenState();
 }
 
 class _AmountSettingSuccessScreenState extends State<AmountSettingSuccessScreen>
@@ -31,19 +32,20 @@ class _AmountSettingSuccessScreenState extends State<AmountSettingSuccessScreen>
   @override
   void initState() {
     super.initState();
-    
+
     _checkAnimationController = AnimationController(
       duration: const Duration(milliseconds: 800),
       vsync: this,
     );
-    
+
     _fadeAnimationController = AnimationController(
       duration: const Duration(milliseconds: 500),
       vsync: this,
     );
 
     _checkAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _checkAnimationController, curve: Curves.elasticOut),
+      CurvedAnimation(
+          parent: _checkAnimationController, curve: Curves.elasticOut),
     );
 
     _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
@@ -149,7 +151,7 @@ class _AmountSettingSuccessScreenState extends State<AmountSettingSuccessScreen>
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 24),
-                    
+
                     // Total Amount Display
                     Container(
                       padding: const EdgeInsets.all(16),

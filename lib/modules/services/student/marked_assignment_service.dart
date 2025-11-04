@@ -1,6 +1,4 @@
-import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
-import 'package:linkschool/modules/model/student/streams_model.dart';
 import 'package:linkschool/modules/model/student/submitted_assignment_model.dart';
 import 'package:linkschool/modules/services/api/api_service.dart';
 
@@ -26,30 +24,25 @@ class MarkedAssignmentService {
 
     try {
       final response = await _apiService.get<Map<String, dynamic>>(
-        endpoint: 'portal/students/${contentid}/assignment-submissions',
+        endpoint: 'portal/students/$contentid/assignment-submissions',
         queryParams: {
           '_db': dbName,
-          'year':year,
+          'year': year,
           'term': term,
-          'content_id':contentid
+          'content_id': contentid
         },
       );
 
-
-      if(response.statusCode == 200) {
-        print("Gottt  ${MarkedAssignmentModel.fromJson(response.rawData!['response'])}");
-          return
-           MarkedAssignmentModel.fromJson(response.rawData!['response']);
-
-
-
-
+      if (response.statusCode == 200) {
+        print(
+            "Gottt  ${MarkedAssignmentModel.fromJson(response.rawData!['response'])}");
+        return MarkedAssignmentModel.fromJson(response.rawData!['response']);
       }
 
       throw Exception("Failed to Fetch Marked assignment: ${response.message}");
     } catch (e) {
       print("Error fetching Streams: $e");
-      throw Exception("Failed to Fetch ma: ${e}");
+      throw Exception("Failed to Fetch ma: $e");
     }
   }
 

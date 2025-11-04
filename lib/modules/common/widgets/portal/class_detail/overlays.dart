@@ -84,14 +84,16 @@ void showStudentResultOverlay(
 
                           if (provider.students.isEmpty) {
                             return const Center(
-                              child: Text('No students available in this class'),
+                              child:
+                                  Text('No students available in this class'),
                             );
                           }
 
                           return ListView.separated(
                             controller: controller,
                             itemCount: provider.students.length,
-                            separatorBuilder: (context, index) => const Divider(),
+                            separatorBuilder: (context, index) =>
+                                const Divider(),
                             itemBuilder: (context, index) {
                               final student = provider.students[index];
                               final firstLetter = student.fullName.isNotEmpty
@@ -117,7 +119,8 @@ void showStudentResultOverlay(
                                     Navigator.pushReplacement(
                                       context,
                                       MaterialPageRoute(
-                                        builder: (context) => StudentResultScreen(
+                                        builder: (context) =>
+                                            StudentResultScreen(
                                           studentName: student.fullName,
                                           className: className,
                                           studentId: student.id,
@@ -130,7 +133,8 @@ void showStudentResultOverlay(
                                     Navigator.push(
                                       context,
                                       MaterialPageRoute(
-                                        builder: (context) => StudentResultScreen(
+                                        builder: (context) =>
+                                            StudentResultScreen(
                                           studentName: student.fullName,
                                           className: className,
                                           studentId: student.id,
@@ -157,21 +161,16 @@ void showStudentResultOverlay(
   );
 }
 
-
-
-
-
-void showTermOverlay(BuildContext context, {
-  required String classId, 
-  required String levelId, 
-  required String year, 
-  required int termId, 
-  required String termName, 
-  required bool isCurrentTerm
-}) {
+void showTermOverlay(BuildContext context,
+    {required String classId,
+    required String levelId,
+    required String year,
+    required int termId,
+    required String termName,
+    required bool isCurrentTerm}) {
   // Check if selected term matches user's login term
   final isUserCurrentTerm = TermComparisonUtils.isCurrentUserTerm(year, termId);
-  
+
   showModalBottomSheet(
     context: context,
     isScrollControlled: true,
@@ -238,7 +237,7 @@ void showTermOverlay(BuildContext context, {
                       title: Text(labels[index]),
                       onTap: () {
                         Navigator.pop(context); // Close the overlay first
-                                                
+
                         if (labels[index] == 'Comment on results') {
                           Navigator.push(
                             context,
@@ -249,7 +248,8 @@ void showTermOverlay(BuildContext context, {
                                 term: termId,
                                 termName: termName,
                                 isCurrentTerm: isCurrentTerm,
-                                isUserCurrentTerm: isUserCurrentTerm, // Pass the comparison result
+                                isUserCurrentTerm:
+                                    isUserCurrentTerm, // Pass the comparison result
                               ),
                             ),
                           );
@@ -263,7 +263,8 @@ void showTermOverlay(BuildContext context, {
                                 term: termId,
                                 termName: termName,
                                 isCurrentTerm: isCurrentTerm,
-                                isUserCurrentTerm: isUserCurrentTerm, // Pass the comparison result
+                                isUserCurrentTerm:
+                                    isUserCurrentTerm, // Pass the comparison result
                               ),
                             ),
                           );
@@ -272,12 +273,12 @@ void showTermOverlay(BuildContext context, {
                           if (isUserCurrentTerm) {
                             // Show both Add and View options
                             _showSkillsBehaviourOverlay(
-                              context, 
-                              classId: classId, 
-                              levelId: levelId, 
-                              year: year, 
-                              termId: termId, 
-                              termName: termName, 
+                              context,
+                              classId: classId,
+                              levelId: levelId,
+                              year: year,
+                              termId: termId,
+                              termName: termName,
                               isCurrentTerm: isCurrentTerm,
                               showBothOptions: true,
                             );
@@ -286,7 +287,8 @@ void showTermOverlay(BuildContext context, {
                             Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (context) => AdminSkillsBehaviourScreen(
+                                builder: (context) =>
+                                    AdminSkillsBehaviourScreen(
                                   classId: classId,
                                   levelId: levelId,
                                   term: termId.toString(),
@@ -322,12 +324,13 @@ void showTermOverlay(BuildContext context, {
   );
 }
 
-void _showSkillsBehaviourOverlay(BuildContext context, {
-  required String classId, 
-  required String levelId, 
-  required String year, 
-  required int termId, 
-  required String termName, 
+void _showSkillsBehaviourOverlay(
+  BuildContext context, {
+  required String classId,
+  required String levelId,
+  required String year,
+  required int termId,
+  required String termName,
   required bool isCurrentTerm,
   required bool showBothOptions,
 }) {
@@ -386,7 +389,8 @@ void _showSkillsBehaviourOverlay(BuildContext context, {
                             Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (context) => AdminSkillsBehaviourScreen(
+                                builder: (context) =>
+                                    AdminSkillsBehaviourScreen(
                                   classId: classId,
                                   levelId: levelId,
                                   term: termId.toString(),
@@ -413,7 +417,8 @@ void _showSkillsBehaviourOverlay(BuildContext context, {
                             Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (context) => AdminSkillsBehaviourScreen(
+                                builder: (context) =>
+                                    AdminSkillsBehaviourScreen(
                                   classId: classId,
                                   levelId: levelId,
                                   term: termId.toString(),
@@ -437,7 +442,8 @@ void _showSkillsBehaviourOverlay(BuildContext context, {
   );
 }
 
-Widget _buildDialogButton(String text, String iconPath, VoidCallback onPressed) {
+Widget _buildDialogButton(
+    String text, String iconPath, VoidCallback onPressed) {
   return Container(
     decoration: BoxDecoration(
       border: Border.all(color: Colors.grey),
@@ -457,7 +463,3 @@ Widget _buildDialogButton(String text, String iconPath, VoidCallback onPressed) 
     ),
   );
 }
-
-
-
-

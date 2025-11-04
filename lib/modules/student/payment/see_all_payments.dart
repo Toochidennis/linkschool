@@ -54,7 +54,8 @@ class _PaymentHistorySeeAllScreenState
   void _openReceipt(BuildContext context, Payment payment) {
     showDialog(
       context: context,
-      builder: (_) => StudentRecieptDialog(payment: payment), // 👈 correct class name
+      builder: (_) =>
+          StudentRecieptDialog(payment: payment), // 👈 correct class name
     );
   }
 
@@ -100,8 +101,8 @@ class _PaymentHistorySeeAllScreenState
                         isDense: true,
                       ),
                       items: years
-                          .map((y) =>
-                              DropdownMenuItem(value: y, child: Text(y)))
+                          .map(
+                              (y) => DropdownMenuItem(value: y, child: Text(y)))
                           .toList(),
                       onChanged: (v) => setState(() => selectedYear = v),
                     ),
@@ -117,8 +118,8 @@ class _PaymentHistorySeeAllScreenState
                         isDense: true,
                       ),
                       items: terms
-                          .map((t) =>
-                              DropdownMenuItem(value: t, child: Text(t)))
+                          .map(
+                              (t) => DropdownMenuItem(value: t, child: Text(t)))
                           .toList(),
                       onChanged: (v) => setState(() => selectedTerm = v),
                     ),
@@ -189,10 +190,10 @@ class PaymentHistoryItem extends StatelessWidget {
   final VoidCallback onTap;
 
   const PaymentHistoryItem({
-    Key? key,
+    super.key,
     required this.payment,
     required this.onTap,
-  }) : super(key: key);
+  });
 
   String _formatDate(DateTime date) {
     return '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
@@ -241,7 +242,11 @@ class PaymentHistoryItem extends StatelessWidget {
             Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const NairaSvgIcon(color: AppColors.paymentTxtColor5, width: 16, height: 16,),
+                const NairaSvgIcon(
+                  color: AppColors.paymentTxtColor5,
+                  width: 16,
+                  height: 16,
+                ),
                 const SizedBox(width: 2),
                 Text(
                   _formatAmount(payment.amount),

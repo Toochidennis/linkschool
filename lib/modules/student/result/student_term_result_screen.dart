@@ -13,7 +13,8 @@ class TermResultScreen extends StatefulWidget {
   final String termTitle;
   final int termInt;
 
-  const TermResultScreen({super.key, required this.termTitle, required this.termInt});
+  const TermResultScreen(
+      {super.key, required this.termTitle, required this.termInt});
 
   @override
   State<TermResultScreen> createState() => _TermResultScreenState();
@@ -25,30 +26,31 @@ class _TermResultScreenState extends State<TermResultScreen> {
   bool isLoading = true;
   late double opacity;
 
-  getuserdata(){
+  getuserdata() {
     final userBox = Hive.box('userData');
     final storedUserData =
         userBox.get('userData') ?? userBox.get('loginResponse');
-    final processedData = storedUserData is String
-        ? json.decode(storedUserData)
-        : storedUserData;
+    final processedData =
+        storedUserData is String ? json.decode(storedUserData) : storedUserData;
     final response = processedData['response'] ?? processedData;
     final data = response['data'] ?? response;
     return data;
   }
+
   Future<void> fetchResult() async {
     final provider = Provider.of<StudentResultProvider>(context, listen: false);
     final data = await provider.fetchStudentResult(
       getuserdata()['profile']['level_id'],
       getuserdata()['profile']['class_id'],
-        getuserdata()['settings']['year'].toString(),
-       getuserdata()['settings']['term'],
+      getuserdata()['settings']['year'].toString(),
+      getuserdata()['settings']['term'],
     );
     setState(() {
       result = data;
       isLoading = false;
     });
   }
+
   @override
   void initState() {
     super.initState();
@@ -66,7 +68,7 @@ class _TermResultScreenState extends State<TermResultScreen> {
     }
     final Brightness brightness = Theme.of(context).brightness;
     opacity = brightness == Brightness.light ? 0.1 : 0.15;
-    return  Scaffold(
+    return Scaffold(
       appBar: AppBar(
         title: Text(
           'Student Result',
@@ -108,7 +110,7 @@ class _TermResultScreenState extends State<TermResultScreen> {
               // Implement download functionality
             },
             icon:
-            const Icon(Icons.download, color: AppColors.eLearningBtnColor1),
+                const Icon(Icons.download, color: AppColors.eLearningBtnColor1),
             label: const Text(
               'Download',
               style: TextStyle(color: AppColors.eLearningBtnColor1),
@@ -134,9 +136,7 @@ class _TermResultScreenState extends State<TermResultScreen> {
         ),
       ),
     );
-
-
-}
+  }
 
   List<DataRow> _buildRows(StudentResultModel result) {
     final rows = <DataRow>[];
@@ -148,7 +148,8 @@ class _TermResultScreenState extends State<TermResultScreen> {
         rows.add(
           DataRow(
             cells: [
-              DataCell(Text(i == 0 ? subject.courseName : "")), // only show subject once
+              DataCell(Text(
+                  i == 0 ? subject.courseName : "")), // only show subject once
               DataCell(Text(assessment.assessmentName)),
               DataCell(Text(assessment.score.toString())),
               DataCell(Text(i == 0 ? subject.total : "")),
@@ -162,7 +163,6 @@ class _TermResultScreenState extends State<TermResultScreen> {
 
     return rows;
   }
-
 
   Widget _buildTermSection(String title) {
     return Padding(
@@ -211,7 +211,7 @@ class _TermResultScreenState extends State<TermResultScreen> {
             style: const TextStyle(fontSize: 14),
           ),
           Text(
-            "${value}",
+            "$value",
             style: const TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w600,
@@ -224,12 +224,9 @@ class _TermResultScreenState extends State<TermResultScreen> {
   }
 
   Widget _buildSubjectsTable() {
-
-    final List<String> subjects = [
-
-    ];
-    for (SubjectResult i in result!.subjects){
-        subjects.add(i.courseName);
+    final List<String> subjects = [];
+    for (SubjectResult i in result!.subjects) {
+      subjects.add(i.courseName);
     }
 
     return Padding(
@@ -245,29 +242,25 @@ class _TermResultScreenState extends State<TermResultScreen> {
             Expanded(
               child: SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
-                child:
-                Row(
+                child: Row(
                   children: subjects.expand((subject) {
                     // Find the result for this subject
                     final subjectResult = result!.subjects.firstWhere(
-                          (s) => s.courseName == subject,
-                    );
-
-                    if (subjectResult == null) return <Widget>[]; // no match → return empty
+                      (s) => s.courseName == subject,
+                    ); // no match → return empty
 
                     // Loop through assessments inside subjectResult
                     return subjectResult.assessments.map((assessment) {
                       return _buildScrollableColumn(
-                        assessment.assessmentName,         // use assessment name
-                        double.tryParse(assessment.score.toString()) ?? 0.0, // score
+                        assessment.assessmentName, // use assessment name
+                        double.tryParse(assessment.score.toString()) ??
+                            0.0, // score
                         subjects,
                       );
                     }).toList();
                   }).toList(),
                 ),
-
               ),
-
             ),
           ],
         ),

@@ -101,7 +101,9 @@ class _QuizAnswersScreenState extends State<QuizAnswersScreen> {
           width: 89,
           height: 30,
           decoration: BoxDecoration(
-            color: isSelected ? const Color.fromRGBO(171, 190, 255, 1) : const Color.fromRGBO(224, 224, 224, 1),
+            color: isSelected
+                ? const Color.fromRGBO(171, 190, 255, 1)
+                : const Color.fromRGBO(224, 224, 224, 1),
             borderRadius: BorderRadius.circular(16),
           ),
           child: Stack(
@@ -126,7 +128,9 @@ class _QuizAnswersScreenState extends State<QuizAnswersScreen> {
                     ),
                     child: Text(
                       '$itemCount',
-                      style: const TextStyle(color: Color.fromRGBO(255, 255, 255, 1), fontSize: 10),
+                      style: const TextStyle(
+                          color: Color.fromRGBO(255, 255, 255, 1),
+                          fontSize: 10),
                     ),
                   ),
                 ),
@@ -146,7 +150,8 @@ class _QuizAnswersScreenState extends State<QuizAnswersScreen> {
           padding: const EdgeInsets.only(left: 16.0),
           child: Text(
             'NOT SUBMITTED',
-            style: AppTextStyles.normal600(fontSize: 16, color: AppColors.backgroundDark),
+            style: AppTextStyles.normal600(
+                fontSize: 16, color: AppColors.backgroundDark),
           ),
         ),
         Expanded(child: _buildListContent('NOT SUBMITTED')),
@@ -157,10 +162,26 @@ class _QuizAnswersScreenState extends State<QuizAnswersScreen> {
   Widget _buildListContent(String category) {
     // This is a mock list
     List<Map<String, String>> items = [
-      {'name': 'Joe Doe', 'progress': '9 of 15 questions answered', 'time': 'Yesterday'},
-      {'name': 'Sam Toochi', 'progress': '1 of 15 questions answered', 'time': 'Yesterday'},
-      {'name': 'Sam Ikenna', 'progress': '8 of 15 questions answered', 'time': 'Today'},
-      {'name': 'Smith Ifeanyi', 'progress': '6 of 15 questions answered', 'time': 'Today'},
+      {
+        'name': 'Joe Doe',
+        'progress': '9 of 15 questions answered',
+        'time': 'Yesterday'
+      },
+      {
+        'name': 'Sam Toochi',
+        'progress': '1 of 15 questions answered',
+        'time': 'Yesterday'
+      },
+      {
+        'name': 'Sam Ikenna',
+        'progress': '8 of 15 questions answered',
+        'time': 'Today'
+      },
+      {
+        'name': 'Smith Ifeanyi',
+        'progress': '6 of 15 questions answered',
+        'time': 'Today'
+      },
     ];
 
     return ListView.separated(
@@ -171,7 +192,11 @@ class _QuizAnswersScreenState extends State<QuizAnswersScreen> {
         return ListTile(
           leading: CircleAvatar(
             backgroundColor: AppColors.primaryLight,
-            child: Text(item['name']![0], style: AppTextStyles.normal500(fontSize: 16, color: AppColors.backgroundLight),),
+            child: Text(
+              item['name']![0],
+              style: AppTextStyles.normal500(
+                  fontSize: 16, color: AppColors.backgroundLight),
+            ),
           ),
           title: Text(item['name']!),
           subtitle: Text(item['progress']!),

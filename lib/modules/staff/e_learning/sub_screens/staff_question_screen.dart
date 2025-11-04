@@ -24,27 +24,26 @@ class StaffQuestionScreen extends StatefulWidget {
   final String? levelId;
   final String? courseName;
   final int? syllabusId;
-   final syllabusClasses;
+  final syllabusClasses;
 
-     final bool editMode;
-  final Question?  questionToEdit;
+  final bool editMode;
+  final Question? questionToEdit;
 
-  const StaffQuestionScreen({
-    super.key,
-    required this.onSave,
-    this.question,
-    this.isEditing = false,
-    this.classId,
-    this.courseId,
-    this.levelId,
-    this.courseName,
-    this.syllabusId,
+  const StaffQuestionScreen(
+      {super.key,
+      required this.onSave,
+      this.question,
+      this.isEditing = false,
+      this.classId,
+      this.courseId,
+      this.levelId,
+      this.courseName,
+      this.syllabusId,
       this.syllabusClasses,
-       this.questions,
-       this.classes,
+      this.questions,
+      this.classes,
       this.editMode = false,
-      this.questionToEdit
-  });
+      this.questionToEdit});
 
   @override
   State<StaffQuestionScreen> createState() => _StaffQuestionScreenState();
@@ -58,8 +57,8 @@ class _StaffQuestionScreenState extends State<StaffQuestionScreen> {
   DateTime _startDate = DateTime.now();
   DateTime _endDate = DateTime.now().add(const Duration(days: 1));
   String _selectedTopic = 'No Topic';
-    int? _selectedTopicId;
-  Duration _selectedDuration = const Duration(seconds:0 );
+  int? _selectedTopicId;
+  Duration _selectedDuration = const Duration(seconds: 0);
   String _marks = '0 marks';
   late double opacity;
   bool isLoading = false;
@@ -74,7 +73,7 @@ class _StaffQuestionScreenState extends State<StaffQuestionScreen> {
   //bool _isMarksValid = true;
   bool _isDurationValid = true;
   bool _isDateValid = true;
-  bool _isClassValid = true;
+  final bool _isClassValid = true;
 
   @override
   void initState() {
@@ -82,39 +81,37 @@ class _StaffQuestionScreenState extends State<StaffQuestionScreen> {
     _loadUserData();
     _populateFormForEdit();
     if (widget.question != null) {
-     
       _titleController.text = widget.question!.title;
       _descriptionController.text = widget.question!.description;
       _selectedClass = widget.question!.selectedClass;
       _startDate = widget.question!.startDate;
       _endDate = widget.question!.endDate;
-      _selectedTopic = widget.question!.topic ;
-_selectedTopicId = widget.question!.topicId;
+      _selectedTopic = widget.question!.topic;
+      _selectedTopicId = widget.question!.topicId;
       _selectedDuration = widget.question!.duration;
       _marks = widget.question!.marks;
     }
   }
 
- void _populateFormForEdit() {
-  if (widget.editMode && widget.questionToEdit != null) {
-    final question = widget.questionToEdit!;
-    _titleController.text = question.title;
-    _descriptionController.text = question.description;
-    _marksController.text = question.marks;
-    _endDate = question.endDate;
-    _startDate = question.startDate;
-    _selectedDuration =question.duration;
-    _selectedTopic = question.topic;
-    //  _attachments = question.attachments;
-     _selectedClass = question.selectedClass;
+  void _populateFormForEdit() {
+    if (widget.editMode && widget.questionToEdit != null) {
+      final question = widget.questionToEdit!;
+      _titleController.text = question.title;
+      _descriptionController.text = question.description;
+      _marksController.text = question.marks;
+      _endDate = question.endDate;
+      _startDate = question.startDate;
+      _selectedDuration = question.duration;
+      _selectedTopic = question.topic;
+      //  _attachments = question.attachments;
+      _selectedClass = question.selectedClass;
+    }
   }
-}
-
 
   // Validation methods
   // bool _validateMarks() {
-  //   final isValid = _marks != ' marks' && 
-  //                  _marks.isNotEmpty && 
+  //   final isValid = _marks != ' marks' &&
+  //                  _marks.isNotEmpty &&
   //                  _marks != 'Select marks' &&
   //                  int.tryParse(_marks.replaceAll(' marks', '')) != null;
   //   setState(() => _isMarksValid = isValid);
@@ -133,16 +130,13 @@ _selectedTopicId = widget.question!.topicId;
     return isValid;
   }
 
-
-
   bool _validateAll() {
-  //  final marksValid = _validateMarks();
+    //  final marksValid = _validateMarks();
     final durationValid = _validateDuration();
     final datesValid = _validateDates();
 
-    
-  //  return marksValid && durationValid && datesValid && classValid;
-    return durationValid && datesValid ;
+    //  return marksValid && durationValid && datesValid && classValid;
+    return durationValid && datesValid;
   }
 
   Future<void> _loadUserData() async {
@@ -150,7 +144,8 @@ _selectedTopicId = widget.question!.topicId;
 
     try {
       final userBox = Hive.box('userData');
-      final storedUserData = userBox.get('userData') ?? userBox.get('loginResponse');
+      final storedUserData =
+          userBox.get('userData') ?? userBox.get('loginResponse');
       if (storedUserData != null) {
         final processedData = storedUserData is String
             ? json.decode(storedUserData)
@@ -163,7 +158,7 @@ _selectedTopicId = widget.question!.topicId;
         setState(() {
           creatorId = profile['staff_id'] as int?;
           creatorRole = profile['role']?.toString();
-           creatorName = profile['name']?.toString();
+          creatorName = profile['name']?.toString();
           academicYear = settings['year']?.toString();
           academicTerm = settings['term'] as int?;
         });
@@ -192,17 +187,20 @@ _selectedTopicId = widget.question!.topicId;
       setState(() => isLoading = true);
 
       try {
-        
         final userBox = Hive.box('userData');
         final storedCourseId = userBox.get('selectedCourseId');
         final storedLevelId = userBox.get('selectedLevelId');
         final selectedClassIds = userBox.get('selectedClassIds') ?? [];
         print('Selected Class IDs: $selectedClassIds');
 
-        final courseId = widget.courseId ?? storedCourseId?.toString() ?? 'course_not_selected';
-        final levelId = widget.levelId ?? storedLevelId?.toString() ?? 'level_not_selected';
+        final courseId = widget.courseId ??
+            storedCourseId?.toString() ??
+            'course_not_selected';
+        final levelId =
+            widget.levelId ?? storedLevelId?.toString() ?? 'level_not_selected';
 
-        final storedUserData = userBox.get('userData') ?? userBox.get('loginResponse');
+        final storedUserData =
+            userBox.get('userData') ?? userBox.get('loginResponse');
         if (storedUserData == null) {
           print('Error: No user data found in Hive');
           return;
@@ -213,33 +211,35 @@ _selectedTopicId = widget.question!.topicId;
         final response = processedData['response'] ?? processedData;
         final data = response['data'] ?? response;
         final classes = data['classes'] ?? [];
-        print('Classes Data: ${const JsonEncoder.withIndent('  ').convert(classes)}');
+        print(
+            'Classes Data: ${const JsonEncoder.withIndent('  ').convert(classes)}');
 
-           final classIdList = selectedClassIds.map<Map<String, String>>((classId) {
-      final classIdStr = classId.toString();
-      final classData = classes.firstWhere(
-        (cls) => cls['id'].toString() == classIdStr,
-        orElse: () => {'id': classIdStr, 'class_name': 'Unknown'},
-      );
-     return {
-  'id': classIdStr,
-  'name': (classData['class_name']?.toString() ?? 'Unknown'),
-};
+        final classIdList =
+            selectedClassIds.map<Map<String, String>>((classId) {
+          final classIdStr = classId.toString();
+          final classData = classes.firstWhere(
+            (cls) => cls['id'].toString() == classIdStr,
+            orElse: () => {'id': classIdStr, 'class_name': 'Unknown'},
+          );
+          return {
+            'id': classIdStr,
+            'name': (classData['class_name']?.toString() ?? 'Unknown'),
+          };
+        }).toList();
 
-    }).toList();
-
-    if (classIdList.isEmpty && widget.classId != null) {
-      final classIdStr = widget.classId!;
-      final classData = classes.firstWhere(
-        (cls) => cls['id'].toString() == classIdStr,
-        orElse: () => {'id': classIdStr, 'class_name': _selectedClass},
-      );
-      classIdList.add({
-        'id': classIdStr,
-        'name': (classData['class_name']?.toString() ?? _selectedClass),
-      });
-    }
-        print('Class ID List: ${const JsonEncoder.withIndent('  ').convert(classIdList)}');
+        if (classIdList.isEmpty && widget.classId != null) {
+          final classIdStr = widget.classId!;
+          final classData = classes.firstWhere(
+            (cls) => cls['id'].toString() == classIdStr,
+            orElse: () => {'id': classIdStr, 'class_name': _selectedClass},
+          );
+          classIdList.add({
+            'id': classIdStr,
+            'name': (classData['class_name']?.toString() ?? _selectedClass),
+          });
+        }
+        print(
+            'Class ID List: ${const JsonEncoder.withIndent('  ').convert(classIdList)}');
 
         final question = Question(
           topicId: _selectedTopicId ?? 0,
@@ -260,10 +260,10 @@ _selectedTopicId = widget.question!.topicId;
           'start_date': _startDate.toIso8601String(),
           'end_date': _endDate.toIso8601String(),
           'topic': _selectedTopic,
-           "topic_id": _selectedTopicId  ?? 0,
+          "topic_id": _selectedTopicId ?? 0,
           'duration': _selectedDuration.inMinutes,
- // or .inMinutes
-          'marks':int.tryParse(_marks.replaceAll(' marks', '')) ,
+          // or .inMinutes
+          'marks': int.tryParse(_marks.replaceAll(' marks', '')),
           'course_id': courseId,
           "course_name": widget.courseName!,
           'syllabus_id': widget.syllabusId!,
@@ -274,27 +274,28 @@ _selectedTopicId = widget.question!.topicId;
           'creator_id': creatorId ?? 0,
         };
 
-        print('Complete Question Data: ${const JsonEncoder.withIndent('  ').convert(questionData)}');
+        print(
+            'Complete Question Data: ${const JsonEncoder.withIndent('  ').convert(questionData)}');
 
         await Future.delayed(const Duration(seconds: 1));
 
         if (mounted) {
           widget.onSave(question);
-       print('SSSSSSSSSSSSSSSSSSSSSSSSSSSSSS $_selectedDuration');
-      
+          print('SSSSSSSSSSSSSSSSSSSSSSSSSSSSSS $_selectedDuration');
+
           Navigator.of(context).push(
             MaterialPageRoute(
               builder: (context) => StaffViewQuestionScreen(
-                   onSaveFlag: (){
-                  widget.onSave?.call(question);
-                 },
-                 onCreation:(){
-                  widget.onSave?.call(question);
-                 } ,
-                questiondata: questionData,
-                 questions: widget.questions,
-                class_ids:widget.classes,
-                question: question),
+                  onSaveFlag: () {
+                    widget.onSave.call(question);
+                  },
+                  onCreation: () {
+                    widget.onSave.call(question);
+                  },
+                  questiondata: questionData,
+                  questions: widget.questions,
+                  class_ids: widget.classes,
+                  question: question),
             ),
           );
         }
@@ -318,7 +319,6 @@ _selectedTopicId = widget.question!.topicId;
         'Validation Error',
         'Please fill all required fields',
       );
-      
     }
   }
 
@@ -342,8 +342,8 @@ _selectedTopicId = widget.question!.topicId;
               Navigator.of(context).pop();
               return;
             }
-           Navigator.of(context).popUntil(ModalRoute.withName('/empty_subject'));
-
+            Navigator.of(context)
+                .popUntil(ModalRoute.withName('/empty_subject'));
           },
           icon: Image.asset(
             'assets/icons/arrow_back.png',
@@ -450,19 +450,19 @@ _selectedTopicId = widget.question!.topicId;
                         fontSize: 16.0, color: Colors.black),
                   ),
                   const SizedBox(height: 16.0),
-                
                   _buildGroupRow(
                     context,
                     iconPath: 'assets/icons/e_learning/mark.svg',
                     text: _marks,
-                  // isValid: _isMarksValid,
+                    // isValid: _isMarksValid,
                     showEditButton: true,
                     onTap: _showMarksDialog,
                   ),
                   _buildGroupRow(
                     context,
                     iconPath: 'assets/icons/e_learning/calender.svg',
-                    text: 'Start: ${_formatDate(_startDate)}\nDue: ${_formatDate(_endDate)}',
+                    text:
+                        'Start: ${_formatDate(_startDate)}\nDue: ${_formatDate(_endDate)}',
                     isValid: _isDateValid,
                     showEditButton: true,
                     isSelected: true,
@@ -477,13 +477,14 @@ _selectedTopicId = widget.question!.topicId;
                     onTap: _showDurationPicker,
                   ),
                   _buildGroupRow(
-  context,
-  iconPath: 'assets/icons/e_learning/clipboard.svg',
-  text: _selectedTopic,
-  showEditButton: true,
-  isSelected: _selectedTopic != 'No Topic',  // Add this condition
-  onTap: () => _selectTopic(),
-),
+                    context,
+                    iconPath: 'assets/icons/e_learning/clipboard.svg',
+                    text: _selectedTopic,
+                    showEditButton: true,
+                    isSelected:
+                        _selectedTopic != 'No Topic', // Add this condition
+                    onTap: () => _selectTopic(),
+                  ),
                 ],
               ),
             ),
@@ -519,29 +520,33 @@ _selectedTopicId = widget.question!.topicId;
                   iconPath,
                   width: 32.0,
                   height: 32.0,
-                ), 
+                ),
               ),
               const SizedBox(width: 8.0),
               IntrinsicWidth(
-                child:Container(
-  padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 14.0),
-  decoration: BoxDecoration(
-    color: isSelected
-        ? Colors.transparent
-        : isValid 
-            ? AppColors.eLearningBtnColor2 
-            : Colors.red.withOpacity(0.2),
-    borderRadius: BorderRadius.circular(18),
-    border: isValid ? null : Border.all(color: Colors.red, width: 1),
-  ),
-  child: Text(
-    text,
-    style: AppTextStyles.normal600(
-      fontSize: 16.0,
-      color: isValid ? AppColors.eLearningBtnColor1 : Colors.red,
-    ),
-  ),
-),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                      vertical: 8.0, horizontal: 14.0),
+                  decoration: BoxDecoration(
+                    color: isSelected
+                        ? Colors.transparent
+                        : isValid
+                            ? AppColors.eLearningBtnColor2
+                            : Colors.red.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(18),
+                    border: isValid
+                        ? null
+                        : Border.all(color: Colors.red, width: 1),
+                  ),
+                  child: Text(
+                    text,
+                    style: AppTextStyles.normal600(
+                      fontSize: 16.0,
+                      color:
+                          isValid ? AppColors.eLearningBtnColor1 : Colors.red,
+                    ),
+                  ),
+                ),
               ),
               const Spacer(),
               if (showEditButton)
@@ -555,7 +560,8 @@ _selectedTopicId = widget.question!.topicId;
                       padding: const EdgeInsets.symmetric(
                           horizontal: 12, vertical: 8),
                       side: BorderSide(
-                        color: isValid ? AppColors.eLearningBtnColor1 : Colors.red,
+                        color:
+                            isValid ? AppColors.eLearningBtnColor1 : Colors.red,
                       ),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(10),
@@ -564,7 +570,8 @@ _selectedTopicId = widget.question!.topicId;
                     child: Text(
                       'Edit',
                       style: TextStyle(
-                        color: isValid ? AppColors.eLearningBtnColor1 : Colors.red,
+                        color:
+                            isValid ? AppColors.eLearningBtnColor1 : Colors.red,
                       ),
                     ),
                   ),
@@ -599,7 +606,8 @@ _selectedTopicId = widget.question!.topicId;
               children: [
                 Text(
                   'Set marks',
-                  style: AppTextStyles.normal600(fontSize: 18.0, color: Colors.black),
+                  style: AppTextStyles.normal600(
+                      fontSize: 18.0, color: Colors.black),
                 ),
                 const SizedBox(height: 16),
                 TextFormField(
@@ -612,7 +620,9 @@ _selectedTopicId = widget.question!.topicId;
                     ),
                   ),
                   validator: (value) {
-                    if (value == null || value.isEmpty || int.tryParse(value) == null) {
+                    if (value == null ||
+                        value.isEmpty ||
+                        int.tryParse(value) == null) {
                       return 'Please enter a valid number';
                     }
                     return null;
@@ -631,7 +641,7 @@ _selectedTopicId = widget.question!.topicId;
                     const SizedBox(width: 8),
                     ElevatedButton(
                       onPressed: () {
-                        if (_marksController.text.isNotEmpty && 
+                        if (_marksController.text.isNotEmpty &&
                             int.tryParse(_marksController.text) != null) {
                           setState(() {
                             _marks = '${_marksController.text} marks';
@@ -644,7 +654,6 @@ _selectedTopicId = widget.question!.topicId;
                             'Invalid Input',
                             'Please enter a valid number',
                           );
-                          
                         }
                       },
                       style: ElevatedButton.styleFrom(
@@ -774,29 +783,30 @@ _selectedTopicId = widget.question!.topicId;
   }
 
   void _selectTopic() async {
-  if (widget.levelId == null) {
-    CustomToaster.toastError(context, 'Error', 'Level ID is missing');
-    return;
-  }
-  final result = await Navigator.push(
-    context,
-    MaterialPageRoute(
-      builder: (context) => SelectTopicScreen(
-        callingScreen: '',
-        syllabusId: widget.syllabusId,
-        levelId: widget.levelId, // no '!'
+    if (widget.levelId == null) {
+      CustomToaster.toastError(context, 'Error', 'Level ID is missing');
+      return;
+    }
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => SelectTopicScreen(
+          callingScreen: '',
+          syllabusId: widget.syllabusId,
+          levelId: widget.levelId, // no '!'
+        ),
       ),
-    ),
-  );
-  print("Selected ${ widget.syllabusId! } Class: ${widget.levelId}, Syllabus ID: ${widget.syllabusId}");
-if (result != null && result is Map) {
+    );
+    print(
+        "Selected ${widget.syllabusId!} Class: ${widget.levelId}, Syllabus ID: ${widget.syllabusId}");
+    if (result != null && result is Map) {
       setState(() {
-           _selectedTopic = result['topicName'] ?? 'No Topic'; // Update topic name
+        _selectedTopic = result['topicName'] ?? 'No Topic'; // Update topic name
         _selectedTopicId = result['topicId']; // Store topic ID
-
       });
     }
-}}
+  }
+}
 
 class DateRangePickerDialog extends StatefulWidget {
   final DateTime initialStartDate;
@@ -832,9 +842,11 @@ class _DateRangePickerDialogState extends State<DateRangePickerDialog> {
   }
 
   bool _validateDates() {
-    final isValid = _endDate.isAfter(_startDate) || 
-                   (_endDate == _startDate && _endTime.hour > _startTime.hour) ||
-                   (_endDate == _startDate && _endTime.hour == _startTime.hour && _endTime.minute > _startTime.minute);
+    final isValid = _endDate.isAfter(_startDate) ||
+        (_endDate == _startDate && _endTime.hour > _startTime.hour) ||
+        (_endDate == _startDate &&
+            _endTime.hour == _startTime.hour &&
+            _endTime.minute > _startTime.minute);
     setState(() => _isDateValid = isValid);
     return isValid;
   }
@@ -891,27 +903,29 @@ class _DateRangePickerDialogState extends State<DateRangePickerDialog> {
                 ),
                 SizedBox(width: 8),
                 ElevatedButton(
-                  onPressed: _isDateValid ? () {
-                    final startDateTime = DateTime(
-                      _startDate.year,
-                      _startDate.month,
-                      _startDate.day,
-                      _startTime.hour,
-                      _startTime.minute,
-                    );
-                    final endDateTime = DateTime(
-                      _endDate.year,
-                      _endDate.month,
-                      _endDate.day,
-                      _endTime.hour,
-                      _endTime.minute,
-                    );
-                    widget.onSave(startDateTime, endDateTime);
-                    Navigator.of(context).pop();
-                  } : null,
+                  onPressed: _isDateValid
+                      ? () {
+                          final startDateTime = DateTime(
+                            _startDate.year,
+                            _startDate.month,
+                            _startDate.day,
+                            _startTime.hour,
+                            _startTime.minute,
+                          );
+                          final endDateTime = DateTime(
+                            _endDate.year,
+                            _endDate.month,
+                            _endDate.day,
+                            _endTime.hour,
+                            _endTime.minute,
+                          );
+                          widget.onSave(startDateTime, endDateTime);
+                          Navigator.of(context).pop();
+                        }
+                      : null,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: _isDateValid 
-                        ? AppColors.eLearningBtnColor1 
+                    backgroundColor: _isDateValid
+                        ? AppColors.eLearningBtnColor1
                         : Colors.grey,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(4.0),
@@ -920,7 +934,8 @@ class _DateRangePickerDialogState extends State<DateRangePickerDialog> {
                   ),
                   child: Text(
                     'Save',
-                    style: AppTextStyles.normal600(fontSize: 16, color: Colors.white),
+                    style: AppTextStyles.normal600(
+                        fontSize: 16, color: Colors.white),
                   ),
                 ),
               ],
@@ -941,7 +956,8 @@ class _DateRangePickerDialogState extends State<DateRangePickerDialog> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: AppTextStyles.normal600(fontSize: 16, color: Colors.black)),
+        Text(label,
+            style: AppTextStyles.normal600(fontSize: 16, color: Colors.black)),
         SizedBox(height: 8),
         Row(
           children: [
@@ -967,7 +983,8 @@ class _DateRangePickerDialogState extends State<DateRangePickerDialog> {
                   ),
                   child: Text(
                     '${date.day} ${_getMonth(date.month)} ${date.year}',
-                    style: AppTextStyles.normal400(fontSize: 14, color: Colors.black),
+                    style: AppTextStyles.normal400(
+                        fontSize: 14, color: Colors.black),
                   ),
                 ),
               ),
@@ -993,7 +1010,8 @@ class _DateRangePickerDialogState extends State<DateRangePickerDialog> {
                   ),
                   child: Text(
                     time.format(context),
-                    style: AppTextStyles.normal400(fontSize: 14, color: Colors.black),
+                    style: AppTextStyles.normal400(
+                        fontSize: 14, color: Colors.black),
                   ),
                 ),
               ),
@@ -1005,7 +1023,20 @@ class _DateRangePickerDialogState extends State<DateRangePickerDialog> {
   }
 
   String _getMonth(int month) {
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec'
+    ];
     return months[month - 1];
   }
 }

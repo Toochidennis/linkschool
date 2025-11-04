@@ -17,20 +17,20 @@ class StaffCreateTopicScreen extends StatefulWidget {
   final String? courseId;
   final String? courseName;
   final int? syllabusId;
-  final List <Map<String,dynamic>>? classes;
+  final List<Map<String, dynamic>>? classes;
   final bool editMode;
-final TopicContent?  topicToEdit;
+  final TopicContent? topicToEdit;
 
-  const StaffCreateTopicScreen({
-    super.key,
-    this.classId,
-    this.levelId,
-    this.classes,
-    this.courseId,
-    this.syllabusId,
-    this.editMode =false,
-    this.topicToEdit, this.courseName
-  });
+  const StaffCreateTopicScreen(
+      {super.key,
+      this.classId,
+      this.levelId,
+      this.classes,
+      this.courseId,
+      this.syllabusId,
+      this.editMode = false,
+      this.topicToEdit,
+      this.courseName});
 
   @override
   State<StaffCreateTopicScreen> createState() => _StaffCreateTopicScreenState();
@@ -39,7 +39,7 @@ final TopicContent?  topicToEdit;
 class _StaffCreateTopicScreenState extends State<StaffCreateTopicScreen> {
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _objectiveController = TextEditingController();
-  String _selectedClass = 'Select classes';
+  final String _selectedClass = 'Select classes';
   late double opacity;
   int? creatorId;
   String? creatorName;
@@ -62,15 +62,15 @@ class _StaffCreateTopicScreenState extends State<StaffCreateTopicScreen> {
     super.dispose();
   }
 
-
-void _populateFormForEdit(){
- if (widget.editMode && widget.topicToEdit != null) {
+  void _populateFormForEdit() {
+    if (widget.editMode && widget.topicToEdit != null) {
       final topic = widget.topicToEdit!;
       _titleController.text = topic.name ?? '';
-      _objectiveController.text = topic.children?.map((child) => child.title).join(', ') ?? '';
-     // _selectedClass = ''
+      _objectiveController.text =
+          topic.children.map((child) => child.title).join(', ') ?? '';
+      // _selectedClass = ''
     }
-}
+  }
 
   Future<void> _loadUserData() async {
     try {
@@ -100,7 +100,7 @@ void _populateFormForEdit(){
 
   void _addTopic() async {
     // Validation
-  
+
     if (_objectiveController.text.trim().isEmpty) {
       CustomToaster.toastError(
         context,
@@ -109,7 +109,6 @@ void _populateFormForEdit(){
       );
       return;
     }
-    
 
     setState(() {
       _isSaving = true;
@@ -142,7 +141,7 @@ void _populateFormForEdit(){
 
       // Get the topicProvider from Provider
       final topicProvider = Provider.of<TopicProvider>(context, listen: false);
-            
+
       // Only the required fields
       final topicData = {
         'syllabus_id': widget.syllabusId ?? 0,
@@ -151,33 +150,31 @@ void _populateFormForEdit(){
         'objective': _objectiveController.text,
         'creator_id': creatorId ?? 0,
         'classes': (widget.classes ?? [])
-    .map((cls) => ClassModel.fromJson(cls))
-    .toList(),
-
-        'course_name':widget.courseName,
-        'term':academicYear ?? 0,
-        'course_id':widget.courseId
+            .map((cls) => ClassModel.fromJson(cls))
+            .toList(),
+        'course_name': widget.courseName,
+        'term': academicYear ?? 0,
+        'course_id': widget.courseId
       };
 
-          print("AAAAAAAAAAAAAAAA$topicData");
+      print("AAAAAAAAAAAAAAAA$topicData");
       await topicProvider.addTopic(
         syllabusId: widget.syllabusId ?? 0,
         topic: _titleController.text,
         creatorName: creatorName ?? 'Unknown',
         objective: _objectiveController.text,
-        term:academicYear ?? '',
-        courseId: widget.courseId ??'' ,
-        levelId: widget.levelId ??"",
-        courseName:widget.courseName  ??"",
+        term: academicYear ?? '',
+        courseId: widget.courseId ?? '',
+        levelId: widget.levelId ?? "",
+        courseName: widget.courseName ?? "",
         creatorId: creatorId ?? 0,
         classes: (widget.classes ?? [])
-    .map((cls) => ClassModel.fromJson(cls))
-    .toList(),
-
+            .map((cls) => ClassModel.fromJson(cls))
+            .toList(),
       );
 
-    
-      print('Topieeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeec Data to POST: $topicData');
+      print(
+          'Topieeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeec Data to POST: $topicData');
 
       Navigator.of(context).pop();
     } catch (e) {
@@ -270,7 +267,7 @@ void _populateFormForEdit(){
         actions: [
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 8.0),
-          child: CustomSaveElevatedButton(
+            child: CustomSaveElevatedButton(
               onPressed: _addTopic,
               text: 'Save',
               isLoading: _isSaving,
@@ -279,7 +276,7 @@ void _populateFormForEdit(){
         ],
       ),
       body: Container(
-       height: MediaQuery.of(context).size.height,
+        height: MediaQuery.of(context).size.height,
         decoration: BoxDecoration(
           image: DecorationImage(
             image: const AssetImage('assets/images/background.png'),
@@ -293,7 +290,8 @@ void _populateFormForEdit(){
             physics: const AlwaysScrollableScrollPhysics(),
             child: ConstrainedBox(
               constraints: BoxConstraints(
-                minHeight: MediaQuery.of(context).size.height - kToolbarHeight - 32,
+                minHeight:
+                    MediaQuery.of(context).size.height - kToolbarHeight - 32,
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -318,8 +316,6 @@ void _populateFormForEdit(){
                     ),
                   ),
                   const SizedBox(height: 32.0),
-                
-                
                   const SizedBox(height: 32.0),
                   Text(
                     'Objective:',
@@ -370,8 +366,8 @@ void _populateFormForEdit(){
               const SizedBox(width: 8.0),
               IntrinsicWidth(
                 child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(vertical: 8.0, horizontal: 14.0),
+                  padding: const EdgeInsets.symmetric(
+                      vertical: 8.0, horizontal: 14.0),
                   decoration: BoxDecoration(
                     color: isSelected
                         ? Colors.transparent
@@ -395,7 +391,8 @@ void _populateFormForEdit(){
                       fontSize: 14.0,
                       color: AppColors.backgroundLight,
                     ),
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                     side: const BorderSide(color: AppColors.eLearningBtnColor1),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(10),

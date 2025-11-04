@@ -11,7 +11,7 @@ import 'package:provider/provider.dart';
 
 class StaffCreateSyllabusScreen extends StatefulWidget {
   final Map<String, dynamic>? syllabusData;
-  final List <Map<String,dynamic>>? classList;
+  final List<Map<String, dynamic>>? classList;
   final String? courseId;
   final String? classId;
   final String? levelId;
@@ -46,17 +46,22 @@ class _StaffCreateSyllabusScreen extends State<StaffCreateSyllabusScreen> {
   int? levelId;
   int? academicTerm;
   final _formKey = GlobalKey<FormState>();
-  late List<Map<String, dynamic>> _classes; // To store classes as List<Map<String, dynamic>>
+  late List<Map<String, dynamic>>
+      _classes; // To store classes as List<Map<String, dynamic>>
 
   @override
   void initState() {
     super.initState();
-    _titleController = TextEditingController(text: widget.syllabusData?['title'] ?? '');
-    _descriptionController = TextEditingController(text: widget.syllabusData?['description'] ?? '');
-    _backgroundImagePath = widget.syllabusData?['backgroundImagePath'] ?? 'assets/images/result/bg_box3.svg';
+    _titleController =
+        TextEditingController(text: widget.syllabusData?['title'] ?? '');
+    _descriptionController =
+        TextEditingController(text: widget.syllabusData?['description'] ?? '');
+    _backgroundImagePath = widget.syllabusData?['backgroundImagePath'] ??
+        'assets/images/result/bg_box3.svg';
 
     // Initialize classes list
-    if (widget.syllabusData != null && widget.syllabusData!['classes'] != null) {
+    if (widget.syllabusData != null &&
+        widget.syllabusData!['classes'] != null) {
       // Editing mode: Use classes from syllabusData
       _classes = (widget.syllabusData!['classes'] as List<dynamic>)
           .map((cls) => {
@@ -81,46 +86,47 @@ class _StaffCreateSyllabusScreen extends State<StaffCreateSyllabusScreen> {
 
 // declare at class level so it's accessible outside
 
-Future<void> _loadUserData() async {
-  try {
-    final userBox = Hive.box('userData');
-    final storedUserData = userBox.get('userData') ?? userBox.get('loginResponse');
+  Future<void> _loadUserData() async {
+    try {
+      final userBox = Hive.box('userData');
+      final storedUserData =
+          userBox.get('userData') ?? userBox.get('loginResponse');
 
-    if (storedUserData != null) {
-      final processedData = storedUserData is String
-          ? json.decode(storedUserData)
-          : storedUserData as Map<String, dynamic>;
+      if (storedUserData != null) {
+        final processedData = storedUserData is String
+            ? json.decode(storedUserData)
+            : storedUserData as Map<String, dynamic>;
 
-      final response = processedData['response'] ?? processedData;
-      final data = response['data'] ?? response;
-      final profile = data['profile'] ?? {};
-      final settings = data['settings'] ?? {};
-      final formClasses = data['form_classes'] as List<dynamic>? ?? [];
+        final response = processedData['response'] ?? processedData;
+        final data = response['data'] ?? response;
+        final profile = data['profile'] ?? {};
+        final settings = data['settings'] ?? {};
+        final formClasses = data['form_classes'] as List<dynamic>? ?? [];
 
-      // just grab the first level_id
-      if (formClasses.isNotEmpty) {
-        levelId = formClasses.first['level_id'] as int?;
+        // just grab the first level_id
+        if (formClasses.isNotEmpty) {
+          levelId = formClasses.first['level_id'] as int?;
+        }
+
+        setState(() {
+          creatorId = profile['staff_id'] as int?;
+          creatorName = profile['name']?.toString() ?? 'Unknown';
+          creatorRole = profile['role']?.toString();
+          academicTerm = settings['term'] != null
+              ? int.tryParse(settings['term'].toString())
+              : null;
+          academicYear = settings['year']?.toString();
+        });
+
+        print(
+            'Loaded user data: creatorId=$creatorId, creatorName=$creatorName, '
+            'creatorRole=$creatorRole, academicTerm=$academicTerm, academicYear=$academicYear, '
+            'levelId=$levelId');
       }
-
-      setState(() {
-        creatorId = profile['staff_id'] as int?;
-        creatorName = profile['name']?.toString() ?? 'Unknown';
-        creatorRole = profile['role']?.toString();
-        academicTerm = settings['term'] != null
-            ? int.tryParse(settings['term'].toString())
-            : null;
-        academicYear = settings['year']?.toString();
-      });
-
-      print('Loaded user data: creatorId=$creatorId, creatorName=$creatorName, '
-          'creatorRole=$creatorRole, academicTerm=$academicTerm, academicYear=$academicYear, '
-          'levelId=$levelId');
+    } catch (e) {
+      print('Error loading user data: $e');
     }
-  } catch (e) {
-    print('Error loading user data: $e');
   }
-}
-
 
   Future<void> _handleSave() async {
     if (_formKey.currentState!.validate()) {
@@ -138,12 +144,14 @@ Future<void> _loadUserData() async {
       setState(() => isLoading = true);
 
       try {
-        final syllabusProvider = Provider.of<StaffSyllabusProvider>(context, listen: false);
+        final syllabusProvider =
+            Provider.of<StaffSyllabusProvider>(context, listen: false);
         final courseId = widget.courseId ?? 'course_not_selected';
-   
 
         // Convert _classes to List<ClassModel> for the provider
-        final classModels = _classes.map((cls) => ClassModel(id: cls['id'], name: cls['name'])).toList();
+        final classModels = _classes
+            .map((cls) => ClassModel(id: cls['id'], name: cls['name']))
+            .toList();
 
         if (widget.syllabusData != null) {
           // Editing mode
@@ -154,7 +162,7 @@ Future<void> _loadUserData() async {
             'term': academicTerm?.toString() ?? '1',
             'levelId': levelId,
             'syllabusId': syllabusId,
-            'classes':widget.classList,
+            'classes': widget.classList,
           };
           print('Update Syllabus Data: $updateData');
           await syllabusProvider.updateSyllabus(
@@ -163,7 +171,7 @@ Future<void> _loadUserData() async {
             term: academicTerm?.toString() ?? '1',
             levelId: levelId!,
             syllabusId: syllabusId,
-            classes:classModels , // Use classModels instead of classes
+            classes: classModels, // Use classModels instead of classes
           );
 
           if (mounted) {
@@ -179,7 +187,6 @@ Future<void> _loadUserData() async {
             });
           }
         } else {
-
           // final createData = {
           //   'title': _titleController.text,
           //   'description': _descriptionController.text,
@@ -192,7 +199,7 @@ Future<void> _loadUserData() async {
           //   'classId': widget.classId ?? '',
           //   'creatorId': creatorId?.toString() ?? '',
           // };
-         // print('Create Syllabus Data: $createData');
+          // print('Create Syllabus Data: $createData');
           await syllabusProvider.addSyllabus(
             title: _titleController.text,
             description: _descriptionController.text,
@@ -307,7 +314,8 @@ Future<void> _loadUserData() async {
                       children: [
                         Text(
                           'Title:',
-                          style: AppTextStyles.normal600(fontSize: 16.0, color: Colors.black),
+                          style: AppTextStyles.normal600(
+                              fontSize: 16.0, color: Colors.black),
                         ),
                         const SizedBox(height: 8.0),
                         TextFormField(
@@ -330,7 +338,8 @@ Future<void> _loadUserData() async {
                         const SizedBox(height: 16.0),
                         Text(
                           'Description:',
-                          style: AppTextStyles.normal600(fontSize: 16.0, color: Colors.black),
+                          style: AppTextStyles.normal600(
+                              fontSize: 16.0, color: Colors.black),
                         ),
                         const SizedBox(height: 8.0),
                         TextFormField(
@@ -354,12 +363,16 @@ Future<void> _loadUserData() async {
                         const SizedBox(height: 16.0),
                         Text(
                           'Class:',
-                          style: AppTextStyles.normal600(fontSize: 16.0, color: Colors.black),
+                          style: AppTextStyles.normal600(
+                              fontSize: 16.0, color: Colors.black),
                         ),
                         const SizedBox(height: 8.0),
                         Text(
-                          _classes.isNotEmpty ? _classes.map((c) => c['name']).join(', ') : 'No class selected',
-                          style: AppTextStyles.normal500(fontSize: 16.0, color: Colors.black),
+                          _classes.isNotEmpty
+                              ? _classes.map((c) => c['name']).join(', ')
+                              : 'No class selected',
+                          style: AppTextStyles.normal500(
+                              fontSize: 16.0, color: Colors.black),
                         ),
                       ],
                     ),

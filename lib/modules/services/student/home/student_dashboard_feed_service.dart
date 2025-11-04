@@ -1,4 +1,3 @@
-import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
 import 'package:linkschool/modules/model/admin/home/dashboard_feed_model.dart';
 import 'package:linkschool/modules/services/api/api_service.dart';
@@ -10,8 +9,7 @@ class StudentDashboardFeedService {
 
   /// Fetch dashboard data including overview and feeds
   Future<DashboardData> fetchFeedData(
-    String class_id, String level_id, String term
-  ) async {
+      String classId, String levelId, String term) async {
     final userBox = Hive.box('userData');
     final loginData = userBox.get('userData') ?? userBox.get('loginResponse');
 
@@ -27,9 +25,8 @@ class StudentDashboardFeedService {
         endpoint: 'portal/dashboard/student',
         queryParams: {
           'term': term,
-          'class_id': class_id,
-          'level_id': level_id,
-
+          'class_id': classId,
+          'level_id': levelId,
         },
       );
 
@@ -46,7 +43,6 @@ class StudentDashboardFeedService {
       throw Exception("Failed to fetch dashboard data: $e");
     }
   }
-
 
   Future<void> createFeed(Map<String, dynamic> newFeed) async {
     final userBox = Hive.box('userData');
@@ -76,7 +72,8 @@ class StudentDashboardFeedService {
     }
   }
 
-  Future<void> updateFeed(String feedId, Map<String, dynamic> updatedFeed) async {
+  Future<void> updateFeed(
+      String feedId, Map<String, dynamic> updatedFeed) async {
     final userBox = Hive.box('userData');
     final loginData = userBox.get('userData') ?? userBox.get('loginResponse');
     final dbName = userBox.get('_db') ?? 'aalmgzmy_linkskoo_practice';

@@ -10,7 +10,6 @@ import '../../../services/admin/payment/payment_service.dart';
 import '../../../services/api/api_service.dart';
 import 'student_payment_detail_screen.dart';
 
-
 class StudentInvoiceSelectionScreen extends StatefulWidget {
   final UnpaidStudent student;
 
@@ -20,10 +19,12 @@ class StudentInvoiceSelectionScreen extends StatefulWidget {
   });
 
   @override
-  State<StudentInvoiceSelectionScreen> createState() => _StudentInvoiceSelectionScreenState();
+  State<StudentInvoiceSelectionScreen> createState() =>
+      _StudentInvoiceSelectionScreenState();
 }
 
-class _StudentInvoiceSelectionScreenState extends State<StudentInvoiceSelectionScreen> {
+class _StudentInvoiceSelectionScreenState
+    extends State<StudentInvoiceSelectionScreen> {
   late double opacity;
   late PaymentService _paymentService;
 
@@ -37,16 +38,16 @@ class _StudentInvoiceSelectionScreenState extends State<StudentInvoiceSelectionS
     try {
       final userBox = Hive.box('userData');
       final token = userBox.get('token');
-      
+
       if (token == null || token.toString().isEmpty) {
         print('No authentication token found. User needs to login again.');
         return;
       }
-      
+
       final apiService = ApiService();
       apiService.setAuthToken(token.toString());
       _paymentService = PaymentService(apiService);
-      
+
       print('ApiService initialized with authentication token');
     } catch (e) {
       print('Error initializing services: $e');
@@ -57,7 +58,7 @@ class _StudentInvoiceSelectionScreenState extends State<StudentInvoiceSelectionS
   Widget build(BuildContext context) {
     final Brightness brightness = Theme.of(context).brightness;
     opacity = brightness == Brightness.light ? 0.1 : 0.15;
-    
+
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
@@ -137,7 +138,9 @@ class _StudentInvoiceSelectionScreenState extends State<StudentInvoiceSelectionS
                             ),
                           ),
                           Text(
-                            _paymentService.getClassName(widget.student.classId) ?? 'Unknown Class',
+                            _paymentService
+                                    .getClassName(widget.student.classId) ??
+                                'Unknown Class',
                             style: AppTextStyles.normal400(
                               fontSize: 14,
                               color: Colors.grey[600]!,
@@ -255,4 +258,3 @@ class _StudentInvoiceSelectionScreenState extends State<StudentInvoiceSelectionS
     );
   }
 }
-

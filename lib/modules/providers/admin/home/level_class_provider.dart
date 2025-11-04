@@ -19,8 +19,6 @@ class LevelClassProvider with ChangeNotifier {
 
   LevelClassProvider(this._levelClassService);
 
-  
-
   Future<bool> createLevel(Map<String, dynamic> newLevel) async {
     isLoading = true;
     notifyListeners();
@@ -59,7 +57,8 @@ class LevelClassProvider with ChangeNotifier {
     }
   }
 
-  Future<bool> updateLevel(String levelId, Map<String, dynamic> updatedLevel) async {
+  Future<bool> updateLevel(
+      String levelId, Map<String, dynamic> updatedLevel) async {
     isLoading = true;
     notifyListeners();
     error = null;
@@ -78,7 +77,8 @@ class LevelClassProvider with ChangeNotifier {
     }
   }
 
-  Future<bool> updateClass(String className, Map<String, dynamic> updatedClass) async {
+  Future<bool> updateClass(
+      String className, Map<String, dynamic> updatedClass) async {
     isLoading = true;
     notifyListeners();
     error = null;
@@ -144,10 +144,13 @@ class LevelClassProvider with ChangeNotifier {
       final levels = await _levelClassService.fetchLevels();
       final classes = await _levelClassService.fetchClasses();
       levelsWithClasses = levels.map((level) {
-        final levelClasses = classes.where((classItem) => classItem.levelId == level.id).toList();
+        final levelClasses = classes
+            .where((classItem) => classItem.levelId == level.id)
+            .toList();
         return LevelWithClasses(level: level, classes: levelClasses);
       }).toList();
-      print("Fetched ${levelsWithClasses.length} levels with associated classes");
+      print(
+          "Fetched ${levelsWithClasses.length} levels with associated classes");
     } catch (e) {
       error = "Failed to fetch levels and classes: $e";
       print("Error in provider: $e");

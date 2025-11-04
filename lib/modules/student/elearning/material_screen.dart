@@ -5,19 +5,18 @@ import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/common/widgets/portal/student/custom_input_field.dart';
 import 'package:linkschool/modules/model/student/elearningcontent_model.dart';
 
-
 class MaterialScreen extends StatefulWidget {
   final ElearningContentData elearningContentData;
 
-  const MaterialScreen({super.key, required this.elearningContentData });
+  const MaterialScreen({super.key, required this.elearningContentData});
 
   @override
   State<MaterialScreen> createState() => _MaterialScreenState();
 }
 
-
 class _MaterialScreenState extends State<MaterialScreen> {
-  final String networkImage = 'https://img.freepik.com/free-vector/gradient-human-rights-day-background_52683-149974.jpg?t=st=1717832829~exp=1717833429~hmac=3e938edcacd7fef2a791b36c7d3decbf64248d9760dd7da0a304acee382b8a86';
+  final String networkImage =
+      'https://img.freepik.com/free-vector/gradient-human-rights-day-background_52683-149974.jpg?t=st=1717832829~exp=1717833429~hmac=3e938edcacd7fef2a791b36c7d3decbf64248d9760dd7da0a304acee382b8a86';
   late double opacity;
 
   final TextEditingController _commentController = TextEditingController();
@@ -30,8 +29,7 @@ class _MaterialScreenState extends State<MaterialScreen> {
 
   Widget materialp(ElearningContentData edat) {
     final hasFiles = edat.children.any(
-          (child) =>
-      child.contentFiles != null && child.contentFiles!.isNotEmpty,
+      (child) => child.contentFiles != null && child.contentFiles!.isNotEmpty,
     );
 
     if (hasFiles) {
@@ -68,8 +66,7 @@ class _MaterialScreenState extends State<MaterialScreen> {
                         children: widget.elearningContentData.children
                             .expand((child) => child.contentFiles ?? [])
                             .map(
-                              (file) =>
-                              Column(
+                              (file) => Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   if (file.fileName.endsWith('.jpg') ||
@@ -78,13 +75,13 @@ class _MaterialScreenState extends State<MaterialScreen> {
                                       file.fileName,
                                       fit: BoxFit.cover,
                                       width: double.infinity,
-                                      errorBuilder: (context, error,
-                                          stackTrace) =>
-                                      const Icon(Icons.broken_image),
+                                      errorBuilder:
+                                          (context, error, stackTrace) =>
+                                              const Icon(Icons.broken_image),
                                     ),
                                   Padding(
-                                    padding:
-                                    const EdgeInsets.symmetric(horizontal: 8.0),
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 8.0),
                                     child: Row(
                                       children: [
                                         const Icon(Icons.link,
@@ -104,7 +101,7 @@ class _MaterialScreenState extends State<MaterialScreen> {
                                   const SizedBox(height: 8),
                                 ],
                               ),
-                        )
+                            )
                             .toList(),
                       ),
                     ),
@@ -133,8 +130,7 @@ class _MaterialScreenState extends State<MaterialScreen> {
           ),
         ),
       );
-    }
-    else {
+    } else {
       return Padding(
         padding: const EdgeInsets.all(16.0),
         child: Container(
@@ -159,46 +155,53 @@ class _MaterialScreenState extends State<MaterialScreen> {
               const SizedBox(height: 16),
 
               // Iterate through children and their questions
-              ...widget.elearningContentData.children.expand((child) => child.questions).map(
+              ...widget.elearningContentData.children
+                  .expand((child) => child.questions)
+                  .map(
                     (q) => Padding(
-                  padding: const EdgeInsets.only(bottom: 12.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Q: ${q.questionText}',
-                        style: const TextStyle(
-                          fontWeight: FontWeight.w600,
-                          fontSize: 14,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      if (q.options.isEmpty) // Short Answer
-                        Text(
-                          'Answer: ${q.correct.text}',
-                          style: const TextStyle(color: Colors.green),
-                        )
-                      else ...[ // Multiple Choice
-                        const Text('Options:'),
-                        ...q.options.map(
-                              (opt) => Row(
-                            children: [
-                              Icon(
-                                opt.order == q.correct.order ? Icons.check_circle : Icons.circle,
-                                size: 16,
-                                color: opt.order == q.correct.order ? Colors.green : Colors.grey,
-                              ),
-                              const SizedBox(width: 6),
-                              Expanded(child: Text(opt.text)),
-                            ],
+                      padding: const EdgeInsets.only(bottom: 12.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Q: ${q.questionText}',
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 14,
+                            ),
                           ),
-                        )
-                      ],
-                      const Divider(),
-                    ],
+                          const SizedBox(height: 4),
+                          if (q.options.isEmpty) // Short Answer
+                            Text(
+                              'Answer: ${q.correct.text}',
+                              style: const TextStyle(color: Colors.green),
+                            )
+                          else ...[
+                            // Multiple Choice
+                            const Text('Options:'),
+                            ...q.options.map(
+                              (opt) => Row(
+                                children: [
+                                  Icon(
+                                    opt.order == q.correct.order
+                                        ? Icons.check_circle
+                                        : Icons.circle,
+                                    size: 16,
+                                    color: opt.order == q.correct.order
+                                        ? Colors.green
+                                        : Colors.grey,
+                                  ),
+                                  const SizedBox(width: 6),
+                                  Expanded(child: Text(opt.text)),
+                                ],
+                              ),
+                            )
+                          ],
+                          const Divider(),
+                        ],
+                      ),
+                    ),
                   ),
-                ),
-              ).toList(),
 
               const Spacer(),
 
@@ -224,12 +227,10 @@ class _MaterialScreenState extends State<MaterialScreen> {
         ),
       );
     }
-
-
   }
+
   @override
   Widget build(BuildContext context) {
-
     final Brightness brightness = Theme.of(context).brightness;
     opacity = brightness == Brightness.light ? 0.1 : 0.15;
     return Scaffold(
@@ -267,8 +268,7 @@ class _MaterialScreenState extends State<MaterialScreen> {
           ),
         ),
       ),
-      body:
-      materialp(widget.elearningContentData),
+      body: materialp(widget.elearningContentData),
     );
   }
 }

@@ -19,7 +19,8 @@ class ExpenseTransactionDetail extends StatefulWidget {
   });
 
   @override
-  State<ExpenseTransactionDetail> createState() => _ExpenseTransactionDetailState();
+  State<ExpenseTransactionDetail> createState() =>
+      _ExpenseTransactionDetailState();
 }
 
 class _ExpenseTransactionDetailState extends State<ExpenseTransactionDetail> {
@@ -198,10 +199,14 @@ class _ExpenseTransactionDetailState extends State<ExpenseTransactionDetail> {
           children: [
             _buildDetailRow('Date', widget.transaction['date'] ?? '2023-10-23'),
             _buildDetailRow('Name', widget.transaction['name'] ?? 'John Doe'),
-            _buildDetailRow('Phone Number', widget.transaction['phone_number'] ?? '08012345679'),
-            _buildDetailRow('Session', widget.transaction['session'] ?? '2022/2023'),
-            _buildDetailRow('Reference No', widget.transaction['reference'] ?? 'ABC123XYZ'),
-            _buildDetailRow('Description', widget.transaction['description'] ?? 'Clinical medication'),
+            _buildDetailRow('Phone Number',
+                widget.transaction['phone_number'] ?? '08012345679'),
+            _buildDetailRow(
+                'Session', widget.transaction['session'] ?? '2022/2023'),
+            _buildDetailRow(
+                'Reference No', widget.transaction['reference'] ?? 'ABC123XYZ'),
+            _buildDetailRow('Description',
+                widget.transaction['description'] ?? 'Clinical medication'),
           ],
         ),
       ),
@@ -215,7 +220,9 @@ class _ExpenseTransactionDetailState extends State<ExpenseTransactionDetail> {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(label, style: const TextStyle(color: Colors.grey)),
-          Text(value, style: AppTextStyles.normal500(fontSize: 16, color: AppColors.backgroundDark)),
+          Text(value,
+              style: AppTextStyles.normal500(
+                  fontSize: 16, color: AppColors.backgroundDark)),
         ],
       ),
     );
@@ -245,8 +252,3 @@ class _ExpenseTransactionDetailState extends State<ExpenseTransactionDetail> {
     );
   }
 }
-
-
-
-
-

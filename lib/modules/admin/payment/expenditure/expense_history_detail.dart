@@ -70,7 +70,8 @@ class _ExpenseHistoryDetailState extends State<ExpenseHistoryDetail> {
       body: Container(
         decoration: Constants.customBoxDecoration(context),
         child: ListView.builder(
-          itemCount: 1, // Single transaction for consistency with ExpenseHistoryScreen
+          itemCount:
+              1, // Single transaction for consistency with ExpenseHistoryScreen
           itemBuilder: (context, index) => _buildDetailItem(context),
         ),
       ),
@@ -79,7 +80,8 @@ class _ExpenseHistoryDetailState extends State<ExpenseHistoryDetail> {
 
   Widget _buildDetailItem(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 8.0, left: 16.0, right: 16.0, top: 16.0),
+      margin: const EdgeInsets.only(
+          bottom: 8.0, left: 16.0, right: 16.0, top: 16.0),
       decoration: BoxDecoration(
         border: Border.all(color: Colors.grey.shade300),
         borderRadius: BorderRadius.circular(8),
@@ -88,11 +90,13 @@ class _ExpenseHistoryDetailState extends State<ExpenseHistoryDetail> {
         leading: SvgPicture.asset('assets/icons/profile/payment_icon.svg'),
         title: Text(
           widget.transaction['session'] ?? '2022/2023',
-          style: AppTextStyles.normal600(fontSize: 18, color: AppColors.backgroundDark),
+          style: AppTextStyles.normal600(
+              fontSize: 18, color: AppColors.backgroundDark),
         ),
         subtitle: Text(
           widget.transaction['date'] ?? '07-03-2018 17:23',
-          style: AppTextStyles.normal500(fontSize: 12, color: AppColors.text10Light),
+          style: AppTextStyles.normal500(
+              fontSize: 12, color: AppColors.text10Light),
         ),
         trailing: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -103,7 +107,10 @@ class _ExpenseHistoryDetailState extends State<ExpenseHistoryDetail> {
               children: [
                 const Text(
                   '-',
-                  style: TextStyle(fontSize: 18, color: Colors.red, fontWeight: FontWeight.w700),
+                  style: TextStyle(
+                      fontSize: 18,
+                      color: Colors.red,
+                      fontWeight: FontWeight.w700),
                 ),
                 const NairaSvgIcon(
                   width: 14.0,
@@ -113,13 +120,15 @@ class _ExpenseHistoryDetailState extends State<ExpenseHistoryDetail> {
                 const SizedBox(width: 2),
                 Text(
                   widget.amount,
-                  style: AppTextStyles.normal700(fontSize: 18, color: Colors.red),
+                  style:
+                      AppTextStyles.normal700(fontSize: 18, color: Colors.red),
                 ),
               ],
             ),
             Text(
               widget.transaction['description'] ?? 'Clinical medication',
-              style: AppTextStyles.normal500(fontSize: 12, color: AppColors.text10Light),
+              style: AppTextStyles.normal500(
+                  fontSize: 12, color: AppColors.text10Light),
             ),
           ],
         ),
@@ -136,6 +145,3 @@ class _ExpenseHistoryDetailState extends State<ExpenseHistoryDetail> {
     );
   }
 }
-
-
-

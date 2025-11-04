@@ -15,7 +15,7 @@ class TermService {
     try {
       final userBox = Hive.box('userData');
       final loginData = userBox.get('userData') ?? userBox.get('loginResponse');
-      
+
       if (loginData == null) {
         throw Exception('No login data available');
       }
@@ -32,7 +32,8 @@ class TermService {
         _apiService.setAuthToken(token);
       }
 
-      print('Fetching terms for class $classId (year: $year, term: $term, db: $db)');
+      print(
+          'Fetching terms for class $classId (year: $year, term: $term, db: $db)');
 
       final response = await _apiService.get(
         endpoint: 'portal/course-registrations/terms',
@@ -44,14 +45,17 @@ class TermService {
         },
       );
 
-      print('API Response: ${response.rawData}, Success: ${response.success}, Message: ${response.message}');
+      print(
+          'API Response: ${response.rawData}, Success: ${response.success}, Message: ${response.message}');
 
       if (!response.success) {
         throw Exception(response.message ?? 'Failed to fetch terms');
       }
 
       final resData = response.rawData;
-      if (resData == null || resData['response'] == null || resData['response']['sessions'] == null) {
+      if (resData == null ||
+          resData['response'] == null ||
+          resData['response']['sessions'] == null) {
         return [];
       }
 
@@ -61,7 +65,7 @@ class TermService {
       for (var session in sessions) {
         final sessionYear = session['year'].toString();
         final sessionTerms = session['terms'] as List;
-        
+
         for (var term in sessionTerms) {
           terms.add({
             'year': sessionYear,
@@ -84,7 +88,7 @@ class TermService {
     try {
       final userBox = Hive.box('userData');
       final loginData = userBox.get('userData') ?? userBox.get('loginResponse');
-      
+
       if (loginData == null) {
         throw Exception('No login data available');
       }
@@ -101,7 +105,8 @@ class TermService {
         _apiService.setAuthToken(token);
       }
 
-      print('Fetching terms and chart data for class $classId (year: $year, term: $term, db: $db)');
+      print(
+          'Fetching terms and chart data for class $classId (year: $year, term: $term, db: $db)');
 
       final response = await _apiService.get(
         endpoint: 'portal/course-registrations/terms',
@@ -113,14 +118,17 @@ class TermService {
         },
       );
 
-      print('API Response: ${response.rawData}, Success: ${response.success}, Message: ${response.message}');
+      print(
+          'API Response: ${response.rawData}, Success: ${response.success}, Message: ${response.message}');
 
       if (!response.success) {
         throw Exception(response.message ?? 'Failed to fetch terms');
       }
 
       final resData = response.rawData;
-      if (resData == null || resData['response'] == null || resData['response']['sessions'] == null) {
+      if (resData == null ||
+          resData['response'] == null ||
+          resData['response']['sessions'] == null) {
         return {'terms': [], 'chart_data': []};
       }
 
@@ -130,7 +138,7 @@ class TermService {
       for (var session in sessions) {
         final sessionYear = session['year'].toString();
         final sessionTerms = session['terms'] as List;
-        
+
         for (var term in sessionTerms) {
           terms.add({
             'year': sessionYear,
@@ -141,9 +149,12 @@ class TermService {
         }
       }
 
-      final chartData = (resData['response']['chart_data'] as List?)?.cast<Map<String, dynamic>>() ?? [];
+      final chartData = (resData['response']['chart_data'] as List?)
+              ?.cast<Map<String, dynamic>>() ??
+          [];
 
-      print('Successfully fetched ${terms.length} terms and ${chartData.length} chart data entries');
+      print(
+          'Successfully fetched ${terms.length} terms and ${chartData.length} chart data entries');
       return {'terms': terms, 'chart_data': chartData};
     } catch (e) {
       print('Error fetching terms and chart data: $e');
@@ -151,11 +162,12 @@ class TermService {
     }
   }
 
-  Future<List<Map<String, dynamic>>> fetchAverageScores(String classId, String year, int term) async {
+  Future<List<Map<String, dynamic>>> fetchAverageScores(
+      String classId, String year, int term) async {
     try {
       final userBox = Hive.box('userData');
       final loginData = userBox.get('userData') ?? userBox.get('loginResponse');
-      
+
       if (loginData == null) {
         throw Exception('No login data available');
       }
@@ -167,7 +179,8 @@ class TermService {
         _apiService.setAuthToken(token);
       }
 
-      print('Fetching average scores for class $classId (year: $year, term: $term, db: $db)');
+      print(
+          'Fetching average scores for class $classId (year: $year, term: $term, db: $db)');
 
       final response = await _apiService.get(
         endpoint: 'portal/classes/$classId/course-registrations/average-scores',
@@ -178,7 +191,8 @@ class TermService {
         },
       );
 
-      print('API Response: ${response.rawData}, Success: ${response.success}, Message: ${response.message}');
+      print(
+          'API Response: ${response.rawData}, Success: ${response.success}, Message: ${response.message}');
 
       if (!response.success) {
         throw Exception(response.message ?? 'Failed to fetch average scores');
@@ -190,11 +204,13 @@ class TermService {
       }
 
       final scores = resData['data'] as List;
-      final averageScores = scores.map((score) => ({
-        'course_id': score['course_id'],
-        'course_name': score['course_name'],
-        'average_score': score['average_score'],
-      })).toList();
+      final averageScores = scores
+          .map((score) => ({
+                'course_id': score['course_id'],
+                'course_name': score['course_name'],
+                'average_score': score['average_score'],
+              }))
+          .toList();
 
       print('Successfully fetched ${averageScores.length} average scores');
       return averageScores;
@@ -204,5 +220,3 @@ class TermService {
     }
   }
 }
-
-

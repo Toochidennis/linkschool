@@ -6,7 +6,7 @@ import 'package:linkschool/modules/model/admin/home/dashboard_feed_model.dart';
 class DashboardFeedProvider with ChangeNotifier {
   final DashboardFeedService _dashboardFeedService;
 
-   DashboardFeedProvider(this._dashboardFeedService) {
+  DashboardFeedProvider(this._dashboardFeedService) {
     debugPrint("✅ DashboardFeedProvider created");
   }
 
@@ -67,7 +67,8 @@ class DashboardFeedProvider with ChangeNotifier {
   }
 
   /// Update a feed
-  Future<bool> updateFeed(Map<String, dynamic> updatedFeed, String feedId) async {
+  Future<bool> updateFeed(
+      Map<String, dynamic> updatedFeed, String feedId) async {
     _isLoading = true;
     _error = null;
     _message = null;

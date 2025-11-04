@@ -9,16 +9,16 @@ class OverviewService {
 
   Future<Map<String, dynamic>> getOverview(String term) async {
     final userBox = Hive.box('userData');
-  final loginData = userBox.get('userData') ?? userBox.get('loginResponse');
-  final dbName = userBox.get('_db') ?? 'aalmgzmy_linkskoo_practice';
-  
-  if (loginData == null || loginData['token'] == null) {
-    throw Exception("No valid login data or token found");
-  }
+    final loginData = userBox.get('userData') ?? userBox.get('loginResponse');
+    final dbName = userBox.get('_db') ?? 'aalmgzmy_linkskoo_practice';
 
-  final token = loginData['token'] as String;
-  print("Set token: $token");
-  _apiService.setAuthToken(token);
+    if (loginData == null || loginData['token'] == null) {
+      throw Exception("No valid login data or token found");
+    }
+
+    final token = loginData['token'] as String;
+    print("Set token: $token");
+    _apiService.setAuthToken(token);
     final response = await _apiService.get<Map<String, dynamic>>(
       endpoint: 'portal/elearning/overview',
       queryParams: {

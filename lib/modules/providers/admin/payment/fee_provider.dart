@@ -83,7 +83,7 @@ class FeeProvider with ChangeNotifier {
         isMandatory: isMandatory,
       );
 
-print("kkkk ${feeName}, $isMandatory");
+      print("kkkk $feeName, $isMandatory");
       final response = await _feeService.addFeeName(request);
       if (response.success) {
         // Refresh the fee names list to get the updated data from server
@@ -107,7 +107,8 @@ print("kkkk ${feeName}, $isMandatory");
     }
   }
 
-  Future<bool> updateFeeName(String feeNameId, String feeName, bool isMandatory) async {
+  Future<bool> updateFeeName(
+      String feeNameId, String feeName, bool isMandatory) async {
     _isLoading = true;
     _error = null;
     notifyListeners();
@@ -118,12 +119,13 @@ print("kkkk ${feeName}, $isMandatory");
         isMandatory: isMandatory,
       );
 
-      print("kkkk ${feeName}, $isMandatory");
+      print("kkkk $feeName, $isMandatory");
 
       final response = await _feeService.updateFeeName(feeNameId, request);
       if (response.success) {
         // Update the fee in the local list immediately for better UX
-        final feeIndex = _feeNames.indexWhere((fee) => fee.id.toString() == feeNameId);
+        final feeIndex =
+            _feeNames.indexWhere((fee) => fee.id.toString() == feeNameId);
         if (feeIndex != -1) {
           // Create a new FeeName object with updated values (assuming FeeName has a copyWith method or constructor)
           // You may need to adjust this based on your FeeName model structure
@@ -134,7 +136,7 @@ print("kkkk ${feeName}, $isMandatory");
             // Add other required fields from your FeeName model
           );
         }
-        
+
         // Also refresh from server to ensure consistency
         await fetchFeeNames();
         _error = null;
@@ -166,19 +168,16 @@ print("kkkk ${feeName}, $isMandatory");
       final year = _getCurrentYear();
       final term = _getCurrentTerm();
 
-      final response = await _feeService.deleteFeeName(
-        feeNameId, 
-        year: year, 
-        term: term
-      );
-      
+      final response =
+          await _feeService.deleteFeeName(feeNameId, year: year, term: term);
+
       if (response.success) {
         // Remove the deleted item from local list immediately for better UX
         _feeNames.removeWhere((fee) => fee.id.toString() == feeNameId);
-        
+
         // Notify listeners immediately for instant UI update
         notifyListeners();
-        
+
         // Also refresh from server to ensure consistency
         await fetchFeeNames();
         _error = null;
@@ -205,7 +204,3 @@ print("kkkk ${feeName}, $isMandatory");
     notifyListeners();
   }
 }
-
-
-
-

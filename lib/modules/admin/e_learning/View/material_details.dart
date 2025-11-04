@@ -5,16 +5,13 @@ import 'package:chewie/chewie.dart';
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
 import 'package:intl/intl.dart';
-import 'package:linkschool/modules/admin/e_learning/add_material_screen.dart';
-import 'package:linkschool/modules/admin/e_learning/admin_assignment_screen.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
-import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/custom_toaster.dart';
 import 'package:linkschool/modules/common/pdf_reader.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/model/e-learning/comment_model.dart';
-import 'package:linkschool/modules/model/e-learning/material_model.dart' as custom;
-import 'package:linkschool/modules/providers/admin/e_learning/admin_comment_provider.dart';
+import 'package:linkschool/modules/model/e-learning/material_model.dart'
+    as custom;
 import 'package:linkschool/modules/providers/admin/e_learning/comment_provider.dart';
 import 'package:linkschool/modules/providers/admin/e_learning/delete_sylabus_content.dart';
 import 'package:linkschool/modules/services/api/service_locator.dart';
@@ -23,7 +20,6 @@ import 'package:provider/provider.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:video_player/video_player.dart';
-import 'package:http/http.dart' as http;
 import 'package:video_thumbnail/video_thumbnail.dart';
 import '../../../common/widgets/portal/attachmentItem.dart';
 
@@ -50,7 +46,8 @@ class AdminMaterialDetailsScreen extends StatefulWidget {
   });
 
   @override
-  _AdminMaterialDetailsScreenState createState() => _AdminMaterialDetailsScreenState();
+  _AdminMaterialDetailsScreenState createState() =>
+      _AdminMaterialDetailsScreenState();
 }
 
 class _AdminMaterialDetailsScreenState extends State<AdminMaterialDetailsScreen>
@@ -64,7 +61,8 @@ class _AdminMaterialDetailsScreenState extends State<AdminMaterialDetailsScreen>
   bool _isEditing = false;
   Comment? _editingComment;
   late double opacity;
-  final String networkImage = 'https://img.freepik.com/free-vector/gradient-human-rights-day-background_52683-149974.jpg?t=st=1717832829~exp=1717833429~hmac=3e938edcacd7fef2a791b36c7d3decbf64248d9760dd7da0a304acee382b8a86';
+  final String networkImage =
+      'https://img.freepik.com/free-vector/gradient-human-rights-day-background_52683-149974.jpg?t=st=1717832829~exp=1717833429~hmac=3e938edcacd7fef2a791b36c7d3decbf64248d9760dd7da0a304acee382b8a86';
   String? creatorName;
   int? creatorId;
   int? academicTerm;
@@ -113,7 +111,8 @@ class _AdminMaterialDetailsScreenState extends State<AdminMaterialDetailsScreen>
   Future<void> _loadUserData() async {
     try {
       final userBox = Hive.box('userData');
-      final storedUserData = userBox.get('userData') ?? userBox.get('loginResponse');
+      final storedUserData =
+          userBox.get('userData') ?? userBox.get('loginResponse');
       if (storedUserData != null) {
         final processedData = storedUserData is String
             ? json.decode(storedUserData)
@@ -162,7 +161,8 @@ class _AdminMaterialDetailsScreenState extends State<AdminMaterialDetailsScreen>
         ),
         actions: [
           PopupMenuButton<String>(
-            icon: const Icon(Icons.more_vert, color: AppColors.paymentTxtColor1),
+            icon:
+                const Icon(Icons.more_vert, color: AppColors.paymentTxtColor1),
             onSelected: (String result) {
               print('mmmmmmmmmmmmmmmm ${widget.material.title}');
               switch (result) {
@@ -259,7 +259,8 @@ class _AdminMaterialDetailsScreenState extends State<AdminMaterialDetailsScreen>
                           child: Text(
                             'Add class comment',
                             style: AppTextStyles.normal500(
-                                fontSize: 16.0, color: AppColors.paymentTxtColor1),
+                                fontSize: 16.0,
+                                color: AppColors.paymentTxtColor1),
                           ),
                         ),
                       ),
@@ -273,7 +274,8 @@ class _AdminMaterialDetailsScreenState extends State<AdminMaterialDetailsScreen>
     try {
       final provider = locator<DeleteSyllabusProvider>();
       await provider.deleteMaterial(id.toString());
-      CustomToaster.toastSuccess(context, 'Success', 'Material deleted successfully');
+      CustomToaster.toastSuccess(
+          context, 'Success', 'Material deleted successfully');
       Navigator.of(context).pop();
     } catch (e) {
       print('Error deleting material: $e');
@@ -318,7 +320,8 @@ class _AdminMaterialDetailsScreenState extends State<AdminMaterialDetailsScreen>
                 fontSize: 16.0, color: AppColors.eLearningTxtColor1),
           ),
           Text(
-            DateFormat('E, dd MMM yyyy (hh:mm a)').format(widget.material.endDate),
+            DateFormat('E, dd MMM yyyy (hh:mm a)')
+                .format(widget.material.endDate),
             style: AppTextStyles.normal500(fontSize: 16.0, color: Colors.black),
           ),
         ],
@@ -360,7 +363,8 @@ class _AdminMaterialDetailsScreenState extends State<AdminMaterialDetailsScreen>
           Expanded(
             child: Text(
               widget.material.description,
-              style: AppTextStyles.normal500(fontSize: 16.0, color: Colors.black),
+              style:
+                  AppTextStyles.normal500(fontSize: 16.0, color: Colors.black),
             ),
           ),
         ],
@@ -368,40 +372,40 @@ class _AdminMaterialDetailsScreenState extends State<AdminMaterialDetailsScreen>
     );
   }
 
- Widget _buildAttachments() {
-  final attachments = widget.material.attachments;
-  if (attachments == null || attachments.isEmpty) {
-    return const Center(child: Text('No attachment available'));
-  }
-  return Padding(
-    padding: const EdgeInsets.all(16.0),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Attachments',
-          style: AppTextStyles.normal600(
-              fontSize: 18.0, color: AppColors.eLearningTxtColor1),
-        ),
-        const SizedBox(height: 12),
-        GridView.builder(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 2,
-            crossAxisSpacing: 12.0,
-            mainAxisSpacing: 12.0,
-            childAspectRatio: 1.2,
+  Widget _buildAttachments() {
+    final attachments = widget.material.attachments;
+    if (attachments == null || attachments.isEmpty) {
+      return const Center(child: Text('No attachment available'));
+    }
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Attachments',
+            style: AppTextStyles.normal600(
+                fontSize: 18.0, color: AppColors.eLearningTxtColor1),
           ),
-          itemCount: attachments.length,
-          itemBuilder: (context, index) {
-            return _buildAttachmentItem(attachments[index]);
-          },
-        ),
-      ],
-    ),
-  );
-}
+          const SizedBox(height: 12),
+          GridView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              crossAxisSpacing: 12.0,
+              mainAxisSpacing: 12.0,
+              childAspectRatio: 1.2,
+            ),
+            itemCount: attachments.length,
+            itemBuilder: (context, index) {
+              return _buildAttachmentItem(attachments[index]);
+            },
+          ),
+        ],
+      ),
+    );
+  }
 
   String _getFileType(String? fileName) {
     if (fileName == null) return 'unknown';
@@ -409,14 +413,16 @@ class _AdminMaterialDetailsScreenState extends State<AdminMaterialDetailsScreen>
     if (['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'].contains(extension)) {
       return 'image';
     }
-    if (['mp4', 'avi', 'mov', 'wmv', 'flv', 'webm', 'm4v', '3gp'].contains(extension)) {
+    if (['mp4', 'avi', 'mov', 'wmv', 'flv', 'webm', 'm4v', '3gp']
+        .contains(extension)) {
       return 'video';
     }
-if (['pdf','doc', 'docx', 'txt', 'rtf'].contains(extension)) {
+    if (['pdf', 'doc', 'docx', 'txt', 'rtf'].contains(extension)) {
       return 'pdf';
     }
-   
-    if (['.com', '.org', '.net', '.edu', 'http', 'https'].contains(extension) || fileName.startsWith('http')) {
+
+    if (['.com', '.org', '.net', '.edu', 'http', 'https'].contains(extension) ||
+        fileName.startsWith('http')) {
       return 'url';
     }
     if (['xls', 'xlsx', 'csv'].contains(extension)) {
@@ -502,88 +508,91 @@ if (['pdf','doc', 'docx', 'txt', 'rtf'].contains(extension)) {
     }
   }
 
-Widget _buildAttachmentItem(AttachmentItem attachment) {
-final rawFileName = attachment.fileName ?? 'Unknown file';
-final fileType = _getFileType(rawFileName);
-final fileUrl = "https://linkskool.net/$rawFileName";
+  Widget _buildAttachmentItem(AttachmentItem attachment) {
+    final rawFileName = attachment.fileName ?? 'Unknown file';
+    final fileType = _getFileType(rawFileName);
+    final fileUrl = "https://linkskool.net/$rawFileName";
 
 // Extract only the actual file name (remove the path)
-final fileName = rawFileName.split('/').last;
-  return GestureDetector(
-    onTap: () {
-      if (fileType == 'image' || fileType == 'video') {
-        _showFullScreenMedia(fileUrl, fileType);
-      } else {
-        // For all other files including PDF, open in external app
-        //fileUrl
-        if(fileType == 'pdf'){
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => PdfViewerPage(url: fileUrl),
-          ),
-        );
-        } else {_launchUrl(fileName);
-      }}
-    },
-    child: Container(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(12.0),
-        border: Border.all(
-          color: _getFileColor(fileType).withOpacity(0.3),
-          width: 1.5,
-        ),
-        color: Colors.white,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
-            spreadRadius: 1,
-            blurRadius: 3,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          Expanded(
-            flex: 3,
-            child: Container(
-              width: double.infinity,
-              decoration: BoxDecoration(
-                borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(12.0),
-                  topRight: Radius.circular(12.0),
-                ),
-                color: _getFileColor(fileType).withOpacity(0.1),
+    final fileName = rawFileName.split('/').last;
+    return GestureDetector(
+      onTap: () {
+        if (fileType == 'image' || fileType == 'video') {
+          _showFullScreenMedia(fileUrl, fileType);
+        } else {
+          // For all other files including PDF, open in external app
+          //fileUrl
+          if (fileType == 'pdf') {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => PdfViewerPage(url: fileUrl),
               ),
-              child: _buildPreviewContent(fileType, fileUrl, fileName),
-            ),
+            );
+          } else {
+            _launchUrl(fileName);
+          }
+        }
+      },
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(12.0),
+          border: Border.all(
+            color: _getFileColor(fileType).withOpacity(0.3),
+            width: 1.5,
           ),
-        if (fileType == "pdf" || fileType == "url") 
-  Expanded(
-    flex: 1,
-    child: Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 6.0),
-      child: Text(
-        fileName.length > 17 ? fileName.substring(0, 17) : fileName,
-        style: AppTextStyles.normal500(
-          fontSize: 14.0,
-          color: Colors.black,
+          color: Colors.white,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.withOpacity(0.1),
+              spreadRadius: 1,
+              blurRadius: 3,
+              offset: const Offset(0, 2),
+            ),
+          ],
         ),
-        maxLines: 2,
-        overflow: TextOverflow.ellipsis,
-        textAlign: TextAlign.center,
+        child: Column(
+          children: [
+            Expanded(
+              flex: 3,
+              child: Container(
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(12.0),
+                    topRight: Radius.circular(12.0),
+                  ),
+                  color: _getFileColor(fileType).withOpacity(0.1),
+                ),
+                child: _buildPreviewContent(fileType, fileUrl, fileName),
+              ),
+            ),
+            if (fileType == "pdf" || fileType == "url")
+              Expanded(
+                flex: 1,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 8.0, vertical: 6.0),
+                  child: Text(
+                    fileName.length > 17 ? fileName.substring(0, 17) : fileName,
+                    style: AppTextStyles.normal500(
+                      fontSize: 14.0,
+                      color: Colors.black,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+              ),
+          ],
+        ),
       ),
-    ),
-  ),
+    );
+  }
 
-        ],
-      ),
-    ),
-  );
-}
-
-  Widget _buildPreviewContent(String fileType, String fileUrl, String fileName) {
+  Widget _buildPreviewContent(
+      String fileType, String fileUrl, String fileName) {
     switch (fileType) {
       case 'image':
         return ClipRRect(
@@ -604,7 +613,8 @@ final fileName = rawFileName.split('/').last;
               return Center(
                 child: CircularProgressIndicator(
                   value: loadingProgress.expectedTotalBytes != null
-                      ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
+                      ? loadingProgress.cumulativeBytesLoaded /
+                          loadingProgress.expectedTotalBytes!
                       : null,
                 ),
               );
@@ -612,32 +622,33 @@ final fileName = rawFileName.split('/').last;
           ),
         );
 
-        case 'video':
-  return FutureBuilder<String?>(
-    future: VideoThumbnail.thumbnailFile(
-      video: fileUrl,
-      imageFormat: ImageFormat.PNG,
-      maxHeight: 200,
-      quality: 50,
-    ),
-    builder: (context, snapshot) {
-      if (snapshot.connectionState == ConnectionState.waiting) {
-        return const Center(child: CircularProgressIndicator());
-      }
-      if (snapshot.hasError || snapshot.data == null) {
-        return const Icon(Icons.videocam, size: 50, color: Colors.blue);
-      }
-      return Stack(
-        fit: StackFit.expand,
-        children: [
-          Image.file(File(snapshot.data!), fit: BoxFit.cover),
-          const Center(
-            child: Icon(Icons.play_circle_fill, size: 60, color: Colors.white),
+      case 'video':
+        return FutureBuilder<String?>(
+          future: VideoThumbnail.thumbnailFile(
+            video: fileUrl,
+            imageFormat: ImageFormat.PNG,
+            maxHeight: 200,
+            quality: 50,
           ),
-        ],
-      );
-    },
-  );
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(child: CircularProgressIndicator());
+            }
+            if (snapshot.hasError || snapshot.data == null) {
+              return const Icon(Icons.videocam, size: 50, color: Colors.blue);
+            }
+            return Stack(
+              fit: StackFit.expand,
+              children: [
+                Image.file(File(snapshot.data!), fit: BoxFit.cover),
+                const Center(
+                  child: Icon(Icons.play_circle_fill,
+                      size: 60, color: Colors.white),
+                ),
+              ],
+            );
+          },
+        );
 
       case 'pdf':
         return Stack(
@@ -658,7 +669,6 @@ final fileName = rawFileName.split('/').last;
                 ),
               ),
             ),
-           
           ],
         );
       case 'url':
@@ -716,14 +726,16 @@ final fileName = rawFileName.split('/').last;
                 padding: const EdgeInsets.all(16.0),
                 child: Text(
                   'Class comments',
-                  style: AppTextStyles.normal600(fontSize: 18.0, color: Colors.black),
+                  style: AppTextStyles.normal600(
+                      fontSize: 18.0, color: Colors.black),
                 ),
               ),
               ListView.builder(
                 controller: _scrollController,
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
-                itemCount: commentList.length + (commentProvider.isLoading ? 1 : 0),
+                itemCount:
+                    commentList.length + (commentProvider.isLoading ? 1 : 0),
                 itemBuilder: (context, index) {
                   if (index == commentList.length) {
                     return const Center(child: CircularProgressIndicator());
@@ -799,26 +811,27 @@ final fileName = rawFileName.split('/').last;
                       ),
                     ),
                     if (comment.userId == creatorId)
-                    PopupMenuButton<String>(
-                      icon: const Icon(Icons.more_vert, size: 20, color: AppColors.primaryLight),
-                      onSelected: (value) {
-                        if (value == 'edit') {
-                          _editComment(comment);
-                        } else if (value == 'delete') {
-                          _deleteComment(comment);
-                        }
-                      },
-                      itemBuilder: (context) => [
-                        const PopupMenuItem(
-                          value: 'edit',
-                          child: Text('Edit'),
-                        ),
-                        const PopupMenuItem(
-                          value: 'delete',
-                          child: Text('Delete'),
-                        ),
-                      ],
-                    ),
+                      PopupMenuButton<String>(
+                        icon: const Icon(Icons.more_vert,
+                            size: 20, color: AppColors.primaryLight),
+                        onSelected: (value) {
+                          if (value == 'edit') {
+                            _editComment(comment);
+                          } else if (value == 'delete') {
+                            _deleteComment(comment);
+                          }
+                        },
+                        itemBuilder: (context) => [
+                          const PopupMenuItem(
+                            value: 'edit',
+                            child: Text('Edit'),
+                          ),
+                          const PopupMenuItem(
+                            value: 'delete',
+                            child: Text('Delete'),
+                          ),
+                        ],
+                      ),
                   ],
                 ),
                 Text(
@@ -866,29 +879,34 @@ final fileName = rawFileName.split('/').last;
 
   void _addComment([Map<String, dynamic>? updatedComment]) async {
     if (_commentController.text.isNotEmpty) {
-      final comment = updatedComment ?? {
-        "content_title": widget.material.title,
-        "user_id": creatorId,
-        "user_name": creatorName,
-        "comment": _commentController.text,
-        "level_id": widget.levelId,
-        "course_id": widget.courseId,
-        "course_name": widget.courseName,
-        "term": academicTerm,
-        if (_isEditing == true && _editingComment != null)
-          "content_id": widget.itemId.toString(),
-      };
+      final comment = updatedComment ??
+          {
+            "content_title": widget.material.title,
+            "user_id": creatorId,
+            "user_name": creatorName,
+            "comment": _commentController.text,
+            "level_id": widget.levelId,
+            "course_id": widget.courseId,
+            "course_name": widget.courseName,
+            "term": academicTerm,
+            if (_isEditing == true && _editingComment != null)
+              "content_id": widget.itemId.toString(),
+          };
       try {
-        final commentProvider = Provider.of<CommentProvider>(context, listen: false);
+        final commentProvider =
+            Provider.of<CommentProvider>(context, listen: false);
         final contentId = _editingComment?.id;
         if (_isEditing) {
           comment['content_id'];
           print("printed Comment $comment");
           await commentProvider.UpdateComment(comment, contentId.toString());
-          CustomToaster.toastSuccess(context, 'Success', 'Comment updated successfully');
+          CustomToaster.toastSuccess(
+              context, 'Success', 'Comment updated successfully');
         } else {
-          await commentProvider.createComment(comment, widget.itemId.toString());
-          CustomToaster.toastSuccess(context, 'Success', 'Comment added successfully');
+          await commentProvider.createComment(
+              comment, widget.itemId.toString());
+          CustomToaster.toastSuccess(
+              context, 'Success', 'Comment added successfully');
         }
         await commentProvider.fetchComments(widget.itemId.toString());
         setState(() {
@@ -911,18 +929,21 @@ final fileName = rawFileName.split('/').last;
           }
         });
       } catch (e) {
-        CustomToaster.toastError(context, 'Error', _isEditing ? 'Failed to update comment' : 'Failed to add comment');
+        CustomToaster.toastError(context, 'Error',
+            _isEditing ? 'Failed to update comment' : 'Failed to add comment');
       }
     }
   }
 
   void _deleteComment(Comment comment) async {
-    final commentProvider = Provider.of<CommentProvider>(context, listen: false);
+    final commentProvider =
+        Provider.of<CommentProvider>(context, listen: false);
     print('Setting up delete for comment ID: ${comment.id}');
     final commentId = comment.id.toString();
     try {
       await commentProvider.DeleteComment(commentId);
-      CustomToaster.toastSuccess(context, 'Success', 'Comment deleted successfully');
+      CustomToaster.toastSuccess(
+          context, 'Success', 'Comment deleted successfully');
     } catch (e) {
       CustomToaster.toastError(context, 'Error', 'Failed to delete comment');
     }
@@ -930,7 +951,8 @@ final fileName = rawFileName.split('/').last;
 
   void _editComment(Comment comment) {
     if (comment.text.isEmpty) {
-      CustomToaster.toastError(context, 'Error', 'Comment text cannot be empty');
+      CustomToaster.toastError(
+          context, 'Error', 'Comment text cannot be empty');
       return;
     }
     print('Setting up edit for comment ID: ${comment.id}');
@@ -947,18 +969,19 @@ final fileName = rawFileName.split('/').last;
       "term": academicTerm,
       "comment_id": comment.id,
     };
-    print('Editing comment: ${updatedComment['comment']} with ID: ${comment.id}');
+    print(
+        'Editing comment: ${updatedComment['comment']} with ID: ${comment.id}');
     setState(() {
       _isAddingComment = true;
       _isEditing = true;
       _commentFocusNode.requestFocus();
     });
-    print('Edit setup complete. _isEditing: $_isEditing, _editingComment.id: ${_editingComment?.id}');
+    print(
+        'Edit setup complete. _isEditing: $_isEditing, _editingComment.id: ${_editingComment?.id}');
   }
 }
 
 // Full Screen Media Viewer (only for images and videos now)
-
 
 class FullScreenMediaViewer extends StatefulWidget {
   final String url;
@@ -966,11 +989,11 @@ class FullScreenMediaViewer extends StatefulWidget {
   final String fileName;
 
   const FullScreenMediaViewer({
-    Key? key,
+    super.key,
     required this.url,
     required this.type,
     required this.fileName,
-  }) : super(key: key);
+  });
 
   @override
   State<FullScreenMediaViewer> createState() => _FullScreenMediaViewerState();
@@ -1031,7 +1054,8 @@ class _FullScreenMediaViewerState extends State<FullScreenMediaViewer> {
       body: Center(
         child: widget.type == 'video'
             ? (_chewieController != null &&
-                    _chewieController!.videoPlayerController.value.isInitialized)
+                    _chewieController!
+                        .videoPlayerController.value.isInitialized)
                 ? Chewie(controller: _chewieController!)
                 : const CircularProgressIndicator(color: Colors.white)
             : Image.network(
@@ -1102,7 +1126,7 @@ class _VideoThumbnailWidgetState extends State<VideoThumbnailWidget> {
           borderRadius: BorderRadius.circular(8),
           child: Image.memory(
             _thumbnail!,
-            width:double.infinity,
+            width: double.infinity,
             height: 140,
             fit: BoxFit.cover,
           ),

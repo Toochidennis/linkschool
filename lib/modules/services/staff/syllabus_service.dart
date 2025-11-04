@@ -36,10 +36,8 @@ class StaffSyllabusService {
         'level_id': levelId,
         'term': term,
         'course_id': courseId,
-        "class_id":classId
+        "class_id": classId
       },
-
-      
       fromJson: (json) {
         if (json['success'] == true && json['response'] is List) {
           return (json['response'] as List)
@@ -103,7 +101,8 @@ class StaffSyllabusService {
     }
   }
 
-  Future<void> UpdateSyllabus(StaffSyllabusModel syllabus, int syllabusId) async {
+  Future<void> UpdateSyllabus(
+      StaffSyllabusModel syllabus, int syllabusId) async {
     final userBox = Hive.box('userData');
     final loginData = userBox.get('userData') ?? userBox.get('loginResponse');
 

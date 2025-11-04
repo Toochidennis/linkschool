@@ -15,8 +15,8 @@ class CustomDashLine extends CustomPainter {
 
     while (startX < maxWidth) {
       canvas.drawLine(
-        Offset(startX, 0), 
-        Offset(startX + dashWidth, 0), 
+        Offset(startX, 0),
+        Offset(startX + dashWidth, 0),
         paint,
       );
       startX += dashWidth + dashSpace;

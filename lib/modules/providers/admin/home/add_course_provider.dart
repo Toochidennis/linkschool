@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:linkschool/modules/model/admin/home/add_course_model.dart';
 import 'package:linkschool/modules/services/admin/home/add_course_service.dart';
 
-
 class CourseProvider with ChangeNotifier {
   final CourseService _courseService;
   bool isLoading = false;
@@ -31,7 +30,8 @@ class CourseProvider with ChangeNotifier {
     }
   }
 
-  Future<bool> updateCourse(String courseId, Map<String, dynamic> updatedCourse) async {
+  Future<bool> updateCourse(
+      String courseId, Map<String, dynamic> updatedCourse) async {
     isLoading = true;
     notifyListeners();
     error = null;

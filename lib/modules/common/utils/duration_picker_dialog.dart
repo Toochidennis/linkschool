@@ -50,7 +50,8 @@ class _DurationPickerDialogState extends State<DurationPickerDialog> {
                   setState(() => _hours = value < 0 ? 0 : value);
                 }),
                 _buildTimeInput('Minutes', _minutes, (value) {
-                  setState(() => _minutes = value >= 60 ? 59 : (value < 0 ? 0 : value));
+                  setState(() =>
+                      _minutes = value >= 60 ? 59 : (value < 0 ? 0 : value));
                 }),
               ],
             ),
@@ -76,11 +77,13 @@ class _DurationPickerDialogState extends State<DurationPickerDialog> {
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(4.0),
                     ),
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 10),
                   ),
                   child: Text(
                     'Save',
-                    style: AppTextStyles.normal600(fontSize: 16, color: Colors.white),
+                    style: AppTextStyles.normal600(
+                        fontSize: 16, color: Colors.white),
                   ),
                 ),
               ],
@@ -94,7 +97,8 @@ class _DurationPickerDialogState extends State<DurationPickerDialog> {
   Widget _buildTimeInput(String label, int value, Function(int) onChanged) {
     return Column(
       children: [
-        Text(label, style: AppTextStyles.normal600(fontSize: 14, color: Colors.black)),
+        Text(label,
+            style: AppTextStyles.normal600(fontSize: 14, color: Colors.black)),
         const SizedBox(height: 8),
         Container(
           width: 80,

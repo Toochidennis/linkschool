@@ -10,7 +10,7 @@ class BookService {
     final userBox = Hive.box('userData');
     final loginData = userBox.get('userData') ?? userBox.get('loginResponse');
     final dbName = userBox.get('_db') ?? 'aalmgzmy_linkskoo_practice';
-    
+
     if (loginData == null || loginData['token'] == null) {
       throw Exception("No valid login data or token found");
     }

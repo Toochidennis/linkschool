@@ -1,8 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:hive/hive.dart';
 import 'package:linkschool/main.dart';
 import 'package:linkschool/modules/admin/home/portal_news_item.dart';
@@ -13,11 +11,12 @@ import 'package:linkschool/modules/common/custom_toaster.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/common/widgets/portal/student/student_customized_appbar.dart';
 import 'package:linkschool/modules/explore/home/custom_button_item.dart';
-import 'package:linkschool/modules/model/staff/dashboard_model.dart' show StafFeed;
-import 'package:linkschool/modules/model/admin/home/dashboard_feed_model.dart' show Feed;
+import 'package:linkschool/modules/model/staff/dashboard_model.dart'
+    show StafFeed;
+import 'package:linkschool/modules/model/admin/home/dashboard_feed_model.dart'
+    show Feed;
 import 'package:linkschool/modules/providers/staff/staff_dashboard_provider.dart';
 import 'package:linkschool/modules/staff/home/form_classes_screen.dart';
-import 'package:linkschool/modules/staff/home/staff_course_screen.dart';
 import 'package:linkschool/modules/staff/result/staff_result_screen.dart';
 import 'package:linkschool/modules/student/home/feed_details_screen.dart';
 import 'package:provider/provider.dart';
@@ -29,7 +28,8 @@ class StaffHomeScreen extends StatefulWidget {
   State<StaffHomeScreen> createState() => _StaffHomeScreenState();
 }
 
-class _StaffHomeScreenState extends State<StaffHomeScreen> with TickerProviderStateMixin, RouteAware {
+class _StaffHomeScreenState extends State<StaffHomeScreen>
+    with TickerProviderStateMixin, RouteAware {
   final PageController _pageController = PageController(viewportFraction: 0.90);
   Timer? _timer;
   int _currentPage = 0;
@@ -97,7 +97,8 @@ class _StaffHomeScreenState extends State<StaffHomeScreen> with TickerProviderSt
     _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(parent: _fadeController, curve: Curves.easeInOut),
     );
-    _slideAnimation = Tween<Offset>(begin: const Offset(0, 0.3), end: Offset.zero).animate(
+    _slideAnimation =
+        Tween<Offset>(begin: const Offset(0, 0.3), end: Offset.zero).animate(
       CurvedAnimation(parent: _slideController, curve: Curves.elasticOut),
     );
     _bounceAnimation = Tween<double>(begin: 0.8, end: 1.0).animate(
@@ -111,7 +112,8 @@ class _StaffHomeScreenState extends State<StaffHomeScreen> with TickerProviderSt
       _bounceController.forward();
     });
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      Provider.of<StaffDashboardProvider>(context, listen: false).fetchDashboardData();
+      Provider.of<StaffDashboardProvider>(context, listen: false)
+          .fetchDashboardData();
     });
   }
 
@@ -123,7 +125,8 @@ class _StaffHomeScreenState extends State<StaffHomeScreen> with TickerProviderSt
 
   @override
   void didPopNext() {
-    Provider.of<StaffDashboardProvider>(context, listen: false).fetchDashboardData();
+    Provider.of<StaffDashboardProvider>(context, listen: false)
+        .fetchDashboardData();
   }
 
   @override
@@ -147,9 +150,12 @@ class _StaffHomeScreenState extends State<StaffHomeScreen> with TickerProviderSt
   Future<void> _loadUserData() async {
     try {
       final userBox = Hive.box('userData');
-      final storedUserData = userBox.get('userData') ?? userBox.get('loginResponse');
+      final storedUserData =
+          userBox.get('userData') ?? userBox.get('loginResponse');
       if (storedUserData != null) {
-        final dataMap = storedUserData is String ? json.decode(storedUserData) : storedUserData as Map<String, dynamic>;
+        final dataMap = storedUserData is String
+            ? json.decode(storedUserData)
+            : storedUserData as Map<String, dynamic>;
         final data = dataMap['response']?['data'] ?? dataMap['data'] ?? {};
         final profile = data['profile'] ?? {};
         final settings = data['settings'] ?? {};
@@ -163,7 +169,8 @@ class _StaffHomeScreenState extends State<StaffHomeScreen> with TickerProviderSt
               ? settings['term']
               : int.tryParse(settings['term'].toString());
         });
-        debugPrint('✅ User loaded: ID=$creatorId, Name=$creatorName, Term=$academicTerm');
+        debugPrint(
+            '✅ User loaded: ID=$creatorId, Name=$creatorName, Term=$academicTerm');
       } else {
         debugPrint('⚠️ No stored user data found.');
       }
@@ -272,7 +279,6 @@ class _StaffHomeScreenState extends State<StaffHomeScreen> with TickerProviderSt
             ),
             child: Row(
               children: [
-               
                 Expanded(
                   child: GestureDetector(
                     onTap: () {
@@ -284,17 +290,14 @@ class _StaffHomeScreenState extends State<StaffHomeScreen> with TickerProviderSt
                       duration: const Duration(milliseconds: 200),
                       padding: const EdgeInsets.symmetric(vertical: 12),
                       decoration: BoxDecoration(
-                        color:AppColors.text2Light,
-                            
+                        color: AppColors.text2Light,
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: Text(
                         'News Feed',
                         textAlign: TextAlign.center,
                         style: TextStyle(
-                          color: 
-                               Colors.white,
-                              
+                          color: Colors.white,
                           fontWeight: FontWeight.w600,
                           fontFamily: 'Urbanist',
                         ),
@@ -328,7 +331,7 @@ class _StaffHomeScreenState extends State<StaffHomeScreen> with TickerProviderSt
             controller: _newsController,
             maxLines: 4,
             decoration: InputDecoration(
-              hintText: "news content here..." ,
+              hintText: "news content here...",
               hintStyle: const TextStyle(
                 color: AppColors.text5Light,
                 fontSize: 14,
@@ -382,10 +385,11 @@ class _StaffHomeScreenState extends State<StaffHomeScreen> with TickerProviderSt
   }
 
   void _handleSubmit() async {
-    final controller =  _newsController;
+    final controller = _newsController;
     final title = _titleController.text.trim();
     final content = controller.text.trim();
-    final provider = Provider.of<StaffDashboardProvider>(context, listen: false);
+    final provider =
+        Provider.of<StaffDashboardProvider>(context, listen: false);
     try {
       if (content.isNotEmpty) {
         final payload = {
@@ -399,7 +403,8 @@ class _StaffHomeScreenState extends State<StaffHomeScreen> with TickerProviderSt
           'replies': [],
         };
         await provider.createFeed(payload);
-        CustomToaster.toastSuccess(context, 'Success', 'Feed added successfully');
+        CustomToaster.toastSuccess(
+            context, 'Success', 'Feed added successfully');
         _titleController.clear();
         controller.clear();
         setState(() {
@@ -407,7 +412,7 @@ class _StaffHomeScreenState extends State<StaffHomeScreen> with TickerProviderSt
         });
       }
     } catch (e) {
-       CustomToaster.toastError(context, 'Failed', 'Failed to add feed $e');
+      CustomToaster.toastError(context, 'Failed', 'Failed to add feed $e');
     }
   }
 
@@ -433,7 +438,8 @@ class _StaffHomeScreenState extends State<StaffHomeScreen> with TickerProviderSt
   }
 
   void _saveEditing(StafFeed feed) async {
-    final provider = Provider.of<StaffDashboardProvider>(context, listen: false);
+    final provider =
+        Provider.of<StaffDashboardProvider>(context, listen: false);
     try {
       final updatedFeed = {
         'id': feed.id,
@@ -449,7 +455,8 @@ class _StaffHomeScreenState extends State<StaffHomeScreen> with TickerProviderSt
       debugPrint('Updated Feed Data: $updatedFeed');
       await provider.updateFeed(feed.id.toString(), updatedFeed);
       if (mounted) {
-        CustomToaster.toastSuccess(context, 'Updated', 'Feed updated successfully');
+        CustomToaster.toastSuccess(
+            context, 'Updated', 'Feed updated successfully');
         _cancelEditing();
       }
     } catch (e) {
@@ -481,10 +488,12 @@ class _StaffHomeScreenState extends State<StaffHomeScreen> with TickerProviderSt
     );
     if (confirm != true) return;
     try {
-      final provider = Provider.of<StaffDashboardProvider>(context, listen: false);
+      final provider =
+          Provider.of<StaffDashboardProvider>(context, listen: false);
       await provider.deleteFeed(feed.id.toString());
       if (mounted) {
-        CustomToaster.toastSuccess(context, 'Deleted', 'Feed deleted successfully');
+        CustomToaster.toastSuccess(
+            context, 'Deleted', 'Feed deleted successfully');
       }
     } catch (e) {
       if (mounted) {
@@ -502,7 +511,8 @@ class _StaffHomeScreenState extends State<StaffHomeScreen> with TickerProviderSt
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16.0),
-        border: Border.all(color: AppColors.text2Light.withOpacity(0.3), width: 2),
+        border:
+            Border.all(color: AppColors.text2Light.withOpacity(0.3), width: 2),
         boxShadow: [
           BoxShadow(
             color: AppColors.text2Light.withOpacity(0.1),
@@ -619,32 +629,31 @@ class _StaffHomeScreenState extends State<StaffHomeScreen> with TickerProviderSt
     );
   }
 
-  String _formatNotificationMessage(String? title, String? type, String? courseName) {
-  if (type == null) return 'posted a new update';
-  final courseText = (courseName != null && courseName.isNotEmpty) ? ' for $courseName' : '';
+  String _formatNotificationMessage(
+      String? title, String? type, String? courseName) {
+    if (type == null) return 'posted a new update';
+    final courseText =
+        (courseName != null && courseName.isNotEmpty) ? ' for $courseName' : '';
 
-  switch (type.toLowerCase()) {
-    case 'news':
-    
-      return 'shared a news update: $title $courseText';
+    switch (type.toLowerCase()) {
+      case 'news':
+        return 'shared a news update: $title $courseText';
 
-    case 'comment':
-      return 'posted a comment $title $courseText';
-    case 'question':
-      return 'asked a question:  $title $courseText';
-    case 'assignment':
-      return 'uploaded an assignment:  $title $courseText';
-    case 'material':
-    return 'uploaded a material $title $courseText';
-    default:
-      return 'posted:  $title $courseText';
+      case 'comment':
+        return 'posted a comment $title $courseText';
+      case 'question':
+        return 'asked a question:  $title $courseText';
+      case 'assignment':
+        return 'uploaded an assignment:  $title $courseText';
+      case 'material':
+        return 'uploaded a material $title $courseText';
+      default:
+        return 'posted:  $title $courseText';
+    }
   }
-}
 
-
-  Widget _buildNotificationCard(String name, String message, String time, String avatarPath, String courseName, String type
-  
-  ) {
+  Widget _buildNotificationCard(String name, String message, String time,
+      String avatarPath, String courseName, String type) {
     return Card(
       elevation: 2,
       child: Container(
@@ -664,7 +673,8 @@ class _StaffHomeScreenState extends State<StaffHomeScreen> with TickerProviderSt
                 children: [
                   Text(
                     name,
-                    style: AppTextStyles.normal500(fontSize: 16, color: AppColors.studentTxtColor2),
+                    style: AppTextStyles.normal500(
+                        fontSize: 16, color: AppColors.studentTxtColor2),
                   ),
                   const SizedBox(height: 4),
                   Text(
@@ -676,7 +686,8 @@ class _StaffHomeScreenState extends State<StaffHomeScreen> with TickerProviderSt
                   const SizedBox(height: 8),
                   Text(
                     time,
-                    style: AppTextStyles.normal500(fontSize: 16, color: AppColors.text5Light),
+                    style: AppTextStyles.normal500(
+                        fontSize: 16, color: AppColors.text5Light),
                   ),
                 ],
               ),
@@ -691,7 +702,8 @@ class _StaffHomeScreenState extends State<StaffHomeScreen> with TickerProviderSt
   Widget build(BuildContext context) {
     final Brightness brightness = Theme.of(context).brightness;
     opacity = brightness == Brightness.light ? 0.1 : 0.15;
-    final provider =  Provider.of<StaffDashboardProvider>(context, listen: false);
+    final provider =
+        Provider.of<StaffDashboardProvider>(context, listen: false);
     return Scaffold(
       appBar: CustomStudentAppBar(
         title: 'Welcome',
@@ -705,7 +717,8 @@ class _StaffHomeScreenState extends State<StaffHomeScreen> with TickerProviderSt
           children: [
             RefreshIndicator(
               onRefresh: () async {
-                await Provider.of<StaffDashboardProvider>(context, listen: false)
+                await Provider.of<StaffDashboardProvider>(context,
+                        listen: false)
                     .fetchDashboardData(refresh: true);
               },
               child: SingleChildScrollView(
@@ -713,7 +726,10 @@ class _StaffHomeScreenState extends State<StaffHomeScreen> with TickerProviderSt
                 physics: const BouncingScrollPhysics(),
                 child: Consumer<StaffDashboardProvider>(
                   builder: (context, provider, _) {
-                    final feeds = [...provider.newsFeeds, ...provider.questionFeeds];
+                    final feeds = [
+                      ...provider.newsFeeds,
+                      ...provider.questionFeeds
+                    ];
                     final notifications = provider.recentActivities;
                     return Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -734,19 +750,27 @@ class _StaffHomeScreenState extends State<StaffHomeScreen> with TickerProviderSt
                                 builder: (context, child) {
                                   double scale = 1.0;
                                   if (_pageController.position.haveDimensions) {
-                                    num pageOffset = _pageController.page ?? _currentPage;
-                                    scale = (1 - ((pageOffset - index).abs() * 0.2)).clamp(0.8, 1.0);
+                                    num pageOffset =
+                                        _pageController.page ?? _currentPage;
+                                    scale =
+                                        (1 - ((pageOffset - index).abs() * 0.2))
+                                            .clamp(0.8, 1.0);
                                   }
                                   return Transform.scale(
                                     scale: scale,
-                                  child: _buildNotificationCard(
-  notifications[index].createdBy ?? 'Unknown',
-  notifications[index].title ?? '', // This becomes the 'title' parameter
-  notifications[index].datePosted ?? '', // This becomes 'time'
-  'assets/images/student/avatar1.svg',
-  notifications[index].courseName ?? '', // This becomes 'courseName'
-  notifications[index].type ?? '', // This becomes 'type'
-),
+                                    child: _buildNotificationCard(
+                                      notifications[index].createdBy ??
+                                          'Unknown',
+                                      notifications[index].title ??
+                                          '', // This becomes the 'title' parameter
+                                      notifications[index].datePosted ??
+                                          '', // This becomes 'time'
+                                      'assets/images/student/avatar1.svg',
+                                      notifications[index].courseName ??
+                                          '', // This becomes 'courseName'
+                                      notifications[index].type ??
+                                          '', // This becomes 'type'
+                                    ),
                                   );
                                 },
                               );
@@ -774,7 +798,8 @@ class _StaffHomeScreenState extends State<StaffHomeScreen> with TickerProviderSt
                         const SizedBox(height: 24),
                         Text(
                           'You can...',
-                          style: AppTextStyles.normal600(fontSize: 20, color: AppColors.primaryLight),
+                          style: AppTextStyles.normal600(
+                              fontSize: 20, color: AppColors.primaryLight),
                         ),
                         const SizedBox(height: 12),
                         Row(
@@ -786,8 +811,9 @@ class _StaffHomeScreenState extends State<StaffHomeScreen> with TickerProviderSt
                                 borderColor: AppColors.portalButton1BorderLight,
                                 textColor: AppColors.staffTxtColor1,
                                 label: 'Form Classes',
-                                number:5,
-                                iconPath: 'assets/icons/student/knowledge_icon.svg',
+                                number: 5,
+                                iconPath:
+                                    'assets/icons/student/knowledge_icon.svg',
                                 iconHeight: 40.0,
                                 iconWidth: 36.0,
                                 destination: FormClassesScreen(),
@@ -796,16 +822,16 @@ class _StaffHomeScreenState extends State<StaffHomeScreen> with TickerProviderSt
                             const SizedBox(width: 14.0),
                             Expanded(
                               child: CustomButtonItem(
-                                backgroundColor: AppColors.staffCtnColor1,
-                                borderColor: AppColors.secondaryLight,
-                                textColor: AppColors.staffTxtColor2,
-                                label: 'Courses',
-                                number: 3,
-                                iconPath: 'assets/icons/student/study_icon.svg',
-                                iconHeight: 40.0,
-                                iconWidth: 36.0,
-                                destination: StaffResultScreen()
-                              ),
+                                  backgroundColor: AppColors.staffCtnColor1,
+                                  borderColor: AppColors.secondaryLight,
+                                  textColor: AppColors.staffTxtColor2,
+                                  label: 'Courses',
+                                  number: 3,
+                                  iconPath:
+                                      'assets/icons/student/study_icon.svg',
+                                  iconHeight: 40.0,
+                                  iconWidth: 36.0,
+                                  destination: StaffResultScreen()),
                             ),
                           ],
                         ),
@@ -813,7 +839,8 @@ class _StaffHomeScreenState extends State<StaffHomeScreen> with TickerProviderSt
                         _buildAnimatedCard(
                           index: 7,
                           child: Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                            padding:
+                                const EdgeInsets.symmetric(horizontal: 16.0),
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
@@ -822,7 +849,8 @@ class _StaffHomeScreenState extends State<StaffHomeScreen> with TickerProviderSt
                                     Container(
                                       padding: const EdgeInsets.all(8),
                                       decoration: BoxDecoration(
-                                        color: AppColors.text2Light.withOpacity(0.1),
+                                        color: AppColors.text2Light
+                                            .withOpacity(0.1),
                                         borderRadius: BorderRadius.circular(12),
                                       ),
                                       child: Icon(
@@ -856,10 +884,12 @@ class _StaffHomeScreenState extends State<StaffHomeScreen> with TickerProviderSt
                                         ),
                                         decoration: BoxDecoration(
                                           color: AppColors.text2Light,
-                                          borderRadius: BorderRadius.circular(20),
+                                          borderRadius:
+                                              BorderRadius.circular(20),
                                           boxShadow: [
                                             BoxShadow(
-                                              color: AppColors.text2Light.withOpacity(0.3),
+                                              color: AppColors.text2Light
+                                                  .withOpacity(0.3),
                                               blurRadius: 8,
                                               offset: const Offset(0, 2),
                                             ),
@@ -868,7 +898,9 @@ class _StaffHomeScreenState extends State<StaffHomeScreen> with TickerProviderSt
                                         child: Row(
                                           children: [
                                             Icon(
-                                              _showAddForm ? Icons.close : Icons.add,
+                                              _showAddForm
+                                                  ? Icons.close
+                                                  : Icons.add,
                                               color: Colors.white,
                                               size: 16,
                                             ),
@@ -889,13 +921,14 @@ class _StaffHomeScreenState extends State<StaffHomeScreen> with TickerProviderSt
                                     const SizedBox(width: 8),
                                     TextButton(
                                       onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => AllFeedsScreen(), // Ensure you have this screen
-                          ),
-                        );
-                      },
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (context) =>
+                                                AllFeedsScreen(), // Ensure you have this screen
+                                          ),
+                                        );
+                                      },
                                       child: const Text(
                                         'See all',
                                         style: TextStyle(
@@ -953,7 +986,8 @@ class _StaffHomeScreenState extends State<StaffHomeScreen> with TickerProviderSt
                                     }
                                     return TweenAnimationBuilder<double>(
                                       tween: Tween<double>(begin: 0, end: 1),
-                                      duration: const Duration(milliseconds: 600),
+                                      duration:
+                                          const Duration(milliseconds: 600),
                                       curve: Curves.easeOutBack,
                                       builder: (context, value, child) {
                                         return Transform.scale(
@@ -963,12 +997,20 @@ class _StaffHomeScreenState extends State<StaffHomeScreen> with TickerProviderSt
                                               Navigator.push(
                                                 context,
                                                 MaterialPageRoute(
-                                                  builder: (_) => FeedDetailsScreen(
-                                                    replies: feed.replies.map((stafFeed) => Feed.fromJson(stafFeed.toJson())).toList(),
-                                                    profileImageUrl: profileImageUrl,
+                                                  builder: (_) =>
+                                                      FeedDetailsScreen(
+                                                    replies: feed.replies
+                                                        .map((stafFeed) =>
+                                                            Feed.fromJson(
+                                                                stafFeed
+                                                                    .toJson()))
+                                                        .toList(),
+                                                    profileImageUrl:
+                                                        profileImageUrl,
                                                     name: feed.authorName,
                                                     content: feed.content,
-                                                    interactions: feed.replies.length,
+                                                    interactions:
+                                                        feed.replies.length,
                                                     time: feed.createdAt,
                                                     parentId: feed.id,
                                                   ),
@@ -978,16 +1020,20 @@ class _StaffHomeScreenState extends State<StaffHomeScreen> with TickerProviderSt
                                             child: Column(
                                               children: [
                                                 PortalNewsItem(
-                                                  profileImageUrl: profileImageUrl,
+                                                  profileImageUrl:
+                                                      profileImageUrl,
                                                   name: feed.authorName,
                                                   newsContent: feed.content,
                                                   time: feed.createdAt,
                                                   title: feed.title,
-                                                  CreatorId: creatorId.toString(),
+                                                  CreatorId:
+                                                      creatorId.toString(),
                                                   authorId: feed.authorId,
                                                   role: userRole,
-                                                  edit: () => _startEditing(feed),
-                                                  delete: () => _confirmDelete(feed),
+                                                  edit: () =>
+                                                      _startEditing(feed),
+                                                  delete: () =>
+                                                      _confirmDelete(feed),
                                                   comments: feed.replies.length,
                                                 ),
                                               ],

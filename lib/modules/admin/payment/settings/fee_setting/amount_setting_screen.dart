@@ -71,7 +71,9 @@ class AmounteSettingScreenState extends State<AmountSettingScreen> {
       if (response.success && response.data != null) {
         setState(() {
           feeItems = response.data!
-              .where((fee) => fee['fee_name'] != null && fee['fee_name'].toString().isNotEmpty)
+              .where((fee) =>
+                  fee['fee_name'] != null &&
+                  fee['fee_name'].toString().isNotEmpty)
               .toList();
           isLoading = false;
 
@@ -79,20 +81,20 @@ class AmounteSettingScreenState extends State<AmountSettingScreen> {
           for (var i = 0; i < feeItems.length; i++) {
             _focusNodes['amount_$i'] = FocusNode();
             _fieldFocusState['amount_$i'] = false;
-            
+
             // Set initial value, but handle zero values specially
             final initialAmount = feeItems[i]['amount']?.toString() ?? '0';
             _amountControllers['amount_$i'] = TextEditingController(
               text: initialAmount == '0' ? '0' : initialAmount,
             );
-            
+
             // Add focus listener for smart zero removal and real-time updates
             _focusNodes['amount_$i']!.addListener(() {
               final hasFocus = _focusNodes['amount_$i']!.hasFocus;
               setState(() {
                 _fieldFocusState['amount_$i'] = hasFocus;
               });
-              
+
               if (hasFocus) {
                 // Remove zero when field gets focus
                 final controller = _amountControllers['amount_$i']!;
@@ -107,7 +109,7 @@ class AmounteSettingScreenState extends State<AmountSettingScreen> {
                 }
               }
             });
-            
+
             // Add text change listener for real-time total updates
             _amountControllers['amount_$i']!.addListener(() {
               setState(() {
@@ -200,7 +202,8 @@ class AmounteSettingScreenState extends State<AmountSettingScreen> {
                             itemCount: availableLevels.length,
                             itemBuilder: (context, index) {
                               final level = availableLevels[index];
-                              final levelName = level['level_name'] ?? 'Unknown Level';
+                              final levelName =
+                                  level['level_name'] ?? 'Unknown Level';
                               return Padding(
                                 padding: const EdgeInsets.symmetric(
                                   horizontal: 24,
@@ -215,7 +218,8 @@ class AmounteSettingScreenState extends State<AmountSettingScreen> {
                                     Navigator.pushReplacement(
                                       context,
                                       MaterialPageRoute(
-                                        builder: (context) => AmountSettingScreen(
+                                        builder: (context) =>
+                                            AmountSettingScreen(
                                           levelName: levelName,
                                           levelId: level['id'],
                                         ),
@@ -228,10 +232,12 @@ class AmounteSettingScreenState extends State<AmountSettingScreen> {
                                     shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(8),
                                     ),
-                                    padding: const EdgeInsets.symmetric(vertical: 16),
+                                    padding: const EdgeInsets.symmetric(
+                                        vertical: 16),
                                   ),
                                   child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
                                     children: [
                                       Text(
                                         levelName,
@@ -265,7 +271,8 @@ class AmounteSettingScreenState extends State<AmountSettingScreen> {
     return feeItems.fold(0, (sum, item) {
       final index = feeItems.indexOf(item);
       final amountText = _amountControllers['amount_$index']?.text ?? '0';
-      final amount = double.tryParse(amountText.isEmpty ? '0' : amountText) ?? 0;
+      final amount =
+          double.tryParse(amountText.isEmpty ? '0' : amountText) ?? 0;
       return sum + amount;
     });
   }
@@ -276,15 +283,16 @@ class AmounteSettingScreenState extends State<AmountSettingScreen> {
     print('Session: ${_getCurrentSession()}');
     print('Total Amount: ${totalAmount.toStringAsFixed(2)}');
     print('Individual Fees:');
-    
+
     for (var i = 0; i < feeItems.length; i++) {
       final fee = feeItems[i];
-      final amount = double.tryParse(_amountControllers['amount_$i']?.text ?? '0') ?? 0;
+      final amount =
+          double.tryParse(_amountControllers['amount_$i']?.text ?? '0') ?? 0;
       final mandatory = fee['is_mandatory'] == 1 ? '(Mandatory)' : '(Optional)';
-      
+
       print('  - ${fee['fee_name']} $mandatory: ${amount.toStringAsFixed(2)}');
     }
-    
+
     print('========================');
   }
 
@@ -306,7 +314,8 @@ class AmounteSettingScreenState extends State<AmountSettingScreen> {
             'fee_id': fee['fee_id'],
             'fee_name': fee['fee_name'],
             'is_mandatory': fee['is_mandatory'],
-            'amount': double.tryParse(amountText.isEmpty ? '0' : amountText) ?? 0,
+            'amount':
+                double.tryParse(amountText.isEmpty ? '0' : amountText) ?? 0,
           };
         }).toList(),
         'level_id': widget.levelId,
@@ -376,10 +385,10 @@ class AmounteSettingScreenState extends State<AmountSettingScreen> {
     final settings = authProvider.getSettings();
     final year = settings['year']?.toString() ?? '2025';
     final term = settings['term'] ?? 3;
-    
+
     final termText = _getTermText(term);
     final sessionText = _getSessionText(year);
-    
+
     return '$termText Term $sessionText Session';
   }
 
@@ -416,7 +425,8 @@ class AmounteSettingScreenState extends State<AmountSettingScreen> {
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8),
                 ),
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
               ),
               child: Text(
                 'Save',
@@ -463,14 +473,15 @@ class AmounteSettingScreenState extends State<AmountSettingScreen> {
                     ),
                   ),
                 ),
-                
+
                 // Level Selection Dropdown
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16.0),
                   child: InkWell(
                     onTap: _showLevelSelectionBottomSheet,
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 12),
                       decoration: BoxDecoration(
                         border: Border.all(color: Colors.grey.shade300),
                         borderRadius: BorderRadius.circular(8),
@@ -494,7 +505,7 @@ class AmounteSettingScreenState extends State<AmountSettingScreen> {
                     ),
                   ),
                 ),
-                
+
                 // Scrollable Fee Items (excluding Total Amount)
                 Expanded(
                   child: isLoading
@@ -531,9 +542,11 @@ class AmounteSettingScreenState extends State<AmountSettingScreen> {
                                       final index = entry.key;
                                       final fee = entry.value;
                                       return Padding(
-                                        padding: const EdgeInsets.only(bottom: 16),
+                                        padding:
+                                            const EdgeInsets.only(bottom: 16),
                                         child: Row(
-                                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.spaceBetween,
                                           children: [
                                             Expanded(
                                               child: RichText(
@@ -541,15 +554,19 @@ class AmounteSettingScreenState extends State<AmountSettingScreen> {
                                                   children: [
                                                     TextSpan(
                                                       text: fee['fee_name'],
-                                                      style: AppTextStyles.normal600(
+                                                      style: AppTextStyles
+                                                          .normal600(
                                                         fontSize: 14,
-                                                        color: AppColors.paymentTxtColor5,
+                                                        color: AppColors
+                                                            .paymentTxtColor5,
                                                       ),
                                                     ),
-                                                    if (fee['is_mandatory'] == 1)
+                                                    if (fee['is_mandatory'] ==
+                                                        1)
                                                       TextSpan(
                                                         text: '*',
-                                                        style: AppTextStyles.normal600(
+                                                        style: AppTextStyles
+                                                            .normal600(
                                                           fontSize: 14,
                                                           color: Colors.red,
                                                         ),
@@ -560,30 +577,49 @@ class AmounteSettingScreenState extends State<AmountSettingScreen> {
                                             ),
                                             const SizedBox(width: 16),
                                             AnimatedContainer(
-                                              duration: const Duration(milliseconds: 300),
+                                              duration: const Duration(
+                                                  milliseconds: 300),
                                               curve: Curves.easeInOut,
-                                              width: _fieldFocusState['amount_$index'] == true ? 106.5 : 71,
+                                              width: _fieldFocusState[
+                                                          'amount_$index'] ==
+                                                      true
+                                                  ? 106.5
+                                                  : 71,
                                               child: TextField(
-                                                focusNode: _focusNodes['amount_$index'],
-                                                controller: _amountControllers['amount_$index'],
+                                                focusNode: _focusNodes[
+                                                    'amount_$index'],
+                                                controller: _amountControllers[
+                                                    'amount_$index'],
                                                 style: AppTextStyles.normal600(
-                                                    fontSize: 14, color: AppColors.paymentTxtColor5),
-                                                keyboardType: TextInputType.number,
+                                                    fontSize: 14,
+                                                    color: AppColors
+                                                        .paymentTxtColor5),
+                                                keyboardType:
+                                                    TextInputType.number,
                                                 textAlign: TextAlign.right,
                                                 decoration: InputDecoration(
-                                                  contentPadding: const EdgeInsets.symmetric(
-                                                      horizontal: 8, vertical: 0),
+                                                  contentPadding:
+                                                      const EdgeInsets
+                                                          .symmetric(
+                                                          horizontal: 8,
+                                                          vertical: 0),
                                                   border: UnderlineInputBorder(
-                                                    borderSide:
-                                                        BorderSide(color: Colors.grey.shade300),
-                                                  ),
-                                                  enabledBorder: UnderlineInputBorder(
-                                                    borderSide:
-                                                        BorderSide(color: Colors.grey.shade300),
-                                                  ),
-                                                  focusedBorder: const UnderlineInputBorder(
                                                     borderSide: BorderSide(
-                                                        color: AppColors.eLearningBtnColor1, width: 2),
+                                                        color: Colors
+                                                            .grey.shade300),
+                                                  ),
+                                                  enabledBorder:
+                                                      UnderlineInputBorder(
+                                                    borderSide: BorderSide(
+                                                        color: Colors
+                                                            .grey.shade300),
+                                                  ),
+                                                  focusedBorder:
+                                                      const UnderlineInputBorder(
+                                                    borderSide: BorderSide(
+                                                        color: AppColors
+                                                            .eLearningBtnColor1,
+                                                        width: 2),
                                                   ),
                                                 ),
                                               ),
@@ -599,7 +635,7 @@ class AmounteSettingScreenState extends State<AmountSettingScreen> {
                 ),
               ],
             ),
-            
+
             // Fixed Total Amount at Bottom
             Positioned(
               bottom: 0,
@@ -630,7 +666,7 @@ class AmounteSettingScreenState extends State<AmountSettingScreen> {
                         NairaSvgIcon(color: AppColors.backgroundDark),
                         const SizedBox(width: 4),
                         Text(
-                          "${totalAmount.toStringAsFixed(2)}",
+                          totalAmount.toStringAsFixed(2),
                           style: AppTextStyles.normal600(
                               fontSize: 18, color: AppColors.backgroundDark),
                         ),
@@ -646,5 +682,3 @@ class AmounteSettingScreenState extends State<AmountSettingScreen> {
     );
   }
 }
-
-

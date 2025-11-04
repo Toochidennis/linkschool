@@ -18,16 +18,14 @@ class ForYouService {
 
       print('🌐 Making request to: $baseUrl');
 
-      final response = await http
-          .get(
-            Uri.parse(baseUrl),
-            headers: {
-              'Content-Type': 'application/json',
-              'Accept': 'application/json',
-              'X-API-KEY': apiKey, // ✅ Attach API key
-            },
-          )
-          .timeout(const Duration(seconds: 15)); // Optional safety timeout
+      final response = await http.get(
+        Uri.parse(baseUrl),
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'X-API-KEY': apiKey, // ✅ Attach API key
+        },
+      ).timeout(const Duration(seconds: 15)); // Optional safety timeout
 
       print('📡 Response status: ${response.statusCode}');
 
@@ -46,48 +44,43 @@ class ForYouService {
     }
   }
 
-List<Game> parseGames(Map<String, dynamic> data) {
-  final gamesData = data['data']?['games'];
-  if (gamesData == null) return [];
+  List<Game> parseGames(Map<String, dynamic> data) {
+    final gamesData = data['data']?['games'];
+    if (gamesData == null) return [];
 
-  List<Game> games = [];
-  gamesData.forEach((category, categoryData) {
-    final categoryGames = categoryData['games'] as List?;
-    if (categoryGames != null) {
-      games.addAll(categoryGames.map((g) => Game.fromJson(g)).toList());
-    }
-  });
-  return games;
-}
+    List<Game> games = [];
+    gamesData.forEach((category, categoryData) {
+      final categoryGames = categoryData['games'] as List?;
+      if (categoryGames != null) {
+        games.addAll(categoryGames.map((g) => Game.fromJson(g)).toList());
+      }
+    });
+    return games;
+  }
 
+  List<Book> parseBooks(Map<String, dynamic> data) {
+    final booksData = data['data']?['books']?['books'];
+    if (booksData == null) return [];
 
-List<Book> parseBooks(Map<String, dynamic> data) {
-  final booksData = data['data']?['books']?['books'];
-  if (booksData == null) return [];
+    return (booksData as List).map((book) => Book.fromJson(book)).toList();
+  }
 
-  return (booksData as List)
-      .map((book) => Book.fromJson(book))
-      .toList();
-}
+  List<Video> parseVideos(Map<String, dynamic> data) {
+    final videosData = data['data']?['videos'];
+    if (videosData == null) return [];
 
-
-List<Video> parseVideos(Map<String, dynamic> data) {
-  final videosData = data['data']?['videos'];
-  if (videosData == null) return [];
-
-  List<Video> videos = [];
-  for (var subject in videosData) {
-    final categories = subject['category'] as List?;
-    if (categories != null) {
-      for (var sub in categories) {
-        final videoList = sub['videos'] as List?;
-        if (videoList != null) {
-          videos.addAll(videoList.map((v) => Video.fromJson(v)).toList());
+    List<Video> videos = [];
+    for (var subject in videosData) {
+      final categories = subject['category'] as List?;
+      if (categories != null) {
+        for (var sub in categories) {
+          final videoList = sub['videos'] as List?;
+          if (videoList != null) {
+            videos.addAll(videoList.map((v) => Video.fromJson(v)).toList());
+          }
         }
       }
     }
+    return videos;
   }
-  return videos;
-}
-
 }

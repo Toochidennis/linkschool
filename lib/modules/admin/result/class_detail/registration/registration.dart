@@ -18,7 +18,8 @@ class RegistrationScreen extends StatefulWidget {
   State<RegistrationScreen> createState() => _RegistrationScreenState();
 }
 
-class _RegistrationScreenState extends State<RegistrationScreen> with RouteAware {
+class _RegistrationScreenState extends State<RegistrationScreen>
+    with RouteAware {
   final ApiService _apiService = locator<ApiService>();
   final AuthProvider _authProvider = locator<AuthProvider>();
   String _selectedTerm = 'First term';
@@ -33,7 +34,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> with RouteAware
     if (_authProvider.token != null) {
       _apiService.setAuthToken(_authProvider.token!);
     }
-    
+
     // Set initial term based on server data
     _setInitialTerm();
   }
@@ -64,7 +65,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> with RouteAware
   void _setInitialTerm() {
     final settings = _authProvider.getSettings();
     final termNumber = settings['term'] ?? 1;
-    
+
     setState(() {
       _selectedTerm = termNumber == 1
           ? 'First term'
@@ -82,7 +83,8 @@ class _RegistrationScreenState extends State<RegistrationScreen> with RouteAware
 
       // Refresh TermProvider data for HistorySection
       final termProvider = Provider.of<TermProvider>(context, listen: false);
-      await termProvider.fetchTerms(widget.classId); // Assuming TermProvider has fetchTerms
+      await termProvider
+          .fetchTerms(widget.classId); // Assuming TermProvider has fetchTerms
 
       // TopContainer will automatically refresh via FutureBuilder
     } catch (e) {
@@ -121,7 +123,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> with RouteAware
         child: SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
           child: Column(
-            children:[
+            children: [
               TopContainer(
                 selectedTerm: _selectedTerm,
                 onTermChanged: (newValue) {

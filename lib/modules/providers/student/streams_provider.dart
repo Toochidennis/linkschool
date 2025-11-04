@@ -1,4 +1,3 @@
-
 import 'package:flutter/cupertino.dart';
 import 'package:linkschool/modules/model/student/streams_model.dart';
 import 'package:linkschool/modules/services/student/streams_service.dart';
@@ -16,9 +15,6 @@ class StreamsProvider with ChangeNotifier {
   StreamsProvider(this._streamsService);
 
   Future<Map<String, dynamic>?> fetchStreams(int syllabusid) async {
-
-
-
     isLoading = true;
     error = null;
     message = null;
@@ -26,24 +22,22 @@ class StreamsProvider with ChangeNotifier {
 
     try {
       final result = await _streamsService.getStreams(
-        syllabusid: syllabusid, 
+        syllabusid: syllabusid,
       );
 
-    //  final newstreams = result as List<StreamsModel>;
+      //  final newstreams = result as List<StreamsModel>;
 
-    //  streams.addAll(newstreams);
+      //  streams.addAll(newstreams);
 
       isLoading = false;
       notifyListeners();
-      print("Paint ${result}");
+      print("Paint $result");
       return result;
     } catch (e) {
       isLoading = false;
       error = e.toString();
       notifyListeners();
       return null;
-
     }
   }
-
 }

@@ -4,12 +4,10 @@ import 'package:linkschool/modules/model/admin/home/add_staff_model.dart';
 import 'package:linkschool/modules/services/api/api_service.dart';
 
 class AddStaffService {
- final ApiService _apiService;
- AddStaffService(this._apiService);
+  final ApiService _apiService;
+  AddStaffService(this._apiService);
 
-
-
-Future<void> CreateStaff(Map<String, dynamic> newStaff) async {
+  Future<void> CreateStaff(Map<String, dynamic> newStaff) async {
     final userBox = Hive.box('userData');
     final loginData = userBox.get('userData') ?? userBox.get('loginResponse');
     final dbName = userBox.get('_db') ?? 'aalmgzmy_linkskoo_practice';
@@ -18,7 +16,7 @@ Future<void> CreateStaff(Map<String, dynamic> newStaff) async {
     }
 
     final token = loginData['token'] as String;
-  
+
     _apiService.setAuthToken(token);
 
     newStaff['_db'] = dbName;
@@ -37,7 +35,7 @@ Future<void> CreateStaff(Map<String, dynamic> newStaff) async {
 
         print("Error: ${response.message ?? 'No error message provided'}");
         SnackBar(
-          content: Text("${response.message}"),
+          content: Text(response.message),
           backgroundColor: Colors.red,
         );
         throw Exception("Failed to Create staff: ${response.message}");
@@ -48,22 +46,19 @@ Future<void> CreateStaff(Map<String, dynamic> newStaff) async {
           content: Text('staff created successfully.'),
           backgroundColor: Colors.green,
         );
-        print('${response.message}');
+        print(response.message);
       }
     } catch (e) {
       print("Error creating staff: $e");
       throw Exception("Failed to Create staff: $e");
     }
-
   }
 
-
-
- Future<List<Staff>> fetchAllStaff() async {
+  Future<List<Staff>> fetchAllStaff() async {
     final userBox = Hive.box('userData');
     final loginData = userBox.get('userData') ?? userBox.get('loginResponse');
     final dbName = userBox.get('_db') ?? 'aalmgzmy_linkskoo_practice';
-    
+
     if (loginData == null || loginData['token'] == null) {
       throw Exception("No valid login data or token found");
     }
@@ -89,10 +84,13 @@ Future<void> CreateStaff(Map<String, dynamic> newStaff) async {
 
       // Parse the response
       final data = response.rawData?['response'];
-      
+
       if (data is List) {
-        print('Staff fetched successfully: ${data.length} staff members found.');
-        return data.map((json) => Staff.fromJson(json as Map<String, dynamic>)).toList();
+        print(
+            'Staff fetched successfully: ${data.length} staff members found.');
+        return data
+            .map((json) => Staff.fromJson(json as Map<String, dynamic>))
+            .toList();
       } else {
         print("Unexpected response format");
         throw Exception("Unexpected response format");
@@ -102,13 +100,13 @@ Future<void> CreateStaff(Map<String, dynamic> newStaff) async {
       throw Exception("Failed to fetch staff: $e");
     }
   }
- 
 
- Future<void> updateStaff(String staffId, Map<String, dynamic> updatedStaff) async {
+  Future<void> updateStaff(
+      String staffId, Map<String, dynamic> updatedStaff) async {
     final userBox = Hive.box('userData');
     final loginData = userBox.get('userData') ?? userBox.get('loginResponse');
     final dbName = userBox.get('_db') ?? 'aalmgzmy_linkskoo_practice';
-    
+
     if (loginData == null || loginData['token'] == null) {
       throw Exception("No valid login data or token found");
     }
@@ -138,13 +136,11 @@ Future<void> CreateStaff(Map<String, dynamic> newStaff) async {
     }
   }
 
-
-
   Future<void> deleteStaff(int staffId) async {
     final userBox = Hive.box('userData');
     final loginData = userBox.get('userData') ?? userBox.get('loginResponse');
     final dbName = userBox.get('_db') ?? 'aalmgzmy_linkskoo_practice';
-    
+
     if (loginData == null || loginData['token'] == null) {
       throw Exception("No valid login data or token found");
     }

@@ -25,7 +25,8 @@ class VendorTransactionScreen extends StatefulWidget {
   });
 
   @override
-  State<VendorTransactionScreen> createState() => _VendorTransactionScreenState();
+  State<VendorTransactionScreen> createState() =>
+      _VendorTransactionScreenState();
 }
 
 class _VendorTransactionScreenState extends State<VendorTransactionScreen> {
@@ -45,7 +46,8 @@ class _VendorTransactionScreenState extends State<VendorTransactionScreen> {
   }
 
   Future<void> _fetchTransactions() async {
-    final response = await _vendorService.fetchVendorTransactionHistory(widget.vendor.id);
+    final response =
+        await _vendorService.fetchVendorTransactionHistory(widget.vendor.id);
     if (response.success && response.data != null) {
       setState(() {
         transactionYears = response.data!;
@@ -77,11 +79,16 @@ class _VendorTransactionScreenState extends State<VendorTransactionScreen> {
   }
 
   void _showAddVendorModal(BuildContext context, {bool isEdit = false}) {
-    final vendorNameController = TextEditingController(text: isEdit ? _currentVendor.vendorName : '');
-    final emailController = TextEditingController(text: isEdit ? _currentVendor.email : '');
-    final phoneNumberController = TextEditingController(text: isEdit ? _currentVendor.phoneNumber : '');
-    final addressController = TextEditingController(text: isEdit ? _currentVendor.address : '');
-    final referenceController = TextEditingController(text: isEdit ? _currentVendor.reference : '');
+    final vendorNameController =
+        TextEditingController(text: isEdit ? _currentVendor.vendorName : '');
+    final emailController =
+        TextEditingController(text: isEdit ? _currentVendor.email : '');
+    final phoneNumberController =
+        TextEditingController(text: isEdit ? _currentVendor.phoneNumber : '');
+    final addressController =
+        TextEditingController(text: isEdit ? _currentVendor.address : '');
+    final referenceController =
+        TextEditingController(text: isEdit ? _currentVendor.reference : '');
     final formKey = GlobalKey<FormState>();
 
     showModalBottomSheet(
@@ -199,7 +206,8 @@ class _VendorTransactionScreenState extends State<VendorTransactionScreen> {
                           child: ElevatedButton(
                             onPressed: () async {
                               if (formKey.currentState!.validate()) {
-                                final response = await _vendorService.updateVendor(
+                                final response =
+                                    await _vendorService.updateVendor(
                                   vendorId: _currentVendor.id,
                                   vendorName: vendorNameController.text,
                                   phoneNumber: phoneNumberController.text,
@@ -218,8 +226,8 @@ class _VendorTransactionScreenState extends State<VendorTransactionScreen> {
                                       reference: referenceController.text,
                                     );
                                   });
-                                  CustomToaster.toastSuccess(
-                                      context, 'Success', 'Vendor updated successfully');
+                                  CustomToaster.toastSuccess(context, 'Success',
+                                      'Vendor updated successfully');
                                   Navigator.pop(context);
                                 } else {
                                   CustomToaster.toastError(
@@ -360,7 +368,8 @@ class _VendorTransactionScreenState extends State<VendorTransactionScreen> {
                           Text(
                             _currentVendor.vendorName,
                             style: AppTextStyles.normal600(
-                                fontSize: 18, color: AppColors.paymentTxtColor1),
+                                fontSize: 18,
+                                color: AppColors.paymentTxtColor1),
                           ),
                           const SizedBox(height: 8),
                           Row(
@@ -375,7 +384,8 @@ class _VendorTransactionScreenState extends State<VendorTransactionScreen> {
                               Text(
                                 _currentVendor.address ?? 'No address provided',
                                 style: AppTextStyles.normal400(
-                                    fontSize: 14, color: AppColors.backgroundDark),
+                                    fontSize: 14,
+                                    color: AppColors.backgroundDark),
                               ),
                             ],
                           ),
@@ -394,7 +404,8 @@ class _VendorTransactionScreenState extends State<VendorTransactionScreen> {
                               Text(
                                 _currentVendor.phoneNumber,
                                 style: AppTextStyles.normal500(
-                                    fontSize: 14, color: AppColors.backgroundDark),
+                                    fontSize: 14,
+                                    color: AppColors.backgroundDark),
                               ),
                             ],
                           ),
@@ -420,14 +431,18 @@ class _VendorTransactionScreenState extends State<VendorTransactionScreen> {
                   children: [
                     Expanded(
                       child: ElevatedButton.icon(
-                        onPressed: () => _showAddVendorModal(context, isEdit: true),
+                        onPressed: () =>
+                            _showAddVendorModal(context, isEdit: true),
                         icon: SvgPicture.asset(
                           'assets/icons/profile/edit_pen.svg',
                           color: AppColors.backgroundLight,
                           width: 20,
                           height: 20,
                         ),
-                        label: Text('Edit details', style: AppTextStyles.normal600(fontSize: 16, color: AppColors.backgroundLight)),
+                        label: Text('Edit details',
+                            style: AppTextStyles.normal600(
+                                fontSize: 16,
+                                color: AppColors.backgroundLight)),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.paymentTxtColor1,
                           shape: RoundedRectangleBorder(
@@ -444,11 +459,16 @@ class _VendorTransactionScreenState extends State<VendorTransactionScreen> {
                     Expanded(
                       child: OutlinedButton.icon(
                         onPressed: () {
-                          final expenditure = _hasExpenditure && transactionYears.isNotEmpty ? _mapToExpenditure(transactionYears.first) : null;
+                          final expenditure =
+                              _hasExpenditure && transactionYears.isNotEmpty
+                                  ? _mapToExpenditure(transactionYears.first)
+                                  : null;
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => AddExpenditureScreen(vendor: _currentVendor, expenditure: expenditure),
+                              builder: (context) => AddExpenditureScreen(
+                                  vendor: _currentVendor,
+                                  expenditure: expenditure),
                             ),
                           ).then((_) {
                             setState(() {
@@ -457,14 +477,20 @@ class _VendorTransactionScreenState extends State<VendorTransactionScreen> {
                           });
                         },
                         icon: SvgPicture.asset(
-                          _hasExpenditure ? 'assets/icons/profile/edit_pen.svg' : 'assets/icons/profile/add_icon.svg',
+                          _hasExpenditure
+                              ? 'assets/icons/profile/edit_pen.svg'
+                              : 'assets/icons/profile/add_icon.svg',
                           color: AppColors.paymentTxtColor1,
                           width: 20,
                           height: 20,
                         ),
-                        label: Text('Expenditure', style: AppTextStyles.normal600(fontSize: 14, color: AppColors.paymentTxtColor1)),
+                        label: Text('Expenditure',
+                            style: AppTextStyles.normal600(
+                                fontSize: 14,
+                                color: AppColors.paymentTxtColor1)),
                         style: OutlinedButton.styleFrom(
-                          side: const BorderSide(color: AppColors.paymentTxtColor1),
+                          side: const BorderSide(
+                              color: AppColors.paymentTxtColor1),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(8),
                           ),
@@ -502,13 +528,15 @@ class _VendorTransactionScreenState extends State<VendorTransactionScreen> {
                         itemBuilder: (context, index) {
                           final ty = transactionYears[index];
                           final displayYear = '${ty.year - 1}/${ty.year}';
-                          final formattedAmount = NumberFormat('#,##0.00').format(ty.total);
+                          final formattedAmount =
+                              NumberFormat('#,##0.00').format(ty.total);
                           return InkWell(
                             onTap: () {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (context) => VendorTransactionDetailsScreen(
+                                  builder: (context) =>
+                                      VendorTransactionDetailsScreen(
                                     vendor: _currentVendor,
                                     year: ty.year.toString(),
                                   ),
@@ -516,7 +544,8 @@ class _VendorTransactionScreenState extends State<VendorTransactionScreen> {
                               );
                             },
                             child: Padding(
-                              padding: const EdgeInsets.symmetric(vertical: 8.0),
+                              padding:
+                                  const EdgeInsets.symmetric(vertical: 8.0),
                               child: Row(
                                 children: [
                                   SvgPicture.asset(
@@ -564,7 +593,3 @@ class _VendorTransactionScreenState extends State<VendorTransactionScreen> {
     );
   }
 }
-
-
-
-

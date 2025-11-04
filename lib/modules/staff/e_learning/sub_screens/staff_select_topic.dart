@@ -10,26 +10,24 @@ import 'package:linkschool/modules/staff/e_learning/sub_screens/staff_create_top
 import 'package:provider/provider.dart';
 // import 'package:linkschool/modules/admin_portal/result/behaviour_settings_screen.dart';
 
-
 class StaffSelectTopicScreen extends StatefulWidget {
   final String callingScreen;
   final VoidCallback? onTopicCreated;
-  final List <Map<String,dynamic>>? classes;
+  final List<Map<String, dynamic>>? classes;
   final String? levelId;
   final int? syllabusId;
   final courseId;
   final courseName;
 
-  const StaffSelectTopicScreen({
-    super.key,
-    required this.callingScreen,
-    this.onTopicCreated,
-    this.levelId,
-    this.syllabusId,
-    this.classes,
-    this.courseId,
-    this.courseName
-  });
+  const StaffSelectTopicScreen(
+      {super.key,
+      required this.callingScreen,
+      this.onTopicCreated,
+      this.levelId,
+      this.syllabusId,
+      this.classes,
+      this.courseId,
+      this.courseName});
 
   @override
   State<StaffSelectTopicScreen> createState() => _SelectTopicScreenState();
@@ -102,12 +100,11 @@ class _SelectTopicScreenState extends State<StaffSelectTopicScreen> {
             padding: const EdgeInsets.symmetric(horizontal: 8.0),
             child: CustomSaveElevatedButton(
               onPressed: () {
-                 Navigator.pop(context, {
-          'topicName': selectedTopic?.name ?? 'No Topic',
-          'topicId': selectedTopic?.id,
-        });
-      },
-              
+                Navigator.pop(context, {
+                  'topicName': selectedTopic?.name ?? 'No Topic',
+                  'topicId': selectedTopic?.id,
+                });
+              },
               text: 'Save',
             ),
           ),
@@ -119,7 +116,6 @@ class _SelectTopicScreenState extends State<StaffSelectTopicScreen> {
           padding: const EdgeInsets.all(16.0),
           child: Column(
             children: [
-             
               const SizedBox(height: 10),
               Expanded(
                 child: topicProvider.isLoading
@@ -160,8 +156,8 @@ class _SelectTopicScreenState extends State<StaffSelectTopicScreen> {
                 .fetchTopic(syllabusId: widget.syllabusId!);
           }
         },
-        child: const Icon(Icons.add, color: AppColors.text6Light),
         backgroundColor: AppColors.primaryLight,
+        child: const Icon(Icons.add, color: AppColors.text6Light),
       ),
     );
   }
@@ -226,8 +222,6 @@ class TopicItem extends StatelessWidget {
   }
 }
 
-
-
 // import 'package:flutter/material.dart';
 // import 'package:flutter_svg/flutter_svg.dart';
 // import 'package:linkschool/modules/admin/e_learning/create_topic_screen.dart';
@@ -245,7 +239,7 @@ class TopicItem extends StatelessWidget {
 //   final VoidCallback? onTopicCreated;
 //   final String? levelId ;
 //   final int? syllabusId;
-  
+
 //   const SelectTopicScreen({
 //     super.key,
 //     required this.callingScreen,
@@ -262,7 +256,6 @@ class TopicItem extends StatelessWidget {
 //   late final String callingScreen;
 //   late final VoidCallback? onTopicCreated;
 
-  
 //   String? selectedTopic;
 //   late double opacity;
 //   @override
@@ -345,7 +338,7 @@ class TopicItem extends StatelessWidget {
 //                   hintText: 'Add new Topic',
 //                   border: OutlineInputBorder(),
 //                 ),
-                
+
 //               ),
 //               const SizedBox(height: 10),
 //               Expanded(
@@ -377,7 +370,7 @@ class TopicItem extends StatelessWidget {
 //         builder: (context) => CreateTopicScreen(
 //           levelId: widget.levelId,
 //           syllabusId: widget.syllabusId!, // Pass the syllabusId
-                   
+
 //         ),
 //       ),
 //     );

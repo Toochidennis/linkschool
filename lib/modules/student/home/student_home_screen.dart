@@ -3,7 +3,6 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart'; // For HapticFeedback
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:hive/hive.dart';
 import 'package:linkschool/modules/admin/home/quick_actions/see_all_feed.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
@@ -12,7 +11,8 @@ import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/common/custom_toaster.dart'; // For toasts
 import 'package:linkschool/modules/common/widgets/portal/student/student_customized_appbar.dart';
 import 'package:linkschool/modules/explore/home/custom_button_item.dart';
-import 'package:linkschool/modules/model/admin/home/dashboard_feed_model.dart' show Feed;
+import 'package:linkschool/modules/model/admin/home/dashboard_feed_model.dart'
+    show Feed;
 import 'package:linkschool/modules/student/home/feed_details_screen.dart';
 import 'package:linkschool/modules/student/home/new_post_dialog.dart';
 import 'package:linkschool/modules/student/payment/student_payment_home_screen.dart';
@@ -34,19 +34,22 @@ import 'package:linkschool/modules/providers/student/payment_provider.dart';
 import 'package:linkschool/modules/providers/student/home/student_dashboard_feed_provider.dart';
 
 class StudentHomeScreen extends StatefulWidget {
-  final  VoidCallback logout;
+  final VoidCallback logout;
   const StudentHomeScreen({super.key, required this.logout});
 
   @override
   State<StudentHomeScreen> createState() => _StudentHomeScreenState();
 }
 
-class _StudentHomeScreenState extends State<StudentHomeScreen> with TickerProviderStateMixin {
+class _StudentHomeScreenState extends State<StudentHomeScreen>
+    with TickerProviderStateMixin {
   DashboardData? dashboardData;
   SingleElearningContentData? elearningContentData;
   // Add these with your other controllers
-final TextEditingController _questionTitleController = TextEditingController();
-final TextEditingController _questionContentController = TextEditingController();
+  final TextEditingController _questionTitleController =
+      TextEditingController();
+  final TextEditingController _questionContentController =
+      TextEditingController();
 
   bool isLoading = true;
   bool hasError = false;
@@ -100,7 +103,7 @@ final TextEditingController _questionContentController = TextEditingController()
   int? _editingFeedId;
   Map<String, dynamic>? _editingFeedData;
   bool _showAddForm = false;
-  String _selectedType = 'feed'; // Default type
+  final String _selectedType = 'feed'; // Default type
   int? creatorId;
   String? creatorName;
   int? academicTerm;
@@ -131,7 +134,8 @@ final TextEditingController _questionContentController = TextEditingController()
     _slideAnimation = Tween<Offset>(
       begin: const Offset(0, 0.3),
       end: Offset.zero,
-    ).animate(CurvedAnimation(parent: _slideController, curve: Curves.elasticOut));
+    ).animate(
+        CurvedAnimation(parent: _slideController, curve: Curves.elasticOut));
     _bounceAnimation = Tween<double>(begin: 0.8, end: 1.0).animate(
       CurvedAnimation(parent: _bounceController, curve: Curves.elasticOut),
     );
@@ -152,12 +156,11 @@ final TextEditingController _questionContentController = TextEditingController()
     _loadUserData();
   }
 
-
-
   Future<void> _loadUserData() async {
     try {
       final userBox = Hive.box('userData');
-      final storedUserData = userBox.get('userData') ?? userBox.get('loginResponse');
+      final storedUserData =
+          userBox.get('userData') ?? userBox.get('loginResponse');
       final dataMap = storedUserData is String
           ? json.decode(storedUserData)
           : storedUserData as Map<String, dynamic>;
@@ -166,7 +169,8 @@ final TextEditingController _questionContentController = TextEditingController()
       final settings = data['settings'] ?? {};
 
       setState(() {
-        creatorId = int.tryParse(profile['id'].toString()) ?? 0; // Adjust to student ID
+        creatorId =
+            int.tryParse(profile['id'].toString()) ?? 0; // Adjust to student ID
         creatorName = profile['name']?.toString() ?? 'Student';
         userRole = profile['role']?.toString() ?? 'student';
         academicTerm = int.tryParse(settings['term'].toString()) ?? 0;
@@ -178,6 +182,7 @@ final TextEditingController _questionContentController = TextEditingController()
       }
     }
   }
+
   void _initializeData() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
@@ -185,10 +190,10 @@ final TextEditingController _questionContentController = TextEditingController()
       // Fetch feed data
       Provider.of<StudentDashboardFeedProvider>(context, listen: false)
           .fetchFeedData(
-            class_id: getuserdata()['profile']['class_id'].toString(),
-            level_id: getuserdata()['profile']['level_id'].toString(),
-            term: getuserdata()['settings']['term'].toString(),
-          );
+        class_id: getuserdata()['profile']['class_id'].toString(),
+        level_id: getuserdata()['profile']['level_id'].toString(),
+        term: getuserdata()['settings']['term'].toString(),
+      );
     });
   }
 
@@ -216,7 +221,7 @@ final TextEditingController _questionContentController = TextEditingController()
         isLoading = false;
       });
 
-      if (data?.recentActivities?.isNotEmpty == true) {
+      if (data?.recentActivities.isNotEmpty == true) {
         _startActivityAutoScroll();
       }
       _startAutoScroll();
@@ -242,7 +247,8 @@ final TextEditingController _questionContentController = TextEditingController()
         activityTimer?.cancel();
         return;
       }
-      if (activityController.hasClients && activityController.positions.isNotEmpty) {
+      if (activityController.hasClients &&
+          activityController.positions.isNotEmpty) {
         setState(() {
           currentActivityIndex = (currentActivityIndex + 1) % activities.length;
         });
@@ -258,7 +264,8 @@ final TextEditingController _questionContentController = TextEditingController()
   Future<void> fetchSingleElearning(int contentid) async {
     if (!mounted) return;
 
-    final provider = Provider.of<SingleelearningcontentProvider>(context, listen: false);
+    final provider =
+        Provider.of<SingleelearningcontentProvider>(context, listen: false);
     final data = await provider.fetchElearningContentData(contentid);
 
     if (!mounted) return;
@@ -301,10 +308,10 @@ final TextEditingController _questionContentController = TextEditingController()
 
   Map<String, dynamic> getuserdata() {
     final userBox = Hive.box('userData');
-    final storedUserData = userBox.get('userData') ?? userBox.get('loginResponse');
-    final processedData = storedUserData is String
-        ? json.decode(storedUserData)
-        : storedUserData;
+    final storedUserData =
+        userBox.get('userData') ?? userBox.get('loginResponse');
+    final processedData =
+        storedUserData is String ? json.decode(storedUserData) : storedUserData;
     final response = processedData['response'] ?? processedData;
     final data = response['data'] ?? response;
     return data;
@@ -319,23 +326,22 @@ final TextEditingController _questionContentController = TextEditingController()
     );
   }
 
- 
   @override
-void dispose() {
-  _timer?.cancel();
-  activityTimer?.cancel();
-  assessmentTimer?.cancel();
-  _pageController.dispose();
-  activityController.dispose();
-  _fadeController.dispose();
-  _slideController.dispose();
-  _bounceController.dispose();
-  _editTitleController.dispose();
-  _editContentController.dispose();
-  _questionTitleController.dispose(); // Add this
-  _questionContentController.dispose(); // Add this
-  super.dispose();
-}
+  void dispose() {
+    _timer?.cancel();
+    activityTimer?.cancel();
+    assessmentTimer?.cancel();
+    _pageController.dispose();
+    activityController.dispose();
+    _fadeController.dispose();
+    _slideController.dispose();
+    _bounceController.dispose();
+    _editTitleController.dispose();
+    _editContentController.dispose();
+    _questionTitleController.dispose(); // Add this
+    _questionContentController.dispose(); // Add this
+    super.dispose();
+  }
 
   // Animation wrapper for feed items
   Widget _buildAnimatedCard({
@@ -373,7 +379,8 @@ void dispose() {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16.0),
-        border: Border.all(color: AppColors.text2Light.withOpacity(0.3), width: 2),
+        border:
+            Border.all(color: AppColors.text2Light.withOpacity(0.3), width: 2),
         boxShadow: [
           BoxShadow(
             color: AppColors.text2Light.withOpacity(0.1),
@@ -514,7 +521,8 @@ void dispose() {
   }
 
   void _saveEditing(Feed feed) async {
-    final provider = Provider.of<StudentDashboardFeedProvider>(context, listen: false);
+    final provider =
+        Provider.of<StudentDashboardFeedProvider>(context, listen: false);
     try {
       final updatedFeed = {
         'id': feed.id,
@@ -527,9 +535,14 @@ void dispose() {
       };
       await provider.updateFeed(updatedFeed, feed.id.toString());
       if (mounted) {
-        CustomToaster.toastSuccess(context, 'Updated', 'Feed updated successfully');
+        CustomToaster.toastSuccess(
+            context, 'Updated', 'Feed updated successfully');
         _cancelEditing();
-        await provider.fetchFeedData(refresh: true, class_id: getuserdata()['profile']['class_id'].toString(), level_id: getuserdata()['profile']['level_id'].toString(), term: getuserdata()['settings']['term'].toString());
+        await provider.fetchFeedData(
+            refresh: true,
+            class_id: getuserdata()['profile']['class_id'].toString(),
+            level_id: getuserdata()['profile']['level_id'].toString(),
+            term: getuserdata()['settings']['term'].toString());
       }
     } catch (e) {
       if (mounted) {
@@ -561,11 +574,17 @@ void dispose() {
     if (confirm != true) return;
 
     try {
-      final provider = Provider.of<StudentDashboardFeedProvider>(context, listen: false);
+      final provider =
+          Provider.of<StudentDashboardFeedProvider>(context, listen: false);
       await provider.deleteFeed(feed.id.toString());
       if (mounted) {
-        CustomToaster.toastSuccess(context, 'Deleted', 'Feed deleted successfully');
-        await provider.fetchFeedData(refresh: true, class_id: getuserdata()['profile']['class_id'].toString(), level_id: getuserdata()['profile']['level_id'].toString(), term: getuserdata()['settings']['term'].toString());
+        CustomToaster.toastSuccess(
+            context, 'Deleted', 'Feed deleted successfully');
+        await provider.fetchFeedData(
+            refresh: true,
+            class_id: getuserdata()['profile']['class_id'].toString(),
+            level_id: getuserdata()['profile']['level_id'].toString(),
+            term: getuserdata()['settings']['term'].toString());
       }
     } catch (e) {
       if (mounted) {
@@ -574,192 +593,197 @@ void dispose() {
     }
   }
 
-Widget _buildAddContentForm() {
-  return AnimatedContainer(
-    duration: const Duration(milliseconds: 300),
-    curve: Curves.easeInOut,
-    margin: const EdgeInsets.symmetric(horizontal: 8.0),
-    padding: const EdgeInsets.all(20.0),
-    decoration: BoxDecoration(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(20.0),
-      border: Border.all(color: AppColors.text2Light.withOpacity(0.2)),
-      boxShadow: [
-        BoxShadow(
-          color: AppColors.text2Light.withOpacity(0.1),
-          blurRadius: 20,
-          offset: const Offset(0, 8),
-        ),
-      ],
-    ),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              'Add New Question',
-              style: AppTextStyles.normal600(
-                fontSize: 18,
-                color: AppColors.text2Light,
+  Widget _buildAddContentForm() {
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeInOut,
+      margin: const EdgeInsets.symmetric(horizontal: 8.0),
+      padding: const EdgeInsets.all(20.0),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20.0),
+        border: Border.all(color: AppColors.text2Light.withOpacity(0.2)),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.text2Light.withOpacity(0.1),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Add New Question',
+                style: AppTextStyles.normal600(
+                  fontSize: 18,
+                  color: AppColors.text2Light,
+                ),
               ),
-            ),
-            IconButton(
-              onPressed: () {
-                setState(() {
-                  _showAddForm = false;
-                });
-              },
-              icon: const Icon(
-                Icons.close,
+              IconButton(
+                onPressed: () {
+                  setState(() {
+                    _showAddForm = false;
+                  });
+                },
+                icon: const Icon(
+                  Icons.close,
+                  color: AppColors.text5Light,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          TextField(
+            controller: _questionTitleController, // Use class-level controller
+            decoration: InputDecoration(
+              hintText: 'Question Title',
+              hintStyle: const TextStyle(
                 color: AppColors.text5Light,
+                fontSize: 14,
               ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 20),
-        TextField(
-          controller: _questionTitleController, // Use class-level controller
-          decoration: InputDecoration(
-            hintText: 'Question Title',
-            hintStyle: const TextStyle(
-              color: AppColors.text5Light,
-              fontSize: 14,
-            ),
-            filled: true,
-            fillColor: AppColors.textFieldLight,
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(16.0),
-              borderSide: BorderSide(color: AppColors.textFieldBorderLight),
-            ),
-          ),
-        ),
-        const SizedBox(height: 12),
-        TextField(
-          controller: _questionContentController, // Use class-level controller
-          maxLines: 4,
-          decoration: InputDecoration(
-            hintText: 'Enter your question here...',
-            hintStyle: const TextStyle(
-              color: AppColors.text5Light,
-              fontSize: 14,
-            ),
-            filled: true,
-            fillColor: AppColors.textFieldLight,
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(16.0),
-              borderSide: BorderSide(color: AppColors.textFieldBorderLight),
-            ),
-          ),
-        ),
-        const SizedBox(height: 20),
-        SizedBox(
-          width: double.infinity,
-          child: ElevatedButton(
-            onPressed: () {
-              _handleSubmit(_questionTitleController, _questionContentController);
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.text2Light,
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-              ),
-            ),
-            child: const Text(
-              'Add Question',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
+              filled: true,
+              fillColor: AppColors.textFieldLight,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(16.0),
+                borderSide: BorderSide(color: AppColors.textFieldBorderLight),
               ),
             ),
           ),
-        ),
-      ],
-    ),
-  );
-}
-
-void _handleSubmit(TextEditingController titleController, TextEditingController contentController) async {
-  final title = titleController.text.trim();
-  final content = contentController.text.trim();
-  final provider = Provider.of<StudentDashboardFeedProvider>(context, listen: false);
-
-  try {
-    if (title.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('Please enter a question title'),
-          backgroundColor: Colors.red,
-        ),
-      );
-      return;
-    }
-    
-    if (content.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('Please enter question content'),
-          backgroundColor: Colors.red,
-        ),
-      );
-      return;
-    }
-
-    final payload = {
-      'title': title,
-      'type': 'question',
-      'parent_id': 0,
-      'content': content,
-      'author_name': creatorName,
-      'author_id': creatorId,
-      'term': academicTerm,
-      'files': <Map<String, dynamic>>[],
-    };
-    
-    await provider.createFeed(
-      payload,
-      class_id: getuserdata()['profile']['class_id'].toString(),
-      level_id: getuserdata()['profile']['level_id'].toString(),
-      term: getuserdata()['settings']['term'].toString(),
+          const SizedBox(height: 12),
+          TextField(
+            controller:
+                _questionContentController, // Use class-level controller
+            maxLines: 4,
+            decoration: InputDecoration(
+              hintText: 'Enter your question here...',
+              hintStyle: const TextStyle(
+                color: AppColors.text5Light,
+                fontSize: 14,
+              ),
+              filled: true,
+              fillColor: AppColors.textFieldLight,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(16.0),
+                borderSide: BorderSide(color: AppColors.textFieldBorderLight),
+              ),
+            ),
+          ),
+          const SizedBox(height: 20),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: () {
+                _handleSubmit(
+                    _questionTitleController, _questionContentController);
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.text2Light,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+              ),
+              child: const Text(
+                'Add Question',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
     );
-    
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('Question added successfully!'),
-          backgroundColor: AppColors.text2Light,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-        ),
-      );
-      
-      // Clear the controllers
-      titleController.clear();
-      contentController.clear();
-      
-      setState(() {
-        _showAddForm = false;
-      });
-      
-      // Refresh feeds
-      await provider.fetchFeedData(
-        refresh: true,
+  }
+
+  void _handleSubmit(TextEditingController titleController,
+      TextEditingController contentController) async {
+    final title = titleController.text.trim();
+    final content = contentController.text.trim();
+    final provider =
+        Provider.of<StudentDashboardFeedProvider>(context, listen: false);
+
+    try {
+      if (title.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Please enter a question title'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+
+      if (content.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Please enter question content'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+
+      final payload = {
+        'title': title,
+        'type': 'question',
+        'parent_id': 0,
+        'content': content,
+        'author_name': creatorName,
+        'author_id': creatorId,
+        'term': academicTerm,
+        'files': <Map<String, dynamic>>[],
+      };
+
+      await provider.createFeed(
+        payload,
         class_id: getuserdata()['profile']['class_id'].toString(),
         level_id: getuserdata()['profile']['level_id'].toString(),
         term: getuserdata()['settings']['term'].toString(),
       );
-    }
-  } catch (e) {
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to add question: $e')),
-      );
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Question added successfully!'),
+            backgroundColor: AppColors.text2Light,
+            behavior: SnackBarBehavior.floating,
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          ),
+        );
+
+        // Clear the controllers
+        titleController.clear();
+        contentController.clear();
+
+        setState(() {
+          _showAddForm = false;
+        });
+
+        // Refresh feeds
+        await provider.fetchFeedData(
+          refresh: true,
+          class_id: getuserdata()['profile']['class_id'].toString(),
+          level_id: getuserdata()['profile']['level_id'].toString(),
+          term: getuserdata()['settings']['term'].toString(),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to add question: $e')),
+        );
+      }
     }
   }
-}
 
   @override
   Widget build(BuildContext context) {
@@ -828,7 +852,7 @@ void _handleSubmit(TextEditingController titleController, TextEditingController 
         showNotification: true,
         showPostInput: false,
         onNotificationTap: () {},
-       // onPostTap: _showNewPostDialog,
+        // onPostTap: _showNewPostDialog,
       ),
       body: Container(
         decoration: Constants.customBoxDecoration(context),
@@ -837,8 +861,15 @@ void _handleSubmit(TextEditingController titleController, TextEditingController 
             RefreshIndicator(
               onRefresh: () async {
                 await fetchDashboard();
-                await Provider.of<StudentDashboardFeedProvider>(context, listen: false)
-                    .fetchFeedData(refresh: true, class_id: getuserdata()['profile']['class_id'].toString(), level_id: getuserdata()['profile']['level_id'].toString(), term: getuserdata()['settings']['term'].toString());
+                await Provider.of<StudentDashboardFeedProvider>(context,
+                        listen: false)
+                    .fetchFeedData(
+                        refresh: true,
+                        class_id:
+                            getuserdata()['profile']['class_id'].toString(),
+                        level_id:
+                            getuserdata()['profile']['level_id'].toString(),
+                        term: getuserdata()['settings']['term'].toString());
               },
               child: Padding(
                 padding: const EdgeInsets.only(bottom: 120.0),
@@ -876,7 +907,8 @@ void _handleSubmit(TextEditingController titleController, TextEditingController 
                     HapticFeedback.lightImpact();
                   },
                   backgroundColor: AppColors.text2Light,
-                  child: Icon(_showAddForm ? Icons.close : Icons.add, color: Colors.white),
+                  child: Icon(_showAddForm ? Icons.close : Icons.add,
+                      color: Colors.white),
                 ),
               ),
             ),
@@ -1009,11 +1041,13 @@ void _handleSubmit(TextEditingController titleController, TextEditingController 
                   if (invoices.isNotEmpty && invoices[0].amount > 0) {
                     showDialog(
                       context: context,
-                      builder: (context) => StudentViewDetailPaymentDialog(invoice: invoices[0]),
+                      builder: (context) =>
+                          StudentViewDetailPaymentDialog(invoice: invoices[0]),
                     );
                   } else {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('No invoice available for payment.')),
+                      const SnackBar(
+                          content: Text('No invoice available for payment.')),
                     );
                   }
                 },
@@ -1026,7 +1060,7 @@ void _handleSubmit(TextEditingController titleController, TextEditingController 
                   iconHeight: 40.0,
                   iconWidth: 36.0,
                   destination: StudentPaymentHomeScreen(
-                    logout:widget.logout ,
+                    logout: widget.logout,
                   ),
                 ),
               );
@@ -1075,44 +1109,45 @@ void _handleSubmit(TextEditingController titleController, TextEditingController 
                       ],
                     ),
                     GestureDetector(
-                       onTap: () {
+                        onTap: () {
                           setState(() {
                             _showAddForm = !_showAddForm;
                           });
                           HapticFeedback.lightImpact();
                         },
-                      child: Container(
-                        
-                       decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(12),
-                          color: AppColors.text2Light.withOpacity(0.1),),
-                        padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 12),
-                       
-                        child: Row(
-                          children: [
-                            Icon(
-                              _showAddForm ? Icons.close : Icons.add,
-                              color: AppColors.text2Light,
-                              size: 20,
-                            ),
-                            const SizedBox(width: 4),
-                            Text(
-                              _showAddForm ? 'Close' : 'Add',
-                              style: TextStyle(
+                        child: Container(
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(12),
+                            color: AppColors.text2Light.withOpacity(0.1),
+                          ),
+                          padding: const EdgeInsets.symmetric(
+                              vertical: 6, horizontal: 12),
+                          child: Row(
+                            children: [
+                              Icon(
+                                _showAddForm ? Icons.close : Icons.add,
                                 color: AppColors.text2Light,
-                                fontSize: 14,
-                                fontWeight: FontWeight.w600,
+                                size: 20,
                               ),
-                            ),
-                          ],),
-                      )),
-                         
+                              const SizedBox(width: 4),
+                              Text(
+                                _showAddForm ? 'Close' : 'Add',
+                                style: TextStyle(
+                                  color: AppColors.text2Light,
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                        )),
                     TextButton(
                       onPressed: () {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => AllFeedsScreen(), // Ensure you have this screen
+                            builder: (context) =>
+                                AllFeedsScreen(), // Ensure you have this screen
                           ),
                         );
                       },
@@ -1185,7 +1220,6 @@ void _handleSubmit(TextEditingController titleController, TextEditingController 
                                           interactions: feed.replies.length,
                                           time: feed.createdAt ?? 'Unknown',
                                           parentId: feed.id,
-                                         
                                         ),
                                       ),
                                     );
@@ -1199,8 +1233,7 @@ void _handleSubmit(TextEditingController titleController, TextEditingController 
                                     CreatorId: creatorId.toString(),
                                     authorId: feed.authorId ?? 0,
                                     role: userRole,
-
-                                edit: () => _startEditing(feed),
+                                    edit: () => _startEditing(feed),
                                     delete: () => _confirmDelete(feed),
                                     comments: feed.replies.length,
                                   ),
@@ -1228,7 +1261,8 @@ void _handleSubmit(TextEditingController titleController, TextEditingController 
 
     if (elearningContentData?.settings != null) {
       final userBox = Hive.box('userData');
-      final List<dynamic> quizzestaken = userBox.get('quizzes', defaultValue: []);
+      final List<dynamic> quizzestaken =
+          userBox.get('quizzes', defaultValue: []);
       final int? quizId = elearningContentData?.settings!.id;
       if (quizzestaken.contains(quizId)) {
         Navigator.push(
@@ -1262,7 +1296,8 @@ void _handleSubmit(TextEditingController titleController, TextEditingController 
       );
     } else if (elearningContentData?.type == "assignment") {
       final userBox = Hive.box('userData');
-      final List<dynamic> assignmentssubmitted = userBox.get('assignments', defaultValue: []);
+      final List<dynamic> assignmentssubmitted =
+          userBox.get('assignments', defaultValue: []);
       final int? assignmentId = elearningContentData?.id;
 
       if (assignmentssubmitted.contains(assignmentId)) {

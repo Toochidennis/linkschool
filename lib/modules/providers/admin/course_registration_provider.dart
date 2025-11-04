@@ -4,19 +4,22 @@ import 'package:linkschool/modules/services/admin/course_registration_service.da
 import 'package:linkschool/modules/services/api/service_locator.dart';
 
 class CourseRegistrationProvider with ChangeNotifier {
-  final CourseRegistrationService _courseRegistrationService = locator<CourseRegistrationService>();
+  final CourseRegistrationService _courseRegistrationService =
+      locator<CourseRegistrationService>();
   List<CourseRegistrationModel> _registeredCourses = [];
   bool _isLoading = false;
 
   List<CourseRegistrationModel> get registeredCourses => _registeredCourses;
   bool get isLoading => _isLoading;
 
-  Future<void> fetchRegisteredCourses(String classId, String term, String year) async {
+  Future<void> fetchRegisteredCourses(
+      String classId, String term, String year) async {
     _isLoading = true;
     notifyListeners();
 
     try {
-      final response = await _courseRegistrationService.fetchRegisteredCourses(classId, term, year);
+      final response = await _courseRegistrationService.fetchRegisteredCourses(
+          classId, term, year);
 
       if (response.success && response.data != null) {
         _registeredCourses = response.data!;
@@ -41,7 +44,8 @@ class CourseRegistrationProvider with ChangeNotifier {
     required String dbName,
   }) async {
     try {
-      final response = await _courseRegistrationService.fetchStudentRegisteredCourses(
+      final response =
+          await _courseRegistrationService.fetchStudentRegisteredCourses(
         studentId: studentId,
         classId: classId,
         year: year,
@@ -66,7 +70,8 @@ class CourseRegistrationProvider with ChangeNotifier {
     }
   }
 
-  Future<bool> registerCourse(CourseRegistrationModel course, {Map<String, dynamic>? payload}) async {
+  Future<bool> registerCourse(CourseRegistrationModel course,
+      {Map<String, dynamic>? payload}) async {
     _isLoading = true;
     notifyListeners();
 
@@ -77,7 +82,8 @@ class CourseRegistrationProvider with ChangeNotifier {
       );
 
       if (response.success) {
-        int index = _registeredCourses.indexWhere((s) => s.studentId == course.studentId);
+        int index = _registeredCourses
+            .indexWhere((s) => s.studentId == course.studentId);
         if (index != -1) {
           var updatedStudent = CourseRegistrationModel(
             studentId: course.studentId,
@@ -104,6 +110,3 @@ class CourseRegistrationProvider with ChangeNotifier {
     }
   }
 }
-
-
-

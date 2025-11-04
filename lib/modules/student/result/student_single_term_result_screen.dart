@@ -28,10 +28,12 @@ class StudentSingleTermResultScreen extends StatefulWidget {
   });
 
   @override
-  State<StudentSingleTermResultScreen> createState() => _StudentSingleTermResultScreenState();
+  State<StudentSingleTermResultScreen> createState() =>
+      _StudentSingleTermResultScreenState();
 }
 
-class _StudentSingleTermResultScreenState extends State<StudentSingleTermResultScreen> {
+class _StudentSingleTermResultScreenState
+    extends State<StudentSingleTermResultScreen> {
   String? studentName;
 
   @override
@@ -39,8 +41,10 @@ class _StudentSingleTermResultScreenState extends State<StudentSingleTermResultS
     super.initState();
     _loadStudentName();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final studentProvider = Provider.of<StudentProvider>(context, listen: false);
-      debugPrint('StudentSingleTermResult: Fetching term results for studentId=${widget.studentId}, '
+      final studentProvider =
+          Provider.of<StudentProvider>(context, listen: false);
+      debugPrint(
+          'StudentSingleTermResult: Fetching term results for studentId=${widget.studentId}, '
           'termId=${widget.termId}, classId=${widget.classId}, '
           'year=${widget.year}, levelId=${widget.levelId}');
       studentProvider.fetchStudentTermResults(
@@ -56,16 +60,15 @@ class _StudentSingleTermResultScreenState extends State<StudentSingleTermResultS
   void _loadStudentName() {
     final userBox = Hive.box('userData');
     final loginData = userBox.get('userData') ?? userBox.get('loginResponse');
-    
+
     if (loginData != null) {
-      Map<String, dynamic> processedData = loginData is String 
-          ? json.decode(loginData) 
-          : loginData;
-      
+      Map<String, dynamic> processedData =
+          loginData is String ? json.decode(loginData) : loginData;
+
       final response = processedData['response'] ?? processedData;
       final data = response['data'] ?? response;
       final profile = data['profile'] ?? {};
-      
+
       setState(() {
         studentName = profile['name'] ?? 'Unknown Student';
       });
@@ -116,7 +119,8 @@ class _StudentSingleTermResultScreenState extends State<StudentSingleTermResultS
             onPressed: () {
               _downloadTermResults();
             },
-            icon: const Icon(Icons.download, color: AppColors.eLearningBtnColor1),
+            icon:
+                const Icon(Icons.download, color: AppColors.eLearningBtnColor1),
             label: const Text(
               'Download',
               style: TextStyle(color: AppColors.eLearningBtnColor1),
@@ -128,7 +132,8 @@ class _StudentSingleTermResultScreenState extends State<StudentSingleTermResultS
         decoration: Constants.customBoxDecoration(context),
         child: Consumer<StudentProvider>(
           builder: (context, studentProvider, child) {
-            debugPrint('StudentSingleTermResult Consumer: isLoading=${studentProvider.isLoading}, '
+            debugPrint(
+                'StudentSingleTermResult Consumer: isLoading=${studentProvider.isLoading}, '
                 'errorMessage=${studentProvider.errorMessage}, '
                 'termResult=${studentProvider.studentTermResult}');
 
@@ -181,37 +186,38 @@ class _StudentSingleTermResultScreenState extends State<StudentSingleTermResultS
     );
   }
 
-   Future<void> _downloadTermResults() async {
-  final url = 'https://linkskool.net/api/v1/students/${widget.studentId}/terms/${widget.termId}/results/download';
-  
-  try {
-    if (await canLaunchUrl(Uri.parse(url))) {
-      await launchUrl(
-        Uri.parse(url),
-        mode: LaunchMode.externalApplication, // Opens in browser
-      );
-    } else {
-      // Show error if URL can't be launched
+  Future<void> _downloadTermResults() async {
+    final url =
+        'https://linkskool.net/api/v1/students/${widget.studentId}/terms/${widget.termId}/results/download';
+
+    try {
+      if (await canLaunchUrl(Uri.parse(url))) {
+        await launchUrl(
+          Uri.parse(url),
+          mode: LaunchMode.externalApplication, // Opens in browser
+        );
+      } else {
+        // Show error if URL can't be launched
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Could not launch $url'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Could not launch $url'),
+            content: Text('Error launching URL: $e'),
             backgroundColor: Colors.red,
           ),
         );
       }
     }
-  } catch (e) {
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error launching URL: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
-    }
   }
-}
 
   Widget _buildProfileImage() {
     // For student, we'll use a default profile image since picture_url might not be available
@@ -419,8 +425,8 @@ class _StudentSingleTermResultScreenState extends State<StudentSingleTermResultS
     );
   }
 
-  Widget _buildScrollableColumn(
-      String title, double width, List<dynamic> subjects, String? assessmentName) {
+  Widget _buildScrollableColumn(String title, double width,
+      List<dynamic> subjects, String? assessmentName) {
     return Container(
       width: width,
       decoration: BoxDecoration(
@@ -474,7 +480,8 @@ class _StudentSingleTermResultScreenState extends State<StudentSingleTermResultS
     );
   }
 
-  String _getDataForColumn(String columnName, Map<String, dynamic> subject, String? assessmentName) {
+  String _getDataForColumn(
+      String columnName, Map<String, dynamic> subject, String? assessmentName) {
     if (assessmentName != null) {
       final assessments = subject['assessments'] as List<dynamic>? ?? [];
       final assessment = assessments.firstWhere(

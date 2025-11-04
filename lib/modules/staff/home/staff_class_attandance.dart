@@ -68,7 +68,6 @@ class _TakeCourseAttendanceState extends State<TakeCourseAttendance> {
     });
   }
 
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -96,9 +95,12 @@ class _TakeCourseAttendanceState extends State<TakeCourseAttendance> {
           GestureDetector(
             onTap: _toggleSelectAll,
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
               decoration: BoxDecoration(
-                  color: _selectedRowIndices.contains(0) ? const Color.fromRGBO(239, 227, 255, 1) : AppColors.attBgColor1,
+                  color: _selectedRowIndices.contains(0)
+                      ? const Color.fromRGBO(239, 227, 255, 1)
+                      : AppColors.attBgColor1,
                   border: Border.all(color: AppColors.attBorderColor1)),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -111,12 +113,15 @@ class _TakeCourseAttendanceState extends State<TakeCourseAttendance> {
                   Container(
                     padding: const EdgeInsets.all(4.0),
                     decoration: BoxDecoration(
-                        color: _selectAll ? AppColors.attCheckColor1 : AppColors.attBgColor1,
+                        color: _selectAll
+                            ? AppColors.attCheckColor1
+                            : AppColors.attBgColor1,
                         shape: BoxShape.circle,
                         border: Border.all(color: AppColors.attCheckColor1)),
                     child: Icon(
                       Icons.check,
-                      color: _selectAll ? Colors.white : AppColors.attCheckColor1,
+                      color:
+                          _selectAll ? Colors.white : AppColors.attCheckColor1,
                       size: 16,
                     ),
                   )
@@ -133,7 +138,9 @@ class _TakeCourseAttendanceState extends State<TakeCourseAttendance> {
               ),
               itemBuilder: (context, index) {
                 return ListTile(
-                  tileColor: _selectedRowIndices.contains(index) ? const Color.fromRGBO(239, 227, 255, 1) : Colors.transparent, // Update background color
+                  tileColor: _selectedRowIndices.contains(index)
+                      ? const Color.fromRGBO(239, 227, 255, 1)
+                      : Colors.transparent, // Update background color
                   leading: CircleAvatar(
                     backgroundColor: _circleColors[index],
                     child: Text(
@@ -143,7 +150,8 @@ class _TakeCourseAttendanceState extends State<TakeCourseAttendance> {
                   ),
                   title: Text(_studentNames[index]),
                   trailing: _selectedStudents[index]
-                      ? const Icon(Icons.check_circle, color: AppColors.attCheckColor2)
+                      ? const Icon(Icons.check_circle,
+                          color: AppColors.attCheckColor2)
                       : null,
                   onTap: () {
                     _toggleRowSelection(index);

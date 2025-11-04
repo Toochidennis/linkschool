@@ -2,23 +2,24 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/model/student/dashboard_model.dart';
-import 'package:linkschool/modules/model/student/elearningcontent_model.dart';
 import 'package:linkschool/modules/student/elearning/course_content_screen.dart';
 import 'package:linkschool/modules/student/elearning/forum_screen.dart';
 
 class CourseDetailScreen extends StatefulWidget {
-
   final String courseTitle;
   final DashboardData dashboardData;
-final int syllabusid;
-  const CourseDetailScreen({super.key, required this.courseTitle , required this.dashboardData, required this.syllabusid});
+  final int syllabusid;
+  const CourseDetailScreen(
+      {super.key,
+      required this.courseTitle,
+      required this.dashboardData,
+      required this.syllabusid});
 
   @override
   _CourseDetailScreenState createState() => _CourseDetailScreenState();
 }
 
 class _CourseDetailScreenState extends State<CourseDetailScreen> {
-
   int _selectedIndex = 0;
   late double opacity;
 
@@ -30,10 +31,16 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
-
-    final List<Widget> _screens = [
-      CourseContentScreen(dashboardData:widget.dashboardData,courseTitle:widget.courseTitle,syllabusid: widget.syllabusid,),
-      ForumScreen(dashboardData:widget.dashboardData,courseTitle:widget.courseTitle, syllabusid: widget.syllabusid),
+    final List<Widget> screens = [
+      CourseContentScreen(
+        dashboardData: widget.dashboardData,
+        courseTitle: widget.courseTitle,
+        syllabusid: widget.syllabusid,
+      ),
+      ForumScreen(
+          dashboardData: widget.dashboardData,
+          courseTitle: widget.courseTitle,
+          syllabusid: widget.syllabusid),
     ];
 
     final Brightness brightness = Theme.of(context).brightness;
@@ -72,14 +79,14 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
               onPressed: () {},
               icon: SvgPicture.asset(
                 'assets/icons/notifications.svg',
-                colorFilter:
-                    const ColorFilter.mode(AppColors.paymentTxtColor1, BlendMode.srcIn),
+                colorFilter: const ColorFilter.mode(
+                    AppColors.paymentTxtColor1, BlendMode.srcIn),
               ),
             ),
           ),
         ],
       ),
-      body: _screens[_selectedIndex],
+      body: screens[_selectedIndex],
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedIndex,
         onTap: _onItemTapped,

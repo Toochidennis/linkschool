@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:linkschool/modules/admin/e_learning/View/quiz/preview_quiz_assessment_screen.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/custom_toaster.dart';
@@ -9,7 +8,6 @@ import 'package:linkschool/modules/common/widgets/portal/quiz/quiz_resultscreen.
 import 'package:linkschool/modules/providers/admin/e_learning/mark_assignment_provider.dart';
 import 'package:linkschool/modules/services/api/service_locator.dart';
 import 'package:provider/provider.dart';
-import 'package:linkschool/modules/admin/e_learning/View/mark_assignment.dart';
 
 class AnswersTabWidget extends StatefulWidget {
   final String itemId;
@@ -29,7 +27,8 @@ class _AnswersTabWidgetState extends State<AnswersTabWidget> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final markProvider = Provider.of<MarkAssignmentProvider>(context, listen: false);
+      final markProvider =
+          Provider.of<MarkAssignmentProvider>(context, listen: false);
       markProvider.fetchQuiz(widget.itemId); // ✅ fixed case
     });
   }
@@ -54,7 +53,8 @@ class _AnswersTabWidgetState extends State<AnswersTabWidget> {
                       : error != null
                           ? Center(
                               child: Text(error,
-                                  style: AppTextStyles.normal500(fontSize: 16, color: Colors.red)),
+                                  style: AppTextStyles.normal500(
+                                      fontSize: 16, color: Colors.red)),
                             )
                           : _selectedCategory == 'SUBMITTED'
                               ? _buildSubmittedContent(quizData)
@@ -73,16 +73,16 @@ class _AnswersTabWidgetState extends State<AnswersTabWidget> {
 
                       for (var quiz in markedQuizzes) {
                         final contentId = quiz['id'].toString();
-                          final publish = quiz['published']?.toString() ?? "";
+                        final publish = quiz['published']?.toString() ?? "";
                         print("quesssssss id $contentId");
                         print("quesssssss id $publish");
-                      
+
                         await provider.returnQuiz(publish, contentId);
                       }
                       CustomToaster.toastSuccess(
                           context, 'Success', 'Marks published successfully');
 
-                      provider.fetchQuiz(widget.itemId); 
+                      provider.fetchQuiz(widget.itemId);
                     } catch (e) {
                       CustomToaster.toastError(context, 'Error', 'Failed: $e');
                     }
@@ -109,7 +109,8 @@ class _AnswersTabWidgetState extends State<AnswersTabWidget> {
     );
   }
 
-  Widget _buildNavigationContainer(String text, Map<String, dynamic>? quizData) {
+  Widget _buildNavigationContainer(
+      String text, Map<String, dynamic>? quizData) {
     bool isSelected = _selectedCategory == text;
     int itemCount = _getItemCount(text, quizData);
 
@@ -140,7 +141,8 @@ class _AnswersTabWidgetState extends State<AnswersTabWidget> {
                 top: -4,
                 child: Container(
                   padding: const EdgeInsets.all(4),
-                  decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
+                  decoration: const BoxDecoration(
+                      color: Colors.red, shape: BoxShape.circle),
                   child: Text(
                     '$itemCount',
                     style: const TextStyle(color: Colors.white, fontSize: 10),
@@ -158,7 +160,6 @@ class _AnswersTabWidgetState extends State<AnswersTabWidget> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Expanded(child: _buildListContent('SUBMITTED', quizData)),
-      
       ],
     );
   }
@@ -169,7 +170,8 @@ class _AnswersTabWidgetState extends State<AnswersTabWidget> {
     if (quizzes.isEmpty) {
       return Center(
           child: Text('No $category quizzes',
-              style: AppTextStyles.normal500(fontSize: 16, color: AppColors.backgroundDark)));
+              style: AppTextStyles.normal500(
+                  fontSize: 16, color: AppColors.backgroundDark)));
     }
 
     return ListView.separated(
@@ -190,82 +192,92 @@ class _AnswersTabWidgetState extends State<AnswersTabWidget> {
         } catch (_) {}
 
         return GestureDetector(
-       onTap: () {
-  if (category == 'MARKED') {
-    CustomToaster.toastInfo(context, 'Info', 'This quiz has already been marked.');
-    return;
-  }
+          onTap: () {
+            if (category == 'MARKED') {
+              CustomToaster.toastInfo(
+                  context, 'Info', 'This quiz has already been marked.');
+              return;
+            }
 
+            final List<Student> students =
+                (quizData?[category.toLowerCase()] as List).map((quiz) {
+              final attempts = (quiz['answers'] as List).map((ans) {
+                return QuizAttempt(
+                  questionNumber:
+                      int.tryParse(ans['question_id']?.toString() ?? '0') ?? 0,
+                  questionText: ans['question'] ?? '',
+                  userAnswer: ans['answer'] ?? '',
+                  correctAnswer: ans['correct'] ?? '',
+                  marks: int.tryParse(ans['marks']?.toString() ?? '0') ?? 0,
+                  status: ans['status'],
+                  userAnswerImageUrl: ans['user_answer_image'],
+                  correctAnswerImageUrl: ans['correct_answer_image'],
+                  customMarks:
+                      int.tryParse(ans['custom_marks']?.toString() ?? ''),
+                );
+              }).toList();
 
-  final List<Student> students = (quizData?[category.toLowerCase()] as List).map((quiz) {
-    final attempts = (quiz['answers'] as List).map((ans) {
-      return QuizAttempt(
-        questionNumber: int.tryParse(ans['question_id']?.toString() ?? '0') ?? 0,
-        questionText: ans['question'] ?? '',
-        userAnswer: ans['answer'] ?? '',
-        correctAnswer: ans['correct'] ?? '',
-        marks: int.tryParse(ans['marks']?.toString() ?? '0') ?? 0,
-        status: ans['status'],
-        userAnswerImageUrl: ans['user_answer_image'],
-        correctAnswerImageUrl: ans['correct_answer_image'],
+              return Student(
+                name: quiz['student_name'] ?? '',
+                regNo: quiz['reg_no'] ?? '',
+                timeTaken: quiz['time_taken']?.toString() ?? '',
+                totalQuestions: attempts.length,
+                overallScore: quiz['score']?.toString(),
+                attempts: attempts,
+              );
+            }).toList();
 
-        customMarks: int.tryParse(ans['custom_marks']?.toString() ?? ''),
-      );
-    }).toList();
-
-    return Student(
-      name: quiz['student_name'] ?? '',
-      regNo: quiz['reg_no'] ?? '',
-      timeTaken: quiz['time_taken']?.toString() ?? '',
-      totalQuestions: attempts.length,
-      overallScore: quiz['score']?.toString(),
-      attempts: attempts,
-    );
-  }).toList();
-
-  Navigator.push(
-    context,
-    MaterialPageRoute(
-      builder: (context) => QuizResultsScreen(
-        students: students,
-         contentId:id,
-         onGraded: () {
-           final provider = Provider.of<MarkAssignmentProvider>(context, listen: false);
-    provider.fetchQuiz(widget.itemId);
-         },
-         ),
-    ),
-  ).then((_) {
-    final provider = Provider.of<MarkAssignmentProvider>(context, listen: false);
-    provider.fetchQuiz(widget.itemId); // refresh after grading
-  });
-},
-
-
-
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => QuizResultsScreen(
+                  students: students,
+                  contentId: id,
+                  onGraded: () {
+                    final provider = Provider.of<MarkAssignmentProvider>(
+                        context,
+                        listen: false);
+                    provider.fetchQuiz(widget.itemId);
+                  },
+                ),
+              ),
+            ).then((_) {
+              final provider =
+                  Provider.of<MarkAssignmentProvider>(context, listen: false);
+              provider.fetchQuiz(widget.itemId); // refresh after grading
+            });
+          },
           child: ListTile(
             leading: CircleAvatar(
               backgroundColor: AppColors.primaryLight,
               child: Text(
                 studentName.isNotEmpty ? studentName[0].toUpperCase() : '?',
-                style: AppTextStyles.normal500(fontSize: 16, color: AppColors.backgroundLight),
+                style: AppTextStyles.normal500(
+                    fontSize: 16, color: AppColors.backgroundLight),
               ),
             ),
             title: Text(studentName,
-                style: AppTextStyles.normal600(fontSize: 16, color: Colors.black87)),
+                style: AppTextStyles.normal600(
+                    fontSize: 16, color: Colors.black87)),
             subtitle: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Score: ${score.isNotEmpty ? score : "N/A"}/${markingScore.isNotEmpty ? markingScore : "N/A"}',
-                    style: AppTextStyles.normal500(fontSize: 14, color: Colors.grey[600]!)),
+                Text(
+                    'Score: ${score.isNotEmpty ? score : "N/A"}/${markingScore.isNotEmpty ? markingScore : "N/A"}',
+                    style: AppTextStyles.normal500(
+                        fontSize: 14, color: Colors.grey[600]!)),
                 Text('Questions: ${answers.length} answered',
-                    style: AppTextStyles.normal500(fontSize: 14, color: Colors.grey[600]!)),
+                    style: AppTextStyles.normal500(
+                        fontSize: 14, color: Colors.grey[600]!)),
               ],
             ),
             trailing: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Text(date != null ? DateFormat('MMM dd').format(date) : 'Invalid date',
+                Text(
+                    date != null
+                        ? DateFormat('MMM dd').format(date)
+                        : 'Invalid date',
                     style: TextStyle(fontSize: 12, color: Colors.grey[600])),
                 Text(date != null ? DateFormat('HH:mm').format(date) : '',
                     style: TextStyle(fontSize: 12, color: Colors.grey[600])),

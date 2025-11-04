@@ -41,16 +41,10 @@ class _StudentPaymentHomeScreenState extends State<StudentPaymentHomeScreen>
   late double opacity;
   int? studentId = 0;
   String studentName = 'Student'; // Default fallback name
-    int? creatorId;
+  int? creatorId;
   String? creatorName;
   int? academicTerm;
   String? userRole;
-
-
-
-   
-
-
 
   String _formatSchoolSession(String year) {
     // Example: "2024" -> "2023/2024"
@@ -59,16 +53,17 @@ class _StudentPaymentHomeScreenState extends State<StudentPaymentHomeScreen>
   }
 
   String _formatAmount(double amount) {
-    return '${amount.toStringAsFixed(2).replaceAllMapped(
-      RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
-      (Match m) => '${m[1]},',
-    )}';
+    return amount.toStringAsFixed(2).replaceAllMapped(
+          RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+          (Match m) => '${m[1]},',
+        );
   }
 
-   Future<void> _loadUserData() async {
+  Future<void> _loadUserData() async {
     try {
       final userBox = Hive.box('userData');
-      final storedUserData = userBox.get('userData') ?? userBox.get('loginResponse');
+      final storedUserData =
+          userBox.get('userData') ?? userBox.get('loginResponse');
       final dataMap = storedUserData is String
           ? json.decode(storedUserData)
           : storedUserData as Map<String, dynamic>;
@@ -77,15 +72,16 @@ class _StudentPaymentHomeScreenState extends State<StudentPaymentHomeScreen>
       final settings = data['settings'] ?? {};
 
       setState(() {
-        studentId = int.tryParse(profile['id'].toString()) ?? 0; // Adjust to student ID
+        studentId =
+            int.tryParse(profile['id'].toString()) ?? 0; // Adjust to student ID
         creatorName = profile['name']?.toString() ?? 'Student';
         userRole = profile['role']?.toString() ?? 'student';
         academicTerm = int.tryParse(settings['term'].toString()) ?? 0;
       });
-         print("✅ Student ID: $studentId");
-    print("✅ Student Name: $creatorName");
-    print("✅ Term: $academicTerm");
-    print("✅ Role: $userRole");
+      print("✅ Student ID: $studentId");
+      print("✅ Student Name: $creatorName");
+      print("✅ Term: $academicTerm");
+      print("✅ Role: $userRole");
     } catch (e) {
       if (mounted) {
         CustomToaster.toastError(context, 'Error', 'Failed to load user data');
@@ -107,9 +103,11 @@ class _StudentPaymentHomeScreenState extends State<StudentPaymentHomeScreen>
   // Fetch student name from payments or Hive
   void _fetchStudentName() {
     try {
-      final invoiceProvider = Provider.of<InvoiceProvider>(context, listen: false);
+      final invoiceProvider =
+          Provider.of<InvoiceProvider>(context, listen: false);
       // Try to get name from payments first
-      if (invoiceProvider.payments != null && invoiceProvider.payments!.isNotEmpty) {
+      if (invoiceProvider.payments != null &&
+          invoiceProvider.payments!.isNotEmpty) {
         setState(() {
           studentName = invoiceProvider.payments!.first.name ?? 'Student';
         });
@@ -117,12 +115,16 @@ class _StudentPaymentHomeScreenState extends State<StudentPaymentHomeScreen>
       }
       // Fallback to Hive if no payments are available
       final userBox = Hive.box('userData');
-      final storedUserData = userBox.get('userData') ?? userBox.get('loginResponse');
-      final processedData = storedUserData is String ? json.decode(storedUserData) : storedUserData;
+      final storedUserData =
+          userBox.get('userData') ?? userBox.get('loginResponse');
+      final processedData = storedUserData is String
+          ? json.decode(storedUserData)
+          : storedUserData;
       final response = processedData['response'] ?? processedData;
       final data = response['data'] ?? response;
       setState(() {
-        studentName = data['name']?.toString() ?? 'Student'; // Adjust key based on your API response
+        studentName = data['name']?.toString() ??
+            'Student'; // Adjust key based on your API response
       });
     } catch (e) {
       debugPrint("Error fetching student name: $e");
@@ -229,28 +231,29 @@ class _StudentPaymentHomeScreenState extends State<StudentPaymentHomeScreen>
     final Brightness brightness = Theme.of(context).brightness;
     opacity = brightness == Brightness.light ? 0.1 : 0.15;
     String getFirstName(String fullName) {
-  return fullName.trim().split(' ').last;
-}
+      return fullName.trim().split(' ').last;
+    }
+
     // Create a dummy invoice if none exists
-    final invoices = (invoiceProvider.invoices == null ||
-            invoiceProvider.invoices!.isEmpty)
-        ? [
-            Invoice(
-              id: 0,
-              details: [],
-              amount: 0.0,
-              year: _formatSchoolSession(DateTime.now().year.toString()),
-              term: null,
-            )
-          ]
-        : invoiceProvider.invoices!;
+    final invoices =
+        (invoiceProvider.invoices == null || invoiceProvider.invoices!.isEmpty)
+            ? [
+                Invoice(
+                  id: 0,
+                  details: [],
+                  amount: 0.0,
+                  year: _formatSchoolSession(DateTime.now().year.toString()),
+                  term: null,
+                )
+              ]
+            : invoiceProvider.invoices!;
 
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: CustomStudentAppBar(
         title: 'Welcome',
-        subtitle:getFirstName(creatorName.toString()),
-         // Use dynamic name here
+        subtitle: getFirstName(creatorName.toString()),
+        // Use dynamic name here
         showNotification: true,
         showSettings: true,
         onNotificationTap: () {},
@@ -345,15 +348,15 @@ class _StudentPaymentHomeScreenState extends State<StudentPaymentHomeScreen>
                                               children: [
                                                 const NairaSvgIcon(
                                                   color: Colors.white,
-
                                                   size: 25,
                                                 ),
                                                 Text(
                                                   _formatAmount(invoice.amount),
-                                                  style: AppTextStyles.normal710(
+                                                  style:
+                                                      AppTextStyles.normal710(
                                                     fontSize: 27,
-                                                    color:
-                                                        AppColors.backgroundLight,
+                                                    color: AppColors
+                                                        .backgroundLight,
                                                   ),
                                                 ),
                                               ],
@@ -368,8 +371,10 @@ class _StudentPaymentHomeScreenState extends State<StudentPaymentHomeScreen>
                                               backgroundColor:
                                                   const Color.fromRGBO(
                                                       198, 210, 255, 1),
-                                              padding: const EdgeInsets.symmetric(
-                                                  horizontal: 20, vertical: 12),
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                      horizontal: 20,
+                                                      vertical: 12),
                                               shape: RoundedRectangleBorder(
                                                 borderRadius:
                                                     BorderRadius.circular(10),
@@ -467,9 +472,10 @@ class _StudentPaymentHomeScreenState extends State<StudentPaymentHomeScreen>
                 )
               else
                 Column(
-                  children: (invoiceProvider.payments!..sort(
-                        (a, b) => b.date.compareTo(a.date), // Newest first
-                      ))
+                  children: (invoiceProvider.payments!
+                        ..sort(
+                          (a, b) => b.date.compareTo(a.date), // Newest first
+                        ))
                       .take(10) // Show only latest 10
                       .toList()
                       .asMap()
@@ -505,20 +511,20 @@ class PaymentHistoryItem extends StatelessWidget {
   final VoidCallback onTap;
 
   const PaymentHistoryItem({
-    Key? key,
+    super.key,
     required this.payment,
     required this.onTap,
-  }) : super(key: key);
+  });
 
   String _formatDate(DateTime date) {
     return '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
   }
 
   String _formatAmount(double amount) {
-    return '${amount.toStringAsFixed(2).replaceAllMapped(
-      RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
-      (Match m) => '${m[1]},',
-    )}';
+    return amount.toStringAsFixed(2).replaceAllMapped(
+          RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+          (Match m) => '${m[1]},',
+        );
   }
 
   @override

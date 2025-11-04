@@ -69,7 +69,8 @@ class _AddFeeOverlayState extends State<AddFeeOverlay> {
                 child: OutlinedButton(
                   onPressed: () => Navigator.pop(context),
                   style: OutlinedButton.styleFrom(
-                    side: const BorderSide(color: AppColors.eLearningRedBtnColor),
+                    side:
+                        const BorderSide(color: AppColors.eLearningRedBtnColor),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8),
                     ),
@@ -91,7 +92,8 @@ class _AddFeeOverlayState extends State<AddFeeOverlay> {
                 child: ElevatedButton(
                   onPressed: () {
                     if (_feeNameController.text.trim().isNotEmpty) {
-                      widget.onConfirm(_feeNameController.text.trim(), _isMandatory);
+                      widget.onConfirm(
+                          _feeNameController.text.trim(), _isMandatory);
                       Navigator.pop(context);
                     }
                   },

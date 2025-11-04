@@ -26,7 +26,7 @@ class _SubjectSelectionState extends State<SubjectSelection> {
   @override
   void initState() {
     super.initState();
-    
+
     // Pre-populate selected courses with registered courses
     _initializeSelectedCourses();
   }
@@ -34,39 +34,42 @@ class _SubjectSelectionState extends State<SubjectSelection> {
   void _initializeSelectedCourses() {
     // Clear existing selections
     _selectedCourses.clear();
-    
+
     // Add pre-registered courses to selected courses
     for (var registeredCourse in widget.preRegisteredCourses) {
-      final int courseId = registeredCourse['id'] is int 
-          ? registeredCourse['id'] 
+      final int courseId = registeredCourse['id'] is int
+          ? registeredCourse['id']
           : int.parse(registeredCourse['id'].toString());
-      final String courseName = registeredCourse['course_name']?.toString() ?? 'Unknown Course';
-      
+      final String courseName =
+          registeredCourse['course_name']?.toString() ?? 'Unknown Course';
+
       _selectedCourses[courseId] = courseName;
     }
-    
+
     // Immediately notify parent of pre-selected courses
     if (_selectedCourses.isNotEmpty) {
-      final List<Map<String, dynamic>> selectedCoursesList = _selectedCourses.entries
-          .map((entry) => <String, dynamic>{
-                "id": entry.key,
-                "name": entry.value,
-              })
-          .toList();
-      
+      final List<Map<String, dynamic>> selectedCoursesList =
+          _selectedCourses.entries
+              .map((entry) => <String, dynamic>{
+                    "id": entry.key,
+                    "name": entry.value,
+                  })
+              .toList();
+
       // Delay the callback to avoid calling during build
       WidgetsBinding.instance.addPostFrameCallback((_) {
         widget.onCoursesSelected(selectedCoursesList);
       });
     }
-    
-    print('Initialized with ${_selectedCourses.length} pre-registered courses: $_selectedCourses');
+
+    print(
+        'Initialized with ${_selectedCourses.length} pre-registered courses: $_selectedCourses');
   }
 
   @override
   void didUpdateWidget(SubjectSelection oldWidget) {
     super.didUpdateWidget(oldWidget);
-    
+
     // Re-initialize if pre-registered courses have changed
     if (oldWidget.preRegisteredCourses != widget.preRegisteredCourses) {
       _initializeSelectedCourses();
@@ -78,17 +81,18 @@ class _SubjectSelectionState extends State<SubjectSelection> {
   Widget build(BuildContext context) {
     // Get the AuthProvider to access the course data from Hive
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    
+
     // Get the courses from Hive using the AuthProvider method
     final List<dynamic> rawCourses = authProvider.getCourses();
-    
+
     // Process the raw courses to ensure they are properly typed
     final List<Map<String, dynamic>> courses = rawCourses.map((course) {
       // Convert each course to a properly typed Map<String, dynamic>
-      final Map<String, dynamic> typedCourse = Map<String, dynamic>.from(course);
+      final Map<String, dynamic> typedCourse =
+          Map<String, dynamic>.from(course);
       return typedCourse;
     }).toList();
-    
+
     // If no courses are available, display a message
     if (courses.isEmpty) {
       return const Center(
@@ -107,13 +111,16 @@ class _SubjectSelectionState extends State<SubjectSelection> {
       spacing: 8,
       runSpacing: 8,
       children: courses.map((course) {
-        // Safely access and convert course id and name 
-        final int courseId = course['id'] is int ? course['id'] : int.parse(course['id'].toString());
-        final String courseName = course['course_name']?.toString() ?? 'Unknown Course';
-        
+        // Safely access and convert course id and name
+        final int courseId = course['id'] is int
+            ? course['id']
+            : int.parse(course['id'].toString());
+        final String courseName =
+            course['course_name']?.toString() ?? 'Unknown Course';
+
         // Check if this course is pre-registered (already selected)
         final bool isPreRegistered = _selectedCourses.containsKey(courseId);
-        
+
         return ChoiceChip(
           label: Text(
             courseName,
@@ -132,15 +139,16 @@ class _SubjectSelectionState extends State<SubjectSelection> {
               } else {
                 _selectedCourses.remove(courseId);
               }
-              
+
               // Pass the selected courses back to parent with explicit type
-              final List<Map<String, dynamic>> selectedCoursesList = _selectedCourses.entries
-                  .map((entry) => <String, dynamic>{
-                        "id": entry.key,
-                        "name": entry.value,
-                      })
-                  .toList();
-              
+              final List<Map<String, dynamic>> selectedCoursesList =
+                  _selectedCourses.entries
+                      .map((entry) => <String, dynamic>{
+                            "id": entry.key,
+                            "name": entry.value,
+                          })
+                      .toList();
+
               widget.onCoursesSelected(selectedCoursesList);
             });
           },
@@ -155,4 +163,3 @@ class _SubjectSelectionState extends State<SubjectSelection> {
     );
   }
 }
-

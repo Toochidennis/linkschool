@@ -1,4 +1,3 @@
-import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
 import 'package:linkschool/modules/model/admin/home/manage_student_model.dart';
 
@@ -36,7 +35,6 @@ class ManageStudentService {
         throw Exception("Failed to create student: ${response.message}");
       } else {
         print('Student created successfully.');
-       
       }
     } catch (e) {
       print("Error creating student: $e");
@@ -45,7 +43,8 @@ class ManageStudentService {
     }
   }
 
-  Future<void> updateStudent(String studentId, Map<String, dynamic> updatedStudent) async {
+  Future<void> updateStudent(
+      String studentId, Map<String, dynamic> updatedStudent) async {
     final userBox = Hive.box('userData');
     final loginData = userBox.get('userData') ?? userBox.get('loginResponse');
     final dbName = userBox.get('_db') ?? 'aalmgzmy_linkskoo_practice';
@@ -135,7 +134,9 @@ class ManageStudentService {
       final data = response.rawData?['response'];
       if (data is List) {
         print('Students fetched successfully: ${data.length} students found.');
-        return data.map((json) => Students.fromJson(json as Map<String, dynamic>)).toList();
+        return data
+            .map((json) => Students.fromJson(json as Map<String, dynamic>))
+            .toList();
       } else {
         print("Unexpected response format");
         throw Exception("Unexpected response format");

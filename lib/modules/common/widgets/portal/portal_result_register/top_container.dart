@@ -4,7 +4,6 @@ import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/common/utils/custom_dropdown_utils.dart';
 
-
 class TopContainer extends StatelessWidget {
   final String selectedTerm;
   final Function(String?) onTermChanged;
@@ -41,8 +40,8 @@ class TopContainer extends StatelessWidget {
                 children: [
                   Container(
                     height: 42,
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 16, vertical: 8),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                     decoration: BoxDecoration(
                       color: AppColors.regBtnColor1,
                       borderRadius: BorderRadius.circular(24),
@@ -72,7 +71,8 @@ class TopContainer extends StatelessWidget {
                     children: [
                       const CircleAvatar(
                         backgroundColor: AppColors.regAvatarColor,
-                        child: Icon(Icons.person, color: AppColors.primaryLight),
+                        child:
+                            Icon(Icons.person, color: AppColors.primaryLight),
                       ),
                       const SizedBox(width: 12),
                       Text('Registered students',

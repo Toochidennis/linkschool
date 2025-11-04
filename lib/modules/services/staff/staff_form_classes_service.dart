@@ -63,7 +63,7 @@ class StaffFormClassesServiceFixed {
 
     if (levelData.isNotEmpty && levelData['classes'] != null) {
       final classes = List<Map<String, dynamic>>.from(levelData['classes']);
-      
+
       // Add current year and term to each class
       return classes.map((classData) {
         return {
@@ -86,8 +86,9 @@ class StaffFormClassesServiceFixed {
         List<dynamic> courses = courseData['courses'] ?? [];
         if (courses.isNotEmpty) {
           // Return the maximum student count (assuming same students across subjects)
-          return courses.map((c) => c['num_of_students'] as int? ?? 0)
-                        .reduce((a, b) => a > b ? a : b);
+          return courses
+              .map((c) => c['num_of_students'] as int? ?? 0)
+              .reduce((a, b) => a > b ? a : b);
         }
       }
     }
@@ -161,5 +162,3 @@ class StaffFormClassesServiceFixed {
     }).toList();
   }
 }
-
-

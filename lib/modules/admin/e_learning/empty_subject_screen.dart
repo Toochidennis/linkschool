@@ -5,7 +5,8 @@ import 'package:hive/hive.dart';
 import 'package:intl/intl.dart';
 import 'package:linkschool/modules/admin/e_learning/View/question/view_question_screen.dart';
 import 'package:linkschool/modules/admin/e_learning/View/quiz/quiz_screen.dart';
-import 'package:linkschool/modules/admin/e_learning/add_material_screen.dart' hide AttachmentItem;
+import 'package:linkschool/modules/admin/e_learning/add_material_screen.dart'
+    hide AttachmentItem;
 import 'package:linkschool/modules/admin/e_learning/admin_assignment_screen.dart';
 import 'package:linkschool/modules/admin/e_learning/create_topic_screen.dart';
 import 'package:linkschool/modules/admin/e_learning/question_screen.dart';
@@ -16,19 +17,13 @@ import 'package:linkschool/modules/common/custom_toaster.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/model/e-learning/question_model.dart';
 import 'package:linkschool/modules/model/e-learning/syllabus_content_model.dart';
-import 'package:linkschool/modules/providers/admin/e_learning/assignment_provider.dart';
 import 'package:linkschool/modules/providers/admin/e_learning/delete_sylabus_content.dart';
-import 'package:linkschool/modules/providers/admin/e_learning/material_provider.dart';
-import 'package:linkschool/modules/providers/admin/e_learning/quiz_provider.dart';
-import 'package:linkschool/modules/providers/admin/e_learning/topic_provider.dart';
-import 'package:linkschool/modules/staff/e_learning/view/quiz_answer_screen.dart';
-import 'package:linkschool/modules/staff/e_learning/view/staff_assignment_details_screen.dart';
 import 'package:linkschool/modules/staff/e_learning/view/staff_material_details_screen.dart';
 import 'package:provider/provider.dart';
-import 'package:linkschool/modules/model/e-learning/material_model.dart' as custom;
+import 'package:linkschool/modules/model/e-learning/material_model.dart'
+    as custom;
 import 'package:linkschool/modules/services/api/service_locator.dart';
 import '../../common/widgets/portal/attachmentItem.dart';
-import '../../model/explore/home/exam_model.dart';
 import 'package:linkschool/modules/admin/e_learning/View/assignment_details.dart';
 import '../../providers/admin/e_learning/syllabus_content_provider.dart';
 
@@ -60,7 +55,8 @@ class EmptySubjectScreen extends StatefulWidget {
   State<EmptySubjectScreen> createState() => _EmptySubjectScreenState();
 }
 
-class _EmptySubjectScreenState extends State<EmptySubjectScreen> with WidgetsBindingObserver {
+class _EmptySubjectScreenState extends State<EmptySubjectScreen>
+    with WidgetsBindingObserver {
   late double opacity = 0.1;
   List<TopicContent> _topics = [];
   List<SyllabusContentItem> _noTopicItems = [];
@@ -125,12 +121,16 @@ class _EmptySubjectScreenState extends State<EmptySubjectScreen> with WidgetsBin
       }
       final contentProvider = locator<SyllabusContentProvider>();
       final userBox = Hive.box('userData');
-      final storedUserData = userBox.get('userData') ?? userBox.get('loginResponse');
-      final processedData = storedUserData is String ? json.decode(storedUserData) : storedUserData;
+      final storedUserData =
+          userBox.get('userData') ?? userBox.get('loginResponse');
+      final processedData = storedUserData is String
+          ? json.decode(storedUserData)
+          : storedUserData;
       final response = processedData['response'] ?? processedData;
       final data = response['data'] ?? response;
       final settings = data['settings'] ?? {};
-      final dbName = settings['db_name']?.toString() ?? 'aalmgzmy_linkskoo_practice';
+      final dbName =
+          settings['db_name']?.toString() ?? 'aalmgzmy_linkskoo_practice';
       await contentProvider.fetchSyllabusContents(widget.syllabusId!, dbName);
       if (contentProvider.error.isEmpty) {
         _processContents(contentProvider.contents);
@@ -139,7 +139,8 @@ class _EmptySubjectScreenState extends State<EmptySubjectScreen> with WidgetsBin
       }
     } catch (e) {
       print('Error loading syllabus contents: $e');
-      CustomToaster.toastError(context, 'Error', 'Failed to load syllabus contents: $e');
+      CustomToaster.toastError(
+          context, 'Error', 'Failed to load syllabus contents: $e');
     }
   }
 
@@ -155,14 +156,16 @@ class _EmptySubjectScreenState extends State<EmptySubjectScreen> with WidgetsBin
         final topicChildren = <SyllabusContentItem>[];
         for (final child in children) {
           try {
-            if (child is Map<String, dynamic> && child.containsKey('settings')) {
+            if (child is Map<String, dynamic> &&
+                child.containsKey('settings')) {
               final settings = child['settings'] as Map<String, dynamic>;
               topicChildren.add(SyllabusContentItem.fromJson({
                 ...settings,
                 'questions': child['questions'] ?? [],
               }));
             } else {
-              topicChildren.add(SyllabusContentItem.fromJson(child as Map<String, dynamic>));
+              topicChildren.add(
+                  SyllabusContentItem.fromJson(child as Map<String, dynamic>));
             }
           } catch (e) {
             print('Error parsing child for topic ${content['title']}: $e');
@@ -179,14 +182,16 @@ class _EmptySubjectScreenState extends State<EmptySubjectScreen> with WidgetsBin
         print('No Topic has ${children.length} children');
         for (final child in children) {
           try {
-            if (child is Map<String, dynamic> && child.containsKey('settings')) {
+            if (child is Map<String, dynamic> &&
+                child.containsKey('settings')) {
               final settings = child['settings'] as Map<String, dynamic>;
               noTopicItems.add(SyllabusContentItem.fromJson({
                 ...settings,
                 'questions': child['questions'] ?? [],
               }));
             } else {
-              noTopicItems.add(SyllabusContentItem.fromJson(child as Map<String, dynamic>));
+              noTopicItems.add(
+                  SyllabusContentItem.fromJson(child as Map<String, dynamic>));
             }
           } catch (e) {
             print('Error parsing no-topic child: $e');
@@ -194,7 +199,8 @@ class _EmptySubjectScreenState extends State<EmptySubjectScreen> with WidgetsBin
         }
       }
     }
-    print('Processed: ${topics.length} topics, ${noTopicItems.length} no-topic items');
+    print(
+        'Processed: ${topics.length} topics, ${noTopicItems.length} no-topic items');
     setState(() {
       _topics = topics;
       _noTopicItems = noTopicItems;
@@ -219,10 +225,14 @@ class _EmptySubjectScreenState extends State<EmptySubjectScreen> with WidgetsBin
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 20),
-              _buildOptionRow(context, 'Assignment', 'assets/icons/e_learning/assignment.svg'),
-              _buildOptionRow(context, 'Question', 'assets/icons/e_learning/question_icon.svg'),
-              _buildOptionRow(context, 'Material', 'assets/icons/e_learning/material.svg'),
-              _buildOptionRow(context, 'Topic', 'assets/icons/e_learning/topic.svg'),
+              _buildOptionRow(context, 'Assignment',
+                  'assets/icons/e_learning/assignment.svg'),
+              _buildOptionRow(context, 'Question',
+                  'assets/icons/e_learning/question_icon.svg'),
+              _buildOptionRow(
+                  context, 'Material', 'assets/icons/e_learning/material.svg'),
+              _buildOptionRow(
+                  context, 'Topic', 'assets/icons/e_learning/topic.svg'),
               const Padding(
                 padding: EdgeInsets.symmetric(vertical: 10),
                 child: Row(
@@ -236,7 +246,8 @@ class _EmptySubjectScreenState extends State<EmptySubjectScreen> with WidgetsBin
                   ],
                 ),
               ),
-              _buildOptionRow(context, 'Reuse content', 'assets/icons/e_learning/share.svg'),
+              _buildOptionRow(context, 'Reuse content',
+                  'assets/icons/e_learning/share.svg'),
             ],
           ),
         );
@@ -245,7 +256,8 @@ class _EmptySubjectScreenState extends State<EmptySubjectScreen> with WidgetsBin
   }
 
   Widget _buildOptionRow(BuildContext context, String text, String iconPath) {
-    print("Adding new ${widget.courseId} syllabus with ${widget.term} levelId: ${widget.levelId}, course_name: ${widget.courseName}");
+    print(
+        "Adding new ${widget.courseId} syllabus with ${widget.term} levelId: ${widget.levelId}, course_name: ${widget.courseName}");
     return InkWell(
       onTap: () {
         Navigator.pop(context);
@@ -306,7 +318,6 @@ class _EmptySubjectScreenState extends State<EmptySubjectScreen> with WidgetsBin
                   courseId: widget.courseId,
                   levelId: widget.levelId,
                   classId: widget.classId,
-                
                 ),
               ),
             );
@@ -471,8 +482,10 @@ class _EmptySubjectScreenState extends State<EmptySubjectScreen> with WidgetsBin
 
   Widget _buildSyllabusDetails() {
     // Split topics into those with and without items
-    final topicsWithItems = _topics.where((topic) => topic.children.isNotEmpty).toList();
-    final topicsWithoutItems = _topics.where((topic) => topic.children.isEmpty).toList();
+    final topicsWithItems =
+        _topics.where((topic) => topic.children.isNotEmpty).toList();
+    final topicsWithoutItems =
+        _topics.where((topic) => topic.children.isEmpty).toList();
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -539,17 +552,14 @@ class _EmptySubjectScreenState extends State<EmptySubjectScreen> with WidgetsBin
             const SizedBox(height: 16),
             // 1. Items without topic
             if (_noTopicItems.isNotEmpty) ...[
-              
               ..._noTopicItems.map(_buildContentItem),
             ],
             // 2. Topics with items
             if (topicsWithItems.isNotEmpty) ...[
-           
               ...topicsWithItems.map(_buildTopicSection),
             ],
             // 3. Topics without items
             if (topicsWithoutItems.isNotEmpty) ...[
-            
               ...topicsWithoutItems.map(_buildTopicSection),
             ],
             const SizedBox(height: 70),
@@ -563,7 +573,9 @@ class _EmptySubjectScreenState extends State<EmptySubjectScreen> with WidgetsBin
     if (_noTopicItems.isNotEmpty && _noTopicItems.first.classes.isNotEmpty) {
       return _noTopicItems.first.classes.map((c) => c.name).join(', ');
     }
-    if (_topics.isNotEmpty && _topics.first.children.isNotEmpty && _topics.first.children.first.classes.isNotEmpty) {
+    if (_topics.isNotEmpty &&
+        _topics.first.children.isNotEmpty &&
+        _topics.first.children.first.classes.isNotEmpty) {
       return _topics.first.children.first.classes.map((c) => c.name).join(', ');
     }
     return 'N/A';
@@ -607,7 +619,6 @@ class _EmptySubjectScreenState extends State<EmptySubjectScreen> with WidgetsBin
                             classId: widget.classId,
                             editMode: true,
                             topicToEdit: topic,
-                         
                           ),
                         ),
                       );
@@ -648,7 +659,9 @@ class _EmptySubjectScreenState extends State<EmptySubjectScreen> with WidgetsBin
         else
           ...topic.children.map((item) => _buildTopicItem(
                 item.title,
-                item.datePosted != null ? _formatDate(DateTime.parse(item.datePosted!)) : 'No date',
+                item.datePosted != null
+                    ? _formatDate(DateTime.parse(item.datePosted!))
+                    : 'No date',
                 _getIconForType(item.type),
                 item,
               )),
@@ -758,7 +771,8 @@ class _EmptySubjectScreenState extends State<EmptySubjectScreen> with WidgetsBin
     );
   }
 
-  Widget _buildTopicItem(String title, String timestamp, IconData icon, SyllabusContentItem item) {
+  Widget _buildTopicItem(
+      String title, String timestamp, IconData icon, SyllabusContentItem item) {
     return InkWell(
       onTap: () => _navigateToDetails(item),
       child: Container(
@@ -849,8 +863,12 @@ class _EmptySubjectScreenState extends State<EmptySubjectScreen> with WidgetsBin
     final attachments = item.contentFiles.map((file) {
       return AttachmentItem(
         fileName: file.fileName,
-        iconPath: (file.type == 'image' || file.type == 'photo') ? 'assets/icons/e_learning/material.svg' : 'assets/icons/e_learning/link.svg',
-        fileContent: file.file.isNotEmpty ? file.file : 'https://yourserver.com/${file.fileName}',
+        iconPath: (file.type == 'image' || file.type == 'photo')
+            ? 'assets/icons/e_learning/material.svg'
+            : 'assets/icons/e_learning/link.svg',
+        fileContent: file.file.isNotEmpty
+            ? file.file
+            : 'https://yourserver.com/${file.fileName}',
       );
     }).toList();
     print("Editing item: ${item.title}, ID: ${item.id}");
@@ -892,7 +910,9 @@ class _EmptySubjectScreenState extends State<EmptySubjectScreen> with WidgetsBin
                 description: item.description,
                 selectedClass: item.classes.map((c) => c.name).join(', '),
                 attachments: attachments,
-                dueDate: item.endDate != null ? DateTime.parse(item.endDate!) : DateTime.now(),
+                dueDate: item.endDate != null
+                    ? DateTime.parse(item.endDate!)
+                    : DateTime.now(),
                 topic: item.topic ?? 'No Topic',
                 topicId: item.topicId.toString(),
                 marks: item.grade ?? '0',
@@ -925,16 +945,27 @@ class _EmptySubjectScreenState extends State<EmptySubjectScreen> with WidgetsBin
                 title: item.title,
                 description: item.description,
                 selectedClass: item.classes.map((c) => c.name).join(', '),
-                startDate: item.startDate != null ? DateTime.parse(item.startDate!) : DateTime.now(),
-                endDate: item.endDate != null ? DateTime.parse(item.endDate!) : DateTime.now(),
+                startDate: item.startDate != null
+                    ? DateTime.parse(item.startDate!)
+                    : DateTime.now(),
+                endDate: item.endDate != null
+                    ? DateTime.parse(item.endDate!)
+                    : DateTime.now(),
                 topic: item.topic ?? 'No Topic',
-                duration: item.duration != null ? Duration(minutes: int.tryParse(item.duration.toString()) ?? 0) : Duration.zero,
+                duration: item.duration != null
+                    ? Duration(
+                        minutes: int.tryParse(item.duration.toString()) ?? 0)
+                    : Duration.zero,
                 marks: item.grade?.toString() ?? '0',
                 topicId: item.topicId,
               ),
               questiondata: questionData,
-              class_ids: item.classes.map((c) => {'id': c.id.toString(), 'name': c.name}).toList(),
-              syllabusClasses: item.classes.map((c) => {'id': c.id.toString(), 'name': c.name}).join(', '),
+              class_ids: item.classes
+                  .map((c) => {'id': c.id.toString(), 'name': c.name})
+                  .toList(),
+              syllabusClasses: item.classes
+                  .map((c) => {'id': c.id.toString(), 'name': c.name})
+                  .join(', '),
               questions: item.questions,
               editMode: true,
               onSaveFlag: setRefreshFlag,
@@ -968,8 +999,12 @@ class _EmptySubjectScreenState extends State<EmptySubjectScreen> with WidgetsBin
                 topicId: item.topicId.toString(),
                 attachments: attachments,
                 selectedClass: item.classes.map((c) => c.name).join(', '),
-                startDate: item.startDate != null ? DateTime.parse(item.startDate!) : DateTime.now(),
-                endDate: item.endDate != null ? DateTime.parse(item.endDate!) : DateTime.now(),
+                startDate: item.startDate != null
+                    ? DateTime.parse(item.startDate!)
+                    : DateTime.now(),
+                endDate: item.endDate != null
+                    ? DateTime.parse(item.endDate!)
+                    : DateTime.now(),
                 duration: const Duration(minutes: 30),
                 marks: item.grade ?? '0',
               ),
@@ -998,7 +1033,6 @@ class _EmptySubjectScreenState extends State<EmptySubjectScreen> with WidgetsBin
                 type: item.type,
                 children: [],
               ),
-             
             ),
           ),
         );
@@ -1006,7 +1040,8 @@ class _EmptySubjectScreenState extends State<EmptySubjectScreen> with WidgetsBin
       default:
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Edit functionality not available for this item type'),
+            content:
+                Text('Edit functionality not available for this item type'),
             backgroundColor: Colors.orange,
           ),
         );
@@ -1019,7 +1054,8 @@ class _EmptySubjectScreenState extends State<EmptySubjectScreen> with WidgetsBin
       builder: (BuildContext context) {
         return AlertDialog(
           title: const Text('Delete Confirmation'),
-          content: Text('Are you sure you want to delete "${item.title}"? This action cannot be undone.'),
+          content: Text(
+              'Are you sure you want to delete "${item.title}"? This action cannot be undone.'),
           actions: <Widget>[
             TextButton(
               child: const Text('Cancel'),
@@ -1069,9 +1105,11 @@ class _EmptySubjectScreenState extends State<EmptySubjectScreen> with WidgetsBin
       final provider = locator<DeleteSyllabusProvider>();
       await provider.DeleteTopic(topic.id.toString());
       _loadSyllabusContents();
-      CustomToaster.toastSuccess(context, 'Success', 'Topic deleted successfully');
+      CustomToaster.toastSuccess(
+          context, 'Success', 'Topic deleted successfully');
     } catch (e) {
-      CustomToaster.toastError(context, 'Error', 'Failed to delete topic: ${e.toString()}');
+      CustomToaster.toastError(
+          context, 'Error', 'Failed to delete topic: ${e.toString()}');
     }
   }
 
@@ -1097,14 +1135,17 @@ class _EmptySubjectScreenState extends State<EmptySubjectScreen> with WidgetsBin
           await provider.DeleteTopic(item.id.toString());
           break;
         default:
-          CustomToaster.toastError(context, 'Error', 'Delete not implemented for this item type.');
+          CustomToaster.toastError(
+              context, 'Error', 'Delete not implemented for this item type.');
           return;
       }
-      CustomToaster.toastSuccess(context, 'Success', '"${item.title}" has been deleted.');
+      CustomToaster.toastSuccess(
+          context, 'Success', '"${item.title}" has been deleted.');
       _loadSyllabusContents();
     } catch (e) {
       print('Error during deletion: $e');
-      CustomToaster.toastError(context, 'Error', 'An unexpected error occurred.');
+      CustomToaster.toastError(
+          context, 'Error', 'An unexpected error occurred.');
     }
   }
 
@@ -1113,8 +1154,14 @@ class _EmptySubjectScreenState extends State<EmptySubjectScreen> with WidgetsBin
     final attachments = item.contentFiles.map((file) {
       return AttachmentItem(
         fileName: file.fileName,
-        iconPath: (file.type == 'image' || file.type == 'photo' || file.type == 'video') ? 'assets/icons/e_learning/material.svg' : 'assets/icons/e_learning/link.svg',
-        fileContent: file.file.isNotEmpty ? file.file : 'https://linkskool.net/${file.fileName}',
+        iconPath: (file.type == 'image' ||
+                file.type == 'photo' ||
+                file.type == 'video')
+            ? 'assets/icons/e_learning/material.svg'
+            : 'assets/icons/e_learning/link.svg',
+        fileContent: file.file.isNotEmpty
+            ? file.file
+            : 'https://linkskool.net/${file.fileName}',
       );
     }).toList();
     final syllabusItem = SyllabusContentItem(
@@ -1139,7 +1186,8 @@ class _EmptySubjectScreenState extends State<EmptySubjectScreen> with WidgetsBin
       description: item.description,
       selectedClass: item.classes.map((c) => c.name).join(', '),
       attachments: attachments,
-      dueDate: item.endDate != null ? DateTime.parse(item.endDate!) : DateTime.now(),
+      dueDate:
+          item.endDate != null ? DateTime.parse(item.endDate!) : DateTime.now(),
       topic: item.topic ?? 'No Topic',
       marks: item.grade ?? '0',
     );
@@ -1204,8 +1252,12 @@ class _EmptySubjectScreenState extends State<EmptySubjectScreen> with WidgetsBin
           MaterialPageRoute(
             builder: (context) => QuizScreen(
               questiondata: questionData,
-              class_ids: item.classes.map((c) => {'id': c.id.toString(), 'name': c.name}).toList(),
-              syllabusClasses: item.classes.map((c) => {'id': c.id.toString(), 'name': c.name}).join(', '),
+              class_ids: item.classes
+                  .map((c) => {'id': c.id.toString(), 'name': c.name})
+                  .toList(),
+              syllabusClasses: item.classes
+                  .map((c) => {'id': c.id.toString(), 'name': c.name})
+                  .join(', '),
               questions: item.questions,
               correctAnswers: correctAnswers,
               question: Question(
@@ -1213,10 +1265,17 @@ class _EmptySubjectScreenState extends State<EmptySubjectScreen> with WidgetsBin
                 description: item.description,
                 id: item.id,
                 selectedClass: item.classes.map((c) => c.name).join(', '),
-                startDate: item.startDate != null ? DateTime.parse(item.startDate!) : DateTime.now(),
-                endDate: item.endDate != null ? DateTime.parse(item.endDate!) : DateTime.now(),
+                startDate: item.startDate != null
+                    ? DateTime.parse(item.startDate!)
+                    : DateTime.now(),
+                endDate: item.endDate != null
+                    ? DateTime.parse(item.endDate!)
+                    : DateTime.now(),
                 topic: item.topic ?? 'No Topic',
-                duration: item.duration != null ? Duration(minutes: int.tryParse(item.duration.toString()) ?? 0) : Duration.zero,
+                duration: item.duration != null
+                    ? Duration(
+                        minutes: int.tryParse(item.duration.toString()) ?? 0)
+                    : Duration.zero,
                 marks: item.grade?.toString() ?? '0',
               ),
             ),
@@ -1232,11 +1291,18 @@ class _EmptySubjectScreenState extends State<EmptySubjectScreen> with WidgetsBin
                 title: item.title,
                 description: item.description,
                 selectedClass: item.classes.map((c) => c.name).join(', '),
-                startDate: item.startDate != null ? DateTime.parse(item.startDate!) : DateTime.now(),
-                endDate: item.endDate != null ? DateTime.parse(item.endDate!) : DateTime.now(),
+                startDate: item.startDate != null
+                    ? DateTime.parse(item.startDate!)
+                    : DateTime.now(),
+                endDate: item.endDate != null
+                    ? DateTime.parse(item.endDate!)
+                    : DateTime.now(),
                 topic: item.topic ?? 'No Topic',
                 attachments: attachments,
-                duration: item.duration != null ? Duration(minutes: int.tryParse(item.duration.toString()) ?? 0) : Duration.zero,
+                duration: item.duration != null
+                    ? Duration(
+                        minutes: int.tryParse(item.duration.toString()) ?? 0)
+                    : Duration.zero,
                 marks: item.grade?.toString() ?? '0',
               ),
             ),

@@ -39,7 +39,8 @@ class BoardGamesClass {
     return BoardGamesClass(
       id: json["id"] ?? '',
       name: json["name"] ?? '',
-      games: List<Game>.from((json["games"] ?? []).map((x) => Game.fromJson(x))),
+      games:
+          List<Game>.from((json["games"] ?? []).map((x) => Game.fromJson(x))),
     );
   }
 }
@@ -88,4 +89,3 @@ class Game {
     );
   }
 }
-

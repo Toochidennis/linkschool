@@ -6,7 +6,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:hive/hive.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:intl/intl.dart';
 import 'package:linkschool/modules/admin/e_learning/select_topic_screen.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/buttons/custom_outline_button..dart';
@@ -15,7 +14,8 @@ import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/custom_toaster.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/common/widgets/portal/e_learning/select_classes_dialog.dart';
-import 'package:linkschool/modules/model/e-learning/material_model.dart' as custom;
+import 'package:linkschool/modules/model/e-learning/material_model.dart'
+    as custom;
 import 'package:linkschool/modules/providers/admin/e_learning/material_provider.dart';
 import 'package:provider/provider.dart';
 
@@ -40,11 +40,11 @@ class AddMaterialScreen extends StatefulWidget {
     this.classId,
     this.courseId,
     this.courseName,
-    this.levelId, 
-    this.syllabusId, 
+    this.levelId,
+    this.syllabusId,
     this.syllabusClasses,
     this.editMode = false,
-    this.materialToEdit, 
+    this.materialToEdit,
     this.id,
     this.itemId,
   });
@@ -66,10 +66,10 @@ class _AddMaterialScreenState extends State<AddMaterialScreen> {
   String? academicYear;
   int? academicTerm;
   bool _isSaving = false;
-  
+
   // Added these variables to match AdminAssignmentScreen functionality
   String? _replacingServerFileName;
-  List<String> _removedServerFileNames = [];
+  final List<String> _removedServerFileNames = [];
 
   @override
   void initState() {
@@ -88,20 +88,24 @@ class _AddMaterialScreenState extends State<AddMaterialScreen> {
       _selectedTopicId = int.parse(material.topicId ?? '');
 
       // Updated to match AdminAssignmentScreen structure
-      _attachments = material.attachments?.map((attachment) => AttachmentItem(
-        fileName: attachment.fileName,
-        iconPath: attachment.iconPath,
-        fileContent: attachment.fileContent,
-        isExisting: true,
-        originalServerFileName: attachment.fileName,
-      )).toList() ?? [];
+      _attachments = material.attachments
+              ?.map((attachment) => AttachmentItem(
+                    fileName: attachment.fileName,
+                    iconPath: attachment.iconPath,
+                    fileContent: attachment.fileContent,
+                    isExisting: true,
+                    originalServerFileName: attachment.fileName,
+                  ))
+              .toList() ??
+          [];
     }
   }
 
   Future<void> _loadUserData() async {
     try {
       final userBox = Hive.box('userData');
-      final storedUserData = userBox.get('userData') ?? userBox.get('loginResponse');
+      final storedUserData =
+          userBox.get('userData') ?? userBox.get('loginResponse');
       if (storedUserData != null) {
         final processedData = storedUserData is String
             ? json.decode(storedUserData)
@@ -127,8 +131,9 @@ class _AddMaterialScreenState extends State<AddMaterialScreen> {
   Widget build(BuildContext context) {
     final Brightness brightness = Theme.of(context).brightness;
     opacity = brightness == Brightness.light ? 0.1 : 0.15;
-    final materialProvider = Provider.of<MaterialProvider>(context, listen: false);
-    
+    final materialProvider =
+        Provider.of<MaterialProvider>(context, listen: false);
+
     return WillPopScope(
       onWillPop: () async {
         FocusScope.of(context).unfocus();
@@ -180,12 +185,13 @@ class _AddMaterialScreenState extends State<AddMaterialScreen> {
             ],
           ),
           body: materialProvider.isLoading
-              ? Center(child: CircularProgressIndicator()) 
+              ? Center(child: CircularProgressIndicator())
               : Container(
                   height: MediaQuery.of(context).size.height,
                   decoration: Constants.customBoxDecoration(context),
                   child: Padding(
-                    padding: const EdgeInsets.all(8.0), // Changed to match AdminAssignmentScreen
+                    padding: const EdgeInsets.all(
+                        8.0), // Changed to match AdminAssignmentScreen
                     child: SingleChildScrollView(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -211,7 +217,6 @@ class _AddMaterialScreenState extends State<AddMaterialScreen> {
                           const SizedBox(height: 16.0),
                           Text(
                             'Description:',
-                            
                             style: AppTextStyles.normal600(
                                 fontSize: 16.0, color: Colors.black),
                           ),
@@ -389,7 +394,8 @@ class _AddMaterialScreenState extends State<AddMaterialScreen> {
                   ..._attachments.asMap().entries.map((entry) {
                     final index = entry.key;
                     final attachment = entry.value;
-                    return _buildAttachmentItem(attachment, isFirst: index == 0);
+                    return _buildAttachmentItem(attachment,
+                        isFirst: index == 0);
                   }),
                   const SizedBox(height: 8.0),
                   _buildAddMoreButton(),
@@ -402,7 +408,8 @@ class _AddMaterialScreenState extends State<AddMaterialScreen> {
   }
 
   // Updated to match AdminAssignmentScreen functionality
-  Widget _buildAttachmentItem(AttachmentItem attachment, {bool isFirst = false}) {
+  Widget _buildAttachmentItem(AttachmentItem attachment,
+      {bool isFirst = false}) {
     return Container(
       margin: EdgeInsets.only(bottom: isFirst ? 0 : 8.0),
       child: Row(
@@ -416,7 +423,8 @@ class _AddMaterialScreenState extends State<AddMaterialScreen> {
           Expanded(
             child: Text(
               attachment.fileName!,
-              style: AppTextStyles.normal400(fontSize: 14.0, color: AppColors.primaryLight),
+              style: AppTextStyles.normal400(
+                  fontSize: 14.0, color: AppColors.primaryLight),
               overflow: TextOverflow.ellipsis,
             ),
           ),
@@ -424,9 +432,11 @@ class _AddMaterialScreenState extends State<AddMaterialScreen> {
             icon: const Icon(Icons.close, size: 20, color: Colors.red),
             onPressed: () {
               setState(() {
-                if (attachment.isExisting && attachment.originalServerFileName != null) {
+                if (attachment.isExisting &&
+                    attachment.originalServerFileName != null) {
                   _replacingServerFileName = attachment.originalServerFileName;
-                  _removedServerFileNames.add(attachment.originalServerFileName!);
+                  _removedServerFileNames
+                      .add(attachment.originalServerFileName!);
                 }
                 _attachments.remove(attachment);
               });
@@ -481,22 +491,14 @@ class _AddMaterialScreenState extends State<AddMaterialScreen> {
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 16),
-              _buildAttachmentOption(
-                  'Insert link',
-                  'assets/icons/e_learning/link3.svg',
-                  _showInsertLinkDialog),
-              _buildAttachmentOption(
-                  'Upload file',
-                  'assets/icons/e_learning/upload_file.svg',
-                  _uploadFile),
-              _buildAttachmentOption(
-                  'Take photo',
-                  'assets/icons/e_learning/take_photo.svg',
-                  _takePhoto),
-              _buildAttachmentOption(
-                  'Record Video',
-                  'assets/icons/e_learning/record_video.svg',
-                  _recordVideo),
+              _buildAttachmentOption('Insert link',
+                  'assets/icons/e_learning/link3.svg', _showInsertLinkDialog),
+              _buildAttachmentOption('Upload file',
+                  'assets/icons/e_learning/upload_file.svg', _uploadFile),
+              _buildAttachmentOption('Take photo',
+                  'assets/icons/e_learning/take_photo.svg', _takePhoto),
+              _buildAttachmentOption('Record Video',
+                  'assets/icons/e_learning/record_video.svg', _recordVideo),
             ],
           ),
         );
@@ -516,14 +518,19 @@ class _AddMaterialScreenState extends State<AddMaterialScreen> {
             children: [
               Text(
                 'Replace attachment',
-                style: AppTextStyles.normal600(fontSize: 20, color: AppColors.backgroundDark),
+                style: AppTextStyles.normal600(
+                    fontSize: 20, color: AppColors.backgroundDark),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 16),
-              _buildAttachmentOption('Upload file', 'assets/icons/e_learning/upload_file.svg', _uploadFile),
-              _buildAttachmentOption('Take photo', 'assets/icons/e_learning/take_photo.svg', _takePhoto),
-              _buildAttachmentOption('Record Video', 'assets/icons/e_learning/record_video.svg', _recordVideo),
-              _buildAttachmentOption('Cancel', 'assets/icons/e_learning/cancel.svg', () {
+              _buildAttachmentOption('Upload file',
+                  'assets/icons/e_learning/upload_file.svg', _uploadFile),
+              _buildAttachmentOption('Take photo',
+                  'assets/icons/e_learning/take_photo.svg', _takePhoto),
+              _buildAttachmentOption('Record Video',
+                  'assets/icons/e_learning/record_video.svg', _recordVideo),
+              _buildAttachmentOption(
+                  'Cancel', 'assets/icons/e_learning/cancel.svg', () {
                 setState(() {
                   _replacingServerFileName = null;
                 });
@@ -536,7 +543,8 @@ class _AddMaterialScreenState extends State<AddMaterialScreen> {
     );
   }
 
-  Widget _buildAttachmentOption(String text, String iconPath, VoidCallback onTap) {
+  Widget _buildAttachmentOption(
+      String text, String iconPath, VoidCallback onTap) {
     return InkWell(
       onTap: onTap,
       child: Container(
@@ -547,8 +555,7 @@ class _AddMaterialScreenState extends State<AddMaterialScreen> {
           children: [
             SvgPicture.asset(iconPath, width: 24, height: 24),
             const SizedBox(width: 16),
-            Text(
-                text,
+            Text(text,
                 style: AppTextStyles.normal400(
                     fontSize: 16, color: AppColors.backgroundDark)),
           ],
@@ -625,8 +632,10 @@ class _AddMaterialScreenState extends State<AddMaterialScreen> {
                 CustomSaveElevatedButton(
                   onPressed: isValid && linkController.text.isNotEmpty
                       ? () {
-                          String fullUrl = linkController.text.replaceAll(' ', '');
-                          _addAttachment(fullUrl, 'assets/icons/e_learning/link3.svg', fullUrl);
+                          String fullUrl =
+                              linkController.text.replaceAll(' ', '');
+                          _addAttachment(fullUrl,
+                              'assets/icons/e_learning/link3.svg', fullUrl);
                           Navigator.of(context).pop();
                           Navigator.of(context).pop();
                         }
@@ -653,7 +662,8 @@ class _AddMaterialScreenState extends State<AddMaterialScreen> {
         } else if (file.path != null) {
           base64String = base64Encode(await File(file.path!).readAsBytes());
         }
-        _addAttachment(fileName, 'assets/icons/e_learning/upload_file.svg', base64String);
+        _addAttachment(
+            fileName, 'assets/icons/e_learning/upload_file.svg', base64String);
         Navigator.of(context).pop();
       }
     } catch (e) {
@@ -668,7 +678,8 @@ class _AddMaterialScreenState extends State<AddMaterialScreen> {
     if (photo != null) {
       Uint8List fileBytes = await photo.readAsBytes();
       final base64String = base64Encode(fileBytes);
-      _addAttachment('Photo: ${photo.name}', 'assets/icons/e_learning/take_photo.svg', base64String);
+      _addAttachment('Photo: ${photo.name}',
+          'assets/icons/e_learning/take_photo.svg', base64String);
       Navigator.of(context).pop();
     }
   }
@@ -679,13 +690,14 @@ class _AddMaterialScreenState extends State<AddMaterialScreen> {
     if (video != null) {
       Uint8List fileBytes = await video.readAsBytes();
       final base64String = base64Encode(fileBytes);
-      _addAttachment('Video: ${video.name}', 'assets/icons/e_learning/record_video.svg', base64String);
+      _addAttachment('Video: ${video.name}',
+          'assets/icons/e_learning/record_video.svg', base64String);
       Navigator.of(context).pop();
     }
   }
 
-  
-  void _addAttachment(String content, String iconPath, [String? base64Content]) {
+  void _addAttachment(String content, String iconPath,
+      [String? base64Content]) {
     setState(() {
       _attachments.add(AttachmentItem(
         fileName: content,
@@ -701,42 +713,45 @@ class _AddMaterialScreenState extends State<AddMaterialScreen> {
     });
   }
 
- void _selectTopic() async {
-  final result = await Navigator.push(
-    context,
-    MaterialPageRoute(
-      builder: (context) => SelectTopicScreen(
-        levelId: widget.levelId!,
-        syllabusId: widget.syllabusId,
-        courseName: widget.courseName,
-        courseId: widget.courseId,
-        callingScreen: '',
-        // Pass current selected topic ID to maintain selection
-        preSelectedTopicId: _selectedTopicId,
+  void _selectTopic() async {
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => SelectTopicScreen(
+          levelId: widget.levelId!,
+          syllabusId: widget.syllabusId,
+          courseName: widget.courseName,
+          courseId: widget.courseId,
+          callingScreen: '',
+          // Pass current selected topic ID to maintain selection
+          preSelectedTopicId: _selectedTopicId,
+        ),
       ),
-    ),
-  );
-  
-  if (result != null && result is Map) {
-    setState(() {
-      // Only update if we actually got a result
-      final topicName = result['topicName'];
-      final topicId = result['topicId'];
-      
-      // If topicName is null or empty, keep the current selection
-      if (topicName != null && topicName.isNotEmpty) {
-        _selectedTopic = topicName;
-        _selectedTopicId = topicId;
-      }
-      // If result is empty or null, maintain current selection
-    });
-    
-    print('Topic selection result: ${result['topicName']} (ID: ${result['topicId']})');
-  } else {
-    // If no result (user cancelled), maintain current selection
-    print('No topic selection result - maintaining current topic: $_selectedTopic');
+    );
+
+    if (result != null && result is Map) {
+      setState(() {
+        // Only update if we actually got a result
+        final topicName = result['topicName'];
+        final topicId = result['topicId'];
+
+        // If topicName is null or empty, keep the current selection
+        if (topicName != null && topicName.isNotEmpty) {
+          _selectedTopic = topicName;
+          _selectedTopicId = topicId;
+        }
+        // If result is empty or null, maintain current selection
+      });
+
+      print(
+          'Topic selection result: ${result['topicName']} (ID: ${result['topicId']})');
+    } else {
+      // If no result (user cancelled), maintain current selection
+      print(
+          'No topic selection result - maintaining current topic: $_selectedTopic');
+    }
   }
-}
+
   void _addMaterial() async {
     // Validation
     if (_titleController.text.isEmpty) {
@@ -748,7 +763,8 @@ class _AddMaterialScreenState extends State<AddMaterialScreen> {
       return;
     }
     if (_selectedClass == 'Select classes') {
-      CustomToaster.toastError(context, 'Error', 'Please select at least one class');
+      CustomToaster.toastError(
+          context, 'Error', 'Please select at least one class');
       return;
     }
 
@@ -757,9 +773,11 @@ class _AddMaterialScreenState extends State<AddMaterialScreen> {
     });
 
     try {
-      final materialProvider = Provider.of<MaterialProvider>(context, listen: false);
+      final materialProvider =
+          Provider.of<MaterialProvider>(context, listen: false);
       final userBox = Hive.box('userData');
-      final storedUserData = userBox.get('userData') ?? userBox.get('loginResponse');
+      final storedUserData =
+          userBox.get('userData') ?? userBox.get('loginResponse');
       final processedData = storedUserData is String
           ? json.decode(storedUserData)
           : storedUserData;
@@ -811,10 +829,13 @@ class _AddMaterialScreenState extends State<AddMaterialScreen> {
               ],
         'files': _attachments.map((attachment) {
           return {
-            'type': _getAttachmentType(attachment.iconPath!, attachment.fileName!),
+            'type':
+                _getAttachmentType(attachment.iconPath!, attachment.fileName!),
             'file_name': attachment.fileName,
-           'file': attachment.fileContent != null ? attachment.fileContent : null,
-            'old_file_name': attachment.isExisting ? (attachment.originalServerFileName ?? '') : '',
+            'file': attachment.fileContent,
+            'old_file_name': attachment.isExisting
+                ? (attachment.originalServerFileName ?? '')
+                : '',
           };
         }).toList(),
         if (widget.editMode) 'removed_files': _removedServerFileNames,
@@ -828,7 +849,7 @@ class _AddMaterialScreenState extends State<AddMaterialScreen> {
       } else {
         print('Creating Material Data:');
         print(const JsonEncoder.withIndent('  ').convert(materialPayload));
-       await materialProvider.addMaterial(materialPayload);
+        await materialProvider.addMaterial(materialPayload);
       }
 
       widget.onSave(materialPayload);
@@ -848,8 +869,10 @@ class _AddMaterialScreenState extends State<AddMaterialScreen> {
     if (iconPath.contains('upload')) {
       final extension = content.split('.').last.toLowerCase();
       if (extension == 'pdf') return 'pdf';
-      if (['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'].contains(extension)) return 'image';
-      if (['mp4', 'mov', 'avi', 'wmv', 'flv', 'webm'].contains(extension)) return 'video';
+      if (['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'].contains(extension))
+        return 'image';
+      if (['mp4', 'mov', 'avi', 'wmv', 'flv', 'webm'].contains(extension))
+        return 'video';
       return 'file'; // Default for other uploaded files
     }
     if (iconPath.contains('camera')) return 'image';

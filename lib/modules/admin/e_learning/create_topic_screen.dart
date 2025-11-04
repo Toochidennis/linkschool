@@ -4,7 +4,6 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:hive/hive.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/buttons/custom_save_elevated_button.dart';
-import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/custom_toaster.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/common/widgets/portal/e_learning/select_classes_dialog.dart';
@@ -21,17 +20,17 @@ class CreateTopicScreen extends StatefulWidget {
   final int? syllabusId;
 
   final bool editMode;
-final TopicContent?  topicToEdit;
+  final TopicContent? topicToEdit;
 
-  const CreateTopicScreen({
-    super.key,
-    this.classId,
-    this.levelId,
-    this.courseId,
-    this.syllabusId,
-    this.editMode =false,
-    this.topicToEdit, this.courseName
-  });
+  const CreateTopicScreen(
+      {super.key,
+      this.classId,
+      this.levelId,
+      this.courseId,
+      this.syllabusId,
+      this.editMode = false,
+      this.topicToEdit,
+      this.courseName});
 
   @override
   State<CreateTopicScreen> createState() => _CreateTopicScreenState();
@@ -63,15 +62,15 @@ class _CreateTopicScreenState extends State<CreateTopicScreen> {
     super.dispose();
   }
 
-
-void _populateFormForEdit(){
- if (widget.editMode && widget.topicToEdit != null) {
+  void _populateFormForEdit() {
+    if (widget.editMode && widget.topicToEdit != null) {
       final topic = widget.topicToEdit!;
       _titleController.text = topic.name ?? '';
-      _objectiveController.text = topic.children?.map((child) => child.title).join(', ') ?? '';
-     // _selectedClass = ''
+      _objectiveController.text =
+          topic.children.map((child) => child.title).join(', ') ?? '';
+      // _selectedClass = ''
     }
-}
+  }
 
   Future<void> _loadUserData() async {
     try {
@@ -99,124 +98,124 @@ void _populateFormForEdit(){
     }
   }
 
- void _addTopic() async {
-  // Validation
-  if (_titleController.text.trim().isEmpty) {
-    CustomToaster.toastError(
-      context,
-      'Error',
-      'Please enter a topic title.',
-    );
-    return;
-  }
-  if (_objectiveController.text.trim().isEmpty) {
-    CustomToaster.toastError(
-      context,
-      'Error',
-      'Please enter an objective.',
-    );
-    return;
-  }
-  if (_selectedClass == 'Select classes' || _selectedClass.trim().isEmpty) {
-    CustomToaster.toastError(
-      context,
-      'Error',
-      'Please select at least one class.',
-    );
-    return;
-  }
-
-  setState(() {
-    _isSaving = true;
-  });
-
-  try {
-    final userBox = Hive.box('userData');
-    final storedUserData =
-        userBox.get('userData') ?? userBox.get('loginResponse');
-    final processedData = storedUserData is String
-        ? json.decode(storedUserData)
-        : storedUserData;
-    final response = processedData['response'] ?? processedData;
-    final data = response['data'] ?? response;
-    final classes = data['classes'] ?? [];
-    final selectedClassIds = userBox.get('selectedClassIds') ?? [];
-
-    // Build the class list as List<ClassModel>
-    final classModelList = selectedClassIds.map<ClassModel>((classId) {
-      final classIdStr = classId.toString();
-      final classData = classes.firstWhere(
-        (cls) => cls['id'].toString() == classIdStr,
-        orElse: () => {'id': classIdStr, 'class_name': 'Unknown'},
-      );
-      return ClassModel(
-        id: int.parse(classIdStr),
-        name: classData['class_name']?.toString() ?? 'Unknown',
-      );
-    }).toList();
-
-    // Get the topicProvider from Provider
-    final topicProvider = Provider.of<TopicProvider>(context, listen: false);
-
-    if (widget.editMode && widget.topicToEdit != null) {
-      // EDIT MODE: Update existing topic
-      await topicProvider.updateTopic(
-        topicId: widget.topicToEdit!.id!.toString(), // Make sure your TopicContent model has an id field
-        syllabusId: widget.syllabusId ?? 0,
-        topic: _titleController.text,
-        creatorName: creatorName ?? 'Unknown',
-        objective: _objectiveController.text,
-        term: academicYear ?? '',
-        courseId: widget.courseId ?? '',
-        levelId: widget.levelId ?? "",
-        courseName: widget.courseName ?? "",
-        creatorId: creatorId ?? 0,
-        classes: classModelList,
-      );
-
-      CustomToaster.toastSuccess(
+  void _addTopic() async {
+    // Validation
+    if (_titleController.text.trim().isEmpty) {
+      CustomToaster.toastError(
         context,
-        'Success',
-        'Topic updated successfully!',
+        'Error',
+        'Please enter a topic title.',
       );
-    } else {
-      // CREATE MODE: Add new topic
-      await topicProvider.addTopic(
-        syllabusId: widget.syllabusId ?? 0,
-        topic: _titleController.text,
-        creatorName: creatorName ?? 'Unknown',
-        objective: _objectiveController.text,
-        term: academicYear ?? '',
-        courseId: widget.courseId ?? '',
-        levelId: widget.levelId ?? "",
-        courseName: widget.courseName ?? "",
-        creatorId: creatorId ?? 0,
-        classes: classModelList,
-      );
-
-      CustomToaster.toastSuccess(
+      return;
+    }
+    if (_objectiveController.text.trim().isEmpty) {
+      CustomToaster.toastError(
         context,
-        'Success',
-        'Topic created successfully!',
+        'Error',
+        'Please enter an objective.',
       );
+      return;
+    }
+    if (_selectedClass == 'Select classes' || _selectedClass.trim().isEmpty) {
+      CustomToaster.toastError(
+        context,
+        'Error',
+        'Please select at least one class.',
+      );
+      return;
     }
 
-    // Navigate back after successful save
-    Navigator.of(context).pop(true); // Pass true to indicate success
-
-  } catch (e) {
-    print('Error ${widget.editMode ? 'updating' : 'creating'} topic: $e');
-    CustomToaster.toastError(
-      context,
-      'Error',
-      'Failed to ${widget.editMode ? 'update' : 'create'} topic: ${e.toString()}',
-    );
-  } finally {
     setState(() {
-      _isSaving = false;
+      _isSaving = true;
     });
+
+    try {
+      final userBox = Hive.box('userData');
+      final storedUserData =
+          userBox.get('userData') ?? userBox.get('loginResponse');
+      final processedData = storedUserData is String
+          ? json.decode(storedUserData)
+          : storedUserData;
+      final response = processedData['response'] ?? processedData;
+      final data = response['data'] ?? response;
+      final classes = data['classes'] ?? [];
+      final selectedClassIds = userBox.get('selectedClassIds') ?? [];
+
+      // Build the class list as List<ClassModel>
+      final classModelList = selectedClassIds.map<ClassModel>((classId) {
+        final classIdStr = classId.toString();
+        final classData = classes.firstWhere(
+          (cls) => cls['id'].toString() == classIdStr,
+          orElse: () => {'id': classIdStr, 'class_name': 'Unknown'},
+        );
+        return ClassModel(
+          id: int.parse(classIdStr),
+          name: classData['class_name']?.toString() ?? 'Unknown',
+        );
+      }).toList();
+
+      // Get the topicProvider from Provider
+      final topicProvider = Provider.of<TopicProvider>(context, listen: false);
+
+      if (widget.editMode && widget.topicToEdit != null) {
+        // EDIT MODE: Update existing topic
+        await topicProvider.updateTopic(
+          topicId: widget.topicToEdit!.id!
+              .toString(), // Make sure your TopicContent model has an id field
+          syllabusId: widget.syllabusId ?? 0,
+          topic: _titleController.text,
+          creatorName: creatorName ?? 'Unknown',
+          objective: _objectiveController.text,
+          term: academicYear ?? '',
+          courseId: widget.courseId ?? '',
+          levelId: widget.levelId ?? "",
+          courseName: widget.courseName ?? "",
+          creatorId: creatorId ?? 0,
+          classes: classModelList,
+        );
+
+        CustomToaster.toastSuccess(
+          context,
+          'Success',
+          'Topic updated successfully!',
+        );
+      } else {
+        // CREATE MODE: Add new topic
+        await topicProvider.addTopic(
+          syllabusId: widget.syllabusId ?? 0,
+          topic: _titleController.text,
+          creatorName: creatorName ?? 'Unknown',
+          objective: _objectiveController.text,
+          term: academicYear ?? '',
+          courseId: widget.courseId ?? '',
+          levelId: widget.levelId ?? "",
+          courseName: widget.courseName ?? "",
+          creatorId: creatorId ?? 0,
+          classes: classModelList,
+        );
+
+        CustomToaster.toastSuccess(
+          context,
+          'Success',
+          'Topic created successfully!',
+        );
+      }
+
+      // Navigate back after successful save
+      Navigator.of(context).pop(true); // Pass true to indicate success
+    } catch (e) {
+      print('Error ${widget.editMode ? 'updating' : 'creating'} topic: $e');
+      CustomToaster.toastError(
+        context,
+        'Error',
+        'Failed to ${widget.editMode ? 'update' : 'create'} topic: ${e.toString()}',
+      );
+    } finally {
+      setState(() {
+        _isSaving = false;
+      });
+    }
   }
-}
 
   void _editObjective() {
     showDialog(
@@ -294,7 +293,7 @@ void _populateFormForEdit(){
         actions: [
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 8.0),
-          child: CustomSaveElevatedButton(
+            child: CustomSaveElevatedButton(
               onPressed: _addTopic,
               text: 'Save',
               isLoading: _isSaving,
@@ -303,7 +302,7 @@ void _populateFormForEdit(){
         ],
       ),
       body: Container(
-       height: MediaQuery.of(context).size.height,
+        height: MediaQuery.of(context).size.height,
         decoration: BoxDecoration(
           image: DecorationImage(
             image: const AssetImage('assets/images/background.png'),
@@ -317,7 +316,8 @@ void _populateFormForEdit(){
             physics: const AlwaysScrollableScrollPhysics(),
             child: ConstrainedBox(
               constraints: BoxConstraints(
-                minHeight: MediaQuery.of(context).size.height - kToolbarHeight - 32,
+                minHeight:
+                    MediaQuery.of(context).size.height - kToolbarHeight - 32,
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -419,8 +419,8 @@ void _populateFormForEdit(){
               const SizedBox(width: 8.0),
               IntrinsicWidth(
                 child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(vertical: 8.0, horizontal: 14.0),
+                  padding: const EdgeInsets.symmetric(
+                      vertical: 8.0, horizontal: 14.0),
                   decoration: BoxDecoration(
                     color: isSelected
                         ? Colors.transparent
@@ -444,7 +444,8 @@ void _populateFormForEdit(){
                       fontSize: 14.0,
                       color: AppColors.backgroundLight,
                     ),
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                     side: const BorderSide(color: AppColors.eLearningBtnColor1),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(10),

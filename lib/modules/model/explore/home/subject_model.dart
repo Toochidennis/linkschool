@@ -1,9 +1,5 @@
 import 'dart:ui';
 
-import 'package:linkschool/modules/common/app_colors.dart';
-
-import 'category_model.dart';
-import 'cbt_board_model.dart';
 // import 'video_model.dart';
 
 class SubjectModel {
@@ -76,5 +72,3 @@ class YearModel {
 //     );
 //   }
 // }
-
-

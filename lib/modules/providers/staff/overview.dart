@@ -19,13 +19,14 @@ class StaffOverviewProvider with ChangeNotifier {
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
 
-  Future<void> fetchOverview(String term, String year ,String staffId) async {
+  Future<void> fetchOverview(String term, String year, String staffId) async {
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
 
     try {
-      final dashboardResponse = await _staffOverviewService.getOverview(term, year,staffId);
+      final dashboardResponse =
+          await _staffOverviewService.getOverview(term, year, staffId);
       final data = dashboardResponse.data;
 
       _recentQuizzes = data.recentQuizzes;

@@ -124,13 +124,13 @@ class PaymentService {
   }) async {
     try {
       final userBox = Hive.box('userData');
-      
+
       // Try to get _db from multiple possible sources
       String? dbParam;
-      
+
       // First try direct _db key
       dbParam = userBox.get('_db');
-      
+
       // If not found, try from loginResponse
       if (dbParam == null) {
         final loginResponse = userBox.get('loginResponse');
@@ -138,11 +138,9 @@ class PaymentService {
           dbParam = loginResponse['_db'] ?? loginResponse['db'];
         }
       }
-      
+
       // If still not found, try from userData directly
-      if (dbParam == null) {
-        dbParam = userBox.get('db');
-      }
+      dbParam ??= userBox.get('db');
 
       if (dbParam == null || dbParam.isEmpty) {
         throw Exception('Database parameter not found. Please login again.');
@@ -161,7 +159,8 @@ class PaymentService {
         'type': 'offline', // Added missing type parameter with default value
         'invoice_details': fees
             .map((fee) => {
-                  'fee_id': int.tryParse(fee.feeId) ?? 0, // Ensure it's an integer
+                  'fee_id':
+                      int.tryParse(fee.feeId) ?? 0, // Ensure it's an integer
                   'fee_name': fee.feeName,
                   'amount': fee.amount,
                 })
@@ -194,7 +193,8 @@ class PaymentService {
       }
 
       if (!response.success) {
-        throw Exception('Payment failed: ${response.message ?? 'Unknown error'}');
+        throw Exception(
+            'Payment failed: ${response.message ?? 'Unknown error'}');
       }
 
       return response.success;
@@ -280,18 +280,18 @@ class PaymentService {
   }
 
   Future<IncomeReport> getIncomeReport(Map<String, dynamic> params) async {
-  final response = await _apiService.post(
-    endpoint: 'portal/payments/income/report/generate',
-    body: params,
-  );
+    final response = await _apiService.post(
+      endpoint: 'portal/payments/income/report/generate',
+      body: params,
+    );
 
-  print("me and $params");
+    print("me and $params");
 
-  if (response.success && response.rawData != null) {
-    final data = response.rawData!['data'];
-    return IncomeReport.fromJson(data);
-  } else {
-    throw Exception(response.message);
+    if (response.success && response.rawData != null) {
+      final data = response.rawData!['data'];
+      return IncomeReport.fromJson(data);
+    } else {
+      throw Exception(response.message);
+    }
   }
-}
 }

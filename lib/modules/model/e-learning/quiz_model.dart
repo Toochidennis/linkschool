@@ -6,12 +6,10 @@ class JsonUtils {
     if (value is String) {
       final parsed = int.tryParse(value);
       if (parsed == null) {
-        print('JsonUtils: Failed to parse int from string: "$value"');
       }
       return parsed;
     }
     if (value is double) return value.toInt();
-    print('JsonUtils: Unexpected type for int parsing: ${value.runtimeType} - $value');
     return null;
   }
 
@@ -32,18 +30,15 @@ class JsonUtils {
 
   static List<T> parseList<T>(dynamic value, T Function(dynamic) parser) {
     if (value is! List) {
-      print('JsonUtils: Expected List but got ${value.runtimeType}: $value');
       return [];
     }
-    
+
     final List<T> result = [];
     for (int i = 0; i < value.length; i++) {
       try {
         final item = parser(value[i]);
         result.add(item);
       } catch (e) {
-        print('JsonUtils: Error parsing list item at index $i: $e');
-        print('JsonUtils: Item data: ${value[i]}');
         // Continue processing other items
       }
     }
@@ -55,7 +50,6 @@ class JsonUtils {
     if (value is Map) {
       return Map<String, dynamic>.from(value);
     }
-    print('JsonUtils: Expected Map but got ${value.runtimeType}: $value');
     return {};
   }
 }
@@ -73,19 +67,14 @@ class ContentResponse {
 
   factory ContentResponse.fromJson(Map<String, dynamic> json) {
     try {
-      print('ContentResponse: Parsing JSON');
-      
+
       return ContentResponse(
         statusCode: JsonUtils.parseInt(json['statusCode']) ?? 200,
         success: JsonUtils.parseBool(json['success']),
-        response: JsonUtils.parseList(
-          json['response'], 
-          (item) => ContentItem.fromJson(JsonUtils.ensureMap(item))
-        ),
+        response: JsonUtils.parseList(json['response'],
+            (item) => ContentItem.fromJson(JsonUtils.ensureMap(item))),
       );
     } catch (e, stackTrace) {
-      print('ContentResponse: Error parsing JSON: $e');
-      print('ContentResponse: Stack trace: $stackTrace');
       rethrow;
     }
   }
@@ -106,8 +95,7 @@ class ContentItem {
 
   factory ContentItem.fromJson(Map<String, dynamic> json) {
     try {
-      print('ContentItem: Parsing item - ${json['title']} (${json['type']})');
-      
+
       return ContentItem(
         id: JsonUtils.parseInt(json['id']),
         title: JsonUtils.parseString(json['title']),
@@ -115,16 +103,12 @@ class ContentItem {
         children: _parseChildren(json['children']),
       );
     } catch (e, stackTrace) {
-      print('ContentItem: Error parsing JSON: $e');
-      print('ContentItem: Stack trace: $stackTrace');
-      print('ContentItem: JSON data: $json');
       rethrow;
     }
   }
 
   static List<dynamic> _parseChildren(dynamic children) {
     if (children is! List) {
-      print('ContentItem: Children is not a list: ${children.runtimeType} - $children');
       return [];
     }
 
@@ -132,27 +116,21 @@ class ContentItem {
     for (int i = 0; i < children.length; i++) {
       try {
         final child = children[i];
-        print('ContentItem: Processing child at index $i');
-        
+
         if (child is! Map) {
-          print('ContentItem: Child at index $i is not a Map: ${child.runtimeType}');
           continue;
         }
 
         final childMap = JsonUtils.ensureMap(child);
-        
+
         // Check if it's a quiz by looking for 'settings' and 'questions'
-        if (childMap.containsKey('settings') && childMap.containsKey('questions')) {
-          print('ContentItem: Detected quiz content at index $i');
+        if (childMap.containsKey('settings') &&
+            childMap.containsKey('questions')) {
           result.add(QuizContent.fromJson(childMap));
         } else {
-          print('ContentItem: Detected regular content at index $i - ${childMap['title']} (${childMap['type']})');
           result.add(ChildContent.fromJson(childMap));
         }
       } catch (e, stackTrace) {
-        print('ContentItem: Error parsing child at index $i: $e');
-        print('ContentItem: Stack trace: $stackTrace');
-        print('ContentItem: Child data: ${children[i]}');
         // Continue processing other children
       }
     }
@@ -195,8 +173,7 @@ class ChildContent {
 
   factory ChildContent.fromJson(Map<String, dynamic> json) {
     try {
-      print('ChildContent: Parsing ${json['title']} (${json['type']})');
-      
+
       return ChildContent(
         id: JsonUtils.parseInt(json['id']),
         syllabusId: JsonUtils.parseInt(json['syllabus_id']) ?? 0,
@@ -214,9 +191,6 @@ class ChildContent {
         datePosted: _parseNullableString(json['date_posted']),
       );
     } catch (e, stackTrace) {
-      print('ChildContent: Error parsing JSON: $e');
-      print('ChildContent: Stack trace: $stackTrace');
-      print('ChildContent: JSON data: $json');
       rethrow;
     }
   }
@@ -228,54 +202,42 @@ class ChildContent {
   }
 
   static List<ClassInfo> _parseClassesList(dynamic classes) {
-    print('ChildContent: Parsing classes list: $classes');
-    
+
     if (classes is! List) {
-      print('ChildContent: Classes is not a list: ${classes.runtimeType}');
       return [];
     }
-    
+
     final List<ClassInfo> result = [];
     for (int i = 0; i < classes.length; i++) {
       try {
         final classItem = classes[i];
-        print('ChildContent: Processing class at index $i: $classItem');
-        
+
         if (classItem is Map) {
           result.add(ClassInfo.fromJson(JsonUtils.ensureMap(classItem)));
         } else {
-          print('ChildContent: Class item at index $i is not a Map: ${classItem.runtimeType}');
         }
       } catch (e) {
-        print('ChildContent: Error parsing class at index $i: $e');
-        print('ChildContent: Class data: ${classes[i]}');
       }
     }
     return result;
   }
 
   static List<ContentFile> _parseContentFilesList(dynamic contentFiles) {
-    print('ChildContent: Parsing content files list: $contentFiles');
-    
+
     if (contentFiles is! List) {
-      print('ChildContent: Content files is not a list: ${contentFiles.runtimeType}');
       return [];
     }
-    
+
     final List<ContentFile> result = [];
     for (int i = 0; i < contentFiles.length; i++) {
       try {
         final fileItem = contentFiles[i];
-        print('ChildContent: Processing content file at index $i: $fileItem');
-        
+
         if (fileItem is Map) {
           result.add(ContentFile.fromJson(JsonUtils.ensureMap(fileItem)));
         } else {
-          print('ChildContent: Content file at index $i is not a Map: ${fileItem.runtimeType}');
         }
       } catch (e) {
-        print('ChildContent: Error parsing content file at index $i: $e');
-        print('ChildContent: File data: ${contentFiles[i]}');
       }
     }
     return result;
@@ -293,18 +255,13 @@ class QuizContent {
 
   factory QuizContent.fromJson(Map<String, dynamic> json) {
     try {
-      print('QuizContent: Parsing quiz content');
-      
+
       return QuizContent(
         settings: QuizSettings.fromJson(JsonUtils.ensureMap(json['settings'])),
-        questions: JsonUtils.parseList(
-          json['questions'], 
-          (item) => QuizQuestion.fromJson(JsonUtils.ensureMap(item))
-        ),
+        questions: JsonUtils.parseList(json['questions'],
+            (item) => QuizQuestion.fromJson(JsonUtils.ensureMap(item))),
       );
     } catch (e, stackTrace) {
-      print('QuizContent: Error parsing JSON: $e');
-      print('QuizContent: Stack trace: $stackTrace');
       rethrow;
     }
   }
@@ -341,8 +298,7 @@ class QuizSettings {
 
   factory QuizSettings.fromJson(Map<String, dynamic> json) {
     try {
-      print('QuizSettings: Parsing quiz settings');
-      
+
       return QuizSettings(
         id: JsonUtils.parseInt(json['id']),
         syllabusId: JsonUtils.parseInt(json['syllabus_id']) ?? 0,
@@ -358,8 +314,6 @@ class QuizSettings {
         duration: JsonUtils.parseString(json['duration']),
       );
     } catch (e, stackTrace) {
-      print('QuizSettings: Error parsing JSON: $e');
-      print('QuizSettings: Stack trace: $stackTrace');
       rethrow;
     }
   }
@@ -386,20 +340,18 @@ class QuizQuestion {
 
   factory QuizQuestion.fromJson(Map<String, dynamic> json) {
     try {
-      print('QuizQuestion: Parsing quiz question');
-      
+
       return QuizQuestion(
         questionId: JsonUtils.parseInt(json['question_id']),
         questionGrade: JsonUtils.parseInt(json['question_grade']) ?? 0,
-        questionFiles: ChildContent._parseContentFilesList(json['question_files']),
+        questionFiles:
+            ChildContent._parseContentFilesList(json['question_files']),
         questionText: JsonUtils.parseString(json['question_text']),
         questionType: JsonUtils.parseString(json['question_type']),
         options: json['options'] is List ? json['options'] : [],
         correct: CorrectAnswer.fromJson(JsonUtils.ensureMap(json['correct'])),
       );
     } catch (e, stackTrace) {
-      print('QuizQuestion: Error parsing JSON: $e');
-      print('QuizQuestion: Stack trace: $stackTrace');
       rethrow;
     }
   }
@@ -432,7 +384,6 @@ class ClassInfo {
   });
 
   factory ClassInfo.fromJson(Map<String, dynamic> json) {
-    print('ClassInfo: Parsing class info: $json');
     return ClassInfo(
       id: JsonUtils.parseString(json['id']),
       name: JsonUtils.parseString(json['name']),
@@ -454,7 +405,6 @@ class ContentFile {
   });
 
   factory ContentFile.fromJson(Map<String, dynamic> json) {
-    print('ContentFile: Parsing content file: $json');
     return ContentFile(
       fileName: JsonUtils.parseString(json['file_name']),
       oldFileName: JsonUtils.parseString(json['old_file_name']),

@@ -28,7 +28,10 @@ class StaffDataService {
   // Get all classes the staff teaches (from courses data)
   List<String> getTeachingClassNames() {
     final courses = getTeachingCourses();
-    return courses.map((course) => course['class_name'] as String).toSet().toList();
+    return courses
+        .map((course) => course['class_name'] as String)
+        .toSet()
+        .toList();
   }
 
   // Get subjects for a specific class
@@ -38,7 +41,7 @@ class StaffDataService {
       (course) => course['class_name'] == className,
       orElse: () => {},
     );
-    
+
     if (classData.isNotEmpty && classData['courses'] != null) {
       return List<Map<String, dynamic>>.from(classData['courses']);
     }
@@ -49,7 +52,7 @@ class StaffDataService {
   int getTotalStudentsForSubject(String subjectName) {
     final courses = getTeachingCourses();
     int totalStudents = 0;
-    
+
     for (var classData in courses) {
       final subjects = classData['courses'] as List? ?? [];
       for (var subject in subjects) {
@@ -58,7 +61,7 @@ class StaffDataService {
         }
       }
     }
-    
+
     return totalStudents;
   }
 
@@ -71,14 +74,14 @@ class StaffDataService {
   List<String> getFormTeacherClasses() {
     final formClasses = getFormClasses();
     List<String> classNames = [];
-    
+
     for (var levelData in formClasses) {
       final classes = levelData['classes'] as List? ?? [];
       for (var classData in classes) {
         classNames.add(classData['class_name'] as String);
       }
     }
-    
+
     return classNames;
   }
 }

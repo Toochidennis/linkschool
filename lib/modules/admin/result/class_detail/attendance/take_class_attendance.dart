@@ -44,7 +44,7 @@ class _TakeClassAttendanceState extends State<TakeClassAttendance> {
   void _initializeData() async {
     final provider = context.read<StudentProvider>();
     await provider.fetchStudents(widget.classId);
-    
+
     if (widget.classId != null) {
       final dateForApi = "${_currentDate.split(' ')[0]} 00:00:00";
       await provider.loadAttendedStudents(
@@ -71,49 +71,48 @@ class _TakeClassAttendanceState extends State<TakeClassAttendance> {
   }
 
   Future<void> _onSavePressed() async {
-  final provider = context.read<StudentProvider>();
-  final now = DateTime.now();
-  final formatter = DateFormat('yyyy-MM-dd HH:mm:ss');
-  final formattedDate = formatter.format(now);
-  final dateForApi = "${formattedDate.split(' ')[0]} 00:00:00";
+    final provider = context.read<StudentProvider>();
+    final now = DateTime.now();
+    final formatter = DateFormat('yyyy-MM-dd HH:mm:ss');
+    final formattedDate = formatter.format(now);
+    final dateForApi = "${formattedDate.split(' ')[0]} 00:00:00";
 
-  bool success = await provider.saveAttendance(
-    classId: widget.classId,
-    courseId: '0',
-    date: formattedDate,
-  );
-
-  if (success) {
-    await provider.saveLocalAttendance(
-      classId: widget.classId!,
+    bool success = await provider.saveAttendance(
+      classId: widget.classId,
+      courseId: '0',
       date: formattedDate,
-      courseId: '0',
-      studentIds: provider.selectedStudentIds,
     );
 
-    CustomToaster.toastSuccess(
-      context,
-      'Success',
-      'Class attendance saved successfully',
-    );
+    if (success) {
+      await provider.saveLocalAttendance(
+        classId: widget.classId!,
+        date: formattedDate,
+        courseId: '0',
+        studentIds: provider.selectedStudentIds,
+      );
 
-    // Optional: refresh attendance list if needed
-    await provider.fetchAttendance(
-      classId: widget.classId!,
-      date: dateForApi,
-      courseId: '0',
-    );
-  } else {
-    CustomToaster.toastError(
-      context,
-      'Error',
-      provider.errorMessage.isNotEmpty
-          ? provider.errorMessage
-          : 'Failed to save class attendance',
-    );
+      CustomToaster.toastSuccess(
+        context,
+        'Success',
+        'Class attendance saved successfully',
+      );
+
+      // Optional: refresh attendance list if needed
+      await provider.fetchAttendance(
+        classId: widget.classId!,
+        date: dateForApi,
+        courseId: '0',
+      );
+    } else {
+      CustomToaster.toastError(
+        context,
+        'Error',
+        provider.errorMessage.isNotEmpty
+            ? provider.errorMessage
+            : 'Failed to save class attendance',
+      );
+    }
   }
-}
-
 
   @override
   Widget build(BuildContext context) {
@@ -137,15 +136,19 @@ class _TakeClassAttendanceState extends State<TakeClassAttendance> {
       ),
       body: Consumer<StudentProvider>(
         builder: (context, provider, child) {
-          if (provider.isLoading) return const Center(child: CircularProgressIndicator());
-          if (provider.errorMessage.isNotEmpty) return Center(child: Text(provider.errorMessage));
-          if (provider.students.isEmpty) return const Center(child: Text('No students found'));
+          if (provider.isLoading)
+            return const Center(child: CircularProgressIndicator());
+          if (provider.errorMessage.isNotEmpty)
+            return Center(child: Text(provider.errorMessage));
+          if (provider.students.isEmpty)
+            return const Center(child: Text('No students found'));
 
           return Column(
             children: [
               if (provider.hasExistingAttendance)
                 Container(
-                  padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
+                  padding: const EdgeInsets.symmetric(
+                      vertical: 8.0, horizontal: 16.0),
                   color: Colors.green.withOpacity(0.1),
                   child: const Row(
                     children: [
@@ -154,11 +157,11 @@ class _TakeClassAttendanceState extends State<TakeClassAttendance> {
                     ],
                   ),
                 ),
-
               GestureDetector(
                 onTap: () => provider.toggleSelectAll(),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 16.0, vertical: 12.0),
                   decoration: BoxDecoration(
                       color: provider.selectAll
                           ? const Color.fromRGBO(239, 227, 255, 1)
@@ -179,7 +182,8 @@ class _TakeClassAttendanceState extends State<TakeClassAttendance> {
                                 ? AppColors.attCheckColor1
                                 : AppColors.attBgColor1,
                             shape: BoxShape.circle,
-                            border: Border.all(color: AppColors.attCheckColor1)),
+                            border:
+                                Border.all(color: AppColors.attCheckColor1)),
                         child: Icon(
                           Icons.check,
                           color: provider.selectAll
@@ -192,7 +196,6 @@ class _TakeClassAttendanceState extends State<TakeClassAttendance> {
                   ),
                 ),
               ),
-
               Expanded(
                 child: ListView.separated(
                   itemCount: provider.students.length,
@@ -218,8 +221,8 @@ class _TakeClassAttendanceState extends State<TakeClassAttendance> {
                       title: Text(student.name),
                       trailing: Icon(
                         Icons.check_circle,
-                        color: student.isMarkedPresent 
-                            ? AppColors.attCheckColor2 
+                        color: student.isMarkedPresent
+                            ? AppColors.attCheckColor2
                             : Colors.grey.withOpacity(0.5),
                       ),
                       onTap: () => provider.toggleStudentSelection(index),
@@ -236,8 +239,12 @@ class _TakeClassAttendanceState extends State<TakeClassAttendance> {
           return provider.students.any((s) => s.isSelected)
               ? CustomFloatingSaveButton(
                   onPressed: _onSavePressed,
-                  icon: provider.hasExistingAttendance ? Icons.update : Icons.save,
-                  tooltip: provider.hasExistingAttendance ? 'Update Attendance' : 'Save Attendance',
+                  icon: provider.hasExistingAttendance
+                      ? Icons.update
+                      : Icons.save,
+                  tooltip: provider.hasExistingAttendance
+                      ? 'Update Attendance'
+                      : 'Save Attendance',
                 )
               : Container();
         },
@@ -245,4 +252,3 @@ class _TakeClassAttendanceState extends State<TakeClassAttendance> {
     );
   }
 }
-

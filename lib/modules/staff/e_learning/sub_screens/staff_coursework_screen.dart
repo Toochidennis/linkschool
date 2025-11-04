@@ -12,11 +12,8 @@ class StaffCourseworkScreen extends StatelessWidget {
   final Map<String, dynamic>? currentSyllabus;
   final List<Topic> topics;
 
-  const StaffCourseworkScreen({
-    super.key, 
-    required this.currentSyllabus, 
-    required this.topics
-  });
+  const StaffCourseworkScreen(
+      {super.key, required this.currentSyllabus, required this.topics});
 
   void _addNewSyllabus(BuildContext context) async {
     final result = await Navigator.of(context).push(

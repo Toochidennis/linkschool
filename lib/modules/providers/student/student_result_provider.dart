@@ -1,7 +1,4 @@
-
 import 'package:flutter/cupertino.dart';
-import 'package:linkschool/modules/model/student/streams_model.dart';
-import 'package:linkschool/modules/services/student/streams_service.dart';
 
 import '../../model/student/student_result_model.dart';
 import '../../services/student/student_result_service.dart';
@@ -17,10 +14,8 @@ class StudentResultProvider with ChangeNotifier {
   int limit = 10;
   StudentResultProvider(this._studentResultService);
 
-  Future<StudentResultModel?> fetchStudentResult(int levelid,int classid, String year, int term) async {
-
-
-
+  Future<StudentResultModel?> fetchStudentResult(
+      int levelid, int classid, String year, int term) async {
     isLoading = true;
     error = null;
     message = null;
@@ -34,7 +29,7 @@ class StudentResultProvider with ChangeNotifier {
         year: year,
       );
 
-      print ("Quest ${result}");
+      print("Quest $result");
       isLoading = false;
       notifyListeners();
       return result;
@@ -43,8 +38,6 @@ class StudentResultProvider with ChangeNotifier {
       error = e.toString();
       notifyListeners();
       return null;
-
     }
   }
-
 }

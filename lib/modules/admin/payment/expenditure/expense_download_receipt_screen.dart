@@ -17,10 +17,12 @@ class ExpenseDownloadReceiptScreen extends StatefulWidget {
   });
 
   @override
-  State<ExpenseDownloadReceiptScreen> createState() => _ExpenseDownloadReceiptScreenState();
+  State<ExpenseDownloadReceiptScreen> createState() =>
+      _ExpenseDownloadReceiptScreenState();
 }
 
-class _ExpenseDownloadReceiptScreenState extends State<ExpenseDownloadReceiptScreen> {
+class _ExpenseDownloadReceiptScreenState
+    extends State<ExpenseDownloadReceiptScreen> {
   late double opacity;
 
   @override
@@ -75,7 +77,8 @@ class _ExpenseDownloadReceiptScreenState extends State<ExpenseDownloadReceiptScr
                     padding: const EdgeInsets.all(16.0),
                     child: Column(
                       children: [
-                        SvgPicture.asset('assets/icons/profile/rounded_success_icon.svg'),
+                        SvgPicture.asset(
+                            'assets/icons/profile/rounded_success_icon.svg'),
                         const SizedBox(height: 16.0),
                         Text(
                           'Expenditure',
@@ -108,19 +111,30 @@ class _ExpenseDownloadReceiptScreenState extends State<ExpenseDownloadReceiptScr
                           size: Size(double.infinity, 1),
                           painter: CustomDashLine(),
                         ),
-                        _buildDetailRow('Date', widget.transaction['date'] ?? '2023-10-23'),
-                        _buildDetailRow('Name', widget.transaction['name'] ?? 'John Doe'),
-                        _buildDetailRow('Phone Number', widget.transaction['phone_number'] ?? '08012345679'),
-                        _buildDetailRow('Session', widget.transaction['session'] ?? '2022/2023'),
-                        _buildDetailRow('Reference No', widget.transaction['reference'] ?? 'ABC123XYZ'),
-                        _buildDetailRow('Description', widget.transaction['description'] ?? 'Clinical medication'),
+                        _buildDetailRow(
+                            'Date', widget.transaction['date'] ?? '2023-10-23'),
+                        _buildDetailRow(
+                            'Name', widget.transaction['name'] ?? 'John Doe'),
+                        _buildDetailRow(
+                            'Phone Number',
+                            widget.transaction['phone_number'] ??
+                                '08012345679'),
+                        _buildDetailRow('Session',
+                            widget.transaction['session'] ?? '2022/2023'),
+                        _buildDetailRow('Reference No',
+                            widget.transaction['reference'] ?? 'ABC123XYZ'),
+                        _buildDetailRow(
+                            'Description',
+                            widget.transaction['description'] ??
+                                'Clinical medication'),
                         const SizedBox(height: 32.0),
                         ElevatedButton(
                           onPressed: () {
                             // Implement download functionality here
                           },
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color.fromRGBO(47, 85, 221, 1),
+                            backgroundColor:
+                                const Color.fromRGBO(47, 85, 221, 1),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(8),
                             ),
@@ -160,12 +174,11 @@ class _ExpenseDownloadReceiptScreenState extends State<ExpenseDownloadReceiptScr
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(label, style: const TextStyle(color: Colors.grey)),
-          Text(value, style: AppTextStyles.normal500(fontSize: 16, color: AppColors.backgroundDark)),
+          Text(value,
+              style: AppTextStyles.normal500(
+                  fontSize: 16, color: AppColors.backgroundDark)),
         ],
       ),
     );
   }
 }
-
-
-

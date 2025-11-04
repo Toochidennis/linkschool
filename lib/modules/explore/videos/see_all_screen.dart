@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
-import 'package:linkschool/modules/explore/e_library/E_lib_vids.dart';
 // import 'package:linkschool/modules/explore/e_library/cbt.details.dart';
 // import 'package:linkschool/modules/explore/e_library/e_games/game_details.dart';
 import 'package:linkschool/modules/model/explore/home/video_model.dart';
@@ -58,7 +57,7 @@ class _SeeallScreenState extends State<SeeallScreen> {
                         //     MaterialPageRoute(
                         //         builder: (context) =>(){}
                         //             // E_lib_vids(video: allVideos[index])
-                                    
+
                         //             )
                         //   ),
                         // child: _watchHistory(allVideos[index])

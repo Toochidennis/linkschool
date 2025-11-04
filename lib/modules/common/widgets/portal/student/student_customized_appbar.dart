@@ -3,8 +3,8 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 
-
-class CustomStudentAppBar extends StatelessWidget implements PreferredSizeWidget {
+class CustomStudentAppBar extends StatelessWidget
+    implements PreferredSizeWidget {
   final String title;
   final String? subtitle;
   final bool showNotification;
@@ -33,37 +33,37 @@ class CustomStudentAppBar extends StatelessWidget implements PreferredSizeWidget
   });
 
   @override
-  Size get preferredSize => Size.fromHeight(showPostInput 
-    ? kToolbarHeight + 83  // Increased height to accommodate input field
-    : kToolbarHeight + 32); // Reduced height when input is hidden
+  Size get preferredSize => Size.fromHeight(showPostInput
+      ? kToolbarHeight + 83 // Increased height to accommodate input field
+      : kToolbarHeight + 32); // Reduced height when input is hidden
 
   @override
   Widget build(BuildContext context) {
     // Create title widget based on whether subtitle exists
     Widget titleWidget = subtitle != null
-      ? RichText(
-          textAlign: centerTitle ? TextAlign.center : TextAlign.start,
-          text: TextSpan(
-            text: '$title, ',
-            style: AppTextStyles.normal700(
-                fontSize: 20, color: AppColors.backgroundLight),
-            children: [
-              TextSpan(
-                text: subtitle,
-                style: AppTextStyles.normal700(
-                    fontSize: 22, color: AppColors.secondaryLight),
-              ),
-            ],
-          ),
-        )
-      : Text(
-          title,
-          textAlign: centerTitle ? TextAlign.center : TextAlign.start,
-          style: AppTextStyles.normal600(
-            fontSize: 18.0,
-            color: Colors.white,
-          ),
-        );
+        ? RichText(
+            textAlign: centerTitle ? TextAlign.center : TextAlign.start,
+            text: TextSpan(
+              text: '$title, ',
+              style: AppTextStyles.normal700(
+                  fontSize: 20, color: AppColors.backgroundLight),
+              children: [
+                TextSpan(
+                  text: subtitle,
+                  style: AppTextStyles.normal700(
+                      fontSize: 22, color: AppColors.secondaryLight),
+                ),
+              ],
+            ),
+          )
+        : Text(
+            title,
+            textAlign: centerTitle ? TextAlign.center : TextAlign.start,
+            style: AppTextStyles.normal600(
+              fontSize: 18.0,
+              color: Colors.white,
+            ),
+          );
 
     return AppBar(
       backgroundColor: AppColors.paymentTxtColor1,
@@ -88,9 +88,9 @@ class CustomStudentAppBar extends StatelessWidget implements PreferredSizeWidget
             Padding(
               padding: EdgeInsets.fromLTRB(16, showPostInput ? 32 : 32, 8, 8),
               child: Row(
-                mainAxisAlignment: centerTitle 
-                  ? MainAxisAlignment.center 
-                  : MainAxisAlignment.spaceBetween,
+                mainAxisAlignment: centerTitle
+                    ? MainAxisAlignment.center
+                    : MainAxisAlignment.spaceBetween,
                 children: [
                   if (!centerTitle) ...[
                     titleWidget,
@@ -156,7 +156,8 @@ class CustomStudentAppBar extends StatelessWidget implements PreferredSizeWidget
             if (showPostInput)
               Container(
                 color: Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 6.0),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16.0, vertical: 6.0),
                 child: Row(
                   children: [
                     CircleAvatar(
@@ -171,7 +172,7 @@ class CustomStudentAppBar extends StatelessWidget implements PreferredSizeWidget
                         onTap: onPostTap,
                         child: Container(
                           padding: const EdgeInsets.symmetric(
-                            vertical: 6.0,  // Reduced vertical padding
+                            vertical: 6.0, // Reduced vertical padding
                             horizontal: 12.0,
                           ),
                           decoration: BoxDecoration(

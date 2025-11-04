@@ -1,5 +1,3 @@
-import 'package:linkschool/modules/admin/e_learning/admin_assignment_screen.dart';
-
 import '../../common/widgets/portal/attachmentItem.dart';
 
 class Material {
@@ -12,24 +10,23 @@ class Material {
   final Duration? duration;
   final String marks;
   final DateTime createdAt;
-  final  List<AttachmentItem>? attachments;
+  final List<AttachmentItem>? attachments;
   final String? topicId;
 
   Material({
     required this.title,
     required this.description,
     required this.selectedClass,
-      DateTime? startDate,
+    DateTime? startDate,
     DateTime? endDate,
     required this.topic,
-     this.duration,
+    this.duration,
     required this.marks,
     this.attachments,
-    DateTime? createdAt, int? id,
+    DateTime? createdAt,
+    int? id,
     this.topicId,
-   
-  }) : createdAt = createdAt ?? DateTime.now(),
-  startDate = startDate ?? DateTime.now(),
-  endDate = endDate ?? DateTime.now();
-
+  })  : createdAt = createdAt ?? DateTime.now(),
+        startDate = startDate ?? DateTime.now(),
+        endDate = endDate ?? DateTime.now();
 }

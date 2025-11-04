@@ -23,13 +23,13 @@ class ElearningContentData {
     final type = json['type'] ?? '';
     final objective = json['objective'] ?? '';
     final classes = (json['classes'] as List<dynamic>?)
-        ?.map((e) => ClassInfo.fromJson(e as Map<String, dynamic>))
-        .toList() ??
+            ?.map((e) => ClassInfo.fromJson(e as Map<String, dynamic>))
+            .toList() ??
         [];
     final rank = json['rank'] ?? 0;
     final children = (json['children'] as List<dynamic>?)
-        ?.map((e) => ChildContent.fromJson(e as Map<String, dynamic>))
-        .toList() ??
+            ?.map((e) => ChildContent.fromJson(e as Map<String, dynamic>))
+            .toList() ??
         [];
 
     return ElearningContentData(
@@ -128,26 +128,27 @@ class ChildContent {
   });
 
   factory ChildContent.fromJson(Map<String, dynamic> json) {
-    final settings = (json.containsKey('settings') && json['settings'] is Map<String, dynamic>)
+    final settings = (json.containsKey('settings') &&
+            json['settings'] is Map<String, dynamic>)
         ? QuizSettings.fromJson(json['settings'])
         : null;
 
     final questions = (json['questions'] as List<dynamic>?)
-        ?.map((e) => Question.fromJson(e as Map<String, dynamic>))
-        .toList() ??
+            ?.map((e) => Question.fromJson(e as Map<String, dynamic>))
+            .toList() ??
         [];
 
     // Safe handling of nullable lists
     final classes = json['classes'] != null
         ? (json['classes'] as List<dynamic>)
-        .map((e) => ClassInfo.fromJson(e))
-        .toList()
+            .map((e) => ClassInfo.fromJson(e))
+            .toList()
         : <ClassInfo>[];
 
     final contentFiles = json['content_files'] != null
         ? (json['content_files'] as List<dynamic>)
-        .map((e) => ContentFile.fromJson(e))
-        .toList()
+            .map((e) => ContentFile.fromJson(e))
+            .toList()
         : <ContentFile>[];
 
     return ChildContent(
@@ -240,8 +241,8 @@ class QuizSettings {
     final duration = json['duration']?.toString() ?? '';
 
     final classes = (json['classes'] as List<dynamic>?)
-        ?.map((e) => ClassInfo.fromJson(e as Map<String, dynamic>))
-        .toList() ??
+            ?.map((e) => ClassInfo.fromJson(e as Map<String, dynamic>))
+            .toList() ??
         [];
 
     return QuizSettings(
@@ -310,12 +311,12 @@ class Question {
     final questionType = json['question_type'] ?? '';
 
     final options = (json['options'] as List<dynamic>?)
-        ?.map((e) => Option.fromJson(e as Map<String, dynamic>))
-        .toList() ??
+            ?.map((e) => Option.fromJson(e as Map<String, dynamic>))
+            .toList() ??
         [];
 
     final correct =
-    CorrectAnswer.fromJson(json['correct'] as Map<String, dynamic>? ?? {});
+        CorrectAnswer.fromJson(json['correct'] as Map<String, dynamic>? ?? {});
 
     return Question(
       questionId: questionId,

@@ -22,16 +22,19 @@ class AdminSkillsBehaviourScreen extends StatefulWidget {
   });
 
   @override
-  State<AdminSkillsBehaviourScreen> createState() => _AdminSkillsBehaviourScreenState();
+  State<AdminSkillsBehaviourScreen> createState() =>
+      _AdminSkillsBehaviourScreenState();
 }
 
-class _AdminSkillsBehaviourScreenState extends State<AdminSkillsBehaviourScreen> {
+class _AdminSkillsBehaviourScreenState
+    extends State<AdminSkillsBehaviourScreen> {
   late double opacity;
 
   @override
   void initState() {
     super.initState();
-    final skillsProvider = Provider.of<SkillsBehaviorTableProvider>(context, listen: false);
+    final skillsProvider =
+        Provider.of<SkillsBehaviorTableProvider>(context, listen: false);
     skillsProvider.fetchSkillsAndBehaviours(
       classId: widget.classId,
       levelId: widget.levelId,
@@ -87,7 +90,8 @@ class _AdminSkillsBehaviourScreenState extends State<AdminSkillsBehaviourScreen>
             onPressed: () {
               // Implement download functionality
             },
-            icon: const Icon(Icons.download, color: AppColors.eLearningBtnColor1),
+            icon:
+                const Icon(Icons.download, color: AppColors.eLearningBtnColor1),
             label: const Text(
               'Save',
               style: TextStyle(color: AppColors.eLearningBtnColor1),
@@ -130,7 +134,8 @@ class _AdminSkillsBehaviourScreenState extends State<AdminSkillsBehaviourScreen>
     );
   }
 
-  Widget _buildSubjectsTable(List<SkillsBehaviorTable> skills, List<StudentSkillBehaviorTable> students) {
+  Widget _buildSubjectsTable(List<SkillsBehaviorTable> skills,
+      List<StudentSkillBehaviorTable> students) {
     return Padding(
       padding: const EdgeInsets.all(16.0),
       child: Container(
@@ -146,7 +151,8 @@ class _AdminSkillsBehaviourScreenState extends State<AdminSkillsBehaviourScreen>
                 scrollDirection: Axis.horizontal,
                 child: Row(
                   children: skills
-                      .map((skill) => _buildScrollableColumn(skill.name, 100, students, skill.id))
+                      .map((skill) => _buildScrollableColumn(
+                          skill.name, 100, students, skill.id))
                       .toList(),
                 ),
               ),
@@ -205,7 +211,8 @@ class _AdminSkillsBehaviourScreenState extends State<AdminSkillsBehaviourScreen>
     );
   }
 
-  Widget _buildScrollableColumn(String title, double width, List<StudentSkillBehaviorTable> students, int skillId) {
+  Widget _buildScrollableColumn(String title, double width,
+      List<StudentSkillBehaviorTable> students, int skillId) {
     return Container(
       width: width,
       decoration: BoxDecoration(
@@ -257,5 +264,3 @@ class _AdminSkillsBehaviourScreenState extends State<AdminSkillsBehaviourScreen>
     );
   }
 }
-
-

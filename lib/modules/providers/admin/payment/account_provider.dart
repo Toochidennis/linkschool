@@ -28,7 +28,6 @@ class AccountProvider extends ChangeNotifier {
   String get searchQuery => _searchQuery;
   String? get selectedAccountTypeFilter => _selectedAccountTypeFilter;
 
-  
   bool get isDeletingAccount => _isDeletingAccount;
 
   // Fetch accounts from API, handling pagination
@@ -51,11 +50,13 @@ class AccountProvider extends ChangeNotifier {
           page++;
         } else {
           // Check if it's an auth error
-          if (response.statusCode == 401 || response.statusCode == 400 || 
+          if (response.statusCode == 401 ||
+              response.statusCode == 400 ||
               response.message.toLowerCase().contains('token')) {
             await _handleAuthError();
             // Retry the current page after handling auth error
-            final retryResponse = await _accountService.fetchAccounts(page: page);
+            final retryResponse =
+                await _accountService.fetchAccounts(page: page);
             if (retryResponse.success && retryResponse.data != null) {
               allData.addAll(retryResponse.data!.data);
               hasNext = retryResponse.data!.meta['has_next'] ?? false;
@@ -189,8 +190,12 @@ class AccountProvider extends ChangeNotifier {
       // Apply search filter
       bool matchesSearch = true;
       if (_searchQuery.isNotEmpty) {
-        matchesSearch = account.accountName.toLowerCase().contains(_searchQuery.toLowerCase()) ||
-                       account.accountNumber.toLowerCase().contains(_searchQuery.toLowerCase());
+        matchesSearch = account.accountName
+                .toLowerCase()
+                .contains(_searchQuery.toLowerCase()) ||
+            account.accountNumber
+                .toLowerCase()
+                .contains(_searchQuery.toLowerCase());
       }
 
       // Apply account type filter
@@ -226,15 +231,15 @@ class AccountProvider extends ChangeNotifier {
   Future<void> _handleAuthError() async {
     try {
       print('Handling authentication error...');
-      
+
       // Check if user is still logged in according to existing auth system
       final userBox = Hive.box('userData');
       final isLoggedIn = userBox.get('isLoggedIn', defaultValue: false);
       final token = userBox.get('token');
-      
+
       print('Is logged in: $isLoggedIn');
       print('Token exists: ${token != null && token.isNotEmpty}');
-      
+
       if (!isLoggedIn || token == null || token.isEmpty) {
         _errorMessage = 'Authentication required. Please login again.';
       } else {
@@ -266,7 +271,8 @@ class AccountProvider extends ChangeNotifier {
         return true;
       } else {
         // Check if it's an auth error
-        if (response.statusCode == 401 || response.statusCode == 400 || 
+        if (response.statusCode == 401 ||
+            response.statusCode == 400 ||
             response.message.toLowerCase().contains('token')) {
           await _handleAuthError();
           // Retry the delete after handling auth error
@@ -295,6 +301,3 @@ class AccountProvider extends ChangeNotifier {
     }
   }
 }
-
-
-

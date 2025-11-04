@@ -23,8 +23,8 @@ class ExploreButtonItem extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Padding(
-        padding: const EdgeInsets.only(
-            top: 30.0, bottom: 15.0, left: 6, right: 8),
+        padding:
+            const EdgeInsets.only(top: 30.0, bottom: 15.0, left: 6, right: 8),
         child: Container(
           width: 110,
           height: 80,

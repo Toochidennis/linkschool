@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
-import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/common/widgets/portal/student/student_customized_appbar.dart';
 import 'package:linkschool/modules/staff/e_learning/sub_screens/staff_attandance_screen.dart';
@@ -13,6 +11,8 @@ import 'package:linkschool/modules/auth/provider/auth_provider.dart';
 import 'package:provider/provider.dart';
 
 class StaffResultScreen extends StatefulWidget {
+  const StaffResultScreen({super.key});
+
   @override
   _StaffResultScreenState createState() => _StaffResultScreenState();
 }
@@ -32,11 +32,13 @@ class _StaffResultScreenState extends State<StaffResultScreen> {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final staffCourses = authProvider.getStaffCourses();
     final formClasses = authProvider.getFormClasses();
-    classSubjects = _transformStaffCoursesToUIByLevel(staffCourses, formClasses);
+    classSubjects =
+        _transformStaffCoursesToUIByLevel(staffCourses, formClasses);
   }
 
   List<Map<String, dynamic>> _transformStaffCoursesToUIByLevel(
-      List<Map<String, dynamic>> staffCourses, List<Map<String, dynamic>> formClasses) {
+      List<Map<String, dynamic>> staffCourses,
+      List<Map<String, dynamic>> formClasses) {
     Map<int, Map<String, dynamic>> classToLevelMap = {};
     for (var levelData in formClasses) {
       String levelName = levelData['level_name'] ?? '';
@@ -59,11 +61,11 @@ class _StaffResultScreenState extends State<StaffResultScreen> {
       String levelName = classToLevelMap.containsKey(classId)
           ? classToLevelMap[classId]!['level_name']
           : _extractLevelFromClassName(className);
-      
+
       if (!levelStructure.containsKey(levelName)) {
         levelStructure[levelName] = {};
       }
-      
+
       List<Map<String, dynamic>> subjects = [];
       for (var course in courses) {
         subjects.add({
@@ -76,7 +78,7 @@ class _StaffResultScreenState extends State<StaffResultScreen> {
           "class_name": className,
         });
       }
-      
+
       if (subjects.isNotEmpty) {
         levelStructure[levelName]![className] = subjects;
       }
@@ -111,7 +113,8 @@ class _StaffResultScreenState extends State<StaffResultScreen> {
     return className;
   }
 
-  int _getClassIdFromName(String className, List<Map<String, dynamic>> staffCourses) {
+  int _getClassIdFromName(
+      String className, List<Map<String, dynamic>> staffCourses) {
     for (var classData in staffCourses) {
       if (classData['class_name'] == className) {
         return classData['class_id'] ?? 0;
@@ -124,9 +127,13 @@ class _StaffResultScreenState extends State<StaffResultScreen> {
     String lowerName = subjectName.toLowerCase();
     if (lowerName.contains('math') || lowerName.contains('numerical')) {
       return Icons.calculate;
-    } else if (lowerName.contains('science') || lowerName.contains('biology') || lowerName.contains('chemistry')) {
+    } else if (lowerName.contains('science') ||
+        lowerName.contains('biology') ||
+        lowerName.contains('chemistry')) {
       return Icons.science;
-    } else if (lowerName.contains('english') || lowerName.contains('literature') || lowerName.contains('literacy')) {
+    } else if (lowerName.contains('english') ||
+        lowerName.contains('literature') ||
+        lowerName.contains('literacy')) {
       return Icons.menu_book;
     } else if (lowerName.contains('computer') || lowerName.contains('code')) {
       return Icons.computer;
@@ -149,7 +156,8 @@ class _StaffResultScreenState extends State<StaffResultScreen> {
       return Colors.green.shade600;
     } else if (lowerName.contains('chemistry')) {
       return Colors.teal.shade600;
-    } else if (lowerName.contains('english') || lowerName.contains('literature')) {
+    } else if (lowerName.contains('english') ||
+        lowerName.contains('literature')) {
       return Colors.purple.shade600;
     } else if (lowerName.contains('computer') || lowerName.contains('code')) {
       return Colors.indigo.shade600;
@@ -209,19 +217,24 @@ class _StaffResultScreenState extends State<StaffResultScreen> {
                                 child: Padding(
                                   padding: EdgeInsets.all(16),
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       Container(
-                                        padding: EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                                        padding: EdgeInsets.symmetric(
+                                            vertical: 12, horizontal: 16),
                                         margin: EdgeInsets.only(bottom: 12),
                                         decoration: BoxDecoration(
                                           gradient: LinearGradient(
                                             colors: [
-                                              AppColors.bookText.withOpacity(0.1),
-                                              AppColors.bookText.withOpacity(0.05),
+                                              AppColors.bookText
+                                                  .withOpacity(0.1),
+                                              AppColors.bookText
+                                                  .withOpacity(0.05),
                                             ],
                                           ),
-                                          borderRadius: BorderRadius.circular(8),
+                                          borderRadius:
+                                              BorderRadius.circular(8),
                                         ),
                                         child: Row(
                                           children: [
@@ -243,47 +256,60 @@ class _StaffResultScreenState extends State<StaffResultScreen> {
                                           ],
                                         ),
                                       ),
-                                      ...levelData["classes"].map<Widget>((classData) {
+                                      ...levelData["classes"]
+                                          .map<Widget>((classData) {
                                         return Padding(
                                           padding: EdgeInsets.only(bottom: 16),
                                           child: Column(
-                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
                                             children: [
                                               Padding(
-                                                padding: EdgeInsets.only(bottom: 12),
+                                                padding:
+                                                    EdgeInsets.only(bottom: 12),
                                                 child: Row(
                                                   children: [
                                                     Container(
                                                       width: 6,
                                                       height: 24,
                                                       decoration: BoxDecoration(
-                                                        gradient: LinearGradient(
+                                                        gradient:
+                                                            LinearGradient(
                                                           colors: [
                                                             AppColors.bookText,
-                                                            AppColors.bookText.withOpacity(0.7),
+                                                            AppColors.bookText
+                                                                .withOpacity(
+                                                                    0.7),
                                                           ],
                                                         ),
-                                                        borderRadius: BorderRadius.circular(3),
+                                                        borderRadius:
+                                                            BorderRadius
+                                                                .circular(3),
                                                       ),
                                                     ),
                                                     SizedBox(width: 12),
                                                     Expanded(
                                                       child: Text(
                                                         classData["class_name"],
-                                                        style: AppTextStyles.normal600(
+                                                        style: AppTextStyles
+                                                            .normal600(
                                                           fontSize: 18,
-                                                          color: AppColors.bookText,
+                                                          color: AppColors
+                                                              .bookText,
                                                         ),
                                                       ),
                                                     ),
                                                   ],
                                                 ),
                                               ),
-                                              ...classData["subjects"].map<Widget>((subject) {
+                                              ...classData["subjects"]
+                                                  .map<Widget>((subject) {
                                                 return Padding(
-                                                  padding: EdgeInsets.only(bottom: 12),
+                                                  padding: EdgeInsets.only(
+                                                      bottom: 12),
                                                   child: GestureDetector(
-                                                    onTap: () => _showOverlayDialog(
+                                                    onTap: () =>
+                                                        _showOverlayDialog(
                                                       subject["name"],
                                                       subject,
                                                       classData["class_id"],
@@ -407,7 +433,8 @@ class _StaffResultScreenState extends State<StaffResultScreen> {
                 color: Colors.grey.shade100,
                 shape: BoxShape.circle,
               ),
-              child: Icon(Icons.chevron_right, color: Colors.grey.shade600, size: 20),
+              child: Icon(Icons.chevron_right,
+                  color: Colors.grey.shade600, size: 20),
             ),
           ],
         ),
@@ -415,7 +442,8 @@ class _StaffResultScreenState extends State<StaffResultScreen> {
     );
   }
 
-  void _showOverlayDialog(String subject, Map<String, dynamic> courseData, int classId, String className) {
+  void _showOverlayDialog(String subject, Map<String, dynamic> courseData,
+      int classId, String className) {
     showModalBottomSheet(
       context: context,
       shape: RoundedRectangleBorder(
@@ -454,7 +482,8 @@ class _StaffResultScreenState extends State<StaffResultScreen> {
                         child: _buildDialogButton(
                           'Add Result',
                           'assets/icons/result/edit.svg',
-                          () => _navigateToAddResult(subject, courseData, classId),
+                          () => _navigateToAddResult(
+                              subject, courseData, classId),
                           Colors.blue.shade50,
                           Colors.blue.shade600,
                         ),
@@ -464,7 +493,8 @@ class _StaffResultScreenState extends State<StaffResultScreen> {
                         child: _buildDialogButton(
                           'View Result',
                           'assets/icons/result/eye.svg',
-                          () => _navigateToViewResult(subject, courseData, classId),
+                          () => _navigateToViewResult(
+                              subject, courseData, classId),
                           Colors.green.shade50,
                           Colors.green.shade600,
                         ),
@@ -501,7 +531,8 @@ class _StaffResultScreenState extends State<StaffResultScreen> {
                         child: _buildDialogButton(
                           'View Assessment',
                           'assets/icons/result/eye.svg',
-                          () => _navigateToMonthlyAssessment(subject, courseData, classId),
+                          () => _navigateToMonthlyAssessment(
+                              subject, courseData, classId),
                           Colors.purple.shade50,
                           Colors.purple.shade600,
                         ),
@@ -540,8 +571,8 @@ class _StaffResultScreenState extends State<StaffResultScreen> {
     );
   }
 
-  Widget _buildDialogButton(
-      String text, String iconPath, VoidCallback onPressed, Color bgColor, Color iconColor) {
+  Widget _buildDialogButton(String text, String iconPath,
+      VoidCallback onPressed, Color bgColor, Color iconColor) {
     return GestureDetector(
       onTap: onPressed,
       child: Container(
@@ -581,8 +612,8 @@ class _StaffResultScreenState extends State<StaffResultScreen> {
     );
   }
 
-  Widget _buildAttendanceButton(
-      String text, String iconPath, VoidCallback onPressed, Color bgColor, Color iconColor) {
+  Widget _buildAttendanceButton(String text, String iconPath,
+      VoidCallback onPressed, Color bgColor, Color iconColor) {
     return GestureDetector(
       onTap: onPressed,
       child: Container(
@@ -622,7 +653,8 @@ class _StaffResultScreenState extends State<StaffResultScreen> {
     );
   }
 
-  void _navigateToViewResult(String subject, Map<String, dynamic> courseData, int classId) {
+  void _navigateToViewResult(
+      String subject, Map<String, dynamic> courseData, int classId) {
     Navigator.pop(context);
     Navigator.push(
       context,
@@ -636,7 +668,8 @@ class _StaffResultScreenState extends State<StaffResultScreen> {
     );
   }
 
-  void _navigateToAddResult(String subject, Map<String, dynamic> courseData, int classId) {
+  void _navigateToAddResult(
+      String subject, Map<String, dynamic> courseData, int classId) {
     Navigator.pop(context);
     Navigator.push(
       context,
@@ -661,7 +694,7 @@ class _StaffResultScreenState extends State<StaffResultScreen> {
         builder: (context) => MonthlyStaffAssessmentScreen(
           classId: classId.toString(),
           year: settings['year']?.toString() ?? '',
-          term: settings['term']?? '',
+          term: settings['term'] ?? '',
           termName: 'Term ${settings['term'] ?? ''}',
           subject: subject,
           courseData: courseData,
@@ -701,10 +734,12 @@ class _StaffResultScreenState extends State<StaffResultScreen> {
         onTap: () {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('Please select a specific course to take attendance'),
+              content:
+                  Text('Please select a specific course to take attendance'),
               backgroundColor: Colors.red.shade600,
               behavior: SnackBarBehavior.floating,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8)),
             ),
           );
         },
@@ -712,5 +747,3 @@ class _StaffResultScreenState extends State<StaffResultScreen> {
     );
   }
 }
-
-

@@ -8,12 +8,21 @@ class StaffAttendanceHistoryList extends StatefulWidget {
   const StaffAttendanceHistoryList({super.key, required this.date});
 
   @override
-  _StaffAttendanceHistoryListState createState() => _StaffAttendanceHistoryListState();
+  _StaffAttendanceHistoryListState createState() =>
+      _StaffAttendanceHistoryListState();
 }
 
-class _StaffAttendanceHistoryListState extends State<StaffAttendanceHistoryList> {
+class _StaffAttendanceHistoryListState
+    extends State<StaffAttendanceHistoryList> {
   final List<String> names = [
-    'Ada', 'Bob', 'Charlie', 'David', 'Eve', 'Frank', 'Grace', 'Toochukwu',
+    'Ada',
+    'Bob',
+    'Charlie',
+    'David',
+    'Eve',
+    'Frank',
+    'Grace',
+    'Toochukwu',
   ];
   final colors = [AppColors.videoColor7, AppColors.attHistColor1];
   final random = Random();
@@ -69,7 +78,8 @@ class _StaffAttendanceHistoryListState extends State<StaffAttendanceHistoryList>
               child: Column(
                 children: [
                   Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 5.0),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 16.0, vertical: 5.0),
                     child: Row(
                       children: [
                         Padding(
@@ -79,7 +89,8 @@ class _StaffAttendanceHistoryListState extends State<StaffAttendanceHistoryList>
                             backgroundColor: circleColor,
                             child: Text(
                               name[0],
-                              style: const TextStyle(color: Colors.white, fontSize: 20),
+                              style: const TextStyle(
+                                  color: Colors.white, fontSize: 20),
                             ),
                           ),
                         ),
@@ -94,8 +105,11 @@ class _StaffAttendanceHistoryListState extends State<StaffAttendanceHistoryList>
                         ),
                         IconButton(
                           icon: Icon(
-                            _isChecked[index] ? Icons.check_circle : Icons.check_circle_outline,
-                            color: _isChecked[index] ? Colors.green : Colors.grey,
+                            _isChecked[index]
+                                ? Icons.check_circle
+                                : Icons.check_circle_outline,
+                            color:
+                                _isChecked[index] ? Colors.green : Colors.grey,
                           ),
                           onPressed: () {
                             setState(() {

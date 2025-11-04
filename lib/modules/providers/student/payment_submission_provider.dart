@@ -1,17 +1,13 @@
 import 'package:flutter/material.dart';
- import 'package:linkschool/modules/services/student/payment_submission_services.dart';
-
-
+import 'package:linkschool/modules/services/student/payment_submission_services.dart';
 
 class PaymentProvider with ChangeNotifier {
- final PaymentSubmissionService _paymentService;
+  final PaymentSubmissionService _paymentService;
   PaymentProvider(this._paymentService);
- 
+
   bool _isLoading = false;
   String? _errorMessage;
   bool _isSuccess = false;
-
- 
 
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
@@ -67,4 +63,3 @@ class PaymentProvider with ChangeNotifier {
     notifyListeners();
   }
 }
-

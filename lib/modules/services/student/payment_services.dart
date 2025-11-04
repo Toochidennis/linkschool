@@ -1,12 +1,10 @@
-import 'dart:convert';
 import 'package:hive/hive.dart';
 import 'package:linkschool/modules/model/student/payment_model.dart';
-import 'package:http/http.dart' as http;
 import 'package:linkschool/modules/services/api/api_service.dart';
 
 class InvoiceService {
   final ApiService _apiService;
-  
+
   InvoiceService(this._apiService);
 
   Future<InvoiceResponse> fetchInvoices(String studentId) async {
@@ -28,40 +26,41 @@ class InvoiceService {
       );
 
       if (response.statusCode != 200) {
-        throw Exception('API request failed with status ${response.statusCode}');
+        throw Exception(
+            'API request failed with status ${response.statusCode}');
       }
 
-     final raw = response.rawData;
+      final raw = response.rawData;
 
-if (raw == null || raw['response'] == null) {
-  throw Exception("Invalid response format: Missing 'response' key.");
-}
+      if (raw == null || raw['response'] == null) {
+        throw Exception("Invalid response format: Missing 'response' key.");
+      }
 
-final responseBody = raw['response'];
+      final responseBody = raw['response'];
 
 // ✅ Handle when the API returns an empty array instead of a map
-Map<String, dynamic> transformedResponse;
-if (responseBody is List && responseBody.isEmpty) {
-  transformedResponse = {
-    'invoices': [],
-    'payments': [],
-  };
-} else if (responseBody is Map<String, dynamic>) {
-  transformedResponse = Map<String, dynamic>.from(responseBody);
-  if (transformedResponse.containsKey('invoice')) {
-    transformedResponse['invoices'] = transformedResponse.remove('invoice');
-  }
-} else {
-  throw Exception("Invalid response type for 'response': ${responseBody.runtimeType}");
-}
+      Map<String, dynamic> transformedResponse;
+      if (responseBody is List && responseBody.isEmpty) {
+        transformedResponse = {
+          'invoices': [],
+          'payments': [],
+        };
+      } else if (responseBody is Map<String, dynamic>) {
+        transformedResponse = Map<String, dynamic>.from(responseBody);
+        if (transformedResponse.containsKey('invoice')) {
+          transformedResponse['invoices'] =
+              transformedResponse.remove('invoice');
+        }
+      } else {
+        throw Exception(
+            "Invalid response type for 'response': ${responseBody.runtimeType}");
+      }
 
-return InvoiceResponse.fromJson({
-  'success': raw['success'] ?? true,
-  'statusCode': raw['statusCode'] ?? response.statusCode,
-  'response': transformedResponse,
-});
-
-
+      return InvoiceResponse.fromJson({
+        'success': raw['success'] ?? true,
+        'statusCode': raw['statusCode'] ?? response.statusCode,
+        'response': transformedResponse,
+      });
     } catch (e) {
       print("Error fetching invoices: $e");
       rethrow;
@@ -72,7 +71,7 @@ return InvoiceResponse.fromJson({
 // class InvoiceService {
 //   Future<InvoiceResponse> getInvoiceData() async {
 //     final baseUrl = 'https://linkskool.net/api/v3/portal/students/277/financial-records?_db=aalmgzmy_linkskoo_practice'; // Replace with actual API endpoint
-    
+
 //     final mockJson = '''
 //     {
 //       "statusCode": 200,
@@ -143,7 +142,7 @@ return InvoiceResponse.fromJson({
 //     ''';
 
 //     await Future.delayed(const Duration(seconds: 1)); // Simulate network delay
-    
+
 //     final jsonMap = json.decode(mockJson);
 //     return InvoiceResponse.fromJson(jsonMap);
 //   }

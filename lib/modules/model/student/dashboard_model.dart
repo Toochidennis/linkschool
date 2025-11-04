@@ -12,16 +12,16 @@ class DashboardData {
   factory DashboardData.fromJson(Map<String, dynamic> json) {
     return DashboardData(
       recentQuizzes: (json['recent_quizzes'] as List<dynamic>?)
-          ?.map((e) => RecentQuiz.fromJson(e))
-          .toList() ??
+              ?.map((e) => RecentQuiz.fromJson(e))
+              .toList() ??
           [],
       recentActivities: (json['recent_activities'] as List<dynamic>?)
-          ?.map((e) => RecentActivity.fromJson(e))
-          .toList() ??
+              ?.map((e) => RecentActivity.fromJson(e))
+              .toList() ??
           [],
       availableCourses: (json['available_courses'] as List<dynamic>?)
-          ?.map((e) => AvailableCourse.fromJson(e))
-          .toList() ??
+              ?.map((e) => AvailableCourse.fromJson(e))
+              .toList() ??
           [],
     );
   }
@@ -71,7 +71,6 @@ class RecentQuiz {
       datePosted: json['date_posted'] ?? '',
     );
   }
-
 
   Map<String, dynamic> toJson() {
     return {};

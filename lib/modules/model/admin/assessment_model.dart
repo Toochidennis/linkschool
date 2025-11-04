@@ -1,8 +1,8 @@
 class Assessment {
   final String? id;
   final String assessmentName;
-  final int assessmentScore;  
-  final int assessmentType;  
+  final int assessmentScore;
+  final int assessmentType;
   final int levelId;
 
   Assessment({
@@ -27,11 +27,9 @@ class Assessment {
     return {
       if (id != null) 'id': id,
       'assessment_name': assessmentName,
-      'max_score': assessmentScore,  
-      'type': assessmentType,  
+      'max_score': assessmentScore,
+      'type': assessmentType,
       'level_id': levelId,
     };
   }
 }
-
-

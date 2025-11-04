@@ -34,7 +34,8 @@ class GradeProvider with ChangeNotifier {
     }
   }
 
-  Future<Grade> addGrade(String gradeSymbol, String start, String remark) async {
+  Future<Grade> addGrade(
+      String gradeSymbol, String start, String remark) async {
     final newGrade = Grade(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
       grade_Symbol: gradeSymbol,
@@ -45,7 +46,7 @@ class GradeProvider with ChangeNotifier {
     _newGrades.add(newGrade);
     notifyListeners();
 
-     return newGrade;
+    return newGrade;
   }
 
   Future<void> saveNewGrades() async {
@@ -56,20 +57,15 @@ class GradeProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-     
-      
-       await _gradeService.addGrades(_newGrades);
-    _grades.addAll(_newGrades);
-    print ("new Gradesssssss added: $_grades");
+      await _gradeService.addGrades(_newGrades);
+      _grades.addAll(_newGrades);
+      print("new Gradesssssss added: $_grades");
       _newGrades.clear();
-        notifyListeners();
-         
-       
-         
+      notifyListeners();
     } catch (e) {
       _error = e.toString();
       notifyListeners();
-      rethrow; 
+      rethrow;
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -80,14 +76,13 @@ class GradeProvider with ChangeNotifier {
     _isLoading = true;
     _error = '';
     notifyListeners();
-   
- 
+
     try {
       await _gradeService.deleteGrades(id);
-         _grades.removeWhere((grade) => grade.id == id);
-    _newGrades.removeWhere((grade) => grade.id == id);
-    notifyListeners();
-  await fetchGrades();
+      _grades.removeWhere((grade) => grade.id == id);
+      _newGrades.removeWhere((grade) => grade.id == id);
+      notifyListeners();
+      await fetchGrades();
       await fetchGrades();
     } catch (e) {
       _error = e.toString();
@@ -100,42 +95,40 @@ class GradeProvider with ChangeNotifier {
     }
   }
 
- Future<void> updateGrade(String id, String gradeSymbol, String start, String remark) async {
-  _isLoading = true;
-  _error = '';
-  notifyListeners();
+  Future<void> updateGrade(
+      String id, String gradeSymbol, String start, String remark) async {
+    _isLoading = true;
+    _error = '';
+    notifyListeners();
 
-  try {
-    
-    final updatedGrade = Grade(
-      id: id,
-      grade_Symbol: gradeSymbol,
-      start: start,
-      remark: remark,
-    );
+    try {
+      final updatedGrade = Grade(
+        id: id,
+        grade_Symbol: gradeSymbol,
+        start: start,
+        remark: remark,
+      );
 
-  
-    final index = _grades.indexWhere((grade) => grade.id == id);
-    if (index != -1) {
-      _grades[index] = updatedGrade;
-    } else {
-      final newIndex = _newGrades.indexWhere((grade) => grade.id == id);
-      if (newIndex != -1) {
-        _newGrades[newIndex] = updatedGrade;
+      final index = _grades.indexWhere((grade) => grade.id == id);
+      if (index != -1) {
+        _grades[index] = updatedGrade;
+      } else {
+        final newIndex = _newGrades.indexWhere((grade) => grade.id == id);
+        if (newIndex != -1) {
+          _newGrades[newIndex] = updatedGrade;
+        }
       }
-    }
-    notifyListeners();
+      notifyListeners();
 
-    await _gradeService.updateGrades(updatedGrade);
-    
-  } catch (e) {
-    _error = e.toString();
-    print("Update Error: $_error");
-    await fetchGrades();
-    rethrow;
-  } finally {
-    _isLoading = false;
-    notifyListeners();
+      await _gradeService.updateGrades(updatedGrade);
+    } catch (e) {
+      _error = e.toString();
+      print("Update Error: $_error");
+      await fetchGrades();
+      rethrow;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
   }
-}
 }

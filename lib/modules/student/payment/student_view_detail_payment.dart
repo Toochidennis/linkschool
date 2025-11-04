@@ -1,9 +1,6 @@
-
-
 // StudentViewDetailPaymentDialog.dart
 
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:hive/hive.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
@@ -33,8 +30,7 @@ class StudentViewDetailPaymentDialog extends StatefulWidget {
 class _StudentViewDetailPaymentDialogState
     extends State<StudentViewDetailPaymentDialog> {
   final TextEditingController _emailController = TextEditingController();
-  final TextEditingController _confirmEmailController =
-      TextEditingController();
+  final TextEditingController _confirmEmailController = TextEditingController();
   late List<bool> _selectedFees;
 
   @override
@@ -47,8 +43,8 @@ class _StudentViewDetailPaymentDialogState
   }
 
   String _formatAmount(double amount) {
-   
-    return '${amount.toStringAsFixed(2).replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]},')}';
+    return amount.toStringAsFixed(2).replaceAllMapped(
+        RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]},');
   }
 
   double _calculateSelectedTotal() {
@@ -61,16 +57,16 @@ class _StudentViewDetailPaymentDialogState
     return total;
   }
 
-
   double _calculateUnselectedTotal() {
-  double total = 0;
-  for (int i = 0; i < widget.invoice.details.length; i++) {
-    if (!_selectedFees[i]) {  // Note the ! (NOT operator)
-      total += widget.invoice.details[i].feeAmount;
+    double total = 0;
+    for (int i = 0; i < widget.invoice.details.length; i++) {
+      if (!_selectedFees[i]) {
+        // Note the ! (NOT operator)
+        total += widget.invoice.details[i].feeAmount;
+      }
     }
+    return total;
   }
-  return total;
-}
 
   getuserdata() {
     final userBox = Hive.box('userData');
@@ -97,15 +93,15 @@ class _StudentViewDetailPaymentDialogState
   }
 
   getUserDb() {
-  final userBox = Hive.box('userData');
-  final storedUserData =
-      userBox.get('userData') ?? userBox.get('loginResponse');
-  final processedData =
-      storedUserData is String ? json.decode(storedUserData) : storedUserData;
-  final response = processedData['response'] ?? processedData;
-  final db = response['_db'] ?? '';
-  return db;
-}
+    final userBox = Hive.box('userData');
+    final storedUserData =
+        userBox.get('userData') ?? userBox.get('loginResponse');
+    final processedData =
+        storedUserData is String ? json.decode(storedUserData) : storedUserData;
+    final response = processedData['response'] ?? processedData;
+    final db = response['_db'] ?? '';
+    return db;
+  }
 
   bool get _hasSelection => _selectedFees.contains(true);
 
@@ -466,9 +462,8 @@ class _StudentViewDetailPaymentDialogState
             _showIdentityConfirmation();
           },
           style: ElevatedButton.styleFrom(
-            backgroundColor: _hasSelection
-                ? const Color(0xFF2F55DD)
-                : Colors.grey,
+            backgroundColor:
+                _hasSelection ? const Color(0xFF2F55DD) : Colors.grey,
             padding: const EdgeInsets.symmetric(vertical: 16),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(8),

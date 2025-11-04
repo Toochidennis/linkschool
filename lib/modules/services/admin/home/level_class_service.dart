@@ -8,9 +8,6 @@ class LevelClassService {
 
   LevelClassService(this._apiService);
 
-
-  
-
   Future<void> createLevel(Map<String, dynamic> newLevel) async {
     final userBox = Hive.box('userData');
     final loginData = userBox.get('userData') ?? userBox.get('loginResponse');
@@ -34,7 +31,7 @@ class LevelClassService {
         print("Failed to create level");
         print("Error: ${response.message ?? 'No error message provided'}");
         SnackBar(
-          content: Text("${response.message}"),
+          content: Text(response.message),
           backgroundColor: Colors.red,
         );
         throw Exception("Failed to create level: ${response.message}");
@@ -74,7 +71,7 @@ class LevelClassService {
         print("Failed to create class");
         print("Error: ${response.message ?? 'No error message provided'}");
         SnackBar(
-          content: Text("${response.message}"),
+          content: Text(response.message),
           backgroundColor: Colors.red,
         );
         throw Exception("Failed to create class: ${response.message}");
@@ -91,7 +88,8 @@ class LevelClassService {
     }
   }
 
-  Future<void> updateLevel(String levelId, Map<String, dynamic> updatedLevel) async {
+  Future<void> updateLevel(
+      String levelId, Map<String, dynamic> updatedLevel) async {
     final userBox = Hive.box('userData');
     final loginData = userBox.get('userData') ?? userBox.get('loginResponse');
     final dbName = userBox.get('_db') ?? 'aalmgzmy_linkskoo_practice';
@@ -122,7 +120,8 @@ class LevelClassService {
     }
   }
 
-  Future<void> updateClass(String className, Map<String, dynamic> updatedClass) async {
+  Future<void> updateClass(
+      String className, Map<String, dynamic> updatedClass) async {
     final userBox = Hive.box('userData');
     final loginData = userBox.get('userData') ?? userBox.get('loginResponse');
     final dbName = userBox.get('_db') ?? 'aalmgzmy_linkskoo_practice';
@@ -243,7 +242,9 @@ class LevelClassService {
       final data = response.rawData?['data'];
       if (data is List) {
         print('Levels fetched successfully: ${data.length} levels found.');
-        return data.map((json) => Levels.fromJson(json as Map<String, dynamic>)).toList();
+        return data
+            .map((json) => Levels.fromJson(json as Map<String, dynamic>))
+            .toList();
       } else {
         print("Unexpected response format");
         throw Exception("Unexpected response format");

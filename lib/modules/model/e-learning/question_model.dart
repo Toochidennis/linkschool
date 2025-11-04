@@ -12,7 +12,7 @@ class Question {
   final DateTime createdAt;
 
   Question({
-   this.topicId,
+    this.topicId,
     required this.title,
     required this.description,
     required this.selectedClass,
@@ -21,7 +21,7 @@ class Question {
     required this.topic,
     required this.duration,
     required this.marks,
-
-    DateTime? createdAt, this.id,
+    DateTime? createdAt,
+    this.id,
   }) : createdAt = createdAt ?? DateTime.now();
 }

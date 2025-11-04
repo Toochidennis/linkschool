@@ -33,7 +33,7 @@ class _StaffViewCourseResultState extends State<StaffViewCourseResult> {
   bool isLoading = true;
   String? error;
   Map<String, int> maxScores = {};
-  
+
   // Settings from local storage
   String year = '';
   int term = 0;
@@ -49,27 +49,27 @@ class _StaffViewCourseResultState extends State<StaffViewCourseResult> {
   Future<void> _loadSettingsFromStorage() async {
     try {
       final userBox = Hive.box('userData');
-      
+
       // Try to get from different possible storage keys
-      dynamic storedData = userBox.get('userData') ?? userBox.get('loginResponse');
-      
+      dynamic storedData =
+          userBox.get('userData') ?? userBox.get('loginResponse');
+
       if (storedData != null) {
-        Map<String, dynamic> processedData = storedData is String
-            ? json.decode(storedData)
-            : storedData;
-            
+        Map<String, dynamic> processedData =
+            storedData is String ? json.decode(storedData) : storedData;
+
         final response = processedData['response'] ?? processedData;
         final data = response['data'] ?? response;
         final settings = data['settings'] ?? {};
-        
+
         setState(() {
           year = settings['year']?.toString() ?? '';
           term = settings['term'] ?? 0;
           termName = 'Term $term';
         });
-        
+
         print('Loaded settings from storage - Year: $year, Term: $term');
-        
+
         // Now fetch the course results with the correct parameters
         await fetchCourseResults();
         await fetchAssessments();
@@ -101,18 +101,19 @@ class _StaffViewCourseResultState extends State<StaffViewCourseResult> {
     try {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
       final apiService = locator<ApiService>();
-      
+
       if (authProvider.token != null) {
         apiService.setAuthToken(authProvider.token!);
       }
 
       final dbName = EnvConfig.dbName;
       final courseId = widget.courseData['course_id'].toString();
-      
+
       // Get level_id from course data or use a default
       final levelId = widget.courseData['level_id']?.toString() ?? '66';
 
-      final endpoint = 'portal/classes/${widget.classId}/courses/$courseId/results';
+      final endpoint =
+          'portal/classes/${widget.classId}/courses/$courseId/results';
       final queryParams = {
         'term': term.toString(),
         'year': year,
@@ -120,7 +121,8 @@ class _StaffViewCourseResultState extends State<StaffViewCourseResult> {
         'level_id': levelId,
       };
 
-      print('Fetching course results from: $endpoint with params: $queryParams');
+      print(
+          'Fetching course results from: $endpoint with params: $queryParams');
 
       final response = await apiService.get(
         endpoint: endpoint,
@@ -134,7 +136,8 @@ class _StaffViewCourseResultState extends State<StaffViewCourseResult> {
 
         for (var result in results) {
           final assessments = result['assessments'] as List;
-          print('Result assessments for result_id ${result['result_id']}: $assessments');
+          print(
+              'Result assessments for result_id ${result['result_id']}: $assessments');
           for (var assessment in assessments) {
             uniqueAssessments.add(assessment['assessment_name'] as String);
           }
@@ -147,7 +150,8 @@ class _StaffViewCourseResultState extends State<StaffViewCourseResult> {
           isLoading = false;
         });
 
-        print('Fetched ${courseResults.length} results, ${grades.length} grades, ${assessmentNames.length} assessments');
+        print(
+            'Fetched ${courseResults.length} results, ${grades.length} grades, ${assessmentNames.length} assessments');
       } else {
         setState(() {
           error = response.message;
@@ -168,7 +172,7 @@ class _StaffViewCourseResultState extends State<StaffViewCourseResult> {
     try {
       final apiService = locator<ApiService>();
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      
+
       if (authProvider.token != null) {
         apiService.setAuthToken(authProvider.token!);
       }
@@ -188,7 +192,8 @@ class _StaffViewCourseResultState extends State<StaffViewCourseResult> {
         for (var assessmentData in assessmentsData) {
           final assessments = assessmentData['assessments'] as List;
           for (var assessment in assessments) {
-            tempMaxScores[assessment['assessment_name']] = assessment['assessment_score'] ?? 0;
+            tempMaxScores[assessment['assessment_name']] =
+                assessment['assessment_score'] ?? 0;
           }
         }
 
@@ -274,7 +279,9 @@ class _StaffViewCourseResultState extends State<StaffViewCourseResult> {
             child: isLoading
                 ? const Center(child: CircularProgressIndicator())
                 : error != null
-                    ? Center(child: Text(error!, style: const TextStyle(color: Colors.red)))
+                    ? Center(
+                        child: Text(error!,
+                            style: const TextStyle(color: Colors.red)))
                     : SingleChildScrollView(
                         child: Column(
                           children: [
@@ -306,7 +313,7 @@ class _StaffViewCourseResultState extends State<StaffViewCourseResult> {
             ),
             child: Center(
               child: Text(
-                year.isNotEmpty && term > 0 
+                year.isNotEmpty && term > 0
                     ? '$year/${int.parse(year) + 1} $termName'
                     : 'Loading session...',
                 style: const TextStyle(
@@ -345,7 +352,8 @@ class _StaffViewCourseResultState extends State<StaffViewCourseResult> {
                 scrollDirection: Axis.horizontal,
                 child: Row(
                   children: [
-                    _buildScrollableColumn('Reg Number', 120, -1, isRegNo: true),
+                    _buildScrollableColumn('Reg Number', 120, -1,
+                        isRegNo: true),
                     ...assessmentNames
                         .asMap()
                         .entries
@@ -354,8 +362,7 @@ class _StaffViewCourseResultState extends State<StaffViewCourseResult> {
                               100,
                               entry.key,
                               isAssessment: true,
-                            ))
-                        .toList(),
+                            )),
                     _buildScrollableColumn('Total', 100, -2, isTotal: true),
                     _buildScrollableColumn('Grade', 100, -3, isGrade: true),
                   ],
@@ -392,10 +399,11 @@ class _StaffViewCourseResultState extends State<StaffViewCourseResult> {
           ),
           ...courseResults.map((result) {
             final studentName = result['student_name']?.toString() ?? 'N/A';
-            
+
             return Container(
               constraints: const BoxConstraints(
-                minHeight: 60, // Increased minimum height to accommodate wrapped text
+                minHeight:
+                    60, // Increased minimum height to accommodate wrapped text
               ),
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
               decoration: BoxDecoration(
@@ -427,7 +435,10 @@ class _StaffViewCourseResultState extends State<StaffViewCourseResult> {
   }
 
   Widget _buildScrollableColumn(String title, double width, int index,
-      {bool isRegNo = false, bool isAssessment = false, bool isTotal = false, bool isGrade = false}) {
+      {bool isRegNo = false,
+      bool isAssessment = false,
+      bool isTotal = false,
+      bool isGrade = false}) {
     return Container(
       width: width,
       decoration: BoxDecoration(
@@ -498,6 +509,3 @@ class _StaffViewCourseResultState extends State<StaffViewCourseResult> {
     );
   }
 }
-
-
-

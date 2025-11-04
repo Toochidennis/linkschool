@@ -78,6 +78,3 @@ class FeeActionOverlay extends StatelessWidget {
     );
   }
 }
-
-
-

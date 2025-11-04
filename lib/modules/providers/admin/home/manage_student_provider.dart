@@ -31,7 +31,8 @@ class ManageStudentProvider with ChangeNotifier {
     }
   }
 
-  Future<bool> updateStudent(String studentId, Map<String, dynamic> updatedStudent) async {
+  Future<bool> updateStudent(
+      String studentId, Map<String, dynamic> updatedStudent) async {
     isLoading = true;
     notifyListeners();
     error = null;

@@ -10,7 +10,7 @@ class LevelSelection extends StatefulWidget {
   final List<dynamic> levelNames; // List of level names
   final List<dynamic>? classNames;
   final List<dynamic>? courseNames;
-  final List<String>? subjects; 
+  final List<String>? subjects;
   final String? courseId; // Course ID for course selection
   final String? classId; // Class ID for class selection
   final String? levelId; // Level ID for level selection
@@ -24,9 +24,9 @@ class LevelSelection extends StatefulWidget {
     this.courseNames,
     this.classNames,
     this.subjects = const [], // Default empty list for subjects
-    this.isSecondScreen = false, 
-    this.courseId, 
-    this.classId, 
+    this.isSecondScreen = false,
+    this.courseId,
+    this.classId,
     this.levelId,
     this.term,
     // Default to class selection
@@ -63,17 +63,21 @@ class _LevelSelectionState extends State<LevelSelection> {
           final levelId = level[0]; // level_id is at index 0
           final levelName = level[1]; // level_name is at index 1
           if (widget.isSecondScreen) {
-            final hasCourse = widget.courseNames?.any((course) => course[1].toString().isNotEmpty) ?? false;
+            final hasCourse = widget.courseNames
+                    ?.any((course) => course[1].toString().isNotEmpty) ??
+                false;
             if (!hasCourse) {
               return const SizedBox.shrink(); // Skip if no course is available
             }
           } else {
-            final hasClasses = widget.classNames?.any((cls) => cls[2] == levelId) ?? false;
+            final hasClasses =
+                widget.classNames?.any((cls) => cls[2] == levelId) ?? false;
             if (!hasClasses) {
-              return const SizedBox.shrink(); // Skip if no classes are available
+              return const SizedBox
+                  .shrink(); // Skip if no classes are available
             }
           }
-       
+
           final imagePath = _imagePaths[index % _imagePaths.length];
           return _buildLevelBox(levelId, levelName, imagePath);
         }),
@@ -82,7 +86,8 @@ class _LevelSelectionState extends State<LevelSelection> {
     );
   }
 
-  Widget _buildLevelBox(String levelId, String levelText, String backgroundImagePath) {
+  Widget _buildLevelBox(
+      String levelId, String levelText, String backgroundImagePath) {
     return GestureDetector(
       onTap: () => _toggleOverlay(levelId, levelText),
       child: Padding(
@@ -208,12 +213,13 @@ class _LevelSelectionState extends State<LevelSelection> {
                                 cls[1], // class name
                                 () {
                                   Navigator.of(context).pop();
-                                  _navigateToClassDetail(cls[0], cls[1]); // class ID, class name
+                                  _navigateToClassDetail(
+                                      cls[0], cls[1]); // class ID, class name
                                 },
                               ),
                             );
                           },
-                 ),
+                        ),
                 ),
               ],
             ),
@@ -225,82 +231,84 @@ class _LevelSelectionState extends State<LevelSelection> {
 
   // In LevelSelection widget, update the _showCourseSelectionDialog method:
 
-void _showCourseSelectionDialog() {
-  final allCourses = (widget.courseNames ?? [])
-      .where((course) => course[1].toString().isNotEmpty)
-      .toList();
+  void _showCourseSelectionDialog() {
+    final allCourses = (widget.courseNames ?? [])
+        .where((course) => course[1].toString().isNotEmpty)
+        .toList();
 
-  showModalBottomSheet(
-    context: context,
-    isScrollControlled: true,
-    shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-    ),
-    builder: (BuildContext context) {
-      return Padding(
-        padding: EdgeInsets.only(
-          bottom: MediaQuery.of(context).viewInsets.bottom,
-        ),
-        child: ConstrainedBox(
-          constraints: BoxConstraints(
-            maxHeight: MediaQuery.of(context).size.height * 0.6,
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (BuildContext context) {
+        return Padding(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(context).viewInsets.bottom,
           ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const SizedBox(height: 24),
-              Text(
-                'Select Course for $_selectedLevel', 
-                style: AppTextStyles.normal600(
-                    fontSize: 20, color: Colors.black),
-              ),
-              const SizedBox(height: 24),
-              Flexible(
-                child: allCourses.isEmpty
-                    ? _buildEmptyState('No courses available')
-                    : ListView.builder(
-                        itemCount: allCourses.length,
-                        itemBuilder: (context, index) {
-                          final course = allCourses[index];
-                          return Padding(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 16, vertical: 8),
-                            child: _buildSelectionButton(
-                              course[1], // course name
-                              () async {
-                                final userBox = Hive.box('userData');
-                                await userBox.put('selectedCourseId', course[0]); // Save course ID
-                                await userBox.put('selectedLevelId', _selectedLevelId); // Save level ID
-                                Navigator.of(context).pop();
-                                Navigator.of(context).push(
-                                  MaterialPageRoute(
-                                    builder: (context) => EmptySyllabusScreen(
-                                      term: widget.term, 
-                                      courseId: course[0], 
-                                      classId: widget.classId,
-                                      levelId: _selectedLevelId, 
-                                      selectedSubject: course[1],
-                                      course_name: widget.courseNames?[index][1] ?? '', // Pass course name
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              maxHeight: MediaQuery.of(context).size.height * 0.6,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const SizedBox(height: 24),
+                Text(
+                  'Select Course for $_selectedLevel',
+                  style: AppTextStyles.normal600(
+                      fontSize: 20, color: Colors.black),
+                ),
+                const SizedBox(height: 24),
+                Flexible(
+                  child: allCourses.isEmpty
+                      ? _buildEmptyState('No courses available')
+                      : ListView.builder(
+                          itemCount: allCourses.length,
+                          itemBuilder: (context, index) {
+                            final course = allCourses[index];
+                            return Padding(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 16, vertical: 8),
+                              child: _buildSelectionButton(
+                                course[1], // course name
+                                () async {
+                                  final userBox = Hive.box('userData');
+                                  await userBox.put('selectedCourseId',
+                                      course[0]); // Save course ID
+                                  await userBox.put('selectedLevelId',
+                                      _selectedLevelId); // Save level ID
+                                  Navigator.of(context).pop();
+                                  Navigator.of(context).push(
+                                    MaterialPageRoute(
+                                      builder: (context) => EmptySyllabusScreen(
+                                        term: widget.term,
+                                        courseId: course[0],
+                                        classId: widget.classId,
+                                        levelId: _selectedLevelId,
+                                        selectedSubject: course[1],
+                                        course_name: widget.courseNames?[index]
+                                                [1] ??
+                                            '', // Pass course name
+                                      ),
                                     ),
-                                  ),
-                                  
-                                );
-                               
-                                print("selected Level ID: $_selectedLevelId");
-                               
-                              },
-                            ),
-                          );
-                        },
-                      ),
-              ),
-            ],
+                                  );
+
+                                  print("selected Level ID: $_selectedLevelId");
+                                },
+                              ),
+                            );
+                          },
+                        ),
+                ),
+              ],
+            ),
           ),
-        ),
-      );
-    },
-  );
-}
+        );
+      },
+    );
+  }
 
   Widget _buildEmptyState(String message) {
     return Center(
@@ -352,17 +360,18 @@ void _showCourseSelectionDialog() {
     );
   }
 
-void _navigateToClassDetail(String classId, String className) async {
-  final userBox = Hive.box('userData');
-  await userBox.put('selectedClassId', classId); // Persist selected class ID
-  await userBox.put('selectedLevelId', _selectedLevelId); // Persist selected level ID
+  void _navigateToClassDetail(String classId, String className) async {
+    final userBox = Hive.box('userData');
+    await userBox.put('selectedClassId', classId); // Persist selected class ID
+    await userBox.put(
+        'selectedLevelId', _selectedLevelId); // Persist selected level ID
 
-    Navigator.of(context).push( 
+    Navigator.of(context).push(
       MaterialPageRoute(
         builder: (context) => ClassDetailScreen(
           classId: classId,
           className: className,
-           levelId: _selectedLevelId, 
+          levelId: _selectedLevelId,
         ),
       ),
     );

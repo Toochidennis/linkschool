@@ -3,7 +3,6 @@ import 'package:linkschool/modules/model/admin/class_model.dart';
 import 'package:linkschool/modules/services/admin/class_service.dart';
 import 'package:linkschool/modules/services/api/service_locator.dart';
 
-
 class ClassProvider with ChangeNotifier {
   final ClassService _classService = locator<ClassService>();
   List<Class> _classes = [];
@@ -18,7 +17,7 @@ class ClassProvider with ChangeNotifier {
     _isLoading = true;
     _error = '';
     notifyListeners();
-    
+
     try {
       _classes = await _classService.fetchClasses(levelId);
     } catch (e) {

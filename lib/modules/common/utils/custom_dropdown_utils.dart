@@ -35,9 +35,8 @@ class CustomDropdown extends StatelessWidget {
                   item,
                   style: AppTextStyles.normal600(
                     fontSize: 12,
-                    color: item == value
-                        ? Colors.blue
-                        : AppColors.backgroundDark,
+                    color:
+                        item == value ? Colors.blue : AppColors.backgroundDark,
                   ),
                 ),
               ),

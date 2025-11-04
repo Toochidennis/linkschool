@@ -16,10 +16,12 @@ class ExpenditureReportPaymentScreen extends StatefulWidget {
   const ExpenditureReportPaymentScreen({super.key, this.initialParams});
 
   @override
-  State<ExpenditureReportPaymentScreen> createState() => _ExpenditureReportPaymentScreenState();
+  State<ExpenditureReportPaymentScreen> createState() =>
+      _ExpenditureReportPaymentScreenState();
 }
 
-class _ExpenditureReportPaymentScreenState extends State<ExpenditureReportPaymentScreen> {
+class _ExpenditureReportPaymentScreenState
+    extends State<ExpenditureReportPaymentScreen> {
   int _selectedIndex = 0;
   late double opacity;
 
@@ -34,10 +36,10 @@ class _ExpenditureReportPaymentScreenState extends State<ExpenditureReportPaymen
   String? _customType;
   String? _startDate;
   String? _endDate;
-  List<int> _selectedVendors = [];
-  List<int> _selectedSessions = [];
-  List<int> _selectedTerms = [];
-  List<int> _selectedAccounts = [];
+  final List<int> _selectedVendors = [];
+  final List<int> _selectedSessions = [];
+  final List<int> _selectedTerms = [];
+  final List<int> _selectedAccounts = [];
   final ExpenditureService _expenditureService = locator<ExpenditureService>();
 
   @override
@@ -110,7 +112,8 @@ class _ExpenditureReportPaymentScreenState extends State<ExpenditureReportPaymen
             },
             child: Text(
               'Download',
-              style: AppTextStyles.normal600(fontSize: 14, color: AppColors.paymentTxtColor1),
+              style: AppTextStyles.normal600(
+                  fontSize: 14, color: AppColors.paymentTxtColor1),
             ),
           ),
         ],
@@ -127,14 +130,18 @@ class _ExpenditureReportPaymentScreenState extends State<ExpenditureReportPaymen
           BottomNavigationBarItem(
             icon: SvgPicture.asset(
               'assets/icons/profile/nav_transaction_icon.svg',
-              color: _selectedIndex == 0 ? const Color.fromRGBO(47, 85, 221, 1) : Colors.grey,
+              color: _selectedIndex == 0
+                  ? const Color.fromRGBO(47, 85, 221, 1)
+                  : Colors.grey,
             ),
             label: 'Transactions',
           ),
           BottomNavigationBarItem(
             icon: SvgPicture.asset(
               'assets/icons/profile/nav_statistics_icon.svg',
-              color: _selectedIndex == 1 ? const Color.fromRGBO(47, 85, 221, 1) : Colors.grey,
+              color: _selectedIndex == 1
+                  ? const Color.fromRGBO(47, 85, 221, 1)
+                  : Colors.grey,
             ),
             label: 'Statistics',
           ),

@@ -1,7 +1,5 @@
 // lib/modules/services/student/payment_submission_service.dart
 
-
-
 import 'dart:convert';
 
 import 'package:hive/hive.dart';
@@ -10,19 +8,16 @@ import 'package:linkschool/modules/services/api/api_service.dart';
 class PaymentSubmissionService {
   final ApiService _apiService;
   PaymentSubmissionService(this._apiService);
-        getuserdata(){
+  getuserdata() {
     final userBox = Hive.box('userData');
     final storedUserData =
         userBox.get('userData') ?? userBox.get('loginResponse');
-    final processedData = storedUserData is String
-        ? json.decode(storedUserData)
-        : storedUserData;
+    final processedData =
+        storedUserData is String ? json.decode(storedUserData) : storedUserData;
     final response = processedData['response'] ?? processedData;
-    
+
     return response;
   }
-
-
 
   Future<void> submitPayment({
     required String studentId,
@@ -38,10 +33,7 @@ class PaymentSubmissionService {
     required int term,
     required String email,
   }) async {
-    
-    
-
-    final token = getuserdata( )['token'] as String;
+    final token = getuserdata()['token'] as String;
     final dbName = getuserdata()['_db'] ?? 'aalmgzmy_linkskoo_practice';
     print("Set token: $token");
     _apiService.setAuthToken(token);
@@ -56,7 +48,7 @@ class PaymentSubmissionService {
       'class_id': classId,
       'level_id': levelId,
       'year': year,
-     "type": "online",
+      "type": "online",
       'term': term,
       '_db': dbName,
       'email': email,
@@ -107,7 +99,7 @@ class PaymentSubmissionService {
 //         ? json.decode(storedUserData)
 //         : storedUserData;
 //     final response = processedData['response'] ?? processedData;
-    
+
 //     return response;
 //   }
 

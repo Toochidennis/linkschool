@@ -6,7 +6,6 @@ import 'package:linkschool/modules/model/explore/home/game_model.dart';
 import 'package:linkschool/modules/providers/explore/game/game_provider.dart';
 import 'package:provider/provider.dart';
 
-
 class GameDetails extends StatefulWidget {
   const GameDetails({super.key, required this.game});
   final Game game;
@@ -30,12 +29,13 @@ class _GameDetailsState extends State<GameDetails> {
     final gameProvider = Provider.of<GameProvider>(context);
 
     final likes = gameProvider.games?.cardGames.games
-       .map((game) => _buildYouMightLikeCard(
-              game: game,
-              startColor: AppColors.gamesColor5,
-              endColor: AppColors.gamesColor6,
-            ))
-       .toList() ??[];
+            .map((game) => _buildYouMightLikeCard(
+                  game: game,
+                  startColor: AppColors.gamesColor5,
+                  endColor: AppColors.gamesColor6,
+                ))
+            .toList() ??
+        [];
 
     final recommendedGames =
         gameProvider.games?.puzzleGames.games.map((game) => game).toList();
@@ -233,7 +233,6 @@ Widget reviewText({
   );
 }
 
-
 Widget _buildYouMightLikeCard({
   required Game game,
   required Color startColor,
@@ -258,7 +257,6 @@ Widget _buildYouMightLikeCard({
           child: Image.network(
             game.thumbnail,
             fit: BoxFit.contain,
-            
           ),
         ),
         const SizedBox(width: 10.0),
@@ -361,4 +359,3 @@ Widget _buildYouMightLikeCard({
     ),
   );
 }
-

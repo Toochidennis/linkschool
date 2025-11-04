@@ -59,7 +59,9 @@ class _CourseRegistrationScreenState extends State<CourseRegistrationScreen> {
     final userBox = Hive.box('userData');
     final userData = userBox.get('userData');
 
-    if (userData != null && userData['data'] != null && userData['data']['settings'] != null) {
+    if (userData != null &&
+        userData['data'] != null &&
+        userData['data']['settings'] != null) {
       setState(() {
         _settings = Map<String, dynamic>.from(userData['data']['settings']);
         int termNumber = _settings['term'] ?? 1;
@@ -68,7 +70,8 @@ class _CourseRegistrationScreenState extends State<CourseRegistrationScreen> {
             : termNumber == 2
                 ? 'Second term'
                 : 'Third term';
-        _academicSession = "${int.parse(_settings['year'] ?? '2023') - 1}/${_settings['year'] ?? '2023'} academic session";
+        _academicSession =
+            "${int.parse(_settings['year'] ?? '2023') - 1}/${_settings['year'] ?? '2023'} academic session";
       });
     } else {
       print('No settings found in Hive, using defaults');
@@ -81,7 +84,8 @@ class _CourseRegistrationScreenState extends State<CourseRegistrationScreen> {
   // Save registered courses to Hive
   Future<void> _saveRegisteredCoursesToHive(List<int> courseIds) async {
     final userBox = Hive.box('userData');
-    final key = 'registeredCourses_${widget.studentId}_${widget.classId}_${_settings['year']}_${_settings['term']}';
+    final key =
+        'registeredCourses_${widget.studentId}_${widget.classId}_${_settings['year']}_${_settings['term']}';
     await userBox.put(key, courseIds);
     print('Saved registered courses to Hive: $courseIds');
   }
@@ -89,7 +93,8 @@ class _CourseRegistrationScreenState extends State<CourseRegistrationScreen> {
   // Get registered courses from Hive
   List<int> _getRegisteredCoursesFromHive() {
     final userBox = Hive.box('userData');
-    final key = 'registeredCourses_${widget.studentId}_${widget.classId}_${_settings['year']}_${_settings['term']}';
+    final key =
+        'registeredCourses_${widget.studentId}_${widget.classId}_${_settings['year']}_${_settings['term']}';
     final cachedCourses = userBox.get(key);
     if (cachedCourses == null) {
       print('No cached courses found in Hive for key: $key');
@@ -98,7 +103,8 @@ class _CourseRegistrationScreenState extends State<CourseRegistrationScreen> {
     // Ensure cachedCourses is a List and cast its elements to int
     if (cachedCourses is List) {
       final result = cachedCourses
-          .where((id) => id is int || (id is num && id is int)) // Filter valid integers
+          .where((id) =>
+              id is int || (id is num && id is int)) // Filter valid integers
           .cast<int>()
           .toList();
       print('Retrieved cached courses from Hive: $result');
@@ -133,7 +139,8 @@ class _CourseRegistrationScreenState extends State<CourseRegistrationScreen> {
       print('Term: $term');
       print('DB Name: $dbName');
 
-      final provider = Provider.of<CourseRegistrationProvider>(context, listen: false);
+      final provider =
+          Provider.of<CourseRegistrationProvider>(context, listen: false);
       final response = await provider.fetchStudentRegisteredCourses(
         studentId: widget.studentId,
         classId: widget.classId,
@@ -180,14 +187,18 @@ class _CourseRegistrationScreenState extends State<CourseRegistrationScreen> {
           userData['data'] != null &&
           userData['data']['courses'] != null) {
         final coursesList = userData['data']['courses'] as List;
-        final result = coursesList.map((course) => Map<String, dynamic>.from(course as Map)).toList();
+        final result = coursesList
+            .map((course) => Map<String, dynamic>.from(course as Map))
+            .toList();
         print('Courses retrieved from Hive: $result');
         return result;
       }
 
       final courses = userDataBox.get('courses');
       if (courses != null && courses is List) {
-        final result = courses.map((course) => Map<String, dynamic>.from(course as Map)).toList();
+        final result = courses
+            .map((course) => Map<String, dynamic>.from(course as Map))
+            .toList();
         print('Courses retrieved from Hive (fallback): $result');
         return result;
       }
@@ -228,7 +239,8 @@ class _CourseRegistrationScreenState extends State<CourseRegistrationScreen> {
 
       print('Saving courses with payload: $payload');
 
-      final provider = Provider.of<CourseRegistrationProvider>(context, listen: false);
+      final provider =
+          Provider.of<CourseRegistrationProvider>(context, listen: false);
       final response = await provider.registerCourse(
         CourseRegistrationModel(
           studentId: widget.studentId,
@@ -286,7 +298,8 @@ class _CourseRegistrationScreenState extends State<CourseRegistrationScreen> {
     setState(() {
       selectedSubjects[index] = isSelected;
       _hasSelectedCourses = selectedSubjects.contains(true);
-      print('Updated selection for index $index: $isSelected, selectedSubjects: $selectedSubjects');
+      print(
+          'Updated selection for index $index: $isSelected, selectedSubjects: $selectedSubjects');
     });
   }
 
@@ -299,7 +312,8 @@ class _CourseRegistrationScreenState extends State<CourseRegistrationScreen> {
         elevation: 0,
         title: Text(
           'Course Registration',
-          style: AppTextStyles.normal600(fontSize: 20, color: AppColors.backgroundLight),
+          style: AppTextStyles.normal600(
+              fontSize: 20, color: AppColors.backgroundLight),
         ),
         leading: IconButton(
           onPressed: () => Navigator.of(context).pop(),
@@ -322,7 +336,8 @@ class _CourseRegistrationScreenState extends State<CourseRegistrationScreen> {
           Column(
             children: [
               SizedBox(
-                height: MediaQuery.of(context).padding.top + AppBar().preferredSize.height,
+                height: MediaQuery.of(context).padding.top +
+                    AppBar().preferredSize.height,
               ),
               Container(
                 height: MediaQuery.of(context).size.height * 0.18,
@@ -337,12 +352,14 @@ class _CourseRegistrationScreenState extends State<CourseRegistrationScreen> {
                         children: [
                           Text(
                             widget.studentName.toUpperCase(),
-                            style: AppTextStyles.normal600(fontSize: 20, color: Colors.white),
+                            style: AppTextStyles.normal600(
+                                fontSize: 20, color: Colors.white),
                           ),
                           const SizedBox(height: 4.0),
                           Text(
                             _academicSession,
-                            style: AppTextStyles.normal400(fontSize: 16, color: Colors.white70),
+                            style: AppTextStyles.normal400(
+                                fontSize: 16, color: Colors.white70),
                           ),
                         ],
                       ),
@@ -353,13 +370,15 @@ class _CourseRegistrationScreenState extends State<CourseRegistrationScreen> {
                         right: 8.0,
                         child: FloatingActionButton(
                           onPressed: _isSaving ? null : _saveSelectedCourses,
-                          backgroundColor: _isSaving ? Colors.grey : AppColors.primaryLight,
+                          backgroundColor:
+                              _isSaving ? Colors.grey : AppColors.primaryLight,
                           shape: const CircleBorder(),
                           child: Container(
                             width: 50,
                             height: 50,
                             decoration: BoxDecoration(
-                              borderRadius: const BorderRadius.all(Radius.circular(100)),
+                              borderRadius:
+                                  const BorderRadius.all(Radius.circular(100)),
                               boxShadow: [
                                 BoxShadow(
                                   color: Colors.black.withOpacity(0.3),
@@ -371,7 +390,8 @@ class _CourseRegistrationScreenState extends State<CourseRegistrationScreen> {
                             ),
                             child: _isSaving
                                 ? const CircularProgressIndicator(
-                                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                    valueColor: AlwaysStoppedAnimation<Color>(
+                                        Colors.white),
                                   )
                                 : const Icon(
                                     Icons.save,
@@ -409,15 +429,19 @@ class _CourseRegistrationScreenState extends State<CourseRegistrationScreen> {
                         : courses.isEmpty
                             ? const Center(child: Text('No courses available'))
                             : ListView.builder(
-                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 16, vertical: 16),
                                 itemCount: courses.length,
                                 itemBuilder: (context, index) {
                                   final course = courses[index];
-                                  final courseName = course['course_name'] as String;
+                                  final courseName =
+                                      course['course_name'] as String;
 
                                   return Container(
                                     decoration: BoxDecoration(
-                                      color: selectedSubjects[index] ? Colors.grey[200] : Colors.white,
+                                      color: selectedSubjects[index]
+                                          ? Colors.grey[200]
+                                          : Colors.white,
                                       border: Border(
                                         bottom: BorderSide(
                                           color: Colors.grey[300]!,
@@ -429,25 +453,33 @@ class _CourseRegistrationScreenState extends State<CourseRegistrationScreen> {
                                       leading: CircleAvatar(
                                         backgroundColor: subjectColors[index],
                                         child: Text(
-                                          courseName.isNotEmpty ? courseName[0].toUpperCase() : '?',
-                                          style: const TextStyle(color: Colors.white),
+                                          courseName.isNotEmpty
+                                              ? courseName[0].toUpperCase()
+                                              : '?',
+                                          style: const TextStyle(
+                                              color: Colors.white),
                                         ),
                                       ),
                                       title: Text(courseName),
                                       trailing: GestureDetector(
                                         onTap: () {
-                                          _updateSelection(index, !selectedSubjects[index]);
+                                          _updateSelection(
+                                              index, !selectedSubjects[index]);
                                         },
                                         child: Container(
                                           width: 24,
                                           height: 24,
                                           decoration: BoxDecoration(
                                             shape: BoxShape.circle,
-                                            color: selectedSubjects[index] ? Colors.green : Colors.white,
-                                            border: Border.all(color: Colors.grey),
+                                            color: selectedSubjects[index]
+                                                ? Colors.green
+                                                : Colors.white,
+                                            border:
+                                                Border.all(color: Colors.grey),
                                           ),
                                           child: selectedSubjects[index]
-                                              ? const Icon(Icons.check, size: 16, color: Colors.white)
+                                              ? const Icon(Icons.check,
+                                                  size: 16, color: Colors.white)
                                               : null,
                                         ),
                                       ),
@@ -465,4 +497,3 @@ class _CourseRegistrationScreenState extends State<CourseRegistrationScreen> {
     );
   }
 }
-

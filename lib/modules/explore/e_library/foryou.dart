@@ -4,7 +4,6 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
-import 'package:linkschool/modules/explore/e_library/E_lib_detail.dart';
 
 import 'package:linkschool/modules/explore/e_library/cbt.dart';
 import 'package:linkschool/modules/explore/games/gamecard.dart';
@@ -101,7 +100,7 @@ class _ForYouScreenState extends State<ForYouScreen> {
     ),
   ];
 
-  bool _showSearchIcon = false;
+  final bool _showSearchIcon = false;
 
   @override
   Widget build(BuildContext context) {
@@ -232,7 +231,7 @@ class newForYouScreen extends StatelessWidget {
             child: ListView.builder(
               itemCount: categories.length,
               scrollDirection: Axis.horizontal,
-              itemBuilder: (context, index) => Container(
+              itemBuilder: (context, index) => SizedBox(
                 height: 50,
                 width: 100,
                 child: categories[index],
@@ -281,7 +280,7 @@ class newForYouScreen extends StatelessWidget {
         SizedBox(
           height: 8,
         ),
-        Container(
+        SizedBox(
           height: 200,
           child: ListView.builder(
             padding: const EdgeInsets.only(right: 16.0),
@@ -298,7 +297,7 @@ class newForYouScreen extends StatelessWidget {
         blueHeading(tag: 'E-book', title: 'Suggested for you'),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Container(
+          child: SizedBox(
             height: 250,
             width: double.infinity,
             child: ListView(
@@ -334,7 +333,7 @@ class newForYouScreen extends StatelessWidget {
 }
 
 class buildForYou extends StatelessWidget {
-  buildForYou({
+  const buildForYou({
     super.key,
     required this.gameItems,
   });
@@ -377,7 +376,7 @@ class buildForYou extends StatelessWidget {
         SizedBox(
           height: 8,
         ),
-        Container(
+        SizedBox(
           height: 200,
           child: ListView.builder(
             padding: const EdgeInsets.only(right: 16.0),
@@ -394,7 +393,7 @@ class buildForYou extends StatelessWidget {
         blueHeading(tag: 'E-book', title: 'Suggested for you'),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Container(
+          child: SizedBox(
             height: 250,
             width: double.infinity,
             child: ListView(
@@ -550,7 +549,6 @@ class _books extends StatelessWidget {
 
   const _books({
     // ignore: unused_element
-    super.key,
     required this.image,
     required this.bookName,
     required this.editor,
@@ -577,9 +575,9 @@ class _books extends StatelessWidget {
             SizedBox(
               height: 5,
             ),
-            Container(
+            SizedBox(
               width: 114,
-              child: new LinearProgressIndicator(
+              child: LinearProgressIndicator(
                 minHeight: 5,
                 value: 0.5,
                 color: AppColors.text2Light,

@@ -7,7 +7,8 @@ import 'package:linkschool/modules/services/api/service_locator.dart';
 class AssessmentProvider with ChangeNotifier {
   final AssessmentService _assessmentService = locator<AssessmentService>();
   final List<Assessment> _assessments = [];
-  final List<Assessment> _newlyAddedAssessments = []; // Track newly added assessments
+  final List<Assessment> _newlyAddedAssessments =
+      []; // Track newly added assessments
   bool _isLoading = false;
   String? _errorMessage;
 
@@ -28,22 +29,25 @@ class AssessmentProvider with ChangeNotifier {
 
   void addAssessment(Assessment assessment) {
     _assessments.add(assessment);
-    _newlyAddedAssessments.add(assessment); // Track this as a newly added assessment
+    _newlyAddedAssessments
+        .add(assessment); // Track this as a newly added assessment
     _setError(null);
     notifyListeners();
   }
 
   void removeAssessment(Assessment assessment) {
     _assessments.remove(assessment);
-    _newlyAddedAssessments.remove(assessment); // Also remove from newly added if present
+    _newlyAddedAssessments
+        .remove(assessment); // Also remove from newly added if present
     notifyListeners();
   }
 
   // Edit assessment method with dual logic
-  Future<bool> editAssessment(Assessment assessment, String newName, int newScore, int newType) async {
+  Future<bool> editAssessment(
+      Assessment assessment, String newName, int newScore, int newType) async {
     // Check if this is a newly added assessment
     final isNewlyAdded = _newlyAddedAssessments.contains(assessment);
-    
+
     if (isNewlyAdded) {
       // Update locally for newly added assessment
       final index = _assessments.indexOf(assessment);
@@ -55,20 +59,21 @@ class AssessmentProvider with ChangeNotifier {
           assessmentType: newType,
           levelId: assessment.levelId,
         );
-        
+
         // Update in newly added list as well
         final newlyAddedIndex = _newlyAddedAssessments.indexOf(assessment);
         if (newlyAddedIndex != -1) {
           _newlyAddedAssessments[newlyAddedIndex] = _assessments[index];
         }
-        
+
         notifyListeners();
         return true;
       }
       return false;
     } else {
       // Use API for existing assessment
-      return await _editAssessmentViaAPI(assessment, newName, newScore, newType);
+      return await _editAssessmentViaAPI(
+          assessment, newName, newScore, newType);
     }
   }
 
@@ -76,7 +81,7 @@ class AssessmentProvider with ChangeNotifier {
   Future<bool> deleteAssessment(Assessment assessment) async {
     // Check if this is a newly added assessment
     final isNewlyAdded = _newlyAddedAssessments.contains(assessment);
-    
+
     if (isNewlyAdded) {
       // Delete locally for newly added assessment
       removeAssessment(assessment);
@@ -88,7 +93,8 @@ class AssessmentProvider with ChangeNotifier {
   }
 
   // Private method to edit assessment via API
-  Future<bool> _editAssessmentViaAPI(Assessment assessment, String newName, int newScore, int newType) async {
+  Future<bool> _editAssessmentViaAPI(
+      Assessment assessment, String newName, int newScore, int newType) async {
     if (assessment.id == null) {
       _setError('Cannot edit assessment without ID');
       return false;
@@ -100,7 +106,7 @@ class AssessmentProvider with ChangeNotifier {
     try {
       final userBox = Hive.box('userData');
       final dbName = userBox.get('_db') ?? 'aalmgzmy_linkskoo_practice';
-      
+
       final payload = {
         'level_id': assessment.levelId,
         'assessment_name': newName,
@@ -109,8 +115,9 @@ class AssessmentProvider with ChangeNotifier {
         '_db': dbName,
       };
 
-      final response = await _assessmentService.editAssessment(assessment.id!, payload);
-      
+      final response =
+          await _assessmentService.editAssessment(assessment.id!, payload);
+
       if (response.success) {
         // Update local assessment after successful API call
         final index = _assessments.indexOf(assessment);
@@ -147,8 +154,9 @@ class AssessmentProvider with ChangeNotifier {
     _setError(null);
 
     try {
-      final response = await _assessmentService.deleteAssessment(assessment.id!);
-      
+      final response =
+          await _assessmentService.deleteAssessment(assessment.id!);
+
       if (response.success) {
         // Remove from local list after successful API call
         removeAssessment(assessment);
@@ -163,13 +171,14 @@ class AssessmentProvider with ChangeNotifier {
       _setLoading(false);
     }
   }
-  
-  Future<void> saveAssessments(BuildContext context, String selectedLevelId) async {
+
+  Future<void> saveAssessments(
+      BuildContext context, String selectedLevelId) async {
     // Only save newly added assessments for the selected level
     final newAssessmentsForLevel = _newlyAddedAssessments
         .where((assessment) => assessment.levelId.toString() == selectedLevelId)
         .toList();
-    
+
     if (newAssessmentsForLevel.isEmpty) {
       _setError('No new assessments to save');
       return;
@@ -181,46 +190,51 @@ class AssessmentProvider with ChangeNotifier {
     try {
       final userBox = Hive.box('userData');
       final dbName = userBox.get('_db') ?? 'aalmgzmy_linkskoo_practice';
-      
+
       // Get level name for the selected level
       String levelName = "General";
-      
+
       // If we're not using "General", get the actual level name
       if (selectedLevelId != "0") {
         final levels = userBox.get('levels');
         if (levels != null && levels is List) {
           final selectedLevel = levels.firstWhere(
-            (level) => level['level_id'].toString() == selectedLevelId || level['id'].toString() == selectedLevelId,
+            (level) =>
+                level['level_id'].toString() == selectedLevelId ||
+                level['id'].toString() == selectedLevelId,
             orElse: () => {'level_name': 'Unknown Level'},
           );
           levelName = selectedLevel['level_name'] ?? 'Unknown Level';
         }
       }
-      
+
       // Prepare the payload according to API format - only including newly added assessments
       final Map<String, dynamic> payload = {
         'level_id': int.parse(selectedLevelId),
         'level_name': levelName,
         'general': 0, // Default to 0 for "General" option
-        'assessments': newAssessmentsForLevel.map((assessment) => {
-          'assessment_name': assessment.assessmentName,
-          'max_score': assessment.assessmentScore,
-          'level_id': assessment.levelId,
-          'type': assessment.assessmentType,
-        }).toList(),
+        'assessments': newAssessmentsForLevel
+            .map((assessment) => {
+                  'assessment_name': assessment.assessmentName,
+                  'max_score': assessment.assessmentScore,
+                  'level_id': assessment.levelId,
+                  'type': assessment.assessmentType,
+                })
+            .toList(),
         '_db': dbName,
       };
 
       // Send to API
       final response = await _assessmentService.createAssessment(payload);
-      
+
       if (!response.success) {
         throw Exception(response.message ?? 'Failed to save assessment');
       }
 
       // After successful save, clear the newly added assessments for this level
-      _newlyAddedAssessments.removeWhere((assessment) => assessment.levelId.toString() == selectedLevelId);
-      
+      _newlyAddedAssessments.removeWhere(
+          (assessment) => assessment.levelId.toString() == selectedLevelId);
+
       // Refresh assessments after saving
       await fetchAssessments();
     } catch (e) {
@@ -237,20 +251,20 @@ class AssessmentProvider with ChangeNotifier {
     try {
       final userBox = Hive.box('userData');
       final dbName = userBox.get('_db') ?? 'aalmgzmy_linkskoo_practice';
-      
+
       final response = await _assessmentService.getAssessments();
 
       if (response.success && response.rawData != null) {
         _assessments.clear();
-        
+
         // Parse the response according to the API format
         if (response.rawData!.containsKey('assessments')) {
           final assessmentsList = response.rawData!['assessments'] as List;
-          
+
           for (var levelData in assessmentsList) {
             final levelId = levelData['level_id'] ?? 0;
             final levelAssessments = levelData['assessments'] as List? ?? [];
-            
+
             for (var assessment in levelAssessments) {
               _assessments.add(Assessment(
                 id: assessment['id']?.toString(),
@@ -262,7 +276,7 @@ class AssessmentProvider with ChangeNotifier {
             }
           }
         }
-        
+
         // Clear newly added assessments after fetch since they're now saved
         _newlyAddedAssessments.clear();
       } else {

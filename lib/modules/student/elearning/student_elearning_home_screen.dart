@@ -69,12 +69,13 @@ class _StudentElearningScreenState extends State<StudentElearningScreen> {
 
     assessmentController = PageController(viewportFraction: 0.90);
     activityController = PageController(viewportFraction: 0.90);
-    
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final dashboardProvider = Provider.of<DashboardProvider>(context, listen: false);
+      final dashboardProvider =
+          Provider.of<DashboardProvider>(context, listen: false);
       dashboardProvider.fetchDashboardData(
-        class_id: getuserdata()['profile']['class_id'].toString(), 
-        level_id: getuserdata()['profile']['level_id'], 
+        class_id: getuserdata()['profile']['class_id'].toString(),
+        level_id: getuserdata()['profile']['level_id'],
         term: getuserdata()['settings']['term'],
       );
     });
@@ -98,9 +99,10 @@ class _StudentElearningScreenState extends State<StudentElearningScreen> {
   // FIXED: Use Consumer pattern to safely access provider
   Future<void> _handleAssessmentTap(int contentId, BuildContext context) async {
     try {
-      final provider = Provider.of<SingleelearningcontentProvider>(context, listen: false);
+      final provider =
+          Provider.of<SingleelearningcontentProvider>(context, listen: false);
       final data = await provider.fetchElearningContentData(contentId);
-      
+
       if (mounted) {
         setState(() {
           elearningContentData = data;
@@ -108,18 +110,18 @@ class _StudentElearningScreenState extends State<StudentElearningScreen> {
       }
 
       final userBox = Hive.box('userData');
-      final List<dynamic> quizzestaken = userBox.get('quizzes', defaultValue: []);
+      final List<dynamic> quizzestaken =
+          userBox.get('quizzes', defaultValue: []);
       int? theid = data?.id;
-      
+
       if (quizzestaken.contains(theid)) {
         Navigator.push(
           context,
           MaterialPageRoute(
             builder: (context) => SingleQuizScoreView(
-              childContent: data,
-              year: int.parse(getuserdata()['settings']['year']), 
-              term: getuserdata()['settings']['term']
-            ),
+                childContent: data,
+                year: int.parse(getuserdata()['settings']['year']),
+                term: getuserdata()['settings']['term']),
           ),
         );
       } else {
@@ -140,11 +142,13 @@ class _StudentElearningScreenState extends State<StudentElearningScreen> {
   }
 
   // FIXED: Handle activity tap with proper provider access
-  Future<void> _handleActivityTap(dynamic activity, BuildContext context) async {
+  Future<void> _handleActivityTap(
+      dynamic activity, BuildContext context) async {
     try {
-      final provider = Provider.of<SingleelearningcontentProvider>(context, listen: false);
+      final provider =
+          Provider.of<SingleelearningcontentProvider>(context, listen: false);
       final data = await provider.fetchElearningContentData(activity.id);
-      
+
       if (mounted) {
         setState(() {
           elearningContentData = data;
@@ -153,18 +157,18 @@ class _StudentElearningScreenState extends State<StudentElearningScreen> {
 
       if (data?.settings != null) {
         final userBox = Hive.box('userData');
-        final List<dynamic> quizzestaken = userBox.get('quizzes', defaultValue: []);
+        final List<dynamic> quizzestaken =
+            userBox.get('quizzes', defaultValue: []);
         final int? quizId = data?.settings!.id;
-        
+
         if (quizzestaken.contains(quizId)) {
           Navigator.push(
             context,
             MaterialPageRoute(
               builder: (context) => SingleQuizScoreView(
-                childContent: data,
-                year: int.parse(getuserdata()['settings']['year']), 
-                term: getuserdata()['settings']['term']
-              ),
+                  childContent: data,
+                  year: int.parse(getuserdata()['settings']['year']),
+                  term: getuserdata()['settings']['term']),
             ),
           );
         } else {
@@ -179,12 +183,14 @@ class _StudentElearningScreenState extends State<StudentElearningScreen> {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => SingleMaterialDetailScreen(childContent: data),
+            builder: (context) =>
+                SingleMaterialDetailScreen(childContent: data),
           ),
         );
       } else if (data?.type == "assignment") {
         final userBox = Hive.box('userData');
-        final List<dynamic> assignmentssubmitted = userBox.get('assignments', defaultValue: []);
+        final List<dynamic> assignmentssubmitted =
+            userBox.get('assignments', defaultValue: []);
         final int? assignmentId = data?.id;
 
         if (assignmentssubmitted.contains(assignmentId)) {
@@ -192,11 +198,10 @@ class _StudentElearningScreenState extends State<StudentElearningScreen> {
             context,
             MaterialPageRoute(
               builder: (context) => SingleAssignmentScoreView(
-                childContent: data,
-                year: int.parse(getuserdata()['settings']['year']), 
-                term: getuserdata()['settings']['term'], 
-                attachedMaterials: [""]
-              ),
+                  childContent: data,
+                  year: int.parse(getuserdata()['settings']['year']),
+                  term: getuserdata()['settings']['term'],
+                  attachedMaterials: [""]),
             ),
           );
         } else {
@@ -204,10 +209,7 @@ class _StudentElearningScreenState extends State<StudentElearningScreen> {
             context,
             MaterialPageRoute(
               builder: (context) => SingleAssignmentDetailsScreen(
-                childContent: data, 
-                title: data?.title, 
-                id: data?.id ?? 0
-              ),
+                  childContent: data, title: data?.title, id: data?.id ?? 0),
             ),
           );
         }
@@ -231,24 +233,24 @@ class _StudentElearningScreenState extends State<StudentElearningScreen> {
 
   getuserdata() {
     final userBox = Hive.box('userData');
-    final storedUserData = userBox.get('userData') ?? userBox.get('loginResponse');
-    final processedData = storedUserData is String
-        ? json.decode(storedUserData)
-        : storedUserData;
+    final storedUserData =
+        userBox.get('userData') ?? userBox.get('loginResponse');
+    final processedData =
+        storedUserData is String ? json.decode(storedUserData) : storedUserData;
     final response = processedData['response'] ?? processedData;
     final data = response['data'] ?? response;
     return data;
   }
 
-  void _navigateToCourseDetail(String courseTitle, DashboardData dashboardata, int syllabusid) {
+  void _navigateToCourseDetail(
+      String courseTitle, DashboardData dashboardata, int syllabusid) {
     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => CourseDetailScreen(
-          courseTitle: courseTitle, 
-          dashboardData: dashboardata, 
-          syllabusid: syllabusid
-        ),
+            courseTitle: courseTitle,
+            dashboardData: dashboardata,
+            syllabusid: syllabusid),
       ),
     );
   }
@@ -265,16 +267,17 @@ class _StudentElearningScreenState extends State<StudentElearningScreen> {
 
     final activities = dashboardData!.recentActivities;
     final courses = dashboardData!.availableCourses;
-    final recentQuizzes = dashboardData!.recentQuizzes; // FIXED: Renamed to avoid conflict
+    final recentQuizzes =
+        dashboardData!.recentQuizzes; // FIXED: Renamed to avoid conflict
 
     final userName = getuserdata()['profile']['name'] ?? 'Guest';
-      String getFirstName(String fullName) {
-  return fullName.trim().split(' ').last;
-}
+    String getFirstName(String fullName) {
+      return fullName.trim().split(' ').last;
+    }
 
     final Brightness brightness = Theme.of(context).brightness;
     opacity = brightness == Brightness.light ? 0.1 : 0.15;
-    
+
     return Scaffold(
       appBar: CustomStudentAppBar(
         title: 'Welcome',
@@ -303,7 +306,8 @@ class _StudentElearningScreenState extends State<StudentElearningScreen> {
                   itemBuilder: (context, index) {
                     final assessment = recentQuizzes[index];
                     return GestureDetector(
-                      onTap: () => _handleAssessmentTap(assessment.id, context), // FIXED: Use the new method
+                      onTap: () => _handleAssessmentTap(
+                          assessment.id, context), // FIXED: Use the new method
                       child: Container(
                         margin: const EdgeInsets.symmetric(horizontal: 8.0),
                         decoration: BoxDecoration(
@@ -330,7 +334,8 @@ class _StudentElearningScreenState extends State<StudentElearningScreen> {
                                   color: Colors.white,
                                 ),
                                 child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
                                   children: [
                                     Expanded(
                                       child: Text(
@@ -346,7 +351,8 @@ class _StudentElearningScreenState extends State<StudentElearningScreen> {
                                 ),
                               ),
                               Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 8.0, vertical: 4.0),
                                 decoration: BoxDecoration(
                                   borderRadius: BorderRadius.circular(8.0),
                                   color: AppColors.paymentTxtColor1,
@@ -375,7 +381,8 @@ class _StudentElearningScreenState extends State<StudentElearningScreen> {
                               ),
                               const SizedBox(height: 24),
                               Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceEvenly,
                                 children: [
                                   Column(
                                     children: [
@@ -401,7 +408,8 @@ class _StudentElearningScreenState extends State<StudentElearningScreen> {
                                     height: 40,
                                     width: 1,
                                     color: Colors.white,
-                                    margin: const EdgeInsets.symmetric(horizontal: 16.0),
+                                    margin: const EdgeInsets.symmetric(
+                                        horizontal: 16.0),
                                   ),
                                   Column(
                                     children: [
@@ -427,7 +435,8 @@ class _StudentElearningScreenState extends State<StudentElearningScreen> {
                                     height: 40,
                                     width: 1,
                                     color: Colors.white,
-                                    margin: const EdgeInsets.symmetric(horizontal: 16.0),
+                                    margin: const EdgeInsets.symmetric(
+                                        horizontal: 16.0),
                                   ),
                                   Column(
                                     children: [
@@ -494,11 +503,12 @@ class _StudentElearningScreenState extends State<StudentElearningScreen> {
                 height: 110,
                 child: PageView.builder(
                   controller: activityController,
-                  itemCount: activities?.length,
+                  itemCount: activities.length,
                   itemBuilder: (context, index) {
-                    final activity = activities?[index];
+                    final activity = activities[index];
                     return GestureDetector(
-                      onTap: () => _handleActivityTap(activity, context), // FIXED: Use the new method
+                      onTap: () => _handleActivityTap(
+                          activity, context), // FIXED: Use the new method
                       child: Container(
                         margin: const EdgeInsets.symmetric(horizontal: 8.0),
                         child: Card(
@@ -511,34 +521,42 @@ class _StudentElearningScreenState extends State<StudentElearningScreen> {
                                 // FIXED: Replace invalid asset with placeholder
                                 CircleAvatar(
                                   backgroundColor: Colors.grey[300],
-                                  child: Icon(Icons.person, color: Colors.grey[600]),
+                                  child: Icon(Icons.person,
+                                      color: Colors.grey[600]),
                                 ),
                                 const SizedBox(width: 8),
                                 Expanded(
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     mainAxisAlignment: MainAxisAlignment.center,
                                     children: [
                                       RichText(
                                         text: TextSpan(
-                                          style: const TextStyle(color: Colors.black, fontSize: 14),
+                                          style: const TextStyle(
+                                              color: Colors.black,
+                                              fontSize: 14),
                                           children: [
-                                            TextSpan(text: '${activity?.createdBy} '),
                                             TextSpan(
-                                              text: '${activity?.type} ',
-                                              style: const TextStyle(fontWeight: FontWeight.normal)
-                                            ),
+                                                text: '${activity.createdBy} '),
                                             TextSpan(
-                                              text: '${activity?.courseName}',
-                                              style: const TextStyle(fontWeight: FontWeight.bold)
-                                            ),
+                                                text: '${activity.type} ',
+                                                style: const TextStyle(
+                                                    fontWeight:
+                                                        FontWeight.normal)),
+                                            TextSpan(
+                                                text: activity.courseName,
+                                                style: const TextStyle(
+                                                    fontWeight:
+                                                        FontWeight.bold)),
                                           ],
                                         ),
                                       ),
                                       const SizedBox(height: 4),
                                       Text(
-                                        activity!.datePosted,
-                                        style: const TextStyle(color: Colors.grey, fontSize: 12),
+                                        activity.datePosted,
+                                        style: const TextStyle(
+                                            color: Colors.grey, fontSize: 12),
                                       ),
                                     ],
                                   ),
@@ -575,9 +593,11 @@ class _StudentElearningScreenState extends State<StudentElearningScreen> {
                 itemCount: courses.length,
                 itemBuilder: (context, index) {
                   final course = courses[index];
-                  final svgBackground = courseBackgrounds[index % courseBackgrounds.length];
+                  final svgBackground =
+                      courseBackgrounds[index % courseBackgrounds.length];
                   return GestureDetector(
-                    onTap: () => _navigateToCourseDetail(course.courseName, dashboardData!, course.syllabusId),
+                    onTap: () => _navigateToCourseDetail(
+                        course.courseName, dashboardData!, course.syllabusId),
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(12.0),
                       child: Stack(

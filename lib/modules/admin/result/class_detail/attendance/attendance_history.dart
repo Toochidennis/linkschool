@@ -3,13 +3,11 @@ import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/common/widgets/portal/result_attendance/attendance_app_bar.dart';
-import 'package:linkschool/modules/model/admin/register_model.dart';
 import 'package:linkschool/modules/providers/admin/attendance_provider.dart';
 import 'package:linkschool/modules/services/api/service_locator.dart';
 import 'package:provider/provider.dart';
 import 'package:hive/hive.dart';
 import 'dart:math';
-
 
 class AttendanceHistoryScreen extends StatefulWidget {
   final String date;
@@ -22,10 +20,12 @@ class AttendanceHistoryScreen extends StatefulWidget {
   });
 
   @override
-  _AttendanceHistoryScreenState createState() => _AttendanceHistoryScreenState();
+  _AttendanceHistoryScreenState createState() =>
+      _AttendanceHistoryScreenState();
 }
 
-class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> with RouteAware {
+class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen>
+    with RouteAware {
   final colors = [AppColors.videoColor7, AppColors.attHistColor1];
   final random = Random();
   late List<bool> _isChecked;
@@ -41,7 +41,6 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> with 
       _fetchAttendanceDetails();
     });
   }
-
 
   @override
   void didPopNext() {
@@ -60,7 +59,8 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> with 
         attendanceId: widget.attendanceId!,
         dbName: dbName,
       );
-      final studentCount = attendanceProvider.attendanceDetails?.register?.length ?? 0;
+      final studentCount =
+          attendanceProvider.attendanceDetails?.register?.length ?? 0;
       setState(() {
         _isChecked = List<bool>.filled(studentCount, true);
         _isSelected = List<bool>.filled(studentCount, false);
@@ -89,9 +89,11 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> with 
               return Center(child: Text('Error: ${attendanceProvider.error}'));
             }
 
-            final students = attendanceProvider.attendanceDetails?.register ?? [];
+            final students =
+                attendanceProvider.attendanceDetails?.register ?? [];
             if (students.isEmpty) {
-              return const Center(child: Text('No students found for this attendance.'));
+              return const Center(
+                  child: Text('No students found for this attendance.'));
             }
 
             return Container(
@@ -115,7 +117,8 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> with 
                       child: Column(
                         children: [
                           Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 5.0),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 16.0, vertical: 5.0),
                             child: Row(
                               children: [
                                 Padding(
@@ -125,7 +128,8 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> with 
                                     backgroundColor: circleColor,
                                     child: Text(
                                       student.name[0],
-                                      style: const TextStyle(color: Colors.white, fontSize: 20),
+                                      style: const TextStyle(
+                                          color: Colors.white, fontSize: 20),
                                     ),
                                   ),
                                 ),
@@ -143,7 +147,9 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> with 
                                     _isChecked[index]
                                         ? Icons.check_circle
                                         : Icons.check_circle_outline,
-                                    color: _isChecked[index] ? Colors.green : Colors.grey,
+                                    color: _isChecked[index]
+                                        ? Colors.green
+                                        : Colors.grey,
                                   ),
                                   onPressed: () {
                                     setState(() {
@@ -168,7 +174,3 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> with 
     );
   }
 }
-
-
-
-

@@ -45,16 +45,15 @@ class StudentProvider extends ChangeNotifier {
     try {
       final userBox = Hive.box('userData');
       final loginData = userBox.get('userData') ?? userBox.get('loginResponse');
-      
+
       if (loginData != null) {
-        Map<String, dynamic> processedData = loginData is String 
-            ? json.decode(loginData) 
-            : loginData;
-        
+        Map<String, dynamic> processedData =
+            loginData is String ? json.decode(loginData) : loginData;
+
         final response = processedData['response'] ?? processedData;
         final data = response['data'] ?? response;
         final profile = data['profile'] ?? {};
-        
+
         // Check if this matches the requested student ID
         final profileId = profile['id'] ?? profile['staff_id'];
         if (profileId != null && profileId.toString() == studentId.toString()) {
@@ -81,12 +80,13 @@ class StudentProvider extends ChangeNotifier {
       _errorMessage = '';
       notifyListeners();
 
-      final fetchedTerms = await _studentService.getStudentResultTerms(studentId);
+      final fetchedTerms =
+          await _studentService.getStudentResultTerms(studentId);
       _studentTerms = fetchedTerms;
 
       // Try to find student in existing lists first
       Student? foundStudent;
-      
+
       try {
         foundStudent = _allStudents.firstWhere(
           (student) => student.id == studentId,
@@ -245,7 +245,8 @@ class StudentProvider extends ChangeNotifier {
               if (student is Map && student.containsKey('id')) {
                 final idString = student['id'].toString();
                 final studentId = int.tryParse(idString) ?? -1;
-                if (studentId != -1 && !_attendedStudentIds.contains(studentId)) {
+                if (studentId != -1 &&
+                    !_attendedStudentIds.contains(studentId)) {
                   _attendedStudentIds.add(studentId);
                 }
               }
@@ -253,7 +254,8 @@ class StudentProvider extends ChangeNotifier {
           }
         }
       } else {
-        debugPrint('No existing attendance records found for class $classId on $date');
+        debugPrint(
+            'No existing attendance records found for class $classId on $date');
       }
 
       // Update student attendance status
@@ -314,7 +316,8 @@ class StudentProvider extends ChangeNotifier {
               if (student is Map && student.containsKey('id')) {
                 final idString = student['id'].toString();
                 final studentId = int.tryParse(idString) ?? -1;
-                if (studentId != -1 && !_attendedStudentIds.contains(studentId)) {
+                if (studentId != -1 &&
+                    !_attendedStudentIds.contains(studentId)) {
                   _attendedStudentIds.add(studentId);
                 }
               }
@@ -322,7 +325,8 @@ class StudentProvider extends ChangeNotifier {
           }
         }
       } else {
-        debugPrint('No existing attendance records found for course $courseId on $date');
+        debugPrint(
+            'No existing attendance records found for course $courseId on $date');
       }
 
       // Update student attendance status
@@ -363,7 +367,8 @@ class StudentProvider extends ChangeNotifier {
       _isLoading = true;
       notifyListeners();
 
-      final selectedStudents = _students.where((student) => student.isSelected).toList();
+      final selectedStudents =
+          _students.where((student) => student.isSelected).toList();
       final success = await _studentService.saveCourseAttendance(
         classId: classId,
         courseId: courseId,
@@ -441,7 +446,8 @@ class StudentProvider extends ChangeNotifier {
         debugPrint("Loaded attended students: $_attendedStudentIds");
         for (int i = 0; i < _students.length; i++) {
           final isAttended = _attendedStudentIds.contains(_students[i].id);
-          debugPrint("Student ${_students[i].id}: ${_students[i].name} - isAttended: $isAttended");
+          debugPrint(
+              "Student ${_students[i].id}: ${_students[i].name} - isAttended: $isAttended");
           _students[i] = _students[i].copyWith(hasAttended: isAttended);
         }
         notifyListeners();
@@ -496,7 +502,8 @@ class StudentProvider extends ChangeNotifier {
       _isLoading = true;
       notifyListeners();
 
-      final selectedStudents = _students.where((student) => student.isSelected).toList();
+      final selectedStudents =
+          _students.where((student) => student.isSelected).toList();
       final success = await _studentService.saveAttendance(
         classId: classId,
         courseId: courseId,
@@ -637,7 +644,8 @@ class StudentProvider extends ChangeNotifier {
       // Validate parameters
       if (classId.isEmpty || levelId.isEmpty || year.isEmpty) {
         _isLoading = false;
-        _errorMessage = 'Invalid parameters: classId, levelId, or year is empty';
+        _errorMessage =
+            'Invalid parameters: classId, levelId, or year is empty';
         debugPrint(_errorMessage);
         notifyListeners();
         return;
@@ -670,5 +678,3 @@ class StudentProvider extends ChangeNotifier {
     }
   }
 }
-
-

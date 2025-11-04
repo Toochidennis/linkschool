@@ -15,10 +15,12 @@ class StaffQuestionPreviewScreen extends StatefulWidget {
   const StaffQuestionPreviewScreen({super.key, required this.question});
 
   @override
-  State<StaffQuestionPreviewScreen> createState() => _StaffQuestionPreviewScreenState();
+  State<StaffQuestionPreviewScreen> createState() =>
+      _StaffQuestionPreviewScreenState();
 }
 
-class _StaffQuestionPreviewScreenState extends State<StaffQuestionPreviewScreen> {
+class _StaffQuestionPreviewScreenState
+    extends State<StaffQuestionPreviewScreen> {
   List<Map<String, dynamic>> createdQuestions = [];
   late double opacity;
   late Question currentQuestion;
@@ -724,4 +726,3 @@ class _StaffQuestionPreviewScreenState extends State<StaffQuestionPreviewScreen>
     return '${duration.inHours}h ${duration.inMinutes.remainder(60)}m';
   }
 }
-

@@ -1,13 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
-import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/custom_toaster.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/providers/admin/e_learning/mark_assignment_provider.dart';
 import 'package:linkschool/modules/services/api/service_locator.dart';
 
 class QuizAttempt {
- 
   final int questionNumber;
   final String questionText;
   final String userAnswer;
@@ -19,7 +17,6 @@ class QuizAttempt {
   int? customMarks;
 
   QuizAttempt({
-    
     required this.questionNumber,
     required this.questionText,
     required this.userAnswer,
@@ -55,8 +52,11 @@ class QuizResultsScreen extends StatefulWidget {
   final String contentId;
   final VoidCallback? onGraded;
 
-
-  const QuizResultsScreen({Key? key, required this.students, required this.contentId, this.onGraded}) : super(key: key);
+  const QuizResultsScreen(
+      {super.key,
+      required this.students,
+      required this.contentId,
+      this.onGraded});
 
   @override
   State<QuizResultsScreen> createState() => _QuizResultsScreenState();
@@ -223,25 +223,28 @@ class _QuizResultsScreenState extends State<QuizResultsScreen> {
         ),
       ),
       floatingActionButton: FloatingActionButton(
-          backgroundColor: AppColors.primaryLight,
-        onPressed: () async{
-           try {
-  final  markProvider = locator<MarkAssignmentProvider>();
+        backgroundColor: AppColors.primaryLight,
+        onPressed: () async {
+          try {
+            final markProvider = locator<MarkAssignmentProvider>();
 
-    //await  markProvider.markQuiz(widget.quizId,_getTotalPossibleScore().toString());
-    await  markProvider.markQuiz(widget.contentId,_getTotalPossibleScore().toString());
-    
-    print('Returning submission id: ${widget.contentId}');
-    //print('Grader id: ${widget.quizId}, name: ');
-    CustomToaster.toastSuccess(context, 'Returned', 'Grade shared with student');
-    widget.onGraded?.call();
-    Navigator.pop(context, true);
-  } catch (e) {
-    CustomToaster.toastError(context, 'Error', 'Could not return submission');
-  }},
+            //await  markProvider.markQuiz(widget.quizId,_getTotalPossibleScore().toString());
+            await markProvider.markQuiz(
+                widget.contentId, _getTotalPossibleScore().toString());
+
+            print('Returning submission id: ${widget.contentId}');
+            //print('Grader id: ${widget.quizId}, name: ');
+            CustomToaster.toastSuccess(
+                context, 'Returned', 'Grade shared with student');
+            widget.onGraded?.call();
+            Navigator.pop(context, true);
+          } catch (e) {
+            CustomToaster.toastError(
+                context, 'Error', 'Could not return submission');
+          }
+        },
         child: Icon(Icons.grading_rounded),
-        ),
-        
+      ),
     );
   }
 
@@ -477,22 +480,22 @@ class _QuizResultsScreenState extends State<QuizResultsScreen> {
     Color statusColor = _getStatusColor(displayStatus);
 
     final isQuestionImage =
-        (attempt.questionText.toLowerCase().endsWith('.jpg') ) ||
+        (attempt.questionText.toLowerCase().endsWith('.jpg')) ||
             (attempt.questionText.toLowerCase().endsWith('.jpeg')) ||
             (attempt.questionText.toLowerCase().endsWith('.png')) ||
             (attempt.questionText.toLowerCase().contains('photo'));
-            
+
     final isUserAnswerImage =
         (attempt.userAnswer.toLowerCase().endsWith('.jpg')) ||
-            (attempt.userAnswer.toLowerCase().endsWith('.jpeg') ) ||
-            (attempt.userAnswer.toLowerCase().endsWith('.png') ) ||
-            (attempt.userAnswer.toLowerCase().contains('photo') );
+            (attempt.userAnswer.toLowerCase().endsWith('.jpeg')) ||
+            (attempt.userAnswer.toLowerCase().endsWith('.png')) ||
+            (attempt.userAnswer.toLowerCase().contains('photo'));
 
     final isCorrectAnswerImage =
-        (attempt.correctAnswer.toLowerCase().endsWith('.jpg') ) ||
+        (attempt.correctAnswer.toLowerCase().endsWith('.jpg')) ||
             (attempt.correctAnswer.toLowerCase().endsWith('.jpeg')) ||
             (attempt.correctAnswer.toLowerCase().endsWith('.png')) ||
-            (attempt.correctAnswer.toLowerCase().contains('photo') );
+            (attempt.correctAnswer.toLowerCase().contains('photo'));
 
     return Container(
       decoration: BoxDecoration(
@@ -526,12 +529,8 @@ class _QuizResultsScreenState extends State<QuizResultsScreen> {
             ),
             const SizedBox(height: 12),
             isQuestionImage
-                ? Image.network(
-                  "https://linkskool.net/${attempt.questionText}",
-                    width: 220,  
-                   height: 180, 
-                   fit: BoxFit.cover
-                  )
+                ? Image.network("https://linkskool.net/${attempt.questionText}",
+                    width: 220, height: 180, fit: BoxFit.cover)
                 : Text(
                     attempt.questionText,
                     style: const TextStyle(
@@ -546,23 +545,20 @@ class _QuizResultsScreenState extends State<QuizResultsScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-
                 isUserAnswerImage
-                 ? Image.network(
-                  "https://linkskool.net/${attempt.userAnswer}",
-                  width: 220,  
-                   height: 180, 
-                  fit: BoxFit.cover           
-                  
-                  )
-               : const Text(
-                  'Student answer:',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                    color: Colors.black87,
-                  ),
-                ),
+                    ? Image.network(
+                        "https://linkskool.net/${attempt.userAnswer}",
+                        width: 220,
+                        height: 180,
+                        fit: BoxFit.cover)
+                    : const Text(
+                        'Student answer:',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                          color: Colors.black87,
+                        ),
+                      ),
                 Flexible(
                   child: Text(
                     attempt.userAnswer.isEmpty
@@ -595,32 +591,29 @@ class _QuizResultsScreenState extends State<QuizResultsScreen> {
                   ),
                 ),
                 isCorrectAnswerImage
-                 ? Image.network(
-                  "https://linkskool.net/${attempt.userAnswer}",
-                   width: 220,  
-                   height: 180,  
-                  fit: BoxFit.cover
-                  )
-               : Flexible(
-                  child: Text(
-                    attempt.correctAnswer,
-                    textAlign: TextAlign.right,
-                    style: const TextStyle(
-                      fontSize: 14,
-                      color: Colors.green,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ),
+                    ? Image.network(
+                        "https://linkskool.net/${attempt.userAnswer}",
+                        width: 220,
+                        height: 180,
+                        fit: BoxFit.cover)
+                    : Flexible(
+                        child: Text(
+                          attempt.correctAnswer,
+                          textAlign: TextAlign.right,
+                          style: const TextStyle(
+                            fontSize: 14,
+                            color: Colors.green,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
               ],
             ),
             const SizedBox(height: 16),
 
             // Marking buttons
             Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-              if (attempt.userAnswer == null ||
-                  attempt.userAnswer.isEmpty ||
-                  attempt.userAnswer == 'No an')
+              if (attempt.userAnswer.isEmpty || attempt.userAnswer == 'No an')
                 _buildStatusButton(
                   'No answer',
                   Colors.blue,
@@ -647,7 +640,7 @@ class _QuizResultsScreenState extends State<QuizResultsScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
-                  Container(
+                  SizedBox(
                     width: 50,
                     height: 30,
                     child: TextFormField(

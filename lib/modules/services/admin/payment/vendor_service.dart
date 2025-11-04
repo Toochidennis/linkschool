@@ -64,9 +64,8 @@ class VendorService {
   }
 
   Future<ApiResponse<void>> deleteVendor(int vendorId) async {
-
     try {
-            final userBox = Hive.box('userData');
+      final userBox = Hive.box('userData');
       final db = userBox.get('_db');
 
       final response = await _apiService.delete<Map<String, dynamic>>(
@@ -75,11 +74,10 @@ class VendorService {
           '_db': db,
         },
         fromJson: (json) => json,
-        addDatabaseParam: false, 
+        addDatabaseParam: false,
       );
 
       return response;
-
     } catch (e) {
       print('Error deleting vendor: $e');
       return ApiResponse<Map<String, dynamic>>.error(
@@ -87,29 +85,32 @@ class VendorService {
         500,
       );
     }
-
   }
-    // return await _apiService.delete<void>(
-    //   endpoint: 'portal/payments/vendors/$vendorId',
-    //   body: {},
-    // ); 
-  Future<ApiResponse<List<VendorTransactionYear>>> fetchVendorTransactionHistory(int vendorId) async {
+
+  // return await _apiService.delete<void>(
+  //   endpoint: 'portal/payments/vendors/$vendorId',
+  //   body: {},
+  // );
+  Future<ApiResponse<List<VendorTransactionYear>>>
+      fetchVendorTransactionHistory(int vendorId) async {
     return await _apiService.get<List<VendorTransactionYear>>(
       endpoint: 'portal/payments/vendors/$vendorId/transactions/annual',
-      fromJson: (json) => (json['data'] as List).map((e) => VendorTransactionYear.fromJson(e)).toList(),
+      fromJson: (json) => (json['data'] as List)
+          .map((e) => VendorTransactionYear.fromJson(e))
+          .toList(),
     );
   }
 
-  Future<ApiResponse<List<VendorTransactionDetail>>> fetchVendorTransactionDetails(int vendorId, int year) async {
+  Future<ApiResponse<List<VendorTransactionDetail>>>
+      fetchVendorTransactionDetails(int vendorId, int year) async {
     return await _apiService.get<List<VendorTransactionDetail>>(
       endpoint: 'portal/payments/vendors/$vendorId/transactions/$year',
-      fromJson: (json) => (json['data'] as List).map((e) => VendorTransactionDetail.fromJson(e)).toList(),
+      fromJson: (json) => (json['data'] as List)
+          .map((e) => VendorTransactionDetail.fromJson(e))
+          .toList(),
     );
   }
 }
-
-
-
 
 // import 'package:linkschool/modules/model/admin/vendor/vendor_model.dart';
 // import 'package:linkschool/modules/services/api/api_service.dart';

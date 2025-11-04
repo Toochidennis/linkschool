@@ -248,7 +248,7 @@ class _PaymentDashboardScreenState extends State<PaymentDashboardScreen> {
                                   context,
                                   MaterialPageRoute(
                                       builder: (context) =>
-                                           ExpenditureScreen()),
+                                          ExpenditureScreen()),
                                 );
                               },
                             )
@@ -267,8 +267,10 @@ class _PaymentDashboardScreenState extends State<PaymentDashboardScreen> {
                                 Navigator.push(
                                   context,
                                   MaterialPageRoute(
-                                    builder: (context) => TransactionHistoryScreen(
-                                      transactions: _dashboardData?.transactions ?? [],
+                                    builder: (context) =>
+                                        TransactionHistoryScreen(
+                                      transactions:
+                                          _dashboardData?.transactions ?? [],
                                     ),
                                   ),
                                 );
@@ -286,9 +288,7 @@ class _PaymentDashboardScreenState extends State<PaymentDashboardScreen> {
                         ),
                         const SizedBox(height: 16),
                         if (_dashboardData?.transactions.isNotEmpty == true)
-                          ..._dashboardData!.transactions
-                              .take(10)
-                              .map(
+                          ..._dashboardData!.transactions.take(10).map(
                                 (transaction) => _buildTransactionItem(
                                   transaction.name,
                                   transaction.date,
@@ -297,7 +297,6 @@ class _PaymentDashboardScreenState extends State<PaymentDashboardScreen> {
                                   transaction, // transaction object
                                 ),
                               )
-                              .toList()
                         else
                           const Center(
                             child: Text('No transactions available'),
@@ -710,5 +709,3 @@ class _PaymentDashboardScreenState extends State<PaymentDashboardScreen> {
     );
   }
 }
-
-

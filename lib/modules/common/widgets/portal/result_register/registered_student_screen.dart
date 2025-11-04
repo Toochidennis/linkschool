@@ -19,7 +19,8 @@ class RegisteredStudentsScreen extends StatefulWidget {
   });
 
   @override
-  State<RegisteredStudentsScreen> createState() => _RegisteredStudentsScreenState();
+  State<RegisteredStudentsScreen> createState() =>
+      _RegisteredStudentsScreenState();
 }
 
 class _RegisteredStudentsScreenState extends State<RegisteredStudentsScreen> {
@@ -32,7 +33,8 @@ class _RegisteredStudentsScreenState extends State<RegisteredStudentsScreen> {
 
   Future<void> _fetchRegisteredStudents() async {
     // Use CourseRegistrationProvider to fetch registered students
-    final provider = Provider.of<CourseRegistrationProvider>(context, listen: false);
+    final provider =
+        Provider.of<CourseRegistrationProvider>(context, listen: false);
     await provider.fetchRegisteredCourses(
       widget.classId,
       widget.termValue.toString(),
@@ -154,7 +156,8 @@ class _RegisteredStudentsScreenState extends State<RegisteredStudentsScreen> {
           itemBuilder: (context, index) {
             final student = activeStudents[index];
             return ListTile(
-              contentPadding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+              contentPadding:
+                  const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
               title: Text(
                 student.studentName ?? 'Unknown Student',
                 style: AppTextStyles.normal600(
@@ -197,5 +200,3 @@ class _RegisteredStudentsScreenState extends State<RegisteredStudentsScreen> {
     );
   }
 }
-
-

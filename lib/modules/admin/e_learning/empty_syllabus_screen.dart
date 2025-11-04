@@ -15,8 +15,6 @@ import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/model/e-learning/syllabus_model.dart';
 import 'package:linkschool/modules/providers/admin/e_learning/delete_sylabus_content.dart';
 import 'package:linkschool/modules/providers/admin/e_learning/syllabus_provider.dart';
-import 'package:linkschool/modules/services/admin/e_learning/syllabus_service.dart';
-import 'package:linkschool/modules/services/api/api_service.dart';
 import 'package:provider/provider.dart';
 
 class EmptySyllabusScreen extends StatefulWidget {
@@ -27,22 +25,22 @@ class EmptySyllabusScreen extends StatefulWidget {
   final String? course_name;
   final String? term;
 
-  const EmptySyllabusScreen({
-    super.key,
-    required this.selectedSubject,
-    this.courseId,
-    this.classId,
-    this.levelId,
-    this.course_name,
-   this.term
-  });
+  const EmptySyllabusScreen(
+      {super.key,
+      required this.selectedSubject,
+      this.courseId,
+      this.classId,
+      this.levelId,
+      this.course_name,
+      this.term});
 
   @override
   State<EmptySyllabusScreen> createState() => _EmptySyllabusScreenState();
 }
 
-class _EmptySyllabusScreenState extends State<EmptySyllabusScreen> with WidgetsBindingObserver {
-  List<Map<String, dynamic>> _syllabusList = [];
+class _EmptySyllabusScreenState extends State<EmptySyllabusScreen>
+    with WidgetsBindingObserver {
+  final List<Map<String, dynamic>> _syllabusList = [];
   bool isLoading = false;
   late SyllabusProvider _syllabusProvider;
   late double opacity;
@@ -59,7 +57,7 @@ class _EmptySyllabusScreenState extends State<EmptySyllabusScreen> with WidgetsB
   @override
   void initState() {
     super.initState();
-   
+
     _syllabusProvider = Provider.of<SyllabusProvider>(context, listen: false);
     _loadSyllabuses();
   }
@@ -67,7 +65,7 @@ class _EmptySyllabusScreenState extends State<EmptySyllabusScreen> with WidgetsB
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
-      _loadSyllabuses(); 
+      _loadSyllabuses();
     }
   }
 
@@ -79,7 +77,7 @@ class _EmptySyllabusScreenState extends State<EmptySyllabusScreen> with WidgetsB
 
   Future<void> _loadSyllabuses() async {
     setState(() => isLoading = true);
-    
+
     try {
       // Check for nulls and handle gracefully
       if (widget.levelId == null || widget.levelId!.isEmpty) {
@@ -98,15 +96,16 @@ class _EmptySyllabusScreenState extends State<EmptySyllabusScreen> with WidgetsB
 
       if (term.isEmpty) {
         final userBox = Hive.box('userData');
-        final storedUserData = userBox.get('userData') ?? userBox.get('loginResponse');
+        final storedUserData =
+            userBox.get('userData') ?? userBox.get('loginResponse');
         final processedData = storedUserData is String
             ? json.decode(storedUserData)
-          : storedUserData;
-      final response = processedData['response'] ?? processedData;
-      final data = response['data'] ?? response;
-      final settings = data['settings'] ?? {};
-      term = settings['term']?.toString() ?? ''; 
-    }
+            : storedUserData;
+        final response = processedData['response'] ?? processedData;
+        final data = response['data'] ?? response;
+        final settings = data['settings'] ?? {};
+        term = settings['term']?.toString() ?? '';
+      }
       print('Handler: Loading syllabuses for levelId: $levelId, term: $term');
       print('Handler: courseId: ${widget.term}, classId: ${widget.classId}');
 
@@ -114,62 +113,61 @@ class _EmptySyllabusScreenState extends State<EmptySyllabusScreen> with WidgetsB
       if (levelId.isEmpty) {
         throw Exception('Level ID is required but not provided');
       }
-      
-await _syllabusProvider.fetchSyllabus(levelId, term,courseId);
-      print("handler: qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq courses selected $courseId");
+
+      await _syllabusProvider.fetchSyllabus(levelId, term, courseId);
+      print(
+          "handler: qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq courses selected $courseId");
       final syllabusModels = _syllabusProvider.syllabusList;
       print('Handler: Received ${syllabusModels.length} syllabus models');
-      
+
       if (_syllabusProvider.error.isNotEmpty) {
         throw Exception(_syllabusProvider.error);
       }
-      
+
       setState(() {
         _syllabusList.clear();
-    _syllabusList.addAll(
-      syllabusModels.asMap().entries.map((entry) {
-        final index = entry.key;
-        final syllabus = entry.value;
-        if (syllabus.id == null) {
-          print('Warning: Syllabus at index $index has null ID');
-          return null; // Skip invalid syllabuses
-        }
+        _syllabusList.addAll(syllabusModels.asMap().entries.map((entry) {
+          final index = entry.key;
+          final syllabus = entry.value;
+          if (syllabus.id == null) {
+            print('Warning: Syllabus at index $index has null ID');
+            return null; // Skip invalid syllabuses
+          }
 
-        final classNames = syllabus.classes
-            .map((classInfo) => classInfo.name)
-            .join(', ');
-        final selectedClass = classNames.isEmpty ? 'No classes selected' : classNames;
+          final classNames =
+              syllabus.classes.map((classInfo) => classInfo.name).join(', ');
+          final selectedClass =
+              classNames.isEmpty ? 'No classes selected' : classNames;
 
-        return {
-          'id': syllabus.id,
-          'title': syllabus.title,
-          'description': syllabus.description,
-          'author_name': syllabus.authorName,
-          'term': syllabus.term,
-          'upload_date': syllabus.uploadDate,
-          'classes': syllabus.classes,
-          'selectedClass': selectedClass,
-          'selectedTeacher': syllabus.authorName,
-          'backgroundImagePath': _imagePaths.isNotEmpty
-              ? _imagePaths[index % _imagePaths.length]
-              : '',
-          // Add the missing fields with defaults
-          'course_id': syllabus.courseId ?? widget.courseId ?? '',
-          'course_name': syllabus.courseName ?? widget.course_name ?? '',
-          'level_id': syllabus.levelId ?? widget.levelId ?? '',
-          'creator_id': syllabus.creatorId ?? '',
-        };
-      }).whereType<Map<String, dynamic>>()
-    );
+          return {
+            'id': syllabus.id,
+            'title': syllabus.title,
+            'description': syllabus.description,
+            'author_name': syllabus.authorName,
+            'term': syllabus.term,
+            'upload_date': syllabus.uploadDate,
+            'classes': syllabus.classes,
+            'selectedClass': selectedClass,
+            'selectedTeacher': syllabus.authorName,
+            'backgroundImagePath': _imagePaths.isNotEmpty
+                ? _imagePaths[index % _imagePaths.length]
+                : '',
+            // Add the missing fields with defaults
+            'course_id': syllabus.courseId ?? widget.courseId ?? '',
+            'course_name': syllabus.courseName ?? widget.course_name ?? '',
+            'level_id': syllabus.levelId ?? widget.levelId ?? '',
+            'creator_id': syllabus.creatorId ?? '',
+          };
+        }).whereType<Map<String, dynamic>>());
       });
-      
-      print('Handler: Successfully processed ${_syllabusList.length} syllabuses for UI');
-      
+
+      print(
+          'Handler: Successfully processed ${_syllabusList.length} syllabuses for UI');
     } catch (e) {
       print('Handler Error: $e');
       if (mounted) {
-        CustomToaster.toastError(context, 'Error', 'Failed to load syllabuses: $e');
-        
+        CustomToaster.toastError(
+            context, 'Error', 'Failed to load syllabuses: $e');
       }
     } finally {
       if (mounted) {
@@ -178,35 +176,36 @@ await _syllabusProvider.fetchSyllabus(levelId, term,courseId);
     }
   }
 
-  void updateSyllabus(int index, String newTitle,String newDescription,List<ClassModel> newClasses) async{
+  void updateSyllabus(int index, String newTitle, String newDescription,
+      List<ClassModel> newClasses) async {
     final int syllabusId = _syllabusList[index]['id'];
-    final String term = _syllabusList[index]["term"] ;
-    final String levelId = widget.levelId ?? "" ;
-    SyllabusProvider syllabusProvider = Provider.of<SyllabusProvider>(context, listen: false);
-     try{
-       await syllabusProvider.UpdateSyllabus(
-         title: newTitle,
-         description: newDescription,
-         term: term,
-         levelId: levelId,
-         syllabusId: syllabusId,
-         classes: newClasses,
-       );
-       CustomToaster.toastSuccess(
-         context,
-         'Syllabus Updated',
-         'Syllabus updated successfully',
-        );
-        
-       _loadSyllabuses();
-     }catch(e){
+    final String term = _syllabusList[index]["term"];
+    final String levelId = widget.levelId ?? "";
+    SyllabusProvider syllabusProvider =
+        Provider.of<SyllabusProvider>(context, listen: false);
+    try {
+      await syllabusProvider.UpdateSyllabus(
+        title: newTitle,
+        description: newDescription,
+        term: term,
+        levelId: levelId,
+        syllabusId: syllabusId,
+        classes: newClasses,
+      );
+      CustomToaster.toastSuccess(
+        context,
+        'Syllabus Updated',
+        'Syllabus updated successfully',
+      );
+
+      _loadSyllabuses();
+    } catch (e) {
       CustomToaster.toastError(
         context,
         'Error',
         'Failed to update syllabus: $e',
       );
-    
-     };
+    }
   }
 
   @override
@@ -248,12 +247,11 @@ await _syllabusProvider.fetchSyllabus(levelId, term,courseId);
           ),
         ),
       ),
-    body: RefreshIndicator(
-     onRefresh: _loadSyllabuses,
+      body: RefreshIndicator(
+        onRefresh: _loadSyllabuses,
         child: Container(
           decoration: Constants.customBoxDecoration(context),
-          child: 
-          isLoading
+          child: isLoading
               ? const Center(child: CircularProgressIndicator())
               : _syllabusList.isEmpty
                   ? _buildEmptyState()
@@ -261,7 +259,7 @@ await _syllabusProvider.fetchSyllabus(levelId, term,courseId);
         ),
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: _addNewSyllabus(), 
+        onPressed: _addNewSyllabus(),
         backgroundColor: AppColors.videoColor4,
         child: SvgPicture.asset(
           'assets/icons/e_learning/plus.svg',
@@ -300,44 +298,44 @@ await _syllabusProvider.fetchSyllabus(levelId, term,courseId);
 
   Widget _buildSyllabusList() {
     print('Building syllabus list with ${_syllabusList.length} items');
-    print('Widget parameters - classId: ${widget.classId}, levelId: ${widget.levelId}, courseId: ${widget.courseId}, course_name: ${widget.course_name}');
+    print(
+        'Widget parameters - classId: ${widget.classId}, levelId: ${widget.levelId}, courseId: ${widget.courseId}, course_name: ${widget.course_name}');
 
     return ListView.builder(
       itemCount: _syllabusList.length,
       itemBuilder: (context, index) {
         return GestureDetector(
           onTap: () => Navigator.push(
-          
             context,
             MaterialPageRoute(
-              builder: (context) => 
-              
-              EmptySubjectScreen(
-                 syllabusId: _syllabusList[index]['id'] as int?,
-                 syllabusClasses: (_syllabusList[index]['classes'] as List<ClassModel>?)
-    ?.map((c) => c.toJson()).toList() ?? [],
+              builder: (context) => EmptySubjectScreen(
+                syllabusId: _syllabusList[index]['id'] as int?,
+                syllabusClasses:
+                    (_syllabusList[index]['classes'] as List<ClassModel>?)
+                            ?.map((c) => c.toJson())
+                            .toList() ??
+                        [],
                 classId: widget.classId,
                 courseId: widget.courseId,
                 levelId: widget.levelId,
-                authorName:  _syllabusList[index]['author_name']?.toString() ?? '',
+                authorName:
+                    _syllabusList[index]['author_name']?.toString() ?? '',
                 courseName: widget.course_name,
                 term: _syllabusList[index]['term']?.toString() ?? '',
                 courseTitle: _syllabusList[index]['title']?.toString() ?? '',
               ),
               settings: const RouteSettings(name: '/empty_subject'),
             ),
-            
           ),
-
           child: _buildOutlineContainers(_syllabusList[index], index),
         );
       },
     );
-    
   }
 
   VoidCallback _addNewSyllabus() {
-    print("Adding new ${widget.courseId} syllabus with  ${widget.term} levelId: ${widget.levelId}, course_name: ${widget.course_name}");
+    print(
+        "Adding new ${widget.courseId} syllabus with  ${widget.term} levelId: ${widget.levelId}, course_name: ${widget.course_name}");
     return () async {
       await Navigator.of(context).push(
         MaterialPageRoute(
@@ -354,50 +352,52 @@ await _syllabusProvider.fetchSyllabus(levelId, term,courseId);
     };
   }
 
- void _editSyllabus(int index) async {
-  final result = await Navigator.of(context).push(
-    MaterialPageRoute(
-      builder: (BuildContext context) => CreateSyllabusScreen(
-        syllabusData: _syllabusList[index],
-        classId: widget.classId,
-        courseId: widget.courseId,
-        levelId: widget.levelId,
-        courseName: widget.course_name,
+  void _editSyllabus(int index) async {
+    final result = await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (BuildContext context) => CreateSyllabusScreen(
+          syllabusData: _syllabusList[index],
+          classId: widget.classId,
+          courseId: widget.courseId,
+          levelId: widget.levelId,
+          courseName: widget.course_name,
+        ),
       ),
-    ),
-  );
+    );
 
     // If the user saved changes, result should contain the new values
-  if (result != null && result is Map<String, dynamic>) {
-    final String newTitle = result['title'];
-    final String newDescription = result['description'];
-    final List<ClassModel> newClasses = result['classes'];
-    updateSyllabus(index, newTitle, newDescription, newClasses);
+    if (result != null && result is Map<String, dynamic>) {
+      final String newTitle = result['title'];
+      final String newDescription = result['description'];
+      final List<ClassModel> newClasses = result['classes'];
+      updateSyllabus(index, newTitle, newDescription, newClasses);
+    }
   }
 
-}
-  void _deleteSyllabus(int index) async{
+  void _deleteSyllabus(int index) async {
     final int syllabusId = _syllabusList[index]['id'];
-    final String term = _syllabusList[index]["term"] ;
+    final String term = _syllabusList[index]["term"];
     final String levelId = widget.levelId!;
     final String courseId = widget.courseId!;
-    final deleteProvider =Provider.of<DeleteSyllabusProvider>(context,listen:false);
-   
-try{
-    await  deleteProvider.deletesyllabus(syllabusId);
-    CustomToaster.toastSuccess(
-      context,
-      'Syllabus Deleted',
-      'Syllabus deleted successfully',
-    );
-       _loadSyllabuses();
-}catch(e){
-  CustomToaster.toastError(
-    context,
-    'Error',
-   "${e.toString()}",
-  );
-  }}
+    final deleteProvider =
+        Provider.of<DeleteSyllabusProvider>(context, listen: false);
+
+    try {
+      await deleteProvider.deletesyllabus(syllabusId);
+      CustomToaster.toastSuccess(
+        context,
+        'Syllabus Deleted',
+        'Syllabus deleted successfully',
+      );
+      _loadSyllabuses();
+    } catch (e) {
+      CustomToaster.toastError(
+        context,
+        'Error',
+        e.toString(),
+      );
+    }
+  }
 
   void _confirmDeleteSyllabus(int index) {
     showDialog(
@@ -433,7 +433,6 @@ try{
               onPressed: () {
                 Navigator.of(context).pop();
                 _deleteSyllabus(index);
-                
               },
               child: Text(
                 'Yes',
@@ -531,6 +530,3 @@ try{
     );
   }
 }
-
-
-

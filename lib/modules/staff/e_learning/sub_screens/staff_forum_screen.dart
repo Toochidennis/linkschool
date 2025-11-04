@@ -7,10 +7,7 @@ import 'package:linkschool/modules/common/text_styles.dart';
 class StaffForumScreen extends StatelessWidget {
   final Map<String, dynamic>? currentSyllabus;
 
-  const StaffForumScreen({
-    super.key, 
-    required this.currentSyllabus
-  });
+  const StaffForumScreen({super.key, required this.currentSyllabus});
 
   @override
   Widget build(BuildContext context) {
@@ -18,9 +15,9 @@ class StaffForumScreen extends StatelessWidget {
       width: double.infinity,
       height: double.infinity,
       decoration: Constants.customBoxDecoration(context),
-      child: currentSyllabus == null 
-        ? _buildEmptyState(context) 
-        : _buildForumContent(context),
+      child: currentSyllabus == null
+          ? _buildEmptyState(context)
+          : _buildForumContent(context),
     );
   }
 

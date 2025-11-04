@@ -32,7 +32,6 @@ class _StaffDashboardState extends State<StaffDashboard> {
     _selectedIndex = widget.selectedIndex;
   }
 
-
   Widget _buildBodyItem(int index) {
     switch (index) {
       case 0:
@@ -57,7 +56,8 @@ class _StaffDashboardState extends State<StaffDashboard> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text('Profile', style: TextStyle(fontSize: 24, color: Colors.white)),
+            Text('Profile',
+                style: TextStyle(fontSize: 24, color: Colors.white)),
             SizedBox(height: 20),
             ElevatedButton(
               onPressed: widget.onLogout,

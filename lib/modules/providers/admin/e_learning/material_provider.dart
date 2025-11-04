@@ -9,25 +9,24 @@ class MaterialProvider extends ChangeNotifier {
 
   Future<void> addMaterial(Map<String, dynamic> material) async {
     isLoading = true;
-    error = null; 
+    error = null;
     notifyListeners();
     try {
       await _materialService.AddMaterial(material);
     } catch (e) {
-      print('Error adding material: $e');
       rethrow;
     }
     isLoading = false;
     notifyListeners();
   }
-  Future<void> UpDateMaterial(Map<String, dynamic> material ,int id) async {
+
+  Future<void> UpDateMaterial(Map<String, dynamic> material, int id) async {
     isLoading = true;
-    error = null; 
+    error = null;
     notifyListeners();
     try {
-      await _materialService.UpDateMaterial(material,id);
+      await _materialService.UpDateMaterial(material, id);
     } catch (e) {
-      print('Error adding material: $e');
       rethrow;
     }
     isLoading = false;
@@ -46,6 +45,4 @@ class MaterialProvider extends ChangeNotifier {
     isLoading = false;
     notifyListeners();
   }
-
-  
 }

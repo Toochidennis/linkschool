@@ -1,5 +1,3 @@
-import 'dart:convert';
-
 class StudentPhoto {
   final String? file;
   final String? fileName;
@@ -43,10 +41,10 @@ class Students {
   final int? country;
   final String? email;
   final String? religion;
-  final String? guardianName;        // Changed to nullable
-  final String? guardianAddress;     // Changed to nullable
+  final String? guardianName; // Changed to nullable
+  final String? guardianAddress; // Changed to nullable
   final String? guardianEmail;
-  final String? guardianPhoneNo;     // Changed to nullable
+  final String? guardianPhoneNo; // Changed to nullable
   final String? lgaOrigin;
   final String? stateOrigin;
   final String? nationality;
@@ -94,7 +92,7 @@ class Students {
   factory Students.fromJson(Map<String, dynamic> json) {
     StudentPhoto? photoObj;
     String? photoPathStr;
-    
+
     // Handle photo field - can be null, string path, or object
     if (json['photo'] != null) {
       if (json['photo'] is String) {

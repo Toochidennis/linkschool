@@ -31,10 +31,11 @@ class _ReceiptStatisticsViewState extends State<ReceiptStatisticsView> {
   @override
   void initState() {
     super.initState();
-    _filterParams = Map.from(widget.initialParams ?? {
-      'report_type': 'monthly',
-      'group_by': 'level',
-    });
+    _filterParams = Map.from(widget.initialParams ??
+        {
+          'report_type': 'monthly',
+          'group_by': 'level',
+        });
     _loadData();
   }
 
@@ -43,7 +44,7 @@ class _ReceiptStatisticsViewState extends State<ReceiptStatisticsView> {
     try {
       final userBox = Hive.box('userData');
       _filterParams['_db'] = userBox.get('_db');
-      
+
       final response = await _paymentService.getIncomeReport(_filterParams);
       setState(() {
         _incomeData = response;
@@ -51,7 +52,8 @@ class _ReceiptStatisticsViewState extends State<ReceiptStatisticsView> {
       });
     } catch (e) {
       setState(() => _isLoading = false);
-      CustomToaster.toastError(context, 'Error', 'Failed to load statistics: $e');
+      CustomToaster.toastError(
+          context, 'Error', 'Failed to load statistics: $e');
     }
   }
 
@@ -95,7 +97,8 @@ class _ReceiptStatisticsViewState extends State<ReceiptStatisticsView> {
                     child: Container(
                       height: 50,
                       decoration: BoxDecoration(
-                        color: const Color.fromRGBO(209, 219, 255, 1).withOpacity(0.35),
+                        color: const Color.fromRGBO(209, 219, 255, 1)
+                            .withOpacity(0.35),
                         borderRadius: BorderRadius.circular(4),
                       ),
                       padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -104,27 +107,32 @@ class _ReceiptStatisticsViewState extends State<ReceiptStatisticsView> {
                         children: [
                           Text(
                             '${_filterParams['report_type']?.toString().capitalize() ?? 'Monthly'} report',
-                            style: AppTextStyles.normal500(fontSize: 14, color: AppColors.backgroundDark),
+                            style: AppTextStyles.normal500(
+                                fontSize: 14, color: AppColors.backgroundDark),
                           ),
                           GestureDetector(
                             onTap: () {
                               // Handle filter action
                             },
-                            child: SvgPicture.asset('assets/icons/profile/filter_icon.svg', height: 24, width: 24),
+                            child: SvgPicture.asset(
+                                'assets/icons/profile/filter_icon.svg',
+                                height: 24,
+                                width: 24),
                           ),
                         ],
                       ),
                     ),
                   ),
 
-                  
                   Padding(
                     padding: const EdgeInsets.all(16.0),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          _filterParams['group_by'] == 'level' ? 'Payments by Level' : 'Daily Payments',
+                          _filterParams['group_by'] == 'level'
+                              ? 'Payments by Level'
+                              : 'Daily Payments',
                           style: const TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w600,
@@ -135,20 +143,26 @@ class _ReceiptStatisticsViewState extends State<ReceiptStatisticsView> {
                         SizedBox(
                           height: 300,
                           child: dailyPayments.isEmpty
-                              ? const Center(child: Text('No chart data available', style: TextStyle(color: Colors.black)))
+                              ? const Center(
+                                  child: Text('No chart data available',
+                                      style: TextStyle(color: Colors.black)))
                               : BarChart(
                                   BarChartData(
                                     alignment: BarChartAlignment.spaceAround,
-                                    maxY: dailyPayments.isNotEmpty 
-                                        ? dailyPayments.reduce((a, b) => a > b ? a : b) * 1.1 
+                                    maxY: dailyPayments.isNotEmpty
+                                        ? dailyPayments.reduce(
+                                                (a, b) => a > b ? a : b) *
+                                            1.1
                                         : 30000,
                                     barTouchData: BarTouchData(
                                       enabled: true,
                                       touchTooltipData: BarTouchTooltipData(
-                                        getTooltipItem: (group, groupIndex, rod, rodIndex) {
+                                        getTooltipItem:
+                                            (group, groupIndex, rod, rodIndex) {
                                           return BarTooltipItem(
                                             '₦${rod.toY.toStringAsFixed(0)}\n${chartLabels.length > groupIndex ? chartLabels[groupIndex] : ''}',
-                                            const TextStyle(color: Colors.white),
+                                            const TextStyle(
+                                                color: Colors.white),
                                           );
                                         },
                                       ),
@@ -161,14 +175,18 @@ class _ReceiptStatisticsViewState extends State<ReceiptStatisticsView> {
                                           reservedSize: 30,
                                           getTitlesWidget: (value, meta) {
                                             final index = value.toInt();
-                                            if (index < 0 || index >= chartLabels.length) {
+                                            if (index < 0 ||
+                                                index >= chartLabels.length) {
                                               return const Text('');
                                             }
                                             return Padding(
-                                              padding: const EdgeInsets.all(8.0),
+                                              padding:
+                                                  const EdgeInsets.all(8.0),
                                               child: Text(
                                                 chartLabels[index],
-                                                style: const TextStyle(fontSize: 12, color: Colors.black),
+                                                style: const TextStyle(
+                                                    fontSize: 12,
+                                                    color: Colors.black),
                                               ),
                                             );
                                           },
@@ -181,19 +199,28 @@ class _ReceiptStatisticsViewState extends State<ReceiptStatisticsView> {
                                           getTitlesWidget: (value, meta) {
                                             return Text(
                                               '${(value / 1000).toInt()}k',
-                                              style: const TextStyle(fontSize: 12, color: Colors.black),
+                                              style: const TextStyle(
+                                                  fontSize: 12,
+                                                  color: Colors.black),
                                             );
                                           },
                                         ),
                                       ),
-                                      rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                                      topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                                      rightTitles: const AxisTitles(
+                                          sideTitles:
+                                              SideTitles(showTitles: false)),
+                                      topTitles: const AxisTitles(
+                                          sideTitles:
+                                              SideTitles(showTitles: false)),
                                     ),
                                     gridData: FlGridData(
                                       show: true,
-                                      horizontalInterval: dailyPayments.isNotEmpty 
-                                          ? dailyPayments.reduce((a, b) => a > b ? a : b) / 5 
-                                          : 5000,
+                                      horizontalInterval:
+                                          dailyPayments.isNotEmpty
+                                              ? dailyPayments.reduce(
+                                                      (a, b) => a > b ? a : b) /
+                                                  5
+                                              : 5000,
                                       drawVerticalLine: false,
                                     ),
                                     borderData: FlBorderData(show: false),
@@ -204,9 +231,11 @@ class _ReceiptStatisticsViewState extends State<ReceiptStatisticsView> {
                                         barRods: [
                                           BarChartRodData(
                                             toY: dailyPayments[index],
-                                            color: const Color.fromRGBO(209, 219, 255, 1),
+                                            color: const Color.fromRGBO(
+                                                209, 219, 255, 1),
                                             width: 20,
-                                            borderRadius: BorderRadius.circular(4),
+                                            borderRadius:
+                                                BorderRadius.circular(4),
                                           ),
                                         ],
                                       ),
@@ -236,13 +265,21 @@ class _ReceiptStatisticsViewState extends State<ReceiptStatisticsView> {
                         SizedBox(
                           height: 200,
                           child: transactions.isEmpty
-                              ? const Center(child: Text('No distribution data available'))
+                              ? const Center(
+                                  child: Text('No distribution data available'))
                               : PieChart(
                                   PieChartData(
-                                    sections: transactions.take(3).toList().asMap().entries.map((entry) {
+                                    sections: transactions
+                                        .take(3)
+                                        .toList()
+                                        .asMap()
+                                        .entries
+                                        .map((entry) {
                                       final index = entry.key;
                                       final trans = entry.value;
-                                      final value = trans.totalAmount ?? trans.amount ?? 0.0;
+                                      final value = trans.totalAmount ??
+                                          trans.amount ??
+                                          0.0;
                                       final colors = [
                                         const Color.fromRGBO(209, 219, 255, 1),
                                         const Color.fromRGBO(47, 85, 221, 1),
@@ -276,7 +313,8 @@ class _ReceiptStatisticsViewState extends State<ReceiptStatisticsView> {
                       child: Container(
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: const Color.fromRGBO(209, 219, 255, 1).withOpacity(0.2),
+                          color: const Color.fromRGBO(209, 219, 255, 1)
+                              .withOpacity(0.2),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Column(
@@ -294,7 +332,8 @@ class _ReceiptStatisticsViewState extends State<ReceiptStatisticsView> {
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                const Text('Total Amount:', style: TextStyle(color: Colors.black)),
+                                const Text('Total Amount:',
+                                    style: TextStyle(color: Colors.black)),
                                 Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
@@ -306,7 +345,9 @@ class _ReceiptStatisticsViewState extends State<ReceiptStatisticsView> {
                                     const SizedBox(width: 2),
                                     Text(
                                       summary.totalAmount.toStringAsFixed(2),
-                                      style: const TextStyle(fontWeight: FontWeight.w600, color: Colors.black),
+                                      style: const TextStyle(
+                                          fontWeight: FontWeight.w600,
+                                          color: Colors.black),
                                     ),
                                   ],
                                 ),
@@ -316,10 +357,13 @@ class _ReceiptStatisticsViewState extends State<ReceiptStatisticsView> {
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                const Text('Total Transactions:', style: TextStyle(color: Colors.black)),
+                                const Text('Total Transactions:',
+                                    style: TextStyle(color: Colors.black)),
                                 Text(
                                   '${summary.totalTransactions}',
-                                  style: const TextStyle(fontWeight: FontWeight.w600, color: Colors.black),
+                                  style: const TextStyle(
+                                      fontWeight: FontWeight.w600,
+                                      color: Colors.black),
                                 ),
                               ],
                             ),
@@ -327,10 +371,13 @@ class _ReceiptStatisticsViewState extends State<ReceiptStatisticsView> {
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                const Text('Unique Students:', style: TextStyle(color: Colors.black)),
+                                const Text('Unique Students:',
+                                    style: TextStyle(color: Colors.black)),
                                 Text(
                                   '${summary.uniqueStudents}',
-                                  style: const TextStyle(fontWeight: FontWeight.w600, color: Colors.black),
+                                  style: const TextStyle(
+                                      fontWeight: FontWeight.w600,
+                                      color: Colors.black),
                                 ),
                               ],
                             ),
@@ -350,23 +397,28 @@ class _ReceiptStatisticsViewState extends State<ReceiptStatisticsView> {
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w600,
-                            color: Colors.black,                            
+                            color: Colors.black,
                           ),
                         ),
                         const SizedBox(height: 16),
                         transactions.isEmpty
-                            ? const Center(child: Text('No transactions available'))
+                            ? const Center(
+                                child: Text('No transactions available'))
                             : ListView.builder(
                                 shrinkWrap: true,
                                 physics: const NeverScrollableScrollPhysics(),
                                 itemCount: transactions.take(5).length,
                                 itemBuilder: (context, index) {
                                   final item = transactions[index];
-                                  final displayName = item.name.isNotEmpty ? item.name : 'Unknown';
-                                  final displayAmount = item.totalAmount ?? item.amount ?? 0.0;
-                                  
+                                  final displayName = item.name.isNotEmpty
+                                      ? item.name
+                                      : 'Unknown';
+                                  final displayAmount =
+                                      item.totalAmount ?? item.amount ?? 0.0;
+
                                   return Padding(
-                                    padding: const EdgeInsets.only(bottom: 12.0),
+                                    padding:
+                                        const EdgeInsets.only(bottom: 12.0),
                                     child: Row(
                                       children: [
                                         Text(
@@ -440,7 +492,6 @@ class _ReceiptStatisticsViewState extends State<ReceiptStatisticsView> {
   }
 }
 
-
 // Extension to capitalize strings
 extension StringExtension on String {
   String capitalize() {
@@ -449,17 +500,12 @@ extension StringExtension on String {
   }
 }
 
-
-
-
-
 // import 'package:flutter/material.dart';
 // import 'package:flutter_svg/svg.dart';
 // import 'package:fl_chart/fl_chart.dart';
 // import 'package:linkschool/modules/common/app_colors.dart';
 // import 'package:linkschool/modules/common/constants.dart';
 // import 'package:linkschool/modules/common/text_styles.dart';
-
 
 // class ReceiptStatisticsView extends StatelessWidget {
 //   const ReceiptStatisticsView({super.key});
@@ -494,7 +540,7 @@ extension StringExtension on String {
 //               ),
 //             ),
 //           ),
-      
+
 //             // Existing Date and Session Picker Row
 //             Padding(
 //               padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -538,7 +584,7 @@ extension StringExtension on String {
 //                 ],
 //               ),
 //             ),
-      
+
 //             // Daily Payments Section
 //             Padding(
 //               padding: const EdgeInsets.all(16.0),
@@ -621,7 +667,7 @@ extension StringExtension on String {
 //                 ],
 //               ),
 //             ),
-      
+
 //             // Payments Distribution Section
 //             Padding(
 //               padding: const EdgeInsets.all(16.0),
@@ -683,7 +729,7 @@ extension StringExtension on String {
 //                 ],
 //               ),
 //             ),
-      
+
 //             // Leaderboard Section
 //             Padding(
 //               padding: const EdgeInsets.all(16.0),
@@ -710,7 +756,7 @@ extension StringExtension on String {
 //                         {'name': 'Water', 'amount': '₦20,790.00'},
 //                         {'name': 'Water', 'amount': '₦20,790.00'},
 //                       ];
-                      
+
 //                       return Padding(
 //                         padding: const EdgeInsets.only(bottom: 12.0),
 //                         child: Row(

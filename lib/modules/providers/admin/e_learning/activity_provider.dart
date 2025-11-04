@@ -2,7 +2,6 @@ import 'package:flutter/foundation.dart';
 import 'package:linkschool/modules/model/e-learning/activity_model.dart';
 import 'package:linkschool/modules/services/admin/e_learning/activity_service.dart';
 
-
 class OverviewProvider with ChangeNotifier {
   final OverviewService _overviewService;
 

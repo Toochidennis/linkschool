@@ -23,17 +23,20 @@ class StaffEditSkillsBehaviourScreen extends StatefulWidget {
   });
 
   @override
-  State<StaffEditSkillsBehaviourScreen> createState() => _StaffEditSkillsBehaviourScreenState();
+  State<StaffEditSkillsBehaviourScreen> createState() =>
+      _StaffEditSkillsBehaviourScreenState();
 }
 
-class _StaffEditSkillsBehaviourScreenState extends State<StaffEditSkillsBehaviourScreen> {
+class _StaffEditSkillsBehaviourScreenState
+    extends State<StaffEditSkillsBehaviourScreen> {
   late double opacity;
   final Map<int, Map<int, TextEditingController>> _controllers = {};
 
   @override
   void initState() {
     super.initState();
-    final skillsProvider = Provider.of<SkillsBehaviorTableProvider>(context, listen: false);
+    final skillsProvider =
+        Provider.of<SkillsBehaviorTableProvider>(context, listen: false);
     skillsProvider.fetchSkillsAndBehaviours(
       classId: widget.classId,
       levelId: widget.levelId,
@@ -141,7 +144,8 @@ class _StaffEditSkillsBehaviourScreenState extends State<StaffEditSkillsBehaviou
   }
 
   void _saveChanges() async {
-    final provider = Provider.of<SkillsBehaviorTableProvider>(context, listen: false);
+    final provider =
+        Provider.of<SkillsBehaviorTableProvider>(context, listen: false);
     final skillsPayload = {
       'skills': <Map<String, dynamic>>[],
       'year': widget.year,
@@ -198,7 +202,8 @@ class _StaffEditSkillsBehaviourScreenState extends State<StaffEditSkillsBehaviou
     }
   }
 
-  Widget _buildSubjectsTable(List<SkillsBehaviorTable> skills, List<StudentSkillBehaviorTable> students) {
+  Widget _buildSubjectsTable(List<SkillsBehaviorTable> skills,
+      List<StudentSkillBehaviorTable> students) {
     return Padding(
       padding: const EdgeInsets.all(16.0),
       child: Container(
@@ -282,7 +287,8 @@ class _StaffEditSkillsBehaviourScreenState extends State<StaffEditSkillsBehaviou
     );
   }
 
-  Widget _buildScrollableColumn(String title, double width, List<StudentSkillBehaviorTable> students, int skillId, int skillIndex) {
+  Widget _buildScrollableColumn(String title, double width,
+      List<StudentSkillBehaviorTable> students, int skillId, int skillIndex) {
     return Container(
       width: width,
       decoration: BoxDecoration(
@@ -313,7 +319,10 @@ class _StaffEditSkillsBehaviourScreenState extends State<StaffEditSkillsBehaviou
             final studentIndex = entry.key;
             final student = entry.value;
             _controllers.putIfAbsent(studentIndex, () => {});
-            _controllers[studentIndex]!.putIfAbsent(skillId, () => TextEditingController(text: student.skills[skillId] ?? ''));
+            _controllers[studentIndex]!.putIfAbsent(
+                skillId,
+                () =>
+                    TextEditingController(text: student.skills[skillId] ?? ''));
 
             return Container(
               height: 50,
@@ -354,7 +363,8 @@ class CustomToaster {
     MotionToast.success(
       title: Text(title, style: const TextStyle(color: Colors.white)),
       description: Text(message, style: const TextStyle(color: Colors.white)),
-      animationType: AnimationType.fromTop,      contentPadding: const EdgeInsets.all(10),
+      animationType: AnimationType.fromTop,
+      contentPadding: const EdgeInsets.all(10),
     ).show(context);
   }
 
@@ -362,7 +372,8 @@ class CustomToaster {
     MotionToast.error(
       title: Text(title, style: const TextStyle(color: Colors.white)),
       description: Text(message, style: const TextStyle(color: Colors.white)),
-      animationType: AnimationType.fromTop,      contentPadding: const EdgeInsets.all(10),
+      animationType: AnimationType.fromTop,
+      contentPadding: const EdgeInsets.all(10),
     ).show(context);
   }
 }

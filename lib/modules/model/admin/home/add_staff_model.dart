@@ -95,7 +95,8 @@ class Staff {
 
   // Check if staff is active
   bool get isActive {
-    return employmentStatus == '1' || employmentStatus?.toLowerCase() == 'active';
+    return employmentStatus == '1' ||
+        employmentStatus?.toLowerCase() == 'active';
   }
 
   factory Staff.fromJson(Map<String, dynamic> json) {
@@ -191,29 +192,29 @@ class Staff {
   }
 
   // Convert to display map for UI compatibility
- Map<String, dynamic> toDisplayMap() {
-  // Map access level to role with a simpler approach
-  String displayRole;
-  if (accessLevel == 'admin') {
-    displayRole = 'Admin';
-  } else {
-    displayRole = 'Staff';
+  Map<String, dynamic> toDisplayMap() {
+    // Map access level to role with a simpler approach
+    String displayRole;
+    if (accessLevel == 'admin') {
+      displayRole = 'Admin';
+    } else {
+      displayRole = 'Staff';
+    }
+
+    return {
+      'id': staffNo,
+      'name': fullName,
+      'email': emailAddress ?? 'No email',
+      'phone': phoneNumber ?? 'No phone',
+      'gender': gender ?? 'male',
+      'role': displayRole, // Now returns either 'Admin' or 'Staff'
+      'courses': <String>[],
+      'level': '',
+      'class': '',
+      'status': isActive ? 'Active' : 'Inactive',
+      'joinDate': employmentDate ?? '',
+      'salary': '',
+      'address': address ?? '',
+    };
   }
-  
-  return {
-    'id': staffNo,
-    'name': fullName,
-    'email': emailAddress ?? 'No email',
-    'phone': phoneNumber ?? 'No phone',
-    'gender': gender ?? 'male',
-    'role': displayRole,  // Now returns either 'Admin' or 'Staff'
-    'courses': <String>[], 
-    'level': '',
-    'class': '',
-    'status': isActive ? 'Active' : 'Inactive',
-    'joinDate': employmentDate ?? '',
-    'salary': '',
-    'address': address ?? '',
-  };
-}
 }

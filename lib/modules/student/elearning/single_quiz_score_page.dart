@@ -6,21 +6,16 @@ import 'package:intl/intl.dart';
 import 'package:linkschool/modules/model/student/single_elearningcontentmodel.dart';
 import 'package:linkschool/modules/model/student/submitted_quiz_model.dart';
 import 'package:linkschool/modules/student/elearning/pdf_reader.dart';
-import 'package:linkschool/modules/student/elearning/resubmit_modal.dart';
 import 'package:provider/provider.dart';
 
-import 'package:linkschool/modules/model/student/submitted_assignment_model.dart';
-import 'package:linkschool/modules/providers/student/marked_assignment_provider.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../common/app_colors.dart';
 import '../../common/custom_toaster.dart';
 import '../../common/text_styles.dart';
-import '../../model/student/assignment_submissions_model.dart';
 import '../../model/student/comment_model.dart';
 import '../../providers/student/student_comment_provider.dart';
 import '../../providers/student/marked_quiz_provider.dart';
-
 
 class SingleQuizScoreView extends StatefulWidget {
   final int year;
@@ -28,12 +23,11 @@ class SingleQuizScoreView extends StatefulWidget {
   final SingleElearningContentData? childContent;
 
   const SingleQuizScoreView({
-    Key? key,
+    super.key,
     required this.childContent,
     required this.year,
     required this.term,
-
-  }) : super(key: key);
+  });
 
   @override
   State<SingleQuizScoreView> createState() => _SingleQuizScoreViewState();
@@ -44,7 +38,6 @@ class _SingleQuizScoreViewState extends State<SingleQuizScoreView> {
   int? academicTerm;
   int? academicYear;
   bool isLoading = true;
-
 
   @override
   void initState() {
@@ -58,11 +51,10 @@ class _SingleQuizScoreViewState extends State<SingleQuizScoreView> {
   }
 
   Future<void> _loadUserData() async {
-
-
     try {
       final userBox = Hive.box('userData');
-      final storedUserData = userBox.get('userData') ?? userBox.get('loginResponse');
+      final storedUserData =
+          userBox.get('userData') ?? userBox.get('loginResponse');
       if (storedUserData != null) {
         final processedData = storedUserData is String
             ? json.decode(storedUserData)
@@ -74,32 +66,34 @@ class _SingleQuizScoreViewState extends State<SingleQuizScoreView> {
 
         setState(() {
           academicYear = settings['year'];
-          academicTerm = settings['term'] ;
+          academicTerm = settings['term'];
         });
       }
-
     } catch (e) {
       print('Error loading user data: $e');
     }
-
   }
-
 
   Future<void> fetchMarkedQuiz() async {
     final provider = Provider.of<MarkedQuizProvider>(context, listen: false);
-    final data = await provider.fetchMarkedQuiz(widget.childContent?.settings!.id ?? 0 , widget.year , widget.term );
+    final data = await provider.fetchMarkedQuiz(
+        widget.childContent?.settings!.id ?? 0, widget.year, widget.term);
 
     setState(() {
       markedquiz = data;
       isLoading = false;
     });
   }
+
   void _showAddCommentModal(BuildContext context) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) =>  AddCommentModal( childContent: widget.childContent,title: widget.childContent?.title ??"", id: widget.childContent?.id),
+      builder: (context) => AddCommentModal(
+          childContent: widget.childContent,
+          title: widget.childContent?.title ?? "",
+          id: widget.childContent?.id),
     );
   }
 
@@ -108,7 +102,12 @@ class _SingleQuizScoreViewState extends State<SingleQuizScoreView> {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) =>  YourWorkModal(childContent: widget.childContent, year: widget.year, term: widget.term, markedquiz: markedquiz,),
+      builder: (context) => YourWorkModal(
+        childContent: widget.childContent,
+        year: widget.year,
+        term: widget.term,
+        markedquiz: markedquiz,
+      ),
     );
   }
 
@@ -143,14 +142,17 @@ class _SingleQuizScoreViewState extends State<SingleQuizScoreView> {
 
   @override
   Widget build(BuildContext context) {
-    if (isLoading || markedquiz== null) {
+    if (isLoading || markedquiz == null) {
       return const Scaffold(
-        body:  Center(
-          child: Column(mainAxisAlignment: MainAxisAlignment.center,
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-
               CircularProgressIndicator(),
-              Text("Loading your marked quiz" ,style: TextStyle(color: AppColors.paymentBtnColor1),),
+              Text(
+                "Loading your marked quiz",
+                style: TextStyle(color: AppColors.paymentBtnColor1),
+              ),
             ],
           ),
         ),
@@ -199,7 +201,7 @@ class _SingleQuizScoreViewState extends State<SingleQuizScoreView> {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  "${markedquiz?.score} Points"  "",
+                  "${markedquiz?.score} Points" "",
                   style: TextStyle(
                     fontSize: 18,
                     color: Colors.grey,
@@ -223,13 +225,14 @@ class _SingleQuizScoreViewState extends State<SingleQuizScoreView> {
                           ),
                         ),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 6),
                           decoration: BoxDecoration(
                             color: Colors.blue.withOpacity(0.1),
                             borderRadius: BorderRadius.circular(16),
                           ),
                           child: Text(
-                            "Score: ${markedquiz?.score }", // <-- quiz score
+                            "Score: ${markedquiz?.score}", // <-- quiz score
                             style: const TextStyle(
                               fontSize: 14,
                               color: Colors.blue,
@@ -245,7 +248,6 @@ class _SingleQuizScoreViewState extends State<SingleQuizScoreView> {
                     // Questions & Answers
                   ],
                 )
-
               ],
             ),
           ),
@@ -261,7 +263,7 @@ class _SingleQuizScoreViewState extends State<SingleQuizScoreView> {
             child: Container(
               width: double.infinity,
               padding: const EdgeInsets.all(32),
-              child:  Column(
+              child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
@@ -280,18 +282,16 @@ class _SingleQuizScoreViewState extends State<SingleQuizScoreView> {
 
           // Bottom Section
           GestureDetector(
-            onTap: (){
+            onTap: () {
               _showYourWorkModal(context);
-            }
-            ,
+            },
             child: Container(
               padding: const EdgeInsets.all(32),
               decoration: BoxDecoration(
                 color: Colors.grey.shade200,
                 borderRadius: BorderRadius.circular(10),
               ),
-              child:
-              Column(
+              child: Column(
                 children: [
                   // Bottom line indicator
                   Container(
@@ -326,7 +326,7 @@ class _SingleQuizScoreViewState extends State<SingleQuizScoreView> {
                           color: Colors.grey.withOpacity(0.1),
                           borderRadius: BorderRadius.circular(16),
                         ),
-                        child:  Text(
+                        child: Text(
                           markedquiz?.score ?? "",
                           style: TextStyle(
                             fontSize: 14,
@@ -376,12 +376,13 @@ class _SingleQuizScoreViewState extends State<SingleQuizScoreView> {
                         Expanded(
                           child: Text(
                             markedquiz?.answers.isNotEmpty == true
-                                ? markedquiz?.answers[0].question ??"No Q"
-                                : "No file",                            style: TextStyle(
-                            fontSize: 16,
-                            color: Colors.black87,
-                            fontWeight: FontWeight.w500,
-                          ),
+                                ? markedquiz?.answers[0].question ?? "No Q"
+                                : "No file",
+                            style: TextStyle(
+                              fontSize: 16,
+                              color: Colors.black87,
+                              fontWeight: FontWeight.w500,
+                            ),
                           ),
                         ),
                       ],
@@ -402,14 +403,12 @@ class YourWorkModal extends StatefulWidget {
   final int term;
   final SingleElearningContentData? childContent;
   final MarkedQuizModel? markedquiz;
-  const YourWorkModal({
-    Key? key,
-    required this.childContent,
-    required this.year,
-    required this.term,
-    required this.markedquiz
-
-  }) : super(key: key);
+  const YourWorkModal(
+      {super.key,
+      required this.childContent,
+      required this.year,
+      required this.term,
+      required this.markedquiz});
 
   @override
   State<YourWorkModal> createState() => _YourWorkModalState();
@@ -426,6 +425,7 @@ class _YourWorkModalState extends State<YourWorkModal> {
       CustomToaster.toastError(context, 'Error', 'Invalid URL: $url');
     }
   }
+
   @override
   Widget build(BuildContext context) {
     return DraggableScrollableSheet(
@@ -518,20 +518,28 @@ class _YourWorkModalState extends State<YourWorkModal> {
                         const SizedBox(height: 16),
 
                         Column(
-                          children: List.generate(widget.markedquiz?.answers.length ?? 0, (index) {
+                          children: List.generate(
+                              widget.markedquiz?.answers.length ?? 0, (index) {
                             final ans = widget.markedquiz!.answers[index];
                             final isCorrect = ans.answer.trim().toLowerCase() ==
                                 ans.correct.trim().toLowerCase();
 
                             return Container(
-                              width: double.infinity, // 👈 makes card full width
+                              width:
+                                  double.infinity, // 👈 makes card full width
                               margin: const EdgeInsets.only(bottom: 16),
                               padding: const EdgeInsets.all(16),
                               decoration: BoxDecoration(
                                 gradient: LinearGradient(
                                   colors: isCorrect
-                                      ? [Colors.green.shade50, Colors.green.shade100]
-                                      : [Colors.red.shade50, Colors.red.shade100],
+                                      ? [
+                                          Colors.green.shade50,
+                                          Colors.green.shade100
+                                        ]
+                                      : [
+                                          Colors.red.shade50,
+                                          Colors.red.shade100
+                                        ],
                                   begin: Alignment.topLeft,
                                   end: Alignment.bottomRight,
                                 ),
@@ -590,21 +598,25 @@ class _YourWorkModalState extends State<YourWorkModal> {
                         Column(
                           children: List.generate(
                             widget.childContent?.contentFiles.length ?? 0,
-                                (index) {
-                              final file = widget.childContent?.contentFiles![index];
+                            (index) {
+                              final file =
+                                  widget.childContent?.contentFiles[index];
 
                               return GestureDetector(
                                 onTap: () {
-                                  final rawFileName = file.fileName ?? 'Unknown file';
+                                  final rawFileName =
+                                      file.fileName ?? 'Unknown file';
                                   final fileType = _getFileType(rawFileName);
-                                  final fileUrl = "https://linkskool.net/$rawFileName";
+                                  final fileUrl =
+                                      "https://linkskool.net/$rawFileName";
 
                                   final fileName = rawFileName.split('/').last;
                                   if (fileType == 'pdf') {
                                     Navigator.push(
                                       context,
                                       MaterialPageRoute(
-                                        builder: (_) => PdfViewerPage(url: fileUrl),
+                                        builder: (_) =>
+                                            PdfViewerPage(url: fileUrl),
                                       ),
                                     );
                                   } else {
@@ -628,7 +640,8 @@ class _YourWorkModalState extends State<YourWorkModal> {
                                         height: 48,
                                         decoration: BoxDecoration(
                                           color: Colors.blue.shade50,
-                                          borderRadius: BorderRadius.circular(12),
+                                          borderRadius:
+                                              BorderRadius.circular(12),
                                         ),
                                         child: const Icon(
                                           Icons.description,
@@ -667,7 +680,6 @@ class _YourWorkModalState extends State<YourWorkModal> {
         );
       },
     );
-
   }
 }
 
@@ -680,11 +692,21 @@ class AddCommentModal extends StatefulWidget {
   final int? itemId;
   final List<Map<String, dynamic>>? syllabusClasses;
   final SingleElearningContentData? childContent;
-  final String ?title;
+  final String? title;
   final int? id;
 
-  const AddCommentModal({super.key,this.childContent,  this.syllabusId, this.courseId, this.levelId, this.classId, this.courseName, this.syllabusClasses, this.itemId, this.title,this.id});
-
+  const AddCommentModal(
+      {super.key,
+      this.childContent,
+      this.syllabusId,
+      this.courseId,
+      this.levelId,
+      this.classId,
+      this.courseName,
+      this.syllabusClasses,
+      this.itemId,
+      this.title,
+      this.id});
 
   @override
   State<AddCommentModal> createState() => _AddCommentModalState();
@@ -697,7 +719,8 @@ class _AddCommentModalState extends State<AddCommentModal> {
   StudentComment? _editingComment;
   late double opacity;
 
-  final String networkImage = 'https://img.freepik.com/free-vector/gradient-human-rights-day-background_52683-149974.jpg?t=st=1717832829~exp=1717833429~hmac=3e938edcacd7fef2a791b36c7d3decbf64248d9760dd7da0a304acee382b8a86';
+  final String networkImage =
+      'https://img.freepik.com/free-vector/gradient-human-rights-day-background_52683-149974.jpg?t=st=1717832829~exp=1717833429~hmac=3e938edcacd7fef2a791b36c7d3decbf64248d9760dd7da0a304acee382b8a86';
   String? creatorName;
   int? creatorId;
   int? academicTerm;
@@ -707,11 +730,10 @@ class _AddCommentModalState extends State<AddCommentModal> {
   final ScrollController _scrollController = ScrollController();
 
   Future<void> _loadUserData() async {
-
-
     try {
       final userBox = Hive.box('userData');
-      final storedUserData = userBox.get('userData') ?? userBox.get('loginResponse');
+      final storedUserData =
+          userBox.get('userData') ?? userBox.get('loginResponse');
       if (storedUserData != null) {
         final processedData = storedUserData is String
             ? json.decode(storedUserData)
@@ -728,12 +750,11 @@ class _AddCommentModalState extends State<AddCommentModal> {
           academicTerm = settings['term'] as int?;
         });
       }
-
     } catch (e) {
       print('Error loading user data: $e');
     }
-
   }
+
   Widget _buildCommentItem(StudentComment comment) {
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 8),
@@ -783,7 +804,6 @@ class _AddCommentModalState extends State<AddCommentModal> {
                         ),
                       ),
                     ),
-
                   ],
                 ),
 
@@ -798,7 +818,6 @@ class _AddCommentModalState extends State<AddCommentModal> {
                   ),
                 ),
                 Row(
-
                   children: [
                     Text(
                       DateFormat('d MMM, HH:mm').format(comment.date),
@@ -807,8 +826,6 @@ class _AddCommentModalState extends State<AddCommentModal> {
                         color: Colors.grey.shade600,
                       ),
                     ),
-
-
                   ],
                 ),
               ],
@@ -821,29 +838,32 @@ class _AddCommentModalState extends State<AddCommentModal> {
 
   void _addComment([Map<String, dynamic>? updatedComment]) async {
     if (_commentController.text.isNotEmpty) {
-      final comment = updatedComment ?? {
-        "content_title": widget.childContent?.title,
-        "user_id": creatorId,
-        "user_name": creatorName,
-        "comment": _commentController.text,
-        "level_id": widget.childContent?.classes?[0].id,
-        "course_id": 25,
-        "course_name": widget.childContent!.title?? "No couresname",
-        "term": academicTerm,
-        if (_isEditing == true && _editingComment != null)
-          "content_id": widget.childContent?.id.toString() , // Use the ID of the comment being edited
-      };
+      final comment = updatedComment ??
+          {
+            "content_title": widget.childContent?.title,
+            "user_id": creatorId,
+            "user_name": creatorName,
+            "comment": _commentController.text,
+            "level_id": widget.childContent?.classes[0].id,
+            "course_id": 25,
+            "course_name": widget.childContent!.title ?? "No couresname",
+            "term": academicTerm,
+            if (_isEditing == true && _editingComment != null)
+              "content_id": widget.childContent?.id
+                  .toString(), // Use the ID of the comment being edited
+          };
 
       try {
 //
-        final commentProvider = Provider.of<StudentCommentProvider>(context, listen: false);
+        final commentProvider =
+            Provider.of<StudentCommentProvider>(context, listen: false);
         final contentId = _editingComment?.id;
         if (_isEditing) {
           comment['content_id'];
-          await commentProvider.UpdateComment(comment,contentId.toString());
+          await commentProvider.UpdateComment(comment, contentId.toString());
         } else {
-
-          await commentProvider.createComment(comment, widget.childContent!.id.toString());
+          await commentProvider.createComment(
+              comment, widget.childContent!.id.toString());
         }
 
         await commentProvider.fetchComments(widget.childContent!.id.toString());
@@ -867,16 +887,19 @@ class _AddCommentModalState extends State<AddCommentModal> {
           }
         });
       } catch (e) {
-        CustomToaster.toastError(context, 'Error', _isEditing ? 'Failed to update comment' : 'Failed to add comment');
+        CustomToaster.toastError(context, 'Error',
+            _isEditing ? 'Failed to update comment' : 'Failed to add comment');
       }
     }
   }
+
   Widget _buildDivider() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0),
       child: Divider(color: Colors.grey.withOpacity(0.5)),
     );
   }
+
   Widget _buildCommentSection() {
     return Consumer<StudentCommentProvider>(
       builder: (context, commentProvider, child) {
@@ -913,14 +936,16 @@ class _AddCommentModalState extends State<AddCommentModal> {
                 padding: const EdgeInsets.all(16.0),
                 child: Text(
                   'Class comments',
-                  style: AppTextStyles.normal600(fontSize: 18.0, color: Colors.black),
+                  style: AppTextStyles.normal600(
+                      fontSize: 18.0, color: Colors.black),
                 ),
               ),
               ListView.builder(
                 controller: _scrollController,
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
-                itemCount: commentList.length + (commentProvider.isLoading ? 1 : 0),
+                itemCount:
+                    commentList.length + (commentProvider.isLoading ? 1 : 0),
                 itemBuilder: (context, index) {
                   if (index == commentList.length) {
                     return const Center(child: CircularProgressIndicator());
@@ -938,7 +963,6 @@ class _AddCommentModalState extends State<AddCommentModal> {
                 ),
               _buildDivider(),
             ],
-
           ],
         );
       },
@@ -1053,7 +1077,8 @@ class _AddCommentModalState extends State<AddCommentModal> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             // Loading skeleton when first fetching
-                            if (commentProvider.isLoading && commentList.isEmpty)
+                            if (commentProvider.isLoading &&
+                                commentList.isEmpty)
                               Skeletonizer(
                                 child: ListView.builder(
                                   controller: _scrollController,
@@ -1094,10 +1119,12 @@ class _AddCommentModalState extends State<AddCommentModal> {
                                 controller: _scrollController,
                                 shrinkWrap: true,
                                 physics: const NeverScrollableScrollPhysics(),
-                                itemCount: commentList.length + (commentProvider.isLoading ? 1 : 0),
+                                itemCount: commentList.length +
+                                    (commentProvider.isLoading ? 1 : 0),
                                 itemBuilder: (context, index) {
                                   if (index == commentList.length) {
-                                    return const Center(child: CircularProgressIndicator());
+                                    return const Center(
+                                        child: CircularProgressIndicator());
                                   }
                                   return _buildCommentItem(commentList[index]);
                                 },
@@ -1148,8 +1175,7 @@ class _AddCommentModalState extends State<AddCommentModal> {
                     );
                   },
                 ),
-              )
-              ,
+              ),
             ],
           ),
         );
@@ -1164,14 +1190,16 @@ String _getFileType(String? fileName) {
   if (['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'].contains(extension)) {
     return 'image';
   }
-  if (['mp4', 'avi', 'mov', 'wmv', 'flv', 'webm', 'm4v', '3gp'].contains(extension)) {
+  if (['mp4', 'avi', 'mov', 'wmv', 'flv', 'webm', 'm4v', '3gp']
+      .contains(extension)) {
     return 'video';
   }
-  if (['pdf','doc', 'docx', 'txt', 'rtf'].contains(extension)) {
+  if (['pdf', 'doc', 'docx', 'txt', 'rtf'].contains(extension)) {
     return 'pdf';
   }
 
-  if (['.com', '.org', '.net', '.edu', 'http', 'https'].contains(extension) || fileName.startsWith('http')) {
+  if (['.com', '.org', '.net', '.edu', 'http', 'https'].contains(extension) ||
+      fileName.startsWith('http')) {
     return 'url';
   }
   if (['xls', 'xlsx', 'csv'].contains(extension)) {

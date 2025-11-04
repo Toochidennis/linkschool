@@ -5,11 +5,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:hive/hive.dart';
 import 'package:intl/intl.dart';
-import 'package:linkschool/modules/admin/e_learning/admin_assignment_screen.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/model/student/comment_model.dart';
 
-import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/model/student/single_elearningcontentmodel.dart';
 import 'package:linkschool/modules/student/elearning/pdf_reader.dart';
@@ -23,22 +21,25 @@ import 'package:video_thumbnail/video_thumbnail.dart';
 import '../../common/custom_toaster.dart';
 import '../../common/widgets/portal/attachmentItem.dart';
 import '../../providers/student/student_comment_provider.dart';
-import 'attachment_preview_screen.dart';
 
 class SingleAssignmentDetailsScreen extends StatefulWidget {
-
   final SingleElearningContentData? childContent;
   final String? title;
   final int? id;
 
-  const SingleAssignmentDetailsScreen({super.key, required this.childContent, required this.title, required this.id});
+  const SingleAssignmentDetailsScreen(
+      {super.key,
+      required this.childContent,
+      required this.title,
+      required this.id});
 
   @override
-  State<SingleAssignmentDetailsScreen> createState() => _SingleAssignmentDetailsScreenState();
+  State<SingleAssignmentDetailsScreen> createState() =>
+      _SingleAssignmentDetailsScreenState();
 }
 
-class _SingleAssignmentDetailsScreenState extends State<SingleAssignmentDetailsScreen> {
-
+class _SingleAssignmentDetailsScreenState
+    extends State<SingleAssignmentDetailsScreen> {
   final TextEditingController _commentController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   List<StudentComment> comments = [];
@@ -46,14 +47,14 @@ class _SingleAssignmentDetailsScreenState extends State<SingleAssignmentDetailsS
   bool _isEditing = false;
   StudentComment? _editingComment;
   late double opacity;
-  final String networkImage = 'https://img.freepik.com/free-vector/gradient-human-rights-day-background_52683-149974.jpg?t=st=1717832829~exp=1717833429~hmac=3e938edcacd7fef2a791b36c7d3decbf64248d9760dd7da0a304acee382b8a86';
+  final String networkImage =
+      'https://img.freepik.com/free-vector/gradient-human-rights-day-background_52683-149974.jpg?t=st=1717832829~exp=1717833429~hmac=3e938edcacd7fef2a791b36c7d3decbf64248d9760dd7da0a304acee382b8a86';
 
   final List<AttachmentItem> _attachments = [];
   String? creatorName;
   int? creatorId;
   int? academicTerm;
   String? academicYear;
-
 
   @override
   void dispose() {
@@ -62,11 +63,10 @@ class _SingleAssignmentDetailsScreenState extends State<SingleAssignmentDetailsS
   }
 
   Future<void> _loadUserData() async {
-
-
     try {
       final userBox = Hive.box('userData');
-      final storedUserData = userBox.get('userData') ?? userBox.get('loginResponse');
+      final storedUserData =
+          userBox.get('userData') ?? userBox.get('loginResponse');
       if (storedUserData != null) {
         final processedData = storedUserData is String
             ? json.decode(storedUserData)
@@ -90,15 +90,17 @@ class _SingleAssignmentDetailsScreenState extends State<SingleAssignmentDetailsS
     } catch (e) {
       print('Error loading user data: $e');
     }
-
   }
 
   void _navigateToAttachmentPreview() {
     Navigator.push(
       context,
       MaterialPageRoute(
-
-        builder: (context) => SingleAttachmentPreviewScreen(attachments: _attachments, childContent: widget.childContent,title: widget.title, id: widget.id),
+        builder: (context) => SingleAttachmentPreviewScreen(
+            attachments: _attachments,
+            childContent: widget.childContent,
+            title: widget.title,
+            id: widget.id),
       ),
     );
   }
@@ -110,9 +112,7 @@ class _SingleAssignmentDetailsScreenState extends State<SingleAssignmentDetailsS
         children: [
           _buildDueDate(),
           _buildDescription(),
-
           _buildSpecDivider(),
-
           Text(
             'Grade:${widget.childContent?.grade} marks',
             style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
@@ -122,6 +122,7 @@ class _SingleAssignmentDetailsScreenState extends State<SingleAssignmentDetailsS
       ),
     );
   }
+
   Widget _buildDueDate() {
     return Padding(
       padding: const EdgeInsets.only(
@@ -134,24 +135,23 @@ class _SingleAssignmentDetailsScreenState extends State<SingleAssignmentDetailsS
                 fontSize: 16.0, color: AppColors.eLearningTxtColor1),
           ),
           Text(
-            DateFormat('E, dd MMM yyyy (hh:mm a)').format(DateTime.parse(widget.childContent?.end_date ?? ""))
-            ,
+            DateFormat('E, dd MMM yyyy (hh:mm a)')
+                .format(DateTime.parse(widget.childContent?.end_date ?? "")),
             style: AppTextStyles.normal500(fontSize: 16.0, color: Colors.black),
           ),
         ],
       ),
     );
   }
+
   Widget _buildTitle() {
     return Container(
       width: double.infinity,
-      decoration: const BoxDecoration(
-
-      ),
+      decoration: const BoxDecoration(),
       child: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Text(
-          widget.childContent?.title ??"",
+          widget.childContent?.title ?? "",
           style: AppTextStyles.normal600(
             fontSize: 20.0,
             color: AppColors.paymentTxtColor1,
@@ -161,10 +161,8 @@ class _SingleAssignmentDetailsScreenState extends State<SingleAssignmentDetailsS
     );
   }
 
-
   @override
   Widget build(BuildContext context) {
-
     final Brightness brightness = Theme.of(context).brightness;
     opacity = brightness == Brightness.light ? 0.1 : 0.15;
     return Scaffold(
@@ -204,12 +202,11 @@ class _SingleAssignmentDetailsScreenState extends State<SingleAssignmentDetailsS
           ),
         ),
       ),
-      body:Container(
+      body: Container(
         color: Colors.white,
         child: _buildInstructionsTab(),
-
       ),
-      bottomNavigationBar:  ElevatedButton(
+      bottomNavigationBar: ElevatedButton(
         // onPressed: _showAttachmentOptions,
         onPressed: _navigateToAttachmentPreview,
         style: ElevatedButton.styleFrom(
@@ -219,13 +216,14 @@ class _SingleAssignmentDetailsScreenState extends State<SingleAssignmentDetailsS
           ),
           minimumSize: const Size(double.infinity, 50),
         ),
-        child: const Text('Add work', style: TextStyle(fontSize: 16, color: AppColors.backgroundLight)),
+        child: const Text('Add work',
+            style: TextStyle(fontSize: 16, color: AppColors.backgroundLight)),
       ),
-
     );
   }
 
-  Widget _buildAttachmentOption(String text, String iconPath, VoidCallback onTap) {
+  Widget _buildAttachmentOption(
+      String text, String iconPath, VoidCallback onTap) {
     return InkWell(
       onTap: onTap,
       child: Container(
@@ -281,14 +279,16 @@ class _SingleAssignmentDetailsScreenState extends State<SingleAssignmentDetailsS
                 padding: const EdgeInsets.all(16.0),
                 child: Text(
                   'Class comments',
-                  style: AppTextStyles.normal600(fontSize: 18.0, color: Colors.black),
+                  style: AppTextStyles.normal600(
+                      fontSize: 18.0, color: Colors.black),
                 ),
               ),
               ListView.builder(
                 controller: _scrollController,
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
-                itemCount: commentList.length + (commentProvider.isLoading ? 1 : 0),
+                itemCount:
+                    commentList.length + (commentProvider.isLoading ? 1 : 0),
                 itemBuilder: (context, index) {
                   if (index == commentList.length) {
                     return const Center(child: CircularProgressIndicator());
@@ -311,13 +311,13 @@ class _SingleAssignmentDetailsScreenState extends State<SingleAssignmentDetailsS
               child: _isAddingComment
                   ? _buildCommentInput()
                   : InkWell(
-                onTap: () => setState(() => _isAddingComment = true),
-                child: Text(
-                  'Add class comment',
-                  style: AppTextStyles.normal500(
-                      fontSize: 16.0, color: AppColors.paymentTxtColor1),
-                ),
-              ),
+                      onTap: () => setState(() => _isAddingComment = true),
+                      child: Text(
+                        'Add class comment',
+                        style: AppTextStyles.normal500(
+                            fontSize: 16.0, color: AppColors.paymentTxtColor1),
+                      ),
+                    ),
             ),
           ],
         );
@@ -346,20 +346,19 @@ class _SingleAssignmentDetailsScreenState extends State<SingleAssignmentDetailsS
             DateFormat('d MMMM').format(comment.date),
             style: AppTextStyles.normal400(fontSize: 14.0, color: Colors.grey),
           ),
-
-
         ],
       ),
       subtitle: Text(
         comment.text,
         style:
-        AppTextStyles.normal500(fontSize: 16, color: AppColors.text4Light),
+            AppTextStyles.normal500(fontSize: 16, color: AppColors.text4Light),
       ),
     );
   }
 
   Widget _buildCommentInput() {
-    final provider = Provider.of<StudentCommentProvider>(context, listen: false);
+    final provider =
+        Provider.of<StudentCommentProvider>(context, listen: false);
     return Row(
       children: [
         Expanded(
@@ -374,47 +373,52 @@ class _SingleAssignmentDetailsScreenState extends State<SingleAssignmentDetailsS
         provider.isLoading
             ? const CircularProgressIndicator()
             : IconButton(
-          icon: const Icon(Icons.send),
-          onPressed: _addComment,
-          color: AppColors.paymentTxtColor1,
-        ),
+                icon: const Icon(Icons.send),
+                onPressed: _addComment,
+                color: AppColors.paymentTxtColor1,
+              ),
       ],
     );
   }
 
-
   void _addComment([Map<String, dynamic>? updatedComment]) async {
     if (_commentController.text.isNotEmpty) {
-      final comment = updatedComment ?? {
-        "content_title": widget.childContent?.title,
-        "user_id": creatorId,
-        "user_name": creatorName,
-        "comment": _commentController.text,
-        "level_id": widget.childContent?.classes?[0].id,
-        "course_id": 25,
-        "course_name": "widget.courseName",
-        "term": academicTerm,
-        if (_isEditing == true && _editingComment != null)
-          "content_id": widget.childContent?.id.toString() , // Use the ID of the comment being edited
-      };
+      final comment = updatedComment ??
+          {
+            "content_title": widget.childContent?.title,
+            "user_id": creatorId,
+            "user_name": creatorName,
+            "comment": _commentController.text,
+            "level_id": widget.childContent?.classes[0].id,
+            "course_id": 25,
+            "course_name": "widget.courseName",
+            "term": academicTerm,
+            if (_isEditing == true && _editingComment != null)
+              "content_id": widget.childContent?.id
+                  .toString(), // Use the ID of the comment being edited
+          };
 
       try {
-        print(" See o seee creator id ${creatorId}");
+        print(" See o seee creator id $creatorId");
 //
-        final commentProvider = Provider.of<StudentCommentProvider>(context, listen: false);
+        final commentProvider =
+            Provider.of<StudentCommentProvider>(context, listen: false);
         final contentId = _editingComment?.id;
         if (_isEditing) {
           comment['content_id'];
           print("printed Comment $comment");
-          await commentProvider.UpdateComment(comment,contentId.toString());
-          CustomToaster.toastSuccess(context, 'Success', 'Comment updated successfully');
+          await commentProvider.UpdateComment(comment, contentId.toString());
+          CustomToaster.toastSuccess(
+              context, 'Success', 'Comment updated successfully');
         } else {
-
-          await commentProvider.createComment(comment, widget.childContent?.id.toString() ??"");
-          CustomToaster.toastSuccess(context, 'Success', 'Comment added successfully');
+          await commentProvider.createComment(
+              comment, widget.childContent?.id.toString() ?? "");
+          CustomToaster.toastSuccess(
+              context, 'Success', 'Comment added successfully');
         }
 
-        await commentProvider.fetchComments(widget.childContent?.id.toString() ?? "");
+        await commentProvider
+            .fetchComments(widget.childContent?.id.toString() ?? "");
         setState(() {
           _isAddingComment = false;
           _isEditing = false;
@@ -435,22 +439,26 @@ class _SingleAssignmentDetailsScreenState extends State<SingleAssignmentDetailsS
           }
         });
       } catch (e) {
-        CustomToaster.toastError(context, 'Error', _isEditing ? 'Failed to update comment' : 'Failed to add comment');
+        CustomToaster.toastError(context, 'Error',
+            _isEditing ? 'Failed to update comment' : 'Failed to add comment');
       }
     }
   }
+
   Widget _buildDivider() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0),
       child: Divider(color: Colors.grey.withOpacity(0.5)),
     );
   }
+
   Widget _buildSpecDivider() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0),
-      child: Divider(  color: AppColors.paymentTxtColor1, thickness: 2.0),
+      child: Divider(color: AppColors.paymentTxtColor1, thickness: 2.0),
     );
   }
+
   Widget _buildDescription() {
     return Padding(
       padding: const EdgeInsets.all(16.0),
@@ -463,8 +471,9 @@ class _SingleAssignmentDetailsScreenState extends State<SingleAssignmentDetailsS
           ),
           Expanded(
             child: Text(
-              widget.childContent?.description ??"",
-              style: AppTextStyles.normal500(fontSize: 16.0, color: Colors.black),
+              widget.childContent?.description ?? "",
+              style:
+                  AppTextStyles.normal500(fontSize: 16.0, color: Colors.black),
             ),
           ),
         ],
@@ -482,7 +491,6 @@ class _SingleAssignmentDetailsScreenState extends State<SingleAssignmentDetailsS
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-
           const SizedBox(height: 12),
           GridView.builder(
             shrinkWrap: true,
@@ -517,7 +525,7 @@ class _SingleAssignmentDetailsScreenState extends State<SingleAssignmentDetailsS
         } else {
           // For all other files including PDF, open in external app
           //fileUrl
-          if(fileType == 'pdf'){
+          if (fileType == 'pdf') {
             Navigator.push(
               context,
               MaterialPageRoute(
@@ -525,9 +533,11 @@ class _SingleAssignmentDetailsScreenState extends State<SingleAssignmentDetailsS
                   url: fileUrl,
                 ),
               ),
-            );;
-          } else {_launchUrl(fileName);
-          }}
+            );
+          } else {
+            _launchUrl(fileName);
+          }
+        }
       },
       child: Container(
         decoration: BoxDecoration(
@@ -566,7 +576,8 @@ class _SingleAssignmentDetailsScreenState extends State<SingleAssignmentDetailsS
               Expanded(
                 flex: 1,
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 6.0),
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 8.0, vertical: 6.0),
                   child: Text(
                     fileName.length > 17 ? fileName.substring(0, 17) : fileName,
                     style: AppTextStyles.normal500(
@@ -579,7 +590,6 @@ class _SingleAssignmentDetailsScreenState extends State<SingleAssignmentDetailsS
                   ),
                 ),
               ),
-
           ],
         ),
       ),
@@ -615,21 +625,22 @@ class _SingleAssignmentDetailsScreenState extends State<SingleAssignmentDetailsS
     }
   }
 
-
   String _getFileType(String? fileName) {
     if (fileName == null) return 'unknown';
     final extension = fileName.toLowerCase().split('.').last;
     if (['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'].contains(extension)) {
       return 'image';
     }
-    if (['mp4', 'avi', 'mov', 'wmv', 'flv', 'webm', 'm4v', '3gp'].contains(extension)) {
+    if (['mp4', 'avi', 'mov', 'wmv', 'flv', 'webm', 'm4v', '3gp']
+        .contains(extension)) {
       return 'video';
     }
-    if (['pdf','doc', 'docx', 'txt', 'rtf'].contains(extension)) {
+    if (['pdf', 'doc', 'docx', 'txt', 'rtf'].contains(extension)) {
       return 'pdf';
     }
 
-    if (['.com', '.org', '.net', '.edu', 'http', 'https'].contains(extension) || fileName.startsWith('http')) {
+    if (['.com', '.org', '.net', '.edu', 'http', 'https'].contains(extension) ||
+        fileName.startsWith('http')) {
       return 'url';
     }
     if (['xls', 'xlsx', 'csv'].contains(extension)) {
@@ -644,7 +655,8 @@ class _SingleAssignmentDetailsScreenState extends State<SingleAssignmentDetailsS
     return 'unknown';
   }
 
-  Widget _buildPreviewContent(String fileType, String fileUrl, String fileName) {
+  Widget _buildPreviewContent(
+      String fileType, String fileUrl, String fileName) {
     switch (fileType) {
       case 'image':
         return ClipRRect(
@@ -665,7 +677,8 @@ class _SingleAssignmentDetailsScreenState extends State<SingleAssignmentDetailsS
               return Center(
                 child: CircularProgressIndicator(
                   value: loadingProgress.expectedTotalBytes != null
-                      ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
+                      ? loadingProgress.cumulativeBytesLoaded /
+                          loadingProgress.expectedTotalBytes!
                       : null,
                 ),
               );
@@ -673,7 +686,7 @@ class _SingleAssignmentDetailsScreenState extends State<SingleAssignmentDetailsS
           ),
         );
       case 'video':
-        return  VideoThumbnailWidget(url: fileUrl);
+        return VideoThumbnailWidget(url: fileUrl);
       case 'pdf':
         return Stack(
           children: [
@@ -693,7 +706,6 @@ class _SingleAssignmentDetailsScreenState extends State<SingleAssignmentDetailsS
                 ),
               ),
             ),
-
           ],
         );
       case 'url':
@@ -714,9 +726,6 @@ class _SingleAssignmentDetailsScreenState extends State<SingleAssignmentDetailsS
         );
     }
   }
-
-
-
 
   IconData _getFileIcon(String fileType) {
     switch (fileType) {
@@ -761,18 +770,17 @@ class _SingleAssignmentDetailsScreenState extends State<SingleAssignmentDetailsS
   }
 }
 
-
 class FullScreenMediaViewer extends StatefulWidget {
   final String url;
   final String type;
   final String fileName;
 
   const FullScreenMediaViewer({
-    Key? key,
+    super.key,
     required this.url,
     required this.type,
     required this.fileName,
-  }) : super(key: key);
+  });
 
   @override
   State<FullScreenMediaViewer> createState() => _FullScreenMediaViewerState();
@@ -800,7 +808,8 @@ class _FullScreenMediaViewerState extends State<FullScreenMediaViewer> {
       });
       _hideControlsAfterDelay();
       _videoController!.addListener(() {
-        if (_videoController!.value.position == _videoController!.value.duration) {
+        if (_videoController!.value.position ==
+            _videoController!.value.duration) {
           setState(() {
             _showControls = true;
           });
@@ -813,7 +822,9 @@ class _FullScreenMediaViewerState extends State<FullScreenMediaViewer> {
 
   void _hideControlsAfterDelay() {
     Future.delayed(const Duration(seconds: 3), () {
-      if (mounted && _videoController != null && _videoController!.value.isPlaying) {
+      if (mounted &&
+          _videoController != null &&
+          _videoController!.value.isPlaying) {
         setState(() {
           _showControls = false;
         });
@@ -825,7 +836,9 @@ class _FullScreenMediaViewerState extends State<FullScreenMediaViewer> {
     setState(() {
       _showControls = !_showControls;
     });
-    if (_showControls && _videoController != null && _videoController!.value.isPlaying) {
+    if (_showControls &&
+        _videoController != null &&
+        _videoController!.value.isPlaying) {
       _hideControlsAfterDelay();
     }
   }
@@ -858,7 +871,8 @@ class _FullScreenMediaViewerState extends State<FullScreenMediaViewer> {
             onPressed: () async {
               try {
                 final Uri uri = Uri.parse(widget.url);
-                if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
+                if (!await launchUrl(uri,
+                    mode: LaunchMode.externalApplication)) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(content: Text('Could not download file')),
                   );
@@ -911,7 +925,8 @@ class _FullScreenMediaViewerState extends State<FullScreenMediaViewer> {
               return Center(
                 child: CircularProgressIndicator(
                   value: loadingProgress.expectedTotalBytes != null
-                      ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
+                      ? loadingProgress.cumulativeBytesLoaded /
+                          loadingProgress.expectedTotalBytes!
                       : null,
                   color: Colors.white,
                 ),
@@ -955,7 +970,9 @@ class _FullScreenMediaViewerState extends State<FullScreenMediaViewer> {
                       ),
                       padding: const EdgeInsets.all(16),
                       child: Icon(
-                        _videoController!.value.isPlaying ? Icons.pause : Icons.play_arrow,
+                        _videoController!.value.isPlaying
+                            ? Icons.pause
+                            : Icons.play_arrow,
                         color: Colors.white,
                         size: 50,
                       ),
@@ -1050,7 +1067,7 @@ class _VideoThumbnailWidgetState extends State<VideoThumbnailWidget> {
           borderRadius: BorderRadius.circular(8),
           child: Image.memory(
             _thumbnail!,
-            width:double.infinity,
+            width: double.infinity,
             height: 140,
             fit: BoxFit.cover,
           ),

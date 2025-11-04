@@ -107,7 +107,7 @@ class _E_lib_vidsState extends State<E_lib_vids> {
 
   Future<void> _initializeDirectVideoPlayer(String url) async {
     _videoPlayerController = VideoPlayerController.networkUrl(Uri.parse(url));
-    
+
     await _videoPlayerController!.initialize();
 
     _chewieController = ChewieController(
@@ -323,7 +323,7 @@ class _E_lib_vidsState extends State<E_lib_vids> {
 
   Widget _buildVideoMetadata() {
     String duration = 'Video';
-    
+
     // Get duration from appropriate controller
     if (!_isYouTube && _videoPlayerController?.value.isInitialized == true) {
       final mins = _videoPlayerController!.value.duration.inMinutes;
@@ -368,7 +368,8 @@ class _E_lib_vidsState extends State<E_lib_vids> {
               if (_isYouTube) ...[
                 const SizedBox(width: 8),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                   decoration: BoxDecoration(
                     color: Colors.red,
                     borderRadius: BorderRadius.circular(3),
@@ -403,53 +404,50 @@ class _E_lib_vidsState extends State<E_lib_vids> {
   }
 
   Widget _buildLessonsList(List<Video> videos) {
-  return ListView.builder(
-    padding: EdgeInsets.zero,
-    shrinkWrap: true,
-    physics: const NeverScrollableScrollPhysics(),
-    itemCount: videos.length,
-    itemBuilder: (context, index) {
-      return GestureDetector(
-        onTap: () {
-  Navigator.pushReplacement(
-    context,
-    PageRouteBuilder(
-      pageBuilder: (context, _, __) => E_lib_vids(video: videos[index]),
-      transitionDuration: Duration.zero,
-    ),
-  );
-},
-        child: _buildVideoCard(videos[index]),
-      );
-    },
-  );
-}
+    return ListView.builder(
+      padding: EdgeInsets.zero,
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      itemCount: videos.length,
+      itemBuilder: (context, index) {
+        return GestureDetector(
+          onTap: () {
+            Navigator.pushReplacement(
+              context,
+              PageRouteBuilder(
+                pageBuilder: (context, _, __) =>
+                    E_lib_vids(video: videos[index]),
+                transitionDuration: Duration.zero,
+              ),
+            );
+          },
+          child: _buildVideoCard(videos[index]),
+        );
+      },
+    );
+  }
 
-Future<void> _switchVideo(Video newVideo) async {
-  // Dispose old controllers
-  _videoPlayerController?.dispose();
-  _chewieController?.dispose();
-  _youtubeController?.dispose();
-  
-  // Reset state
-  setState(() {
-    _errorMessage = null;
-    _isYouTube = false;
-    _videoPlayerController = null;
-    _chewieController = null;
-    _youtubeController = null;
-  });
-  
+  Future<void> _switchVideo(Video newVideo) async {
+    // Dispose old controllers
+    _videoPlayerController?.dispose();
+    _chewieController?.dispose();
+    _youtubeController?.dispose();
 
-  await initializePlayer();
-}
+    // Reset state
+    setState(() {
+      _errorMessage = null;
+      _isYouTube = false;
+      _videoPlayerController = null;
+      _chewieController = null;
+      _youtubeController = null;
+    });
 
-
-
+    await initializePlayer();
+  }
 
   Widget _buildVideoCard(Video video) {
     final isYouTube = isYouTubeUrl(video.url);
-    
+
     return Container(
       height: 121,
       padding: const EdgeInsets.only(
@@ -503,7 +501,8 @@ Future<void> _switchVideo(Video newVideo) async {
                   top: 4,
                   right: 4,
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
                     decoration: BoxDecoration(
                       color: Colors.red,
                       borderRadius: BorderRadius.circular(2),

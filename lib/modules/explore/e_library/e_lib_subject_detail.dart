@@ -250,7 +250,6 @@ class _ELibSubjectDetailState extends State<ELibSubjectDetail>
               setState(() {
                 _isTextExpanded = !_isTextExpanded;
               });
-
             },
             child: Text(
               _isTextExpanded ? 'Read More' : 'Read Less',
@@ -413,38 +412,37 @@ class _ELibSubjectDetailState extends State<ELibSubjectDetail>
     );
   }
 
- Widget _buildLessonSection(String title, List<Video> videos) {
-  if (videos.isEmpty) {
-    return SizedBox.shrink();
-  }
+  Widget _buildLessonSection(String title, List<Video> videos) {
+    if (videos.isEmpty) {
+      return SizedBox.shrink();
+    }
 
-  return Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      Padding(
-        padding: const EdgeInsets.symmetric(vertical: 8.0),
-        child: Text(
-          title,
-          style: AppTextStyles.normal600(
-              fontSize: 16, color: AppColors.assessmentColor2),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8.0),
+          child: Text(
+            title,
+            style: AppTextStyles.normal600(
+                fontSize: 16, color: AppColors.assessmentColor2),
+          ),
         ),
-      ),
-      ...videos.map((video) => GestureDetector(
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => E_lib_vids(video: video),
-                ),
-              );
-            },
-            child: SubjectDetails(video: video),
-          )),
-      SizedBox(height: 20),
-    ],
-  );
-}
-
+        ...videos.map((video) => GestureDetector(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => E_lib_vids(video: video),
+                  ),
+                );
+              },
+              child: SubjectDetails(video: video),
+            )),
+        SizedBox(height: 20),
+      ],
+    );
+  }
 
   Widget _buildReviewsTab() {
     if (_isLoading) {

@@ -26,9 +26,9 @@ class _AllFeedsScreenState extends State<AllFeedsScreen> {
   Map<String, dynamic>? _editingFeedData;
 
   int? creatorId;
-   String? creatorName;
-   int? academicTerm;
-   String? userRole;
+  String? creatorName;
+  int? academicTerm;
+  String? userRole;
 
   @override
   void initState() {
@@ -64,10 +64,8 @@ class _AllFeedsScreenState extends State<AllFeedsScreen> {
           creatorId = profile['staff_id'] is int
               ? profile['staff_id']
               : int.tryParse(profile['staff_id'].toString());
-          
+
           userRole = profile['role']?.toString() ?? 'admin';
-
-
 
           creatorName = profile['name']?.toString() ?? '';
 
@@ -103,7 +101,7 @@ class _AllFeedsScreenState extends State<AllFeedsScreen> {
   void _startEditing(feed) {
     _editTitleController = TextEditingController(text: feed.title ?? '');
     _editContentController = TextEditingController(text: feed.content ?? '');
-    
+
     setState(() {
       _editingFeedId = feed.id;
       _editingFeedData = {
@@ -116,7 +114,7 @@ class _AllFeedsScreenState extends State<AllFeedsScreen> {
   void _cancelEditing() {
     _editTitleController.dispose();
     _editContentController.dispose();
-    
+
     setState(() {
       _editingFeedId = null;
       _editingFeedData = null;
@@ -124,8 +122,9 @@ class _AllFeedsScreenState extends State<AllFeedsScreen> {
   }
 
   void _saveEditing(feed) async {
-    final provider = Provider.of<FeedsPaginationProvider>(context, listen: false);
-    
+    final provider =
+        Provider.of<FeedsPaginationProvider>(context, listen: false);
+
     try {
       final updatedFeed = {
         'id': feed.id,
@@ -134,16 +133,18 @@ class _AllFeedsScreenState extends State<AllFeedsScreen> {
         "author_id": feed.authorId,
         'author_name': feed.authorName,
         'type': feed.type,
-        'term': 3, // You might want to get this from user data like in PortalHome
+        'term':
+            3, // You might want to get this from user data like in PortalHome
       };
-      
+
       print('Updated Feed Data: $updatedFeed');
-      
+
       // You'll need to add updateFeed method to FeedsPaginationProvider
       await provider.updateFeed(updatedFeed, feed.id.toString());
-      
+
       if (mounted) {
-        CustomToaster.toastSuccess(context, 'Updated', 'Feed updated successfully');
+        CustomToaster.toastSuccess(
+            context, 'Updated', 'Feed updated successfully');
         _cancelEditing();
         // Refresh the feeds to show updated data
         provider.fetchFeeds(refresh: true);
@@ -179,11 +180,13 @@ class _AllFeedsScreenState extends State<AllFeedsScreen> {
     if (confirm != true) return;
 
     try {
-      final provider = Provider.of<FeedsPaginationProvider>(context, listen: false);
+      final provider =
+          Provider.of<FeedsPaginationProvider>(context, listen: false);
       await provider.deleteFeed(feed.id.toString());
 
       if (mounted) {
-        CustomToaster.toastSuccess(context, 'Deleted', 'Feed deleted successfully');
+        CustomToaster.toastSuccess(
+            context, 'Deleted', 'Feed deleted successfully');
         // Refresh the feeds after deletion
         provider.fetchFeeds(refresh: true);
       }
@@ -203,7 +206,8 @@ class _AllFeedsScreenState extends State<AllFeedsScreen> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16.0),
-        border: Border.all(color: AppColors.text2Light.withOpacity(0.3), width: 2),
+        border:
+            Border.all(color: AppColors.text2Light.withOpacity(0.3), width: 2),
         boxShadow: [
           BoxShadow(
             color: AppColors.text2Light.withOpacity(0.1),
@@ -470,7 +474,7 @@ class _AllFeedsScreenState extends State<AllFeedsScreen> {
                           );
                         },
                       );
-                    }).toList(),
+                    }),
 
                     // Loading indicator for more
                     if (provider.isLoadingMore)

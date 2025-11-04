@@ -3,7 +3,6 @@ import 'package:flip_card/flip_card.dart';
 import 'package:flip_card/flip_card_controller.dart';
 import 'package:linkschool/modules/auth/provider/auth_provider.dart';
 import 'package:provider/provider.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:linkschool/modules/explore/home/explore_dashboard.dart';
 import 'package:linkschool/modules/auth/ui/login_screen.dart';
 import 'package:linkschool/modules/student/student_dashboard.dart';

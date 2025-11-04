@@ -3,8 +3,6 @@ import 'package:flutter/foundation.dart';
 import '../../model/explore/home/subject_model2.dart';
 import '../../services/explore/subject_service.dart';
 
-
-
 class SubjectProvider with ChangeNotifier {
   final SubjectService _subjectService = SubjectService();
   List<SubjectModel2> _subjects = [];
@@ -27,4 +25,3 @@ class SubjectProvider with ChangeNotifier {
     notifyListeners();
   }
 }
-

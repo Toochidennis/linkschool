@@ -102,7 +102,8 @@ class _ExpenseHistoryScreenState extends State<ExpenseHistoryScreen> {
               Expanded(
                 child: ListView.builder(
                   itemCount: 1, // Single transaction for now
-                  itemBuilder: (context, index) => _buildTransactionItem(context),
+                  itemBuilder: (context, index) =>
+                      _buildTransactionItem(context),
                 ),
               ),
             ],
@@ -123,18 +124,21 @@ class _ExpenseHistoryScreenState extends State<ExpenseHistoryScreen> {
         leading: SvgPicture.asset('assets/icons/profile/payment_icon.svg'),
         title: Text(
           widget.name,
-          style: AppTextStyles.normal500(fontSize: 18, color: AppColors.backgroundDark),
+          style: AppTextStyles.normal500(
+              fontSize: 18, color: AppColors.backgroundDark),
         ),
         subtitle: Text(
           widget.transaction['date'] ?? '07-03-2018  17:23',
-          style: AppTextStyles.normal500(fontSize: 12, color: AppColors.text10Light),
+          style: AppTextStyles.normal500(
+              fontSize: 12, color: AppColors.text10Light),
         ),
         trailing: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             const Text(
               '-',
-              style: TextStyle(fontSize: 18, color: Colors.red, fontWeight: FontWeight.w700),
+              style: TextStyle(
+                  fontSize: 18, color: Colors.red, fontWeight: FontWeight.w700),
             ),
             const NairaSvgIcon(
               width: 14.0,
@@ -162,4 +166,3 @@ class _ExpenseHistoryScreenState extends State<ExpenseHistoryScreen> {
     );
   }
 }
-

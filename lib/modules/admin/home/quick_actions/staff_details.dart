@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
@@ -6,7 +5,7 @@ import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/model/admin/home/add_staff_model.dart';
 
 class StaffProfileScreen extends StatelessWidget {
-   final Staff staff;
+  final Staff staff;
 
   const StaffProfileScreen({
     super.key,
@@ -54,25 +53,22 @@ class StaffProfileScreen extends StatelessWidget {
               children: [
                 // Staff photo OR initials
                 CircleAvatar(
-                  radius: 50,
-                  backgroundColor: Colors.white,
-               
-                  child:
-                      Text(
-                          _getInitials(),
-                          style: const TextStyle(
-                            fontSize: 30,
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.paymentTxtColor1,
-                          ),
-                        )
-                     
-                ),
+                    radius: 50,
+                    backgroundColor: Colors.white,
+                    child: Text(
+                      _getInitials(),
+                      style: const TextStyle(
+                        fontSize: 30,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.paymentTxtColor1,
+                      ),
+                    )),
                 const SizedBox(height: 10.0),
 
                 // Staff full name
                 Text(
-                  "${staff.lastName ?? ''} ${staff.firstName ?? ''} ${staff.middleName ?? ''}".trim(),
+                  "${staff.lastName ?? ''} ${staff.firstName ?? ''} ${staff.middleName ?? ''}"
+                      .trim(),
                   style: const TextStyle(
                     fontSize: 22,
                     fontWeight: FontWeight.bold,
@@ -123,7 +119,8 @@ class StaffProfileScreen extends StatelessWidget {
                         width: 20,
                       ),
                     ),
-                    _buildIconColumn('assets/icons/staff/whatsapp_call_icon.svg'),
+                    _buildIconColumn(
+                        'assets/icons/staff/whatsapp_call_icon.svg'),
                   ],
                 ),
               ],
@@ -149,7 +146,7 @@ class StaffProfileScreen extends StatelessWidget {
                   // Personal Information
                   _buildSectionHeader('Personal Information'),
                   const SizedBox(height: 5.0),
-                  
+
                   _buildSubText('Gender'),
                   const SizedBox(height: 5.0),
                   Text(
@@ -246,7 +243,8 @@ class StaffProfileScreen extends StatelessWidget {
                   _buildSubText('Employment Status'),
                   const SizedBox(height: 5.0),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                     decoration: BoxDecoration(
                       color: staff.isActive
                           ? AppColors.attCheckColor2.withOpacity(0.1)

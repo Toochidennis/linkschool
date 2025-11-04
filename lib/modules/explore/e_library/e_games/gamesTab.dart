@@ -10,7 +10,6 @@ import 'package:skeletonizer/skeletonizer.dart';
 import '../../../common/app_colors.dart';
 import '../../../common/constants.dart';
 import '../../../common/text_styles.dart';
-import '../../../model/explore/home/game_model.dart';
 
 class GamesTab extends StatefulWidget {
   const GamesTab({super.key});
@@ -579,4 +578,3 @@ Widget _buildGameCard(BuildContext context, BoardGamesClass category,
     ),
   );
 }
-

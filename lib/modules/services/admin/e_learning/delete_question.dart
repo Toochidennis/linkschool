@@ -1,14 +1,12 @@
 import 'package:hive/hive.dart';
 import 'package:linkschool/modules/services/api/api_service.dart';
-import 'package:flutter/material.dart';
-
 
 class DeleteQuestionService {
-    final ApiService _apiService;
-    DeleteQuestionService(this._apiService);
+  final ApiService _apiService;
+  DeleteQuestionService(this._apiService);
 
-    Future<void>deleteQuestion(String id,String settingId)async{
-          final userBox = Hive.box('userData');
+  Future<void> deleteQuestion(String id, String settingId) async {
+    final userBox = Hive.box('userData');
     final loginData = userBox.get('userData') ?? userBox.get('loginResponse');
     final dbName = userBox.get('_db') ?? 'aalmgzmy_linkskoo_practice';
 
@@ -20,18 +18,18 @@ class DeleteQuestionService {
     print("Set token: $token");
     _apiService.setAuthToken(token);
 
-    try{
-       final response = await _apiService.delete<Map<String, dynamic>>(
+    try {
+      final response = await _apiService.delete<Map<String, dynamic>>(
           endpoint: 'portal/elearning/quiz/$settingId/$id',
           body: {
             '_db': dbName,
           });
-          if (!response.success) {
+      if (!response.success) {
         print("Failed to delete Question content");
         print("Error: ${response.message ?? 'No error message provided'}");
         throw Exception(
             "Failed to Delete  Question Content: ${response.message}");
-    } else {
+      } else {
         print(' Question content deleted successfully.');
         print('Status Code: ${response.statusCode}');
         print('Message: ${response.message}');
@@ -40,7 +38,5 @@ class DeleteQuestionService {
       print("Error deleting  Question content: $e");
       throw Exception("Failed to Delete  Question Content: $e");
     }
-    }
-
-
+  }
 }

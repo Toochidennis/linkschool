@@ -49,7 +49,9 @@ class StudentCommentProvider with ChangeNotifier {
       notifyListeners();
     }
   }
-  Future<bool> createComment(Map<String, dynamic> commentData, String contentId) async {
+
+  Future<bool> createComment(
+      Map<String, dynamic> commentData, String contentId) async {
     isLoading = true;
     notifyListeners();
     error = null;
@@ -67,7 +69,8 @@ class StudentCommentProvider with ChangeNotifier {
     }
   }
 
-  Future<bool>UpdateComment(Map<String, dynamic> commentData, String contentId) async {
+  Future<bool> UpdateComment(
+      Map<String, dynamic> commentData, String contentId) async {
     isLoading = true;
     notifyListeners();
     error = null;

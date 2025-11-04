@@ -27,7 +27,7 @@ class FeeService {
     try {
       // Ensure token is set before making the request
       _ensureTokenIsSet();
-      
+
       final response = await _apiService.get<List<FeeName>>(
         endpoint: 'portal/payments/fee-names',
         fromJson: (json) {
@@ -52,7 +52,7 @@ class FeeService {
     try {
       // Ensure token is set before making the request
       _ensureTokenIsSet();
-      
+
       final response = await _apiService.post<void>(
         endpoint: 'portal/payments/fee-names',
         body: request.toJson(),
@@ -67,11 +67,12 @@ class FeeService {
   }
 
   // Update fee name method
-  Future<ApiResponse<void>> updateFeeName(String feeNameId, UpdateFeeNameRequest request) async {
+  Future<ApiResponse<void>> updateFeeName(
+      String feeNameId, UpdateFeeNameRequest request) async {
     try {
       // Ensure token is set before making the request
       _ensureTokenIsSet();
-      
+
       final response = await _apiService.put<void>(
         endpoint: 'portal/payments/fee-names/$feeNameId',
         body: request.toJson(),
@@ -86,19 +87,20 @@ class FeeService {
   }
 
   // Delete fee name method
-  Future<ApiResponse<void>> deleteFeeName(String feeNameId, {required String year, required String term}) async {
+  Future<ApiResponse<void>> deleteFeeName(String feeNameId,
+      {required String year, required String term}) async {
     try {
       // Ensure token is set before making the request
       _ensureTokenIsSet();
 
       final userBox = Hive.box('userData');
       final db = userBox.get('_db');
-      
+
       final response = await _apiService.delete<void>(
         endpoint: 'portal/payments/fee-names/$feeNameId?year=$year&term=$term',
         body: {
           '_db': db ?? '',
-        }, 
+        },
         fromJson: (json) => json,
         addDatabaseParam: false,
       );
@@ -111,10 +113,6 @@ class FeeService {
     }
   }
 }
-
-
-
-
 
 // // import 'package:linkschool/modules/admin/payment/models/fee_name.dart';
 // import 'package:linkschool/modules/model/admin/fee_name.dart';

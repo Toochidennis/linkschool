@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'package:linkschool/modules/model/e-learning/material_model.dart';
 import 'package:linkschool/modules/model/e-learning/question_model.dart';
 import 'package:linkschool/modules/admin/e_learning/admin_assignment_screen.dart';
@@ -32,7 +31,7 @@ class Topic {
 
   factory Topic.fromJson(Map<String, dynamic> json) {
     print('Parsing topic: ${json['content']}');
-    
+
     // Safe parsing with null checks
     int? parseId(dynamic value) {
       if (value == null) return null;
@@ -55,7 +54,7 @@ class Topic {
     List<ClassModel> parseClasses(dynamic classesData) {
       if (classesData == null) return [];
       if (classesData is! List) return [];
-      
+
       return classesData
           .where((e) => e != null)
           .map((e) {
@@ -73,7 +72,9 @@ class Topic {
 
     return Topic(
       id: parseId(json['id']),
-      name: (json['content'] as String?) ?? (json['name'] as String?) ?? '', // Handle both content and name fields
+      name: (json['content'] as String?) ??
+          (json['name'] as String?) ??
+          '', // Handle both content and name fields
       objective: json['objective'] as String?,
       classes: parseClasses(json['classes']),
       syllabusId: parseSyllabusId(json['syllabus_id']),
@@ -140,5 +141,3 @@ class ClassModel {
   @override
   int get hashCode => id.hashCode;
 }
-
-

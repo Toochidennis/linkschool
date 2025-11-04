@@ -33,7 +33,8 @@ class CustomSaveElevatedButton extends StatelessWidget {
                 width: 20,
                 height: 20,
                 child: CircularProgressIndicator(
-                  valueColor: AlwaysStoppedAnimation<Color>(AppColors.backgroundLight),
+                  valueColor:
+                      AlwaysStoppedAnimation<Color>(AppColors.backgroundLight),
                   strokeWidth: 2.5,
                 ),
               )

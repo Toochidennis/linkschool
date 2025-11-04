@@ -26,10 +26,12 @@ class AdminCommentCourseResultScreen extends StatefulWidget {
   });
 
   @override
-  State<AdminCommentCourseResultScreen> createState() => _AdminCommentCourseResultScreenState();
+  State<AdminCommentCourseResultScreen> createState() =>
+      _AdminCommentCourseResultScreenState();
 }
 
-class _AdminCommentCourseResultScreenState extends State<AdminCommentCourseResultScreen> {
+class _AdminCommentCourseResultScreenState
+    extends State<AdminCommentCourseResultScreen> {
   List<Map<String, dynamic>> studentResults = [];
   List<String> assessmentNames = [];
   bool isLoading = true;
@@ -40,7 +42,7 @@ class _AdminCommentCourseResultScreenState extends State<AdminCommentCourseResul
   String? userRole;
 
   // Comment modal state
-  bool _isCommentModalOpen = false;
+  final bool _isCommentModalOpen = false;
   final TextEditingController _modalCommentController = TextEditingController();
   bool _isSubmittingComment = false;
   bool _isEditing = false;
@@ -101,7 +103,8 @@ class _AdminCommentCourseResultScreenState extends State<AdminCommentCourseResul
           for (var subject in subjects) {
             final assessments = subject['assessments'] as List<dynamic>? ?? [];
             for (var assessment in assessments) {
-              uniqueAssessments.add(assessment['assessment_name'] as String? ?? '');
+              uniqueAssessments
+                  .add(assessment['assessment_name'] as String? ?? '');
             }
           }
           if (student['comments'] != null && student['comments'] is! Map) {
@@ -163,7 +166,8 @@ class _AdminCommentCourseResultScreenState extends State<AdminCommentCourseResul
           if (studentResults[_currentStudentIndex]['comments'] == null) {
             studentResults[_currentStudentIndex]['comments'] = {};
           }
-          studentResults[_currentStudentIndex]['comments']['teacher_comment'] = comment;
+          studentResults[_currentStudentIndex]['comments']['teacher_comment'] =
+              comment;
           _isEditing = false;
         });
 
@@ -240,7 +244,6 @@ class _AdminCommentCourseResultScreenState extends State<AdminCommentCourseResul
                 ),
               ),
               const SizedBox(height: 20),
-
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -264,7 +267,6 @@ class _AdminCommentCourseResultScreenState extends State<AdminCommentCourseResul
                   ),
                 ],
               ),
-
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
@@ -275,12 +277,14 @@ class _AdminCommentCourseResultScreenState extends State<AdminCommentCourseResul
                   children: [
                     CircleAvatar(
                       radius: 20,
-                      backgroundColor: Colors.primaries[_currentStudentIndex % Colors.primaries.length],
+                      backgroundColor: Colors.primaries[
+                          _currentStudentIndex % Colors.primaries.length],
                       child: Text(
                         currentStudent['student_name']?.isNotEmpty == true
                             ? currentStudent['student_name'][0].toUpperCase()
                             : 'S',
-                        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                        style: const TextStyle(
+                            color: Colors.white, fontWeight: FontWeight.bold),
                       ),
                     ),
                     const SizedBox(width: 12),
@@ -308,9 +312,7 @@ class _AdminCommentCourseResultScreenState extends State<AdminCommentCourseResul
                   ],
                 ),
               ),
-
               const SizedBox(height: 20),
-
               if (!_hasExistingComment()) ...[
                 Text(
                   'Post a Comment',
@@ -340,30 +342,32 @@ class _AdminCommentCourseResultScreenState extends State<AdminCommentCourseResul
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
-                    onPressed: _isSubmittingComment ? null : () async {
-                      if (_modalCommentController.text.trim().isEmpty) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Please enter a comment'),
-                            backgroundColor: Colors.orange,
-                          ),
-                        );
-                        return;
-                      }
+                    onPressed: _isSubmittingComment
+                        ? null
+                        : () async {
+                            if (_modalCommentController.text.trim().isEmpty) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Please enter a comment'),
+                                  backgroundColor: Colors.orange,
+                                ),
+                              );
+                              return;
+                            }
 
-                      setModalState(() {
-                        _isSubmittingComment = true;
-                      });
+                            setModalState(() {
+                              _isSubmittingComment = true;
+                            });
 
-                      await submitComment(
-                        currentStudent['student_id'],
-                        _modalCommentController.text.trim(),
-                      );
+                            await submitComment(
+                              currentStudent['student_id'],
+                              _modalCommentController.text.trim(),
+                            );
 
-                      setModalState(() {
-                        _isSubmittingComment = false;
-                      });
-                    },
+                            setModalState(() {
+                              _isSubmittingComment = false;
+                            });
+                          },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.eLearningBtnColor1,
                       foregroundColor: Colors.white,
@@ -378,7 +382,8 @@ class _AdminCommentCourseResultScreenState extends State<AdminCommentCourseResul
                             width: 20,
                             child: CircularProgressIndicator(
                               strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                              valueColor:
+                                  AlwaysStoppedAnimation<Color>(Colors.white),
                             ),
                           )
                         : const Text(
@@ -392,10 +397,10 @@ class _AdminCommentCourseResultScreenState extends State<AdminCommentCourseResul
                 ),
                 const SizedBox(height: 20),
               ],
-
               if (comments != null) ...[
                 if (comments is Map<String, dynamic>) ...[
-                  if (comments['teacher_comment'] != null && comments['teacher_comment'].toString().isNotEmpty)
+                  if (comments['teacher_comment'] != null &&
+                      comments['teacher_comment'].toString().isNotEmpty)
                     _buildCommentCard(
                       'Teacher Comment',
                       comments['teacher_comment'].toString(),
@@ -404,14 +409,14 @@ class _AdminCommentCourseResultScreenState extends State<AdminCommentCourseResul
                       onEdit: () {
                         setModalState(() {
                           _isEditing = true;
-                          _modalCommentController.text = comments['teacher_comment'].toString();
+                          _modalCommentController.text =
+                              comments['teacher_comment'].toString();
                         });
                       },
                     ),
-
                   const SizedBox(height: 12),
-
-                  if (comments['principal_comment'] != null && comments['principal_comment'].toString().isNotEmpty)
+                  if (comments['principal_comment'] != null &&
+                      comments['principal_comment'].toString().isNotEmpty)
                     _buildCommentCard(
                       'Principal Comment',
                       comments['principal_comment'].toString(),
@@ -427,7 +432,6 @@ class _AdminCommentCourseResultScreenState extends State<AdminCommentCourseResul
                   ),
                 ],
                 const SizedBox(height: 20),
-
                 if (_hasExistingComment()) ...[
                   Text(
                     'Edit Your Comment',
@@ -457,30 +461,32 @@ class _AdminCommentCourseResultScreenState extends State<AdminCommentCourseResul
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
-                      onPressed: _isSubmittingComment || !_isEditing ? null : () async {
-                        if (_modalCommentController.text.trim().isEmpty) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Please enter a comment'),
-                              backgroundColor: Colors.orange,
-                            ),
-                          );
-                          return;
-                        }
+                      onPressed: _isSubmittingComment || !_isEditing
+                          ? null
+                          : () async {
+                              if (_modalCommentController.text.trim().isEmpty) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text('Please enter a comment'),
+                                    backgroundColor: Colors.orange,
+                                  ),
+                                );
+                                return;
+                              }
 
-                        setModalState(() {
-                          _isSubmittingComment = true;
-                        });
+                              setModalState(() {
+                                _isSubmittingComment = true;
+                              });
 
-                        await submitComment(
-                          currentStudent['student_id'],
-                          _modalCommentController.text.trim(),
-                        );
+                              await submitComment(
+                                currentStudent['student_id'],
+                                _modalCommentController.text.trim(),
+                              );
 
-                        setModalState(() {
-                          _isSubmittingComment = false;
-                        });
-                      },
+                              setModalState(() {
+                                _isSubmittingComment = false;
+                              });
+                            },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.eLearningBtnColor1,
                         foregroundColor: Colors.white,
@@ -495,7 +501,8 @@ class _AdminCommentCourseResultScreenState extends State<AdminCommentCourseResul
                               width: 20,
                               child: CircularProgressIndicator(
                                 strokeWidth: 2,
-                                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                valueColor:
+                                    AlwaysStoppedAnimation<Color>(Colors.white),
                               ),
                             )
                           : const Text(
@@ -516,7 +523,8 @@ class _AdminCommentCourseResultScreenState extends State<AdminCommentCourseResul
     );
   }
 
-  Widget _buildCommentCard(String title, String comment, Color color, {bool canEdit = false, VoidCallback? onEdit}) {
+  Widget _buildCommentCard(String title, String comment, Color color,
+      {bool canEdit = false, VoidCallback? onEdit}) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(12),
@@ -574,7 +582,8 @@ class _AdminCommentCourseResultScreenState extends State<AdminCommentCourseResul
     if (comments == null) return false;
 
     if (comments is Map<String, dynamic>) {
-      return comments['teacher_comment'] != null && comments['teacher_comment'].toString().isNotEmpty;
+      return comments['teacher_comment'] != null &&
+          comments['teacher_comment'].toString().isNotEmpty;
     } else if (comments is String) {
       return comments.isNotEmpty;
     }
@@ -650,7 +659,8 @@ class _AdminCommentCourseResultScreenState extends State<AdminCommentCourseResul
                                   children: [
                                     Text(
                                       error!,
-                                      style: const TextStyle(color: Colors.red, fontSize: 16),
+                                      style: const TextStyle(
+                                          color: Colors.red, fontSize: 16),
                                     ),
                                     ElevatedButton(
                                       onPressed: fetchStudentResults,
@@ -731,14 +741,17 @@ class _AdminCommentCourseResultScreenState extends State<AdminCommentCourseResul
                         : null,
                     icon: Icon(
                       Icons.arrow_back_ios,
-                      color: _currentStudentIndex > 0 ? AppColors.eLearningBtnColor1 : Colors.grey,
+                      color: _currentStudentIndex > 0
+                          ? AppColors.eLearningBtnColor1
+                          : Colors.grey,
                     ),
                   ),
                   Row(
                     children: [
                       CircleAvatar(
                         radius: 16,
-                        backgroundColor: Colors.primaries[_currentStudentIndex % Colors.primaries.length],
+                        backgroundColor: Colors.primaries[
+                            _currentStudentIndex % Colors.primaries.length],
                         child: Text(
                           student['student_name']?.isNotEmpty == true
                               ? student['student_name'][0].toUpperCase()
@@ -804,7 +817,8 @@ class _AdminCommentCourseResultScreenState extends State<AdminCommentCourseResul
     if (subjects.isEmpty) {
       return const Padding(
         padding: EdgeInsets.all(16.0),
-        child: Text('No subjects available', style: TextStyle(color: Colors.black)),
+        child: Text('No subjects available',
+            style: TextStyle(color: Colors.black)),
       );
     }
 
@@ -832,11 +846,13 @@ class _AdminCommentCourseResultScreenState extends State<AdminCommentCourseResul
                               subjects,
                               entry.key,
                               isAssessment: true,
-                            ))
-                        .toList(),
-                    _buildScrollableColumn('Total', 100, subjects, -1, isTotal: true),
-                    _buildScrollableColumn('Grade', 100, subjects, -2, isGrade: true),
-                    _buildScrollableColumn('Remark', 100, subjects, -3, isRemark: true),
+                            )),
+                    _buildScrollableColumn('Total', 100, subjects, -1,
+                        isTotal: true),
+                    _buildScrollableColumn('Grade', 100, subjects, -2,
+                        isGrade: true),
+                    _buildScrollableColumn('Remark', 100, subjects, -3,
+                        isRemark: true),
                   ],
                 ),
               ),
@@ -896,8 +912,12 @@ class _AdminCommentCourseResultScreenState extends State<AdminCommentCourseResul
     );
   }
 
-  Widget _buildScrollableColumn(String title, double width, List subjects, int index,
-      {bool isAssessment = false, bool isTotal = false, bool isGrade = false, bool isRemark = false}) {
+  Widget _buildScrollableColumn(
+      String title, double width, List subjects, int index,
+      {bool isAssessment = false,
+      bool isTotal = false,
+      bool isGrade = false,
+      bool isRemark = false}) {
     return Container(
       width: width,
       decoration: BoxDecoration(
@@ -929,7 +949,8 @@ class _AdminCommentCourseResultScreenState extends State<AdminCommentCourseResul
             String value = '-';
 
             if (isAssessment) {
-              final assessmentData = (subject['assessments'] as List? ?? []).firstWhere(
+              final assessmentData =
+                  (subject['assessments'] as List? ?? []).firstWhere(
                 (a) => a['assessment_name'] == title,
                 orElse: () => {'score': ''},
               );
@@ -967,6 +988,3 @@ class _AdminCommentCourseResultScreenState extends State<AdminCommentCourseResul
     );
   }
 }
-
-
-

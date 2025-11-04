@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/svg.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:linkschool/modules/admin/home/quick_actions/student_details.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
@@ -29,9 +28,10 @@ class _ManageStudentsScreenState extends State<ManageStudentsScreen> {
   @override
   void initState() {
     super.initState();
-    
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      Provider.of<ManageStudentProvider>(context, listen: false).fetchStudents();
+      Provider.of<ManageStudentProvider>(context, listen: false)
+          .fetchStudents();
       Provider.of<LevelClassProvider>(context, listen: false).fetchLevels();
     });
   }
@@ -39,13 +39,13 @@ class _ManageStudentsScreenState extends State<ManageStudentsScreen> {
   List<Students> get filteredStudents {
     final provider = Provider.of<ManageStudentProvider>(context);
     return provider.students.where((student) {
-      bool levelMatch = selectedLevelId == null || student.levelId == selectedLevelId;
-      bool classMatch = selectedClassId == null || student.classId == selectedClassId;
+      bool levelMatch =
+          selectedLevelId == null || student.levelId == selectedLevelId;
+      bool classMatch =
+          selectedClassId == null || student.classId == selectedClassId;
       return levelMatch && classMatch;
     }).toList();
   }
-
-  
 
   bool _showAddForm = false;
   Students? _editingStudent;
@@ -112,10 +112,12 @@ class _ManageStudentsScreenState extends State<ManageStudentsScreen> {
                                     value: null,
                                     child: Text('All Levels'),
                                   ),
-                                  ...levelClassProvider.levelsWithClasses.map((levelWithClasses) {
+                                  ...levelClassProvider.levelsWithClasses
+                                      .map((levelWithClasses) {
                                     return DropdownMenuItem(
                                       value: levelWithClasses.level.id,
-                                      child: Text(levelWithClasses.level.levelName),
+                                      child: Text(
+                                          levelWithClasses.level.levelName),
                                     );
                                   }),
                                 ],
@@ -130,7 +132,14 @@ class _ManageStudentsScreenState extends State<ManageStudentsScreen> {
                             const SizedBox(width: 16),
                             Expanded(
                               child: DropdownButtonFormField<int>(
-                                value: (selectedClassId != null && selectedLevelId != null && levelClassProvider.levelsWithClasses.any((lwc) => lwc.level.id == selectedLevelId && lwc.classes.any((c) => c.id == selectedClassId)))
+                                value: (selectedClassId != null &&
+                                        selectedLevelId != null &&
+                                        levelClassProvider.levelsWithClasses
+                                            .any((lwc) =>
+                                                lwc.level.id ==
+                                                    selectedLevelId &&
+                                                lwc.classes.any((c) =>
+                                                    c.id == selectedClassId)))
                                     ? selectedClassId
                                     : null,
                                 decoration: const InputDecoration(
@@ -144,7 +153,8 @@ class _ManageStudentsScreenState extends State<ManageStudentsScreen> {
                                   ),
                                   if (selectedLevelId != null)
                                     ...levelClassProvider.levelsWithClasses
-                                        .firstWhere((lwc) => lwc.level.id == selectedLevelId)
+                                        .firstWhere((lwc) =>
+                                            lwc.level.id == selectedLevelId)
                                         .classes
                                         .map((cls) => DropdownMenuItem(
                                               value: cls.id,
@@ -162,7 +172,8 @@ class _ManageStudentsScreenState extends State<ManageStudentsScreen> {
                         ),
                       ),
                       filteredStudents.isEmpty
-                          ? const Center(child: Padding(
+                          ? const Center(
+                              child: Padding(
                               padding: EdgeInsets.all(32.0),
                               child: Text('No students found'),
                             ))
@@ -173,105 +184,120 @@ class _ManageStudentsScreenState extends State<ManageStudentsScreen> {
                               itemCount: filteredStudents.length,
                               itemBuilder: (context, index) {
                                 final student = filteredStudents[index];
-                                final levelName = levelClassProvider.levelsWithClasses
-                                    .firstWhere(
-                                      (lwc) => lwc.level.id == student.levelId,
-                                      orElse: () => LevelWithClasses(
-                                        level: Levels(
-                                          id: 0,
-                                          levelName: 'Unknown',
-                                          schoolType: '',
-                                          rank: 0,
-                                          admit: 0,
-                                        ),
-                                        classes: [],
-                                      ),
-                                    )
-                                    .level
-                                    .levelName;
-                                final className = levelClassProvider.levelsWithClasses
-                                    .firstWhere(
-                                      (lwc) => lwc.level.id == student.levelId,
-                                      orElse: () => LevelWithClasses(
-                                        level: Levels(
-                                          id: 0,
-                                          levelName: 'Unknown',
-                                          schoolType: '',
-                                          rank: 0,
-                                          admit: 0,
-                                        ),
-                                        classes: [],
-                                      ),
-                                    )
-                                    .classes
-                                    .firstWhere(
-                                      (cls) => cls.id == student.classId,
-                                      orElse: () => Class(
-                                        id: 0,
-                                        className: 'Unknown',
-                                        levelId: 0,
-                                        formTeacherIds: [],
-                                      ),
-                                    )
-                                    .className;
+                                final levelName =
+                                    levelClassProvider.levelsWithClasses
+                                        .firstWhere(
+                                          (lwc) =>
+                                              lwc.level.id == student.levelId,
+                                          orElse: () => LevelWithClasses(
+                                            level: Levels(
+                                              id: 0,
+                                              levelName: 'Unknown',
+                                              schoolType: '',
+                                              rank: 0,
+                                              admit: 0,
+                                            ),
+                                            classes: [],
+                                          ),
+                                        )
+                                        .level
+                                        .levelName;
+                                final className =
+                                    levelClassProvider.levelsWithClasses
+                                        .firstWhere(
+                                          (lwc) =>
+                                              lwc.level.id == student.levelId,
+                                          orElse: () => LevelWithClasses(
+                                            level: Levels(
+                                              id: 0,
+                                              levelName: 'Unknown',
+                                              schoolType: '',
+                                              rank: 0,
+                                              admit: 0,
+                                            ),
+                                            classes: [],
+                                          ),
+                                        )
+                                        .classes
+                                        .firstWhere(
+                                          (cls) => cls.id == student.classId,
+                                          orElse: () => Class(
+                                            id: 0,
+                                            className: 'Unknown',
+                                            levelId: 0,
+                                            formTeacherIds: [],
+                                          ),
+                                        )
+                                        .className;
 
                                 return GestureDetector(
                                   onTap: () {
-                                    final fullName = '${student.firstName} ${student.surname}';
+                                    final fullName =
+                                        '${student.firstName} ${student.surname}';
                                     print(fullName);
-                                    print(student.levelId );
+                                    print(student.levelId);
                                     print(className);
                                     print(student.classId);
-                                 
 
-  Navigator.push(
-    context,
-    MaterialPageRoute(
-      builder: (context) => StudentProfileScreen(
-        student: student,
-        classId:student.classId.toString(),
-        levelId: student.levelId,
-        className: className,
-        studentName: fullName,
-      ),
-    ),
-  );
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) =>
+                                            StudentProfileScreen(
+                                          student: student,
+                                          classId: student.classId.toString(),
+                                          levelId: student.levelId,
+                                          className: className,
+                                          studentName: fullName,
+                                        ),
+                                      ),
+                                    );
                                   },
                                   child: Card(
                                     margin: const EdgeInsets.only(bottom: 8),
                                     child: ListTile(
                                       leading: CircleAvatar(
                                         backgroundColor: AppColors.text2Light,
-                                        child: student.photoPath != null && student.photoPath!.isNotEmpty
+                                        child: student.photoPath != null &&
+                                                student.photoPath!.isNotEmpty
                                             ? ClipOval(
                                                 child: Image.network(
                                                   "https://linkskool.net/${student.photoPath}",
                                                   fit: BoxFit.cover,
                                                   width: 40,
                                                   height: 40,
-                                                  errorBuilder: (context, error, stackTrace) {
+                                                  errorBuilder: (context, error,
+                                                      stackTrace) {
                                                     return Text(
                                                       student.getInitials(),
-                                                      style: const TextStyle(color: Colors.white),
+                                                      style: const TextStyle(
+                                                          color: Colors.white),
                                                     );
                                                   },
-                                                  loadingBuilder: (context, child, loadingProgress) {
-                                                    if (loadingProgress == null) return child;
-                                                    return const CircularProgressIndicator(strokeWidth: 2);
+                                                  loadingBuilder: (context,
+                                                      child, loadingProgress) {
+                                                    if (loadingProgress == null)
+                                                      return child;
+                                                    return const CircularProgressIndicator(
+                                                        strokeWidth: 2);
                                                   },
                                                 ),
                                               )
                                             : Text(
                                                 student.getInitials(),
-                                                style: const TextStyle(color: Colors.white),
+                                                style: const TextStyle(
+                                                    color: Colors.white),
                                               ),
                                       ),
-                                      title: Text('${student.firstName} ${student.surname}'),
-                                      subtitle: Text('$levelName - $className | ID: ${student.registrationNo ?? student.id}'),
+                                      title: Text(
+                                          '${student.firstName} ${student.surname}'),
+                                      subtitle: Text(
+                                          '$levelName - $className | ID: ${student.registrationNo ?? student.id}'),
                                       trailing: PopupMenuButton<String>(
                                         onSelected: (value) {
                                           if (value == 'edit') {
-                                            _showAddEditStudentForm(student: student);
+                                            _showAddEditStudentForm(
+                                                student: student);
                                           } else if (value == 'delete') {
                                             _showDeleteDialog(context, student);
                                           }
@@ -287,8 +313,11 @@ class _ManageStudentsScreenState extends State<ManageStudentsScreen> {
                                           const PopupMenuItem(
                                             value: 'delete',
                                             child: ListTile(
-                                              leading: Icon(Icons.delete, color: Colors.red),
-                                              title: Text('Delete', style: TextStyle(color: Colors.red)),
+                                              leading: Icon(Icons.delete,
+                                                  color: Colors.red),
+                                              title: Text('Delete',
+                                                  style: TextStyle(
+                                                      color: Colors.red)),
                                             ),
                                           ),
                                         ],
@@ -326,7 +355,8 @@ class _ManageStudentsScreenState extends State<ManageStudentsScreen> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Delete Student'),
-        content: Text('Are you sure you want to delete ${student.firstName} ${student.surname}?'),
+        content: Text(
+            'Are you sure you want to delete ${student.firstName} ${student.surname}?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -337,16 +367,19 @@ class _ManageStudentsScreenState extends State<ManageStudentsScreen> {
               onPressed: provider.isLoading
                   ? null
                   : () async {
-                      final success = await provider.deleteStudent(student.id.toString());
+                      final success =
+                          await provider.deleteStudent(student.id.toString());
                       if (success) {
                         Navigator.pop(context);
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Student deleted successfully')),
+                          const SnackBar(
+                              content: Text('Student deleted successfully')),
                         );
                       } else {
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
-                            content: Text(provider.error ?? 'Failed to delete student'),
+                            content: Text(
+                                provider.error ?? 'Failed to delete student'),
                             backgroundColor: Colors.red,
                           ),
                         );
@@ -381,7 +414,7 @@ class StudentFormWidget extends StatefulWidget {
 }
 
 class _StudentFormWidgetState extends State<StudentFormWidget> {
-late final TextEditingController _fullNameController;
+  late final TextEditingController _fullNameController;
   late final TextEditingController middleNameController;
   late final TextEditingController birthDateController;
   late final TextEditingController addressController;
@@ -413,31 +446,45 @@ late final TextEditingController _fullNameController;
   @override
   void initState() {
     super.initState();
-    
+
     final student = widget.student;
-    
-    final fullName = '${student?.surname ?? ''} ${student?.firstName ?? ''}'.trim();
+
+    final fullName =
+        '${student?.surname ?? ''} ${student?.firstName ?? ''}'.trim();
     _fullNameController = TextEditingController(text: fullName);
 
     middleNameController = TextEditingController(text: student?.middle ?? '');
     birthDateController = TextEditingController(text: student?.birthDate ?? '');
     addressController = TextEditingController(text: student?.address ?? '');
-    cityController = TextEditingController(text: student?.city?.toString() ?? '');
-    stateController = TextEditingController(text: student?.state?.toString() ?? '');
-    countryController = TextEditingController(text: student?.country?.toString() ?? '');
+    cityController =
+        TextEditingController(text: student?.city?.toString() ?? '');
+    stateController =
+        TextEditingController(text: student?.state?.toString() ?? '');
+    countryController =
+        TextEditingController(text: student?.country?.toString() ?? '');
     emailController = TextEditingController(text: student?.email ?? '');
     religionController = TextEditingController(text: student?.religion ?? '');
-    guardianNameController = TextEditingController(text: student?.guardianName ?? '');
-    guardianAddressController = TextEditingController(text: student?.guardianAddress ?? '');
-    guardianPhoneController = TextEditingController(text: student?.guardianPhoneNo ?? '');
+    guardianNameController =
+        TextEditingController(text: student?.guardianName ?? '');
+    guardianAddressController =
+        TextEditingController(text: student?.guardianAddress ?? '');
+    guardianPhoneController =
+        TextEditingController(text: student?.guardianPhoneNo ?? '');
     lgaOriginController = TextEditingController(text: student?.lgaOrigin ?? '');
-    stateOriginController = TextEditingController(text: student?.stateOrigin ?? '');
-    nationalityController = TextEditingController(text: student?.nationality ?? '');
-    healthStatusController = TextEditingController(text: student?.healthStatus ?? '');
-    studentStatusController = TextEditingController(text: student?.studentStatus ?? '');
-    pastRecordController = TextEditingController(text: student?.pastRecord ?? '');
-    academicResultController = TextEditingController(text: student?.academicResult ?? '');
-    registrationNoController = TextEditingController(text: student?.registrationNo ?? '');
+    stateOriginController =
+        TextEditingController(text: student?.stateOrigin ?? '');
+    nationalityController =
+        TextEditingController(text: student?.nationality ?? '');
+    healthStatusController =
+        TextEditingController(text: student?.healthStatus ?? '');
+    studentStatusController =
+        TextEditingController(text: student?.studentStatus ?? '');
+    pastRecordController =
+        TextEditingController(text: student?.pastRecord ?? '');
+    academicResultController =
+        TextEditingController(text: student?.academicResult ?? '');
+    registrationNoController =
+        TextEditingController(text: student?.registrationNo ?? '');
 
     gender = student?.gender.isNotEmpty == true
         ? (student!.gender.toLowerCase() == 'f' ? 'female' : 'male')
@@ -446,7 +493,10 @@ late final TextEditingController _fullNameController;
     dialogLevelId = student?.levelId;
     dialogClassId = student?.classId;
 
-    if (isEditing && student?.photo != null && (student!.photo is String) && (student.photo as String).isNotEmpty) {
+    if (isEditing &&
+        student?.photo != null &&
+        (student!.photo is String) &&
+        (student.photo as String).isNotEmpty) {
       oldFileName = path.basename(student.photo as String);
     }
   }
@@ -499,168 +549,170 @@ late final TextEditingController _fullNameController;
     }
   }
 
-Future<void> _saveStudent() async {
-  final fullName = _fullNameController.text.trim();
-  
-  // Validate full name first
-  if (fullName.isEmpty) {
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please enter full name'),
-          backgroundColor: Colors.red,
-        ),
-      );
+  Future<void> _saveStudent() async {
+    final fullName = _fullNameController.text.trim();
+
+    // Validate full name first
+    if (fullName.isEmpty) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Please enter full name'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+      return;
     }
-    return;
-  }
 
-  // Parse name
-  final nameParts = fullName.split(' ').where((part) => part.isNotEmpty).toList();
-  String surname = '';
-  String firstName = '';
+    // Parse name
+    final nameParts =
+        fullName.split(' ').where((part) => part.isNotEmpty).toList();
+    String surname = '';
+    String firstName = '';
 
-  if (nameParts.length < 2) {
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please enter both surname and first name (e.g., Smith John)'),
-          backgroundColor: Colors.red,
-        ),
-      );
+    if (nameParts.length < 2) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+                'Please enter both surname and first name (e.g., Smith John)'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+      return;
     }
-    return;
-  }
 
-  surname = nameParts[0]; // First part is surname
-  firstName = nameParts.sublist(1).join(' '); // Rest is first name
+    surname = nameParts[0]; // First part is surname
+    firstName = nameParts.sublist(1).join(' '); // Rest is first name
 
-  // Validate gender
-  if (gender == null) {
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please select Gender'),
-          backgroundColor: Colors.red,
-        ),
-      );
+    // Validate gender
+    if (gender == null) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Please select Gender'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+      return;
     }
-    return;
-  }
 
-  // Validate birth date
-  if (birthDateController.text.trim().isEmpty) {
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please select Birth Date'),
-          backgroundColor: Colors.red,
-        ),
-      );
+    // Validate birth date
+    if (birthDateController.text.trim().isEmpty) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Please select Birth Date'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+      return;
     }
-    return;
-  }
 
-  final studentProvider = Provider.of<ManageStudentProvider>(context, listen: false);
+    final studentProvider =
+        Provider.of<ManageStudentProvider>(context, listen: false);
 
-  // Handle photo upload
-  String? base64Image;
-  String? newFileName;
-  
-  if (tempImage != null) {
-    final bytes = await tempImage!.readAsBytes();
-    base64Image = base64Encode(bytes);
-    newFileName = path.basename(tempImage!.path);
-  }
+    // Handle photo upload
+    String? base64Image;
+    String? newFileName;
 
-  // Build student data
-  final studentData = <String, dynamic>{
-    'surname': surname,
-    'first_name': firstName,
-    'middle': middleNameController.text.trim(),
-    'gender': gender,
-    'birth_date': birthDateController.text.trim(),
-    'address': addressController.text.trim(),
-    'city': int.tryParse(cityController.text) ?? 0,
-    'state': int.tryParse(stateController.text) ?? 0,
-    'country': int.tryParse(countryController.text) ?? 0,
-    'email': emailController.text.trim(),
-    'religion': religionController.text.trim(),
-    'guardian_name': guardianNameController.text.trim(),
-    'guardian_address': guardianAddressController.text.trim(),
-    'guardian_phone_no': guardianPhoneController.text.trim(),
-    'lga_origin': lgaOriginController.text.trim(),
-    'state_origin': stateOriginController.text.trim(),
-    'nationality': nationalityController.text.trim(),
-    'health_status': healthStatusController.text.trim(),
-    'student_status': studentStatusController.text.trim(),
-    'past_record': pastRecordController.text.trim(),
-    'academic_result': academicResultController.text.trim(),
-    'level_id': dialogLevelId,
-    'class_id': dialogClassId,
-    'registration_no': registrationNoController.text.trim(),
-  };
+    if (tempImage != null) {
+      final bytes = await tempImage!.readAsBytes();
+      base64Image = base64Encode(bytes);
+      newFileName = path.basename(tempImage!.path);
+    }
 
-  // CRITICAL FIX: Always send photo as an object/map structure
-  if (tempImage != null && base64Image != null) {
-    // New image selected - send with base64
-    studentData['photo'] = {
-      "file": base64Image,
-      "file_name": newFileName,
-      "old_file_name": oldFileName.isNotEmpty ? oldFileName : "",
+    // Build student data
+    final studentData = <String, dynamic>{
+      'surname': surname,
+      'first_name': firstName,
+      'middle': middleNameController.text.trim(),
+      'gender': gender,
+      'birth_date': birthDateController.text.trim(),
+      'address': addressController.text.trim(),
+      'city': int.tryParse(cityController.text) ?? 0,
+      'state': int.tryParse(stateController.text) ?? 0,
+      'country': int.tryParse(countryController.text) ?? 0,
+      'email': emailController.text.trim(),
+      'religion': religionController.text.trim(),
+      'guardian_name': guardianNameController.text.trim(),
+      'guardian_address': guardianAddressController.text.trim(),
+      'guardian_phone_no': guardianPhoneController.text.trim(),
+      'lga_origin': lgaOriginController.text.trim(),
+      'state_origin': stateOriginController.text.trim(),
+      'nationality': nationalityController.text.trim(),
+      'health_status': healthStatusController.text.trim(),
+      'student_status': studentStatusController.text.trim(),
+      'past_record': pastRecordController.text.trim(),
+      'academic_result': academicResultController.text.trim(),
+      'level_id': dialogLevelId,
+      'class_id': dialogClassId,
+      'registration_no': registrationNoController.text.trim(),
     };
-  } else if (isEditing) {
-    // Editing without new image - send existing path in proper structure
-    studentData['photo'] = {
-      "file": widget.student?.photoPath ?? "",
-      "file_name": oldFileName.isNotEmpty ? oldFileName : "",
-      "old_file_name": "",
-    };
-  } else {
-    // Creating new student without photo - send empty structure
-    studentData['photo'] = {
-      "file": "",
-      "file_name": "",
-      "old_file_name": "",
-    };
-  }
 
-  bool success;
-  if (isEditing) {
-    success = await studentProvider.updateStudent(
-      widget.student!.id.toString(), 
-      studentData
-    );
-  } else {
-    success = await studentProvider.createStudent(studentData);
-  }
+    // CRITICAL FIX: Always send photo as an object/map structure
+    if (tempImage != null && base64Image != null) {
+      // New image selected - send with base64
+      studentData['photo'] = {
+        "file": base64Image,
+        "file_name": newFileName,
+        "old_file_name": oldFileName.isNotEmpty ? oldFileName : "",
+      };
+    } else if (isEditing) {
+      // Editing without new image - send existing path in proper structure
+      studentData['photo'] = {
+        "file": widget.student?.photoPath ?? "",
+        "file_name": oldFileName.isNotEmpty ? oldFileName : "",
+        "old_file_name": "",
+      };
+    } else {
+      // Creating new student without photo - send empty structure
+      studentData['photo'] = {
+        "file": "",
+        "file_name": "",
+        "old_file_name": "",
+      };
+    }
 
-  // Check if widget is still mounted before showing snackbar
-  if (!mounted) return;
+    bool success;
+    if (isEditing) {
+      success = await studentProvider.updateStudent(
+          widget.student!.id.toString(), studentData);
+    } else {
+      success = await studentProvider.createStudent(studentData);
+    }
 
-  if (success) {
-    widget.onSaved();
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          isEditing ? 'Student updated successfully' : 'Student added successfully'
+    // Check if widget is still mounted before showing snackbar
+    if (!mounted) return;
+
+    if (success) {
+      widget.onSaved();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(isEditing
+              ? 'Student updated successfully'
+              : 'Student added successfully'),
+          backgroundColor: AppColors.attCheckColor2,
         ),
-        backgroundColor: AppColors.attCheckColor2,
-      ),
-    );
-  } else {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(studentProvider.error ?? 'Failed to save student'),
-        backgroundColor: Colors.red,
-      ),
-    );
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(studentProvider.error ?? 'Failed to save student'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
-}
+
   @override
   Widget build(BuildContext context) {
     final studentProvider = Provider.of<ManageStudentProvider>(context);
-    
+
     return Container(
       margin: const EdgeInsets.all(16.0),
       padding: const EdgeInsets.all(20.0),
@@ -679,172 +731,217 @@ Future<void> _saveStudent() async {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-              // Header
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  isEditing ? 'Edit Student' : 'Add New Student',
-                  style: AppTextStyles.normal600(
-                    fontSize: 18,
-                    color: AppColors.text2Light,
-                  ),
-                ),
-                IconButton(
-                  onPressed: widget.onCancel,
-                  icon: const Icon(Icons.close, color: AppColors.text5Light),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-
-            // Image picker
-            Center(
-              child: GestureDetector(
-                onTap: _pickImage,
-                child: CircleAvatar(
-                  radius: 50,
-                  backgroundColor: AppColors.textFieldLight,
-                  backgroundImage: tempImage != null
-                      ? FileImage(tempImage!)
-                      : (widget.student?.photoPath != null && widget.student!.photoPath!.isNotEmpty)
-                          ? NetworkImage("https://linkskool.net/${widget.student!.photoPath}") as ImageProvider<Object>
-                          : null,
-                  child: tempImage == null && (widget.student?.photoPath == null || widget.student!.photoPath!.isEmpty)
-                      ? const Icon(Icons.add_a_photo, color: AppColors.text2Light, size: 40)
-                      : null,
+          // Header
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                isEditing ? 'Edit Student' : 'Add New Student',
+                style: AppTextStyles.normal600(
+                  fontSize: 18,
+                  color: AppColors.text2Light,
                 ),
               ),
+              IconButton(
+                onPressed: widget.onCancel,
+                icon: const Icon(Icons.close, color: AppColors.text5Light),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+
+          // Image picker
+          Center(
+            child: GestureDetector(
+              onTap: _pickImage,
+              child: CircleAvatar(
+                radius: 50,
+                backgroundColor: AppColors.textFieldLight,
+                backgroundImage: tempImage != null
+                    ? FileImage(tempImage!)
+                    : (widget.student?.photoPath != null &&
+                            widget.student!.photoPath!.isNotEmpty)
+                        ? NetworkImage(
+                                "https://linkskool.net/${widget.student!.photoPath}")
+                            as ImageProvider<Object>
+                        : null,
+                child: tempImage == null &&
+                        (widget.student?.photoPath == null ||
+                            widget.student!.photoPath!.isEmpty)
+                    ? const Icon(Icons.add_a_photo,
+                        color: AppColors.text2Light, size: 40)
+                    : null,
+              ),
             ),
-            const SizedBox(height: 20),
+          ),
+          const SizedBox(height: 20),
 
-            // Form fields
-           _buildTextField(
-  controller: _fullNameController,
-  label: 'Full Name * (Surname First)',
-  icon: Icons.person,
-  hintText: 'e.g., Smith John David',
-),
-const SizedBox(height: 12),
-            const SizedBox(height: 12),
-            _buildTextField(controller: middleNameController, label: 'Middle Name', icon: Icons.person_outline),
-            const SizedBox(height: 12),
+          // Form fields
+          _buildTextField(
+            controller: _fullNameController,
+            label: 'Full Name * (Surname First)',
+            icon: Icons.person,
+            hintText: 'e.g., Smith John David',
+          ),
+          const SizedBox(height: 12),
+          const SizedBox(height: 12),
+          _buildTextField(
+              controller: middleNameController,
+              label: 'Middle Name',
+              icon: Icons.person_outline),
+          const SizedBox(height: 12),
 
-            _buildDropdown(
-              label: 'Gender',
-              value: gender,
-              items: ['male', 'female']
-                  .map((g) => DropdownMenuItem(value: g, child: Text(g.capitalize())))
+          _buildDropdown(
+            label: 'Gender',
+            value: gender,
+            items: ['male', 'female']
+                .map((g) =>
+                    DropdownMenuItem(value: g, child: Text(g.capitalize())))
+                .toList(),
+            onChanged: (val) => setState(() => gender = val),
+          ),
+
+          const SizedBox(height: 12),
+          GestureDetector(
+            onTap: _selectBirthDate,
+            child: AbsorbPointer(
+              child: _buildTextField(
+                controller: birthDateController,
+                label: 'Birth Date',
+                icon: Icons.cake,
+                readOnly: true,
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 12),
+          _buildTextField(
+              controller: addressController,
+              label: 'Address',
+              icon: Icons.location_on),
+
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                  child: _buildTextField(
+                      controller: cityController,
+                      label: 'City ID',
+                      icon: Icons.location_city,
+                      keyboardType: TextInputType.number)),
+              const SizedBox(width: 12),
+              Expanded(
+                  child: _buildTextField(
+                      controller: stateController,
+                      label: 'State ID',
+                      icon: Icons.map,
+                      keyboardType: TextInputType.number)),
+            ],
+          ),
+
+          const SizedBox(height: 12),
+          _buildTextField(
+              controller: countryController,
+              label: 'Country ID',
+              icon: Icons.flag,
+              keyboardType: TextInputType.number),
+          const SizedBox(height: 12),
+          _buildTextField(
+              controller: emailController,
+              label: 'Email',
+              icon: Icons.email,
+              keyboardType: TextInputType.emailAddress),
+
+          const SizedBox(height: 12),
+          _buildTextField(
+              controller: religionController,
+              label: 'Religion',
+              icon: Icons.church),
+          const SizedBox(height: 12),
+          _buildTextField(
+              controller: guardianNameController,
+              label: 'Guardian Name',
+              icon: Icons.person),
+          const SizedBox(height: 12),
+          _buildTextField(
+              controller: guardianAddressController,
+              label: 'Guardian Address',
+              icon: Icons.home),
+          const SizedBox(height: 12),
+          _buildTextField(
+              controller: guardianPhoneController,
+              label: 'Guardian Phone',
+              icon: Icons.phone_android,
+              keyboardType: TextInputType.phone),
+
+          const SizedBox(height: 12),
+          Consumer<LevelClassProvider>(
+            builder: (context, provider, _) => _buildDropdown(
+              label: 'Level',
+              value: dialogLevelId,
+              items: provider.levelsWithClasses
+                  .map((lvl) => DropdownMenuItem(
+                        value: lvl.level.id,
+                        child: Text(lvl.level.levelName),
+                      ))
                   .toList(),
-              onChanged: (val) => setState(() => gender = val),
+              onChanged: (value) => setState(() {
+                dialogLevelId = value;
+                dialogClassId = null;
+              }),
             ),
+          ),
 
-            const SizedBox(height: 12),
-            GestureDetector(
-              onTap: _selectBirthDate,
-              child: AbsorbPointer(
-                child: _buildTextField(
-                  controller: birthDateController,
-                  label: 'Birth Date',
-                  icon: Icons.cake,
-                  readOnly: true,
-                ),
+          const SizedBox(height: 12),
+          Consumer<LevelClassProvider>(
+            builder: (context, provider, _) => _buildDropdown(
+              label: 'Class',
+              value: dialogClassId,
+              items: dialogLevelId == null
+                  ? []
+                  : provider.levelsWithClasses
+                      .firstWhere((lvl) => lvl.level.id == dialogLevelId)
+                      .classes
+                      .map((cls) => DropdownMenuItem(
+                          value: cls.id, child: Text(cls.className)))
+                      .toList(),
+              onChanged: (value) => setState(() => dialogClassId = value),
+            ),
+          ),
+
+          const SizedBox(height: 24),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: studentProvider.isLoading ? null : _saveStudent,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.text2Light,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16)),
               ),
-            ),
-
-            const SizedBox(height: 12),
-            _buildTextField(controller: addressController, label: 'Address', icon: Icons.location_on),
-
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                Expanded(child: _buildTextField(controller: cityController, label: 'City ID', icon: Icons.location_city, keyboardType: TextInputType.number)),
-                const SizedBox(width: 12),
-                Expanded(child: _buildTextField(controller: stateController, label: 'State ID', icon: Icons.map, keyboardType: TextInputType.number)),
-              ],
-            ),
-
-            const SizedBox(height: 12),
-            _buildTextField(controller: countryController, label: 'Country ID', icon: Icons.flag, keyboardType: TextInputType.number),
-            const SizedBox(height: 12),
-            _buildTextField(controller: emailController, label: 'Email', icon: Icons.email, keyboardType: TextInputType.emailAddress),
-
-            const SizedBox(height: 12),
-            _buildTextField(controller: religionController, label: 'Religion', icon: Icons.church),
-            const SizedBox(height: 12),
-            _buildTextField(controller: guardianNameController, label: 'Guardian Name', icon: Icons.person),
-            const SizedBox(height: 12),
-            _buildTextField(controller: guardianAddressController, label: 'Guardian Address', icon: Icons.home),
-            const SizedBox(height: 12),
-            _buildTextField(controller: guardianPhoneController, label: 'Guardian Phone', icon: Icons.phone_android, keyboardType: TextInputType.phone),
-
-            const SizedBox(height: 12),
-            Consumer<LevelClassProvider>(
-              builder: (context, provider, _) => _buildDropdown(
-                label: 'Level',
-                value: dialogLevelId,
-                items: provider.levelsWithClasses
-                    .map((lvl) => DropdownMenuItem(
-                          value: lvl.level.id,
-                          child: Text(lvl.level.levelName),
-                        ))
-                    .toList(),
-                onChanged: (value) => setState(() {
-                  dialogLevelId = value;
-                  dialogClassId = null;
-                }),
-              ),
-            ),
-
-            const SizedBox(height: 12),
-            Consumer<LevelClassProvider>(
-              builder: (context, provider, _) => _buildDropdown(
-                label: 'Class',
-                value: dialogClassId,
-                items: dialogLevelId == null
-                    ? []
-                    : provider.levelsWithClasses
-                        .firstWhere((lvl) => lvl.level.id == dialogLevelId)
-                        .classes
-                        .map((cls) => DropdownMenuItem(value: cls.id, child: Text(cls.className)))
-                        .toList(),
-                onChanged: (value) => setState(() => dialogClassId = value),
-              ),
-            ),
-
-            const SizedBox(height: 24),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: studentProvider.isLoading ? null : _saveStudent,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.text2Light,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                ),
-                child: studentProvider.isLoading
-                    ? const CircularProgressIndicator(color: Colors.white)
-                    : Text(
-                        isEditing ? 'Update Student' : 'Add Student',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                        ),
+              child: studentProvider.isLoading
+                  ? const CircularProgressIndicator(color: Colors.white)
+                  : Text(
+                      isEditing ? 'Update Student' : 'Add Student',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
                       ),
-              ),
+                    ),
             ),
-          ],
-        ),
-      );
-    
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _buildTextField({
     required TextEditingController controller,
     required String label,
     required IconData icon,
-      String? hintText, 
+    String? hintText,
     TextInputType keyboardType = TextInputType.text,
     bool readOnly = false,
   }) {

@@ -27,7 +27,8 @@ class _BehaviourSettingScreenState extends State<BehaviourSettingScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
       if (authProvider.isLoggedIn && authProvider.token != null) {
-        final skillsProvider = Provider.of<SkillsProvider>(context, listen: false);
+        final skillsProvider =
+            Provider.of<SkillsProvider>(context, listen: false);
         // ✅ Set initial level and fetch
         skillsProvider.setSelectedLevel('0');
         skillsProvider.fetchSkills();
@@ -70,7 +71,8 @@ class _BehaviourSettingScreenState extends State<BehaviourSettingScreen> {
               GestureDetector(
                 onTap: () => _showLevelSelectionBottomSheet(context),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                   decoration: BoxDecoration(
                     color: AppColors.backgroundLight,
                     borderRadius: BorderRadius.circular(4.0),
@@ -86,7 +88,8 @@ class _BehaviourSettingScreenState extends State<BehaviourSettingScreen> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(selectedLevelDisplay),
-                      const Icon(Icons.arrow_drop_down, color: AppColors.primaryLight),
+                      const Icon(Icons.arrow_drop_down,
+                          color: AppColors.primaryLight),
                     ],
                   ),
                 ),
@@ -98,16 +101,18 @@ class _BehaviourSettingScreenState extends State<BehaviourSettingScreen> {
                     if (provider.isLoading) {
                       return const Center(child: CircularProgressIndicator());
                     }
-                    
+
                     // ✅ FIXED: Sort skills in descending order by id
                     final sortedSkills = List<Skills>.from(provider.skills)
-                      ..sort((a, b) => int.parse(b.id).compareTo(int.parse(a.id)));
-                    
+                      ..sort(
+                          (a, b) => int.parse(b.id).compareTo(int.parse(a.id)));
+
                     return sortedSkills.isEmpty
                         ? const Center(
                             child: Text(
                               'No skills or behaviors available',
-                              style: TextStyle(fontSize: 16, color: Colors.grey),
+                              style:
+                                  TextStyle(fontSize: 16, color: Colors.grey),
                             ),
                           )
                         : SkillsList(
@@ -123,7 +128,8 @@ class _BehaviourSettingScreenState extends State<BehaviourSettingScreen> {
                               );
                             },
                             onDelete: (skill) async {
-                              await provider.deleteSkill(skill.id, context: context);
+                              await provider.deleteSkill(skill.id,
+                                  context: context);
                             },
                           );
                   },
@@ -167,7 +173,8 @@ class _BehaviourSettingScreenState extends State<BehaviourSettingScreen> {
                 const SizedBox(height: 24),
                 Text(
                   'Select Level',
-                  style: AppTextStyles.normal600(fontSize: 24, color: Colors.black),
+                  style: AppTextStyles.normal600(
+                      fontSize: 24, color: Colors.black),
                 ),
                 const SizedBox(height: 24),
                 Flexible(
@@ -175,7 +182,8 @@ class _BehaviourSettingScreenState extends State<BehaviourSettingScreen> {
                     shrinkWrap: true,
                     children: [
                       Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 8),
                         child: _buildSelectionButton(
                           'General (All Levels)',
                           () {
@@ -191,7 +199,8 @@ class _BehaviourSettingScreenState extends State<BehaviourSettingScreen> {
                         ),
                       ),
                       ...levels.map((level) => Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 16, vertical: 8),
                             child: _buildSelectionButton(
                               level['level_name'],
                               () {
@@ -200,7 +209,8 @@ class _BehaviourSettingScreenState extends State<BehaviourSettingScreen> {
                                   selectedLevelValue = level['id'].toString();
                                 });
                                 // ✅ FIXED: Set level in provider
-                                Provider.of<SkillsProvider>(context, listen: false)
+                                Provider.of<SkillsProvider>(context,
+                                        listen: false)
                                     .setSelectedLevel(level['id'].toString());
                                 Navigator.pop(context);
                               },
@@ -245,7 +255,8 @@ class _BehaviourSettingScreenState extends State<BehaviourSettingScreen> {
               alignment: Alignment.center,
               child: Text(
                 text,
-                style: AppTextStyles.normal600(fontSize: 16, color: AppColors.backgroundDark),
+                style: AppTextStyles.normal600(
+                    fontSize: 16, color: AppColors.backgroundDark),
               ),
             ),
           ),
@@ -279,15 +290,15 @@ class _BehaviourSettingScreenState extends State<BehaviourSettingScreen> {
 // ✅ FIXED: Updated callback signatures to pass skill objects
 class SkillsList extends StatelessWidget {
   final List<Skills> skills;
-  final Function(Skills, String) onEdit;  // ✅ Changed to pass Skills object
-  final Function(Skills) onDelete;        // ✅ Changed to pass Skills object
+  final Function(Skills, String) onEdit; // ✅ Changed to pass Skills object
+  final Function(Skills) onDelete; // ✅ Changed to pass Skills object
 
   const SkillsList({
-    Key? key,
+    super.key,
     required this.skills,
     required this.onEdit,
     required this.onDelete,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -300,13 +311,13 @@ class SkillsList extends StatelessWidget {
         final levelDisplay = skill.level == null || skill.level == '0'
             ? 'General (All level)'
             : skill.levelName ?? 'Unknown';
-        
+
         return SkillItem(
           skill: skill.skillName ?? '',
           type: typeDisplay,
           level: levelDisplay,
           onEdit: (newSkill) => onEdit(skill, newSkill), // ✅ Pass skill object
-          onDelete: () => onDelete(skill),                // ✅ Pass skill object
+          onDelete: () => onDelete(skill), // ✅ Pass skill object
         );
       },
     );
@@ -443,7 +454,8 @@ class _SkillItemState extends State<SkillItem> {
                   context: context,
                   builder: (context) => AlertDialog(
                     title: const Text('Delete Skill'),
-                    content: Text('Are you sure you want to delete "${widget.skill}"?'),
+                    content: Text(
+                        'Are you sure you want to delete "${widget.skill}"?'),
                     actions: [
                       TextButton(
                         onPressed: () => Navigator.pop(context),
@@ -454,7 +466,8 @@ class _SkillItemState extends State<SkillItem> {
                           Navigator.pop(context);
                           widget.onDelete();
                         },
-                        child: const Text('Delete', style: TextStyle(color: Colors.red)),
+                        child: const Text('Delete',
+                            style: TextStyle(color: Colors.red)),
                       ),
                     ],
                   ),
@@ -478,10 +491,10 @@ class AddSkillBottomSheet extends StatefulWidget {
   final String selectedLevelValue;
 
   const AddSkillBottomSheet({
-    Key? key,
+    super.key,
     required this.onAddSkill,
     required this.selectedLevelValue,
-  }) : super(key: key);
+  });
 
   @override
   _AddSkillBottomSheetState createState() => _AddSkillBottomSheetState();
@@ -550,7 +563,8 @@ class _AddSkillBottomSheetState extends State<AddSkillBottomSheet> {
                 ),
               ),
               IconButton(
-                icon: SvgPicture.asset('assets/icons/profile/cancel_receipt.svg'),
+                icon:
+                    SvgPicture.asset('assets/icons/profile/cancel_receipt.svg'),
                 color: AppColors.bgGray,
                 onPressed: () => Navigator.pop(context),
               ),

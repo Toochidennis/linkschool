@@ -1,13 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:linkschool/modules/common/buttons/custom_outline_button..dart';
-// import 'package:linkschool/modules/common/buttons/custom_outline_button_2.dart';
 import "package:linkschool/modules/common/text_styles.dart";
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
+import 'package:linkschool/modules/model/explore/home/admission_model.dart';
+
 
 class SchoolProfileScreen extends StatelessWidget {
-  const SchoolProfileScreen({super.key});
+  final School school;
+
+  const SchoolProfileScreen({super.key, required this.school});
 
   @override
   Widget build(BuildContext context) {
@@ -15,9 +18,7 @@ class SchoolProfileScreen extends StatelessWidget {
       appBar: AppBar(
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () {
-            Navigator.pop(context);
-          },
+          onPressed: () => Navigator.pop(context),
         ),
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -26,13 +27,20 @@ class SchoolProfileScreen extends StatelessWidget {
       body: SingleChildScrollView(
         child: Stack(
           children: [
-            // Background Image (SVG)
-            Image(
-                image:
-                    AssetImage('assets/images/explore-images/school-view.png'),
-                fit: BoxFit.cover,
-                width: double.infinity,
-                height: 300),
+            // Background Banner Image
+            Image.network(
+              school.banner,
+              fit: BoxFit.cover,
+              width: double.infinity,
+              height: 300,
+              errorBuilder: (context, error, stackTrace) {
+                return Container(
+                  height: 300,
+                  color: Colors.grey[300],
+                  child: const Icon(Icons.school, size: 100),
+                );
+              },
+            ),
             // Header Section
             Positioned(
               top: 200,
@@ -51,7 +59,7 @@ class SchoolProfileScreen extends StatelessWidget {
                     ),
                   ],
                 ),
-                child: const SchoolHeader(),
+                child: SchoolHeader(school: school),
               ),
             ),
             // Rest of the content
@@ -59,21 +67,12 @@ class SchoolProfileScreen extends StatelessWidget {
               padding: const EdgeInsets.only(top: 310),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: const [
-                  // Map Section
-                  MapSection(),
-
-                  // Action Buttons
-                  ActionButtons(),
-
-                  // School Type Section
-                  SchoolTypeSection(),
-
-                  // About Section
-                  AboutSection(),
-
-                  // Gallery Section
-                  GallerySection(),
+                children: [
+                  MapSection(school: school),
+                  ActionButtons(school: school),
+                  SchoolTypeSection(school: school),
+                  AboutSection(school: school),
+                  GallerySection(school: school),
                 ],
               ),
             ),
@@ -84,18 +83,30 @@ class SchoolProfileScreen extends StatelessWidget {
   }
 }
 
-// school_header.dart
 class SchoolHeader extends StatelessWidget {
-  const SchoolHeader({super.key});
+  final School school;
+
+  const SchoolHeader({super.key, required this.school});
 
   @override
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Image(
-          image: AssetImage('assets/images/explore-images/ls-logo.png'),
-          width: 50,
-          height: 50,
+        ClipRRect(
+          borderRadius: BorderRadius.circular(8),
+          child: Image.network(
+            school.logo,
+            width: 50,
+            height: 50,
+            errorBuilder: (context, error, stackTrace) {
+              return Container(
+                width: 50,
+                height: 50,
+                color: Colors.grey[300],
+                child: const Icon(Icons.school),
+              );
+            },
+          ),
         ),
         const SizedBox(width: 16),
         Expanded(
@@ -103,18 +114,39 @@ class SchoolHeader extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Daughters Of Divine Love Juniorate',
-                style:AppTextStyles.normal500(fontSize: 18, color:AppColors.aboutTitle),
+                school.schoolName,
+                style: AppTextStyles.normal500(
+                  fontSize: 18,
+                  color: AppColors.aboutTitle,
+                ),
               ),
               const SizedBox(height: 4),
               Text(
-                '10 Ugwunwani St, Abakpa, Abakpa Nike 400103, Enugu',
-               style: AppTextStyles.normal400(fontSize: 16, color: AppColors.detailsText),
+                school.address,
+                style: AppTextStyles.normal400(
+                  fontSize: 16,
+                  color: AppColors.detailsText,
+                ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
               ),
               const SizedBox(height: 4),
-              const Text(
-                'Motto: Peace and Love and Integrity',
-               style:AppTextStyles.normal2Light,
+              Text(
+                'Motto: ${school.motto}',
+                style: AppTextStyles.normal2Light,
+              ),
+              Row(
+                children: [
+                  Icon(Icons.star, size: 16, color: Colors.amber),
+                  const SizedBox(width: 4),
+                  Text(
+                    school.rating.toString(),
+                    style: AppTextStyles.normal400(
+                      fontSize: 14,
+                      color: AppColors.text3Light,
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
@@ -124,9 +156,10 @@ class SchoolHeader extends StatelessWidget {
   }
 }
 
-
 class MapSection extends StatelessWidget {
-  const MapSection({super.key});
+  final School school;
+
+  const MapSection({super.key, required this.school});
 
   @override
   Widget build(BuildContext context) {
@@ -141,12 +174,22 @@ class MapSection extends StatelessWidget {
         children: [
           Expanded(
             child: ClipRRect(
-              borderRadius:
-                  const BorderRadius.vertical(top: Radius.circular(8)),
-              child: SvgPicture.asset(
-                'assets/images/map_placeholder.svg',
-                fit: BoxFit.cover,
-                width: double.infinity,
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(8)),
+              child: Container(
+                color: Colors.grey[200],
+                child: Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(Icons.location_on, size: 40),
+                      Text(
+                        'Lat: ${school.latitude.toStringAsFixed(4)}, '
+                        'Long: ${school.longitude.toStringAsFixed(4)}',
+                        style: const TextStyle(fontSize: 12),
+                      ),
+                    ],
+                  ),
+                ),
               ),
             ),
           ),
@@ -168,19 +211,25 @@ class MapSection extends StatelessWidget {
   }
 }
 
-
 class GallerySection extends StatelessWidget {
-  const GallerySection({super.key});
+  final School school;
+
+  const GallerySection({super.key, required this.school});
 
   Widget _buildGalleryCategory(String title, List<String> imageUrls) {
+    if (imageUrls.isEmpty) return const SizedBox.shrink();
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding:  EdgeInsets.all(16),
+          padding: const EdgeInsets.all(16),
           child: Text(
             title,
-            style: AppTextStyles.normal600(fontSize: 16, color: AppColors.detailsText),
+            style: AppTextStyles.normal600(
+              fontSize: 16,
+              color: AppColors.detailsText,
+            ),
           ),
         ),
         SizedBox(
@@ -194,9 +243,17 @@ class GallerySection extends StatelessWidget {
                 margin: const EdgeInsets.only(right: 8),
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(8),
-                  child: Image.asset(
+                  child: Image.network(
                     imageUrls[index],
                     fit: BoxFit.cover,
+                    width: 120,
+                    errorBuilder: (context, error, stackTrace) {
+                      return Container(
+                        width: 120,
+                        color: Colors.grey[300],
+                        child: const Icon(Icons.image),
+                      );
+                    },
                   ),
                 ),
               );
@@ -209,18 +266,6 @@ class GallerySection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const dummyImages = [
-      'assets/images/explore-images/schools-in-Nigeria.jpg',
-      'assets/images/explore-images/schools-in-Nigeria.jpg',
-      'assets/images/explore-images/schools-in-Nigeria.jpg',
-      'assets/images/explore-images/schools-in-Nigeria.jpg',
-      'assets/images/explore-images/schools-in-Nigeria.jpg',
-      'assets/images/explore-images/schools-in-Nigeria.jpg',
-      'assets/images/explore-images/schools-in-Nigeria.jpg',
-      'assets/images/explore-images/schools-in-Nigeria.jpg',
-      'assets/images/explore-images/schools-in-Nigeria.jpg'
-    ];
-
     return DefaultTabController(
       length: 3,
       child: Column(
@@ -232,38 +277,30 @@ class GallerySection extends StatelessWidget {
               Tab(text: 'Other Info'),
             ],
             indicatorColor: AppColors.text2Light,
-         labelColor:AppColors.text2Light, 
+            labelColor: AppColors.text2Light,
           ),
           SizedBox(
             height: 500,
             child: TabBarView(
               children: [
+                // Gallery Tab
                 SingleChildScrollView(
                   child: Column(
                     children: [
-                      _buildGalleryCategory(
-                          'Buildings and facilities', dummyImages),
-                      _buildGalleryCategory('Administrators', dummyImages),
-                      _buildGalleryCategory(
-                          'School activities and events', dummyImages),
-                      _buildGalleryCategory('Alumni', dummyImages),
-                      SizedBox(
-                        height: 50,
-                      ),
+                      _buildGalleryCategory('School Gallery', school.gallery),
+                      const SizedBox(height: 50),
                       CustomOutlineButton(
                         onPressed: () {},
-                        text: 'Get a Form: ₦10,000.00',
+                        text: 'Get a Form: ₦${school.admissionPrice.toStringAsFixed(2)}',
                         borderColor: AppColors.bgBorder,
                         textColor: AppColors.bgBorder,
                         width: 400,
-                      )
+                      ),
                     ],
                   ),
                 ),
 
-
-
-                // Content for the "Testimonials" tab
+                // Testimonials Tab
                 SingleChildScrollView(
                   child: Padding(
                     padding: const EdgeInsets.all(8.0),
@@ -273,53 +310,31 @@ class GallerySection extends StatelessWidget {
                         Text(
                           'What people say about us',
                           style: AppTextStyles.normal400(
-                              fontSize: 16, color: AppColors.aboutTitle),
+                            fontSize: 16,
+                            color: AppColors.aboutTitle,
+                          ),
                         ),
-                        SizedBox(
-                          height: 20,
-                        ),
-                        _TestimonyCard(
-                          image:
-                              'assets/images/explore-images/schools-in-Nigeria.jpg',
-                          name: 'John Doe',
-                          role: '(Parent)',
-                          testimoney:
-                              'DDLJ helped shape my child into the smart and excellent child that she is today. She always stands out!', rating: 2,
-                        ),
-                        _TestimonyCard(
-                          image:
-                              'assets/images/explore-images/schools-in-Nigeria.jpg',
-                          name: 'Mrs Jane Doe',
-                          role: '(Parent)',
-                          testimoney:
-                              'DDLJ helped shape my child into the smart and excellent child that she is today. She always stands out!', rating: 3,
-                        ),
-                        _TestimonyCard(
-                          image:
-                              'assets/images/explore-images/schools-in-Nigeria.jpg',
-                          name: 'Mrs Jane Doe',
-                          role: '(Parent)',
-                          testimoney:
-                              'DDLJ helped shape my child into the smart and excellent child that she is today. She always stands out!', rating: 4,
-                        ),
-                        _TestimonyCard(
-                          image:
-                              'assets/images/explore-images/schools-in-Nigeria.jpg',
-                          name: 'John Doe',
-                          role: '(Parent)',
-                          testimoney:
-                              'The years I spent as a juniorate student were some of the best years of my life', rating: 5,
-                        )
+                        const SizedBox(height: 20),
+                        if (school.testimonials.isEmpty)
+                          const Center(
+                            child: Padding(
+                              padding: EdgeInsets.all(32.0),
+                              child: Text('No testimonials available'),
+                            ),
+                          )
+                        else
+                          ...school.testimonials.map((testimonial) {
+                            return _TestimonyCard(
+                              testimonial: testimonial,
+                            );
+                          }),
                       ],
                     ),
                   ),
                 ),
-                // Content for the "Other Info" tab
-              Column(
-                children: [
-                  MoreInfor(),
-                ],
-              )
+
+                // Other Info Tab
+                MoreInfo(school: school),
               ],
             ),
           ),
@@ -329,9 +344,10 @@ class GallerySection extends StatelessWidget {
   }
 }
 
-
 class ActionButtons extends StatelessWidget {
-  const ActionButtons({super.key});
+  final School school;
+
+  const ActionButtons({super.key, required this.school});
 
   @override
   Widget build(BuildContext context) {
@@ -346,31 +362,86 @@ class ActionButtons extends StatelessWidget {
               padding: const EdgeInsets.all(16),
               backgroundColor: AppColors.aboutTitle,
             ),
-            child: Text('Get a Form: ₦10,000.00',
-                style: AppTextStyles.normal500(
-                  fontSize: 16,
-                  color: AppColors.text6Light,
-                )),
+            child: Text(
+              'Get a Form: ₦${school.admissionPrice.toStringAsFixed(2)}',
+              style: AppTextStyles.normal500(
+                fontSize: 16,
+                color: AppColors.text6Light,
+              ),
+            ),
           ),
         ),
-        SizedBox(
-          height: 16,
-        ),
+        const SizedBox(height: 16),
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
             TextButton.icon(
-              onPressed: () {},
+              onPressed: () {
+                // Show contact dialog
+                showDialog(
+                  context: context,
+                  builder: (context) => AlertDialog(
+                    title: const Text('Contact Information'),
+                    content: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            const Icon(Icons.phone),
+                            const SizedBox(width: 8),
+                            Text(school.contact.phone),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        Row(
+                          children: [
+                            const Icon(Icons.email),
+                            const SizedBox(width: 8),
+                            Expanded(child: Text(school.contact.email)),
+                          ],
+                        ),
+                      ],
+                    ),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(context),
+                        child: const Text('Close'),
+                      ),
+                    ],
+                  ),
+                );
+              },
               style: ButtonStyle(
                 overlayColor: WidgetStateProperty.all(AppColors.detailsbuttonbg),
               ),
-              icon: const Icon(Icons.call_sharp,size: 18,color: AppColors.detailsbutton),
-              label:  Text('Get contact info', style: AppTextStyles.normal400(fontSize: 16, color: AppColors.detailsbutton)),
+              icon: const Icon(
+                Icons.call_sharp,
+                size: 18,
+                color: AppColors.detailsbutton,
+              ),
+              label: Text(
+                'Get contact info',
+                style: AppTextStyles.normal400(
+                  fontSize: 16,
+                  color: AppColors.detailsbutton,
+                ),
+              ),
             ),
             TextButton.icon(
               onPressed: () {},
-              icon: const Icon(Icons.message,size: 18,color: AppColors.detailsbutton),
-              label:  Text('Send a message',style: AppTextStyles.normal400(fontSize: 16, color: AppColors.detailsbutton)),
+              icon: const Icon(
+                Icons.message,
+                size: 18,
+                color: AppColors.detailsbutton,
+              ),
+              label: Text(
+                'Send a message',
+                style: AppTextStyles.normal400(
+                  fontSize: 16,
+                  color: AppColors.detailsbutton,
+                ),
+              ),
             ),
           ],
         ),
@@ -379,9 +450,10 @@ class ActionButtons extends StatelessWidget {
   }
 }
 
-
 class SchoolTypeSection extends StatelessWidget {
-  const SchoolTypeSection({super.key});
+  final School school;
+
+  const SchoolTypeSection({super.key, required this.school});
 
   @override
   Widget build(BuildContext context) {
@@ -392,22 +464,29 @@ class SchoolTypeSection extends StatelessWidget {
         children: [
           Text(
             'School type',
-            style: AppTextStyles.normal600(fontSize: 16, color: AppColors.aboutTitle),
+            style: AppTextStyles.normal600(
+              fontSize: 16,
+              color: AppColors.aboutTitle,
+            ),
           ),
-          SizedBox(height: 8),
-          Text('Boarding Only (All girls)',style: AppTextStyles.normal400(fontSize: 16, color: AppColors.detailsText),),
+          const SizedBox(height: 8),
+          Text(
+            school.schoolType,
+            style: AppTextStyles.normal400(
+              fontSize: 16,
+              color: AppColors.detailsText,
+            ),
+          ),
         ],
       ),
     );
   }
 }
 
-
-
-
-
 class AboutSection extends StatelessWidget {
-  const AboutSection({super.key});
+  final School school;
+
+  const AboutSection({super.key, required this.school});
 
   @override
   Widget build(BuildContext context) {
@@ -419,12 +498,17 @@ class AboutSection extends StatelessWidget {
           Text(
             'About',
             style: AppTextStyles.normal500(
-                fontSize: 16, color: AppColors.aboutTitle),
+              fontSize: 16,
+              color: AppColors.aboutTitle,
+            ),
           ),
-          SizedBox(height: 8),
+          const SizedBox(height: 8),
           Text(
-            'The father founder was rector of a junior seminary, a male juniorate before he was made a bishop. It was a concept he was converted to with and he knows the value of the saying, \'catch them young\'. He was aware of what could be got from the juniorate and believed that after the training, if one did not succeed in the being a religious/clergy, the person would at least be a good citizen.',
-            style: AppTextStyles.normal400(fontSize: 16, color:AppColors.text4Light),
+            school.about,
+            style: AppTextStyles.normal400(
+              fontSize: 16,
+              color: AppColors.text4Light,
+            ),
           ),
         ],
       ),
@@ -432,21 +516,10 @@ class AboutSection extends StatelessWidget {
   }
 }
 
-
-
-
 class _TestimonyCard extends StatelessWidget {
-  final String image;
-  final String name;
-  final String role;
-  final String testimoney;
-  final double rating;
+  final Testimonial testimonial;
 
-  const _TestimonyCard(
-      {required this.image,
-      required this.name,
-      required this.role,
-      required this.testimoney, required this.rating});
+  const _TestimonyCard({required this.testimonial});
 
   @override
   Widget build(BuildContext context) {
@@ -455,101 +528,162 @@ class _TestimonyCard extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Image(
-            image: AssetImage(image),
+          Container(
             height: 50,
             width: 50,
+            decoration: BoxDecoration(
+              color: Colors.grey[300],
+              borderRadius: BorderRadius.circular(25),
+            ),
+            child: Center(
+              child: Text(
+                testimonial.name[0].toUpperCase(),
+                style: const TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
           ),
-          SizedBox(
-            width: 20,
-          ),
+          const SizedBox(width: 20),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.start,
-                  children: [
-                    Text(name,
-                        style: AppTextStyles.normal600(
-                            fontSize: 16, color: AppColors.tesimonyName)),
-                    Text((role),style: AppTextStyles.normal400(
-                            fontSize: 16, color: AppColors.tesimonyName))
-                  ],
-                ),
-                SizedBox(
-                  height: 2,
-                ),
                 Text(
-                  testimoney,
-                  style:AppTextStyles.normal400(
-                            fontSize: 16, color: AppColors.tesimonyName) ,
+                  testimonial.name,
+                  style: AppTextStyles.normal600(
+                    fontSize: 16,
+                    color: AppColors.tesimonyName,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  testimonial.content,
+                  style: AppTextStyles.normal400(
+                    fontSize: 16,
+                    color: AppColors.tesimonyName,
+                  ),
                   overflow: TextOverflow.ellipsis,
                   maxLines: 3,
                 ),
+                const SizedBox(height: 4),
                 RatingBar.builder(
                   itemBuilder: (context, index) {
-                    return Icon(Icons.star, color: Colors.amber);
+                    return const Icon(Icons.star, color: Colors.amber);
                   },
                   allowHalfRating: true,
                   direction: Axis.horizontal,
                   itemCount: 5,
                   itemSize: 16,
-                  initialRating: rating,
+                  initialRating: testimonial.rating,
                   ignoreGestures: true,
                   onRatingUpdate: (rating) {},
-                )
+                ),
+                Text(
+                  testimonial.date,
+                  style: AppTextStyles.normal400(
+                    fontSize: 12,
+                    color: Colors.grey,
+                  ),
+                ),
               ],
             ),
-          )
+          ),
         ],
       ),
     );
   }
 }
-// moreInfor tab
-class MoreInfor extends StatelessWidget {
-  const MoreInfor({super.key});
+
+class MoreInfo extends StatelessWidget {
+  final School school;
+
+  const MoreInfo({super.key, required this.school});
 
   @override
   Widget build(BuildContext context) {
-    return Padding(padding: EdgeInsets.all(16.0),
-    child:Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-            _schoolMotto(),
-            SizedBox(height: 20,),
-            _information()
-      ],
-    ),);
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Text(
+                'School motto: ',
+                style: AppTextStyles.normal400(
+                  fontSize: 16,
+                  color: AppColors.aboutTitle,
+                ),
+              ),
+              Expanded(
+                child: Text(
+                  school.motto,
+                  style: AppTextStyles.normal400(
+                    fontSize: 16,
+                    color: AppColors.detailsText,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          Text(
+            'For more information and inquiries',
+            style: AppTextStyles.normal400(
+              fontSize: 16,
+              color: AppColors.aboutTitle,
+            ),
+          ),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              const Icon(Icons.phone_in_talk),
+              const SizedBox(width: 5),
+              Text(
+                school.contact.phone,
+                style: AppTextStyles.normal400(
+                  fontSize: 16,
+                  color: AppColors.inforText,
+                ),
+              ),
+            ],
+          ),
+          Row(
+            children: [
+              const Icon(Icons.email),
+              const SizedBox(width: 5),
+              Expanded(
+                child: Text(
+                  school.contact.email,
+                  style: AppTextStyles.normal400(
+                    fontSize: 16,
+                    color: AppColors.inforText,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          if (school.startDate != null && school.endDate != null) ...[
+            const SizedBox(height: 10),
+            Text(
+              'Admission Period',
+              style: AppTextStyles.normal400(
+                fontSize: 16,
+                color: AppColors.aboutTitle,
+              ),
+            ),
+            Text(
+              'From: ${school.startDate} to ${school.endDate}',
+              style: AppTextStyles.normal400(
+                fontSize: 16,
+                color: AppColors.detailsText,
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
   }
-}
-
-Widget _schoolMotto (){
-  return Row(
-    children:[
-      Text('School motto:',style:AppTextStyles.normal400(fontSize: 16, color: AppColors.aboutTitle),),
-      Text('Faith and Love',style:AppTextStyles.normal400(fontSize: 16, color: AppColors.detailsText)),
-    ]
-  );
-}
-
-Widget _information(){
-  return Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      Text('For more information and inquiries',style:AppTextStyles.normal400(fontSize: 16, color:AppColors.aboutTitle)),
-      SizedBox(height: 10,),
-      Row(children: [
-        Icon(Icons.phone_in_talk),
-        SizedBox(width: 5,),
-        Text('07030804137, 08124848923',style:AppTextStyles.normal400(fontSize: 16, color:AppColors.inforText)),
-      ],),
-      Row(children: [
-        Icon(Icons.email),
-         SizedBox(width: 5,),
-        Text('azuhchiamaka2018@gmail.com',style:AppTextStyles.normal400(fontSize: 16, color:AppColors.inforText)),
-      ],)
-    ],
-  );
 }

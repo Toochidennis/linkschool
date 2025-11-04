@@ -15,7 +15,7 @@ class StudentCommentService {
   }) async {
     final userBox = Hive.box('userData');
     final loginData = userBox.get('userData') ?? userBox.get('loginResponse');
-          final dbName = userBox.get('_db') ?? 'aalmgzmy_linkskoo_practice';
+    final dbName = userBox.get('_db') ?? 'aalmgzmy_linkskoo_practice';
     if (loginData == null || loginData['token'] == null) {
       throw Exception("No valid login data or token found");
     }
@@ -33,17 +33,21 @@ class StudentCommentService {
         },
       );
 
-      if(response.statusCode == 200) {
-        final data = response.rawData?['response']['data'] as List<dynamic> ?? [];
-        final meta = response.rawData?['response']['meta'] as Map<String, dynamic>;
+      if (response.statusCode == 200) {
+        final data =
+            response.rawData?['response']['data'] as List<dynamic> ?? [];
+        final meta =
+            response.rawData?['response']['meta'] as Map<String, dynamic>;
         if (data.isNotEmpty) {
-          print("Comments fetched successfully: ${data.length} comments found.");
+          print(
+              "Comments fetched successfully: ${data.length} comments found.");
           print("Meta data: $meta");
           return {
-            'comments': data.map((json) => StudentComment.fromJson(json)).toList(),
+            'comments':
+                data.map((json) => StudentComment.fromJson(json)).toList(),
             'meta': meta,
-          };}
-
+          };
+        }
       }
 
       throw Exception("Failed to Fetch Comments: ${response.message}");
@@ -53,7 +57,8 @@ class StudentCommentService {
     }
   }
 
-  Future<void> CreateComments(Map<String, dynamic> commentData,String contentId) async {
+  Future<void> CreateComments(
+      Map<String, dynamic> commentData, String contentId) async {
     final userBox = Hive.box('userData');
     final loginData = userBox.get('userData') ?? userBox.get('loginResponse');
     final dbName = userBox.get('_db') ?? 'aalmgzmy_linkskoo_practice';
@@ -75,13 +80,13 @@ class StudentCommentService {
       );
 
       print("Response Status Code: ${response.statusCode}");
-      print(" this is the comment oo${commentData}");
+      print(" this is the comment oo$commentData");
       if (!response.success) {
         print("Failed to create comment");
 
         print("Error: ${response.message ?? 'No error message provided'}");
         SnackBar(
-          content: Text("${response.message}"),
+          content: Text(response.message),
           backgroundColor: Colors.red,
         );
         throw Exception("Failed to Create Comment: ${response.message}");
@@ -92,16 +97,16 @@ class StudentCommentService {
           content: Text('Comment created successfully.'),
           backgroundColor: Colors.green,
         );
-        print('${response.message}');
+        print(response.message);
       }
     } catch (e) {
       print("Error creating comment: $e");
       throw Exception("Failed to Create Comment: $e");
     }
-
   }
 
-  Future<void> updateComment(Map<String, dynamic> UpdatedComment,String id) async {
+  Future<void> updateComment(
+      Map<String, dynamic> UpdatedComment, String id) async {
     final userBox = Hive.box('userData');
     final loginData = userBox.get('userData') ?? userBox.get('loginResponse');
     final dbName = userBox.get('_db') ?? 'aalmgzmy_linkskoo_practice';

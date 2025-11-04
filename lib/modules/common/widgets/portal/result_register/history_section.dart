@@ -48,11 +48,13 @@ class _HistorySectionState extends State<HistorySection> with RouteAware {
   // Method to refresh data by notifying TermProvider
   Future<void> _refreshData() async {
     final termProvider = Provider.of<TermProvider>(context, listen: false);
-    await termProvider.fetchTerms(widget.classId); // Assuming TermProvider has a fetchTerms method
+    await termProvider.fetchTerms(
+        widget.classId); // Assuming TermProvider has a fetchTerms method
   }
 
   // Method to show terms bottom sheet
-  void _showTermsBottomSheet(BuildContext context, String session, List<Map<String, dynamic>> terms) {
+  void _showTermsBottomSheet(
+      BuildContext context, String session, List<Map<String, dynamic>> terms) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -90,7 +92,8 @@ class _HistorySectionState extends State<HistorySection> with RouteAware {
                     itemBuilder: (context, index) {
                       final term = terms[index];
                       return Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 8),
                         child: _buildTermButton(
                           term['termName'] ?? 'Unknown Term',
                           () {
@@ -207,7 +210,8 @@ class _HistorySectionState extends State<HistorySection> with RouteAware {
                         onTap: () {
                           Navigator.push(
                             context,
-                            MaterialPageRoute(builder: (context) => const SeeAllHistory()),
+                            MaterialPageRoute(
+                                builder: (context) => const SeeAllHistory()),
                           );
                         },
                         child: Text(
@@ -243,7 +247,8 @@ class _HistorySectionState extends State<HistorySection> with RouteAware {
                       final sessionTerms = groupedTerms[year]!;
 
                       return InkWell(
-                        onTap: () => _showTermsBottomSheet(context, session, sessionTerms),
+                        onTap: () => _showTermsBottomSheet(
+                            context, session, sessionTerms),
                         child: Container(
                           margin: const EdgeInsets.only(bottom: 16),
                           padding: const EdgeInsets.all(16),
@@ -255,7 +260,8 @@ class _HistorySectionState extends State<HistorySection> with RouteAware {
                           child: Column(
                             children: [
                               Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
                                 children: [
                                   Text(
                                     '$session academic session',
@@ -268,11 +274,15 @@ class _HistorySectionState extends State<HistorySection> with RouteAware {
                                     height: 24,
                                     child: OutlinedButton(
                                       style: OutlinedButton.styleFrom(
-                                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
-                                        backgroundColor: AppColors.backgroundLight,
-                                        side: const BorderSide(color: AppColors.primaryLight),
+                                        padding: const EdgeInsets.symmetric(
+                                            horizontal: 16, vertical: 0),
+                                        backgroundColor:
+                                            AppColors.backgroundLight,
+                                        side: const BorderSide(
+                                            color: AppColors.primaryLight),
                                       ),
-                                      onPressed: () => _showTermsBottomSheet(context, session, sessionTerms),
+                                      onPressed: () => _showTermsBottomSheet(
+                                          context, session, sessionTerms),
                                       child: Text(
                                         'See details',
                                         style: AppTextStyles.normal500(

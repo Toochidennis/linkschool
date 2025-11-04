@@ -1,7 +1,6 @@
 // import 'package:linkschool/modules/model/admin/course_registration_history.dart';
 // import 'package:linkschool/modules/services/api/api_service.dart';
 
-
 // class RegistrationHistoryService {
 //   final ApiService _apiService;
 
@@ -24,7 +23,6 @@
 //     );
 //   }
 // }
-
 
 // // class RegistrationHistoryService {
 // //   final ApiService _apiService;

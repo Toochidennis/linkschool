@@ -21,10 +21,10 @@ class ClassDetailBarChart extends StatelessWidget {
             BarChartData(
               maxY: 100,
               titlesData: FlTitlesData(
-                rightTitles: const AxisTitles(
-                    sideTitles: SideTitles(showTitles: false)),
-                topTitles: const AxisTitles(
-                    sideTitles: SideTitles(showTitles: false)),
+                rightTitles:
+                    const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                topTitles:
+                    const AxisTitles(sideTitles: SideTitles(showTitles: false)),
                 bottomTitles: AxisTitles(
                   sideTitles: SideTitles(
                     showTitles: true,
@@ -76,7 +76,8 @@ class ClassDetailBarChart extends StatelessWidget {
         barRods: [
           BarChartRodData(
             toY: score,
-            color: index % 2 == 0 ? AppColors.primaryLight : AppColors.videoColor4,
+            color:
+                index % 2 == 0 ? AppColors.primaryLight : AppColors.videoColor4,
             width: 20.46,
             borderRadius: const BorderRadius.only(
               topLeft: Radius.circular(4),
@@ -137,6 +138,3 @@ class ClassDetailBarChart extends StatelessWidget {
     );
   }
 }
-
-
-

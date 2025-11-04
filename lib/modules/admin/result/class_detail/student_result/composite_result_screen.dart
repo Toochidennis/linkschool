@@ -78,7 +78,8 @@ class _CompositeResultScreenState extends State<CompositeResultScreen> {
         final responseData = response.rawData!['response'];
         setState(() {
           subjects = List<Map<String, dynamic>>.from(responseData['subjects']);
-          studentResults = List<Map<String, dynamic>>.from(responseData['students']);
+          studentResults =
+              List<Map<String, dynamic>>.from(responseData['students']);
           isLoading = false;
         });
       } else {
@@ -100,7 +101,7 @@ class _CompositeResultScreenState extends State<CompositeResultScreen> {
     if (position == null) return 'N/A';
     final int pos = int.tryParse(position.toString()) ?? 0;
     if (pos == 0) return 'N/A';
-    
+
     String suffix;
     switch (pos % 10) {
       case 1:
@@ -165,7 +166,9 @@ class _CompositeResultScreenState extends State<CompositeResultScreen> {
           child: isLoading
               ? const Center(child: CircularProgressIndicator())
               : error != null
-                  ? Center(child: Text(error!, style: const TextStyle(color: Colors.red)))
+                  ? Center(
+                      child: Text(error!,
+                          style: const TextStyle(color: Colors.red)))
                   : Column(
                       children: [
                         // Term information card
@@ -254,11 +257,11 @@ class _CompositeResultScreenState extends State<CompositeResultScreen> {
                               100,
                               entry.key,
                               isSubject: true,
-                            ))
-                        .toList(),
+                            )),
                     _buildScrollableColumn('Total', 100, -1, isTotal: true),
                     _buildScrollableColumn('Average', 100, -2, isAverage: true),
-                    _buildScrollableColumn('Position', 100, -3, isPosition: true),
+                    _buildScrollableColumn('Position', 100, -3,
+                        isPosition: true),
                   ],
                 ),
               ),
@@ -320,7 +323,10 @@ class _CompositeResultScreenState extends State<CompositeResultScreen> {
 
   // Build scrollable column for subjects, total, average, or position
   Widget _buildScrollableColumn(String title, double width, int index,
-      {bool isSubject = false, bool isTotal = false, bool isAverage = false, bool isPosition = false}) {
+      {bool isSubject = false,
+      bool isTotal = false,
+      bool isAverage = false,
+      bool isPosition = false}) {
     return Container(
       width: width,
       decoration: BoxDecoration(
@@ -355,7 +361,6 @@ class _CompositeResultScreenState extends State<CompositeResultScreen> {
             } else if (isTotal) {
               value = stud['total_score']?.toString() ?? '0';
             } else if (isAverage) {
-             
               value = stud['average']?.toString() ?? '0';
             } else if (isPosition) {
               value = _formatPosition(stud['position']);
@@ -384,5 +389,3 @@ class _CompositeResultScreenState extends State<CompositeResultScreen> {
     );
   }
 }
-
-

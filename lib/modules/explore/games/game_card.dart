@@ -6,8 +6,6 @@ import 'package:linkschool/modules/common/text_styles.dart';
 import '../../model/explore/home/game_model.dart';
 import '../e_library/e_games/game_details.dart';
 
-
-
 class GameCard extends StatelessWidget {
   final Game game;
   final Color beginColor;
@@ -61,13 +59,15 @@ class GameCard extends StatelessWidget {
           SizedBox(height: 8),
           Text(
             game.title.isEmpty ? 'Loading...' : game.title,
-            style: AppTextStyles.normal500(fontSize: 13, color: AppColors.libText),
+            style:
+                AppTextStyles.normal500(fontSize: 13, color: AppColors.libText),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
           Text(
             'Cross-platform',
-            style: AppTextStyles.normal500(fontSize: 13, color: AppColors.text5Light),
+            style: AppTextStyles.normal500(
+                fontSize: 13, color: AppColors.text5Light),
           ),
           RatingBar.builder(
             allowHalfRating: true,
@@ -87,4 +87,3 @@ class GameCard extends StatelessWidget {
     );
   }
 }
-

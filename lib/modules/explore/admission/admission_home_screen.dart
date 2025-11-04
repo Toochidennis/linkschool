@@ -12,11 +12,11 @@ class AdmissionHomeScreen extends StatelessWidget {
         child: ElevatedButton(
           onPressed: () {
             // Navigate to SchoolProfilePage when button is pressed
-            Navigator.of(context).push(
-              MaterialPageRoute(
-                builder: (context) => const SchoolProfileScreen(),
-              ),
-            );
+            // Navigator.of(context).push(
+            //   MaterialPageRoute(
+            //     builder: (context) => const SchoolProfileScreen(school: {},),
+            //   ),
+            // );
           },
           style: ElevatedButton.styleFrom(
             padding: const EdgeInsets.symmetric(

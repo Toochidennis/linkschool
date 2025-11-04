@@ -37,18 +37,19 @@ class _StudentRecieptDialogState extends State<StudentRecieptDialog> {
 
   String _formatAmount(double amount) {
     return amount.toStringAsFixed(2).replaceAllMapped(
-      RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
-      (Match m) => '${m[1]},',
-    );
+          RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+          (Match m) => '${m[1]},',
+        );
   }
 
   /// Capture receipt widget as PDF
   Future<Uint8List?> _generateReceiptPdf() async {
     try {
-      RenderRepaintBoundary boundary =
-          _receiptKey.currentContext!.findRenderObject() as RenderRepaintBoundary;
+      RenderRepaintBoundary boundary = _receiptKey.currentContext!
+          .findRenderObject() as RenderRepaintBoundary;
 
-      final ui.Image image = await boundary.toImage(pixelRatio: 3.0); // high quality
+      final ui.Image image =
+          await boundary.toImage(pixelRatio: 3.0); // high quality
       final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
       final pngBytes = byteData!.buffer.asUint8List();
 
@@ -86,7 +87,7 @@ class _StudentRecieptDialogState extends State<StudentRecieptDialog> {
         onLayout: (format) async => pdfData,
         name: 'receipt_${widget.payment.reference}.pdf',
       );
-      
+
       // Show success message after download
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -127,10 +128,12 @@ class _StudentRecieptDialogState extends State<StudentRecieptDialog> {
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 520),
             child: Card(
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10)),
               elevation: 6,
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 22.0, vertical: 20.0),
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 22.0, vertical: 20.0),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -146,7 +149,8 @@ class _StudentRecieptDialogState extends State<StudentRecieptDialog> {
                               color: Color.fromARGB(255, 175, 235, 191),
                               shape: BoxShape.circle,
                             ),
-                            child: const Icon(Icons.check, size: 36, color: Color(0xFF32A852)),
+                            child: const Icon(Icons.check,
+                                size: 36, color: Color(0xFF32A852)),
                           ),
                           const SizedBox(height: 10),
                           Builder(
@@ -154,12 +158,19 @@ class _StudentRecieptDialogState extends State<StudentRecieptDialog> {
                               String schoolName = "School Name";
                               try {
                                 final userBox = Hive.box('userData');
-                                final storedUserData = userBox.get('userData') ?? userBox.get('loginResponse');
-                                final processedData = storedUserData is String ? json.decode(storedUserData) : storedUserData;
-                                final response = processedData['response'] ?? processedData;
+                                final storedUserData =
+                                    userBox.get('userData') ??
+                                        userBox.get('loginResponse');
+                                final processedData = storedUserData is String
+                                    ? json.decode(storedUserData)
+                                    : storedUserData;
+                                final response =
+                                    processedData['response'] ?? processedData;
                                 final data = response['data'] ?? response;
                                 final settings = data['settings'] ?? data;
-                                schoolName = settings['school_name']?.toString() ?? "School Name";
+                                schoolName =
+                                    settings['school_name']?.toString() ??
+                                        "School Name";
                               } catch (e) {}
                               return Text(
                                 schoolName,
@@ -185,9 +196,10 @@ class _StudentRecieptDialogState extends State<StudentRecieptDialog> {
                           Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              const NairaSvgIcon(color: Color(0xFF2F55DD), 
-                              width: 16,
-                              // size: 25 
+                              const NairaSvgIcon(
+                                color: Color(0xFF2F55DD),
+                                width: 16,
+                                // size: 25
                               ),
                               Text(
                                 _formatAmount(widget.payment.amount),
@@ -214,13 +226,17 @@ class _StudentRecieptDialogState extends State<StudentRecieptDialog> {
                             dashColor: Color(0xFFE6E6E6),
                           ),
                           const SizedBox(height: 8),
-                          _buildDetailRow('Date', _formatDate(widget.payment.date)),
+                          _buildDetailRow(
+                              'Date', _formatDate(widget.payment.date)),
                           _buildDetailRow('Name', widget.payment.name),
                           _buildDetailRow('Class', widget.payment.levelName),
-                          _buildDetailRow('Registration number', widget.payment.regNo),
+                          _buildDetailRow(
+                              'Registration number', widget.payment.regNo),
                           _buildDetailRow('Session', widget.payment.year),
-                          _buildDetailRow('Term', '${widget.payment.termName} Fees'),
-                          _buildDetailRow('Reference number', widget.payment.reference),
+                          _buildDetailRow(
+                              'Term', '${widget.payment.termName} Fees'),
+                          _buildDetailRow(
+                              'Reference number', widget.payment.reference),
                           const SizedBox(height: 18),
                           const DottedLine(
                             dashLength: 6,
@@ -237,7 +253,8 @@ class _StudentRecieptDialogState extends State<StudentRecieptDialog> {
                       children: [
                         Expanded(
                           child: OutlinedButton(
-                            onPressed: () => _handleReceiptAction(isShare: true),
+                            onPressed: () =>
+                                _handleReceiptAction(isShare: true),
                             style: OutlinedButton.styleFrom(
                               side: const BorderSide(color: Color(0xFF2F55DD)),
                               shape: RoundedRectangleBorder(
@@ -254,7 +271,8 @@ class _StudentRecieptDialogState extends State<StudentRecieptDialog> {
                         const SizedBox(width: 14),
                         Expanded(
                           child: ElevatedButton(
-                            onPressed: () => _handleReceiptAction(isShare: false),
+                            onPressed: () =>
+                                _handleReceiptAction(isShare: false),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: const Color(0xFF2F55DD),
                               shape: RoundedRectangleBorder(
@@ -264,7 +282,8 @@ class _StudentRecieptDialogState extends State<StudentRecieptDialog> {
                             child: Text(
                               'Download',
                               style: AppTextStyles.normal500(
-                                  fontSize: 16, color: AppColors.backgroundLight),
+                                  fontSize: 16,
+                                  color: AppColors.backgroundLight),
                             ),
                           ),
                         ),

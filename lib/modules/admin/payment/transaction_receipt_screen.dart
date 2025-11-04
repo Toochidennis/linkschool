@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import '../../common/app_colors.dart';
 import '../../common/text_styles.dart';
 import '../../common/widgets/portal/profile/naira_icon.dart';
@@ -75,7 +74,7 @@ class TransactionReceiptScreen extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 24),
-                    
+
                     // Receipt Title
                     Text(
                       _getReceiptTitle(),
@@ -86,7 +85,7 @@ class TransactionReceiptScreen extends StatelessWidget {
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 16),
-                    
+
                     // Amount
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -102,15 +101,15 @@ class TransactionReceiptScreen extends StatelessWidget {
                           style: TextStyle(
                             fontSize: 28,
                             fontWeight: FontWeight.bold,
-                            color: transaction.type == 'receipts' 
-                                ? AppColors.paymentTxtColor1 
+                            color: transaction.type == 'receipts'
+                                ? AppColors.paymentTxtColor1
                                 : const Color(0xFFFF5722),
                           ),
                         ),
                       ],
                     ),
                     const SizedBox(height: 8),
-                    
+
                     // Status
                     Text(
                       transaction.type == 'receipts' ? 'Successful' : 'Paid',
@@ -120,36 +119,36 @@ class TransactionReceiptScreen extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 32),
-                    
+
                     // Dashed line
                     CustomPaint(
                       size: const Size(double.infinity, 1),
                       painter: DashedLinePainter(),
                     ),
                     const SizedBox(height: 32),
-                    
+
                     // Receipt Details
                     _buildReceiptRow('Date', _formatDate(transaction.date)),
                     const SizedBox(height: 20),
-                    
+
                     _buildReceiptRow('Name', transaction.name),
                     const SizedBox(height: 20),
-                    
+
                     _buildReceiptRow('Class', transaction.levelName),
                     const SizedBox(height: 20),
-                    
+
                     _buildReceiptRow('Registration number', transaction.regNo),
                     const SizedBox(height: 20),
-                    
+
                     _buildReceiptRow('Session', _getSessionText()),
                     const SizedBox(height: 20),
-                    
+
                     _buildReceiptRow('Term', _getTermText()),
                     const SizedBox(height: 20),
-                    
+
                     _buildReceiptRow('Reference number', transaction.reference),
                     const SizedBox(height: 32),
-                    
+
                     // Bottom dashed line
                     CustomPaint(
                       size: const Size(double.infinity, 1),
@@ -159,7 +158,7 @@ class TransactionReceiptScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 32),
-              
+
               // Action Buttons (if needed)
               Row(
                 children: [
@@ -172,7 +171,8 @@ class TransactionReceiptScreen extends StatelessWidget {
                       label: const Text('Share'),
                       style: OutlinedButton.styleFrom(
                         foregroundColor: AppColors.paymentTxtColor1,
-                        side: const BorderSide(color: AppColors.paymentTxtColor1),
+                        side:
+                            const BorderSide(color: AppColors.paymentTxtColor1),
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8),
@@ -278,23 +278,34 @@ class TransactionReceiptScreen extends StatelessWidget {
 
   String _formatAmount(double amount) {
     return amount.abs().toStringAsFixed(2).replaceAllMapped(
-      RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
-      (Match m) => '${m[1]},',
-    );
+          RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+          (Match m) => '${m[1]},',
+        );
   }
 
   String _formatDate(String dateString) {
     try {
       DateTime date = DateTime.parse(dateString);
       List<String> months = [
-        '', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-        'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+        '',
+        'Jan',
+        'Feb',
+        'Mar',
+        'Apr',
+        'May',
+        'Jun',
+        'Jul',
+        'Aug',
+        'Sep',
+        'Oct',
+        'Nov',
+        'Dec'
       ];
-      
+
       String day = date.day.toString().padLeft(2, '0');
       String month = months[date.month];
       String year = date.year.toString();
-      
+
       return '$day-$month-$year';
     } catch (e) {
       return dateString;

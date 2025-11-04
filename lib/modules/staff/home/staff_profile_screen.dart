@@ -7,8 +7,6 @@ import 'package:linkschool/modules/providers/admin/student_provider.dart';
 import 'package:provider/provider.dart';
 
 class StaffProfileScreen extends StatelessWidget {
-
-
   final String studentName;
   final String classId;
   final String className;
@@ -26,7 +24,14 @@ class StaffProfileScreen extends StatelessWidget {
   ]; // Sample phone numbers
   final String address = '425 Wallaby Way, Sydney, Australia'; // Sample address
 
-  StaffProfileScreen({super.key, required this.name, required this.studentName, required this.classId, required this.className, required this.levelId, required this.studentId});
+  StaffProfileScreen(
+      {super.key,
+      required this.name,
+      required this.studentName,
+      required this.classId,
+      required this.className,
+      required this.levelId,
+      required this.studentId});
 
   @override
   Widget build(BuildContext context) {
@@ -179,18 +184,15 @@ class StaffProfileScreen extends StatelessWidget {
 
                   // Button
                   ElevatedButton(
-                   onPressed: () async {
+                    onPressed: () async {
                       // ✅ Get the provider
-                      final studentProvider = Provider.of<StudentProvider>(
-                        context,
-                        listen: false
-                      );
-                      
+                      final studentProvider =
+                          Provider.of<StudentProvider>(context, listen: false);
+
                       // ✅ Fetch student result terms BEFORE navigation
-                      await studentProvider.fetchStudentResultTerms(studentId ?? 0);
-                      
-                     
-                      
+                      await studentProvider
+                          .fetchStudentResultTerms(studentId ?? 0);
+
                       // ✅ Navigate after data is fetched
                       if (context.mounted) {
                         Navigator.push(
@@ -205,7 +207,8 @@ class StaffProfileScreen extends StatelessWidget {
                             ),
                           ),
                         );
-                      }},
+                      }
+                    },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.staffCtnColor2,
                       padding: const EdgeInsets.symmetric(

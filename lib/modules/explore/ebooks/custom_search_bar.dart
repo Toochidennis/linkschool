@@ -16,10 +16,10 @@ class CustomSearchBar extends StatelessWidget {
           hintText: 'Search books...',
           prefixIcon: const Icon(Icons.search),
           border: InputBorder.none,
-          contentPadding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
         ),
       ),
     );
   }
 }
-

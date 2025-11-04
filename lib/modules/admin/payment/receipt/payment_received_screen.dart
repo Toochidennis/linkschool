@@ -10,8 +10,6 @@ import '../../../model/admin/payment_model.dart';
 import '../../../services/admin/payment/payment_service.dart';
 import '../../../services/api/api_service.dart';
 
-
-
 class PaymentReceivedScreen extends StatefulWidget {
   final int levelId;
   final int classId;
@@ -56,16 +54,16 @@ class _PaymentReceivedScreenState extends State<PaymentReceivedScreen> {
     try {
       final userBox = Hive.box('userData');
       final token = userBox.get('token');
-      
+
       if (token == null || token.toString().isEmpty) {
         print('No authentication token found. User needs to login again.');
         return;
       }
-      
+
       final apiService = ApiService();
       apiService.setAuthToken(token.toString());
       _paymentService = PaymentService(apiService);
-      
+
       print('ApiService initialized with authentication token');
     } catch (e) {
       print('Error initializing services: $e');
@@ -74,7 +72,7 @@ class _PaymentReceivedScreenState extends State<PaymentReceivedScreen> {
 
   Future<void> _loadPaidInvoices() async {
     setState(() => _isLoading = true);
-    
+
     try {
       final invoices = await _paymentService.getPaidInvoices(
         levelId: _currentLevelId,
@@ -108,7 +106,7 @@ class _PaymentReceivedScreenState extends State<PaymentReceivedScreen> {
 
   void _showClassSelectionOverlay() {
     final classes = _paymentService.getClassesForLevel(_currentLevelId);
-    
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -141,7 +139,8 @@ class _PaymentReceivedScreenState extends State<PaymentReceivedScreen> {
                       itemBuilder: (context, index) {
                         final classModel = classes[index];
                         return Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 24, vertical: 8),
                           child: _buildClassButton(classModel),
                         );
                       },
@@ -190,7 +189,7 @@ class _PaymentReceivedScreenState extends State<PaymentReceivedScreen> {
   Widget build(BuildContext context) {
     final Brightness brightness = Theme.of(context).brightness;
     opacity = brightness == Brightness.light ? 0.1 : 0.15;
-    
+
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
@@ -298,12 +297,15 @@ class _PaymentReceivedScreenState extends State<PaymentReceivedScreen> {
                           : ListView.builder(
                               itemCount: groupedInvoices.length,
                               itemBuilder: (context, index) {
-                                final entry = groupedInvoices.entries.elementAt(index);
+                                final entry =
+                                    groupedInvoices.entries.elementAt(index);
                                 final studentInvoices = entry.value;
                                 final firstInvoice = studentInvoices.first;
-                                final totalAmount = studentInvoices.fold(0.0, (sum, invoice) => sum + invoice.amount);
-                                
-                                return _buildStudentItem(context, firstInvoice, totalAmount, studentInvoices);
+                                final totalAmount = studentInvoices.fold(0.0,
+                                    (sum, invoice) => sum + invoice.amount);
+
+                                return _buildStudentItem(context, firstInvoice,
+                                    totalAmount, studentInvoices);
                               },
                             ),
                     ),
@@ -314,9 +316,11 @@ class _PaymentReceivedScreenState extends State<PaymentReceivedScreen> {
     );
   }
 
-  Widget _buildStudentItem(BuildContext context, PaidInvoice invoice, double totalAmount, List<PaidInvoice> allInvoices) {
-    final className = _paymentService.getClassName(invoice.classId) ?? 'Unknown Class';
-    
+  Widget _buildStudentItem(BuildContext context, PaidInvoice invoice,
+      double totalAmount, List<PaidInvoice> allInvoices) {
+    final className =
+        _paymentService.getClassName(invoice.classId) ?? 'Unknown Class';
+
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       decoration: BoxDecoration(
@@ -362,9 +366,11 @@ class _PaymentReceivedScreenState extends State<PaymentReceivedScreen> {
   }
 
   void _showReceiptOverlay(BuildContext context, PaidInvoice invoice) {
-    final levelName = _paymentService.getLevelName(invoice.levelId) ?? 'Unknown Level';
-    final className = _paymentService.getClassName(invoice.classId) ?? 'Unknown Class';
-    
+    final levelName =
+        _paymentService.getLevelName(invoice.levelId) ?? 'Unknown Level';
+    final className =
+        _paymentService.getClassName(invoice.classId) ?? 'Unknown Class';
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -394,8 +400,14 @@ class _PaymentReceivedScreenState extends State<PaymentReceivedScreen> {
                     ),
                     const SizedBox(height: 24),
                     invoice.status == 1
-                        ? SvgPicture.asset('assets/icons/profile/success_receipt_icon.svg', width: 80, height: 80)
-                        : SvgPicture.asset('assets/icons/profile/failed_receipt_icon.svg', width: 80, height: 80),
+                        ? SvgPicture.asset(
+                            'assets/icons/profile/success_receipt_icon.svg',
+                            width: 80,
+                            height: 80)
+                        : SvgPicture.asset(
+                            'assets/icons/profile/failed_receipt_icon.svg',
+                            width: 80,
+                            height: 80),
                     const SizedBox(height: 16),
                     Text(
                       invoice.termText,
@@ -432,10 +444,12 @@ class _PaymentReceivedScreenState extends State<PaymentReceivedScreen> {
                           _buildReceiptRow('Name', invoice.name),
                           _buildReceiptRow('Level', levelName),
                           _buildReceiptRow('Class', className),
-                          _buildReceiptRow('Registration Number', invoice.regNo),
+                          _buildReceiptRow(
+                              'Registration Number', invoice.regNo),
                           _buildReceiptRow('Session', invoice.sessionText),
                           _buildReceiptRow('Term', invoice.termFeesText),
-                          _buildReceiptRow('Reference Number', invoice.reference),
+                          _buildReceiptRow(
+                              'Reference Number', invoice.reference),
                         ],
                       ),
                     ),
@@ -495,6 +509,3 @@ class _PaymentReceivedScreenState extends State<PaymentReceivedScreen> {
     );
   }
 }
-
-
-

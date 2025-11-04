@@ -11,7 +11,6 @@ import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/custom_toaster.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/common/widgets/portal/profile/naira_icon.dart';
-import 'package:linkschool/modules/model/admin/vendor/vendor_model.dart';
 import 'package:linkschool/modules/services/admin/payment/account_service.dart';
 import 'package:linkschool/modules/services/admin/payment/vendor_service.dart';
 import 'package:linkschool/modules/services/admin/payment/expenditure_service.dart';
@@ -25,7 +24,8 @@ class ExpenditureScreen extends StatefulWidget {
   State<ExpenditureScreen> createState() => _ExpenditureScreenState();
 }
 
-class _ExpenditureScreenState extends State<ExpenditureScreen> with TickerProviderStateMixin {
+class _ExpenditureScreenState extends State<ExpenditureScreen>
+    with TickerProviderStateMixin {
   late double opacity;
   bool _isAmountHidden = false;
   bool _isExpanded = false;
@@ -95,8 +95,10 @@ class _ExpenditureScreenState extends State<ExpenditureScreen> with TickerProvid
               });
               _fetchExpenditureData();
             },
-            vendors: _filterParams['vendors']?.cast<Map<String, dynamic>>() ?? [],
-            accounts: _filterParams['accounts']?.cast<Map<String, dynamic>>() ?? [],
+            vendors:
+                _filterParams['vendors']?.cast<Map<String, dynamic>>() ?? [],
+            accounts:
+                _filterParams['accounts']?.cast<Map<String, dynamic>>() ?? [],
           );
         },
       );
@@ -104,7 +106,9 @@ class _ExpenditureScreenState extends State<ExpenditureScreen> with TickerProvid
 
     _fabButtons[1]['onPressed'] = () async {
       final response = await _vendorService.fetchVendors();
-      if (response.success && response.data != null && response.data!.isNotEmpty) {
+      if (response.success &&
+          response.data != null &&
+          response.data!.isNotEmpty) {
         final selectedVendor = response.data![0];
         Navigator.push(
           context,
@@ -124,7 +128,8 @@ class _ExpenditureScreenState extends State<ExpenditureScreen> with TickerProvid
     final userBox = Hive.box('userData');
     _db = userBox.get('_db') ?? '';
     if (_db.isEmpty) {
-      CustomToaster.toastError(context, 'Error', 'No database configuration found');
+      CustomToaster.toastError(
+          context, 'Error', 'No database configuration found');
     }
   }
 
@@ -133,10 +138,12 @@ class _ExpenditureScreenState extends State<ExpenditureScreen> with TickerProvid
       final response = await _vendorService.fetchVendors();
       if (response.success && response.data != null) {
         setState(() {
-          _filterParams['vendors'] = response.data!.map((vendor) => {
-            'id': vendor.id,
-            'vendor_name': vendor.vendorName,
-          }).toList();
+          _filterParams['vendors'] = response.data!
+              .map((vendor) => {
+                    'id': vendor.id,
+                    'vendor_name': vendor.vendorName,
+                  })
+              .toList();
         });
       }
     } catch (e) {
@@ -147,12 +154,14 @@ class _ExpenditureScreenState extends State<ExpenditureScreen> with TickerProvid
   Future<void> _fetchAccounts() async {
     try {
       final response = await locator<AccountService>().fetchAccounts();
-      if (response.success && response.data != null && response.data!.data != null) {
+      if (response.success && response.data != null) {
         setState(() {
-          _filterParams['accounts'] = response.data!.data.map((account) => {
-            'id': account.id,
-            'account_name': account.accountName,
-          }).toList();
+          _filterParams['accounts'] = response.data!.data
+              .map((account) => {
+                    'id': account.id,
+                    'account_name': account.accountName,
+                  })
+              .toList();
         });
       }
     } catch (e) {
@@ -167,11 +176,16 @@ class _ExpenditureScreenState extends State<ExpenditureScreen> with TickerProvid
       final payload = {
         'report_type': _filterParams['report_type'],
         '_db': _db,
-        if (_filterParams['group_by'] != null) 'group_by': _filterParams['group_by'],
-        if (_filterParams['custom_type'] != null) 'custom_type': _filterParams['custom_type'],
-        if (_filterParams['start_date'] != null) 'start_date': _filterParams['start_date'],
-        if (_filterParams['end_date'] != null) 'end_date': _filterParams['end_date'],
-        if (_filterParams['filters']?.isNotEmpty == true) 'filters': _filterParams['filters'],
+        if (_filterParams['group_by'] != null)
+          'group_by': _filterParams['group_by'],
+        if (_filterParams['custom_type'] != null)
+          'custom_type': _filterParams['custom_type'],
+        if (_filterParams['start_date'] != null)
+          'start_date': _filterParams['start_date'],
+        if (_filterParams['end_date'] != null)
+          'end_date': _filterParams['end_date'],
+        if (_filterParams['filters']?.isNotEmpty == true)
+          'filters': _filterParams['filters'],
       };
       print('Expenditure Payload: $payload');
       final response = await _expenditureService.generateReport(payload);
@@ -182,10 +196,12 @@ class _ExpenditureScreenState extends State<ExpenditureScreen> with TickerProvid
           _prepareChartData();
         });
       } else {
-        CustomToaster.toastError(context, 'Error', response.message ?? 'Failed to load data');
+        CustomToaster.toastError(
+            context, 'Error', response.message ?? 'Failed to load data');
       }
     } catch (e) {
-      CustomToaster.toastError(context, 'Error', 'Failed to load expenditure data: $e');
+      CustomToaster.toastError(
+          context, 'Error', 'Failed to load expenditure data: $e');
     } finally {
       setState(() => _isDataLoading = false);
     }
@@ -198,8 +214,12 @@ class _ExpenditureScreenState extends State<ExpenditureScreen> with TickerProvid
       return;
     }
 
-    final chartDataList = _expenditureData!['chart_data'] as List<dynamic>? ?? [];
-    xLabels = chartDataList.map((e) => (e as Map<String, dynamic>)['x']?.toString() ?? '').toSet().toList();
+    final chartDataList =
+        _expenditureData!['chart_data'] as List<dynamic>? ?? [];
+    xLabels = chartDataList
+        .map((e) => (e as Map<String, dynamic>)['x']?.toString() ?? '')
+        .toSet()
+        .toList();
 
     try {
       xLabels.sort((a, b) => DateTime.parse(a).compareTo(DateTime.parse(b)));
@@ -209,7 +229,9 @@ class _ExpenditureScreenState extends State<ExpenditureScreen> with TickerProvid
       isDateFormat = false;
     }
 
-    xIndexMap = {for (int i = 0; i < xLabels.length; i++) xLabels[i]: i.toDouble()};
+    xIndexMap = {
+      for (int i = 0; i < xLabels.length; i++) xLabels[i]: i.toDouble()
+    };
   }
 
   @override
@@ -224,14 +246,18 @@ class _ExpenditureScreenState extends State<ExpenditureScreen> with TickerProvid
     opacity = brightness == Brightness.light ? 0.1 : 0.15;
 
     final summary = _expenditureData?['summary'] ?? {};
-    final chartDataList = _expenditureData?['chart_data'] as List<dynamic>? ?? [];
-    final transactionsList = _expenditureData?['transactions'] as List<dynamic>? ?? [];
+    final chartDataList =
+        _expenditureData?['chart_data'] as List<dynamic>? ?? [];
+    final transactionsList =
+        _expenditureData?['transactions'] as List<dynamic>? ?? [];
 
     // Convert chartDataList to List<FlSpot>
     final List<FlSpot> chartSpots = chartDataList.asMap().entries.map((entry) {
       final index = entry.key;
       final data = entry.value as Map<String, dynamic>;
-      final yValue = (data['y'] is int) ? (data['y'] as int).toDouble() : (data['y'] as double?) ?? 0.0;
+      final yValue = (data['y'] is int)
+          ? (data['y'] as int).toDouble()
+          : (data['y'] as double?) ?? 0.0;
       return FlSpot(xIndexMap[data['x']] ?? index.toDouble(), yValue);
     }).toList();
 
@@ -289,8 +315,12 @@ class _ExpenditureScreenState extends State<ExpenditureScreen> with TickerProvid
                             });
                             _fetchExpenditureData();
                           },
-                          vendors: _filterParams['vendors']?.cast<Map<String, dynamic>>() ?? [],
-                          accounts: _filterParams['accounts']?.cast<Map<String, dynamic>>() ?? [],
+                          vendors: _filterParams['vendors']
+                                  ?.cast<Map<String, dynamic>>() ??
+                              [],
+                          accounts: _filterParams['accounts']
+                                  ?.cast<Map<String, dynamic>>() ??
+                              [],
                         );
                       },
                     );
@@ -329,7 +359,8 @@ class _ExpenditureScreenState extends State<ExpenditureScreen> with TickerProvid
                     ? const Center(child: Text('No data available'))
                     : SingleChildScrollView(
                         child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 16.0),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8.0, vertical: 16.0),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
@@ -373,41 +404,58 @@ class _ExpenditureScreenState extends State<ExpenditureScreen> with TickerProvid
                                 child: Padding(
                                   padding: const EdgeInsets.all(16),
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
                                     children: [
                                       Row(
-                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceBetween,
                                         children: [
                                           Row(
                                             children: [
                                               Text(
                                                 'Total Expenses',
-                                                style: AppTextStyles.normal600(fontSize: 14, color: AppColors.backgroundLight),
+                                                style: AppTextStyles.normal600(
+                                                    fontSize: 14,
+                                                    color: AppColors
+                                                        .backgroundLight),
                                               ),
                                               IconButton(
                                                 icon: Icon(
-                                                  _isAmountHidden ? Icons.visibility : Icons.visibility_off,
+                                                  _isAmountHidden
+                                                      ? Icons.visibility
+                                                      : Icons.visibility_off,
                                                   color: Colors.white,
                                                   size: 20,
                                                 ),
                                                 onPressed: () {
                                                   setState(() {
-                                                    _isAmountHidden = !_isAmountHidden;
+                                                    _isAmountHidden =
+                                                        !_isAmountHidden;
                                                   });
                                                 },
                                               ),
                                             ],
                                           ),
                                           Container(
-                                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                            padding: const EdgeInsets.symmetric(
+                                                horizontal: 8, vertical: 4),
                                             decoration: BoxDecoration(
-                                              color: const Color.fromRGBO(198, 210, 255, 1),
-                                              borderRadius: BorderRadius.circular(10),
+                                              color: const Color.fromRGBO(
+                                                  198, 210, 255, 1),
+                                              borderRadius:
+                                                  BorderRadius.circular(10),
                                             ),
                                             child: Text(
-                                              _isDataLoading ? 'Loading...' : '${summary['total_transactions'] ?? 0} payments',
-                                              style: AppTextStyles.normal500(fontSize: 12, color: AppColors.paymentTxtColor1),
+                                              _isDataLoading
+                                                  ? 'Loading...'
+                                                  : '${summary['total_transactions'] ?? 0} payments',
+                                              style: AppTextStyles.normal500(
+                                                  fontSize: 12,
+                                                  color: AppColors
+                                                      .paymentTxtColor1),
                                             ),
                                           ),
                                         ],
@@ -427,8 +475,15 @@ class _ExpenditureScreenState extends State<ExpenditureScreen> with TickerProvid
                                                 ? '********'
                                                 : _isDataLoading
                                                     ? 'Loading...'
-                                                    : '${(summary['total_amount'] as num?)?.toStringAsFixed(2) ?? '0.00'}',
-                                            style: AppTextStyles.normal700(fontSize: 24, color: AppColors.backgroundLight),
+                                                    : (summary['total_amount']
+                                                                as num?)
+                                                            ?.toStringAsFixed(
+                                                                2) ??
+                                                        '0.00',
+                                            style: AppTextStyles.normal700(
+                                                fontSize: 24,
+                                                color:
+                                                    AppColors.backgroundLight),
                                           ),
                                         ],
                                       ),
@@ -440,10 +495,12 @@ class _ExpenditureScreenState extends State<ExpenditureScreen> with TickerProvid
                               SizedBox(
                                 height: 200,
                                 child: chartSpots.isEmpty
-                                    ? const Center(child: Text('No chart data available'))
+                                    ? const Center(
+                                        child: Text('No chart data available'))
                                     : LineChart(
                                         LineChartData(
-                                          gridData: const FlGridData(show: false),
+                                          gridData:
+                                              const FlGridData(show: false),
                                           titlesData: FlTitlesData(
                                             bottomTitles: AxisTitles(
                                               sideTitles: SideTitles(
@@ -451,26 +508,45 @@ class _ExpenditureScreenState extends State<ExpenditureScreen> with TickerProvid
                                                 reservedSize: 30,
                                                 getTitlesWidget: (value, meta) {
                                                   final idx = value.toInt();
-                                                  if (idx < 0 || idx >= dateLabels.length) {
+                                                  if (idx < 0 ||
+                                                      idx >=
+                                                          dateLabels.length) {
                                                     return const Text('');
                                                   }
                                                   return Padding(
-                                                    padding: const EdgeInsets.only(top: 4),
-                                                    child: Text(dateLabels[idx], style: const TextStyle(fontSize: 10)),
+                                                    padding:
+                                                        const EdgeInsets.only(
+                                                            top: 4),
+                                                    child: Text(dateLabels[idx],
+                                                        style: const TextStyle(
+                                                            fontSize: 10)),
                                                   );
                                                 },
                                               ),
                                             ),
-                                            leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                                            topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                                            rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                                            leftTitles: const AxisTitles(
+                                                sideTitles: SideTitles(
+                                                    showTitles: false)),
+                                            topTitles: const AxisTitles(
+                                                sideTitles: SideTitles(
+                                                    showTitles: false)),
+                                            rightTitles: const AxisTitles(
+                                                sideTitles: SideTitles(
+                                                    showTitles: false)),
                                           ),
                                           borderData: FlBorderData(show: false),
                                           minX: 0,
-                                          maxX: chartSpots.isNotEmpty ? (chartSpots.length - 1).toDouble() : 2,
+                                          maxX: chartSpots.isNotEmpty
+                                              ? (chartSpots.length - 1)
+                                                  .toDouble()
+                                              : 2,
                                           minY: 0,
                                           maxY: chartSpots.isNotEmpty
-                                              ? chartSpots.map((spot) => spot.y).reduce((a, b) => a > b ? a : b) * 1.1
+                                              ? chartSpots
+                                                      .map((spot) => spot.y)
+                                                      .reduce((a, b) =>
+                                                          a > b ? a : b) *
+                                                  1.1
                                               : 6000,
                                           lineBarsData: [
                                             LineChartBarData(
@@ -478,10 +554,12 @@ class _ExpenditureScreenState extends State<ExpenditureScreen> with TickerProvid
                                               isCurved: true,
                                               color: AppColors.videoColor4,
                                               barWidth: 3,
-                                              dotData: const FlDotData(show: false),
+                                              dotData:
+                                                  const FlDotData(show: false),
                                               belowBarData: BarAreaData(
                                                 show: true,
-                                                color: const Color.fromRGBO(47, 85, 221, 0.102),
+                                                color: const Color.fromRGBO(
+                                                    47, 85, 221, 0.102),
                                               ),
                                             ),
                                           ],
@@ -490,19 +568,22 @@ class _ExpenditureScreenState extends State<ExpenditureScreen> with TickerProvid
                               ),
                               const SizedBox(height: 16),
                               Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
                                 children: [
                                   Text(
                                     'Expense History',
-                                    style: AppTextStyles.normal600(fontSize: 18, color: AppColors.backgroundDark),
+                                    style: AppTextStyles.normal600(
+                                        fontSize: 18,
+                                        color: AppColors.backgroundDark),
                                   ),
                                   GestureDetector(
                                     onTap: () {
-                                      Navigator.push( 
+                                      Navigator.push(
                                         context,
                                         MaterialPageRoute(
-                                          builder: (context) => ExpenditureReportPaymentScreen()
-                                        ),
+                                            builder: (context) =>
+                                                ExpenditureReportPaymentScreen()),
                                       );
                                     },
                                     child: const Text(
@@ -518,17 +599,29 @@ class _ExpenditureScreenState extends State<ExpenditureScreen> with TickerProvid
                               ),
                               const SizedBox(height: 16),
                               _isDataLoading
-                                  ? const Center(child: CircularProgressIndicator())
+                                  ? const Center(
+                                      child: CircularProgressIndicator())
                                   : transactionsList.isEmpty
-                                      ? const Center(child: Text('No transactions available'))
+                                      ? const Center(
+                                          child:
+                                              Text('No transactions available'))
                                       : Column(
-                                          children: transactionsList.take(5).map((transaction) {
+                                          children: transactionsList
+                                              .take(5)
+                                              .map((transaction) {
                                             return _buildExpenseHistoryItem(
-                                              transaction['name']?.toString() ?? 'Unknown',
+                                              transaction['name']?.toString() ??
+                                                  'Unknown',
                                               (transaction['amount'] is int)
-                                                  ? (transaction['amount'] as int).toDouble()
-                                                  : (transaction['amount'] as double?) ?? 0.0,
-                                              transaction['account_name']?.toString() ?? 'Unknown Account',
+                                                  ? (transaction['amount']
+                                                          as int)
+                                                      .toDouble()
+                                                  : (transaction['amount']
+                                                          as double?) ??
+                                                      0.0,
+                                              transaction['account_name']
+                                                      ?.toString() ??
+                                                  'Unknown Account',
                                               transaction,
                                             );
                                           }).toList(),
@@ -577,13 +670,17 @@ class _ExpenditureScreenState extends State<ExpenditureScreen> with TickerProvid
                 Expanded(
                   child: ListView(
                     children: List.generate(12, (index) {
-                      final date = DateTime.now().subtract(Duration(days: 30 * index));
+                      final date =
+                          DateTime.now().subtract(Duration(days: 30 * index));
                       return ListTile(
                         title: Text(DateFormat('MMMM yyyy').format(date)),
                         onTap: () {
                           setState(() {
-                            _filterParams['start_date'] = DateFormat('yyyy-MM-dd').format(DateTime(date.year, date.month, 1));
-                            _filterParams['end_date'] = DateFormat('yyyy-MM-dd').format(DateTime(date.year, date.month + 1, 0));
+                            _filterParams['start_date'] =
+                                DateFormat('yyyy-MM-dd')
+                                    .format(DateTime(date.year, date.month, 1));
+                            _filterParams['end_date'] = DateFormat('yyyy-MM-dd')
+                                .format(DateTime(date.year, date.month + 1, 0));
                             _filterParams['custom_type'] = 'this_month';
                             _fetchExpenditureData();
                           });
@@ -715,7 +812,8 @@ class _ExpenditureScreenState extends State<ExpenditureScreen> with TickerProvid
                     Padding(
                       padding: const EdgeInsets.only(right: 8.0),
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 6.0),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12.0, vertical: 6.0),
                         decoration: BoxDecoration(
                           color: const Color.fromRGBO(47, 85, 221, 1),
                           borderRadius: BorderRadius.circular(4.0),
@@ -767,7 +865,8 @@ class _ExpenditureScreenState extends State<ExpenditureScreen> with TickerProvid
     );
   }
 
-  Widget _buildExpenseHistoryItem(String name, double amount, String accountName, Map<String, dynamic> transaction) {
+  Widget _buildExpenseHistoryItem(String name, double amount,
+      String accountName, Map<String, dynamic> transaction) {
     return GestureDetector(
       onTap: () {
         Navigator.push(
@@ -789,15 +888,18 @@ class _ExpenditureScreenState extends State<ExpenditureScreen> with TickerProvid
           borderRadius: BorderRadius.circular(8),
         ),
         child: ListTile(
-          contentPadding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
+          contentPadding:
+              const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
           leading: SvgPicture.asset('assets/icons/profile/payment_icon.svg'),
           title: Text(
             name,
-            style: AppTextStyles.normal600(fontSize: 18, color: AppColors.backgroundDark),
+            style: AppTextStyles.normal600(
+                fontSize: 18, color: AppColors.backgroundDark),
           ),
           subtitle: Text(
             transaction['date']?.toString() ?? '07-03-2018  17:23',
-            style: AppTextStyles.normal500(fontSize: 12, color: AppColors.text10Light),
+            style: AppTextStyles.normal500(
+                fontSize: 12, color: AppColors.text10Light),
           ),
           trailing: Column(
             crossAxisAlignment: CrossAxisAlignment.end,
@@ -808,7 +910,10 @@ class _ExpenditureScreenState extends State<ExpenditureScreen> with TickerProvid
                 children: [
                   const Text(
                     '-',
-                    style: TextStyle(fontSize: 18, color: Colors.red, fontWeight: FontWeight.w700),
+                    style: TextStyle(
+                        fontSize: 18,
+                        color: Colors.red,
+                        fontWeight: FontWeight.w700),
                   ),
                   const NairaSvgIcon(
                     width: 14.0,
@@ -818,14 +923,16 @@ class _ExpenditureScreenState extends State<ExpenditureScreen> with TickerProvid
                   const SizedBox(width: 2),
                   Text(
                     amount.toStringAsFixed(2),
-                    style: AppTextStyles.normal700(fontSize: 18, color: Colors.red),
+                    style: AppTextStyles.normal700(
+                        fontSize: 18, color: Colors.red),
                   ),
                 ],
               ),
               const SizedBox(height: 4),
               Text(
                 accountName,
-                style: AppTextStyles.normal500(fontSize: 12, color: AppColors.text10Light),
+                style: AppTextStyles.normal500(
+                    fontSize: 12, color: AppColors.text10Light),
               ),
             ],
           ),
@@ -873,7 +980,12 @@ class _FilterOverlayState extends State<FilterOverlay> {
     'Last Month'
   ];
   final List<String> groupingOptions = ['Vendor', 'Account', 'Month'];
-  final List<String> filterByOptions = ['Vendors', 'Accounts', 'Sessions', 'Terms'];
+  final List<String> filterByOptions = [
+    'Vendors',
+    'Accounts',
+    'Sessions',
+    'Terms'
+  ];
 
   bool get isCustom => selectedReport == 'Custom';
 
@@ -881,14 +993,17 @@ class _FilterOverlayState extends State<FilterOverlay> {
   void initState() {
     super.initState();
     if (widget.initialParams != null) {
-      selectedReport = (widget.initialParams!['report_type'] as String).capitalize();
+      selectedReport =
+          (widget.initialParams!['report_type'] as String).capitalize();
       if (widget.initialParams!.containsKey('group_by')) {
-        selectedGrouping = (widget.initialParams!['group_by'] as String).capitalize();
+        selectedGrouping =
+            (widget.initialParams!['group_by'] as String).capitalize();
       }
       if (isCustom) {
         if (widget.initialParams!.containsKey('custom_type')) {
           String ctype = widget.initialParams!['custom_type'];
-          selectedCustomType = ctype.split('_').map((e) => e.capitalize()).join(' ');
+          selectedCustomType =
+              ctype.split('_').map((e) => e.capitalize()).join(' ');
         }
         if (widget.initialParams!.containsKey('start_date')) {
           fromDate = DateTime.parse(widget.initialParams!['start_date']);
@@ -917,7 +1032,8 @@ class _FilterOverlayState extends State<FilterOverlay> {
           onTap: () {},
           child: Container(
             height: MediaQuery.of(context).size.height * 0.60,
-            margin: EdgeInsets.only(top: MediaQuery.of(context).size.height * 0.4),
+            margin:
+                EdgeInsets.only(top: MediaQuery.of(context).size.height * 0.4),
             decoration: const BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
@@ -926,7 +1042,8 @@ class _FilterOverlayState extends State<FilterOverlay> {
               children: [
                 Container(
                   height: 60,
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   child: SingleChildScrollView(
                     scrollDirection: Axis.horizontal,
                     child: Row(
@@ -942,21 +1059,27 @@ class _FilterOverlayState extends State<FilterOverlay> {
                                 selectedFilters = {};
                                 if (type != 'Custom') {
                                   selectedCustomType = 'This Month';
-                                  fromDate = DateTime.now().subtract(const Duration(days: 30));
+                                  fromDate = DateTime.now()
+                                      .subtract(const Duration(days: 30));
                                   toDate = DateTime.now();
                                 }
                               });
                             },
                             child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 16, vertical: 8),
                               decoration: BoxDecoration(
-                                color: isSelected ? const Color.fromRGBO(228, 234, 255, 1) : const Color.fromRGBO(247, 247, 247, 1),
+                                color: isSelected
+                                    ? const Color.fromRGBO(228, 234, 255, 1)
+                                    : const Color.fromRGBO(247, 247, 247, 1),
                                 borderRadius: BorderRadius.circular(4),
                               ),
                               child: Text(
                                 type,
                                 style: TextStyle(
-                                  color: isSelected ? const Color.fromRGBO(47, 85, 221, 1) : const Color.fromRGBO(65, 65, 65, 1),
+                                  color: isSelected
+                                      ? const Color.fromRGBO(47, 85, 221, 1)
+                                      : const Color.fromRGBO(65, 65, 65, 1),
                                   fontSize: 14,
                                 ),
                               ),
@@ -1001,7 +1124,8 @@ class _FilterOverlayState extends State<FilterOverlay> {
                           child: ElevatedButton(
                             onPressed: _generateReport,
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color.fromRGBO(47, 85, 221, 1),
+                              backgroundColor:
+                                  const Color.fromRGBO(47, 85, 221, 1),
                               minimumSize: const Size(double.infinity, 50),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(10.0),
@@ -1052,7 +1176,8 @@ class _FilterOverlayState extends State<FilterOverlay> {
                         });
                       },
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 6),
                         decoration: BoxDecoration(
                           color: isSelected
                               ? const Color.fromRGBO(47, 85, 221, 1)
@@ -1062,7 +1187,9 @@ class _FilterOverlayState extends State<FilterOverlay> {
                         child: Text(
                           option,
                           style: TextStyle(
-                            color: isSelected ? Colors.white : AppColors.paymentTxtColor1,
+                            color: isSelected
+                                ? Colors.white
+                                : AppColors.paymentTxtColor1,
                           ),
                         ),
                       ),
@@ -1093,7 +1220,8 @@ class _FilterOverlayState extends State<FilterOverlay> {
     );
   }
 
-  Widget _buildDatePicker(String label, DateTime date, Function(DateTime) onChanged) {
+  Widget _buildDatePicker(
+      String label, DateTime date, Function(DateTime) onChanged) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -1115,7 +1243,7 @@ class _FilterOverlayState extends State<FilterOverlay> {
                       surface: Colors.white,
                       onSurface: Colors.black,
                     ),
-                    dialogBackgroundColor: Colors.white,
+                    dialogTheme: DialogThemeData(backgroundColor: Colors.white),
                   ),
                   child: child!,
                 );
@@ -1136,9 +1264,11 @@ class _FilterOverlayState extends State<FilterOverlay> {
               children: [
                 Text(
                   DateFormat('yyyy-MM-dd').format(date),
-                  style: AppTextStyles.normal500(fontSize: 14, color: Colors.black),
+                  style: AppTextStyles.normal500(
+                      fontSize: 14, color: Colors.black),
                 ),
-                const Icon(Icons.calendar_today, color: Color.fromRGBO(47, 85, 221, 1)),
+                const Icon(Icons.calendar_today,
+                    color: Color.fromRGBO(47, 85, 221, 1)),
               ],
             ),
           ),
@@ -1165,7 +1295,9 @@ class _FilterOverlayState extends State<FilterOverlay> {
               height: 42,
               margin: const EdgeInsets.only(bottom: 10),
               decoration: BoxDecoration(
-                color: isSelected ? const Color.fromRGBO(47, 85, 221, 1) : const Color.fromRGBO(229, 229, 229, 1),
+                color: isSelected
+                    ? const Color.fromRGBO(47, 85, 221, 1)
+                    : const Color.fromRGBO(229, 229, 229, 1),
                 borderRadius: BorderRadius.circular(6),
               ),
               child: Center(
@@ -1203,7 +1335,8 @@ class _FilterOverlayState extends State<FilterOverlay> {
               child: Center(
                 child: Text(
                   '$option: $count selected',
-                  style: AppTextStyles.normal500(fontSize: 16, color: Colors.black),
+                  style: AppTextStyles.normal500(
+                      fontSize: 16, color: Colors.black),
                 ),
               ),
             ),
@@ -1278,9 +1411,11 @@ class _FilterOverlayState extends State<FilterOverlay> {
             : <dynamic>[];
 
         return Padding(
-          padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+          padding:
+              EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
           child: ConstrainedBox(
-            constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.5),
+            constraints: BoxConstraints(
+                maxHeight: MediaQuery.of(context).size.height * 0.5),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -1288,7 +1423,9 @@ class _FilterOverlayState extends State<FilterOverlay> {
                   padding: const EdgeInsets.only(top: 16.0),
                   child: Text(
                     title,
-                    style: AppTextStyles.normal600(fontSize: 20, color: const Color.fromRGBO(47, 85, 221, 1)),
+                    style: AppTextStyles.normal600(
+                        fontSize: 20,
+                        color: const Color.fromRGBO(47, 85, 221, 1)),
                   ),
                 ),
                 const SizedBox(height: 24),
@@ -1298,7 +1435,10 @@ class _FilterOverlayState extends State<FilterOverlay> {
                     itemBuilder: (context, index) {
                       final item = items[index];
                       final value = item['value'] ?? item['id'];
-                      final name = item['name'] ?? item['vendor_name'] ?? item['account_name'] ?? 'Unknown';
+                      final name = item['name'] ??
+                          item['vendor_name'] ??
+                          item['account_name'] ??
+                          'Unknown';
                       final isSelected = selectedValues.contains(value);
                       return GestureDetector(
                         onTap: () {
@@ -1308,16 +1448,21 @@ class _FilterOverlayState extends State<FilterOverlay> {
                             } else {
                               selectedValues.add(value);
                             }
-                            print('Selected values in bottom sheet: $selectedValues');
+                            print(
+                                'Selected values in bottom sheet: $selectedValues');
                           });
                           setState(() {
-                            selectedFilters[key] = List<dynamic>.from(selectedValues);
-                            print('Updated selectedFilters in parent: $selectedFilters');
+                            selectedFilters[key] =
+                                List<dynamic>.from(selectedValues);
+                            print(
+                                'Updated selectedFilters in parent: $selectedFilters');
                           });
                         },
                         child: Container(
-                          margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 16),
-                          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                          margin: const EdgeInsets.symmetric(
+                              vertical: 4, horizontal: 16),
+                          padding: const EdgeInsets.symmetric(
+                              vertical: 12, horizontal: 16),
                           decoration: BoxDecoration(
                             color: Colors.white,
                             borderRadius: BorderRadius.circular(8),
@@ -1336,12 +1481,14 @@ class _FilterOverlayState extends State<FilterOverlay> {
                               Expanded(
                                 child: Text(
                                   name,
-                                  style: AppTextStyles.normal500(fontSize: 16, color: Colors.black),
+                                  style: AppTextStyles.normal500(
+                                      fontSize: 16, color: Colors.black),
                                   overflow: TextOverflow.ellipsis,
                                 ),
                               ),
                               if (isSelected)
-                                const Icon(Icons.check, color: Color.fromRGBO(47, 85, 221, 1)),
+                                const Icon(Icons.check,
+                                    color: Color.fromRGBO(47, 85, 221, 1)),
                             ],
                           ),
                         ),
@@ -1359,7 +1506,8 @@ class _FilterOverlayState extends State<FilterOverlay> {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color.fromRGBO(47, 85, 221, 1),
                       minimumSize: const Size(double.infinity, 50),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10)),
                       elevation: 2,
                       shadowColor: Colors.grey.withOpacity(0.5),
                     ),
@@ -1379,7 +1527,8 @@ class _FilterOverlayState extends State<FilterOverlay> {
 
   void _generateReport() {
     if (isCustom && selectedCustomType == 'Range' && fromDate.isAfter(toDate)) {
-      CustomToaster.toastError(context, 'Error', 'Start date cannot be after end date');
+      CustomToaster.toastError(
+          context, 'Error', 'Start date cannot be after end date');
       return;
     }
 
@@ -1415,6 +1564,3 @@ extension StringExtension on String {
     return "${this[0].toUpperCase()}${substring(1).toLowerCase()}";
   }
 }
-
-
-

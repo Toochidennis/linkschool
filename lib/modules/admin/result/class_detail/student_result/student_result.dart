@@ -131,14 +131,16 @@ class StudentResultScreen extends StatelessWidget {
           // Calculate overall average
           final double overallAverage = chartData.isNotEmpty
               ? chartData
-                  .map((e) => e['averageScore'])
-                  .reduce((a, b) => a + b) /
+                      .map((e) => e['averageScore'])
+                      .reduce((a, b) => a + b) /
                   chartData.length
               : 0.0;
 
           // Retrieve levelId from Hive with a fallback
           final userBox = Hive.box('userData');
-          final storedLevelId = userBox.get('currentLevelId') ?? levelId ?? '69'; // Fallback for testing
+          final storedLevelId = userBox.get('currentLevelId') ??
+              levelId ??
+              '69'; // Fallback for testing
 
           // Build profile widget
           Widget profileImage = _buildProfileImage(student);
@@ -161,7 +163,7 @@ class StudentResultScreen extends StatelessWidget {
                           profileImage,
                           const SizedBox(height: 10),
                           Text(
-                           studentName ?? student.name,
+                            studentName ?? student.name,
                             style: AppTextStyles.normal700(
                               fontSize: 20,
                               color: AppColors.primaryLight,
@@ -187,8 +189,8 @@ class StudentResultScreen extends StatelessWidget {
                         child: Text('No academic records available'),
                       )
                     else
-                      ..._buildAllSessions(
-                          processedTerms, context, student.id, classId, storedLevelId),
+                      ..._buildAllSessions(processedTerms, context, student.id,
+                          classId, storedLevelId),
 
                     const SizedBox(height: 30),
                     CustomOutlineButton2(
@@ -196,9 +198,12 @@ class StudentResultScreen extends StatelessWidget {
                         context,
                         MaterialPageRoute(
                           builder: (context) => StudentAnnualResultScreen(
-                            studentId: studentId ?? student.id, // Use widget.studentId or fallback to student.id
+                            studentId: studentId ??
+                                student
+                                    .id, // Use widget.studentId or fallback to student.id
                             classId: classId ?? '66', // Fallback for testing
-                            levelId: storedLevelId, // Use storedLevelId from Hive or widget.levelId
+                            levelId:
+                                storedLevelId, // Use storedLevelId from Hive or widget.levelId
                           ),
                         ),
                       ),
@@ -298,7 +303,8 @@ class StudentResultScreen extends StatelessWidget {
       String? classId,
       String? levelId) {
     // Log parameters for debugging
-    print('StudentResultScreen: Using levelId=$levelId, classId=$classId, studentId=$studentId');
+    print(
+        'StudentResultScreen: Using levelId=$levelId, classId=$classId, studentId=$studentId');
 
     return processedTerms.entries.map((entry) {
       final year = entry.key;
@@ -383,7 +389,8 @@ class StudentResultScreen extends StatelessWidget {
               percent: percent,
               center: Text(
                 "${(percent * 100).toInt()}%",
-                style: AppTextStyles.normal600(fontSize: 10, color: Colors.black),
+                style:
+                    AppTextStyles.normal600(fontSize: 10, color: Colors.black),
               ),
               progressColor: indicatorColor,
               backgroundColor: Colors.transparent,
@@ -429,10 +436,10 @@ class StudentResultScreen extends StatelessWidget {
                 ),
               ),
             ),
-            topTitles: const AxisTitles(
-                sideTitles: SideTitles(showTitles: false)),
-            rightTitles: const AxisTitles(
-                sideTitles: SideTitles(showTitles: false)),
+            topTitles:
+                const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+            rightTitles:
+                const AxisTitles(sideTitles: SideTitles(showTitles: false)),
           ),
           gridData: FlGridData(
             show: true,
@@ -505,14 +512,10 @@ class StudentResultScreen extends StatelessWidget {
     return SideTitleWidget(
       space: 4.0,
       axisSide: meta.axisSide, // pass just this instead of `meta`
-        child: Text(
+      child: Text(
         text,
         style: AppTextStyles.normal400(fontSize: 12, color: Colors.black),
       ),
     );
   }
 }
-
-
-
-

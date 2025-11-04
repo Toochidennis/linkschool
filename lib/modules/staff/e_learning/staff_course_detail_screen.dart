@@ -6,8 +6,10 @@ import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/buttons/custom_medium_elevated_button.dart';
 import 'package:linkschool/modules/common/custom_toaster.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
-import 'package:linkschool/modules/model/e-learning/syllabus_model.dart' as elModel;
-import 'package:linkschool/modules/model/staff/syllabus_model.dart' as staffModel;
+import 'package:linkschool/modules/model/e-learning/syllabus_model.dart'
+    as elModel;
+import 'package:linkschool/modules/model/staff/syllabus_model.dart'
+    as staffModel;
 import 'package:linkschool/modules/providers/admin/e_learning/delete_sylabus_content.dart';
 import 'package:linkschool/modules/providers/staff/syllabus_provider.dart';
 import 'package:linkschool/modules/staff/e_learning/empty_staff_subjectscreen.dart';
@@ -18,7 +20,8 @@ import 'package:provider/provider.dart';
 class StaffCourseDetailScreen extends StatefulWidget {
   final String selectedSubject;
   final String courseId;
-  final List<Map<String, dynamic>> classesList; // Receives List<Map<String, dynamic>>
+  final List<Map<String, dynamic>>
+      classesList; // Receives List<Map<String, dynamic>>
   final String? classId;
   final String? levelId;
   final String? course_name;
@@ -36,11 +39,13 @@ class StaffCourseDetailScreen extends StatefulWidget {
   });
 
   @override
-  State<StaffCourseDetailScreen> createState() => _StaffCourseDetailScreenState();
+  State<StaffCourseDetailScreen> createState() =>
+      _StaffCourseDetailScreenState();
 }
 
-class _StaffCourseDetailScreenState extends State<StaffCourseDetailScreen> with WidgetsBindingObserver {
-  List<Map<String, dynamic>> _syllabusList = [];
+class _StaffCourseDetailScreenState extends State<StaffCourseDetailScreen>
+    with WidgetsBindingObserver {
+  final List<Map<String, dynamic>> _syllabusList = [];
   bool isLoading = false;
   int? creatorId;
   String? creatorName;
@@ -71,57 +76,57 @@ class _StaffCourseDetailScreenState extends State<StaffCourseDetailScreen> with 
     super.dispose();
   }
 
-Future<void> _loadUserData() async {
-  try {
-    final userBox = Hive.box('userData');
-    final storedUserData = userBox.get('userData') ?? userBox.get('loginResponse');
+  Future<void> _loadUserData() async {
+    try {
+      final userBox = Hive.box('userData');
+      final storedUserData =
+          userBox.get('userData') ?? userBox.get('loginResponse');
 
-    if (storedUserData != null) {
-      final processedData = storedUserData is String
-          ? json.decode(storedUserData)
-          : storedUserData as Map<String, dynamic>;
+      if (storedUserData != null) {
+        final processedData = storedUserData is String
+            ? json.decode(storedUserData)
+            : storedUserData as Map<String, dynamic>;
 
-      final response = processedData['response'] ?? processedData;
-      final data = response['data'] ?? response;
+        final response = processedData['response'] ?? processedData;
+        final data = response['data'] ?? response;
 
-      final profile = data['profile'] ?? {};
-      final settings = data['settings'] ?? {};
-      final formClasses = (data['form_classes'] ?? []) as List;
+        final profile = data['profile'] ?? {};
+        final settings = data['settings'] ?? {};
+        final formClasses = (data['form_classes'] ?? []) as List;
 
-      // grab first form class if available
-      final firstClass = formClasses.isNotEmpty ? formClasses.first : null;
-      final fallbackLevelId = firstClass?['level_id']?.toString();
+        // grab first form class if available
+        final firstClass = formClasses.isNotEmpty ? formClasses.first : null;
+        final fallbackLevelId = firstClass?['level_id']?.toString();
 
-      setState(() {
-        creatorId = profile['staff_id'] as int?;
-        creatorName = profile['name']?.toString() ?? 'Unknown';
-        creatorRole = profile['role']?.toString();
-        academicTerm = settings['term'] != null
-            ? int.tryParse(settings['term'].toString())
-            : null;
-        academicYear = settings['year']?.toString();
+        setState(() {
+          creatorId = profile['staff_id'] as int?;
+          creatorName = profile['name']?.toString() ?? 'Unknown';
+          creatorRole = profile['role']?.toString();
+          academicTerm = settings['term'] != null
+              ? int.tryParse(settings['term'].toString())
+              : null;
+          academicYear = settings['year']?.toString();
 
-        // add levelId and term from your format
-        _levelId = fallbackLevelId ?? '';
-        
-      });
+          // add levelId and term from your format
+          _levelId = fallbackLevelId ?? '';
+        });
 
-      print('Loaded user data: '
-          'creatorId=$creatorId, creatorName=$creatorName, creatorRole=$creatorRole, '
-          'academicTerm=$academicTerm, academicYear=$academicYear, '
-          'levelId=$_levelId');
+        print('Loaded user data: '
+            'creatorId=$creatorId, creatorName=$creatorName, creatorRole=$creatorRole, '
+            'academicTerm=$academicTerm, academicYear=$academicYear, '
+            'levelId=$_levelId');
+      }
+    } catch (e) {
+      print('Error loading user data: $e');
     }
-  } catch (e) {
-    print('Error loading user data: $e');
   }
-}
-
-
 
   Future<void> _loadSyllabuses() async {
-    print("Loading syllabuses with courseId: ${widget.courseId}, classId: ${widget.classId}, levelId: ${widget.levelId}, classesList: ${widget.classesList}");
+    print(
+        "Loading syllabuses with courseId: ${widget.courseId}, classId: ${widget.classId}, levelId: ${widget.levelId}, classesList: ${widget.classesList}");
 
-    final syllabusProvider = Provider.of<StaffSyllabusProvider>(context, listen: false);
+    final syllabusProvider =
+        Provider.of<StaffSyllabusProvider>(context, listen: false);
     setState(() => isLoading = true);
 
     try {
@@ -132,7 +137,8 @@ Future<void> _loadUserData() async {
 
       if (levelId.isEmpty || term == null || term.isEmpty) {
         final userBox = Hive.box('userData');
-        final storedUserData = userBox.get('userData') ?? userBox.get('loginResponse');
+        final storedUserData =
+            userBox.get('userData') ?? userBox.get('loginResponse');
 
         if (storedUserData != null) {
           final processedData = storedUserData is String
@@ -187,8 +193,10 @@ Future<void> _loadUserData() async {
                     .map((c) => {'id': c.id.toString(), 'name': c.name})
                     .toList();
 
-            final classNames = classes.map((c) => c['name']?.toString() ?? '').join(', ');
-            final selectedClass = classNames.isEmpty ? 'No classes selected' : classNames;
+            final classNames =
+                classes.map((c) => c['name']?.toString() ?? '').join(', ');
+            final selectedClass =
+                classNames.isEmpty ? 'No classes selected' : classNames;
 
             return {
               'id': syllabus.id,
@@ -216,7 +224,8 @@ Future<void> _loadUserData() async {
     } catch (e) {
       print('Error: $e');
       if (mounted) {
-        CustomToaster.toastError(context, 'Error', 'Failed to load syllabuses: $e');
+        CustomToaster.toastError(
+            context, 'Error', 'Failed to load syllabuses: $e');
       }
     } finally {
       if (mounted) {
@@ -226,17 +235,20 @@ Future<void> _loadUserData() async {
   }
 
   void _addNewSyllabus() async {
-    print("Adding new syllabus with courseId: ${widget.courseId}, levelId: ${widget.levelId}, course_name: ${widget.course_name}, classId: ${widget.classId}, classesList: ${widget.classesList}");
+    print(
+        "Adding new syllabus with courseId: ${widget.courseId}, levelId: ${widget.levelId}, course_name: ${widget.course_name}, classId: ${widget.classId}, classesList: ${widget.classesList}");
     final result = await Navigator.of(context).push(
       MaterialPageRoute(
         fullscreenDialog: true,
         builder: (BuildContext context) => StaffCreateSyllabusScreen(
-          classList:widget.classesList,
+          classList: widget.classesList,
           classId: widget.classId,
           courseId: widget.courseId,
           levelId: widget.levelId,
           courseName: widget.course_name,
-          className: widget.classesList.isNotEmpty ? widget.classesList[0]['name'] : '',
+          className: widget.classesList.isNotEmpty
+              ? widget.classesList[0]['name']
+              : '',
         ),
       ),
     );
@@ -281,11 +293,13 @@ Future<void> _loadUserData() async {
     }
   }
 
-  void updateSyllabus(int index, String newTitle, String newDescription, List<staffModel.ClassModel> newClasses) async {
+  void updateSyllabus(int index, String newTitle, String newDescription,
+      List<staffModel.ClassModel> newClasses) async {
     final int syllabusId = _syllabusList[index]['id'];
     final String term = _syllabusList[index]['term'];
     final String levelId = widget.levelId ?? '';
-    final syllabusProvider = Provider.of<StaffSyllabusProvider>(context, listen: false);
+    final syllabusProvider =
+        Provider.of<StaffSyllabusProvider>(context, listen: false);
     try {
       await syllabusProvider.updateSyllabus(
         title: newTitle,
@@ -312,7 +326,8 @@ Future<void> _loadUserData() async {
 
   Widget _buildSyllabusList() {
     print('Building syllabus list with ${_syllabusList.length} items');
-    print('Widget parameters - classId: ${widget.classId}, levelId: ${widget.levelId}, courseId: ${widget.courseId}, course_name: ${widget.course_name}, classesList: ${widget.classesList}');
+    print(
+        'Widget parameters - classId: ${widget.classId}, levelId: ${widget.levelId}, courseId: ${widget.courseId}, course_name: ${widget.course_name}, classesList: ${widget.classesList}');
 
     return ListView.builder(
       itemCount: _syllabusList.length,
@@ -322,13 +337,14 @@ Future<void> _loadUserData() async {
             context,
             MaterialPageRoute(
               builder: (context) => StaffEmptySubjectScreen(
-                classList:widget.classesList,
+                classList: widget.classesList,
                 syllabusId: _syllabusList[index]['id'] as int?,
-                syllabusClasses: _syllabusList[index]['classes'] as List<Map<String, dynamic>>,
+                syllabusClasses: _syllabusList[index]['classes']
+                    as List<Map<String, dynamic>>,
                 classId: widget.classId,
                 courseId: widget.courseId,
-                levelId:  _levelId,
-               // authorName: _syllabusList[index]['author_name']?.toString() ?? '',
+                levelId: _levelId,
+                // authorName: _syllabusList[index]['author_name']?.toString() ?? '',
                 courseName: widget.course_name,
                 term: _syllabusList[index]['term']?.toString() ?? '',
                 courseTitle: _syllabusList[index]['title']?.toString() ?? '',
@@ -475,7 +491,8 @@ Future<void> _loadUserData() async {
 
   void _deleteSyllabus(int index) async {
     final int syllabusId = _syllabusList[index]['id'];
-    final deleteProvider = Provider.of<DeleteSyllabusProvider>(context, listen: false);
+    final deleteProvider =
+        Provider.of<DeleteSyllabusProvider>(context, listen: false);
 
     try {
       await deleteProvider.deletesyllabus(syllabusId);
@@ -489,7 +506,7 @@ Future<void> _loadUserData() async {
       CustomToaster.toastError(
         context,
         'Error',
-        "${e.toString()}",
+        e.toString(),
       );
     }
   }
@@ -503,7 +520,8 @@ Future<void> _loadUserData() async {
       appBar: AppBar(
         title: Text(
           'Syllabus',
-          style: AppTextStyles.normal600(fontSize: 24.0, color: AppColors.primaryLight),
+          style: AppTextStyles.normal600(
+              fontSize: 24.0, color: AppColors.primaryLight),
         ),
         backgroundColor: AppColors.backgroundLight,
         flexibleSpace: FlexibleSpaceBar(

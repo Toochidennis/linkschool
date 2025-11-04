@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:linkschool/modules/admin/e_learning/View/question/assessment_screen.dart';
 import 'package:linkschool/modules/admin/e_learning/View/question/view_question_screen.dart';
-import 'package:linkschool/modules/admin/e_learning/View/quiz/quiz_assessment_screen.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/buttons/custom_long_elevated_button.dart';
 import 'package:linkschool/modules/common/constants.dart';
@@ -18,7 +17,7 @@ class QuizScreen extends StatefulWidget {
   final Question question;
   final List<Map<String, dynamic>>? questions;
   final List<Map<String, dynamic>>? correctAnswers;
-  final Map<String, dynamic?>? questiondata;
+  final Map<String, dynamic>? questiondata;
   final List<Map<String, String>>? class_ids;
   final String? syllabusClasses;
   const QuizScreen(
@@ -85,7 +84,7 @@ class _QuizScreenState extends State<QuizScreen> {
                             topic: widget.question.topic ?? 'No Topic',
                             duration: widget.question.duration,
 
-                            marks: widget.question.marks?.toString() ?? '0',
+                            marks: widget.question.marks.toString() ?? '0',
                             topicId: widget.question.topicId,
                           ),
                           questiondata: widget.questiondata ?? {},

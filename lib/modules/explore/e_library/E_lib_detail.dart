@@ -231,11 +231,10 @@ class _VideoDisplayState extends State<VideoDisplay> {
                       slivers: [
                         SliverToBoxAdapter(
                           child: Constants.headingWithSeeAll600(
-                            title: 'Watch history',
-                            titleSize: 18.0,
-                            titleColor: AppColors.primaryLight,
-                            onPressed: _navigateToSeeall
-                          ),
+                              title: 'Watch history',
+                              titleSize: 18.0,
+                              titleColor: AppColors.primaryLight,
+                              onPressed: _navigateToSeeall),
                         ),
                         SliverToBoxAdapter(
                           child: SizedBox(

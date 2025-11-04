@@ -74,7 +74,8 @@ class _ReportPaymentScreenState extends State<ReportPaymentScreen> {
             },
             child: Text(
               'Download',
-              style: AppTextStyles.normal600(fontSize: 14, color: AppColors.paymentTxtColor1),
+              style: AppTextStyles.normal600(
+                  fontSize: 14, color: AppColors.paymentTxtColor1),
             ),
           ),
         ],
@@ -91,14 +92,18 @@ class _ReportPaymentScreenState extends State<ReportPaymentScreen> {
           BottomNavigationBarItem(
             icon: SvgPicture.asset(
               'assets/icons/profile/nav_transaction_icon.svg',
-              color: _selectedIndex == 0 ? const Color.fromRGBO(47, 85, 221, 1) : Colors.grey,
+              color: _selectedIndex == 0
+                  ? const Color.fromRGBO(47, 85, 221, 1)
+                  : Colors.grey,
             ),
             label: 'Transactions',
           ),
           BottomNavigationBarItem(
             icon: SvgPicture.asset(
               'assets/icons/profile/nav_statistics_icon.svg',
-              color: _selectedIndex == 1 ? const Color.fromRGBO(47, 85, 221, 1) : Colors.grey,
+              color: _selectedIndex == 1
+                  ? const Color.fromRGBO(47, 85, 221, 1)
+                  : Colors.grey,
             ),
             label: 'Statistics',
           ),
@@ -109,4 +114,3 @@ class _ReportPaymentScreenState extends State<ReportPaymentScreen> {
     );
   }
 }
-

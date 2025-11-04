@@ -26,29 +26,45 @@ class User {
   factory User.fromJson(Map<String, dynamic> json) {
     final profile = json['profile'] ?? {};
     final role = profile['role'] ?? '';
-    
+
     return User(
       id: profile['staff_id']?.toString() ?? '',
       name: profile['name'] ?? '',
       email: profile['email'] ?? '',
       role: role,
       // Admin data structure
-      classes: role == 'admin' 
-        ? (json['classes'] as List?)?.map((classData) => Class.fromJson(classData)).toList() ?? []
-        : [],
+      classes: role == 'admin'
+          ? (json['classes'] as List?)
+                  ?.map((classData) => Class.fromJson(classData))
+                  .toList() ??
+              []
+          : [],
       levels: role == 'admin'
-        ? (json['levels'] as List?)?.map((levelData) => Level.fromJson(levelData)).toList() ?? []
-        : [],
+          ? (json['levels'] as List?)
+                  ?.map((levelData) => Level.fromJson(levelData))
+                  .toList() ??
+              []
+          : [],
       courses: role == 'admin'
-        ? (json['courses'] as List?)?.map((courseData) => Course.fromJson(courseData)).toList() ?? []
-        : [],
+          ? (json['courses'] as List?)
+                  ?.map((courseData) => Course.fromJson(courseData))
+                  .toList() ??
+              []
+          : [],
       // Staff data structure
       formClasses: role == 'staff'
-        ? (json['form_classes'] as List?)?.map((formClassData) => FormClass.fromJson(formClassData)).toList() ?? []
-        : [],
+          ? (json['form_classes'] as List?)
+                  ?.map((formClassData) => FormClass.fromJson(formClassData))
+                  .toList() ??
+              []
+          : [],
       staffCourses: role == 'staff'
-        ? (json['courses'] as List?)?.map((staffCourseData) => StaffCourse.fromJson(staffCourseData)).toList() ?? []
-        : [],
+          ? (json['courses'] as List?)
+                  ?.map((staffCourseData) =>
+                      StaffCourse.fromJson(staffCourseData))
+                  .toList() ??
+              []
+          : [],
       settings: SchoolSettings.fromJson(json['settings'] ?? {}),
     );
   }
@@ -168,8 +184,9 @@ class FormClass {
       levelId: json['level_id'] ?? 0,
       levelName: json['level_name'] ?? '',
       classes: (json['classes'] as List?)
-        ?.map((classData) => FormClassDetail.fromJson(classData))
-        .toList() ?? [],
+              ?.map((classData) => FormClassDetail.fromJson(classData))
+              .toList() ??
+          [],
     );
   }
 
@@ -222,8 +239,9 @@ class StaffCourse {
       classId: json['class_id'] ?? 0,
       className: json['class_name'] ?? '',
       courses: (json['courses'] as List?)
-        ?.map((courseData) => CourseDetail.fromJson(courseData))
-        .toList() ?? [],
+              ?.map((courseData) => CourseDetail.fromJson(courseData))
+              .toList() ??
+          [],
     );
   }
 
@@ -291,5 +309,3 @@ class SchoolSettings {
     };
   }
 }
-
-

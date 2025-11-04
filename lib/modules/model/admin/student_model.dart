@@ -8,7 +8,7 @@ class Student {
   final String? pictureUrl;
   bool isSelected;
   bool hasAttended;
-  
+
   Student({
     required this.id,
     required this.name,
@@ -21,12 +21,13 @@ class Student {
     this.hasAttended = false,
   });
 
-  String get fullName => '$surname $firstName ${middleName.isNotEmpty ? middleName : ''}'.trim();
-  
+  String get fullName =>
+      '$surname $firstName ${middleName.isNotEmpty ? middleName : ''}'.trim();
+
   bool get isMarkedPresent => hasAttended || isSelected;
-  
+
   Student copyWith({
-    bool? isSelected, 
+    bool? isSelected,
     bool? hasAttended,
     String? name,
     String? surname,
@@ -47,11 +48,11 @@ class Student {
       hasAttended: hasAttended ?? this.hasAttended,
     );
   }
-  
+
   factory Student.fromJson(Map<String, dynamic> json) {
     return Student(
       id: json['id'] is int ? json['id'] : int.parse(json['id'].toString()),
-      name: json['student_name'] ?? '', 
+      name: json['student_name'] ?? '',
       surname: json['surname'] ?? '',
       firstName: json['first_name'] ?? '',
       middleName: json['middle'] ?? '',
@@ -59,11 +60,11 @@ class Student {
       pictureUrl: json['picture_url'],
     );
   }
-  
+
   Map<String, dynamic> toJson() {
     return {
       'id': id,
-      'student_name': name,  
+      'student_name': name,
       'surname': surname,
       'first_name': firstName,
       'middle': middleName,

@@ -58,7 +58,7 @@ class _GradingSettingsScreenState extends State<GradingSettingsScreen> {
 
   void createControllersForGrade(Grade grade) {
     String itemId = grade.id;
-    
+
     editingControllers['$itemId-Grade'] =
         TextEditingController(text: grade.grade_Symbol);
     editingControllers['$itemId-Range'] =
@@ -73,7 +73,7 @@ class _GradingSettingsScreenState extends State<GradingSettingsScreen> {
 
     // Ensure editing state is initialized, defaults to false
     editingStates[itemId] = false;
-    
+
     // Create a form key for this grade
     formKeys[itemId] = GlobalKey<FormState>();
   }
@@ -96,118 +96,129 @@ class _GradingSettingsScreenState extends State<GradingSettingsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        leading: IconButton(
-          onPressed: () {
-            Navigator.of(context).pop();
-          },
-          icon: Image.asset(
-            'assets/icons/arrow_back.png',
-            color: AppColors.primaryLight,
-            width: 34.0,
-            height: 34.0,
+          leading: IconButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+            },
+            icon: Image.asset(
+              'assets/icons/arrow_back.png',
+              color: AppColors.primaryLight,
+              width: 34.0,
+              height: 34.0,
+            ),
           ),
-        ),
-        title: Text(
-          'Grade Settings',
-          style: AppTextStyles.normal600(
-            fontSize: 18.0,
-            color: AppColors.primaryLight,
+          title: Text(
+            'Grade Settings',
+            style: AppTextStyles.normal600(
+              fontSize: 18.0,
+              color: AppColors.primaryLight,
+            ),
           ),
-        ),
-        centerTitle: true,
-        backgroundColor: AppColors.backgroundLight,
-        actions:[
+          centerTitle: true,
+          backgroundColor: AppColors.backgroundLight,
+          actions: [
             Padding(
-            padding: const EdgeInsets.only(right: 16.0),
-            child: MouseRegion(
-              onEnter: (_) => setState(() => isHoveringSave = true),
-              onExit: (_) => setState(() => isHoveringSave = false),
-              child: FloatingActionButton(
-                onPressed: () async {
-  // Validate all forms first
-  bool allFormsValid = true;
-  for (var formKey in formKeys.values) {
-    if (formKey.currentState != null && !formKey.currentState!.validate()) {
-      allFormsValid = false;
-      break;
-    }
-  }
+              padding: const EdgeInsets.only(right: 16.0),
+              child: MouseRegion(
+                onEnter: (_) => setState(() => isHoveringSave = true),
+                onExit: (_) => setState(() => isHoveringSave = false),
+                child: FloatingActionButton(
+                  onPressed: () async {
+                    // Validate all forms first
+                    bool allFormsValid = true;
+                    for (var formKey in formKeys.values) {
+                      if (formKey.currentState != null &&
+                          !formKey.currentState!.validate()) {
+                        allFormsValid = false;
+                        break;
+                      }
+                    }
 
-  if (!allFormsValid) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Please fix all validation errors')),
-    );
-    return;
-  }
+                    if (!allFormsValid) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                            content: Text('Please fix all validation errors')),
+                      );
+                      return;
+                    }
 
-  final gradeProvider = Provider.of<GradeProvider>(context, listen: false);
+                    final gradeProvider =
+                        Provider.of<GradeProvider>(context, listen: false);
 
-  // CHECK IF THERE ARE NEW GRADES TO SAVE
-  if (!gradeProvider.hasNewGrades) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: const Text('Nothing to save',style: TextStyle(color: Colors.white),), backgroundColor: Colors.red[400],),
-    );
-    return;
-  }
+                    // CHECK IF THERE ARE NEW GRADES TO SAVE
+                    if (!gradeProvider.hasNewGrades) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: const Text(
+                            'Nothing to save',
+                            style: TextStyle(color: Colors.white),
+                          ),
+                          backgroundColor: Colors.red[400],
+                        ),
+                      );
+                      return;
+                    }
 
-  try {
-   
-  
+                    try {
+                      await gradeProvider.saveNewGrades();
 
-    await gradeProvider.saveNewGrades();
-
-    ScaffoldMessenger.of(context).hideCurrentSnackBar();
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('All grades added successfully!', style: TextStyle(color: Colors.white)), backgroundColor: Colors.green,),
-    );
-  } catch (e) {
-    ScaffoldMessenger.of(context).hideCurrentSnackBar();
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Failed to save grades ${e}', style: TextStyle(color: Colors.white)), backgroundColor: Colors.red,),
-    );
-  }
-},
-
-
-                mini: true,
-                backgroundColor:
-                    isHoveringSave ? Colors.blueGrey : AppColors.primaryLight,
-                shape: const CircleBorder(),
-                child: Container(
-                  decoration: BoxDecoration(
-                    borderRadius: const BorderRadius.all(Radius.circular(100)),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.3),
-                        blurRadius: 5,
-                        spreadRadius: 2,
-                        offset: const Offset(1, 2),
-                      ),
-                    ],
-                  ),
-                  child: const Icon(
-                    Icons.save,
-                    color: AppColors.backgroundLight,
-                    size: 20,
+                      ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('All grades added successfully!',
+                              style: TextStyle(color: Colors.white)),
+                          backgroundColor: Colors.green,
+                        ),
+                      );
+                    } catch (e) {
+                      ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Failed to save grades $e',
+                              style: TextStyle(color: Colors.white)),
+                          backgroundColor: Colors.red,
+                        ),
+                      );
+                    }
+                  },
+                  mini: true,
+                  backgroundColor:
+                      isHoveringSave ? Colors.blueGrey : AppColors.primaryLight,
+                  shape: const CircleBorder(),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      borderRadius:
+                          const BorderRadius.all(Radius.circular(100)),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.3),
+                          blurRadius: 5,
+                          spreadRadius: 2,
+                          offset: const Offset(1, 2),
+                        ),
+                      ],
+                    ),
+                    child: const Icon(
+                      Icons.save,
+                      color: AppColors.backgroundLight,
+                      size: 20,
+                    ),
                   ),
                 ),
               ),
             ),
-          ),
-        ]
-      ),
+          ]),
       body: Consumer<GradeProvider>(
         builder: (context, gradeProvider, child) {
           if (gradeProvider.isLoading) {
             return const Center(child: CircularProgressIndicator());
           } else {
-           
             for (var grade in gradeProvider.grades) {
               if (!editingControllers.containsKey('${grade.id}-Grade')) {
                 createControllersForGrade(grade);
               }
             }
-            
+
             return Padding(
               padding: const EdgeInsets.all(Constants.padding),
               child: ListView(
@@ -228,7 +239,6 @@ class _GradingSettingsScreenState extends State<GradingSettingsScreen> {
           }
         },
       ),
-    
     );
   }
 
@@ -263,34 +273,41 @@ class _GradingSettingsScreenState extends State<GradingSettingsScreen> {
                     child: GestureDetector(
                       onTap: () async {
                         if (isEditing) {
-                         
                           if (formKeys[itemId]!.currentState!.validate()) {
                             // Save changes if validation passes
                             try {
-                                final gradeSymbol = editingControllers['$itemId-Grade']!.text;
-                                final start = editingControllers['$itemId-Range']!.text;
-                                final remark = editingControllers['$itemId-Remark']!.text;
+                              final gradeSymbol =
+                                  editingControllers['$itemId-Grade']!.text;
+                              final start =
+                                  editingControllers['$itemId-Range']!.text;
+                              final remark =
+                                  editingControllers['$itemId-Remark']!.text;
 
-                                await gradeProvider.updateGrade(
-                                  grade.id,
-                                  gradeSymbol,
-                                  start,
-                                  remark,
-                                );
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text('Grade ${grade.grade_Symbol} updated successfully',style:TextStyle(color: Colors.white)),
-                                    backgroundColor: Colors.green,
-                                  ),
-                                );
-                          
+                              await gradeProvider.updateGrade(
+                                grade.id,
+                                gradeSymbol,
+                                start,
+                                remark,
+                              );
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                      'Grade ${grade.grade_Symbol} updated successfully',
+                                      style: TextStyle(color: Colors.white)),
+                                  backgroundColor: Colors.green,
+                                ),
+                              );
+
                               setState(() {
                                 editingStates[itemId] = false;
                               });
                             } catch (error) {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
-                                  content: Text('Failed to update grade: ${error.toString()}',style: TextStyle(color: Colors.white),),
+                                  content: Text(
+                                    'Failed to update grade: ${error.toString()}',
+                                    style: TextStyle(color: Colors.white),
+                                  ),
                                   backgroundColor: Colors.red,
                                 ),
                               );
@@ -317,21 +334,31 @@ class _GradingSettingsScreenState extends State<GradingSettingsScreen> {
                     onExit: (_) => setState(() => isHoveringDelete = false),
                     child: GestureDetector(
                       onTap: () async {
-
                         try {
                           await gradeProvider.deleteGrade(grade.id);
                           ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('Grade ${gradeProvider.error} deleted successfully',style:TextStyle(color: Colors.white)), backgroundColor: Colors.green,),
+                            SnackBar(
+                              content: Text(
+                                  'Grade ${gradeProvider.error} deleted successfully',
+                                  style: TextStyle(color: Colors.white)),
+                              backgroundColor: Colors.green,
+                            ),
                           );
                         } catch (error) {
                           ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('Failed to delete grade: ${error.toString()}',style: TextStyle(color: Colors.white)), backgroundColor: Colors.red,),
+                            SnackBar(
+                              content: Text(
+                                  'Failed to delete grade: ${error.toString()}',
+                                  style: TextStyle(color: Colors.white)),
+                              backgroundColor: Colors.red,
+                            ),
                           );
                         }
                       },
                       child: SvgPicture.asset(
                         'assets/icons/result/delete.svg',
-                        color: isHoveringDelete ? Colors.blueGrey : Colors.black,
+                        color:
+                            isHoveringDelete ? Colors.blueGrey : Colors.black,
                       ),
                     ),
                   ),
@@ -358,22 +385,23 @@ class _GradingSettingsScreenState extends State<GradingSettingsScreen> {
     String? Function(String?)? validator,
   ) {
     String key = '$itemId-${title.replaceAll(':', '')}';
-    
+
     // Ensure controllers are created when needed
     if (!editingControllers.containsKey(key)) {
       print('Warning: Missing controller for $key');
       return const SizedBox();
     }
-    
+
     TextEditingController controller = editingControllers[key]!;
     FocusNode focusNode = focusNodes[key] ?? FocusNode();
-    
+
     if (!focusNodes.containsKey(key)) {
       focusNodes[key] = focusNode;
     }
 
     focusNode.addListener(() {
-      if (mounted) {  // Check if the widget is still mounted
+      if (mounted) {
+        // Check if the widget is still mounted
         setState(() {
           focusedField = focusNode.hasFocus ? key : null;
         });
@@ -395,7 +423,8 @@ class _GradingSettingsScreenState extends State<GradingSettingsScreen> {
           Expanded(
             child: isEditing
                 ? TextFormField(
-                    key: ValueKey('input-$key'), // Important for widget identity
+                    key:
+                        ValueKey('input-$key'), // Important for widget identity
                     focusNode: focusNode,
                     controller: controller,
                     style: AppTextStyles.normal500(
@@ -483,15 +512,15 @@ class _GradingSettingsScreenState extends State<GradingSettingsScreen> {
                             rangeController.text,
                             remarkController.text,
                           );
-                          
+
                           // Create controllers for the new grade
                           createControllersForGrade(newGrade);
-                          
+
                           // Clear input fields
                           gradeController.clear();
                           rangeController.clear();
                           remarkController.clear();
-                          
+
                           // Show success message
                           MotionToast.success(
                             title: Text(
@@ -509,13 +538,15 @@ class _GradingSettingsScreenState extends State<GradingSettingsScreen> {
                               ),
                             ),
                           ).show(context);
-                          
+
                           // Force rebuild to make new grade visible
                           setState(() {});
                         } catch (error) {
                           print('Error adding grade: ${error.toString()}');
                           ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text('Error adding grade: ${error.toString()}')),
+                            SnackBar(
+                                content: Text(
+                                    'Error adding grade: ${error.toString()}')),
                           );
                         }
                       }
@@ -574,7 +605,8 @@ class _GradingSettingsScreenState extends State<GradingSettingsScreen> {
               focusNode: focusNode,
               onChanged: onChanged,
               validator: validator,
-              keyboardType: label == 'Range' ? TextInputType.number : TextInputType.text,
+              keyboardType:
+                  label == 'Range' ? TextInputType.number : TextInputType.text,
               inputFormatters: label == 'Range'
                   ? [FilteringTextInputFormatter.digitsOnly]
                   : null,
@@ -604,6 +636,3 @@ class _GradingSettingsScreenState extends State<GradingSettingsScreen> {
     return null;
   }
 }
-
-
-

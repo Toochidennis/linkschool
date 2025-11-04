@@ -27,10 +27,12 @@ class StaffSkillsBehaviourScreen extends StatefulWidget {
   });
 
   @override
-  State<StaffSkillsBehaviourScreen> createState() => _StaffSkillsBehaviourScreenState();
+  State<StaffSkillsBehaviourScreen> createState() =>
+      _StaffSkillsBehaviourScreenState();
 }
 
-class _StaffSkillsBehaviourScreenState extends State<StaffSkillsBehaviourScreen> {
+class _StaffSkillsBehaviourScreenState
+    extends State<StaffSkillsBehaviourScreen> {
   late double opacity;
   late String currentYear;
   late String currentTerm;
@@ -45,10 +47,12 @@ class _StaffSkillsBehaviourScreenState extends State<StaffSkillsBehaviourScreen>
     currentYear = widget.year ?? SettingsService.getCurrentYear();
     currentTerm = widget.term ?? SettingsService.getCurrentTerm().toString();
     currentDb = widget.db ?? SettingsService.getDatabaseName();
-    
-    print('Skills Behaviour Screen - Year: $currentYear, Term: $currentTerm, DB: $currentDb');
-    
-    final skillsProvider = Provider.of<SkillsBehaviorTableProvider>(context, listen: false);
+
+    print(
+        'Skills Behaviour Screen - Year: $currentYear, Term: $currentTerm, DB: $currentDb');
+
+    final skillsProvider =
+        Provider.of<SkillsBehaviorTableProvider>(context, listen: false);
     skillsProvider.fetchSkillsAndBehaviours(
       classId: widget.classId,
       levelId: widget.levelId,
@@ -69,7 +73,8 @@ class _StaffSkillsBehaviourScreenState extends State<StaffSkillsBehaviourScreen>
   Future<void> _loadUserData() async {
     try {
       final userBox = Hive.box('userData');
-      final storedUserData = userBox.get('userData') ?? userBox.get('loginResponse');
+      final storedUserData =
+          userBox.get('userData') ?? userBox.get('loginResponse');
 
       if (storedUserData == null) return;
 
@@ -184,7 +189,7 @@ class _StaffSkillsBehaviourScreenState extends State<StaffSkillsBehaviourScreen>
               if (provider.isLoading) {
                 return const Center(child: CircularProgressIndicator());
               }
-              
+
               if (provider.errorMessage.isNotEmpty) {
                 return Center(
                   child: Column(
@@ -271,7 +276,8 @@ class _StaffSkillsBehaviourScreenState extends State<StaffSkillsBehaviourScreen>
                       ),
                       child: Row(
                         children: [
-                          Icon(Icons.info_outline, color: Colors.blue, size: 20),
+                          Icon(Icons.info_outline,
+                              color: Colors.blue, size: 20),
                           SizedBox(width: 8),
                           Text(
                             'Academic Year: $currentYear/${int.parse(currentYear) + 1} - ${SettingsService.getTermName(int.parse(currentTerm))}',
@@ -296,7 +302,8 @@ class _StaffSkillsBehaviourScreenState extends State<StaffSkillsBehaviourScreen>
   }
 
   void _saveChanges() async {
-    final provider = Provider.of<SkillsBehaviorTableProvider>(context, listen: false);
+    final provider =
+        Provider.of<SkillsBehaviorTableProvider>(context, listen: false);
     final skillsPayload = {
       'skills': <Map<String, dynamic>>[],
       'year': currentYear,
@@ -375,7 +382,8 @@ class _StaffSkillsBehaviourScreenState extends State<StaffSkillsBehaviourScreen>
     }
   }
 
-  Widget _buildSubjectsTable(List<SkillsBehaviorTable> skills, List<StudentSkillBehaviorTable> students) {
+  Widget _buildSubjectsTable(List<SkillsBehaviorTable> skills,
+      List<StudentSkillBehaviorTable> students) {
     return Padding(
       padding: const EdgeInsets.all(16.0),
       child: Container(
@@ -459,7 +467,8 @@ class _StaffSkillsBehaviourScreenState extends State<StaffSkillsBehaviourScreen>
     );
   }
 
-  Widget _buildScrollableColumn(String title, double width, List<StudentSkillBehaviorTable> students, int skillId, int skillIndex) {
+  Widget _buildScrollableColumn(String title, double width,
+      List<StudentSkillBehaviorTable> students, int skillId, int skillIndex) {
     return Container(
       width: width,
       decoration: BoxDecoration(
@@ -490,7 +499,10 @@ class _StaffSkillsBehaviourScreenState extends State<StaffSkillsBehaviourScreen>
             final studentIndex = entry.key;
             final student = entry.value;
             _controllers.putIfAbsent(studentIndex, () => {});
-            _controllers[studentIndex]!.putIfAbsent(skillId, () => TextEditingController(text: student.skills[skillId] ?? ''));
+            _controllers[studentIndex]!.putIfAbsent(
+                skillId,
+                () =>
+                    TextEditingController(text: student.skills[skillId] ?? ''));
 
             return Container(
               height: 50,

@@ -3,7 +3,6 @@ import 'package:provider/provider.dart';
 import 'chat_bubble.dart';
 import 'services/openai_service.dart';
 
-
 class Message {
   final String content;
   final bool isUser;
@@ -13,7 +12,7 @@ class Message {
 
 class ChatScreen extends StatefulWidget {
   const ChatScreen({super.key});
-  
+
   @override
   _ChatScreenState createState() => _ChatScreenState();
 }
@@ -44,33 +43,35 @@ class _ChatScreenState extends State<ChatScreen> {
   void _sendMessage() async {
     final message = _controller.text.trim();
     if (message.isEmpty) return;
-    
+
     setState(() {
       messages.add(Message(content: message, isUser: true));
       _controller.clear();
       _isLoading = true;
     });
-    
+
     // Scroll to bottom after sending message
     WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
-    
+
     try {
       final openAIService = Provider.of<OpenAIService>(context, listen: false);
       final response = await openAIService.sendMessage(message);
-      
+
       setState(() {
         messages.add(Message(content: response, isUser: false));
         _isLoading = false;
       });
-      
+
       // Scroll to bottom after receiving response
       WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
     } catch (e) {
       print('Error sending message: $e'); // Debug print
       setState(() {
-        String errorMessage = "Sorry, I couldn't process your request. Please try again.";
+        String errorMessage =
+            "Sorry, I couldn't process your request. Please try again.";
         if (e.toString().contains('Quota exceeded')) {
-          errorMessage = "The AI service is currently unavailable due to high demand. Please try again later or contact support.";
+          errorMessage =
+              "The AI service is currently unavailable due to high demand. Please try again later or contact support.";
         }
         messages.add(Message(
           content: errorMessage,

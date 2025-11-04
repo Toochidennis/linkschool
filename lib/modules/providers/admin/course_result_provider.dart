@@ -18,14 +18,12 @@ class CourseResultProvider with ChangeNotifier {
       _error = null;
       notifyListeners();
 
-      print('Fetching average scores for classId: $classId, year: $year, term: $term');
-      final response = await _termService.fetchAverageScores(classId, year, term);
-      print('Fetched Average Scores: $response');
+      final response =
+          await _termService.fetchAverageScores(classId, year, term);
 
       _averageScores = response;
       _error = null;
     } catch (e) {
-      print('Error fetching average scores: $e');
       _error = 'Failed to load average scores. Please try again.';
       _averageScores = [];
     } finally {

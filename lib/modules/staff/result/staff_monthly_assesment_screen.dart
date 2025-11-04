@@ -3,27 +3,44 @@ import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 
 class MonthlyStaffAssessmentScreen extends StatefulWidget {
-    final String classId;
-    final String year;
-    final int term;
-    final String termName;
-    final String subject;
-    final Map<String, dynamic> courseData;
+  final String classId;
+  final String year;
+  final int term;
+  final String termName;
+  final String subject;
+  final Map<String, dynamic> courseData;
 
   const MonthlyStaffAssessmentScreen({
-    super.key, required this.classId, required this.year, required this.term, required this.termName, required this.subject, required this.courseData, 
-   
+    super.key,
+    required this.classId,
+    required this.year,
+    required this.term,
+    required this.termName,
+    required this.subject,
+    required this.courseData,
   });
 
   @override
-  State<MonthlyStaffAssessmentScreen> createState() => _MonthlyStaffAssessmentScreenState();
+  State<MonthlyStaffAssessmentScreen> createState() =>
+      _MonthlyStaffAssessmentScreenState();
 }
 
-class _MonthlyStaffAssessmentScreenState extends State<MonthlyStaffAssessmentScreen> {
+class _MonthlyStaffAssessmentScreenState
+    extends State<MonthlyStaffAssessmentScreen> {
   String selectedMonth = 'January';
   final List<String> months = [
-    'January', 'February', 'March', 'April', 'May', 'June',
-    'July', 'August', 'September', 'October', 'November', 'December'
+    'January',
+    'February',
+    'March',
+    'April',
+    'May',
+    'June',
+    'July',
+    'August',
+    'September',
+    'October',
+    'November',
+    'December'
   ];
 
   @override
@@ -89,10 +106,11 @@ class _MonthlyStaffAssessmentScreenState extends State<MonthlyStaffAssessmentScr
                     ],
                   ),
                   const SizedBox(height: 12),
-                  
+
                   // Month Selector
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                     decoration: BoxDecoration(
                       border: Border.all(color: Colors.grey[300]!),
                       borderRadius: BorderRadius.circular(8),
@@ -131,9 +149,9 @@ class _MonthlyStaffAssessmentScreenState extends State<MonthlyStaffAssessmentScr
                 ],
               ),
             ),
-            
+
             const SizedBox(height: 1),
-            
+
             // Statistics Cards
             Container(
               color: Colors.white,
@@ -154,9 +172,9 @@ class _MonthlyStaffAssessmentScreenState extends State<MonthlyStaffAssessmentScr
                 ],
               ),
             ),
-            
+
             const SizedBox(height: 16),
-            
+
             // Assessment List
             Expanded(
               child: Container(
@@ -219,7 +237,7 @@ class _MonthlyStaffAssessmentScreenState extends State<MonthlyStaffAssessmentScr
                 ),
               ),
             ),
-            
+
             const SizedBox(height: 16),
           ],
         ),
@@ -290,11 +308,36 @@ class _MonthlyStaffAssessmentScreenState extends State<MonthlyStaffAssessmentScr
 
   Widget _buildAssessmentCard(int index) {
     final dummyAssessments = [
-      {'title': 'Weekly Quiz 1', 'date': '2024-01-05', 'type': 'Quiz', 'status': 'Completed'},
-      {'title': 'Assignment 1', 'date': '2024-01-12', 'type': 'Assignment', 'status': 'Completed'},
-      {'title': 'Mid-Month Test', 'date': '2024-01-15', 'type': 'Test', 'status': 'Pending'},
-      {'title': 'Project Submission', 'date': '2024-01-22', 'type': 'Project', 'status': 'In Progress'},
-      {'title': 'Final Assessment', 'date': '2024-01-30', 'type': 'Exam', 'status': 'Scheduled'},
+      {
+        'title': 'Weekly Quiz 1',
+        'date': '2024-01-05',
+        'type': 'Quiz',
+        'status': 'Completed'
+      },
+      {
+        'title': 'Assignment 1',
+        'date': '2024-01-12',
+        'type': 'Assignment',
+        'status': 'Completed'
+      },
+      {
+        'title': 'Mid-Month Test',
+        'date': '2024-01-15',
+        'type': 'Test',
+        'status': 'Pending'
+      },
+      {
+        'title': 'Project Submission',
+        'date': '2024-01-22',
+        'type': 'Project',
+        'status': 'In Progress'
+      },
+      {
+        'title': 'Final Assessment',
+        'date': '2024-01-30',
+        'type': 'Exam',
+        'status': 'Scheduled'
+      },
     ];
 
     final assessment = dummyAssessments[index % dummyAssessments.length];
@@ -335,7 +378,8 @@ class _MonthlyStaffAssessmentScreenState extends State<MonthlyStaffAssessmentScr
                 ),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
                   color: statusColor.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(16),
@@ -414,7 +458,8 @@ class _MonthlyStaffAssessmentScreenState extends State<MonthlyStaffAssessmentScr
               color: AppColors.primaryLight,
             ),
           ),
-          content: const Text('This feature will allow you to add new monthly assessments.'),
+          content: const Text(
+              'This feature will allow you to add new monthly assessments.'),
           actions: [
             TextButton(
               onPressed: () {
@@ -426,7 +471,8 @@ class _MonthlyStaffAssessmentScreenState extends State<MonthlyStaffAssessmentScr
               onPressed: () {
                 Navigator.of(context).pop();
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Add Assessment feature coming soon!')),
+                  const SnackBar(
+                      content: Text('Add Assessment feature coming soon!')),
                 );
               },
               style: ElevatedButton.styleFrom(
@@ -477,7 +523,8 @@ class _MonthlyStaffAssessmentScreenState extends State<MonthlyStaffAssessmentScr
               onPressed: () {
                 Navigator.of(context).pop();
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Edit Assessment feature coming soon!')),
+                  const SnackBar(
+                      content: Text('Edit Assessment feature coming soon!')),
                 );
               },
               style: ElevatedButton.styleFrom(

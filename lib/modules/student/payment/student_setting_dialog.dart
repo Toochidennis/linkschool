@@ -14,7 +14,6 @@ class StudentSettingDialog extends StatefulWidget {
 class _StudentSettingDialogState extends State<StudentSettingDialog> {
   late double opacity;
 
-
   @override
   Widget build(BuildContext context) {
     final Brightness brightness = Theme.of(context).brightness;
@@ -37,7 +36,7 @@ class _StudentSettingDialogState extends State<StudentSettingDialog> {
             padding: const EdgeInsets.only(right: 16.0),
             child: ElevatedButton(
               onPressed: () {
-                widget.logout();       // Perform logout action
+                widget.logout(); // Perform logout action
                 Navigator.pop(context); // Close the dialog after logout
               },
               style: ElevatedButton.styleFrom(
@@ -47,7 +46,8 @@ class _StudentSettingDialogState extends State<StudentSettingDialog> {
               ),
               child: Text(
                 'Logout',
-                style:AppTextStyles.normal500(fontSize: 14, color: AppColors.backgroundLight),
+                style: AppTextStyles.normal500(
+                    fontSize: 14, color: AppColors.backgroundLight),
               ),
             ),
           ),

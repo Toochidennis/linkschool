@@ -55,8 +55,8 @@ class Data {
                 json["form_classes"].map((x) => FormClass.fromJson(x))),
         assignedCourses: json["assigned_courses"] == null
             ? []
-            : List<AssignedCourse>.from(
-                json["assigned_courses"].map((x) => AssignedCourse.fromJson(x))),
+            : List<AssignedCourse>.from(json["assigned_courses"]
+                .map((x) => AssignedCourse.fromJson(x))),
         feeds: json["feeds"] == null ? null : Feeds.fromJson(json["feeds"]),
       );
 
@@ -219,8 +219,7 @@ class AssignedCourse {
         levelId: json["level_id"],
         courses: json["courses"] == null
             ? []
-            : List<Course>.from(
-                json["courses"].map((x) => Course.fromJson(x))),
+            : List<Course>.from(json["courses"].map((x) => Course.fromJson(x))),
       );
 
   Map<String, dynamic> toJson() => {

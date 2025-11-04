@@ -2,7 +2,6 @@
 import 'package:flutter/material.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 
-
 class SelectClassButton extends StatefulWidget {
   final String text;
   final VoidCallback onTap;

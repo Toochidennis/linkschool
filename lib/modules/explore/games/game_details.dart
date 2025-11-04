@@ -74,7 +74,7 @@ class _GameDetailsState extends State<GameDetails> {
                     style: AppTextStyles.normal600(
                         fontSize: 22, color: AppColors.gametitle),
                   ),
-                  
+
                   // Game info row
                   Row(
                     children: [
@@ -98,7 +98,7 @@ class _GameDetailsState extends State<GameDetails> {
                   ),
 
                   const SizedBox(height: 20),
-                  
+
                   // Play now button
                   CustomLongElevatedButton(
                     text: 'Play now',
@@ -109,7 +109,7 @@ class _GameDetailsState extends State<GameDetails> {
                     textStyle: AppTextStyles.normal500(
                         fontSize: 16, color: AppColors.assessmentColor1),
                   ),
-                  
+
                   const SizedBox(height: 30),
 
                   // About this game section
@@ -215,7 +215,7 @@ class RecommendedCard extends StatelessWidget {
       height: 150,
       width: 300,
       decoration: BoxDecoration(
-        color: AppColors.gameCard, 
+        color: AppColors.gameCard,
         borderRadius: BorderRadius.circular(20),
       ),
       child: ClipRRect(
@@ -224,8 +224,8 @@ class RecommendedCard extends StatelessWidget {
           // Using thumbnail instead of gameUrl for consistency
           game.thumbnail,
           fit: BoxFit.cover,
-          errorBuilder: (context, error, stackTrace) => 
-            const Center(child: Icon(Icons.error)),
+          errorBuilder: (context, error, stackTrace) =>
+              const Center(child: Icon(Icons.error)),
         ),
       ),
     );
@@ -317,13 +317,13 @@ class GameCard extends StatelessWidget {
             child: Image.network(
               game.thumbnail,
               fit: BoxFit.contain,
-              errorBuilder: (context, error, stackTrace) => 
-                const Center(child: Icon(Icons.error, color: Colors.white)),
+              errorBuilder: (context, error, stackTrace) =>
+                  const Center(child: Icon(Icons.error, color: Colors.white)),
             ),
           ),
-          
+
           const SizedBox(width: 10.0),
-          
+
           // Game details area
           Expanded(
             child: Container(
@@ -364,12 +364,13 @@ class GameCard extends StatelessWidget {
                           overflow: TextOverflow.ellipsis,
                         ),
                         const SizedBox(height: 2.0),
-                        
+
                         // Rating and downloads
                         Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            const Icon(Icons.star, color: Colors.amber, size: 16.0),
+                            const Icon(Icons.star,
+                                color: Colors.amber, size: 16.0),
                             const SizedBox(width: 2),
                             Text(
                               game.rating,
@@ -379,7 +380,8 @@ class GameCard extends StatelessWidget {
                               ),
                             ),
                             const SizedBox(width: 16.0),
-                            const Icon(Icons.file_download_outlined, size: 16.0),
+                            const Icon(Icons.file_download_outlined,
+                                size: 16.0),
                             const SizedBox(width: 2),
                             Text(
                               '150k', // Hardcoded value should be replaced
@@ -393,7 +395,7 @@ class GameCard extends StatelessWidget {
                       ],
                     ),
                   ),
-                  
+
                   // Play button
                   Container(
                     height: 45.0,
@@ -423,7 +425,7 @@ class GameCard extends StatelessWidget {
                           child: Text(
                             'Play',
                             style: AppTextStyles.normal600(
-                              fontSize: 14.0, 
+                              fontSize: 14.0,
                               color: AppColors.buttonColor1,
                             ),
                           ),
@@ -440,4 +442,3 @@ class GameCard extends StatelessWidget {
     );
   }
 }
-

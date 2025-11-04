@@ -25,25 +25,23 @@ class Comment {
     required this.author,
   });
 
-
-
-
   // Factory to create Comment from JSON (if API returns the comment)
-factory Comment.fromJson(Map<String, dynamic> json) {
-  return Comment(
-    contentTitle: json['content_title'] as String?,
-    id: json['id'] as int?, 
-    userId: json['author_id'] as int?, // mapped from author_id
-    userName: json['author_name'] as String?, 
-    // mapped from author_name
-    text: json['comment'] ?? '',
-    levelId: json['level_id']?.toString(),
-    courseId: json['course_id']?.toString(),
-    courseName: json['course_name'] as String?,
-    term: json['term'] is int ? json['term'] : int.tryParse(json['term']?.toString() ?? ''),
-    date: DateTime.tryParse(json['upload_date'] ?? '') ?? DateTime.now(),
-    author: json['author_name'] ?? 'Unknown', // For UI display
-  );
-}
-
+  factory Comment.fromJson(Map<String, dynamic> json) {
+    return Comment(
+      contentTitle: json['content_title'] as String?,
+      id: json['id'] as int?,
+      userId: json['author_id'] as int?, // mapped from author_id
+      userName: json['author_name'] as String?,
+      // mapped from author_name
+      text: json['comment'] ?? '',
+      levelId: json['level_id']?.toString(),
+      courseId: json['course_id']?.toString(),
+      courseName: json['course_name'] as String?,
+      term: json['term'] is int
+          ? json['term']
+          : int.tryParse(json['term']?.toString() ?? ''),
+      date: DateTime.tryParse(json['upload_date'] ?? '') ?? DateTime.now(),
+      author: json['author_name'] ?? 'Unknown', // For UI display
+    );
+  }
 }

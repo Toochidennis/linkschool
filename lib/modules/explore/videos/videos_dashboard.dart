@@ -12,8 +12,8 @@ import 'package:skeletonizer/skeletonizer.dart';
 import '../e_library/e_lib_subject_detail.dart';
 
 class VideosDashboard extends StatefulWidget {
-    final bool showAppBar;
-  const VideosDashboard({super.key, this.showAppBar=true});
+  final bool showAppBar;
+  const VideosDashboard({super.key, this.showAppBar = true});
 
   @override
   State<VideosDashboard> createState() => _VideosDashboardState();
@@ -74,14 +74,13 @@ class _VideosDashboardState extends State<VideosDashboard> {
     return Consumer<SubjectProvider>(
       builder: (context, subjectProvider, child) {
         if (subjectProvider.isLoading) {
-          
           return Scaffold(
             appBar: widget.showAppBar
-             ? Constants.customAppBar(
-                context: context,
-                iconPath: 'assets/icons/search.png',
-                iconSize: 20.0)
-              : null,
+                ? Constants.customAppBar(
+                    context: context,
+                    iconPath: 'assets/icons/search.png',
+                    iconSize: 20.0)
+                : null,
             body: Skeletonizer(
               child: Container(
                 decoration: Constants.customBoxDecoration(context),

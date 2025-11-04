@@ -43,7 +43,9 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
           children: [
             _buildTopContainer(),
             _buildButtonSection(),
-            const SizedBox(height: 25,),
+            const SizedBox(
+              height: 25,
+            ),
             _buildHistorySection(),
           ],
         ),
@@ -51,217 +53,249 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
     );
   }
 
-Widget _buildTopContainer() {
-  return Padding(
-    padding: const EdgeInsets.symmetric(horizontal: 16.0),
-    child: Container(
-      height: 165, // Fixed height for the container
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(12.0),
-      ),
-      child: Stack(
-        fit: StackFit.expand,
-        children: [
-          ClipRRect(
-            borderRadius: BorderRadius.circular(12.0),
-            child: SvgPicture.asset(
-              'assets/images/result/top_container.svg',
-              fit: BoxFit.cover,
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  height: 42,
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: AppColors.regBtnColor1,
-                    borderRadius: BorderRadius.circular(24),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        '2016/2017 academic session',
-                        style: AppTextStyles.normal600(
-                            fontSize: 12, color: AppColors.backgroundDark),
-                      ),
-                      CustomDropdown(
-                        items: const ['First term', 'Second term', 'Third term'],
-                        value: _selectedTerm,
-                        onChanged: (newValue) {
-                          setState(() {
-                            _selectedTerm = newValue!;
-                          });
-                        },
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 34,),
-                Row(
-                  children: [
-                    const CircleAvatar(
-                      backgroundColor: AppColors.regAvatarColor,
-                      child: Icon(Icons.person, color: AppColors.primaryLight),
-                    ),
-                    const SizedBox(width: 12),
-                    Text('Registered students',
-                        style: AppTextStyles.normal500(
-                            fontSize: 14, color: AppColors.backgroundLight)),
-                    const SizedBox(width: 18),
-                    Container(
-                        width: 1, height: 40, color: AppColors.backgroundLight),
-                    const SizedBox(width: 18),
-                    Text(
-                      '345',
-                      style: AppTextStyles.normal700(
-                          fontSize: 24, color: AppColors.backgroundLight),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    ),
-  );
-}
-
-Widget _buildButtonSection() {
-  return Padding(
-    padding: const EdgeInsets.all(16),
-    child: Column(
-      children: [
-        ElevatedButton(
-          style: ElevatedButton.styleFrom(
-            backgroundColor: AppColors.videoColor4,
-            minimumSize: const Size(double.infinity, 50),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8), // Reduced border radius
-            ),
-          ),
-          child: Text(
-            'Register student',
-            style: AppTextStyles.normal600(
-                fontSize: 16, color: AppColors.backgroundLight),
-          ),
-          onPressed: () => {},
+  Widget _buildTopContainer() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+      child: Container(
+        height: 165, // Fixed height for the container
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(12.0),
         ),
-        const SizedBox(height: 16),
-        Row(
+        child: Stack(
+          fit: StackFit.expand,
           children: [
-            Expanded(
-              child: OutlinedButton(
-                style: OutlinedButton.styleFrom(
-                  backgroundColor: AppColors.regBtnColor2, 
-                  side: const BorderSide(color: AppColors.videoColor4),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(4), 
-                  ),
-                ),
-                onPressed: () {},
-                child:  Text('+ Copy previous registration', style: AppTextStyles.normal600(fontSize: 10, color: AppColors.videoColor4),),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(12.0),
+              child: SvgPicture.asset(
+                'assets/images/result/top_container.svg',
+                fit: BoxFit.cover,
               ),
             ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: OutlinedButton(
-                style: OutlinedButton.styleFrom(
-                  backgroundColor: AppColors.regBtnColor2, 
-                  side: const BorderSide(color: AppColors.videoColor4),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(4), 
-                  ),
-                ),
-                child: Text('+ Bulk registration', style: AppTextStyles.normal600(fontSize: 12, color: AppColors.videoColor4)),
-                onPressed: () => _showRegistrationDialog(context),
-              ),
-            ),
-          ],
-        ),
-      ],
-    ),
-  );
-}
-
-Widget _buildHistorySection() {
-  return Container(
-    margin: const EdgeInsets.symmetric(horizontal: 16,),
-    padding: const EdgeInsets.all(16),
-    color: AppColors.regBgColor1,
-    child: Column(
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text('History', style: AppTextStyles.normal600(fontSize: 16, color: AppColors.backgroundDark)),
-            Text(
-              'See all',
-              style: AppTextStyles.normal500(fontSize: 14, color: AppColors.barTextGray).copyWith(
-                decoration: TextDecoration.underline,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 16),
-        ListView.builder(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          itemCount: 4,
-          itemBuilder: (context, index) {
-            return Container(
-              margin: const EdgeInsets.only(bottom: 16),
+            Padding(
               padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: AppColors.backgroundLight,
-                borderRadius: BorderRadius.circular(12), 
-              ),
-              height: 90,
               child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text('2015/2016 academic session',
-                          style: AppTextStyles.normal700(fontSize: 14, color: AppColors.backgroundDark)),
-                      SizedBox(
-                        height: 24,
-                        // width: 85,
-                        child: OutlinedButton(
-                          style: OutlinedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0), // Increased horizontal padding
-                            backgroundColor: AppColors.backgroundLight,
-                            side: const BorderSide(color: AppColors.primaryLight),
-                          ),
-                          child: Text('See details', style: AppTextStyles.normal500(fontSize: 12, color: AppColors.primaryLight)),
-                          onPressed: () {},
+                  Container(
+                    height: 42,
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: AppColors.regBtnColor1,
+                      borderRadius: BorderRadius.circular(24),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          '2016/2017 academic session',
+                          style: AppTextStyles.normal600(
+                              fontSize: 12, color: AppColors.backgroundDark),
                         ),
-                      ),
-                    ],
+                        CustomDropdown(
+                          items: const [
+                            'First term',
+                            'Second term',
+                            'Third term'
+                          ],
+                          value: _selectedTerm,
+                          onChanged: (newValue) {
+                            setState(() {
+                              _selectedTerm = newValue!;
+                            });
+                          },
+                        ),
+                      ],
+                    ),
                   ),
-                  const SizedBox(height: 14),
+                  const SizedBox(
+                    height: 34,
+                  ),
                   Row(
                     children: [
-                      Text('345', style: AppTextStyles.normal600(fontSize: 12, color: AppColors.regTextGray)),
-                      const SizedBox(width: 10),
-                      Text('students registered',
-                          style:  AppTextStyles.normal600(fontSize: 11, color: AppColors.regTextGray)),
+                      const CircleAvatar(
+                        backgroundColor: AppColors.regAvatarColor,
+                        child:
+                            Icon(Icons.person, color: AppColors.primaryLight),
+                      ),
+                      const SizedBox(width: 12),
+                      Text('Registered students',
+                          style: AppTextStyles.normal500(
+                              fontSize: 14, color: AppColors.backgroundLight)),
+                      const SizedBox(width: 18),
+                      Container(
+                          width: 1,
+                          height: 40,
+                          color: AppColors.backgroundLight),
+                      const SizedBox(width: 18),
+                      Text(
+                        '345',
+                        style: AppTextStyles.normal700(
+                            fontSize: 24, color: AppColors.backgroundLight),
+                      ),
                     ],
                   ),
                 ],
               ),
-            );
-          },
+            ),
+          ],
         ),
-      ],
-    ),
-  );
-}
+      ),
+    );
+  }
+
+  Widget _buildButtonSection() {
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        children: [
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.videoColor4,
+              minimumSize: const Size(double.infinity, 50),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8), // Reduced border radius
+              ),
+            ),
+            child: Text(
+              'Register student',
+              style: AppTextStyles.normal600(
+                  fontSize: 16, color: AppColors.backgroundLight),
+            ),
+            onPressed: () => {},
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton(
+                  style: OutlinedButton.styleFrom(
+                    backgroundColor: AppColors.regBtnColor2,
+                    side: const BorderSide(color: AppColors.videoColor4),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                  ),
+                  onPressed: () {},
+                  child: Text(
+                    '+ Copy previous registration',
+                    style: AppTextStyles.normal600(
+                        fontSize: 10, color: AppColors.videoColor4),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: OutlinedButton(
+                  style: OutlinedButton.styleFrom(
+                    backgroundColor: AppColors.regBtnColor2,
+                    side: const BorderSide(color: AppColors.videoColor4),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                  ),
+                  child: Text('+ Bulk registration',
+                      style: AppTextStyles.normal600(
+                          fontSize: 12, color: AppColors.videoColor4)),
+                  onPressed: () => _showRegistrationDialog(context),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHistorySection() {
+    return Container(
+      margin: const EdgeInsets.symmetric(
+        horizontal: 16,
+      ),
+      padding: const EdgeInsets.all(16),
+      color: AppColors.regBgColor1,
+      child: Column(
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text('History',
+                  style: AppTextStyles.normal600(
+                      fontSize: 16, color: AppColors.backgroundDark)),
+              Text(
+                'See all',
+                style: AppTextStyles.normal500(
+                        fontSize: 14, color: AppColors.barTextGray)
+                    .copyWith(
+                  decoration: TextDecoration.underline,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          ListView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: 4,
+            itemBuilder: (context, index) {
+              return Container(
+                margin: const EdgeInsets.only(bottom: 16),
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: AppColors.backgroundLight,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                height: 90,
+                child: Column(
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text('2015/2016 academic session',
+                            style: AppTextStyles.normal700(
+                                fontSize: 14, color: AppColors.backgroundDark)),
+                        SizedBox(
+                          height: 24,
+                          // width: 85,
+                          child: OutlinedButton(
+                            style: OutlinedButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 0), // Increased horizontal padding
+                              backgroundColor: AppColors.backgroundLight,
+                              side: const BorderSide(
+                                  color: AppColors.primaryLight),
+                            ),
+                            child: Text('See details',
+                                style: AppTextStyles.normal500(
+                                    fontSize: 12,
+                                    color: AppColors.primaryLight)),
+                            onPressed: () {},
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 14),
+                    Row(
+                      children: [
+                        Text('345',
+                            style: AppTextStyles.normal600(
+                                fontSize: 12, color: AppColors.regTextGray)),
+                        const SizedBox(width: 10),
+                        Text('students registered',
+                            style: AppTextStyles.normal600(
+                                fontSize: 11, color: AppColors.regTextGray)),
+                      ],
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 class CustomDropdown extends StatelessWidget {
@@ -322,7 +356,8 @@ void _showRegistrationDialog(BuildContext context) {
     backgroundColor: Colors.transparent,
     builder: (BuildContext context) {
       return Padding(
-        padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+        padding:
+            EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
         child: Container(
           decoration: BoxDecoration(
             color: Colors.white,
@@ -334,7 +369,8 @@ void _showRegistrationDialog(BuildContext context) {
             children: [
               Text(
                 'Select courses to register',
-                style: AppTextStyles.normal600(fontSize: 18, color: AppColors.backgroundDark),
+                style: AppTextStyles.normal600(
+                    fontSize: 18, color: AppColors.backgroundDark),
                 textAlign: TextAlign.center,
               ),
               SizedBox(height: 20),
@@ -350,7 +386,8 @@ void _showRegistrationDialog(BuildContext context) {
                 ),
                 child: Text(
                   'Register',
-                  style: AppTextStyles.normal600(fontSize: 16, color: AppColors.backgroundLight),
+                  style: AppTextStyles.normal600(
+                      fontSize: 16, color: AppColors.backgroundLight),
                 ),
                 onPressed: () {
                   Navigator.pop(context);
@@ -366,42 +403,54 @@ void _showRegistrationDialog(BuildContext context) {
 
 List<Widget> _buildSubjectRows() {
   List<String> allSubjects = [
-    'Mathematics', 'English', 'Physics', 'Chemistry', 'Biology', 
-    'History', 'Geography', 'Literature', 'Economics', 'Government',
-    'French', 'Computer Science', 'Fine Arts', 'Music', 'Physical Education'
+    'Mathematics',
+    'English',
+    'Physics',
+    'Chemistry',
+    'Biology',
+    'History',
+    'Geography',
+    'Literature',
+    'Economics',
+    'Government',
+    'French',
+    'Computer Science',
+    'Fine Arts',
+    'Music',
+    'Physical Education'
   ];
   allSubjects.shuffle();
-  
+
   List<Widget> rows = [];
   while (allSubjects.isNotEmpty) {
     List<String> rowSubjects = allSubjects.take(3).toList();
     allSubjects.removeRange(0, rowSubjects.length);
-    
-    rows.add(
-      Padding(
-        padding: EdgeInsets.only(bottom: 8),
-        child: Row(
-          children: rowSubjects.map((subject) {
-            return Expanded(
-              child: Padding(
-                padding: EdgeInsets.symmetric(horizontal: 4),
-                child: OutlinedButton(
-                  style: OutlinedButton.styleFrom(
-                    side: BorderSide(color: AppColors.videoColor4),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(20),
-                    ),
+
+    rows.add(Padding(
+      padding: EdgeInsets.only(bottom: 8),
+      child: Row(
+        children: rowSubjects.map((subject) {
+          return Expanded(
+            child: Padding(
+              padding: EdgeInsets.symmetric(horizontal: 4),
+              child: OutlinedButton(
+                style: OutlinedButton.styleFrom(
+                  side: BorderSide(color: AppColors.videoColor4),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(20),
                   ),
-                  child: Text(subject, style: TextStyle(color: AppColors.videoColor4), overflow: TextOverflow.ellipsis),
-                  onPressed: () {},
                 ),
+                child: Text(subject,
+                    style: TextStyle(color: AppColors.videoColor4),
+                    overflow: TextOverflow.ellipsis),
+                onPressed: () {},
               ),
-            );
-          }).toList(),
-        ),
-      )
-    );
+            ),
+          );
+        }).toList(),
+      ),
+    ));
   }
-  
+
   return rows;
 }

@@ -8,14 +8,12 @@ import 'package:linkschool/modules/services/api/service_locator.dart';
 import 'package:linkschool/modules/common/custom_toaster.dart';
 import 'package:linkschool/modules/admin/payment/settings/vendor/vendor_transaction_screen.dart';
 
-
 class VendorSettingsScreen extends StatefulWidget {
   const VendorSettingsScreen({super.key});
 
   @override
   State<VendorSettingsScreen> createState() => _VendorSettingsScreenState();
 }
-
 
 class _VendorSettingsScreenState extends State<VendorSettingsScreen> {
   late double opacity;
@@ -61,8 +59,9 @@ class _VendorSettingsScreenState extends State<VendorSettingsScreen> {
   void _filterVendors() {
     final query = _searchController.text.toLowerCase();
     setState(() {
-      filteredVendors = vendors.where((vendor) =>
-          vendor.vendorName.toLowerCase().contains(query)).toList();
+      filteredVendors = vendors
+          .where((vendor) => vendor.vendorName.toLowerCase().contains(query))
+          .toList();
     });
   }
 
@@ -75,188 +74,190 @@ class _VendorSettingsScreenState extends State<VendorSettingsScreen> {
     final formKey = GlobalKey<FormState>();
 
     showModalBottomSheet(
-  context: context,
-  isScrollControlled: true,
-  backgroundColor: Colors.transparent,
-  builder: (BuildContext context) {
-    return DraggableScrollableSheet(
-      expand: false,
-      initialChildSize: 0.8, // height when opened
-      maxChildSize: 0.95, // can drag almost full screen
-      minChildSize: 0.5, // minimum collapsed size
-      builder: (context, scrollController) {
-        return Container(
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.only(
-              topLeft: Radius.circular(20),
-              topRight: Radius.circular(20),
-            ),
-          ),
-          child: Column(
-            children: [
-              // Header
-              Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      'Add Vendor',
-                      style: AppTextStyles.normal600(
-                        fontSize: 20.0,
-                        color: AppColors.primaryLight,
-                      ),
-                    ),
-                    IconButton(
-                      onPressed: () => Navigator.pop(context),
-                      icon: const Icon(Icons.close),
-                      color: AppColors.primaryLight,
-                    ),
-                  ],
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (BuildContext context) {
+        return DraggableScrollableSheet(
+          expand: false,
+          initialChildSize: 0.8, // height when opened
+          maxChildSize: 0.95, // can drag almost full screen
+          minChildSize: 0.5, // minimum collapsed size
+          builder: (context, scrollController) {
+            return Container(
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(20),
+                  topRight: Radius.circular(20),
                 ),
               ),
-
-              // Scrollable content
-              Expanded(
-                child: SingleChildScrollView(
-                  controller: scrollController,
-                  padding: EdgeInsets.only(
-                    left: 16,
-                    right: 16,
-                    bottom: MediaQuery.of(context).viewInsets.bottom + 16, // ✅ adjusts for keyboard
-                    top: 8,
-                  ),
-                  child: Form(
-                    key: formKey,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+              child: Column(
+                children: [
+                  // Header
+                  Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        _buildFormField(
-                          'Vendor name',
-                          'Enter vendor name',
-                          vendorNameController,
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Vendor name is required';
-                            }
-                            return null;
-                          },
-                        ),
-                        const SizedBox(height: 16),
-                        _buildFormField(
-                          'Email (optional)',
-                          'Enter email',
-                          emailController,
-                          validator: (value) {
-                            if (value != null && value.isNotEmpty) {
-                              if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$')
-                                  .hasMatch(value)) {
-                                return 'Enter a valid email';
-                              }
-                            }
-                            return null;
-                          },
-                        ),
-                        const SizedBox(height: 16),
-                        _buildFormField(
-                          'Phone number',
-                          'Enter phone number',
-                          phoneNumberController,
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Phone number is required';
-                            }
-                            if (!RegExp(r'^\d{10,15}$').hasMatch(value)) {
-                              return 'Enter a valid phone number';
-                            }
-                            return null;
-                          },
-                        ),
-                        const SizedBox(height: 16),
-                        _buildFormField(
-                          'Address',
-                          'Enter address',
-                          addressController,
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Address is required';
-                            }
-                            return null;
-                          },
-                        ),
-                        const SizedBox(height: 16),
-                        _buildFormField(
-                          'Reference number',
-                          'Enter reference number',
-                          referenceController,
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Reference number is required';
-                            }
-                            return null;
-                          },
-                        ),
-                        const SizedBox(height: 24),
-                        SizedBox(
-                          width: double.infinity,
-                          child: ElevatedButton(
-                            onPressed: () async {
-                              if (formKey.currentState!.validate()) {
-                                final response = await _vendorService.addVendor(
-                                  vendorName: vendorNameController.text,
-                                  phoneNumber: phoneNumberController.text,
-                                  email: emailController.text,
-                                  address: addressController.text,
-                                  reference: referenceController.text,
-                                );
-                                if (response.success) {
-                                  CustomToaster.toastSuccess(
-                                    context,
-                                    'Success',
-                                    'Vendor added successfully',
-                                  );
-                                  Navigator.pop(context);
-                                  _fetchVendors();
-                                } else {
-                                  CustomToaster.toastError(
-                                    context,
-                                    'Error',
-                                    response.message,
-                                  );
-                                }
-                              }
-                            },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppColors.paymentTxtColor1,
-                              padding:
-                                  const EdgeInsets.symmetric(vertical: 16),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                            ),
-                            child: Text(
-                              'Add vendor',
-                              style: AppTextStyles.normal600(
-                                fontSize: 16.0,
-                                color: Colors.white,
-                              ),
-                            ),
+                        Text(
+                          'Add Vendor',
+                          style: AppTextStyles.normal600(
+                            fontSize: 20.0,
+                            color: AppColors.primaryLight,
                           ),
+                        ),
+                        IconButton(
+                          onPressed: () => Navigator.pop(context),
+                          icon: const Icon(Icons.close),
+                          color: AppColors.primaryLight,
                         ),
                       ],
                     ),
                   ),
-                ),
+
+                  // Scrollable content
+                  Expanded(
+                    child: SingleChildScrollView(
+                      controller: scrollController,
+                      padding: EdgeInsets.only(
+                        left: 16,
+                        right: 16,
+                        bottom: MediaQuery.of(context).viewInsets.bottom +
+                            16, // ✅ adjusts for keyboard
+                        top: 8,
+                      ),
+                      child: Form(
+                        key: formKey,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _buildFormField(
+                              'Vendor name',
+                              'Enter vendor name',
+                              vendorNameController,
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  return 'Vendor name is required';
+                                }
+                                return null;
+                              },
+                            ),
+                            const SizedBox(height: 16),
+                            _buildFormField(
+                              'Email (optional)',
+                              'Enter email',
+                              emailController,
+                              validator: (value) {
+                                if (value != null && value.isNotEmpty) {
+                                  if (!RegExp(
+                                          r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$')
+                                      .hasMatch(value)) {
+                                    return 'Enter a valid email';
+                                  }
+                                }
+                                return null;
+                              },
+                            ),
+                            const SizedBox(height: 16),
+                            _buildFormField(
+                              'Phone number',
+                              'Enter phone number',
+                              phoneNumberController,
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  return 'Phone number is required';
+                                }
+                                if (!RegExp(r'^\d{10,15}$').hasMatch(value)) {
+                                  return 'Enter a valid phone number';
+                                }
+                                return null;
+                              },
+                            ),
+                            const SizedBox(height: 16),
+                            _buildFormField(
+                              'Address',
+                              'Enter address',
+                              addressController,
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  return 'Address is required';
+                                }
+                                return null;
+                              },
+                            ),
+                            const SizedBox(height: 16),
+                            _buildFormField(
+                              'Reference number',
+                              'Enter reference number',
+                              referenceController,
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  return 'Reference number is required';
+                                }
+                                return null;
+                              },
+                            ),
+                            const SizedBox(height: 24),
+                            SizedBox(
+                              width: double.infinity,
+                              child: ElevatedButton(
+                                onPressed: () async {
+                                  if (formKey.currentState!.validate()) {
+                                    final response =
+                                        await _vendorService.addVendor(
+                                      vendorName: vendorNameController.text,
+                                      phoneNumber: phoneNumberController.text,
+                                      email: emailController.text,
+                                      address: addressController.text,
+                                      reference: referenceController.text,
+                                    );
+                                    if (response.success) {
+                                      CustomToaster.toastSuccess(
+                                        context,
+                                        'Success',
+                                        'Vendor added successfully',
+                                      );
+                                      Navigator.pop(context);
+                                      _fetchVendors();
+                                    } else {
+                                      CustomToaster.toastError(
+                                        context,
+                                        'Error',
+                                        response.message,
+                                      );
+                                    }
+                                  }
+                                },
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: AppColors.paymentTxtColor1,
+                                  padding:
+                                      const EdgeInsets.symmetric(vertical: 16),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                ),
+                                child: Text(
+                                  'Add vendor',
+                                  style: AppTextStyles.normal600(
+                                    fontSize: 16.0,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
-            ],
-          ),
+            );
+          },
         );
       },
     );
-  },
-);
-
   }
 
   Future<void> _deleteVendor(int vendorId, String vendorName) async {
@@ -281,7 +282,8 @@ class _VendorSettingsScreenState extends State<VendorSettingsScreen> {
     if (confirm == true) {
       final response = await _vendorService.deleteVendor(vendorId);
       if (response.success) {
-        CustomToaster.toastSuccess(context, 'Success', 'Vendor deleted successfully');
+        CustomToaster.toastSuccess(
+            context, 'Success', 'Vendor deleted successfully');
         _fetchVendors();
       } else {
         CustomToaster.toastError(context, 'Error', response.message);
@@ -441,11 +443,12 @@ class _VendorSettingsScreenState extends State<VendorSettingsScreen> {
                                   },
                                   child: ListTile(
                                     leading: CircleAvatar(
-                                      backgroundColor: AppColors.paymentTxtColor1,
+                                      backgroundColor:
+                                          AppColors.paymentTxtColor1,
                                       child: Text(
                                         vendor.vendorName[0],
-                                        style:
-                                            const TextStyle(color: Colors.white),
+                                        style: const TextStyle(
+                                            color: Colors.white),
                                       ),
                                     ),
                                     title: Text(vendor.vendorName),
@@ -490,6 +493,3 @@ class _VendorSettingsScreenState extends State<VendorSettingsScreen> {
     );
   }
 }
-
-
-

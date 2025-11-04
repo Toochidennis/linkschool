@@ -11,8 +11,6 @@ import '../../../model/admin/payment_model.dart';
 import '../../../services/admin/payment/payment_service.dart';
 import '../../../services/api/api_service.dart';
 
-
-
 class StudentPaymentDetailScreen extends StatefulWidget {
   final UnpaidStudent student;
   final UnpaidInvoice invoice;
@@ -24,14 +22,16 @@ class StudentPaymentDetailScreen extends StatefulWidget {
   });
 
   @override
-  State<StudentPaymentDetailScreen> createState() => _StudentPaymentDetailScreenState();
+  State<StudentPaymentDetailScreen> createState() =>
+      _StudentPaymentDetailScreenState();
 }
 
-class _StudentPaymentDetailScreenState extends State<StudentPaymentDetailScreen> {
+class _StudentPaymentDetailScreenState
+    extends State<StudentPaymentDetailScreen> {
   late double opacity;
   late PaymentService _paymentService;
-  bool _isProcessingPayment = false;
-  Map<String, bool> _selectedFees = {};
+  final bool _isProcessingPayment = false;
+  final Map<String, bool> _selectedFees = {};
   bool _selectAll = false;
 
   @override
@@ -45,16 +45,16 @@ class _StudentPaymentDetailScreenState extends State<StudentPaymentDetailScreen>
     try {
       final userBox = Hive.box('userData');
       final token = userBox.get('token');
-      
+
       if (token == null || token.toString().isEmpty) {
         print('No authentication token found. User needs to login again.');
         return;
       }
-      
+
       final apiService = ApiService();
       apiService.setAuthToken(token.toString());
       _paymentService = PaymentService(apiService);
-      
+
       print('ApiService initialized with authentication token');
     } catch (e) {
       print('Error initializing services: $e');
@@ -62,7 +62,8 @@ class _StudentPaymentDetailScreenState extends State<StudentPaymentDetailScreen>
   }
 
   void _initializeCheckboxStates() {
-    final activeFees = widget.invoice.invoiceDetails.where((fee) => fee.amount > 0).toList();
+    final activeFees =
+        widget.invoice.invoiceDetails.where((fee) => fee.amount > 0).toList();
     for (var fee in activeFees) {
       _selectedFees[fee.feeId] = true; // All selected by default
     }
@@ -70,21 +71,24 @@ class _StudentPaymentDetailScreenState extends State<StudentPaymentDetailScreen>
   }
 
   double get _calculateSelectedTotal {
-    final activeFees = widget.invoice.invoiceDetails.where((fee) => fee.amount > 0).toList();
+    final activeFees =
+        widget.invoice.invoiceDetails.where((fee) => fee.amount > 0).toList();
     return activeFees
         .where((fee) => _selectedFees[fee.feeId] == true)
         .fold(0.0, (sum, fee) => sum + fee.amount);
   }
 
   List<InvoiceDetail> get _getSelectedFees {
-    final activeFees = widget.invoice.invoiceDetails.where((fee) => fee.amount > 0).toList();
+    final activeFees =
+        widget.invoice.invoiceDetails.where((fee) => fee.amount > 0).toList();
     return activeFees.where((fee) => _selectedFees[fee.feeId] == true).toList();
   }
 
   void _toggleSelectAll(bool? value) {
     setState(() {
       _selectAll = value ?? false;
-      final activeFees = widget.invoice.invoiceDetails.where((fee) => fee.amount > 0).toList();
+      final activeFees =
+          widget.invoice.invoiceDetails.where((fee) => fee.amount > 0).toList();
       for (var fee in activeFees) {
         _selectedFees[fee.feeId] = _selectAll;
       }
@@ -94,9 +98,10 @@ class _StudentPaymentDetailScreenState extends State<StudentPaymentDetailScreen>
   void _toggleFeeSelection(String feeId, bool? value) {
     setState(() {
       _selectedFees[feeId] = value ?? false;
-      
+
       // Update select all state
-      final activeFees = widget.invoice.invoiceDetails.where((fee) => fee.amount > 0).toList();
+      final activeFees =
+          widget.invoice.invoiceDetails.where((fee) => fee.amount > 0).toList();
       _selectAll = activeFees.every((fee) => _selectedFees[fee.feeId] == true);
     });
   }
@@ -105,11 +110,12 @@ class _StudentPaymentDetailScreenState extends State<StudentPaymentDetailScreen>
   Widget build(BuildContext context) {
     final Brightness brightness = Theme.of(context).brightness;
     opacity = brightness == Brightness.light ? 0.1 : 0.15;
-    
+
     // Filter out fees with zero amount
-    final activeFees = widget.invoice.invoiceDetails.where((fee) => fee.amount > 0).toList();
+    final activeFees =
+        widget.invoice.invoiceDetails.where((fee) => fee.amount > 0).toList();
     final selectedTotal = _calculateSelectedTotal;
-    
+
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
@@ -193,7 +199,9 @@ class _StudentPaymentDetailScreenState extends State<StudentPaymentDetailScreen>
                                   ),
                                 ),
                                 Text(
-                                  _paymentService.getClassName(widget.student.classId) ?? 'Unknown Class',
+                                  _paymentService.getClassName(
+                                          widget.student.classId) ??
+                                      'Unknown Class',
                                   style: AppTextStyles.normal400(
                                     fontSize: 14,
                                     color: Colors.grey[600]!,
@@ -206,7 +214,7 @@ class _StudentPaymentDetailScreenState extends State<StudentPaymentDetailScreen>
                       ),
                     ),
                     const SizedBox(height: 24),
-                    
+
                     // Payment Title
                     Text(
                       '${widget.invoice.termText} ${widget.invoice.sessionText}',
@@ -216,7 +224,7 @@ class _StudentPaymentDetailScreenState extends State<StudentPaymentDetailScreen>
                       ),
                     ),
                     const SizedBox(height: 16),
-                    
+
                     // Fee Breakdown Header with Select All
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -247,23 +255,25 @@ class _StudentPaymentDetailScreenState extends State<StudentPaymentDetailScreen>
                       ],
                     ),
                     const SizedBox(height: 12),
-                    
+
                     Container(
                       decoration: BoxDecoration(
                         border: Border.all(color: Colors.grey.shade300),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Column(
-                        children: activeFees.map((fee) => _buildFeeItem(fee)).toList(),
+                        children: activeFees
+                            .map((fee) => _buildFeeItem(fee))
+                            .toList(),
                       ),
                     ),
-                    
-                    const SizedBox(height: 100), // Added space for fixed bottom section
+
+                    const SizedBox(
+                        height: 100), // Added space for fixed bottom section
                   ],
                 ),
               ),
             ),
-            
             Container(
               padding: const EdgeInsets.all(16.0),
               decoration: BoxDecoration(
@@ -286,7 +296,8 @@ class _StudentPaymentDetailScreenState extends State<StudentPaymentDetailScreen>
                     decoration: BoxDecoration(
                       color: const Color.fromRGBO(47, 85, 221, 0.1),
                       borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: const Color.fromRGBO(47, 85, 221, 0.3)),
+                      border: Border.all(
+                          color: const Color.fromRGBO(47, 85, 221, 0.3)),
                     ),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -300,7 +311,8 @@ class _StudentPaymentDetailScreenState extends State<StudentPaymentDetailScreen>
                         ),
                         Row(
                           children: [
-                            const NairaSvgIcon(color: Color.fromRGBO(47, 85, 221, 1)),
+                            const NairaSvgIcon(
+                                color: Color.fromRGBO(47, 85, 221, 1)),
                             const SizedBox(width: 4),
                             Text(
                               selectedTotal.toStringAsFixed(2),
@@ -314,14 +326,16 @@ class _StudentPaymentDetailScreenState extends State<StudentPaymentDetailScreen>
                       ],
                     ),
                   ),
-                  
+
                   const SizedBox(height: 16),
-                  
+
                   // Proceed to Pay Button
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
-                      onPressed: (_isProcessingPayment || selectedTotal == 0) ? null : () => _showPaymentBottomSheet(),
+                      onPressed: (_isProcessingPayment || selectedTotal == 0)
+                          ? null
+                          : () => _showPaymentBottomSheet(),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color.fromRGBO(47, 85, 221, 1),
                         minimumSize: const Size(double.infinity, 50),
@@ -395,7 +409,7 @@ class _StudentPaymentDetailScreenState extends State<StudentPaymentDetailScreen>
   void _showPaymentBottomSheet() {
     final selectedFees = _getSelectedFees;
     final selectedTotal = _calculateSelectedTotal;
-    
+
     if (selectedFees.isEmpty) {
       CustomToaster.toastError(
         context,
@@ -404,7 +418,7 @@ class _StudentPaymentDetailScreenState extends State<StudentPaymentDetailScreen>
       );
       return;
     }
-    
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -476,8 +490,9 @@ class _PaymentBottomSheetState extends State<_PaymentBottomSheet> {
     super.initState();
     _amountController.text = widget.totalAmount.toStringAsFixed(2);
     _selectedDate = DateTime.now();
-    _dateController.text = "${_selectedDate!.day}/${_selectedDate!.month}/${_selectedDate!.year}";
-    
+    _dateController.text =
+        "${_selectedDate!.day}/${_selectedDate!.month}/${_selectedDate!.year}";
+
     // Generate a reference number
     _referenceController.text = 'REF${DateTime.now().millisecondsSinceEpoch}';
   }
@@ -540,7 +555,6 @@ class _PaymentBottomSheetState extends State<_PaymentBottomSheet> {
     }
   }
 
-
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -565,7 +579,8 @@ class _PaymentBottomSheetState extends State<_PaymentBottomSheet> {
                 ),
               ),
               IconButton(
-                icon: SvgPicture.asset('assets/icons/profile/cancel_receipt.svg'),
+                icon:
+                    SvgPicture.asset('assets/icons/profile/cancel_receipt.svg'),
                 onPressed: () => Navigator.pop(context),
               ),
             ],
@@ -573,9 +588,12 @@ class _PaymentBottomSheetState extends State<_PaymentBottomSheet> {
           const SizedBox(height: 16),
           _buildInputField('Student name', widget.student.name, enabled: false),
           const SizedBox(height: 16),
-          _buildInputField('Amount', '₦${widget.totalAmount.toStringAsFixed(2)}', controller: _amountController),
+          _buildInputField(
+              'Amount', '₦${widget.totalAmount.toStringAsFixed(2)}',
+              controller: _amountController),
           const SizedBox(height: 16),
-          _buildInputField('Reference', 'Enter payment reference', controller: _referenceController),
+          _buildInputField('Reference', 'Enter payment reference',
+              controller: _referenceController),
           const SizedBox(height: 16),
           _buildDateInputField(context, 'Payment Date'),
           const SizedBox(height: 24),
@@ -607,7 +625,8 @@ class _PaymentBottomSheetState extends State<_PaymentBottomSheet> {
     );
   }
 
-  Widget _buildInputField(String label, String hint, {bool enabled = true, TextEditingController? controller}) {
+  Widget _buildInputField(String label, String hint,
+      {bool enabled = true, TextEditingController? controller}) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -656,7 +675,9 @@ class _PaymentBottomSheetState extends State<_PaymentBottomSheet> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(_dateController.text.isEmpty ? 'Select date' : _dateController.text),
+                Text(_dateController.text.isEmpty
+                    ? 'Select date'
+                    : _dateController.text),
                 SvgPicture.asset('assets/icons/profile/calendar_icon.svg'),
               ],
             ),
@@ -666,6 +687,3 @@ class _PaymentBottomSheetState extends State<_PaymentBottomSheet> {
     );
   }
 }
-
-
-

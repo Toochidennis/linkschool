@@ -4,7 +4,7 @@ import 'package:linkschool/modules/services/admin/e_learning/topic_service.dart'
 
 class TopicProvider extends ChangeNotifier {
   final TopicService topicService;
-  
+
   TopicProvider(this.topicService);
 
   bool _isLoading = false;
@@ -56,16 +56,16 @@ class TopicProvider extends ChangeNotifier {
       await topicService.createTopic(
         syllabusId: syllabusId,
         topic: topic,
-        courseName:courseName,
-        courseId:courseId,
+        courseName: courseName,
+        courseId: courseId,
         levelId: levelId,
         creatorName: creatorName,
         objective: objective,
         creatorId: creatorId,
         classes: classes,
-       term:term,
+        term: term,
       );
-      
+
       // Refresh the topics list after adding
       await fetchTopic(syllabusId: syllabusId);
     } catch (e) {
@@ -77,8 +77,7 @@ class TopicProvider extends ChangeNotifier {
     }
   }
 
-   Future<void> updateTopic({
-
+  Future<void> updateTopic({
     required String topicId,
     required int syllabusId,
     required String topic,
@@ -100,16 +99,16 @@ class TopicProvider extends ChangeNotifier {
         topicId: topicId,
         syllabusId: syllabusId,
         topic: topic,
-        courseName:courseName,
-        courseId:courseId,
+        courseName: courseName,
+        courseId: courseId,
         levelId: levelId,
         creatorName: creatorName,
         objective: objective,
         creatorId: creatorId,
         classes: classes,
-       term:term,
+        term: term,
       );
-      
+
       // Refresh the topics list after adding
       await fetchTopic(syllabusId: syllabusId);
     } catch (e) {
@@ -120,9 +119,6 @@ class TopicProvider extends ChangeNotifier {
       notifyListeners();
     }
   }
-
-
-
 
   void clearTopics() {
     _topics = [];
@@ -135,6 +131,3 @@ class TopicProvider extends ChangeNotifier {
     notifyListeners();
   }
 }
-
-
-

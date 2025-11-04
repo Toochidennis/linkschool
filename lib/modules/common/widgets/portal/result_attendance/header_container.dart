@@ -10,7 +10,8 @@ class HeaderContainer extends StatelessWidget {
       height: MediaQuery.of(context).size.height * 0.20,
       decoration: const BoxDecoration(
         color: AppColors.primaryLight,
-        borderRadius: BorderRadius.only(bottomLeft: Radius.circular(28), bottomRight: Radius.circular(28)),
+        borderRadius: BorderRadius.only(
+            bottomLeft: Radius.circular(28), bottomRight: Radius.circular(28)),
       ),
     );
   }

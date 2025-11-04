@@ -10,12 +10,9 @@ import 'package:hive/hive.dart';
 
 class AttendanceHistoryList extends StatefulWidget {
   final String classId;
-   final VoidCallback? onRefresh; 
-  const AttendanceHistoryList({
-    super.key,
-    required this.classId,
-    this.onRefresh
-  });
+  final VoidCallback? onRefresh;
+  const AttendanceHistoryList(
+      {super.key, required this.classId, this.onRefresh});
 
   @override
   State<AttendanceHistoryList> createState() => AttendanceHistoryListState();
@@ -33,12 +30,9 @@ class AttendanceHistoryListState extends State<AttendanceHistoryList> {
     'Literature'
   ];
 
-Future<void> refreshData() async {
+  Future<void> refreshData() async {
     await _fetchAttendanceHistory();
-   
   }
-
-
 
   @override
   void initState() {
@@ -46,7 +40,7 @@ Future<void> refreshData() async {
     // Defer the API call until after the build phase
     // WidgetsBinding.instance.addPostFrameCallback((_) {
     //   _fetchAttendanceHistory();
-      
+
     // });
   }
 
@@ -63,7 +57,7 @@ Future<void> refreshData() async {
       // Get userData from Hive with validation
       final userBox = Hive.box('userData');
       final userData = userBox.get('userData');
-      
+
       if (userData == null) {
         throw Exception('User data not found. Please login again.');
       }
@@ -110,7 +104,6 @@ Future<void> refreshData() async {
         year: year,
         dbName: dbName.toString(),
       );
-
     } catch (e) {
       print('Error in _fetchAttendanceHistory: $e');
       // Set error in provider to show in UI
@@ -124,9 +117,6 @@ Future<void> refreshData() async {
   Widget build(BuildContext context) {
     return Consumer<AttendanceProvider>(
       builder: (context, attendanceProvider, child) {
-
-       
-
         if (attendanceProvider.isLoading) {
           return const Center(child: CircularProgressIndicator());
         }
@@ -198,15 +188,22 @@ Future<void> refreshData() async {
         return Container(
           width: double.infinity,
           color: AppColors.backgroundLight,
-          constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.5),
+          constraints: BoxConstraints(
+              maxHeight: MediaQuery.of(context).size.height * 0.5),
           child: Padding(
             padding: const EdgeInsets.symmetric(vertical: 8.0),
             child: ListView.separated(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
-              itemCount: attendanceRecords.length > 8 ? 8 : attendanceRecords.length,
-              separatorBuilder: (context, index) => Divider(height: 1, color: Colors.grey[300], indent: 16, endIndent: 16),
-              itemBuilder: (context, index) => _buildAttendanceHistoryItem(context, index, attendanceRecords, attendanceProvider),
+              itemCount:
+                  attendanceRecords.length > 8 ? 8 : attendanceRecords.length,
+              separatorBuilder: (context, index) => Divider(
+                  height: 1,
+                  color: Colors.grey[300],
+                  indent: 16,
+                  endIndent: 16),
+              itemBuilder: (context, index) => _buildAttendanceHistoryItem(
+                  context, index, attendanceRecords, attendanceProvider),
             ),
           ),
         );
@@ -222,17 +219,23 @@ Future<void> refreshData() async {
   ) {
     final record = attendanceRecords[index];
     final formattedDate = attendanceProvider.formatDate(record.date);
-    final subject = record.courseName.isNotEmpty ? record.courseName : subjects[index % subjects.length]; // Fallback to subjects list if courseName is empty
+    final subject = record.courseName.isNotEmpty
+        ? record.courseName
+        : subjects[index %
+            subjects
+                .length]; // Fallback to subjects list if courseName is empty
 
     return ListTile(
       leading: Container(
         width: 30,
         height: 30,
-        decoration: const BoxDecoration(color: Colors.green, shape: BoxShape.circle),
+        decoration:
+            const BoxDecoration(color: Colors.green, shape: BoxShape.circle),
         child: const Icon(Icons.check, color: Colors.white, size: 20),
       ),
       title: Text(formattedDate),
-      subtitle: Text('Subject: $subject, Count: ${record.count}', style: const TextStyle(color: Colors.grey)),
+      subtitle: Text('Subject: $subject, Count: ${record.count}',
+          style: const TextStyle(color: Colors.grey)),
       onTap: () => Navigator.push(
         context,
         MaterialPageRoute(
@@ -245,6 +248,3 @@ Future<void> refreshData() async {
     );
   }
 }
-
-
-

@@ -7,9 +7,7 @@ import '../../../../common/widgets/portal/class_detail/overlays.dart';
 import '../../../../providers/admin/student_provider.dart';
 
 class StudentList extends StatefulWidget {
-  
-
-  const StudentList({super.key, required });
+  const StudentList({super.key, required});
 
   @override
   State createState() => _StudentListState();
@@ -110,9 +108,9 @@ class _StudentListState extends State<StudentList> {
                         style: AppTextStyles.normal500(
                             fontSize: 18, color: AppColors.textLight),
                       ),
-                      onTap: () =>
-                          showStudentResultOverlay(context, 
-                             ),
+                      onTap: () => showStudentResultOverlay(
+                        context,
+                      ),
                     );
                   },
                 );

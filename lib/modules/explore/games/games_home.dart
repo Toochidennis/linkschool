@@ -6,14 +6,12 @@ import 'package:linkschool/modules/model/explore/home/game_model.dart';
 import 'package:linkschool/modules/providers/explore/game/game_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:skeletonizer/skeletonizer.dart';
-import 'package:skeletonizer/skeletonizer.dart';
 import '../../common/constants.dart';
 import '../../common/text_styles.dart';
 import '../../common/app_colors.dart';
-import '../../model/explore/home/game_model.dart';
 
 class GamesDashboard extends StatefulWidget {
-    final bool showAppBar;
+  final bool showAppBar;
   const GamesDashboard({super.key, this.showAppBar = true});
 
   @override
@@ -32,7 +30,7 @@ class _GamesDashboardState extends State<GamesDashboard> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        appBar: widget.showAppBar
+      appBar: widget.showAppBar
           ? Constants.customAppBar(context: context, showBackButton: true)
           : null,
       body: Consumer<GameProvider>(

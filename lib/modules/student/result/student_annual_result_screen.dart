@@ -37,10 +37,13 @@ class _StudentAnnualResultScreenState extends State<StudentAnnualResultScreen> {
   }
 
   Future<void> _fetchAnnualResults() async {
-    final studentProvider = Provider.of<StudentProvider>(context, listen: false);
+    final studentProvider =
+        Provider.of<StudentProvider>(context, listen: false);
     final userBox = Hive.box('userData');
     final loginData = userBox.get('userData') ?? userBox.get('loginResponse');
-    final year = loginData?['response']?['data']?['settings']?['year']?.toString() ?? '2024';
+    final year =
+        loginData?['response']?['data']?['settings']?['year']?.toString() ??
+            '2024';
 
     try {
       await studentProvider.fetchAnnualResults(
@@ -57,7 +60,8 @@ class _StudentAnnualResultScreenState extends State<StudentAnnualResultScreen> {
   @override
   Widget build(BuildContext context) {
     // Compute opacity in build method to ensure Theme.of(context) is available
-    final double opacity = Theme.of(context).brightness == Brightness.light ? 0.1 : 0.15;
+    final double opacity =
+        Theme.of(context).brightness == Brightness.light ? 0.1 : 0.15;
     final studentProvider = Provider.of<StudentProvider>(context);
     final student = studentProvider.student;
 
@@ -100,7 +104,8 @@ class _StudentAnnualResultScreenState extends State<StudentAnnualResultScreen> {
               // Implement download functionality
               _downloadTermResults();
             },
-            icon: const Icon(Icons.download, color: AppColors.eLearningBtnColor1),
+            icon:
+                const Icon(Icons.download, color: AppColors.eLearningBtnColor1),
             label: const Text(
               'Download',
               style: TextStyle(color: AppColors.eLearningBtnColor1),
@@ -133,10 +138,10 @@ class _StudentAnnualResultScreenState extends State<StudentAnnualResultScreen> {
 
           // Calculate annual average, safely converting to double
           double annualAverage = annualResults
-              .map((term) => (term['average'] is int
-                  ? (term['average'] as int).toDouble()
-                  : term['average'] as double))
-              .reduce((a, b) => a + b) /
+                  .map((term) => (term['average'] is int
+                      ? (term['average'] as int).toDouble()
+                      : term['average'] as double))
+                  .reduce((a, b) => a + b) /
               annualResults.length;
 
           return Container(
@@ -162,7 +167,7 @@ class _StudentAnnualResultScreenState extends State<StudentAnnualResultScreen> {
                   ),
                   const SizedBox(height: 20),
                   _buildAverageSection(annualAverage),
-                  ...annualResults.map((term) => _buildTermSection(term)).toList(),
+                  ...annualResults.map((term) => _buildTermSection(term)),
                 ],
               ),
             ),
@@ -172,37 +177,38 @@ class _StudentAnnualResultScreenState extends State<StudentAnnualResultScreen> {
     );
   }
 
-    Future<void> _downloadTermResults() async {
-  final url = 'https://linkskool.net/api/v1/students/${widget.studentId}/terms/${widget.classId}/results/download';
-  
-  try {
-    if (await canLaunchUrl(Uri.parse(url))) {
-      await launchUrl(
-        Uri.parse(url),
-        mode: LaunchMode.externalApplication, // Opens in browser
-      );
-    } else {
-      // Show error if URL can't be launched
+  Future<void> _downloadTermResults() async {
+    final url =
+        'https://linkskool.net/api/v1/students/${widget.studentId}/terms/${widget.classId}/results/download';
+
+    try {
+      if (await canLaunchUrl(Uri.parse(url))) {
+        await launchUrl(
+          Uri.parse(url),
+          mode: LaunchMode.externalApplication, // Opens in browser
+        );
+      } else {
+        // Show error if URL can't be launched
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Could not launch $url'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Could not launch $url'),
+            content: Text('Error launching URL: $e'),
             backgroundColor: Colors.red,
           ),
         );
       }
     }
-  } catch (e) {
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error launching URL: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
-    }
   }
-}
 
   bool _isEmptyResult(List<Map<String, dynamic>> results) {
     return results.every((term) =>
@@ -368,7 +374,8 @@ class _StudentAnnualResultScreenState extends State<StudentAnnualResultScreen> {
           padding: const EdgeInsets.all(16.0),
           child: Column(
             children: [
-              _buildInfoRow('Student average', '${average.toStringAsFixed(2)}%'),
+              _buildInfoRow(
+                  'Student average', '${average.toStringAsFixed(2)}%'),
               const Divider(),
               _buildInfoRow('Class position', '$position of $totalStudents'),
               const SizedBox(height: 16),
@@ -424,10 +431,8 @@ class _StudentAnnualResultScreenState extends State<StudentAnnualResultScreen> {
               scrollDirection: Axis.horizontal,
               child: Row(
                 children: [
-                  ...assessmentNames
-                      .map((assessment) =>
-                          _buildScrollableColumn(assessment, 80, subjects, assessment))
-                      .toList(),
+                  ...assessmentNames.map((assessment) => _buildScrollableColumn(
+                      assessment, 80, subjects, assessment)),
                   _buildScrollableColumn('Total Score', 100, subjects, null),
                   _buildScrollableColumn('Grade', 80, subjects, null),
                 ],
@@ -486,8 +491,8 @@ class _StudentAnnualResultScreenState extends State<StudentAnnualResultScreen> {
     );
   }
 
-  Widget _buildScrollableColumn(
-      String title, double width, List<Map<String, dynamic>> subjects, String? assessmentName) {
+  Widget _buildScrollableColumn(String title, double width,
+      List<Map<String, dynamic>> subjects, String? assessmentName) {
     return Container(
       width: width,
       decoration: BoxDecoration(
@@ -517,7 +522,8 @@ class _StudentAnnualResultScreenState extends State<StudentAnnualResultScreen> {
           ...subjects.asMap().entries.map((entry) {
             final index = entry.key;
             final subject = entry.value;
-            final assessments = List<Map<String, dynamic>>.from(subject['assessments'] ?? []);
+            final assessments =
+                List<Map<String, dynamic>>.from(subject['assessments'] ?? []);
             String value = '';
 
             if (assessmentName != null) {
@@ -558,10 +564,6 @@ class _StudentAnnualResultScreenState extends State<StudentAnnualResultScreen> {
   }
 }
 
-
-
-
-
 // import 'package:flutter/material.dart';
 // import 'package:linkschool/modules/common/app_colors.dart';
 // import 'package:linkschool/modules/common/constants.dart';
@@ -570,7 +572,6 @@ class _StudentAnnualResultScreenState extends State<StudentAnnualResultScreen> {
 // import 'package:linkschool/modules/providers/admin/student_provider.dart';
 // import 'package:hive/hive.dart';
 // import '../../model/admin/student_model.dart';
-
 
 // class StudentAnnualResultScreen extends StatefulWidget {
 //   final int studentId;

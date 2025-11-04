@@ -21,9 +21,10 @@ class ReceiptScreen extends StatefulWidget {
   State<ReceiptScreen> createState() => _ReceiptScreenState();
 }
 
-class _ReceiptScreenState extends State<ReceiptScreen> with TickerProviderStateMixin {
+class _ReceiptScreenState extends State<ReceiptScreen>
+    with TickerProviderStateMixin {
   late double opacity;
-  int _currentTabIndex = 0;
+  final int _currentTabIndex = 0;
   bool _isAmountHidden = false;
   bool _isExpanded = false;
   late AnimationController _animationController;
@@ -113,7 +114,8 @@ class _ReceiptScreenState extends State<ReceiptScreen> with TickerProviderStateM
       });
     } catch (e) {
       setState(() => _isLoading = false);
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error loading report: $e')));
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('Error loading report: $e')));
     }
   }
 
@@ -130,9 +132,12 @@ class _ReceiptScreenState extends State<ReceiptScreen> with TickerProviderStateM
       isDateFormat = false;
     }
 
-    xIndexMap = {for (int i = 0; i < xLabels.length; i++) xLabels[i]: i.toDouble()};
+    xIndexMap = {
+      for (int i = 0; i < xLabels.length; i++) xLabels[i]: i.toDouble()
+    };
 
-    maxY = _report!.chartData.fold(0.0, (max, d) => d.y > max ? d.y : max) * 1.1;
+    maxY =
+        _report!.chartData.fold(0.0, (max, d) => d.y > max ? d.y : max) * 1.1;
   }
 
   @override
@@ -219,7 +224,8 @@ class _ReceiptScreenState extends State<ReceiptScreen> with TickerProviderStateM
                     ? const Center(child: Text('No data available'))
                     : SingleChildScrollView(
                         child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 16.0),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8.0, vertical: 16.0),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
@@ -231,58 +237,75 @@ class _ReceiptScreenState extends State<ReceiptScreen> with TickerProviderStateM
                                   borderRadius: BorderRadius.circular(8),
                                 ),
                                 child: Padding(
-                                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 16, vertical: 8),
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       Row(
-                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceBetween,
                                         children: [
                                           Row(
                                             children: [
                                               Text(
                                                 'Total Amount Received',
                                                 style: AppTextStyles.normal600(
-                                                    fontSize: 14, color: AppColors.backgroundLight),
+                                                    fontSize: 14,
+                                                    color: AppColors
+                                                        .backgroundLight),
                                               ),
                                               IconButton(
                                                 icon: Icon(
-                                                  _isAmountHidden ? Icons.visibility : Icons.visibility_off,
+                                                  _isAmountHidden
+                                                      ? Icons.visibility
+                                                      : Icons.visibility_off,
                                                   color: Colors.white,
                                                   size: 20,
                                                 ),
                                                 onPressed: () {
                                                   setState(() {
-                                                    _isAmountHidden = !_isAmountHidden;
+                                                    _isAmountHidden =
+                                                        !_isAmountHidden;
                                                   });
                                                 },
                                               ),
                                             ],
                                           ),
                                           Container(
-                                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                            padding: const EdgeInsets.symmetric(
+                                                horizontal: 8, vertical: 4),
                                             decoration: BoxDecoration(
-                                              color: const Color.fromRGBO(198, 210, 255, 1),
-                                              borderRadius: BorderRadius.circular(10),
+                                              color: const Color.fromRGBO(
+                                                  198, 210, 255, 1),
+                                              borderRadius:
+                                                  BorderRadius.circular(10),
                                             ),
                                             child: Text(
                                               '${_report!.summary.totalTransactions} payments',
                                               style: AppTextStyles.normal500(
-                                                  fontSize: 12, color: AppColors.paymentTxtColor1),
+                                                  fontSize: 12,
+                                                  color: AppColors
+                                                      .paymentTxtColor1),
                                             ),
                                           ),
                                         ],
                                       ),
                                       Row(
                                         children: [
-                                          const NairaSvgIcon(color: AppColors.backgroundLight),
+                                          const NairaSvgIcon(
+                                              color: AppColors.backgroundLight),
                                           const SizedBox(width: 4),
                                           Text(
                                             _isAmountHidden
                                                 ? '********'
-                                                : _report!.summary.totalAmount.toStringAsFixed(2),
+                                                : _report!.summary.totalAmount
+                                                    .toStringAsFixed(2),
                                             style: AppTextStyles.normal700(
-                                                fontSize: 24, color: AppColors.backgroundLight),
+                                                fontSize: 24,
+                                                color:
+                                                    AppColors.backgroundLight),
                                           ),
                                         ],
                                       ),
@@ -303,29 +326,42 @@ class _ReceiptScreenState extends State<ReceiptScreen> with TickerProviderStateM
                                           reservedSize: 40,
                                           getTitlesWidget: (value, meta) {
                                             final idx = value.toInt();
-                                            if (idx < 0 || idx >= xLabels.length) {
+                                            if (idx < 0 ||
+                                                idx >= xLabels.length) {
                                               return const Text('');
                                             }
                                             String title = xLabels[idx];
-                                           if (isDateFormat) {
-  try {
-    final date = DateTime.parse(title);
-    title = DateFormat('MMM yyyy').format(date);
-  } catch (e) {
-   
-    title = title.length > 5 ? title.substring(5) : title;
-  }
-}
+                                            if (isDateFormat) {
+                                              try {
+                                                final date =
+                                                    DateTime.parse(title);
+                                                title = DateFormat('MMM yyyy')
+                                                    .format(date);
+                                              } catch (e) {
+                                                title = title.length > 5
+                                                    ? title.substring(5)
+                                                    : title;
+                                              }
+                                            }
                                             return Padding(
-                                              padding: const EdgeInsets.only(top: 4),
-                                              child: Text(title, style: const TextStyle(fontSize: 10)),
+                                              padding:
+                                                  const EdgeInsets.only(top: 4),
+                                              child: Text(title,
+                                                  style: const TextStyle(
+                                                      fontSize: 10)),
                                             );
                                           },
                                         ),
                                       ),
-                                      leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                                      topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                                      rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                                      leftTitles: const AxisTitles(
+                                          sideTitles:
+                                              SideTitles(showTitles: false)),
+                                      topTitles: const AxisTitles(
+                                          sideTitles:
+                                              SideTitles(showTitles: false)),
+                                      rightTitles: const AxisTitles(
+                                          sideTitles:
+                                              SideTitles(showTitles: false)),
                                     ),
                                     borderData: FlBorderData(show: false),
                                     minX: 0,
@@ -334,14 +370,19 @@ class _ReceiptScreenState extends State<ReceiptScreen> with TickerProviderStateM
                                     maxY: maxY,
                                     lineBarsData: [
                                       LineChartBarData(
-                                        spots: _report!.chartData.map((d) => FlSpot(xIndexMap[d.x]!, d.y)).toList(),
+                                        spots: _report!.chartData
+                                            .map((d) =>
+                                                FlSpot(xIndexMap[d.x]!, d.y))
+                                            .toList(),
                                         isCurved: true,
-                                        color: const Color.fromRGBO(47, 85, 221, 1),
+                                        color: const Color.fromRGBO(
+                                            47, 85, 221, 1),
                                         barWidth: 3,
                                         dotData: const FlDotData(show: false),
                                         belowBarData: BarAreaData(
                                           show: true,
-                                          color: const Color.fromRGBO(47, 85, 221, 0.102),
+                                          color: const Color.fromRGBO(
+                                              47, 85, 221, 0.102),
                                         ),
                                       ),
                                     ],
@@ -350,16 +391,20 @@ class _ReceiptScreenState extends State<ReceiptScreen> with TickerProviderStateM
                               ),
                               const SizedBox(height: 16),
                               Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
                                 children: [
                                   Text('Payment History',
-                                      style: AppTextStyles.normal600(fontSize: 18, color: AppColors.backgroundDark)),
+                                      style: AppTextStyles.normal600(
+                                          fontSize: 18,
+                                          color: AppColors.backgroundDark)),
                                   GestureDetector(
                                     onTap: () {
                                       Navigator.push(
                                         context,
                                         MaterialPageRoute(
-                                          builder: (context) => ReportPaymentScreen(
+                                          builder: (context) =>
+                                              ReportPaymentScreen(
                                             initialParams: _filterParams,
                                           ),
                                         ),
@@ -391,7 +436,8 @@ class _ReceiptScreenState extends State<ReceiptScreen> with TickerProviderStateM
   List<Widget> _buildPaymentHistoryItems() {
     if (_report == null || _report!.transactions.isEmpty) return [];
 
-    List<IncomeTransaction> transactions = _report!.transactions.take(10).toList();
+    List<IncomeTransaction> transactions =
+        _report!.transactions.take(10).toList();
 
     if (transactions.first.isAggregated) {
       return transactions.map((trans) {
@@ -436,7 +482,8 @@ class _ReceiptScreenState extends State<ReceiptScreen> with TickerProviderStateM
                   const SizedBox(width: 8),
                   Text(
                     title,
-                    style: AppTextStyles.normal600(fontSize: 18, color: AppColors.backgroundDark),
+                    style: AppTextStyles.normal600(
+                        fontSize: 18, color: AppColors.backgroundDark),
                   ),
                 ],
               ),
@@ -446,7 +493,8 @@ class _ReceiptScreenState extends State<ReceiptScreen> with TickerProviderStateM
                   const SizedBox(width: 4),
                   Text(
                     amount,
-                    style: AppTextStyles.normal700(fontSize: 18, color: AppColors.paymentTxtColor1),
+                    style: AppTextStyles.normal700(
+                        fontSize: 18, color: AppColors.paymentTxtColor1),
                   ),
                 ],
               ),
@@ -474,14 +522,16 @@ class _ReceiptScreenState extends State<ReceiptScreen> with TickerProviderStateM
                     Padding(
                       padding: const EdgeInsets.only(right: 8.0),
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 6.0),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12.0, vertical: 6.0),
                         decoration: BoxDecoration(
                           color: const Color.fromRGBO(47, 85, 221, 1),
                           borderRadius: BorderRadius.circular(4.0),
                         ),
                         child: Text(
                           button['title'],
-                          style: const TextStyle(color: Colors.white, fontSize: 14.0),
+                          style: const TextStyle(
+                              color: Colors.white, fontSize: 14.0),
                         ),
                       ),
                     ),
@@ -574,7 +624,8 @@ class _ReceiptScreenState extends State<ReceiptScreen> with TickerProviderStateM
             });
             _loadData();
             if (classes.isNotEmpty) {
-              _showStudentList(classes.firstWhere((c) => c.id == params['filters']['classes']?.first));
+              _showStudentList(classes.firstWhere(
+                  (c) => c.id == params['filters']['classes']?.first));
             }
           },
           title: 'Select Class',
@@ -630,7 +681,7 @@ class _FilterOverlayState extends State<FilterOverlay> {
   Map<String, List<int>> selectedFilters = {};
 
   final List<String> reportTypes = ['Termly', 'Session', 'Monthly', 'Custom'];
-  
+
   final List<String> customTypes = [
     'Range',
     'Today',
@@ -650,14 +701,17 @@ class _FilterOverlayState extends State<FilterOverlay> {
   void initState() {
     super.initState();
     if (widget.initialParams != null) {
-      selectedReport = (widget.initialParams!['report_type'] as String).capitalize();
+      selectedReport =
+          (widget.initialParams!['report_type'] as String).capitalize();
       if (widget.initialParams!.containsKey('group_by')) {
-        selectedGrouping = (widget.initialParams!['group_by'] as String).capitalize();
+        selectedGrouping =
+            (widget.initialParams!['group_by'] as String).capitalize();
       }
       if (isCustom) {
         if (widget.initialParams!.containsKey('custom_type')) {
           String ctype = widget.initialParams!['custom_type'];
-          selectedCustomType = ctype.split('_').map((e) => e.capitalize()).join(' ');
+          selectedCustomType =
+              ctype.split('_').map((e) => e.capitalize()).join(' ');
         }
         if (widget.initialParams!.containsKey('start_date')) {
           fromDate = DateTime.parse(widget.initialParams!['start_date']);
@@ -666,7 +720,8 @@ class _FilterOverlayState extends State<FilterOverlay> {
           toDate = DateTime.parse(widget.initialParams!['end_date']);
         }
         if (widget.initialParams!.containsKey('filters')) {
-          selectedFilters = Map.from(widget.initialParams!['filters']).map((key, value) => MapEntry(key, List<int>.from(value)));
+          selectedFilters = Map.from(widget.initialParams!['filters'])
+              .map((key, value) => MapEntry(key, List<int>.from(value)));
         }
       }
     }
@@ -710,7 +765,8 @@ class _FilterOverlayState extends State<FilterOverlay> {
           onTap: () {},
           child: Container(
             height: MediaQuery.of(context).size.height * 0.60,
-            margin: EdgeInsets.only(top: MediaQuery.of(context).size.height * 0.4),
+            margin:
+                EdgeInsets.only(top: MediaQuery.of(context).size.height * 0.4),
             decoration: const BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
@@ -719,7 +775,8 @@ class _FilterOverlayState extends State<FilterOverlay> {
               children: [
                 Container(
                   height: 60,
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   child: SingleChildScrollView(
                     scrollDirection: Axis.horizontal,
                     child: Row(
@@ -735,21 +792,27 @@ class _FilterOverlayState extends State<FilterOverlay> {
                                 selectedFilters = {};
                                 if (type != 'Custom') {
                                   selectedCustomType = 'This Month';
-                                  fromDate = DateTime.now().subtract(const Duration(days: 30));
+                                  fromDate = DateTime.now()
+                                      .subtract(const Duration(days: 30));
                                   toDate = DateTime.now();
                                 }
                               });
                             },
                             child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 16, vertical: 8),
                               decoration: BoxDecoration(
-                                color: isSelected ? const Color.fromRGBO(228, 234, 255, 1) : const Color.fromRGBO(247, 247, 247, 1),
+                                color: isSelected
+                                    ? const Color.fromRGBO(228, 234, 255, 1)
+                                    : const Color.fromRGBO(247, 247, 247, 1),
                                 borderRadius: BorderRadius.circular(4),
                               ),
                               child: Text(
                                 type,
                                 style: TextStyle(
-                                  color: isSelected ? const Color.fromRGBO(47, 85, 221, 1) : const Color.fromRGBO(65, 65, 65, 1),
+                                  color: isSelected
+                                      ? const Color.fromRGBO(47, 85, 221, 1)
+                                      : const Color.fromRGBO(65, 65, 65, 1),
                                   fontSize: 14,
                                 ),
                               ),
@@ -794,7 +857,8 @@ class _FilterOverlayState extends State<FilterOverlay> {
                           child: ElevatedButton(
                             onPressed: _generateReport,
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color.fromRGBO(47, 85, 221, 1),
+                              backgroundColor:
+                                  const Color.fromRGBO(47, 85, 221, 1),
                               minimumSize: const Size(double.infinity, 50),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(10.0),
@@ -845,7 +909,8 @@ class _FilterOverlayState extends State<FilterOverlay> {
                         });
                       },
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 6),
                         decoration: BoxDecoration(
                           color: isSelected
                               ? const Color.fromRGBO(47, 85, 221, 1)
@@ -855,7 +920,9 @@ class _FilterOverlayState extends State<FilterOverlay> {
                         child: Text(
                           option,
                           style: TextStyle(
-                            color: isSelected ? Colors.white : AppColors.paymentTxtColor1,
+                            color: isSelected
+                                ? Colors.white
+                                : AppColors.paymentTxtColor1,
                           ),
                         ),
                       ),
@@ -886,7 +953,8 @@ class _FilterOverlayState extends State<FilterOverlay> {
     );
   }
 
-  Widget _buildDatePicker(String label, DateTime date, Function(DateTime) onChanged) {
+  Widget _buildDatePicker(
+      String label, DateTime date, Function(DateTime) onChanged) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -908,7 +976,7 @@ class _FilterOverlayState extends State<FilterOverlay> {
                       surface: Colors.white,
                       onSurface: Colors.black,
                     ),
-                    dialogBackgroundColor: Colors.white,
+                    dialogTheme: DialogThemeData(backgroundColor: Colors.white),
                   ),
                   child: child!,
                 );
@@ -929,9 +997,11 @@ class _FilterOverlayState extends State<FilterOverlay> {
               children: [
                 Text(
                   DateFormat('yyyy-MM-dd').format(date),
-                  style: AppTextStyles.normal500(fontSize: 14, color: Colors.black),
+                  style: AppTextStyles.normal500(
+                      fontSize: 14, color: Colors.black),
                 ),
-                const Icon(Icons.calendar_today, color: Color.fromRGBO(47, 85, 221, 1)),
+                const Icon(Icons.calendar_today,
+                    color: Color.fromRGBO(47, 85, 221, 1)),
               ],
             ),
           ),
@@ -958,7 +1028,9 @@ class _FilterOverlayState extends State<FilterOverlay> {
               height: 42,
               margin: const EdgeInsets.only(bottom: 10),
               decoration: BoxDecoration(
-                color: isSelected ? const Color.fromRGBO(47, 85, 221, 1) : const Color.fromRGBO(229, 229, 229, 1),
+                color: isSelected
+                    ? const Color.fromRGBO(47, 85, 221, 1)
+                    : const Color.fromRGBO(229, 229, 229, 1),
                 borderRadius: BorderRadius.circular(6),
               ),
               child: Center(
@@ -982,7 +1054,8 @@ class _FilterOverlayState extends State<FilterOverlay> {
       padding: const EdgeInsets.all(16.0),
       child: Column(
         children: filterByOptions.map((option) {
-          final count = selectedFilters[option.toLowerCase() + 's']?.length ?? 0;
+          final count =
+              selectedFilters['${option.toLowerCase()}s']?.length ?? 0;
           return GestureDetector(
             onTap: () => _showFilterBottomSheet(option),
             child: Container(
@@ -996,7 +1069,8 @@ class _FilterOverlayState extends State<FilterOverlay> {
               child: Center(
                 child: Text(
                   '$option: $count selected',
-                  style: AppTextStyles.normal500(fontSize: 16, color: Colors.black),
+                  style: AppTextStyles.normal500(
+                      fontSize: 16, color: Colors.black),
                 ),
               ),
             ),
@@ -1011,7 +1085,9 @@ class _FilterOverlayState extends State<FilterOverlay> {
     final userBox = Hive.box('userData');
     switch (option) {
       case 'Session':
-        final currentYear = int.tryParse(userBox.get('settings')?['year']?.toString() ?? '') ?? DateTime.now().year;
+        final currentYear =
+            int.tryParse(userBox.get('settings')?['year']?.toString() ?? '') ??
+                DateTime.now().year;
         for (int y = currentYear; y >= 2000; y--) {
           items.add({'name': '${y - 1}/$y', 'value': y});
         }
@@ -1025,11 +1101,15 @@ class _FilterOverlayState extends State<FilterOverlay> {
         break;
       case 'Class':
         final classes = userBox.get('classes') as List<dynamic>? ?? [];
-        items = classes.map((c) => {'name': c['class_name'], 'value': c['id']}).toList();
+        items = classes
+            .map((c) => {'name': c['class_name'], 'value': c['id']})
+            .toList();
         break;
       case 'Level':
         final levels = userBox.get('levels') as List<dynamic>? ?? [];
-        items = levels.map((l) => {'name': l['level_name'], 'value': l['id']}).toList();
+        items = levels
+            .map((l) => {'name': l['level_name'], 'value': l['id']})
+            .toList();
         break;
     }
 
@@ -1043,7 +1123,7 @@ class _FilterOverlayState extends State<FilterOverlay> {
           items: items,
           onItemSelected: (selectedValues) {
             setState(() {
-              final key = option.toLowerCase() + 's';
+              final key = '${option.toLowerCase()}s';
               if (selectedValues.isEmpty) {
                 selectedFilters.remove(key);
               } else {
@@ -1076,9 +1156,11 @@ class _FilterOverlayState extends State<FilterOverlay> {
             : <int>[];
 
         return Padding(
-          padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+          padding:
+              EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
           child: ConstrainedBox(
-            constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.5),
+            constraints: BoxConstraints(
+                maxHeight: MediaQuery.of(context).size.height * 0.5),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -1086,7 +1168,9 @@ class _FilterOverlayState extends State<FilterOverlay> {
                   padding: const EdgeInsets.only(top: 16.0),
                   child: Text(
                     title,
-                    style: AppTextStyles.normal600(fontSize: 20, color: const Color.fromRGBO(47, 85, 221, 1)),
+                    style: AppTextStyles.normal600(
+                        fontSize: 20,
+                        color: const Color.fromRGBO(47, 85, 221, 1)),
                   ),
                 ),
                 const SizedBox(height: 24),
@@ -1106,20 +1190,25 @@ class _FilterOverlayState extends State<FilterOverlay> {
                             } else {
                               selectedValues.add(value);
                             }
-                            print('Selected values in bottom sheet: $selectedValues');
+                            print(
+                                'Selected values in bottom sheet: $selectedValues');
                           });
                           setState(() {
                             if (selectedValues.isEmpty) {
                               selectedFilters.remove(key);
                             } else {
-                              selectedFilters[key] = List<int>.from(selectedValues);
+                              selectedFilters[key] =
+                                  List<int>.from(selectedValues);
                             }
-                            print('Updated selectedFilters in parent: $selectedFilters');
+                            print(
+                                'Updated selectedFilters in parent: $selectedFilters');
                           });
                         },
                         child: Container(
-                          margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 16),
-                          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                          margin: const EdgeInsets.symmetric(
+                              vertical: 4, horizontal: 16),
+                          padding: const EdgeInsets.symmetric(
+                              vertical: 12, horizontal: 16),
                           decoration: BoxDecoration(
                             color: Colors.white,
                             borderRadius: BorderRadius.circular(8),
@@ -1138,12 +1227,14 @@ class _FilterOverlayState extends State<FilterOverlay> {
                               Expanded(
                                 child: Text(
                                   name,
-                                  style: AppTextStyles.normal500(fontSize: 16, color: Colors.black),
+                                  style: AppTextStyles.normal500(
+                                      fontSize: 16, color: Colors.black),
                                   overflow: TextOverflow.ellipsis,
                                 ),
                               ),
                               if (isSelected)
-                                const Icon(Icons.check, color: Color.fromRGBO(47, 85, 221, 1)),
+                                const Icon(Icons.check,
+                                    color: Color.fromRGBO(47, 85, 221, 1)),
                             ],
                           ),
                         ),
@@ -1161,7 +1252,8 @@ class _FilterOverlayState extends State<FilterOverlay> {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color.fromRGBO(47, 85, 221, 1),
                       minimumSize: const Size(double.infinity, 50),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10)),
                       elevation: 2,
                       shadowColor: Colors.grey.withOpacity(0.5),
                     ),
@@ -1259,7 +1351,3 @@ extension StringCapitalize on String {
     return "${this[0].toUpperCase()}${substring(1).toLowerCase()}";
   }
 }
-
-
-
-

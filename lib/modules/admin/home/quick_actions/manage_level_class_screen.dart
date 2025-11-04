@@ -9,10 +9,12 @@ class LevelClassManagementScreen extends StatefulWidget {
   const LevelClassManagementScreen({super.key});
 
   @override
-  State<LevelClassManagementScreen> createState() => _LevelClassManagementScreenState();
+  State<LevelClassManagementScreen> createState() =>
+      _LevelClassManagementScreenState();
 }
 
-class _LevelClassManagementScreenState extends State<LevelClassManagementScreen> {
+class _LevelClassManagementScreenState
+    extends State<LevelClassManagementScreen> {
   @override
   void initState() {
     super.initState();
@@ -33,7 +35,7 @@ class _LevelClassManagementScreenState extends State<LevelClassManagementScreen>
 
   void _showAddLevelDialog({Levels? levelToEdit}) {
     final levelController = TextEditingController(text: levelToEdit?.levelName);
-    String? schoolType = levelToEdit?.schoolType?.toString();
+    String? schoolType = levelToEdit?.schoolType.toString();
 
     showDialog(
       context: context,
@@ -78,27 +80,33 @@ class _LevelClassManagementScreenState extends State<LevelClassManagementScreen>
               onPressed: provider.isLoading
                   ? null
                   : () async {
-                      if (levelController.text.isNotEmpty && schoolType != null) {
+                      if (levelController.text.isNotEmpty &&
+                          schoolType != null) {
                         final levelData = {
                           'level_name': levelController.text,
                           'school_type': schoolType,
-                        //  'rank': 0, // Default or adjust as needed
-                        
+                          //  'rank': 0, // Default or adjust as needed
                         };
                         final success = levelToEdit == null
                             ? await provider.createLevel(levelData)
-                            : await provider.updateLevel(levelToEdit.id.toString(), levelData);
+                            : await provider.updateLevel(
+                                levelToEdit.id.toString(), levelData);
                         Navigator.pop(context);
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
                             content: Text(
                               success
                                   ? (provider.message ??
-                                      (levelToEdit == null ? 'Level added successfully' : 'Level updated successfully'))
+                                      (levelToEdit == null
+                                          ? 'Level added successfully'
+                                          : 'Level updated successfully'))
                                   : (provider.error ??
-                                      (levelToEdit == null ? 'Failed to add level' : 'Failed to update level')),
+                                      (levelToEdit == null
+                                          ? 'Failed to add level'
+                                          : 'Failed to update level')),
                             ),
-                            backgroundColor: success ? Colors.green : Colors.red,
+                            backgroundColor:
+                                success ? Colors.green : Colors.red,
                           ),
                         );
                       }
@@ -119,7 +127,9 @@ class _LevelClassManagementScreenState extends State<LevelClassManagementScreen>
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text(classToEdit == null ? 'Add Class to ${level.levelName}' : 'Edit Class'),
+        title: Text(classToEdit == null
+            ? 'Add Class to ${level.levelName}'
+            : 'Edit Class'),
         content: TextField(
           controller: classController,
           decoration: const InputDecoration(
@@ -139,27 +149,33 @@ class _LevelClassManagementScreenState extends State<LevelClassManagementScreen>
                   : () async {
                       if (classController.text.isNotEmpty) {
                         final classData = {
-                        'class_name': classController.text,
-                        'level_id': level.id,
-                        'result_template': classToEdit?.resultTemplate == null
-                            ? ""
-                            : classToEdit!.resultTemplate,
-                        'form_teacher_ids': classToEdit?.formTeacherIds ?? [],
-                      };
+                          'class_name': classController.text,
+                          'level_id': level.id,
+                          'result_template': classToEdit?.resultTemplate == null
+                              ? ""
+                              : classToEdit!.resultTemplate,
+                          'form_teacher_ids': classToEdit?.formTeacherIds ?? [],
+                        };
                         final success = classToEdit == null
                             ? await provider.createClass(classData)
-                            : await provider.updateClass(classToEdit.id.toString(), classData);
+                            : await provider.updateClass(
+                                classToEdit.id.toString(), classData);
                         Navigator.pop(context);
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
                             content: Text(
                               success
                                   ? (provider.message ??
-                                      (classToEdit == null ? 'Class added successfully' : 'Class updated successfully'))
+                                      (classToEdit == null
+                                          ? 'Class added successfully'
+                                          : 'Class updated successfully'))
                                   : (provider.error ??
-                                      (classToEdit == null ? 'Failed to add class' : 'Failed to update class')),
+                                      (classToEdit == null
+                                          ? 'Failed to add class'
+                                          : 'Failed to update class')),
                             ),
-                            backgroundColor: success ? Colors.green : Colors.red,
+                            backgroundColor:
+                                success ? Colors.green : Colors.red,
                           ),
                         );
                       }
@@ -190,13 +206,15 @@ class _LevelClassManagementScreenState extends State<LevelClassManagementScreen>
               onPressed: provider.isLoading
                   ? null
                   : () async {
-                      final success = await provider.deleteLevel(level.id.toString());
+                      final success =
+                          await provider.deleteLevel(level.id.toString());
                       Navigator.pop(context);
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
                           content: Text(
                             success
-                                ? (provider.message ?? 'Level deleted successfully')
+                                ? (provider.message ??
+                                    'Level deleted successfully')
                                 : (provider.error ?? 'Failed to delete level'),
                           ),
                           backgroundColor: success ? Colors.green : Colors.red,
@@ -218,7 +236,8 @@ class _LevelClassManagementScreenState extends State<LevelClassManagementScreen>
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Delete Class'),
-        content: Text('Are you sure you want to delete ${classItem.className}?'),
+        content:
+            Text('Are you sure you want to delete ${classItem.className}?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -229,13 +248,15 @@ class _LevelClassManagementScreenState extends State<LevelClassManagementScreen>
               onPressed: provider.isLoading
                   ? null
                   : () async {
-                      final success = await provider.deleteClass(classItem.id.toString());
+                      final success =
+                          await provider.deleteClass(classItem.id.toString());
                       Navigator.pop(context);
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
                           content: Text(
                             success
-                                ? (provider.message ?? 'Class deleted successfully')
+                                ? (provider.message ??
+                                    'Class deleted successfully')
                                 : (provider.error ?? 'Failed to delete class'),
                           ),
                           backgroundColor: success ? Colors.green : Colors.red,
@@ -306,9 +327,11 @@ class _LevelClassManagementScreenState extends State<LevelClassManagementScreen>
                                 trailing: PopupMenuButton<String>(
                                   onSelected: (value) {
                                     if (value == 'edit') {
-                                      _showAddClassDialog(level, classToEdit: classItem);
+                                      _showAddClassDialog(level,
+                                          classToEdit: classItem);
                                     } else if (value == 'delete') {
-                                      _showDeleteClassConfirmation(level, classItem);
+                                      _showDeleteClassConfirmation(
+                                          level, classItem);
                                     }
                                   },
                                   itemBuilder: (context) => [

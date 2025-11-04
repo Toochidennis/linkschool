@@ -11,9 +11,8 @@ class SingleAssessmentService {
     final userBox = Hive.box('userData');
     final storedUserData =
         userBox.get('userData') ?? userBox.get('loginResponse');
-    final processedData = storedUserData is String
-        ? json.decode(storedUserData)
-        : storedUserData;
+    final processedData =
+        storedUserData is String ? json.decode(storedUserData) : storedUserData;
     final response = processedData['response'] ?? processedData;
     final data = response['data'] ?? response;
     return data;
@@ -76,43 +75,43 @@ class SingleAssessmentService {
         throw Exception("No assignment data received.");
       }
 
-    return AssessmentContentItem.fromJson(data);
+      return AssessmentContentItem.fromJson(data);
     } catch (e) {
       throw Exception('Failed to fetch assignment: $e');
     }
   }
 
-Future<AssessmentContentItem> fetchMaterial(int itemId) async {
-  try {
-    final userBox = Hive.box('userData');
-    final token = userBox.get('token');
-    final dbName = userBox.get('_db') ?? 'aalmgzmy_linkskoo_practice';
+  Future<AssessmentContentItem> fetchMaterial(int itemId) async {
+    try {
+      final userBox = Hive.box('userData');
+      final token = userBox.get('token');
+      final dbName = userBox.get('_db') ?? 'aalmgzmy_linkskoo_practice';
 
-    if (token == null) {
-      throw Exception("Authentication token is missing.");
+      if (token == null) {
+        throw Exception("Authentication token is missing.");
+      }
+
+      _apiService.setAuthToken(token);
+
+      final response = await _apiService.get(
+        endpoint: 'portal/elearning/contents/$itemId', // Updated endpoint
+        queryParams: {
+          '_db': dbName,
+        },
+      );
+
+      print('Raw API response: ${response.rawData}'); // Log raw response
+
+      final data = response.rawData?['response'];
+      if (data == null) {
+        throw Exception("No material data received.");
+      }
+
+      print('Parsed response data: $data'); // Log parsed data
+
+      return AssessmentContentItem.fromJson(data); // Parse directly
+    } catch (e) {
+      throw Exception('Failed to fetch material: $e');
     }
-
-    _apiService.setAuthToken(token);
-
-    final response = await _apiService.get(
-      endpoint: 'portal/elearning/contents/$itemId', // Updated endpoint
-      queryParams: {
-        '_db': dbName,
-      },
-    );
-
-    print('Raw API response: ${response.rawData}'); // Log raw response
-
-    final data = response.rawData?['response'];
-    if (data == null) {
-      throw Exception("No material data received.");
-    }
-
-    print('Parsed response data: $data'); // Log parsed data
-
-    return AssessmentContentItem.fromJson(data); // Parse directly
-  } catch (e) {
-    throw Exception('Failed to fetch material: $e');
   }
-}
 }

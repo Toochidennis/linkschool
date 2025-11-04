@@ -4,7 +4,7 @@ class AssignmentFile {
   final String file; // base64 string
 
   AssignmentFile({
-     this.fileName,
+    this.fileName,
     required this.type,
     required this.file,
   });
@@ -47,8 +47,8 @@ class AssignmentSubmission {
     required this.studentId,
     required this.studentName,
     required this.files,
-     this.mark,
-     this.score,
+    this.mark,
+    this.score,
     required this.levelId,
     required this.courseId,
     required this.classId,

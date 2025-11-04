@@ -6,7 +6,7 @@ class SyllabusModel {
   final String? term;
   final String? uploadDate; // This exists in JSON
   final List<ClassModel> classes;
-  
+
   // Optional fields that may not exist in all responses
   final String? courseId;
   final String? courseName;
@@ -14,15 +14,12 @@ class SyllabusModel {
   final String? creatorId;
 
   SyllabusModel({
-  
     this.id,
     required this.title,
     required this.description,
-    
-     this.authorName,
+    this.authorName,
     required this.term,
- 
-  this.uploadDate,
+    this.uploadDate,
     required this.classes,
     this.courseId,
     this.courseName,

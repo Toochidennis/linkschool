@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:intl/intl.dart';
 import 'package:linkschool/modules/admin/payment/transaction_receipt_screen.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
@@ -8,7 +7,6 @@ import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/common/widgets/portal/profile/naira_icon.dart';
 import 'package:linkschool/modules/common/widgets/portal/student/student_customized_appbar.dart';
 import 'package:linkschool/modules/model/admin/payment_model.dart';
-
 
 class TransactionHistoryScreen extends StatefulWidget {
   final List<Transaction> transactions;
@@ -50,10 +48,18 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
     // Apply search filter
     if (_searchQuery.isNotEmpty) {
       filtered = filtered.where((transaction) {
-        return transaction.name.toLowerCase().contains(_searchQuery.toLowerCase()) ||
-            transaction.description.toLowerCase().contains(_searchQuery.toLowerCase()) ||
-            transaction.reference.toLowerCase().contains(_searchQuery.toLowerCase()) ||
-            transaction.regNo.toLowerCase().contains(_searchQuery.toLowerCase());
+        return transaction.name
+                .toLowerCase()
+                .contains(_searchQuery.toLowerCase()) ||
+            transaction.description
+                .toLowerCase()
+                .contains(_searchQuery.toLowerCase()) ||
+            transaction.reference
+                .toLowerCase()
+                .contains(_searchQuery.toLowerCase()) ||
+            transaction.regNo
+                .toLowerCase()
+                .contains(_searchQuery.toLowerCase());
       }).toList();
     }
 
@@ -149,7 +155,7 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
                       ],
                     ),
                     const SizedBox(height: 16),
-                    
+
                     // Search bar
                     TextField(
                       controller: _searchController,
@@ -191,7 +197,7 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
                       },
                     ),
                     const SizedBox(height: 16),
-                    
+
                     // Filter chips
                     SizedBox(
                       height: 40,
@@ -201,7 +207,7 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
                         itemBuilder: (context, index) {
                           final option = _filterOptions[index];
                           final isSelected = _selectedFilter == option;
-                          
+
                           return Padding(
                             padding: const EdgeInsets.only(right: 8.0),
                             child: FilterChip(
@@ -230,7 +236,7 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
                   ],
                 ),
               ),
-              
+
               // Transaction list
               Expanded(
                 child: filteredTransactions.isEmpty
@@ -285,7 +291,7 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
   String _getFilterSummary() {
     final total = widget.transactions.length;
     final filtered = _filteredTransactions.length;
-    
+
     if (_selectedFilter == 'All' && _searchQuery.isEmpty) {
       return 'Showing all transactions';
     } else if (_searchQuery.isNotEmpty && _selectedFilter != 'All') {
@@ -301,7 +307,7 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
     final transactions = _filteredTransactions;
     double totalIncome = 0;
     double totalExpenditure = 0;
-    
+
     for (final transaction in transactions) {
       if (transaction.type == 'receipts') {
         totalIncome += transaction.amount;
@@ -309,9 +315,9 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
         totalExpenditure += transaction.amount;
       }
     }
-    
+
     final netAmount = totalIncome - totalExpenditure;
-    
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.end,
       children: [
@@ -363,7 +369,7 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
     final iconColor = isReceipt ? Colors.green : Colors.red;
     final amountColor = isReceipt ? Colors.green : Colors.red;
     final prefix = isReceipt ? '+' : '-';
-    
+
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       elevation: 2,
@@ -408,7 +414,7 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
                     ),
                   ),
                   const SizedBox(width: 16),
-                  
+
                   // Transaction details
                   Expanded(
                     child: Column(
@@ -473,7 +479,7 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
                       ],
                     ),
                   ),
-                  
+
                   // Amount
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.end,
@@ -526,7 +532,7 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
                   ),
                 ],
               ),
-              
+
               // Reference number (if available)
               if (transaction.reference.isNotEmpty) ...[
                 const SizedBox(height: 12),

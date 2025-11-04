@@ -76,7 +76,7 @@ class _StudentListScreenState extends State<StudentListScreen> {
 
   void _showClassSelectionOverlay() {
     final classes = _paymentService.getClassesForLevel(_currentLevelId);
-    
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -109,7 +109,8 @@ class _StudentListScreenState extends State<StudentListScreen> {
                       itemBuilder: (context, index) {
                         final classModel = classes[index];
                         return Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 24, vertical: 8),
                           child: _buildClassButton(classModel),
                         );
                       },
@@ -206,13 +207,17 @@ class _StudentListScreenState extends State<StudentListScreen> {
                                   selectedClass ?? 'Class',
                                   style: AppTextStyles.normal500(
                                     fontSize: 16.0,
-                                    color: selectedClass != null ? AppColors.primaryLight : Colors.grey,
+                                    color: selectedClass != null
+                                        ? AppColors.primaryLight
+                                        : Colors.grey,
                                   ),
                                 ),
                                 const SizedBox(width: 8),
                                 Icon(
                                   Icons.arrow_drop_down,
-                                  color: selectedClass != null ? AppColors.primaryLight : Colors.grey,
+                                  color: selectedClass != null
+                                      ? AppColors.primaryLight
+                                      : Colors.grey,
                                 ),
                               ],
                             ),
@@ -238,7 +243,8 @@ class _StudentListScreenState extends State<StudentListScreen> {
                     const SizedBox(height: 16),
                     Expanded(
                       child: filteredStudents.isEmpty
-                          ? const Center(child: Text('No outstanding payments found'))
+                          ? const Center(
+                              child: Text('No outstanding payments found'))
                           : ListView.builder(
                               itemCount: filteredStudents.length,
                               itemBuilder: (context, index) {
@@ -317,7 +323,3 @@ class _StudentListScreenState extends State<StudentListScreen> {
     );
   }
 }
-
-
-
-

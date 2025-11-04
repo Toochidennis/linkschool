@@ -3,8 +3,6 @@ import 'package:linkschool/modules/admin/result/class_detail/registration/see_al
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 
-
-
 class HistorySection extends StatelessWidget {
   const HistorySection({super.key});
 

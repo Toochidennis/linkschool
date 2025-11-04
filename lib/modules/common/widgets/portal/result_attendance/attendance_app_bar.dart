@@ -17,7 +17,8 @@ class AttendanceAppBar extends StatelessWidget implements PreferredSizeWidget {
       elevation: 0,
       title: Text(
         'Attendance',
-        style: AppTextStyles.normal600(fontSize: 20, color: AppColors.backgroundLight),
+        style: AppTextStyles.normal600(
+            fontSize: 20, color: AppColors.backgroundLight),
       ),
       leading: IconButton(
         onPressed: () => Navigator.of(context).pop(),

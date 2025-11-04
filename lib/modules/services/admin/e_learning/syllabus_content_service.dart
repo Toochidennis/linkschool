@@ -5,7 +5,8 @@ class SyllabusContentService {
 
   SyllabusContentService(this._apiService);
 
-  Future<ApiResponse<Map<String, dynamic>>> getSyllabusContents(int syllabusId, String dbName) async {
+  Future<ApiResponse<Map<String, dynamic>>> getSyllabusContents(
+      int syllabusId, String dbName) async {
     try {
       final response = await _apiService.get<Map<String, dynamic>>(
         endpoint: 'portal/elearning/syllabus/$syllabusId/contents',
@@ -13,7 +14,7 @@ class SyllabusContentService {
           '_db': dbName,
         },
       );
-      
+
       return response;
     } catch (e) {
       print('Error fetching syllabus contents: $e');

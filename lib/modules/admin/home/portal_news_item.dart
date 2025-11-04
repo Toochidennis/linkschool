@@ -19,30 +19,28 @@ class PortalNewsItem extends StatefulWidget {
   final VoidCallback? edit;
   final VoidCallback? delete;
 
-
-  const PortalNewsItem({
-    super.key,
-    required this.profileImageUrl,
-    required this.name,
-    required this.newsContent,
-    required this.time,
-    required this.CreatorId,
-    required this.authorId,
-    required this.role,
-    this.title = '',
-    this.likes = 0,
-    this.comments = 0,
-    this.shares = 0,
-    this.edit,
-    this.delete
-  });
+  const PortalNewsItem(
+      {super.key,
+      required this.profileImageUrl,
+      required this.name,
+      required this.newsContent,
+      required this.time,
+      required this.CreatorId,
+      required this.authorId,
+      required this.role,
+      this.title = '',
+      this.likes = 0,
+      this.comments = 0,
+      this.shares = 0,
+      this.edit,
+      this.delete});
 
   @override
   State<PortalNewsItem> createState() => _PortalNewsItemState();
 }
 
 class _PortalNewsItemState extends State<PortalNewsItem> {
-    bool get canEdit {
+  bool get canEdit {
     // Admin can edit only their own posts
     if (widget.role == 'admin') {
       return widget.authorId.toString() == widget.CreatorId;
@@ -60,6 +58,7 @@ class _PortalNewsItemState extends State<PortalNewsItem> {
     // Staff, teacher, or student can delete only their own posts
     return widget.authorId.toString() == widget.CreatorId;
   }
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -108,8 +107,8 @@ class _PortalNewsItemState extends State<PortalNewsItem> {
                       widget.title,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
-                      
-                      style: AppTextStyles.normal500(fontSize: 16.0, color: AppColors.text2Light),
+                      style: AppTextStyles.normal500(
+                          fontSize: 16.0, color: AppColors.text2Light),
                     ),
                   ),
                   const SizedBox(height: 10.0),
@@ -117,7 +116,8 @@ class _PortalNewsItemState extends State<PortalNewsItem> {
                     widget.newsContent,
                     maxLines: 3,
                     overflow: TextOverflow.ellipsis,
-                    style: AppTextStyles.normal500(fontSize: 14.0, color: AppColors.text4Light),
+                    style: AppTextStyles.normal500(
+                        fontSize: 14.0, color: AppColors.text4Light),
                   ),
                   const SizedBox(height: 10.0),
                   Text(
@@ -141,21 +141,16 @@ class _PortalNewsItemState extends State<PortalNewsItem> {
                         ),
                         onPressed: () {},
                       ),
-                      
-                     if (canEdit && widget.edit != null)
-                      IconButton(
-                        icon: Icon(Icons.edit_note_outlined),
-                        onPressed:widget.edit,
-                      ),
-                    
-                      
+                      if (canEdit && widget.edit != null)
+                        IconButton(
+                          icon: Icon(Icons.edit_note_outlined),
+                          onPressed: widget.edit,
+                        ),
                       if (canDelete && widget.delete != null)
-                      IconButton(
-                        icon: Icon(Icons.delete),
-                        onPressed:widget.delete,
-                      ),
-                    
-
+                        IconButton(
+                          icon: Icon(Icons.delete),
+                          onPressed: widget.delete,
+                        ),
                     ],
                   ),
                 ],

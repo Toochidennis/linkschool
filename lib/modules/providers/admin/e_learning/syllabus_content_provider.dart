@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:linkschool/modules/services/admin/e_learning/syllabus_content_service.dart';
 // import 'package:linkschool/modules/services/admin/e_learning/syllabus_content_service.dart';
-import 'package:linkschool/modules/services/api/api_service.dart';
 
 class SyllabusContentProvider with ChangeNotifier {
   final SyllabusContentService _syllabusContentService;
-  
+
   List<Map<String, dynamic>> _contents = [];
   bool _isLoading = false;
   String _error = '';
@@ -22,8 +21,9 @@ class SyllabusContentProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      final response = await _syllabusContentService.getSyllabusContents(syllabusId, dbName);
-      
+      final response =
+          await _syllabusContentService.getSyllabusContents(syllabusId, dbName);
+
       if (response.success && response.rawData != null) {
         final responseData = response.rawData!['response'];
         if (responseData is List) {

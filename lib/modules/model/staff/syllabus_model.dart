@@ -26,22 +26,22 @@ class StaffSyllabusModel {
   });
 
   factory StaffSyllabusModel.fromJson(Map<String, dynamic> json) {
-  return StaffSyllabusModel(
-    id: json['id'] as int?,
-    title: json['title'] as String? ?? '',
-    description: json['description'] as String? ?? '',
-    authorName: json['author_name'] as String? ?? '',
-    term: json['term']?.toString() ?? '', // Ensure string conversion
-    uploadDate: json['upload_date'] as String? ?? '',
-    classes: (json['classes'] as List? ?? [])
-        .map((classJson) => ClassModel.fromJson(classJson))
-        .toList(),
-    courseId: json['course_id'] as int?,
-    courseName: json['course_name'] as String?,
-    levelId: json['level_id'] as int?,
-    creatorId: json['creator_id'] as int?,
-  );
-}
+    return StaffSyllabusModel(
+      id: json['id'] as int?,
+      title: json['title'] as String? ?? '',
+      description: json['description'] as String? ?? '',
+      authorName: json['author_name'] as String? ?? '',
+      term: json['term']?.toString() ?? '', // Ensure string conversion
+      uploadDate: json['upload_date'] as String? ?? '',
+      classes: (json['classes'] as List? ?? [])
+          .map((classJson) => ClassModel.fromJson(classJson))
+          .toList(),
+      courseId: json['course_id'] as int?,
+      courseName: json['course_name'] as String?,
+      levelId: json['level_id'] as int?,
+      creatorId: json['creator_id'] as int?,
+    );
+  }
 
   Map<String, dynamic> toJson() {
     return {

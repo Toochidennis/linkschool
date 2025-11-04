@@ -1,15 +1,12 @@
-
-
 import 'package:flutter/cupertino.dart';
 import 'package:linkschool/modules/model/student/elearningcontent_model.dart';
 import 'package:linkschool/modules/services/student/elearningcontent_service.dart';
 
-import '../../model/student/dashboard_model.dart';
 import '../../services/api/service_locator.dart';
-import '../../services/student/student_dasboard_service.dart';
 
 class ElearningContentProvider with ChangeNotifier {
-  final ElearningContentService _elearningContentService = locator<ElearningContentService>();
+  final ElearningContentService _elearningContentService =
+      locator<ElearningContentService>();
 
   late List<ElearningContentData> _elearningContentData;
   bool _isLoading = false;
@@ -29,14 +26,16 @@ class ElearningContentProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  Future<List<ElearningContentData>?> fetchElearningContentData( int syllabusid) async {
+  Future<List<ElearningContentData>?> fetchElearningContentData(
+      int syllabusid) async {
     _setLoading(true);
     _setError(null);
 
     try {
-      final response = await _elearningContentService.getElearningContentData(syllabusid);
+      final response =
+          await _elearningContentService.getElearningContentData(syllabusid);
       _elearningContentData = response;
-      print("This is the response ${_elearningContentData}");
+      print("This is the response $_elearningContentData");
 
       return response; // Return DashboardData directly
     } catch (e) {
@@ -46,5 +45,4 @@ class ElearningContentProvider with ChangeNotifier {
       _setLoading(false);
     }
   }
-
 }

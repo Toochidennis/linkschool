@@ -101,7 +101,7 @@ class MarkAssignmentProvider extends ChangeNotifier {
     }
   }
 
-    Future<void> markQuiz(String itemId, String score) async {
+  Future<void> markQuiz(String itemId, String score) async {
     _isLoading = true;
     _error = null;
     notifyListeners();
@@ -116,7 +116,7 @@ class MarkAssignmentProvider extends ChangeNotifier {
     }
   }
 
-    Future<void> returnQuiz(String publish, String contentId) async {
+  Future<void> returnQuiz(String publish, String contentId) async {
     _isLoading = true;
     _error = null;
     notifyListeners();
@@ -132,15 +132,11 @@ class MarkAssignmentProvider extends ChangeNotifier {
   }
 }
 
-
-
-
 // import 'package:linkschool/modules/services/admin/e_learning/marking_service.dart';
 // import 'package:flutter/material.dart';
 
 // class MarkAssignmentProvider extends ChangeNotifier {
 //   final MarkingService _markingService;
-  
 
 //   MarkAssignmentProvider(this._markingService);
 
@@ -205,9 +201,6 @@ class MarkAssignmentProvider extends ChangeNotifier {
 //       notifyListeners();
 //     }
 //   }
-
-
-
 
 //   Future<void> fetchQuiz(String itemId) async {
 //   _isLoading = true;

@@ -103,11 +103,12 @@ class _AccountSettingScreenState extends State<AccountSettingScreen> {
               // Active filters display
               Consumer<AccountProvider>(
                 builder: (context, accountProvider, child) {
-                  final hasActiveFilters = accountProvider.searchQuery.isNotEmpty ||
-                      accountProvider.selectedAccountTypeFilter != null;
-                  
+                  final hasActiveFilters =
+                      accountProvider.searchQuery.isNotEmpty ||
+                          accountProvider.selectedAccountTypeFilter != null;
+
                   if (!hasActiveFilters) return const SizedBox.shrink();
-                  
+
                   return Container(
                     margin: const EdgeInsets.only(bottom: 16),
                     padding: const EdgeInsets.all(12),
@@ -133,17 +134,22 @@ class _AccountSettingScreenState extends State<AccountSettingScreen> {
                             children: [
                               if (accountProvider.searchQuery.isNotEmpty)
                                 Chip(
-                                  label: Text('Search: "${accountProvider.searchQuery}"'),
-                                  backgroundColor: AppColors.eLearningBtnColor1.withOpacity(0.2),
+                                  label: Text(
+                                      'Search: "${accountProvider.searchQuery}"'),
+                                  backgroundColor: AppColors.eLearningBtnColor1
+                                      .withOpacity(0.2),
                                   deleteIcon: const Icon(Icons.close, size: 18),
                                   onDeleted: () {
                                     accountProvider.searchAccounts('');
                                   },
                                 ),
-                              if (accountProvider.selectedAccountTypeFilter != null)
+                              if (accountProvider.selectedAccountTypeFilter !=
+                                  null)
                                 Chip(
-                                  label: Text('Type: ${accountProvider.selectedAccountTypeFilter}'),
-                                  backgroundColor: AppColors.eLearningBtnColor1.withOpacity(0.2),
+                                  label: Text(
+                                      'Type: ${accountProvider.selectedAccountTypeFilter}'),
+                                  backgroundColor: AppColors.eLearningBtnColor1
+                                      .withOpacity(0.2),
                                   deleteIcon: const Icon(Icons.close, size: 18),
                                   onDeleted: () {
                                     accountProvider.filterByAccountType(null);
@@ -158,7 +164,8 @@ class _AccountSettingScreenState extends State<AccountSettingScreen> {
                           },
                           child: Text(
                             'Clear All',
-                            style: TextStyle(color: AppColors.eLearningBtnColor1),
+                            style:
+                                TextStyle(color: AppColors.eLearningBtnColor1),
                           ),
                         ),
                       ],
@@ -199,21 +206,24 @@ class _AccountSettingScreenState extends State<AccountSettingScreen> {
                     }
 
                     if (accountProvider.accounts.isEmpty) {
-                      final hasFilters = accountProvider.searchQuery.isNotEmpty ||
-                          accountProvider.selectedAccountTypeFilter != null;
-                      
+                      final hasFilters =
+                          accountProvider.searchQuery.isNotEmpty ||
+                              accountProvider.selectedAccountTypeFilter != null;
+
                       return Center(
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Icon(
-                              hasFilters ? Icons.search_off : Icons.account_balance_wallet_outlined,
+                              hasFilters
+                                  ? Icons.search_off
+                                  : Icons.account_balance_wallet_outlined,
                               size: 64,
                               color: Colors.grey,
                             ),
                             const SizedBox(height: 16),
                             Text(
-                              hasFilters 
+                              hasFilters
                                   ? 'No accounts match your search criteria'
                                   : 'No accounts found',
                               style: const TextStyle(
@@ -323,7 +333,6 @@ class _AccountSettingScreenState extends State<AccountSettingScreen> {
   //   );
   // }
 
-
   Widget _buildAccountRow(AccountModel account) {
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
@@ -372,7 +381,9 @@ class _AccountSettingScreenState extends State<AccountSettingScreen> {
               TextSpan(
                 text: account.accountTypeString,
                 style: TextStyle(
-                  color: account.accountType == 0 ? Colors.green[600] : Colors.orange[600],
+                  color: account.accountType == 0
+                      ? Colors.green[600]
+                      : Colors.orange[600],
                   fontSize: 14,
                   fontWeight: FontWeight.w500,
                 ),
@@ -384,7 +395,8 @@ class _AccountSettingScreenState extends State<AccountSettingScreen> {
           mainAxisSize: MainAxisSize.min,
           children: [
             IconButton(
-              onPressed: () => _showAddEditAccountOverlay(context, account: account),
+              onPressed: () =>
+                  _showAddEditAccountOverlay(context, account: account),
               icon: SvgPicture.asset(
                 'assets/icons/profile/edit_pen.svg',
                 width: 20,
@@ -408,8 +420,8 @@ class _AccountSettingScreenState extends State<AccountSettingScreen> {
     );
   }
 
-
-  void _showDeleteConfirmationDialog(BuildContext context, AccountModel account) {
+  void _showDeleteConfirmationDialog(
+      BuildContext context, AccountModel account) {
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -484,7 +496,7 @@ class _AccountSettingScreenState extends State<AccountSettingScreen> {
                           final success = await accountProvider.deleteAccount(
                             accountId: account.id,
                           );
-                          
+
                           if (success) {
                             Navigator.of(context).pop();
                             ScaffoldMessenger.of(context).showSnackBar(
@@ -497,7 +509,8 @@ class _AccountSettingScreenState extends State<AccountSettingScreen> {
                             // Keep dialog open to show error
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
-                                content: Text('Error: ${accountProvider.errorMessage}'),
+                                content: Text(
+                                    'Error: ${accountProvider.errorMessage}'),
                                 backgroundColor: Colors.red,
                               ),
                             );
@@ -525,7 +538,6 @@ class _AccountSettingScreenState extends State<AccountSettingScreen> {
       },
     );
   }
-
 
   void _showSearchDialog(BuildContext context) {
     final accountProvider = context.read<AccountProvider>();
@@ -658,7 +670,8 @@ class _AccountSettingScreenState extends State<AccountSettingScreen> {
     );
   }
 
-  void _showAddEditAccountOverlay(BuildContext context, {AccountModel? account}) {
+  void _showAddEditAccountOverlay(BuildContext context,
+      {AccountModel? account}) {
     final isEditing = account != null;
     final accountNameController = TextEditingController(
       text: isEditing ? account.accountName : '',
@@ -666,7 +679,7 @@ class _AccountSettingScreenState extends State<AccountSettingScreen> {
     final accountNumberController = TextEditingController(
       text: isEditing ? account.accountNumber : '',
     );
-    String? selectedAccountType = isEditing 
+    String? selectedAccountType = isEditing
         ? (account.accountType == 0 ? 'Income' : 'Expenditure')
         : null;
 
@@ -744,8 +757,8 @@ class _AccountSettingScreenState extends State<AccountSettingScreen> {
                             ),
                           ),
                         ElevatedButton(
-                          onPressed: (accountProvider.isAddingAccount || 
-                                     accountProvider.isUpdatingAccount)
+                          onPressed: (accountProvider.isAddingAccount ||
+                                  accountProvider.isUpdatingAccount)
                               ? null
                               : () async {
                                   if (accountNameController.text.isEmpty ||
@@ -760,20 +773,24 @@ class _AccountSettingScreenState extends State<AccountSettingScreen> {
                                     return;
                                   }
 
-                                  final accountType = selectedAccountType == 'Income' ? 0 : 1;
+                                  final accountType =
+                                      selectedAccountType == 'Income' ? 0 : 1;
                                   bool success;
 
                                   if (isEditing) {
-                                    success = await accountProvider.updateAccount(
-                                      accountId: account!.id,
+                                    success =
+                                        await accountProvider.updateAccount(
+                                      accountId: account.id,
                                       accountName: accountNameController.text,
-                                      accountNumber: accountNumberController.text,
+                                      accountNumber:
+                                          accountNumberController.text,
                                       accountType: accountType,
                                     );
                                   } else {
                                     success = await accountProvider.addAccount(
                                       accountName: accountNameController.text,
-                                      accountNumber: accountNumberController.text,
+                                      accountNumber:
+                                          accountNumberController.text,
                                       accountType: accountType,
                                     );
                                   }
@@ -783,7 +800,7 @@ class _AccountSettingScreenState extends State<AccountSettingScreen> {
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(
                                         content: Text(
-                                          isEditing 
+                                          isEditing
                                               ? 'Account updated successfully'
                                               : 'Account added successfully',
                                         ),
@@ -799,8 +816,8 @@ class _AccountSettingScreenState extends State<AccountSettingScreen> {
                               borderRadius: BorderRadius.circular(8),
                             ),
                           ),
-                          child: (accountProvider.isAddingAccount || 
-                                 accountProvider.isUpdatingAccount)
+                          child: (accountProvider.isAddingAccount ||
+                                  accountProvider.isUpdatingAccount)
                               ? const SizedBox(
                                   height: 20,
                                   width: 20,
@@ -829,8 +846,3 @@ class _AccountSettingScreenState extends State<AccountSettingScreen> {
     );
   }
 }
-
-
-
-
-

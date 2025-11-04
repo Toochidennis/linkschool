@@ -66,7 +66,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
       final username = _usernameController.text;
       final password = _passwordController.text;
-      final schoolCode = widget.schoolCode; 
+      final schoolCode = widget.schoolCode;
 
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
       try {
@@ -178,8 +178,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   style: AppTextStyles.normal700(
                       fontSize: 32, color: AppColors.bookText)),
               Padding(
-                padding:
-                    const EdgeInsets.symmetric(vertical: 2, horizontal: 8),
+                padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 8),
                 child: Text(
                   "Log in and simplify your school processes",
                   style: AppTextStyles.normal400(
@@ -200,8 +199,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   child: Row(
                     children: [
-                      Icon(Icons.school,
-                          color: AppColors.aicircle, size: 18),
+                      Icon(Icons.school, color: AppColors.aicircle, size: 18),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
@@ -230,8 +228,9 @@ class _LoginScreenState extends State<LoginScreen> {
                   contentPadding:
                       const EdgeInsets.symmetric(vertical: 8, horizontal: 10),
                 ),
-                validator: (value) =>
-                    value == null || value.isEmpty ? 'Please enter a username' : null,
+                validator: (value) => value == null || value.isEmpty
+                    ? 'Please enter a username'
+                    : null,
                 onFieldSubmitted: (_) =>
                     FocusScope.of(context).requestFocus(_passwordFocus),
               ),
@@ -259,8 +258,9 @@ class _LoginScreenState extends State<LoginScreen> {
                         setState(() => _obscurePassword = !_obscurePassword),
                   ),
                 ),
-                validator: (value) =>
-                    value == null || value.isEmpty ? 'Please enter a password' : null,
+                validator: (value) => value == null || value.isEmpty
+                    ? 'Please enter a password'
+                    : null,
               ),
               const SizedBox(height: 30),
 
@@ -274,7 +274,6 @@ class _LoginScreenState extends State<LoginScreen> {
                 padding:
                     const EdgeInsets.symmetric(vertical: 14, horizontal: 140),
               ),
-            
             ],
           ),
         ),

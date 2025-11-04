@@ -1,10 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:linkschool/modules/admin/home/quick_actions/course_assignment_screen.dart';
 import 'package:linkschool/modules/admin/home/quick_actions/staff_details.dart';
-import 'package:linkschool/modules/model/admin/home/add_staff_model.dart';
 import 'package:linkschool/modules/providers/admin/home/add_staff_provider.dart';
-
 
 import 'package:provider/provider.dart';
 import '../../../common/app_colors.dart';
@@ -18,18 +15,18 @@ class ManageStaffScreen extends StatefulWidget {
   State<ManageStaffScreen> createState() => _ManageStaffScreenState();
 }
 
-class _ManageStaffScreenState extends State<ManageStaffScreen> with TickerProviderStateMixin {
+class _ManageStaffScreenState extends State<ManageStaffScreen>
+    with TickerProviderStateMixin {
   late AnimationController _fadeController;
   late AnimationController _slideController;
   late Animation<double> _fadeAnimation;
   String? _editingStaffId;
   final TextEditingController _searchController = TextEditingController();
-final TextEditingController _fullNameController = TextEditingController();
+  final TextEditingController _fullNameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _phoneController = TextEditingController();
   final TextEditingController _addressController = TextEditingController();
   final TextEditingController _salaryController = TextEditingController();
-
 
   final TextEditingController _middleNameController = TextEditingController();
   final TextEditingController _birthDateController = TextEditingController();
@@ -43,18 +40,28 @@ final TextEditingController _fullNameController = TextEditingController();
   final TextEditingController _homeTownController = TextEditingController();
   final TextEditingController _healthStatusController = TextEditingController();
   final TextEditingController _pastRecordController = TextEditingController();
-  final TextEditingController _pastRecordExtraController = TextEditingController();
-  final TextEditingController _personalRecordController = TextEditingController();
-  final TextEditingController _employmentHistoryController = TextEditingController();
+  final TextEditingController _pastRecordExtraController =
+      TextEditingController();
+  final TextEditingController _personalRecordController =
+      TextEditingController();
+  final TextEditingController _employmentHistoryController =
+      TextEditingController();
   final TextEditingController _refereesController = TextEditingController();
   final TextEditingController _extraNoteController = TextEditingController();
-  final TextEditingController _nextOfKinNameController = TextEditingController();
-  final TextEditingController _nextOfKinAddressController = TextEditingController();
-  final TextEditingController _nextOfKinEmailController = TextEditingController();
-  final TextEditingController _nextOfKinPhoneController = TextEditingController();
-  final TextEditingController _employmentDateController = TextEditingController();
-  final TextEditingController _healthAppraisalController = TextEditingController();
-  final TextEditingController _generalAppraisalController = TextEditingController();
+  final TextEditingController _nextOfKinNameController =
+      TextEditingController();
+  final TextEditingController _nextOfKinAddressController =
+      TextEditingController();
+  final TextEditingController _nextOfKinEmailController =
+      TextEditingController();
+  final TextEditingController _nextOfKinPhoneController =
+      TextEditingController();
+  final TextEditingController _employmentDateController =
+      TextEditingController();
+  final TextEditingController _healthAppraisalController =
+      TextEditingController();
+  final TextEditingController _generalAppraisalController =
+      TextEditingController();
   final TextEditingController _gradeController = TextEditingController();
   final TextEditingController _departmentController = TextEditingController();
   final TextEditingController _sectionController = TextEditingController();
@@ -71,8 +78,14 @@ final TextEditingController _fullNameController = TextEditingController();
   List<String> _selectedCourses = [];
 
   final List<String> _staffRoles = [
-    'Teacher', 'Vice Principal', 'Principal', 'Admin Staff', 'Librarian',
-    'Lab Assistant', 'Counselor', 'IT Support'
+    'Teacher',
+    'Vice Principal',
+    'Principal',
+    'Admin Staff',
+    'Librarian',
+    'Lab Assistant',
+    'Counselor',
+    'IT Support'
   ];
 
   @override
@@ -106,13 +119,12 @@ final TextEditingController _fullNameController = TextEditingController();
     _fadeController.dispose();
     _slideController.dispose();
     _searchController.dispose();
-  _fullNameController.dispose();
+    _fullNameController.dispose();
     _emailController.dispose();
     _phoneController.dispose();
     _addressController.dispose();
     _salaryController.dispose();
-   
-  
+
     _middleNameController.dispose();
     _birthDateController.dispose();
     _cityController.dispose();
@@ -146,20 +158,30 @@ final TextEditingController _fullNameController = TextEditingController();
 
   List<Map<String, dynamic>> get _filteredStaffList {
     final provider = Provider.of<AddStaffProvider>(context, listen: false);
-    List<Map<String, dynamic>> filtered = provider.staffList
-        .map((staff) => staff.toDisplayMap())
-        .toList();
+    List<Map<String, dynamic>> filtered =
+        provider.staffList.map((staff) => staff.toDisplayMap()).toList();
 
     if (_selectedFilter != 'All') {
-      filtered = filtered.where((staff) => staff['role'] == _selectedFilter).toList();
+      filtered =
+          filtered.where((staff) => staff['role'] == _selectedFilter).toList();
     }
 
     if (_searchController.text.isNotEmpty) {
-      filtered = filtered.where((staff) =>
-          staff['name'].toString().toLowerCase().contains(_searchController.text.toLowerCase()) ||
-          staff['email'].toString().toLowerCase().contains(_searchController.text.toLowerCase()) ||
-          staff['id'].toString().toLowerCase().contains(_searchController.text.toLowerCase())
-      ).toList();
+      filtered = filtered
+          .where((staff) =>
+              staff['name']
+                  .toString()
+                  .toLowerCase()
+                  .contains(_searchController.text.toLowerCase()) ||
+              staff['email']
+                  .toString()
+                  .toLowerCase()
+                  .contains(_searchController.text.toLowerCase()) ||
+              staff['id']
+                  .toString()
+                  .toLowerCase()
+                  .contains(_searchController.text.toLowerCase()))
+          .toList();
     }
 
     return filtered;
@@ -282,21 +304,21 @@ final TextEditingController _fullNameController = TextEditingController();
 
   Widget _buildStaffCard(Map<String, dynamic> staff, int index) {
     final provider = Provider.of<AddStaffProvider>(context, listen: false);
-  final staffModel = provider.staffList.firstWhere(
-    (s) => s.staffNo == staff['id'],
-    orElse: () => throw Exception('Staff not found'),
-  );
+    final staffModel = provider.staffList.firstWhere(
+      (s) => s.staffNo == staff['id'],
+      orElse: () => throw Exception('Staff not found'),
+    );
 
     return GestureDetector(
       onTap: () {
-      // Navigate to staff profile
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => StaffProfileScreen(staff: staffModel),
-        ),
-      );
-    },
+        // Navigate to staff profile
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => StaffProfileScreen(staff: staffModel),
+          ),
+        );
+      },
       child: Container(
         margin: const EdgeInsets.only(bottom: 12.0),
         padding: const EdgeInsets.all(16.0),
@@ -325,7 +347,10 @@ final TextEditingController _fullNameController = TextEditingController();
                     borderRadius: BorderRadius.circular(25),
                   ),
                   child: Icon(
-                    (staff['gender']?.toString().toLowerCase() ?? 'male') == 'male' ? Icons.man : Icons.woman,
+                    (staff['gender']?.toString().toLowerCase() ?? 'male') ==
+                            'male'
+                        ? Icons.man
+                        : Icons.woman,
                     color: AppColors.text2Light,
                     size: 30,
                   ),
@@ -351,7 +376,8 @@ final TextEditingController _fullNameController = TextEditingController();
                         ),
                       ),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 2),
                         decoration: BoxDecoration(
                           color: staff['status'] == 'Active'
                               ? AppColors.attCheckColor2.withOpacity(0.1)
@@ -382,7 +408,8 @@ final TextEditingController _fullNameController = TextEditingController();
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => AssignCoursesScreen(staffId: staff['id']),
+                          builder: (context) =>
+                              AssignCoursesScreen(staffId: staff['id']),
                         ),
                       );
                     }
@@ -392,7 +419,8 @@ final TextEditingController _fullNameController = TextEditingController();
                       value: 'edit',
                       child: Row(
                         children: [
-                          Icon(Icons.edit, size: 16, color: AppColors.text2Light),
+                          Icon(Icons.edit,
+                              size: 16, color: AppColors.text2Light),
                           SizedBox(width: 8),
                           Text('Edit'),
                         ],
@@ -402,7 +430,8 @@ final TextEditingController _fullNameController = TextEditingController();
                       value: 'assign_courses',
                       child: Row(
                         children: [
-                          Icon(Icons.book, size: 16, color: AppColors.text2Light),
+                          Icon(Icons.book,
+                              size: 16, color: AppColors.text2Light),
                           SizedBox(width: 8),
                           Text('Assign Courses'),
                         ],
@@ -539,12 +568,12 @@ final TextEditingController _fullNameController = TextEditingController();
             ],
           ),
           const SizedBox(height: 16),
-         _buildTextField(
-  controller: _fullNameController,
-  label: 'Full Name * (Surname First)',
-  icon: Icons.person,
-  hintText: 'e.g., Smith John',
-),
+          _buildTextField(
+            controller: _fullNameController,
+            label: 'Full Name * (Surname First)',
+            icon: Icons.person,
+            hintText: 'e.g., Smith John',
+          ),
           const SizedBox(height: 12),
           _buildTextField(
             controller: _middleNameController,
@@ -577,7 +606,8 @@ final TextEditingController _fullNameController = TextEditingController();
                 lastDate: now,
               );
               if (picked != null) {
-                _birthDateController.text = picked.toIso8601String().substring(0, 10);
+                _birthDateController.text =
+                    picked.toIso8601String().substring(0, 10);
                 setState(() {});
               }
             },
@@ -608,11 +638,10 @@ final TextEditingController _fullNameController = TextEditingController();
               const SizedBox(width: 12),
               Expanded(
                 child: _buildTextField(
-                  controller: _stateController,
-                  label: 'State',
-                  icon: Icons.map,
-                  keyboardType:TextInputType.number
-                ),
+                    controller: _stateController,
+                    label: 'State',
+                    icon: Icons.map,
+                    keyboardType: TextInputType.number),
               ),
             ],
           ),
@@ -644,7 +673,6 @@ final TextEditingController _fullNameController = TextEditingController();
                 ),
               ),
               const SizedBox(width: 12),
-             
             ],
           ),
           const SizedBox(height: 12),
@@ -796,7 +824,8 @@ final TextEditingController _fullNameController = TextEditingController();
                 lastDate: DateTime(now.year + 1),
               );
               if (picked != null) {
-                _employmentDateController.text = picked.toIso8601String().substring(0, 10);
+                _employmentDateController.text =
+                    picked.toIso8601String().substring(0, 10);
                 setState(() {});
               }
             },
@@ -895,8 +924,7 @@ final TextEditingController _fullNameController = TextEditingController();
                 ),
                 elevation: 0,
               ),
-              child:
-               Text(
+              child: Text(
                 _isEditing ? 'Update Staff' : 'Add Staff',
                 style: const TextStyle(
                   color: Colors.white,
@@ -912,47 +940,48 @@ final TextEditingController _fullNameController = TextEditingController();
     );
   }
 
- Widget _buildTextField({
-  required TextEditingController controller,
-  required String label,
-  required IconData icon,
-  TextInputType keyboardType = TextInputType.text,
-  String? hintText, // Add this parameter
-}) {
-  return TextField(
-    controller: controller,
-    keyboardType: keyboardType,
-    decoration: InputDecoration(
-      labelText: label,
-      hintText: hintText, // Add this
-      prefixIcon: Icon(icon, color: AppColors.text7Light),
-      labelStyle: const TextStyle(
-        color: AppColors.text5Light,
-        fontSize: 14,
-        fontFamily: 'Urbanist',
+  Widget _buildTextField({
+    required TextEditingController controller,
+    required String label,
+    required IconData icon,
+    TextInputType keyboardType = TextInputType.text,
+    String? hintText, // Add this parameter
+  }) {
+    return TextField(
+      controller: controller,
+      keyboardType: keyboardType,
+      decoration: InputDecoration(
+        labelText: label,
+        hintText: hintText, // Add this
+        prefixIcon: Icon(icon, color: AppColors.text7Light),
+        labelStyle: const TextStyle(
+          color: AppColors.text5Light,
+          fontSize: 14,
+          fontFamily: 'Urbanist',
+        ),
+        hintStyle: const TextStyle(
+          // Add hint style
+          color: AppColors.text9Light,
+          fontSize: 14,
+          fontFamily: 'Urbanist',
+        ),
+        filled: true,
+        fillColor: AppColors.textFieldLight,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16.0),
+          borderSide: BorderSide(color: AppColors.textFieldBorderLight),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16.0),
+          borderSide: BorderSide(color: AppColors.textFieldBorderLight),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16.0),
+          borderSide: BorderSide(color: AppColors.text2Light, width: 2),
+        ),
       ),
-      hintStyle: const TextStyle( // Add hint style
-        color: AppColors.text9Light,
-        fontSize: 14,
-        fontFamily: 'Urbanist',
-      ),
-      filled: true,
-      fillColor: AppColors.textFieldLight,
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(16.0),
-        borderSide: BorderSide(color: AppColors.textFieldBorderLight),
-      ),
-      enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(16.0),
-        borderSide: BorderSide(color: AppColors.textFieldBorderLight),
-      ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(16.0),
-        borderSide: BorderSide(color: AppColors.text2Light, width: 2),
-      ),
-    ),
-  );
-}
+    );
+  }
 
   Widget _buildDropdown({
     required String label,
@@ -995,12 +1024,11 @@ final TextEditingController _fullNameController = TextEditingController();
   }
 
   void _clearForm() {
- 
     _emailController.clear();
     _phoneController.clear();
     _addressController.clear();
     _salaryController.clear();
-     _fullNameController.clear();
+    _fullNameController.clear();
 
     _middleNameController.clear();
     _birthDateController.clear();
@@ -1041,19 +1069,19 @@ final TextEditingController _fullNameController = TextEditingController();
   void _handleSubmit() async {
     // Form validation
     final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
-   if (_fullNameController.text.trim().isEmpty) {
-  ScaffoldMessenger.of(context).showSnackBar(
-    SnackBar(
-      content: Text('Please enter Full Name'),
-      backgroundColor: Colors.red,
-      behavior: SnackBarBehavior.floating,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(10),
-      ),
-    ),
-  );
-  return;
-}
+    if (_fullNameController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Please enter Full Name'),
+          backgroundColor: Colors.red,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+        ),
+      );
+      return;
+    }
     if (_selectedGender.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -1106,7 +1134,8 @@ final TextEditingController _fullNameController = TextEditingController();
       );
       return;
     }
-    if (_emailController.text.trim().isNotEmpty && !emailRegex.hasMatch(_emailController.text.trim())) {
+    if (_emailController.text.trim().isNotEmpty &&
+        !emailRegex.hasMatch(_emailController.text.trim())) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: const Text('Please enter a valid email address'),
@@ -1120,62 +1149,62 @@ final TextEditingController _fullNameController = TextEditingController();
       return;
     }
     final fullName = _fullNameController.text.trim();
-final nameParts = fullName.split(' ');
+    final nameParts = fullName.split(' ');
 
-String surname = '';
-String firstName = '';
+    String surname = '';
+    String firstName = '';
 
-if (nameParts.isNotEmpty) {
-  surname = nameParts[0]; // First part is surname
-  if (nameParts.length > 1) {
-    firstName = nameParts.sublist(1).join(' '); // Rest is first name
-  }
-}
+    if (nameParts.isNotEmpty) {
+      surname = nameParts[0]; // First part is surname
+      if (nameParts.length > 1) {
+        firstName = nameParts.sublist(1).join(' '); // Rest is first name
+      }
+    }
 
+    final newStaff = {
+      'surname': surname,
+      'first_name': firstName,
+      'middle_name': _middleNameController.text.trim(),
+      'gender': _selectedGender.toLowerCase(),
+      'email_address': _emailController.text.trim(),
+      'phone': _phoneController.text.trim(),
+      'birth_date': _birthDateController.text.trim(),
+      'address': _addressController.text.trim(),
+      'city': int.tryParse(_cityController.text.trim()) ?? 0,
+      'state':
+          int.tryParse(_stateController.text.trim()) ?? 0, // Parse as integer
+      'country': _countryController.text.trim(),
+      'phone_number': _phoneController.text.trim(),
+      'religion': _religionController.text.trim(),
+      'marital_status': _selectedMaritalStatus,
+      'lga_origin': _lgaOriginController.text.trim(),
+      'state_origin': _stateOriginController.text.trim(),
+      'nationality': _nationalityController.text.trim(),
+      'home_town': _homeTownController.text.trim(),
+      'health_status': _healthStatusController.text.trim(),
+      'past_record': _pastRecordController.text.trim(),
+      'past_record_extra': _pastRecordExtraController.text.trim(),
+      'personal_record': _personalRecordController.text.trim(),
+      'employment_history': _employmentHistoryController.text.trim(),
+      'referees': _refereesController.text.trim(),
+      'extra_note': _extraNoteController.text.trim(),
+      'next_of_kin_name': _nextOfKinNameController.text.trim(),
+      'next_of_kin_address': _nextOfKinAddressController.text.trim(),
+      'next_of_kin_email': _nextOfKinEmailController.text.trim(),
+      'next_of_kin_phone': _nextOfKinPhoneController.text.trim(),
+      'employment_date': _employmentDateController.text.trim(),
+      'employment_status': _selectedStatus,
+      'health_appraisal': _healthAppraisalController.text.trim(),
+      'general_appraisal': _generalAppraisalController.text.trim(),
+      'grade': int.tryParse(_gradeController.text.trim()) ?? 0,
+      'department': int.tryParse(_departmentController.text.trim()) ?? 0,
+      'section': int.tryParse(_sectionController.text.trim()) ?? 0,
+      'designation': int.tryParse(_designationController.text.trim()) ?? 0,
+      'access_level': _selectedAccessLevel,
+    };
 
-
-   final newStaff = {
-    'surname': surname,
-    'first_name': firstName,
-    'middle_name': _middleNameController.text.trim(),
-    'gender': _selectedGender.toLowerCase(),
-    'email_address': _emailController.text.trim(),
-    'phone': _phoneController.text.trim(),
-    'birth_date': _birthDateController.text.trim(),
-    'address': _addressController.text.trim(),
-    'city': int.tryParse(_cityController.text.trim()) ?? 0,
-    'state': int.tryParse(_stateController.text.trim()) ?? 0, // Parse as integer
-    'country': _countryController.text.trim(),
-    'phone_number': _phoneController.text.trim(),
-    'religion': _religionController.text.trim(),
-    'marital_status': _selectedMaritalStatus,
-    'lga_origin': _lgaOriginController.text.trim(),
-    'state_origin': _stateOriginController.text.trim(),
-    'nationality': _nationalityController.text.trim(),
-    'home_town': _homeTownController.text.trim(),
-    'health_status': _healthStatusController.text.trim(),
-    'past_record': _pastRecordController.text.trim(),
-    'past_record_extra': _pastRecordExtraController.text.trim(),
-    'personal_record': _personalRecordController.text.trim(),
-    'employment_history': _employmentHistoryController.text.trim(),
-    'referees': _refereesController.text.trim(),
-    'extra_note': _extraNoteController.text.trim(),
-    'next_of_kin_name': _nextOfKinNameController.text.trim(),
-    'next_of_kin_address': _nextOfKinAddressController.text.trim(),
-    'next_of_kin_email': _nextOfKinEmailController.text.trim(),
-    'next_of_kin_phone': _nextOfKinPhoneController.text.trim(),
-    'employment_date': _employmentDateController.text.trim(),
-    'employment_status': _selectedStatus,
-    'health_appraisal': _healthAppraisalController.text.trim(),
-    'general_appraisal': _generalAppraisalController.text.trim(),
-    'grade': int.tryParse(_gradeController.text.trim()) ?? 0,
-    'department': int.tryParse(_departmentController.text.trim()) ?? 0,
-    'section': int.tryParse(_sectionController.text.trim()) ?? 0,
-    'designation': int.tryParse(_designationController.text.trim()) ?? 0,
-    'access_level': _selectedAccessLevel,
-  };
-
-    final addStaffProvider = Provider.of<AddStaffProvider>(context, listen: false);
+    final addStaffProvider =
+        Provider.of<AddStaffProvider>(context, listen: false);
     bool success;
     if (_isEditing) {
       success = await addStaffProvider.updateStaff(_editingStaffId!, newStaff);
@@ -1192,7 +1221,8 @@ if (nameParts.isNotEmpty) {
       });
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(addStaffProvider.message ?? 'Staff ${_isEditing ? 'updated' : 'created'} successfully!'),
+          content: Text(addStaffProvider.message ??
+              'Staff ${_isEditing ? 'updated' : 'created'} successfully!'),
           backgroundColor: AppColors.attCheckColor2,
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(
@@ -1203,7 +1233,8 @@ if (nameParts.isNotEmpty) {
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(addStaffProvider.error ?? 'Failed to ${_isEditing ? 'update' : 'create'} staff'),
+          content: Text(addStaffProvider.error ??
+              'Failed to ${_isEditing ? 'update' : 'create'} staff'),
           backgroundColor: Colors.red,
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(
@@ -1223,13 +1254,13 @@ if (nameParts.isNotEmpty) {
       orElse: () => throw Exception('Staff not found'),
     );
 
-      final fullName = '${staff.lastName ?? ''} ${staff.firstName ?? ''}'.trim();
+    final fullName = '${staff.lastName ?? ''} ${staff.firstName ?? ''}'.trim();
     setState(() {
       _isEditing = true;
       _showAddForm = true;
       _editingStaffId = staff.staffNo;
-       _fullNameController.text = fullName;
-    
+      _fullNameController.text = fullName;
+
       _middleNameController.text = staff.middleName ?? '';
       _emailController.text = staff.emailAddress ?? '';
       _phoneController.text = staff.phoneNumber ?? '';
@@ -1407,7 +1438,10 @@ if (nameParts.isNotEmpty) {
                               Expanded(
                                 child: _buildStatsCard(
                                   title: 'Active Staff',
-                                  value: provider.staffList.where((s) => s.isActive).length.toString(),
+                                  value: provider.staffList
+                                      .where((s) => s.isActive)
+                                      .length
+                                      .toString(),
                                   icon: Icons.check_circle,
                                   iconColor: AppColors.attCheckColor2,
                                   backgroundColor: AppColors.boxColor2,
@@ -1417,7 +1451,10 @@ if (nameParts.isNotEmpty) {
                               Expanded(
                                 child: _buildStatsCard(
                                   title: 'Admins',
-                                  value: provider.staffList.where((s) => s.accessLevel == 'admin').length.toString(),
+                                  value: provider.staffList
+                                      .where((s) => s.accessLevel == 'admin')
+                                      .length
+                                      .toString(),
                                   icon: Icons.school,
                                   iconColor: AppColors.secondaryLight,
                                   backgroundColor: AppColors.boxColor3,
@@ -1448,14 +1485,16 @@ if (nameParts.isNotEmpty) {
                             onChanged: (value) => setState(() {}),
                             decoration: InputDecoration(
                               hintText: 'Search staff by name, email, or ID...',
-                              prefixIcon: const Icon(Icons.search, color: AppColors.text7Light),
+                              prefixIcon: const Icon(Icons.search,
+                                  color: AppColors.text7Light),
                               suffixIcon: _searchController.text.isNotEmpty
                                   ? IconButton(
                                       onPressed: () {
                                         _searchController.clear();
                                         setState(() {});
                                       },
-                                      icon: const Icon(Icons.clear, color: AppColors.text7Light),
+                                      icon: const Icon(Icons.clear,
+                                          color: AppColors.text7Light),
                                     )
                                   : null,
                               hintStyle: const TextStyle(
@@ -1467,15 +1506,18 @@ if (nameParts.isNotEmpty) {
                               fillColor: Colors.white,
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(16.0),
-                                borderSide: BorderSide(color: AppColors.textFieldBorderLight),
+                                borderSide: BorderSide(
+                                    color: AppColors.textFieldBorderLight),
                               ),
                               enabledBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(16.0),
-                                borderSide: BorderSide(color: AppColors.textFieldBorderLight),
+                                borderSide: BorderSide(
+                                    color: AppColors.textFieldBorderLight),
                               ),
                               focusedBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(16.0),
-                                borderSide: BorderSide(color: AppColors.text2Light, width: 2),
+                                borderSide: BorderSide(
+                                    color: AppColors.text2Light, width: 2),
                               ),
                             ),
                           ),
@@ -1484,11 +1526,14 @@ if (nameParts.isNotEmpty) {
                             scrollDirection: Axis.horizontal,
                             child: Row(
                               children: [
-                               _buildFilterChip('All', _selectedFilter == 'All'),
-      const SizedBox(width: 8),
-      _buildFilterChip('Staff', _selectedFilter == 'Staff'),
-      const SizedBox(width: 8),
-      _buildFilterChip('Admin', _selectedFilter == 'Admin'),
+                                _buildFilterChip(
+                                    'All', _selectedFilter == 'All'),
+                                const SizedBox(width: 8),
+                                _buildFilterChip(
+                                    'Staff', _selectedFilter == 'Staff'),
+                                const SizedBox(width: 8),
+                                _buildFilterChip(
+                                    'Admin', _selectedFilter == 'Admin'),
                               ],
                             ),
                           ),
@@ -1514,7 +1559,8 @@ if (nameParts.isNotEmpty) {
                                   color: AppColors.text2Light,
                                 ),
                               ),
-                              if (filteredStaff.length != provider.staffList.length)
+                              if (filteredStaff.length !=
+                                  provider.staffList.length)
                                 TextButton(
                                   onPressed: () {
                                     setState(() {
@@ -1574,12 +1620,14 @@ if (nameParts.isNotEmpty) {
                               itemBuilder: (context, index) {
                                 return TweenAnimationBuilder<double>(
                                   tween: Tween<double>(begin: 0, end: 1),
-                                  duration: Duration(milliseconds: 300 + (index * 100)),
+                                  duration: Duration(
+                                      milliseconds: 300 + (index * 100)),
                                   curve: Curves.easeOutBack,
                                   builder: (context, value, child) {
                                     return Transform.scale(
                                       scale: value,
-                                      child: _buildStaffCard(filteredStaff[index], index),
+                                      child: _buildStaffCard(
+                                          filteredStaff[index], index),
                                     );
                                   },
                                 );

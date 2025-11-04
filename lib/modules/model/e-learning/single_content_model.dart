@@ -291,7 +291,8 @@ class ContentTopic {
           [],
       rank: json['rank'] ?? 0,
       children: (json['children'] as List<dynamic>?)
-              ?.map((e) => AssessmentContentItem.fromJson(e as Map<String, dynamic>))
+              ?.map((e) =>
+                  AssessmentContentItem.fromJson(e as Map<String, dynamic>))
               .toList() ??
           [],
     );

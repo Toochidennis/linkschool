@@ -48,18 +48,20 @@ class SyllabusContentItem {
       topicId: json['topic_id'],
       topic: json['topic'],
       classes: (json['classes'] as List<dynamic>?)
-          ?.map((e) => ClassInfo.fromJson(e as Map<String, dynamic>))
-          .toList() ?? [],
+              ?.map((e) => ClassInfo.fromJson(e as Map<String, dynamic>))
+              .toList() ??
+          [],
       startDate: json['start_date'],
       endDate: json['end_date'],
       grade: json['grade'],
       duration: json['duration'],
       contentFiles: (json['content_files'] as List<dynamic>?)
-          ?.map((e) => ContentFile.fromJson(e as Map<String, dynamic>))
-          .toList() ?? [],
+              ?.map((e) => ContentFile.fromJson(e as Map<String, dynamic>))
+              .toList() ??
+          [],
       datePosted: json['date_posted'],
       settings: json['settings'],
-      questions: json['questions'] != null 
+      questions: json['questions'] != null
           ? List<Map<String, dynamic>>.from(json['questions'])
           : null,
     );
@@ -125,8 +127,10 @@ class TopicContent {
       name: json['title'] ?? '',
       type: json['type'] ?? '',
       children: (json['children'] as List<dynamic>?)
-          ?.map((e) => SyllabusContentItem.fromJson(e as Map<String, dynamic>))
-          .toList() ?? [],
+              ?.map((e) =>
+                  SyllabusContentItem.fromJson(e as Map<String, dynamic>))
+              .toList() ??
+          [],
     );
   }
 }

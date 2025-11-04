@@ -20,7 +20,8 @@ class StaffTakeClassAttendance extends StatefulWidget {
   });
 
   @override
-  State<StaffTakeClassAttendance> createState() => _StaffTakeClassAttendanceState();
+  State<StaffTakeClassAttendance> createState() =>
+      _StaffTakeClassAttendanceState();
 }
 
 class _StaffTakeClassAttendanceState extends State<StaffTakeClassAttendance> {
@@ -95,7 +96,8 @@ class _StaffTakeClassAttendanceState extends State<StaffTakeClassAttendance> {
 
     bool success;
 
-    if (provider.hasExistingAttendance && provider.currentAttendanceId != null) {
+    if (provider.hasExistingAttendance &&
+        provider.currentAttendanceId != null) {
       success = await provider.updateAttendance(
         attendanceId: provider.currentAttendanceId!,
       );
@@ -195,14 +197,16 @@ class _StaffTakeClassAttendanceState extends State<StaffTakeClassAttendance> {
               return Center(child: Text(provider.errorMessage));
             }
             if (provider.students.isEmpty) {
-              return const Center(child: Text('No students found for this class'));
+              return const Center(
+                  child: Text('No students found for this class'));
             }
 
             return Column(
               children: [
                 if (provider.hasExistingAttendance)
                   Container(
-                    padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
+                    padding: const EdgeInsets.symmetric(
+                        vertical: 8.0, horizontal: 16.0),
                     color: Colors.green.withOpacity(0.1),
                     child: const Row(
                       children: [
@@ -215,11 +219,11 @@ class _StaffTakeClassAttendanceState extends State<StaffTakeClassAttendance> {
                       ],
                     ),
                   ),
-                  
                 GestureDetector(
                   onTap: () => provider.toggleSelectAll(),
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 16.0, vertical: 12.0),
                     decoration: BoxDecoration(
                       color: provider.selectAll
                           ? const Color.fromRGBO(239, 227, 255, 1)
@@ -299,8 +303,12 @@ class _StaffTakeClassAttendanceState extends State<StaffTakeClassAttendance> {
           return provider.students.any((s) => s.isSelected)
               ? CustomFloatingSaveButton(
                   onPressed: _onSavePressed,
-                  icon: provider.hasExistingAttendance ? Icons.update : Icons.save,
-                  tooltip: provider.hasExistingAttendance ? 'Update Attendance' : 'Save Attendance',
+                  icon: provider.hasExistingAttendance
+                      ? Icons.update
+                      : Icons.save,
+                  tooltip: provider.hasExistingAttendance
+                      ? 'Update Attendance'
+                      : 'Save Attendance',
                 )
               : Container();
         },

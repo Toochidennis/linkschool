@@ -32,7 +32,11 @@ class TopBorder extends InputBorder {
   }
 
   @override
-  void paint(Canvas canvas, Rect rect, {double? gapStart, double? gapExtent = 0.0, double? gapPercentage = 0.0, TextDirection? textDirection}) {
+  void paint(Canvas canvas, Rect rect,
+      {double? gapStart,
+      double? gapExtent = 0.0,
+      double? gapPercentage = 0.0,
+      TextDirection? textDirection}) {
     canvas.drawLine(
       rect.topLeft,
       rect.topRight,
@@ -149,12 +153,13 @@ class CustomCommentInput extends StatelessWidget {
             ),
             // Add padding to top and bottom
             contentPadding: EdgeInsets.only(
-              top: topPadding, 
+              top: topPadding,
               bottom: bottomPadding,
             ),
             // Adjust the send icon alignment
             suffixIcon: Padding(
-              padding: EdgeInsets.only(top: topPadding / 2), // Adjust icon vertical alignment
+              padding: EdgeInsets.only(
+                  top: topPadding / 2), // Adjust icon vertical alignment
               child: IconButton(
                 icon: Icon(
                   Icons.send,

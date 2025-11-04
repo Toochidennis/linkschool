@@ -21,7 +21,10 @@ class TermProvider with ChangeNotifier {
 
       print('Fetching terms for classId: $classId');
       final terms = await _termService.fetchTerms(classId);
-      print('Fetched Terms: ${terms.map((t) => {...t, 'averageScore': t['averageScore']}).toList()}');
+      print('Fetched Terms: ${terms.map((t) => {
+            ...t,
+            'averageScore': t['averageScore']
+          }).toList()}');
 
       _terms = terms;
       _error = null;
@@ -35,5 +38,3 @@ class TermProvider with ChangeNotifier {
     }
   }
 }
-
-

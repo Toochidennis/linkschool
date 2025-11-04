@@ -22,6 +22,7 @@ class SkillsProvider with ChangeNotifier {
     }
     return _skills.where((skill) => skill.level == _selectedLevel).toList();
   }
+
   bool get isLoading => _isLoading;
   String get error => _error;
   String get selectedLevel => _selectedLevel;
@@ -43,7 +44,7 @@ class SkillsProvider with ChangeNotifier {
       } else {
         throw Exception('Authentication token is missing');
       }
-      
+
       _skills = await _skillService.getSkills();
       _error = '';
     } catch (e) {
@@ -54,7 +55,8 @@ class SkillsProvider with ChangeNotifier {
     }
   }
 
-  Future<void> addSkill(String skillName, String type, String level, {BuildContext? context}) async {
+  Future<void> addSkill(String skillName, String type, String level,
+      {BuildContext? context}) async {
     try {
       final authProvider = locator<AuthProvider>();
       if (authProvider.token != null) {
@@ -92,7 +94,8 @@ class SkillsProvider with ChangeNotifier {
     }
   }
 
-  Future<void> editSkill(String id, String skillName, String type, String level, {BuildContext? context}) async {
+  Future<void> editSkill(String id, String skillName, String type, String level,
+      {BuildContext? context}) async {
     _isLoading = true;
     _error = '';
     notifyListeners();
@@ -157,6 +160,3 @@ class SkillsProvider with ChangeNotifier {
     }
   }
 }
-
-
-

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
-import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/services/staff/settings_service.dart';
 import 'package:linkschool/modules/staff/e_learning/form_classes/staff_comment_result_screen.dart';
@@ -89,12 +88,15 @@ class _FormClassesScreenState extends State<FormClassesScreen> {
     return transformedData;
   }
 
-  int _getStudentCountForClass(int classId, List<Map<String, dynamic>> staffCourses) {
+  int _getStudentCountForClass(
+      int classId, List<Map<String, dynamic>> staffCourses) {
     for (var courseData in staffCourses) {
       if (courseData['class_id'] == classId) {
         List<dynamic> courses = courseData['courses'] ?? [];
         if (courses.isNotEmpty) {
-          return courses.map((c) => c['num_of_students'] as int? ?? 0).reduce((a, b) => a > b ? a : b);
+          return courses
+              .map((c) => c['num_of_students'] as int? ?? 0)
+              .reduce((a, b) => a > b ? a : b);
         }
       }
     }
@@ -188,7 +190,8 @@ class _FormClassesScreenState extends State<FormClassesScreen> {
                   children: [
                     Card(
                       elevation: 2,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12)),
                       child: Padding(
                         padding: EdgeInsets.all(16),
                         child: Row(
@@ -227,19 +230,24 @@ class _FormClassesScreenState extends State<FormClassesScreen> {
                                 child: Padding(
                                   padding: EdgeInsets.all(16),
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       Container(
-                                        padding: EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                                        padding: EdgeInsets.symmetric(
+                                            vertical: 12, horizontal: 16),
                                         margin: EdgeInsets.only(bottom: 12),
                                         decoration: BoxDecoration(
                                           gradient: LinearGradient(
                                             colors: [
-                                              AppColors.bookText.withOpacity(0.1),
-                                              AppColors.bookText.withOpacity(0.05),
+                                              AppColors.bookText
+                                                  .withOpacity(0.1),
+                                              AppColors.bookText
+                                                  .withOpacity(0.05),
                                             ],
                                           ),
-                                          borderRadius: BorderRadius.circular(8),
+                                          borderRadius:
+                                              BorderRadius.circular(8),
                                         ),
                                         child: Row(
                                           children: [
@@ -261,7 +269,8 @@ class _FormClassesScreenState extends State<FormClassesScreen> {
                                           ],
                                         ),
                                       ),
-                                      ...levelData["classes"].map<Widget>((classData) {
+                                      ...levelData["classes"]
+                                          .map<Widget>((classData) {
                                         return Padding(
                                           padding: EdgeInsets.only(bottom: 12),
                                           child: GestureDetector(
@@ -388,7 +397,8 @@ class _FormClassesScreenState extends State<FormClassesScreen> {
                 color: Colors.grey.shade100,
                 shape: BoxShape.circle,
               ),
-              child: Icon(Icons.chevron_right, color: Colors.grey.shade600, size: 20),
+              child: Icon(Icons.chevron_right,
+                  color: Colors.grey.shade600, size: 20),
             ),
           ],
         ),
@@ -406,7 +416,7 @@ class _FormClassesScreenState extends State<FormClassesScreen> {
     String termName,
   ) {
     final dbName = SettingsService.getDatabaseName();
-    
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -434,7 +444,8 @@ class _FormClassesScreenState extends State<FormClassesScreen> {
                 child: ListView.separated(
                   physics: BouncingScrollPhysics(),
                   itemCount: 4,
-                  separatorBuilder: (context, index) => Divider(color: Colors.grey.shade200),
+                  separatorBuilder: (context, index) =>
+                      Divider(color: Colors.grey.shade200),
                   itemBuilder: (context, index) {
                     final icons = [
                       'assets/icons/result/comment.svg',
@@ -482,23 +493,24 @@ class _FormClassesScreenState extends State<FormClassesScreen> {
                         isFromFormClasses: true,
                       ),
                       StaffCoursesScreen(
-
                         classId: classId,
                         levelId: levelId,
                         className: className,
-                        ),
-                    ]; 
+                      ),
+                    ];
 
                     return GestureDetector(
                       onTap: () {
                         Navigator.pop(context);
                         Navigator.push(
                           context,
-                          MaterialPageRoute(builder: (context) => screens[index]),
+                          MaterialPageRoute(
+                              builder: (context) => screens[index]),
                         );
                       },
                       child: Container(
-                        padding: EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                        padding:
+                            EdgeInsets.symmetric(vertical: 12, horizontal: 16),
                         decoration: BoxDecoration(
                           color: colors[index],
                           borderRadius: BorderRadius.circular(12),
@@ -553,5 +565,3 @@ class _FormClassesScreenState extends State<FormClassesScreen> {
     );
   }
 }
-
-

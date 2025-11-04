@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'package:hive/hive.dart';
-import 'package:http/http.dart' as http;
 
 import '../../model/student/assignment_submissions_model.dart';
 import '../api/api_service.dart';
@@ -9,18 +8,16 @@ import '../api/service_locator.dart';
 class AssignmentSubmissionService {
   final ApiService _apiService = locator<ApiService>();
 
-  getuserdata(){
+  getuserdata() {
     final userBox = Hive.box('userData');
     final storedUserData =
         userBox.get('userData') ?? userBox.get('loginResponse');
-    final processedData = storedUserData is String
-        ? json.decode(storedUserData)
-        : storedUserData;
+    final processedData =
+        storedUserData is String ? json.decode(storedUserData) : storedUserData;
     final response = processedData['response'] ?? processedData;
     final data = response['data'] ?? response;
     return data;
   }
-
 
   AssignmentSubmissionService();
 
@@ -33,13 +30,12 @@ class AssignmentSubmissionService {
       throw Exception("Authentication token is missing.");
     }
     _apiService.setAuthToken(token);
-      print(submission.toJson());
+    print(submission.toJson());
 
     final response = await _apiService.post(
-      endpoint: 'portal/students/${studentid}/assignment-submissions',
+      endpoint: 'portal/students/$studentid/assignment-submissions',
       body: submission.toJson(),
     );
-
 
     if (response.statusCode == 201) {
       return true;
@@ -48,6 +44,4 @@ class AssignmentSubmissionService {
       return false;
     }
   }
-
-
 }

@@ -5,12 +5,13 @@ import 'package:linkschool/modules/services/api/service_locator.dart';
 class AssessmentService {
   final ApiService _apiService = locator<ApiService>();
 
-  Future<ApiResponse<Map<String, dynamic>>> createAssessment(Map<String, dynamic> payload) async {
+  Future<ApiResponse<Map<String, dynamic>>> createAssessment(
+      Map<String, dynamic> payload) async {
     try {
       // Get token from local storage
       final userBox = Hive.box('userData');
       final token = userBox.get('token');
-      
+
       if (token == null) {
         throw Exception('Authentication token not found');
       }
@@ -29,13 +30,14 @@ class AssessmentService {
   }
 
   // method for editing assessment
-  Future<ApiResponse<Map<String, dynamic>>> editAssessment(String assessmentId, Map<String, dynamic> payload) async {
-    print ("Payload in service: $payload");
+  Future<ApiResponse<Map<String, dynamic>>> editAssessment(
+      String assessmentId, Map<String, dynamic> payload) async {
+    print("Payload in service: $payload");
     try {
       // Get token from local storage
       final userBox = Hive.box('userData');
       final token = userBox.get('token');
-      
+
       if (token == null) {
         throw Exception('Authentication token not found');
       }
@@ -54,14 +56,15 @@ class AssessmentService {
   }
 
   // method for deleting assessment
-  Future<ApiResponse<Map<String, dynamic>>> deleteAssessment(String assessmentId) async {
+  Future<ApiResponse<Map<String, dynamic>>> deleteAssessment(
+      String assessmentId) async {
     try {
       // Get token from local storage
       final userBox = Hive.box('userData');
       final token = userBox.get('token');
-     
-    final dbName = userBox.get('_db') ?? 'aalmgzmy_linkskoo_practice';
-      
+
+      final dbName = userBox.get('_db') ?? 'aalmgzmy_linkskoo_practice';
+
       if (token == null) {
         throw Exception('Authentication token not found');
       }
@@ -73,7 +76,7 @@ class AssessmentService {
       return await _apiService.delete(
         endpoint: 'portal/assessments/$assessmentId',
         body: {
-          "_db":dbName
+          "_db": dbName
         }, // Empty body, database will be added automatically
       );
     } catch (e) {
@@ -86,7 +89,7 @@ class AssessmentService {
       // Get token from local storage
       final userBox = Hive.box('userData');
       final token = userBox.get('token');
-      
+
       if (token == null) {
         throw Exception('Authentication token not found');
       }
@@ -104,9 +107,6 @@ class AssessmentService {
   }
 }
 
-
-
-
 // import 'package:hive/hive.dart';
 // import 'package:linkschool/modules/services/api/api_service.dart';
 // import 'package:linkschool/modules/services/api/service_locator.dart';
@@ -119,7 +119,7 @@ class AssessmentService {
 //       // Get token from local storage
 //       final userBox = Hive.box('userData');
 //       final token = userBox.get('token');
-      
+
 //       if (token == null) {
 //         throw Exception('Authentication token not found');
 //       }
@@ -142,7 +142,7 @@ class AssessmentService {
 //       // Get token from local storage
 //       final userBox = Hive.box('userData');
 //       final token = userBox.get('token');
-      
+
 //       if (token == null) {
 //         throw Exception('Authentication token not found');
 //       }
@@ -170,7 +170,7 @@ class AssessmentService {
 //       final userBox = Hive.box('userData');
 //       final token = userBox.get('token');
 //       final dbName = userBox.get('_db') ?? 'aalmgzmy_linkskoo_practice';
-      
+
 //       if (token == null) {
 //         throw Exception('Authentication token not found');
 //       }
@@ -198,7 +198,7 @@ class AssessmentService {
 //       // Get token from local storage
 //       final userBox = Hive.box('userData');
 //       final token = userBox.get('token');
-      
+
 //       if (token == null) {
 //         throw Exception('Authentication token not found');
 //       }

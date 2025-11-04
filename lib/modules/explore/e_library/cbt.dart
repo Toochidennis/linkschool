@@ -205,7 +205,6 @@ class _E_CBTDashboardState extends State<E_CBTDashboard> {
                       _yearDialog(context);
                     },
                     child: _buildChooseSubjectCard(
-                      
                       subject: item.subject,
                       year: item.year,
                       cardColor: item.cardColor,
@@ -424,11 +423,12 @@ void _yearDialog(BuildContext context) {
                             context,
                             MaterialPageRoute(
                                 builder: (context) => CbtDetailScreen(
-                                  examTypeId: "",
+                                      examTypeId: "",
                                       year: selectedYear!,
                                       subject: 'Mathematics',
                                       subjectIcon: 'maths',
-                                      cardColor: AppColors.cbtCardColor1, subjectList: [],
+                                      cardColor: AppColors.cbtCardColor1,
+                                      subjectList: [],
                                     )));
                       }
                     },

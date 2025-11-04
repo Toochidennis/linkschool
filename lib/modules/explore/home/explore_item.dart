@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-class ExploreItem{
+class ExploreItem {
   final Color backgroundColor;
   final Color borderColor;
   final String label;
@@ -11,7 +11,7 @@ class ExploreItem{
   ExploreItem({
     required this.backgroundColor,
     required this.borderColor,
-    this. textColor,
+    this.textColor,
     required this.label,
     required this.iconPath,
     required this.destination,

@@ -15,10 +15,38 @@ class _StaffInputResultScreenState extends State<StaffInputResultScreen> {
 
   // Sample data for rows
   final List<Map<String, dynamic>> studentData = [
-    {"name": "Toochi Dennis", "attendance": "90", "assessment": "85", "exam": "75", "total": "250", "grade": "A"},
-    {"name": "Toochi Joe", "attendance": "88", "assessment": "80", "exam": "78", "total": "246", "grade": "B"},
-    {"name": "Ifeanyi Dennis", "attendance": "92", "assessment": "83", "exam": "88", "total": "263", "grade": "A"},
-    {"name": "Johnson Kenny", "attendance": "80", "assessment": "75", "exam": "70", "total": "225", "grade": "C"},
+    {
+      "name": "Toochi Dennis",
+      "attendance": "90",
+      "assessment": "85",
+      "exam": "75",
+      "total": "250",
+      "grade": "A"
+    },
+    {
+      "name": "Toochi Joe",
+      "attendance": "88",
+      "assessment": "80",
+      "exam": "78",
+      "total": "246",
+      "grade": "B"
+    },
+    {
+      "name": "Ifeanyi Dennis",
+      "attendance": "92",
+      "assessment": "83",
+      "exam": "88",
+      "total": "263",
+      "grade": "A"
+    },
+    {
+      "name": "Johnson Kenny",
+      "attendance": "80",
+      "assessment": "75",
+      "exam": "70",
+      "total": "225",
+      "grade": "C"
+    },
     // Add more students as needed
   ];
 
@@ -65,7 +93,8 @@ class _StaffInputResultScreenState extends State<StaffInputResultScreen> {
         ),
       ),
       body: Container(
-        decoration: Constants.customBoxDecoration(context), // Full screen decoration
+        decoration:
+            Constants.customBoxDecoration(context), // Full screen decoration
         child: Column(
           children: [
             Expanded(
@@ -272,14 +301,12 @@ class _StaffInputResultScreenState extends State<StaffInputResultScreen> {
           child: const Text(
             'Save',
             style: TextStyle(
-              fontSize: 16.0,
-              fontWeight: FontWeight.w600,
-              color: AppColors.backgroundLight
-            ),
+                fontSize: 16.0,
+                fontWeight: FontWeight.w600,
+                color: AppColors.backgroundLight),
           ),
         ),
       ),
     );
   }
 }
-

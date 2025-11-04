@@ -23,19 +23,22 @@ import '../../providers/student/student_comment_provider.dart';
 import 'attachment_preview_screen.dart';
 
 class AssignmentDetailsScreen extends StatefulWidget {
-
   final ChildContent childContent;
   final String title;
   final int id;
 
-  const AssignmentDetailsScreen({super.key, required this.childContent, required this.title, required this.id});
+  const AssignmentDetailsScreen(
+      {super.key,
+      required this.childContent,
+      required this.title,
+      required this.id});
 
   @override
-  State<AssignmentDetailsScreen> createState() => _AssignmentDetailsScreenState();
+  State<AssignmentDetailsScreen> createState() =>
+      _AssignmentDetailsScreenState();
 }
 
 class _AssignmentDetailsScreenState extends State<AssignmentDetailsScreen> {
-
   final TextEditingController _commentController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   List<StudentComment> comments = [];
@@ -43,14 +46,14 @@ class _AssignmentDetailsScreenState extends State<AssignmentDetailsScreen> {
   bool _isEditing = false;
   StudentComment? _editingComment;
   late double opacity;
-  final String networkImage = 'https://img.freepik.com/free-vector/gradient-human-rights-day-background_52683-149974.jpg?t=st=1717832829~exp=1717833429~hmac=3e938edcacd7fef2a791b36c7d3decbf64248d9760dd7da0a304acee382b8a86';
+  final String networkImage =
+      'https://img.freepik.com/free-vector/gradient-human-rights-day-background_52683-149974.jpg?t=st=1717832829~exp=1717833429~hmac=3e938edcacd7fef2a791b36c7d3decbf64248d9760dd7da0a304acee382b8a86';
 
   final List<AttachmentItem> _attachments = [];
   String? creatorName;
   int? creatorId;
   int? academicTerm;
   String? academicYear;
-
 
   @override
   void dispose() {
@@ -59,11 +62,10 @@ class _AssignmentDetailsScreenState extends State<AssignmentDetailsScreen> {
   }
 
   Future<void> _loadUserData() async {
-
-
     try {
       final userBox = Hive.box('userData');
-      final storedUserData = userBox.get('userData') ?? userBox.get('loginResponse');
+      final storedUserData =
+          userBox.get('userData') ?? userBox.get('loginResponse');
       if (storedUserData != null) {
         final processedData = storedUserData is String
             ? json.decode(storedUserData)
@@ -87,15 +89,17 @@ class _AssignmentDetailsScreenState extends State<AssignmentDetailsScreen> {
     } catch (e) {
       print('Error loading user data: $e');
     }
-
   }
 
   void _navigateToAttachmentPreview() {
     Navigator.push(
       context,
       MaterialPageRoute(
-
-        builder: (context) => AttachmentPreviewScreen(attachments: _attachments, childContent: widget.childContent,title: widget.title, id: widget.id),
+        builder: (context) => AttachmentPreviewScreen(
+            attachments: _attachments,
+            childContent: widget.childContent,
+            title: widget.title,
+            id: widget.id),
       ),
     );
   }
@@ -107,9 +111,7 @@ class _AssignmentDetailsScreenState extends State<AssignmentDetailsScreen> {
         children: [
           _buildDueDate(),
           _buildDescription(),
-
           _buildSpecDivider(),
-
           Text(
             'Grade:${widget.childContent.grade} marks',
             style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
@@ -119,6 +121,7 @@ class _AssignmentDetailsScreenState extends State<AssignmentDetailsScreen> {
       ),
     );
   }
+
   Widget _buildDueDate() {
     return Padding(
       padding: const EdgeInsets.only(
@@ -131,20 +134,19 @@ class _AssignmentDetailsScreenState extends State<AssignmentDetailsScreen> {
                 fontSize: 16.0, color: AppColors.eLearningTxtColor1),
           ),
           Text(
-              DateFormat('E, dd MMM yyyy (hh:mm a)').format(DateTime.parse(widget.childContent.endDate!))
-,
-              style: AppTextStyles.normal500(fontSize: 16.0, color: Colors.black),
+            DateFormat('E, dd MMM yyyy (hh:mm a)')
+                .format(DateTime.parse(widget.childContent.endDate!)),
+            style: AppTextStyles.normal500(fontSize: 16.0, color: Colors.black),
           ),
         ],
       ),
     );
   }
+
   Widget _buildTitle() {
     return Container(
       width: double.infinity,
-      decoration: const BoxDecoration(
-
-      ),
+      decoration: const BoxDecoration(),
       child: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Text(
@@ -158,10 +160,8 @@ class _AssignmentDetailsScreenState extends State<AssignmentDetailsScreen> {
     );
   }
 
-
   @override
   Widget build(BuildContext context) {
-
     final Brightness brightness = Theme.of(context).brightness;
     opacity = brightness == Brightness.light ? 0.1 : 0.15;
     return Scaffold(
@@ -201,12 +201,11 @@ class _AssignmentDetailsScreenState extends State<AssignmentDetailsScreen> {
           ),
         ),
       ),
-      body:Container(
+      body: Container(
         color: Colors.white,
         child: _buildInstructionsTab(),
-
       ),
-      bottomNavigationBar:  ElevatedButton(
+      bottomNavigationBar: ElevatedButton(
         // onPressed: _showAttachmentOptions,
         onPressed: _navigateToAttachmentPreview,
         style: ElevatedButton.styleFrom(
@@ -216,13 +215,14 @@ class _AssignmentDetailsScreenState extends State<AssignmentDetailsScreen> {
           ),
           minimumSize: const Size(double.infinity, 50),
         ),
-        child: const Text('Add work', style: TextStyle(fontSize: 16, color: AppColors.backgroundLight)),
+        child: const Text('Add work',
+            style: TextStyle(fontSize: 16, color: AppColors.backgroundLight)),
       ),
-
     );
   }
 
-  Widget _buildAttachmentOption(String text, String iconPath, VoidCallback onTap) {
+  Widget _buildAttachmentOption(
+      String text, String iconPath, VoidCallback onTap) {
     return InkWell(
       onTap: onTap,
       child: Container(
@@ -278,14 +278,16 @@ class _AssignmentDetailsScreenState extends State<AssignmentDetailsScreen> {
                 padding: const EdgeInsets.all(16.0),
                 child: Text(
                   'Class comments',
-                  style: AppTextStyles.normal600(fontSize: 18.0, color: Colors.black),
+                  style: AppTextStyles.normal600(
+                      fontSize: 18.0, color: Colors.black),
                 ),
               ),
               ListView.builder(
                 controller: _scrollController,
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
-                itemCount: commentList.length + (commentProvider.isLoading ? 1 : 0),
+                itemCount:
+                    commentList.length + (commentProvider.isLoading ? 1 : 0),
                 itemBuilder: (context, index) {
                   if (index == commentList.length) {
                     return const Center(child: CircularProgressIndicator());
@@ -308,13 +310,13 @@ class _AssignmentDetailsScreenState extends State<AssignmentDetailsScreen> {
               child: _isAddingComment
                   ? _buildCommentInput()
                   : InkWell(
-                onTap: () => setState(() => _isAddingComment = true),
-                child: Text(
-                  'Add class comment',
-                  style: AppTextStyles.normal500(
-                      fontSize: 16.0, color: AppColors.paymentTxtColor1),
-                ),
-              ),
+                      onTap: () => setState(() => _isAddingComment = true),
+                      child: Text(
+                        'Add class comment',
+                        style: AppTextStyles.normal500(
+                            fontSize: 16.0, color: AppColors.paymentTxtColor1),
+                      ),
+                    ),
             ),
           ],
         );
@@ -343,20 +345,19 @@ class _AssignmentDetailsScreenState extends State<AssignmentDetailsScreen> {
             DateFormat('d MMMM').format(comment.date),
             style: AppTextStyles.normal400(fontSize: 14.0, color: Colors.grey),
           ),
-
-
         ],
       ),
       subtitle: Text(
         comment.text,
         style:
-        AppTextStyles.normal500(fontSize: 16, color: AppColors.text4Light),
+            AppTextStyles.normal500(fontSize: 16, color: AppColors.text4Light),
       ),
     );
   }
 
   Widget _buildCommentInput() {
-    final provider = Provider.of<StudentCommentProvider>(context, listen: false);
+    final provider =
+        Provider.of<StudentCommentProvider>(context, listen: false);
     return Row(
       children: [
         Expanded(
@@ -371,44 +372,48 @@ class _AssignmentDetailsScreenState extends State<AssignmentDetailsScreen> {
         provider.isLoading
             ? const CircularProgressIndicator()
             : IconButton(
-          icon: const Icon(Icons.send),
-          onPressed: _addComment,
-          color: AppColors.paymentTxtColor1,
-        ),
+                icon: const Icon(Icons.send),
+                onPressed: _addComment,
+                color: AppColors.paymentTxtColor1,
+              ),
       ],
     );
   }
 
-
   void _addComment([Map<String, dynamic>? updatedComment]) async {
     if (_commentController.text.isNotEmpty) {
-      final comment = updatedComment ?? {
-        "content_title": widget.childContent.title,
-        "user_id": creatorId,
-        "user_name": creatorName,
-        "comment": _commentController.text,
-        "level_id": widget.childContent.classes?[0].id,
-        "course_id": 25,
-        "course_name": "widget.courseName",
-        "term": academicTerm,
-        if (_isEditing == true && _editingComment != null)
-          "content_id": widget.childContent.id.toString() , // Use the ID of the comment being edited
-      };
+      final comment = updatedComment ??
+          {
+            "content_title": widget.childContent.title,
+            "user_id": creatorId,
+            "user_name": creatorName,
+            "comment": _commentController.text,
+            "level_id": widget.childContent.classes?[0].id,
+            "course_id": 25,
+            "course_name": "widget.courseName",
+            "term": academicTerm,
+            if (_isEditing == true && _editingComment != null)
+              "content_id": widget.childContent.id
+                  .toString(), // Use the ID of the comment being edited
+          };
 
       try {
-        print(" See o seee creator id ${creatorId}");
+        print(" See o seee creator id $creatorId");
 //
-        final commentProvider = Provider.of<StudentCommentProvider>(context, listen: false);
+        final commentProvider =
+            Provider.of<StudentCommentProvider>(context, listen: false);
         final contentId = _editingComment?.id;
         if (_isEditing) {
           comment['content_id'];
           print("printed Comment $comment");
-          await commentProvider.UpdateComment(comment,contentId.toString());
-          CustomToaster.toastSuccess(context, 'Success', 'Comment updated successfully');
+          await commentProvider.UpdateComment(comment, contentId.toString());
+          CustomToaster.toastSuccess(
+              context, 'Success', 'Comment updated successfully');
         } else {
-
-          await commentProvider.createComment(comment, widget.childContent.id.toString());
-          CustomToaster.toastSuccess(context, 'Success', 'Comment added successfully');
+          await commentProvider.createComment(
+              comment, widget.childContent.id.toString());
+          CustomToaster.toastSuccess(
+              context, 'Success', 'Comment added successfully');
         }
 
         await commentProvider.fetchComments(widget.childContent.id.toString());
@@ -432,22 +437,26 @@ class _AssignmentDetailsScreenState extends State<AssignmentDetailsScreen> {
           }
         });
       } catch (e) {
-        CustomToaster.toastError(context, 'Error', _isEditing ? 'Failed to update comment' : 'Failed to add comment');
+        CustomToaster.toastError(context, 'Error',
+            _isEditing ? 'Failed to update comment' : 'Failed to add comment');
       }
     }
   }
+
   Widget _buildDivider() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0),
       child: Divider(color: Colors.grey.withOpacity(0.5)),
     );
   }
+
   Widget _buildSpecDivider() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0),
-      child: Divider(  color: AppColors.paymentTxtColor1, thickness: 2.0),
+      child: Divider(color: AppColors.paymentTxtColor1, thickness: 2.0),
     );
   }
+
   Widget _buildDescription() {
     return Padding(
       padding: const EdgeInsets.all(16.0),
@@ -461,7 +470,8 @@ class _AssignmentDetailsScreenState extends State<AssignmentDetailsScreen> {
           Expanded(
             child: Text(
               widget.childContent.description!,
-              style: AppTextStyles.normal500(fontSize: 16.0, color: Colors.black),
+              style:
+                  AppTextStyles.normal500(fontSize: 16.0, color: Colors.black),
             ),
           ),
         ],
@@ -479,7 +489,6 @@ class _AssignmentDetailsScreenState extends State<AssignmentDetailsScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-
           const SizedBox(height: 12),
           GridView.builder(
             shrinkWrap: true,
@@ -514,7 +523,7 @@ class _AssignmentDetailsScreenState extends State<AssignmentDetailsScreen> {
         } else {
           // For all other files including PDF, open in external app
           //fileUrl
-          if(fileType == 'pdf'){
+          if (fileType == 'pdf') {
             Navigator.push(
               context,
               MaterialPageRoute(
@@ -522,9 +531,11 @@ class _AssignmentDetailsScreenState extends State<AssignmentDetailsScreen> {
                   url: fileUrl,
                 ),
               ),
-            );;
-          } else {_launchUrl(fileName);
-          }}
+            );
+          } else {
+            _launchUrl(fileName);
+          }
+        }
       },
       child: Container(
         decoration: BoxDecoration(
@@ -563,7 +574,8 @@ class _AssignmentDetailsScreenState extends State<AssignmentDetailsScreen> {
               Expanded(
                 flex: 1,
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 6.0),
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 8.0, vertical: 6.0),
                   child: Text(
                     fileName.length > 17 ? fileName.substring(0, 17) : fileName,
                     style: AppTextStyles.normal500(
@@ -576,7 +588,6 @@ class _AssignmentDetailsScreenState extends State<AssignmentDetailsScreen> {
                   ),
                 ),
               ),
-
           ],
         ),
       ),
@@ -612,21 +623,22 @@ class _AssignmentDetailsScreenState extends State<AssignmentDetailsScreen> {
     }
   }
 
-
   String _getFileType(String? fileName) {
     if (fileName == null) return 'unknown';
     final extension = fileName.toLowerCase().split('.').last;
     if (['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'].contains(extension)) {
       return 'image';
     }
-    if (['mp4', 'avi', 'mov', 'wmv', 'flv', 'webm', 'm4v', '3gp'].contains(extension)) {
+    if (['mp4', 'avi', 'mov', 'wmv', 'flv', 'webm', 'm4v', '3gp']
+        .contains(extension)) {
       return 'video';
     }
-    if (['pdf','doc', 'docx', 'txt', 'rtf'].contains(extension)) {
+    if (['pdf', 'doc', 'docx', 'txt', 'rtf'].contains(extension)) {
       return 'pdf';
     }
 
-    if (['.com', '.org', '.net', '.edu', 'http', 'https'].contains(extension) || fileName.startsWith('http')) {
+    if (['.com', '.org', '.net', '.edu', 'http', 'https'].contains(extension) ||
+        fileName.startsWith('http')) {
       return 'url';
     }
     if (['xls', 'xlsx', 'csv'].contains(extension)) {
@@ -641,7 +653,8 @@ class _AssignmentDetailsScreenState extends State<AssignmentDetailsScreen> {
     return 'unknown';
   }
 
-  Widget _buildPreviewContent(String fileType, String fileUrl, String fileName) {
+  Widget _buildPreviewContent(
+      String fileType, String fileUrl, String fileName) {
     switch (fileType) {
       case 'image':
         return ClipRRect(
@@ -662,7 +675,8 @@ class _AssignmentDetailsScreenState extends State<AssignmentDetailsScreen> {
               return Center(
                 child: CircularProgressIndicator(
                   value: loadingProgress.expectedTotalBytes != null
-                      ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
+                      ? loadingProgress.cumulativeBytesLoaded /
+                          loadingProgress.expectedTotalBytes!
                       : null,
                 ),
               );
@@ -670,7 +684,7 @@ class _AssignmentDetailsScreenState extends State<AssignmentDetailsScreen> {
           ),
         );
       case 'video':
-        return  VideoThumbnailWidget(url: fileUrl);
+        return VideoThumbnailWidget(url: fileUrl);
       case 'pdf':
         return Stack(
           children: [
@@ -690,7 +704,6 @@ class _AssignmentDetailsScreenState extends State<AssignmentDetailsScreen> {
                 ),
               ),
             ),
-
           ],
         );
       case 'url':
@@ -711,9 +724,6 @@ class _AssignmentDetailsScreenState extends State<AssignmentDetailsScreen> {
         );
     }
   }
-
-
-
 
   IconData _getFileIcon(String fileType) {
     switch (fileType) {
@@ -758,18 +768,17 @@ class _AssignmentDetailsScreenState extends State<AssignmentDetailsScreen> {
   }
 }
 
-
 class FullScreenMediaViewer extends StatefulWidget {
   final String url;
   final String type;
   final String fileName;
 
   const FullScreenMediaViewer({
-    Key? key,
+    super.key,
     required this.url,
     required this.type,
     required this.fileName,
-  }) : super(key: key);
+  });
 
   @override
   State<FullScreenMediaViewer> createState() => _FullScreenMediaViewerState();
@@ -797,7 +806,8 @@ class _FullScreenMediaViewerState extends State<FullScreenMediaViewer> {
       });
       _hideControlsAfterDelay();
       _videoController!.addListener(() {
-        if (_videoController!.value.position == _videoController!.value.duration) {
+        if (_videoController!.value.position ==
+            _videoController!.value.duration) {
           setState(() {
             _showControls = true;
           });
@@ -810,7 +820,9 @@ class _FullScreenMediaViewerState extends State<FullScreenMediaViewer> {
 
   void _hideControlsAfterDelay() {
     Future.delayed(const Duration(seconds: 3), () {
-      if (mounted && _videoController != null && _videoController!.value.isPlaying) {
+      if (mounted &&
+          _videoController != null &&
+          _videoController!.value.isPlaying) {
         setState(() {
           _showControls = false;
         });
@@ -822,7 +834,9 @@ class _FullScreenMediaViewerState extends State<FullScreenMediaViewer> {
     setState(() {
       _showControls = !_showControls;
     });
-    if (_showControls && _videoController != null && _videoController!.value.isPlaying) {
+    if (_showControls &&
+        _videoController != null &&
+        _videoController!.value.isPlaying) {
       _hideControlsAfterDelay();
     }
   }
@@ -855,7 +869,8 @@ class _FullScreenMediaViewerState extends State<FullScreenMediaViewer> {
             onPressed: () async {
               try {
                 final Uri uri = Uri.parse(widget.url);
-                if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
+                if (!await launchUrl(uri,
+                    mode: LaunchMode.externalApplication)) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(content: Text('Could not download file')),
                   );
@@ -908,7 +923,8 @@ class _FullScreenMediaViewerState extends State<FullScreenMediaViewer> {
               return Center(
                 child: CircularProgressIndicator(
                   value: loadingProgress.expectedTotalBytes != null
-                      ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
+                      ? loadingProgress.cumulativeBytesLoaded /
+                          loadingProgress.expectedTotalBytes!
                       : null,
                   color: Colors.white,
                 ),
@@ -952,7 +968,9 @@ class _FullScreenMediaViewerState extends State<FullScreenMediaViewer> {
                       ),
                       padding: const EdgeInsets.all(16),
                       child: Icon(
-                        _videoController!.value.isPlaying ? Icons.pause : Icons.play_arrow,
+                        _videoController!.value.isPlaying
+                            ? Icons.pause
+                            : Icons.play_arrow,
                         color: Colors.white,
                         size: 50,
                       ),
@@ -1047,7 +1065,7 @@ class _VideoThumbnailWidgetState extends State<VideoThumbnailWidget> {
           borderRadius: BorderRadius.circular(8),
           child: Image.memory(
             _thumbnail!,
-            width:double.infinity,
+            width: double.infinity,
             height: 140,
             fit: BoxFit.cover,
           ),

@@ -61,16 +61,15 @@ class Invoice {
 
   factory Invoice.fromJson(Map<String, dynamic> json) {
     return Invoice(
-      id: json['id'],
-      details: (json['invoice_details'] as List?)
-              ?.where((item) => item != null)
-              .map((d) => InvoiceDetail.fromJson(d as Map<String, dynamic>))
-              .toList() ??
-          [],
-      amount: double.tryParse(json['amount']?.toString() ?? '') ?? 0.0,
-      year: _formatSchoolSession(json['year']?.toString()),
-      term: json['term']
-    );
+        id: json['id'],
+        details: (json['invoice_details'] as List?)
+                ?.where((item) => item != null)
+                .map((d) => InvoiceDetail.fromJson(d as Map<String, dynamic>))
+                .toList() ??
+            [],
+        amount: double.tryParse(json['amount']?.toString() ?? '') ?? 0.0,
+        year: _formatSchoolSession(json['year']?.toString()),
+        term: json['term']);
   }
 
   String get termName {
@@ -110,13 +109,13 @@ class InvoiceDetail {
     required this.feeAmount,
   });
 
-factory InvoiceDetail.fromJson(Map<String, dynamic> json) {
-  return InvoiceDetail(
-    feeId: json['fee_id'],
-    feeName: json['fee_name']?.toString() ?? '',
-    feeAmount: double.tryParse(json['amount']?.toString() ?? '') ?? 0.0, 
-  );
-}
+  factory InvoiceDetail.fromJson(Map<String, dynamic> json) {
+    return InvoiceDetail(
+      feeId: json['fee_id'],
+      feeName: json['fee_name']?.toString() ?? '',
+      feeAmount: double.tryParse(json['amount']?.toString() ?? '') ?? 0.0,
+    );
+  }
 }
 
 class Payment {
@@ -156,9 +155,8 @@ class Payment {
       description: json['description']?.toString() ?? '',
       name: json['name']?.toString() ?? '',
       amount: double.tryParse(json['amount']?.toString() ?? '') ?? 0.0,
-      date: json['date'] != null
-          ? DateTime.parse(json['date'])
-          : DateTime.now(),
+      date:
+          json['date'] != null ? DateTime.parse(json['date']) : DateTime.now(),
       year: _formatSchoolSession(json['year']?.toString()),
       term: json['term'],
       levelId: json['level_id'],

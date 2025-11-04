@@ -12,7 +12,6 @@ import 'package:linkschool/modules/services/admin/payment/payment_service.dart';
 import 'package:linkschool/modules/services/api/api_service.dart';
 import 'package:linkschool/modules/services/api/service_locator.dart';
 
-
 class TransactionsView extends StatefulWidget {
   final Map<String, dynamic>? initialParams;
 
@@ -35,7 +34,8 @@ class _TransactionsViewState extends State<TransactionsView> {
     super.initState();
     final apiService = locator<ApiService>();
     _paymentService = PaymentService(apiService);
-    _filterParams = Map.from(widget.initialParams ?? {'report_type': 'session'});
+    _filterParams =
+        Map.from(widget.initialParams ?? {'report_type': 'session'});
     _filterParams.remove('group_by'); // To get individual transactions
     _loadData();
   }
@@ -53,7 +53,8 @@ class _TransactionsViewState extends State<TransactionsView> {
       });
     } catch (e) {
       setState(() => _isLoading = false);
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error loading transactions: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error loading transactions: $e')));
     }
   }
 
@@ -75,7 +76,8 @@ class _TransactionsViewState extends State<TransactionsView> {
                       padding: const EdgeInsets.symmetric(vertical: 16),
                       child: Row(
                         children: [
-                          SvgPicture.asset('assets/icons/profile/payment_icon.svg'),
+                          SvgPicture.asset(
+                              'assets/icons/profile/payment_icon.svg'),
                           const SizedBox(width: 12),
                           Expanded(
                             child: Column(
@@ -83,7 +85,9 @@ class _TransactionsViewState extends State<TransactionsView> {
                               children: [
                                 Text(
                                   trans.name,
-                                  style: AppTextStyles.normal600(fontSize: 16, color: AppColors.backgroundDark),
+                                  style: AppTextStyles.normal600(
+                                      fontSize: 16,
+                                      color: AppColors.backgroundDark),
                                 ),
                                 Text(
                                   trans.date ?? '',
@@ -97,11 +101,14 @@ class _TransactionsViewState extends State<TransactionsView> {
                           ),
                           Row(
                             children: [
-                              const NairaSvgIcon(color: AppColors.backgroundDark),
+                              const NairaSvgIcon(
+                                  color: AppColors.backgroundDark),
                               const SizedBox(width: 2),
                               Text(
                                 trans.amount!.toStringAsFixed(2),
-                                style: AppTextStyles.normal600(fontSize: 16, color: AppColors.backgroundDark),
+                                style: AppTextStyles.normal600(
+                                    fontSize: 16,
+                                    color: AppColors.backgroundDark),
                               ),
                             ],
                           ),
@@ -113,6 +120,3 @@ class _TransactionsViewState extends State<TransactionsView> {
     );
   }
 }
-
-
-

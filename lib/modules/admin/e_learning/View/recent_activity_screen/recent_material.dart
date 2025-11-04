@@ -6,25 +6,22 @@ import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
 import 'package:intl/intl.dart';
 import 'package:linkschool/modules/admin/e_learning/add_material_screen.dart';
-import 'package:linkschool/modules/admin/e_learning/admin_assignment_screen.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
-import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/custom_toaster.dart';
 import 'package:linkschool/modules/common/pdf_reader.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/model/e-learning/comment_model.dart';
-import 'package:linkschool/modules/model/e-learning/material_model.dart' as custom;
+import 'package:linkschool/modules/model/e-learning/material_model.dart'
+    as custom;
 import 'package:linkschool/modules/model/e-learning/single_content_model.dart';
 import 'package:linkschool/modules/providers/admin/e_learning/comment_provider.dart';
 import 'package:linkschool/modules/providers/admin/e_learning/delete_sylabus_content.dart';
 import 'package:linkschool/modules/providers/admin/e_learning/single_content_provider.dart';
 import 'package:linkschool/modules/services/api/service_locator.dart';
-import 'package:linkschool/modules/staff/e_learning/sub_screens/staff_add_material_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:video_player/video_player.dart';
-import 'package:http/http.dart' as http;
 import 'package:video_thumbnail/video_thumbnail.dart';
 import '../../../../common/widgets/portal/attachmentItem.dart';
 
@@ -105,41 +102,42 @@ class _RecentMaterialState extends State<RecentMaterial>
   }
 
   Future<void> _fetchMaterialData() async {
-  if (widget.itemId == null) {
-    setState(() {
-      isLoading = false;
-      errorMessage = 'No material ID provided';
-    });
-    print('Error: No itemId provided');
-    return;
-  }
-
-  try {
-    final singleContentProvider =
-        Provider.of<SingleContentProvider>(context, listen: false);
-    print('Fetching material for ID: ${widget.itemId}');
-    final content = await singleContentProvider.fetchMaterial(widget.itemId!);
-    if (content == null) {
+    if (widget.itemId == null) {
       setState(() {
         isLoading = false;
-        errorMessage = singleContentProvider.errorMessage ?? 'Failed to load material';
+        errorMessage = 'No material ID provided';
       });
-      print('Error: ${singleContentProvider.errorMessage}');
+      print('Error: No itemId provided');
       return;
     }
-    setState(() {
-      materialData = content;
-      isLoading = false;
-    });
-    print('Fetched material: ${materialData?.title}');
-  } catch (e) {
-    setState(() {
-      isLoading = false;
-      errorMessage = 'Error fetching material: $e';
-    });
-    print('Error fetching material: $e');
+
+    try {
+      final singleContentProvider =
+          Provider.of<SingleContentProvider>(context, listen: false);
+      print('Fetching material for ID: ${widget.itemId}');
+      final content = await singleContentProvider.fetchMaterial(widget.itemId!);
+      if (content == null) {
+        setState(() {
+          isLoading = false;
+          errorMessage =
+              singleContentProvider.errorMessage ?? 'Failed to load material';
+        });
+        print('Error: ${singleContentProvider.errorMessage}');
+        return;
+      }
+      setState(() {
+        materialData = content;
+        isLoading = false;
+      });
+      print('Fetched material: ${materialData?.title}');
+    } catch (e) {
+      setState(() {
+        isLoading = false;
+        errorMessage = 'Error fetching material: $e';
+      });
+      print('Error fetching material: $e');
+    }
   }
-}
 
   @override
   void dispose() {
@@ -153,7 +151,8 @@ class _RecentMaterialState extends State<RecentMaterial>
   Future<void> _loadUserData() async {
     try {
       final userBox = Hive.box('userData');
-      final storedUserData = userBox.get('userData') ?? userBox.get('loginResponse');
+      final storedUserData =
+          userBox.get('userData') ?? userBox.get('loginResponse');
       if (storedUserData != null) {
         final processedData = storedUserData is String
             ? json.decode(storedUserData)
@@ -216,11 +215,11 @@ class _RecentMaterialState extends State<RecentMaterial>
             ],
           ),
         ),
-
         actions: [
           if (!isLoading && errorMessage == null)
             PopupMenuButton<String>(
-              icon: const Icon(Icons.more_vert, color: AppColors.paymentTxtColor1),
+              icon: const Icon(Icons.more_vert,
+                  color: AppColors.paymentTxtColor1),
               onSelected: (String result) {
                 switch (result) {
                   case 'edit':
@@ -228,11 +227,10 @@ class _RecentMaterialState extends State<RecentMaterial>
                       context,
                       MaterialPageRoute(
                         builder: (context) => AddMaterialScreen(
-                         onSave: (data) {
-  print(data);
-},
-
-                           editMode: true,
+                          onSave: (data) {
+                            print(data);
+                          },
+                          editMode: true,
                           syllabusId: widget.syllabusId,
                           courseId: widget.courseId,
                           levelId: widget.levelId,
@@ -241,30 +239,30 @@ class _RecentMaterialState extends State<RecentMaterial>
                           itemId: widget.itemId,
                           materialToEdit: custom.Material(
                             marks: '0',
-
                             id: materialData?.id,
                             title: materialData?.title ?? '',
                             description: materialData?.description ?? '',
                             startDate: materialData?.startDate != null
                                 ? DateTime.parse(materialData!.startDate!)
-                                : null ?? DateTime.now(),
+                                : DateTime.now(),
                             endDate: materialData?.endDate != null
                                 ? DateTime.parse(materialData!.endDate!)
-                                : null ?? DateTime.now(),
+                                : DateTime.now(),
                             topic: materialData?.topic ?? 'No Topic',
-                            duration: Duration(seconds: int.tryParse(materialData?.duration.toString() ?? '') ?? 0),
-
+                            duration: Duration(
+                                seconds: int.tryParse(
+                                        materialData?.duration.toString() ??
+                                            '') ??
+                                    0),
                             topicId: materialData?.topicId.toString(),
                             selectedClass: widget.classId ?? '',
-                           attachments:(materialData?.contentFiles ?? [])
-    .map((file) => AttachmentItem(
-          fileName: file.fileName,
-          iconPath: '',
-          fileContent: file.file,
-        ))
-    .toList(),
-                            
-
+                            attachments: (materialData?.contentFiles ?? [])
+                                .map((file) => AttachmentItem(
+                                      fileName: file.fileName,
+                                      iconPath: '',
+                                      fileContent: file.file,
+                                    ))
+                                .toList(),
                           ),
                           syllabusClasses: widget.syllabusClasses,
                         ),
@@ -276,7 +274,8 @@ class _RecentMaterialState extends State<RecentMaterial>
                       context: context,
                       builder: (context) => AlertDialog(
                         title: const Text('Confirm Deletion'),
-                        content: const Text('Are you sure you want to delete this material?'),
+                        content: const Text(
+                            'Are you sure you want to delete this material?'),
                         actions: [
                           TextButton(
                             onPressed: () => Navigator.of(context).pop(),
@@ -287,7 +286,8 @@ class _RecentMaterialState extends State<RecentMaterial>
                               Navigator.of(context).pop();
                               deleteMaterial(widget.itemId);
                             },
-                            child: const Text('Delete', style: TextStyle(color: Colors.red)),
+                            child: const Text('Delete',
+                                style: TextStyle(color: Colors.red)),
                           ),
                         ],
                       ),
@@ -311,7 +311,9 @@ class _RecentMaterialState extends State<RecentMaterial>
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
           : errorMessage != null
-              ? Center(child: Text(errorMessage!, style: const TextStyle(color: Colors.red)))
+              ? Center(
+                  child: Text(errorMessage!,
+                      style: const TextStyle(color: Colors.red)))
               : Container(
                   color: Colors.white,
                   child: _buildInstructionsTab(),
@@ -334,7 +336,8 @@ class _RecentMaterialState extends State<RecentMaterial>
                             onTap: () {
                               setState(() {
                                 _isAddingComment = true;
-                                WidgetsBinding.instance.addPostFrameCallback((_) {
+                                WidgetsBinding.instance
+                                    .addPostFrameCallback((_) {
                                   _commentFocusNode.requestFocus();
                                 });
                               });
@@ -344,7 +347,8 @@ class _RecentMaterialState extends State<RecentMaterial>
                               child: Text(
                                 'Add class comment',
                                 style: AppTextStyles.normal500(
-                                    fontSize: 16.0, color: AppColors.paymentTxtColor1),
+                                    fontSize: 16.0,
+                                    color: AppColors.paymentTxtColor1),
                               ),
                             ),
                           ),
@@ -358,11 +362,13 @@ class _RecentMaterialState extends State<RecentMaterial>
     try {
       final provider = locator<DeleteSyllabusProvider>();
       await provider.deleteMaterial(id.toString());
-      CustomToaster.toastSuccess(context, 'Success', 'Material deleted successfully');
+      CustomToaster.toastSuccess(
+          context, 'Success', 'Material deleted successfully');
       Navigator.of(context).pop();
     } catch (e) {
       print('Error deleting material: $e');
-      CustomToaster.toastError(context, 'Error', 'Failed to delete material: $e');
+      CustomToaster.toastError(
+          context, 'Error', 'Failed to delete material: $e');
     }
   }
 
@@ -449,7 +455,8 @@ class _RecentMaterialState extends State<RecentMaterial>
           Expanded(
             child: Text(
               materialData!.description ?? 'No Description',
-              style: AppTextStyles.normal500(fontSize: 16.0, color: Colors.black),
+              style:
+                  AppTextStyles.normal500(fontSize: 16.0, color: Colors.black),
             ),
           ),
         ],
@@ -461,11 +468,13 @@ class _RecentMaterialState extends State<RecentMaterial>
     final attachments = (materialData!.contentFiles ?? []).map((file) {
       return AttachmentItem(
         fileName: file.fileName ?? 'Unknown File',
-        iconPath: (file.type == 'image' || file.type == 'photo' || file.type == 'video')
+        iconPath: (file.type == 'image' ||
+                file.type == 'photo' ||
+                file.type == 'video')
             ? 'assets/icons/e_learning/material.svg'
             : 'assets/icons/e_learning/link.svg',
-        fileContent: file.file?.isNotEmpty ?? false
-            ? file.file!
+        fileContent: file.file.isNotEmpty ?? false
+            ? file.file
             : 'https://linkskoo.net/${file.fileName ?? 'unknown'}',
       );
     }).toList();
@@ -509,7 +518,8 @@ class _RecentMaterialState extends State<RecentMaterial>
     if (['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'].contains(extension)) {
       return 'image';
     }
-    if (['mp4', 'avi', 'mov', 'wmv', 'flv', 'webm', 'm4v', '3gp'].contains(extension)) {
+    if (['mp4', 'avi', 'mov', 'wmv', 'flv', 'webm', 'm4v', '3gp']
+        .contains(extension)) {
       return 'video';
     }
     if (['pdf', 'doc', 'docx', 'txt', 'rtf'].contains(extension)) {
@@ -660,7 +670,8 @@ class _RecentMaterialState extends State<RecentMaterial>
               Expanded(
                 flex: 1,
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 6.0),
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 8.0, vertical: 6.0),
                   child: Text(
                     fileName.length > 17 ? fileName.substring(0, 17) : fileName,
                     style: AppTextStyles.normal500(
@@ -679,7 +690,8 @@ class _RecentMaterialState extends State<RecentMaterial>
     );
   }
 
-  Widget _buildPreviewContent(String fileType, String fileUrl, String fileName) {
+  Widget _buildPreviewContent(
+      String fileType, String fileUrl, String fileName) {
     switch (fileType) {
       case 'image':
         return ClipRRect(
@@ -728,7 +740,8 @@ class _RecentMaterialState extends State<RecentMaterial>
               children: [
                 Image.file(File(snapshot.data!), fit: BoxFit.cover),
                 const Center(
-                  child: Icon(Icons.play_circle_fill, size: 60, color: Colors.white),
+                  child: Icon(Icons.play_circle_fill,
+                      size: 60, color: Colors.white),
                 ),
               ],
             );
@@ -810,14 +823,16 @@ class _RecentMaterialState extends State<RecentMaterial>
                 padding: const EdgeInsets.all(16.0),
                 child: Text(
                   'Class comments',
-                  style: AppTextStyles.normal600(fontSize: 18.0, color: Colors.black),
+                  style: AppTextStyles.normal600(
+                      fontSize: 18.0, color: Colors.black),
                 ),
               ),
               ListView.builder(
                 controller: _scrollController,
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
-                itemCount: commentList.length + (commentProvider.isLoading ? 1 : 0),
+                itemCount:
+                    commentList.length + (commentProvider.isLoading ? 1 : 0),
                 itemBuilder: (context, index) {
                   if (index == commentList.length) {
                     return const Center(child: CircularProgressIndicator());
@@ -893,26 +908,27 @@ class _RecentMaterialState extends State<RecentMaterial>
                       ),
                     ),
                     if (comment.userId == creatorId)
-                    PopupMenuButton<String>(
-                      icon: const Icon(Icons.more_vert, size: 20, color: AppColors.primaryLight),
-                      onSelected: (value) {
-                        if (value == 'edit') {
-                          _editComment(comment);
-                        } else if (value == 'delete') {
-                          _deleteComment(comment);
-                        }
-                      },
-                      itemBuilder: (context) => [
-                        const PopupMenuItem(
-                          value: 'edit',
-                          child: Text('Edit'),
-                        ),
-                        const PopupMenuItem(
-                          value: 'delete',
-                          child: Text('Delete'),
-                        ),
-                      ],
-                    ),
+                      PopupMenuButton<String>(
+                        icon: const Icon(Icons.more_vert,
+                            size: 20, color: AppColors.primaryLight),
+                        onSelected: (value) {
+                          if (value == 'edit') {
+                            _editComment(comment);
+                          } else if (value == 'delete') {
+                            _deleteComment(comment);
+                          }
+                        },
+                        itemBuilder: (context) => [
+                          const PopupMenuItem(
+                            value: 'edit',
+                            child: Text('Edit'),
+                          ),
+                          const PopupMenuItem(
+                            value: 'delete',
+                            child: Text('Delete'),
+                          ),
+                        ],
+                      ),
                   ],
                 ),
                 Text(
@@ -960,29 +976,34 @@ class _RecentMaterialState extends State<RecentMaterial>
 
   void _addComment([Map<String, dynamic>? updatedComment]) async {
     if (_commentController.text.isNotEmpty) {
-      final comment = updatedComment ?? {
-        "content_title": materialData!.title ?? 'No Title',
-        "user_id": creatorId,
-        "user_name": creatorName,
-        "comment": _commentController.text,
-        "level_id": widget.levelId,
-        "course_id": widget.courseId,
-        "course_name": widget.courseName,
-        "term": academicTerm,
-        if (_isEditing == true && _editingComment != null)
-          "content_id": widget.itemId.toString(),
-      };
+      final comment = updatedComment ??
+          {
+            "content_title": materialData!.title ?? 'No Title',
+            "user_id": creatorId,
+            "user_name": creatorName,
+            "comment": _commentController.text,
+            "level_id": widget.levelId,
+            "course_id": widget.courseId,
+            "course_name": widget.courseName,
+            "term": academicTerm,
+            if (_isEditing == true && _editingComment != null)
+              "content_id": widget.itemId.toString(),
+          };
       try {
-        final commentProvider = Provider.of<CommentProvider>(context, listen: false);
+        final commentProvider =
+            Provider.of<CommentProvider>(context, listen: false);
         final contentId = _editingComment?.id;
         if (_isEditing) {
           comment['content_id'];
           print("printed Comment $comment");
           await commentProvider.UpdateComment(comment, contentId.toString());
-          CustomToaster.toastSuccess(context, 'Success', 'Comment updated successfully');
+          CustomToaster.toastSuccess(
+              context, 'Success', 'Comment updated successfully');
         } else {
-          await commentProvider.createComment(comment, widget.itemId.toString());
-          CustomToaster.toastSuccess(context, 'Success', 'Comment added successfully');
+          await commentProvider.createComment(
+              comment, widget.itemId.toString());
+          CustomToaster.toastSuccess(
+              context, 'Success', 'Comment added successfully');
         }
         await commentProvider.fetchComments(widget.itemId.toString());
         setState(() {
@@ -1005,18 +1026,21 @@ class _RecentMaterialState extends State<RecentMaterial>
           }
         });
       } catch (e) {
-        CustomToaster.toastError(context, 'Error', _isEditing ? 'Failed to update comment' : 'Failed to add comment');
+        CustomToaster.toastError(context, 'Error',
+            _isEditing ? 'Failed to update comment' : 'Failed to add comment');
       }
     }
   }
 
   void _deleteComment(Comment comment) async {
-    final commentProvider = Provider.of<CommentProvider>(context, listen: false);
+    final commentProvider =
+        Provider.of<CommentProvider>(context, listen: false);
     print('Setting up delete for comment ID: ${comment.id}');
     final commentId = comment.id.toString();
     try {
       await commentProvider.DeleteComment(commentId);
-      CustomToaster.toastSuccess(context, 'Success', 'Comment deleted successfully');
+      CustomToaster.toastSuccess(
+          context, 'Success', 'Comment deleted successfully');
     } catch (e) {
       CustomToaster.toastError(context, 'Error', 'Failed to delete comment');
     }
@@ -1024,7 +1048,8 @@ class _RecentMaterialState extends State<RecentMaterial>
 
   void _editComment(Comment comment) {
     if (comment.text.isEmpty) {
-      CustomToaster.toastError(context, 'Error', 'Comment text cannot be empty');
+      CustomToaster.toastError(
+          context, 'Error', 'Comment text cannot be empty');
       return;
     }
     print('Setting up edit for comment ID: ${comment.id}');
@@ -1041,13 +1066,15 @@ class _RecentMaterialState extends State<RecentMaterial>
       "term": academicTerm,
       "comment_id": comment.id,
     };
-    print('Editing comment: ${updatedComment['comment']} with ID: ${comment.id}');
+    print(
+        'Editing comment: ${updatedComment['comment']} with ID: ${comment.id}');
     setState(() {
       _isAddingComment = true;
       _isEditing = true;
       _commentFocusNode.requestFocus();
     });
-    print('Edit setup complete. _isEditing: $_isEditing, _editingComment.id: ${_editingComment?.id}');
+    print(
+        'Edit setup complete. _isEditing: $_isEditing, _editingComment.id: ${_editingComment?.id}');
   }
 }
 
@@ -1057,11 +1084,11 @@ class FullScreenMediaViewer extends StatefulWidget {
   final String fileName;
 
   const FullScreenMediaViewer({
-    Key? key,
+    super.key,
     required this.url,
     required this.type,
     required this.fileName,
-  }) : super(key: key);
+  });
 
   @override
   State<FullScreenMediaViewer> createState() => _FullScreenMediaViewerState();
@@ -1122,7 +1149,8 @@ class _FullScreenMediaViewerState extends State<FullScreenMediaViewer> {
       body: Center(
         child: widget.type == 'video'
             ? (_chewieController != null &&
-                    _chewieController!.videoPlayerController.value.isInitialized)
+                    _chewieController!
+                        .videoPlayerController.value.isInitialized)
                 ? Chewie(controller: _chewieController!)
                 : const CircularProgressIndicator(color: Colors.white)
             : Image.network(

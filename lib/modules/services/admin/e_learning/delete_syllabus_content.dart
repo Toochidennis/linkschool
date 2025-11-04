@@ -41,6 +41,7 @@ class DeleteSyllabusService {
       throw Exception("Failed to Delete Assignment Content: $e");
     }
   }
+
   Future<void> DeleteQuiz(String id) async {
     final userBox = Hive.box('userData');
     final loginData = userBox.get('userData') ?? userBox.get('loginResponse');
@@ -65,8 +66,7 @@ class DeleteSyllabusService {
       if (!response.success) {
         print("Failed to delete Quiz content");
         print("Error: ${response.message ?? 'No error message provided'}");
-        throw Exception(
-            "Failed to Delete  Quiz  Content: ${response.message}");
+        throw Exception("Failed to Delete  Quiz  Content: ${response.message}");
       } else {
         print(' Quiz  content deleted successfully.');
         print('Status Code: ${response.statusCode}');
@@ -77,6 +77,7 @@ class DeleteSyllabusService {
       throw Exception("Failed to Delete  Quiz  Content: $e");
     }
   }
+
   Future<void> DeleteMaterial(String id) async {
     final userBox = Hive.box('userData');
     final loginData = userBox.get('userData') ?? userBox.get('loginResponse');
@@ -113,6 +114,7 @@ class DeleteSyllabusService {
       throw Exception("Failed to Delete material Content: $e");
     }
   }
+
   Future<void> DeleteTopic(String id) async {
     final userBox = Hive.box('userData');
     final loginData = userBox.get('userData') ?? userBox.get('loginResponse');
@@ -137,8 +139,7 @@ class DeleteSyllabusService {
       if (!response.success) {
         print("Failed to delete topic content");
         print("Error: ${response.message ?? 'No error message provided'}");
-        throw Exception(
-            "Failed to Delete topic Content: ${response.message}");
+        throw Exception("Failed to Delete topic Content: ${response.message}");
       } else {
         print('topic content deleted successfully.');
         print('Status Code: ${response.statusCode}');
@@ -150,7 +151,7 @@ class DeleteSyllabusService {
     }
   }
 
-   Future<void> deletesyllabus(int syllabusId) async {
+  Future<void> deletesyllabus(int syllabusId) async {
     final userBox = Hive.box('userData');
     final loginData = userBox.get('userData') ?? userBox.get('loginResponse');
     final dbName = userBox.get('_db') ?? 'aalmgzmy_linkskoo_practice';
@@ -174,6 +175,4 @@ class DeleteSyllabusService {
       print('Syllabus deleted: ${response.message}');
     }
   }
-
-  
 }

@@ -45,16 +45,13 @@ class SubjectService {
           if (data is List) {
             return data.map((e) => SubjectModel2.fromJson(e)).toList();
           } else if (data is Map<String, dynamic>) {
-            return data.values
-                .map((e) => SubjectModel2.fromJson(e))
-                .toList();
+            return data.values.map((e) => SubjectModel2.fromJson(e)).toList();
           } else {
             throw Exception(
                 'Unexpected data format inside response: ${data.runtimeType}');
           }
         } else {
-          throw Exception(
-              'Unexpected response format: ${decoded.runtimeType}');
+          throw Exception('Unexpected response format: ${decoded.runtimeType}');
         }
       } else {
         debugPrint('🚨 API Error: ${response.statusCode} - ${response.body}');

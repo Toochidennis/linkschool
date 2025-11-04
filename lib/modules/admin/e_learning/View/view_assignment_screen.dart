@@ -8,7 +8,6 @@ import 'package:linkschool/modules/model/e-learning/comment_model.dart';
 
 import '../../../common/widgets/portal/attachmentItem.dart';
 
-
 class ViewAssignmentScreen extends StatefulWidget {
   final Assignment assignment;
 
@@ -374,5 +373,3 @@ class _ViewAssignmentScreenState extends State<ViewAssignmentScreen>
     }
   }
 }
-
-

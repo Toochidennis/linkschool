@@ -76,6 +76,7 @@ dependencies:
   flutter_charts: ^0.5.2
   open_filex: ^4.7.0
 
+  http: any
 dev_dependencies:
   flutter_test:
     sdk: flutter

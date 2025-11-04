@@ -1,4 +1,3 @@
-import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
 import 'package:linkschool/modules/model/admin/home/add_course_model.dart';
 import 'package:linkschool/modules/services/api/api_service.dart';
@@ -43,7 +42,8 @@ class CourseService {
     }
   }
 
-  Future<void> updateCourse(String courseId, Map<String, dynamic> updatedCourse) async {
+  Future<void> updateCourse(
+      String courseId, Map<String, dynamic> updatedCourse) async {
     final userBox = Hive.box('userData');
     final loginData = userBox.get('userData') ?? userBox.get('loginResponse');
     final dbName = userBox.get('_db') ?? 'aalmgzmy_linkskoo_practice';
@@ -126,7 +126,9 @@ class CourseService {
       final data = response.rawData?['response'];
       if (data is List) {
         print('Courses fetched successfully: ${data.length} courses found.');
-        return data.map((json) => Courses.fromJson(json as Map<String, dynamic>)).toList();
+        return data
+            .map((json) => Courses.fromJson(json as Map<String, dynamic>))
+            .toList();
       } else {
         print("Unexpected response format");
         throw Exception("Unexpected response format");

@@ -4,8 +4,6 @@ import 'package:http/http.dart' as http;
 import 'package:hive/hive.dart';
 import 'dart:io';
 
-import '../../model/student/dashboard_model.dart';
-
 // Enum to define the available HTTP methods
 enum HttpMethod { GET, POST, PUT, DELETE, PATCH }
 
@@ -31,7 +29,7 @@ class ApiResponse<T> {
   factory ApiResponse.fromJson(Map<String, dynamic> json, {T? parsedData}) {
     bool isSuccess = false;
     String message = "Unknown response";
-    
+
     // Check for common API status indicators
     if (json.containsKey('status')) {
       isSuccess = json['status'] == 'success' || json['status'] == true;
@@ -71,7 +69,9 @@ class ApiService {
   };
 
   ApiService({String? baseUrl, String? apiKey})
-      : baseUrl = baseUrl ?? dotenv.env['API_BASE_URL'] ?? 'https://linkskool.net/api/v3',
+      : baseUrl = baseUrl ??
+            dotenv.env['API_BASE_URL'] ??
+            'https://linkskool.net/api/v3',
         apiKey = apiKey ?? dotenv.env['API_KEY'] {
     print('Initializing ApiService with baseUrl: $baseUrl');
   }
@@ -98,12 +98,12 @@ class ApiService {
   // Helper method to add database to query params if not already present
   Map<String, dynamic> _ensureDatabaseParam(Map<String, dynamic>? queryParams) {
     final params = Map<String, dynamic>.from(queryParams ?? {});
-    
+
     // Only add _db if it's not already present
     if (!params.containsKey('_db')) {
       params['_db'] = _getCurrentDatabase();
     }
-    
+
     return params;
   }
 
@@ -136,7 +136,8 @@ class ApiService {
       }
 
       final uri = Uri.parse('$baseUrl/$endpoint').replace(
-        queryParameters: finalQueryParams?.map((key, value) => MapEntry(key, value.toString())),
+        queryParameters: finalQueryParams
+            ?.map((key, value) => MapEntry(key, value.toString())),
       );
 
       print('Making ${method.toString()} request to: ${uri.toString()}');
@@ -151,7 +152,9 @@ class ApiService {
           if (payloadType == PayloadType.JSON) {
             // Add database to body if it's a Map and doesn't already contain _db
             dynamic finalBody = body;
-            if (addDatabaseParam && body is Map<String, dynamic> && !body.containsKey('_db')) {
+            if (addDatabaseParam &&
+                body is Map<String, dynamic> &&
+                !body.containsKey('_db')) {
               try {
                 finalBody = Map<String, dynamic>.from(body);
                 finalBody['_db'] = _getCurrentDatabase();
@@ -160,7 +163,7 @@ class ApiService {
                 finalBody = body;
               }
             }
-            
+
             response = await http.post(
               uri,
               headers: headers,
@@ -171,7 +174,7 @@ class ApiService {
             final multipartHeaders = Map<String, String>.from(headers);
             multipartHeaders.remove('Content-Type');
             request.headers.addAll(multipartHeaders);
-            
+
             if (body is Map<String, dynamic>) {
               // Add database parameter to form data if not present
               if (addDatabaseParam && !body.containsKey('_db')) {
@@ -181,7 +184,7 @@ class ApiService {
                   print('Warning: Could not add database to form data: $e');
                 }
               }
-              
+
               body.forEach((key, value) {
                 if (value is File) {
                   request.files.add(
@@ -204,7 +207,9 @@ class ApiService {
         case HttpMethod.PUT:
           // Add database to body if it's a Map and doesn't already contain _db
           dynamic finalBody = body;
-          if (addDatabaseParam && body is Map<String, dynamic> && !body.containsKey('_db')) {
+          if (addDatabaseParam &&
+              body is Map<String, dynamic> &&
+              !body.containsKey('_db')) {
             try {
               finalBody = Map<String, dynamic>.from(body);
               finalBody['_db'] = _getCurrentDatabase();
@@ -213,7 +218,7 @@ class ApiService {
               finalBody = body;
             }
           }
-          
+
           response = await http.put(
             uri,
             headers: headers,
@@ -223,7 +228,9 @@ class ApiService {
         case HttpMethod.DELETE:
           // Add database to body if it's a Map and doesn't already contain _db
           dynamic finalBody = body;
-          if (addDatabaseParam && body is Map<String, dynamic> && !body.containsKey('_db')) {
+          if (addDatabaseParam &&
+              body is Map<String, dynamic> &&
+              !body.containsKey('_db')) {
             try {
               finalBody = Map<String, dynamic>.from(body);
               finalBody['_db'] = _getCurrentDatabase();
@@ -232,7 +239,7 @@ class ApiService {
               finalBody = body;
             }
           }
-          
+
           response = await http.delete(
             uri,
             headers: headers,
@@ -242,7 +249,9 @@ class ApiService {
         case HttpMethod.PATCH:
           // Add database to body if it's a Map and doesn't already contain _db
           dynamic finalBody = body;
-          if (addDatabaseParam && body is Map<String, dynamic> && !body.containsKey('_db')) {
+          if (addDatabaseParam &&
+              body is Map<String, dynamic> &&
+              !body.containsKey('_db')) {
             try {
               finalBody = Map<String, dynamic>.from(body);
               finalBody['_db'] = _getCurrentDatabase();
@@ -251,7 +260,7 @@ class ApiService {
               finalBody = body;
             }
           }
-          
+
           response = await http.patch(
             uri,
             headers: headers,
@@ -272,7 +281,6 @@ class ApiService {
           parsedData: fromJson != null ? fromJson(jsonResponse) : null,
         );
 
-
         return ApiResponse<T>(
           success: apiResponse.success,
           message: apiResponse.message,
@@ -288,9 +296,10 @@ class ApiService {
           final message = response.reasonPhrase ?? 'Unknown error';
           return ApiResponse<T>.error(message, response.statusCode);
         }
-        
-        final message = errorData['message'] ?? errorData['error'] ?? 'Request failed';
-        
+
+        final message =
+            errorData['message'] ?? errorData['error'] ?? 'Request failed';
+
         // Return error response with proper status code - this allows the service layer to handle 404s appropriately
         return ApiResponse<T>(
           success: false,
@@ -376,8 +385,3 @@ class ApiService {
     );
   }
 }
-
-
-
-
-

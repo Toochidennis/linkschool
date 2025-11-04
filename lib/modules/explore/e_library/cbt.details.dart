@@ -14,7 +14,7 @@ class CbtDetailScreen extends StatefulWidget {
   final String subjectIcon;
   final Color cardColor;
   final List<String> subjectList;
-   final String examTypeId;
+  final String examTypeId;
 
   const CbtDetailScreen({
     super.key,
@@ -24,7 +24,6 @@ class CbtDetailScreen extends StatefulWidget {
     required this.cardColor,
     required this.subjectList,
     required this.examTypeId,
-
   });
 
   @override
@@ -123,7 +122,10 @@ class _CbtDetailScreenState extends State<CbtDetailScreen> {
       builder: (context, provider, child) {
         return Scaffold(
           appBar: Constants.customAppBar(
-              context: context, title: 'WAEC/SSCE', centerTitle: true ,showBackButton: true),
+              context: context,
+              title: 'WAEC/SSCE',
+              centerTitle: true,
+              showBackButton: true),
           body: Container(
             decoration: Constants.customBoxDecoration(context),
             child: Padding(
@@ -142,8 +144,10 @@ class _CbtDetailScreenState extends State<CbtDetailScreen> {
                           children: [
                             subjects(
                               subjectName: selectedSubject,
-                              subjectIcon: provider.getSubjectIcon(selectedSubject),
-                              subjectColor: provider.getSubjectColor(selectedSubject),
+                              subjectIcon:
+                                  provider.getSubjectIcon(selectedSubject),
+                              subjectColor:
+                                  provider.getSubjectColor(selectedSubject),
                             ),
                             const Icon(Icons.arrow_drop_down_circle_outlined)
                           ],
@@ -225,8 +229,8 @@ class _CbtDetailScreenState extends State<CbtDetailScreen> {
                           context,
                           MaterialPageRoute(
                               builder: (context) => TestScreen(
-                                examTypeId:widget.examTypeId, 
-                              ))),
+                                    examTypeId: widget.examTypeId,
+                                  ))),
                       backgroundColor: AppColors.bookText1,
                       textStyle: AppTextStyles.normal500(
                           fontSize: 18.0, color: AppColors.bookText2),

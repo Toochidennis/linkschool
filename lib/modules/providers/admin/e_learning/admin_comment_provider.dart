@@ -5,7 +5,7 @@ import 'package:linkschool/modules/services/admin/e_learning/admin_comment_servi
 class AdminCommentProvider with ChangeNotifier {
   final AdminCommentService _commentService;
   List<Comment> comments = [];
-  
+
   bool isLoading = false;
   String? message;
   String? error;
@@ -48,7 +48,9 @@ class AdminCommentProvider with ChangeNotifier {
       notifyListeners();
     }
   }
-  Future<bool> createComment(Map<String, dynamic> commentData, String contentId) async {
+
+  Future<bool> createComment(
+      Map<String, dynamic> commentData, String contentId) async {
     isLoading = true;
     notifyListeners();
     error = null;
@@ -66,7 +68,8 @@ class AdminCommentProvider with ChangeNotifier {
     }
   }
 
-  Future<bool>UpdateComment(Map<String, dynamic> commentData, String contentId) async {
+  Future<bool> UpdateComment(
+      Map<String, dynamic> commentData, String contentId) async {
     isLoading = true;
     notifyListeners();
     error = null;
@@ -83,14 +86,15 @@ class AdminCommentProvider with ChangeNotifier {
       notifyListeners();
     }
   }
-  Future<bool>DeleteComment(String commentId) async {
+
+  Future<bool> DeleteComment(String commentId) async {
     isLoading = true;
     notifyListeners();
     error = null;
     message = null;
     try {
       await _commentService.deleteComment(commentId);
-       comments.removeWhere((c) => c.id.toString() == commentId);
+      comments.removeWhere((c) => c.id.toString() == commentId);
       message = "Comment updated successfully.";
       return true;
     } catch (e) {

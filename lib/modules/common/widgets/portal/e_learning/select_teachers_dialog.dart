@@ -116,10 +116,9 @@ class _SelectTeachersDialogState extends State<SelectTeachersDialog> {
             .height, // Ensures the container covers the full screen height
         decoration: BoxDecoration(
           image: DecorationImage(
-            image: AssetImage('assets/images/background.png'),
-            fit: BoxFit.cover,
-            opacity: opacity
-          ),
+              image: AssetImage('assets/images/background.png'),
+              fit: BoxFit.cover,
+              opacity: opacity),
         ),
         child: Padding(
           padding: const EdgeInsets.all(16.0),
@@ -184,27 +183,28 @@ class _SelectTeachersDialogState extends State<SelectTeachersDialog> {
         return ListTile(
           contentPadding: const EdgeInsets.symmetric(horizontal: 16.0),
           tileColor: _selectedTeachers[index]
-                    ? AppColors.eLearningBtnColor2
-                    : Colors.transparent,
+              ? AppColors.eLearningBtnColor2
+              : Colors.transparent,
           title: Text(
             _teachers[index],
-            style: AppTextStyles.normal500(fontSize: 16.0, color: AppColors.textGray),
+            style: AppTextStyles.normal500(
+                fontSize: 16.0, color: AppColors.textGray),
           ),
-          trailing:  _selectedTeachers[index]
-                    ? Container(
-                      padding: const EdgeInsets.all(4.0),
-                      decoration: BoxDecoration(
-                        color: Colors.green,
-                        shape: BoxShape.circle,
-                        border: Border.all(color: Colors.green),
-                      ),
+          trailing: _selectedTeachers[index]
+              ? Container(
+                  padding: const EdgeInsets.all(4.0),
+                  decoration: BoxDecoration(
+                    color: Colors.green,
+                    shape: BoxShape.circle,
+                    border: Border.all(color: Colors.green),
+                  ),
                   child: const Icon(
                     Icons.check,
                     color: Colors.white,
                     size: 12, // Matching size with the Select All check icon
                   ),
-                    )
-                    :   Container(
+                )
+              : Container(
                   width: 24.0, // Ensuring space for alignment even when no icon
                 ),
           onTap: () => _toggleRowSelection(index),

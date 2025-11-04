@@ -34,14 +34,14 @@ class _ResultDashboardScreenState extends State<ResultDashboardScreen> {
   Future<void> _loadUserData() async {
     try {
       final userBox = Hive.box('userData');
-      
+
       // Debug: Print all keys in the box
       print('Hive Box Keys: ${userBox.keys.toList()}');
-      
+
       // Try different approaches to retrieve the data
       final storedUserData = userBox.get('userData');
       final storedLoginResponse = userBox.get('loginResponse');
-      
+
       print('Stored userData: $storedUserData');
       print('Stored loginResponse: $storedLoginResponse');
 
@@ -55,8 +55,8 @@ class _ResultDashboardScreenState extends State<ResultDashboardScreen> {
 
       if (dataToProcess != null) {
         // Ensure dataToProcess is a Map
-        Map<String, dynamic> processedData = dataToProcess is String 
-            ? json.decode(dataToProcess) 
+        Map<String, dynamic> processedData = dataToProcess is String
+            ? json.decode(dataToProcess)
             : dataToProcess;
 
         // Extract data from different possible structures
@@ -70,33 +70,35 @@ class _ResultDashboardScreenState extends State<ResultDashboardScreen> {
         setState(() {
           userData = processedData;
           // Transform levels to match the previous format [id, level_name]
-          levelNames = levels.map((level) => [
-            (level['id'] ?? '').toString(), 
-            level['level_name'] ?? ''
-          ]).toList();
-          
+          levelNames = levels
+              .map((level) =>
+                  [(level['id'] ?? '').toString(), level['level_name'] ?? ''])
+              .toList();
+
           // Transform classes to match the previous format [id, class_name, level_id]
-          classNames = classes.map((cls) => [
-            (cls['id'] ?? '').toString(), 
-            cls['class_name'] ?? '', 
-            (cls['level_id'] ?? '').toString()
-          ]).toList();
-          
+          classNames = classes
+              .map((cls) => [
+                    (cls['id'] ?? '').toString(),
+                    cls['class_name'] ?? '',
+                    (cls['level_id'] ?? '').toString()
+                  ])
+              .toList();
+
           // Filter out classes with empty class_name or zero level_id
-          List<dynamic> validClasses = classNames.where((cls) => 
-            cls[1].toString().isNotEmpty && 
-            cls[2].toString() != '0'
-          ).toList();
-          
+          List<dynamic> validClasses = classNames
+              .where((cls) =>
+                  cls[1].toString().isNotEmpty && cls[2].toString() != '0')
+              .toList();
+
           // Create a set of level IDs that have valid classes
-          Set<String> levelIdsWithClasses = validClasses
-              .map<String>((cls) => cls[2].toString())
-              .toSet();
-          
+          Set<String> levelIdsWithClasses =
+              validClasses.map<String>((cls) => cls[2].toString()).toSet();
+
           // Filter levelNames to include only those with classes
-          levelsWithClasses = levelNames.where((level) => 
-            levelIdsWithClasses.contains(level[0].toString())
-          ).toList();
+          levelsWithClasses = levelNames
+              .where(
+                  (level) => levelIdsWithClasses.contains(level[0].toString()))
+              .toList();
 
           print('Processed Level Names: $levelNames');
           print('Processed Class Names: $classNames');
@@ -115,9 +117,7 @@ class _ResultDashboardScreenState extends State<ResultDashboardScreen> {
     return Scaffold(
       appBar: widget.appBar,
       body: RefreshIndicator(
-         onRefresh: ()async {
-          
-         },
+        onRefresh: () async {},
         child: Container(
           decoration: Constants.customBoxDecoration(context),
           child: CustomScrollView(
@@ -153,13 +153,9 @@ class _ResultDashboardScreenState extends State<ResultDashboardScreen> {
               SliverToBoxAdapter(
                 child: LevelSelection(
                   levelNames: levelsWithClasses, // Use filtered levels list
-                  classNames: classNames, 
+                  classNames: classNames,
                   isSecondScreen: false,
-                  subjects: [
-                    'Math',
-                    'Science',
-                    'English'
-                  ], 
+                  subjects: ['Math', 'Science', 'English'],
                 ),
               ),
             ],
