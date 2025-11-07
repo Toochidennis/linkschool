@@ -38,6 +38,24 @@ class _NewsDetailsState extends State<NewsDetails> {
         context, MaterialPageRoute(builder: (context) => AllnewsScreen()));
   }
 
+  void _shareNews(String title, String content, String time, String imageUrl) {
+    // Format the complete news content for sharing
+    String shareText = '''
+📰 $title
+
+📅 Published: $time
+
+📝 Content:
+$content
+
+${imageUrl.isNotEmpty ? '🖼️ Image: $imageUrl' : ''}
+
+#LinkSchool #News
+''';
+    
+    Share.share(shareText);
+  }
+
   @override
   Widget build(BuildContext context) {
     final newsProvider = Provider.of<NewsProvider>(context);
@@ -93,8 +111,12 @@ class _NewsDetailsState extends State<NewsDetails> {
                         ],
                       ),
                       TextButton(
-                          onPressed: () =>
-                              (Share.share('dream ict/${widget.news.title}')),
+                          onPressed: () => _shareNews(
+                            widget.news.title,
+                            widget.news.content,
+                            widget.time.toString(),
+                            widget.news.image_url,
+                          ),
                           style: TextButton.styleFrom(
                             backgroundColor:
                                 Colors.white, // Button background color
@@ -161,8 +183,21 @@ class _NewsDetailsState extends State<NewsDetails> {
               itemCount: recommendedNews.length,
               itemBuilder: (context, index) {
                 final news = recommendedNews[index];
-                return recommendationSection(
-                    news.title, news.content, widget.time, news.image_url);
+                return GestureDetector(
+                  onTap: () {
+                    Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => NewsDetails(
+                          news: news,
+                          time: widget.time,
+                        ),
+                      ),
+                    );
+                  },
+                  child: recommendationSection(
+                      news.title, news.content, widget.time, news.image_url),
+                );
               },
             ),
 
@@ -202,6 +237,24 @@ class _NewsDetailsState extends State<NewsDetails> {
 }
 
 // ====================== Helper Widgets ======================
+
+void _shareNewsContent(String title, String content, String time, String imageUrl) {
+  // Format the complete news content for sharing
+  String shareText = '''
+📰 $title
+
+📅 Published: $time
+
+📝 Content:
+$content
+
+${imageUrl.isNotEmpty ? '🖼️ Image: $imageUrl' : ''}
+
+#LinkSchool #News
+''';
+  
+  Share.share(shareText);
+}
 
 Widget relatedHeadlines(
     String title, String content, String time, String imageUrl) {
@@ -262,7 +315,7 @@ Widget relatedHeadlines(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
                   IconButton(
-                      onPressed: () => (Share.share('dream ict')),
+                      onPressed: () => _shareNewsContent(title, content, time, imageUrl),
                       icon: Icon(Icons.share)
                       // SvgPicture.asset(
                       //   'assets/icons/share.svg',
@@ -330,8 +383,7 @@ Widget recommendationSection(
                         //   height: 20.0,
                         //   width: 20.0,
                         // ),
-                        onPressed: () =>
-                            (Share.share("Digital Dreams Academy, News")),
+                        onPressed: () => _shareNewsContent(title, content, time, imageUrl),
                       ),
                     ],
                   )
@@ -361,33 +413,7 @@ Widget recommendationSection(
   );
 }
 
-Widget _buildLikesButton() {
-  return Row(
-    mainAxisAlignment: MainAxisAlignment.end,
-    children: [
-      // Icon(Icons.favorite, size: 20, color: AppColors.aitext),
-      // SizedBox(width: 8),
-      // Text(userLikes.toString(),
-      //     style: AppTextStyles.normal400(
-      //         fontSize: 14.0, color: AppColors.admissionTitle)),
-      // SizedBox(width: 20),
-      // Icon(Icons.chat_bubble_outline, size: 20),
-      // SizedBox(width: 8),
-      // Text(likes.toString(),
-      //     style: AppTextStyles.normal400(
-      //         fontSize: 12, color: AppColors.assessmentColor2)),
-      IconButton(
-        icon: Icon(Icons.share),
-        // SvgPicture.asset(
-        //   'assets/icons/share.svg',
-        //   height: 20.0,
-        //   width: 20.0,
-        // ),
-        onPressed: () => (Share.share("Digital Dreams Academy, News")),
-      ),
-    ],
-  );
-}
+
 
 Widget textSection(paraBody) {
   return Text(

@@ -69,7 +69,8 @@ class _FeeSettingScreenState extends State<FeeSettingScreen> {
         ),
       ),
       body: Container(
-        decoration: Constants.customBoxDecoration(context),
+        color: Colors.white,
+        //decoration: Constants.customBoxDecoration(context),
         child: Consumer<FeeProvider>(
           builder: (context, feeProvider, child) {
             if (feeProvider.isLoading && feeProvider.feeNames.isEmpty) {

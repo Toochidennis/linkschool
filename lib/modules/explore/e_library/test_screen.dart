@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:linkschool/modules/model/explore/home/exam_model.dart';
 import 'package:linkschool/modules/providers/explore/exam_provider.dart';
 import 'package:provider/provider.dart';
@@ -7,7 +8,17 @@ import 'package:linkschool/modules/common/text_styles.dart';
 
 class TestScreen extends StatefulWidget {
   final String examTypeId;
-  const TestScreen({super.key, required this.examTypeId});
+  final String? subjectId;
+  final String? subject;
+  final int? year;
+  
+  const TestScreen({
+    super.key, 
+    required this.examTypeId,
+    this.subjectId,
+    this.subject,
+    this.year,
+  });
 
   @override
   _TestScreenState createState() => _TestScreenState();
@@ -44,7 +55,7 @@ class _TestScreenState extends State<TestScreen> {
               ),
             ),
             title: Text(
-              examProvider.examInfo?.courseName ?? 'Loading...',
+              widget.subject ?? examProvider.examInfo?.courseName ?? 'Loading...',
               style: const TextStyle(color: Colors.white),
             ),
             elevation: 0,
@@ -65,7 +76,7 @@ class _TestScreenState extends State<TestScreen> {
                                   AssetImage('assets/icons/alarm_clock.png')),
                           const SizedBox(width: 8),
                           Text(
-                            '58:22',
+                            '00:00',
                             style: AppTextStyles.normal700(
                               fontSize: 32,
                               color: Colors.white,
@@ -158,7 +169,49 @@ class _TestScreenState extends State<TestScreen> {
   }
 
   Widget _buildQuestionCard(ExamProvider provider) {
+
+
     final question = provider.currentQuestion;
+    if (question == null) {
+      return Container(
+        width: double.infinity,
+        margin: const EdgeInsets.symmetric(vertical: 8.0),
+        padding: const EdgeInsets.all(16.0),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(8),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 4,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Column(
+          children: [
+            Container(
+              alignment: Alignment.center,
+              height: 300,
+              child: SvgPicture.asset(
+                'assets/images/e-learning/Student stress-amico.svg',
+                width: 200,
+                height: 200,
+                
+              ),
+            ),
+            const SizedBox(height: 10),
+            Text(
+              'No Questions at the moment',
+              style: AppTextStyles.normal700(
+                fontSize: 22,
+                color: AppColors.text3Light,
+              ),
+            ),
+          ],
+        )
+      );
+    }
 
     return Container(
       width: double.infinity,

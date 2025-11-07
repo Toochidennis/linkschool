@@ -32,9 +32,22 @@ class _ExploreHomeState extends State<ExploreHome> {
   bool _showSearchBar = true;
   bool isLoading = true;
 
-  @override
-  void _shareURL() {
-    Share.share('https://flutter.dev');
+  void _shareNews(String title, String content, String time, String imageUrl) {
+    // Format the complete news content for sharing
+    String shareText = '''
+📰 $title
+
+📅 Published: $time
+
+📝 Content:
+$content
+
+${imageUrl.isNotEmpty ? '🖼️ Image: $imageUrl' : ''}
+
+#LinkSchool #News
+''';
+    
+    Share.share(shareText);
   }
 
   @override
@@ -421,7 +434,12 @@ class _ExploreHomeState extends State<ExploreHome> {
                                     color: AppColors.text4Light,
                                   ),
                                 ),
-                                _buildActionButtons(),
+                                _buildActionButtons(
+                                  title: title,
+                                  content: newsContent,
+                                  time: time,
+                                  imageUrl: imageUrl,
+                                ),
                                 SizedBox(
                                   height: 8,
                                 )
@@ -482,7 +500,12 @@ class _ExploreHomeState extends State<ExploreHome> {
                       ],
                     ),
                   ),
-                  _buildActionButtons(),
+                  _buildActionButtons(
+                    title: title,
+                    content: newsContent,
+                    time: time,
+                    imageUrl: imageUrl,
+                  ),
                 ]),
         );
       },
@@ -490,7 +513,12 @@ class _ExploreHomeState extends State<ExploreHome> {
   }
 
 // Widget for action buttons (like, comment, share)
-  Widget _buildActionButtons() {
+  Widget _buildActionButtons({
+    String? title,
+    String? content,
+    String? time,
+    String? imageUrl,
+  }) {
     // final newsProvider = Provider.of<NewsProvider>(context);
     return Wrap(
       children: [
@@ -532,7 +560,12 @@ class _ExploreHomeState extends State<ExploreHome> {
                 //   height: 20.0,
                 //   width: 20.0,
                 // ),
-                onPressed: _shareURL // Add your onPressed logic here
+                onPressed: () => _shareNews(
+                  title ?? 'News',
+                  content ?? 'No content available',
+                  time ?? 'Unknown time',
+                  imageUrl ?? '',
+                ) // Add your onPressed logic here
                 ),
           ],
         ),

@@ -304,6 +304,7 @@ class _CourseManagementScreenState extends State<CourseManagementScreen>
           'Manage Courses',
           style: TextStyle(
             fontFamily: 'Urbanist',
+          color: Colors.white,
             fontWeight: FontWeight.w600,
           ),
         ),
@@ -352,44 +353,87 @@ class _CourseManagementScreenState extends State<CourseManagementScreen>
 
                         return _buildAnimatedCard(
                           index: index,
-                          child: Card(
-                            margin: const EdgeInsets.only(bottom: 8),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(16.0),
-                              side: BorderSide(color: AppColors.text6Light),
-                            ),
-                            elevation: 2,
-                            child: ListTile(
-                              leading: Container(
-                                width: 50,
-                                height: 50,
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  border: Border.all(
-                                      color: AppColors.text2Light, width: 2),
-                                  color: AppColors.text2Light.withOpacity(0.1),
+                          child: Container(
+                            margin: const EdgeInsets.only(bottom: 12),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(16),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.grey.withOpacity(0.1),
+                                  spreadRadius: 1,
+                                  blurRadius: 10,
+                                  offset: const Offset(0, 2),
                                 ),
-                                child: const Icon(
-                                  Icons.book,
-                                  color: AppColors.text2Light,
-                                  size: 24,
+                              ],
+                            ),
+                            child: ListTile(
+                              contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 20, vertical: 12),
+                              leading: Container(
+                                padding: const EdgeInsets.all(2),
+                                decoration: BoxDecoration(
+                                  color: AppColors.text2Light.withOpacity(0.1),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Container(
+                                  width: 46,
+                                  height: 46,
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    color: AppColors.text2Light,
+                                  ),
+                                  child: const Icon(
+                                    Icons.book,
+                                    color: Colors.white,
+                                    size: 22,
+                                  ),
                                 ),
                               ),
                               title: Text(
                                 course.courseName,
-                                style: AppTextStyles.normal600(
+                                style: AppTextStyles.normal500(
                                   fontSize: 16,
                                   color: AppColors.text2Light,
                                 ),
                               ),
-                              subtitle: Text(
-                                'Code: ${course.courseCode}',
-                                style: AppTextStyles.normal400(
-                                  fontSize: 12,
-                                  color: AppColors.text7Light,
+                              subtitle: Padding(
+                                padding: const EdgeInsets.only(top: 4.0),
+                                child: Row(
+                                  children: [
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 8,
+                                        vertical: 4,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: AppColors.text2Light.withOpacity(0.1),
+                                        borderRadius: BorderRadius.circular(6),
+                                      ),
+                                      child: Text(
+                                        course.courseCode.toUpperCase(),
+                                        style: AppTextStyles.normal600(
+                                          fontSize: 11,
+                                          color: AppColors.text2Light,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ),
                               trailing: PopupMenuButton<String>(
+                                icon: Container(
+                                  padding: const EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.text2Light.withOpacity(0.1),
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: const Icon(
+                                    Icons.more_vert,
+                                    color: AppColors.text2Light,
+                                    size: 20,
+                                  ),
+                                ),
                                 onSelected: (value) {
                                   if (value == 'edit') {
                                     _showAddEditCourseForm(course: course);
@@ -479,27 +523,20 @@ class _CourseManagementScreenState extends State<CourseManagementScreen>
                                 itemBuilder: (context) => [
                                   const PopupMenuItem(
                                     value: 'edit',
-                                    child: Row(
-                                      children: [
-                                        Icon(Icons.edit,
-                                            size: 16,
-                                            color: AppColors.text2Light),
-                                        SizedBox(width: 8),
-                                        Text('Edit'),
-                                      ],
+                                    child: ListTile(
+                                      leading: Icon(Icons.edit, size: 20),
+                                      title: Text('Edit'),
+                                      contentPadding: EdgeInsets.zero,
                                     ),
                                   ),
                                   const PopupMenuItem(
                                     value: 'delete',
-                                    child: Row(
-                                      children: [
-                                        Icon(Icons.delete,
-                                            size: 16, color: Colors.red),
-                                        SizedBox(width: 8),
-                                        Text('Delete',
-                                            style:
-                                                TextStyle(color: Colors.red)),
-                                      ],
+                                    child: ListTile(
+                                      leading: Icon(Icons.delete,
+                                          size: 20, color: Colors.red),
+                                      title: Text('Delete',
+                                          style: TextStyle(color: Colors.red)),
+                                      contentPadding: EdgeInsets.zero,
                                     ),
                                   ),
                                 ],

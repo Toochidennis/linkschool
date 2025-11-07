@@ -240,13 +240,6 @@ class _StudentViewDetailPaymentDialogState
       final user = getuserdata();
       final settings = getuserSettings();
 
-      // Calculate unpaid fees total
-      double unpaidFeesTotal = 0.0;
-      for (int i = 0; i < widget.invoice.details.length; i++) {
-        if (!_selectedFees[i]) {
-          unpaidFeesTotal += widget.invoice.details[i].feeAmount;
-        }
-      }
       Navigator.pop(context); // close bottom sheet
       Future.delayed(const Duration(milliseconds: 300), () {
         Navigator.push(
@@ -259,7 +252,7 @@ class _StudentViewDetailPaymentDialogState
               invoiceId: widget.invoice.id.toString(),
               regNo: user['registration_no'] ?? '',
               name: user['name'] ?? '',
-              amount: unpaidFeesTotal.toInt(),
+              amount: _calculateSelectedTotal().toInt(),
               invoiceDetails: widget.invoice.details
                   .asMap()
                   .entries

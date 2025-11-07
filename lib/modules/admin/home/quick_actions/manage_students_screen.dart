@@ -23,7 +23,6 @@ class ManageStudentsScreen extends StatefulWidget {
 class _ManageStudentsScreenState extends State<ManageStudentsScreen> {
   int? selectedLevelId;
   int? selectedClassId;
-  File? _selectedImage;
 
   @override
   void initState() {
@@ -71,9 +70,13 @@ class _ManageStudentsScreenState extends State<ManageStudentsScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Manage Students'),
+        title: const Text('Manage Students',style: TextStyle(
+          fontFamily: 'Urbanist',
+          color: Colors.white,
+          fontWeight: FontWeight.w600,
+        ),),
         backgroundColor: AppColors.text2Light,
-        foregroundColor: Colors.white,
+       // foregroundColor: Colors.white,
         actions: [
           if (_showAddForm)
             IconButton(
@@ -253,47 +256,104 @@ class _ManageStudentsScreenState extends State<ManageStudentsScreen> {
                                       ),
                                     );
                                   },
-                                  child: Card(
-                                    margin: const EdgeInsets.only(bottom: 8),
+                                  child: Container(
+                                    margin: const EdgeInsets.only(bottom: 12),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white,
+                                      borderRadius: BorderRadius.circular(16),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.grey.withOpacity(0.1),
+                                          spreadRadius: 1,
+                                          blurRadius: 10,
+                                          offset: const Offset(0, 2),
+                                        ),
+                                      ],
+                                    ),
                                     child: ListTile(
-                                      leading: CircleAvatar(
-                                        backgroundColor: AppColors.text2Light,
-                                        child: student.photoPath != null &&
-                                                student.photoPath!.isNotEmpty
-                                            ? ClipOval(
-                                                child: Image.network(
-                                                  "https://linkskool.net/${student.photoPath}",
-                                                  fit: BoxFit.cover,
-                                                  width: 40,
-                                                  height: 40,
-                                                  errorBuilder: (context, error,
-                                                      stackTrace) {
-                                                    return Text(
-                                                      student.getInitials(),
-                                                      style: const TextStyle(
-                                                          color: Colors.white),
-                                                    );
-                                                  },
-                                                  loadingBuilder: (context,
-                                                      child, loadingProgress) {
-                                                    if (loadingProgress == null)
-                                                      return child;
-                                                    return const CircularProgressIndicator(
-                                                        strokeWidth: 2);
-                                                  },
+                                      contentPadding: const EdgeInsets.symmetric(
+                                          horizontal: 20, vertical: 12),
+                                      leading: Container(
+                                        padding: const EdgeInsets.all(2),
+                                        decoration: BoxDecoration(
+                                          color: AppColors.text2Light.withOpacity(0.1),
+                                          borderRadius: BorderRadius.circular(12),
+                                        ),
+                                        child: CircleAvatar(
+                                          radius: 24,
+                                          backgroundColor: AppColors.text2Light,
+                                          child: student.photoPath != null &&
+                                                  student.photoPath!.isNotEmpty
+                                              ? ClipOval(
+                                                  child: Image.network(
+                                                    "https://linkskool.net/${student.photoPath}",
+                                                    fit: BoxFit.cover,
+                                                    width: 48,
+                                                    height: 48,
+                                                    errorBuilder: (context, error,
+                                                        stackTrace) {
+                                                      return Text(
+                                                        student.getInitials(),
+                                                        style: AppTextStyles.normal600(
+                                                          fontSize: 16,
+                                                          color: Colors.white,
+                                                        ),
+                                                      );
+                                                    },
+                                                    loadingBuilder: (context,
+                                                        child, loadingProgress) {
+                                                      if (loadingProgress == null)
+                                                        return child;
+                                                      return const SizedBox(
+                                                        width: 20,
+                                                        height: 20,
+                                                        child: CircularProgressIndicator(
+                                                          strokeWidth: 2,
+                                                          color: Colors.white,
+                                                        ),
+                                                      );
+                                                    },
+                                                  ),
+                                                )
+                                              : Text(
+                                                  student.getInitials(),
+                                                  style: AppTextStyles.normal600(
+                                                    fontSize: 16,
+                                                    color: Colors.white,
+                                                  ),
                                                 ),
-                                              )
-                                            : Text(
-                                                student.getInitials(),
-                                                style: const TextStyle(
-                                                    color: Colors.white),
-                                              ),
+                                        ),
                                       ),
                                       title: Text(
-                                          '${student.firstName} ${student.surname}'),
-                                      subtitle: Text(
-                                          '$levelName - $className | ID: ${student.registrationNo ?? student.id}'),
+                                        '${student.firstName} ${student.surname}',
+                                        style: AppTextStyles.normal500(
+                                          fontSize: 16,
+                                          color: AppColors.text2Light,
+                                        ),
+                                      ),
+                                      subtitle: Padding(
+                                        padding: const EdgeInsets.only(top: 4.0),
+                                        child: Text(
+                                          '$levelName - $className | ID: ${student.registrationNo ?? student.id}',
+                                          style: AppTextStyles.normal400(
+                                            fontSize: 14,
+                                            color: Colors.grey[600]!,
+                                          ),
+                                        ),
+                                      ),
                                       trailing: PopupMenuButton<String>(
+                                        icon: Container(
+                                          padding: const EdgeInsets.all(8),
+                                          decoration: BoxDecoration(
+                                            color: AppColors.text2Light.withOpacity(0.1),
+                                            borderRadius: BorderRadius.circular(8),
+                                          ),
+                                          child: const Icon(
+                                            Icons.more_vert,
+                                            color: AppColors.text2Light,
+                                            size: 20,
+                                          ),
+                                        ),
                                         onSelected: (value) {
                                           if (value == 'edit') {
                                             _showAddEditStudentForm(
@@ -308,6 +368,7 @@ class _ManageStudentsScreenState extends State<ManageStudentsScreen> {
                                             child: ListTile(
                                               leading: Icon(Icons.edit),
                                               title: Text('Edit'),
+                                              contentPadding: EdgeInsets.zero,
                                             ),
                                           ),
                                           const PopupMenuItem(
@@ -318,6 +379,7 @@ class _ManageStudentsScreenState extends State<ManageStudentsScreen> {
                                               title: Text('Delete',
                                                   style: TextStyle(
                                                       color: Colors.red)),
+                                              contentPadding: EdgeInsets.zero,
                                             ),
                                           ),
                                         ],

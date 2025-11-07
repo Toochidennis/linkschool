@@ -211,7 +211,7 @@ class _PortalHomeState extends State<PortalHome>
 
   Widget _buildStatsCard({
     required String title,
-    required String value,
+
     required String subtitle,
     required IconData icon,
     required Color iconColor,
@@ -221,69 +221,42 @@ class _PortalHomeState extends State<PortalHome>
     return _buildAnimatedCard(
       index: index,
       child: Container(
-        padding: const EdgeInsets.all(14.0),
-        margin: const EdgeInsets.symmetric(horizontal: 4.0),
+        padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
+        margin: const EdgeInsets.symmetric(horizontal: 2.0),
         decoration: BoxDecoration(
           color: backgroundColor,
-          borderRadius: BorderRadius.circular(16.0),
-          border: Border.all(color: AppColors.text6Light, width: 1),
+          borderRadius: BorderRadius.circular(12.0),
           boxShadow: [
             BoxShadow(
-              color: AppColors.text2Light.withOpacity(0.1),
-              blurRadius: 8,
-              offset: const Offset(0, 3),
+              color: backgroundColor.withOpacity(0.3),
+              blurRadius: 6,
+              offset: const Offset(0, 2),
             ),
           ],
         ),
         child: Column(
+          mainAxisAlignment: MainAxisAlignment.start,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Container(
-                  padding: const EdgeInsets.all(6),
-                  decoration: BoxDecoration(
-                    color: iconColor.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Icon(
-                    icon,
-                    color: iconColor,
-                    size: 18,
-                  ),
-                ),
-                Text(
-                  '+12%',
-                  style: AppTextStyles.normal500(
-                    fontSize: 10,
-                    color: AppColors.attCheckColor2,
-                  ),
+                Icon(
+                  icon,
+                  color: iconColor,
+                  size: 24,
                 ),
               ],
             ),
             const SizedBox(height: 8),
-            Text(
-              value,
-              style: AppTextStyles.normal700(
-                fontSize: 20,
-                color: AppColors.text2Light,
-              ),
-            ),
+           
+            
             Text(
               title,
-              style: AppTextStyles.normal400(
-                fontSize: 12,
-                color: AppColors.text7Light,
+              style: AppTextStyles.normal500(
+                fontSize: 16,
+                color: Colors.white,
               ),
-            ),
-            const SizedBox(height: 2),
-            Text(
-              subtitle,
-              style: AppTextStyles.normal400(
-                fontSize: 10,
-                color: AppColors.text9Light,
-              ),
+              textAlign: TextAlign.center,
             ),
           ],
         ),
@@ -293,6 +266,7 @@ class _PortalHomeState extends State<PortalHome>
 
   Widget _buildQuickActionButton({
     required String label,
+    required String title,
     required IconData icon,
     required Color backgroundColor,
     required Color borderColor,
@@ -304,65 +278,69 @@ class _PortalHomeState extends State<PortalHome>
       builder: (context, child) {
         return Transform.scale(
           scale: _bounceAnimation.value,
-          child: GestureDetector(
-            onTap: () {
-              HapticFeedback.lightImpact();
-              onTap();
-            },
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 200),
-              curve: Curves.easeInOut,
-              padding: const EdgeInsets.all(12.0),
-              decoration: BoxDecoration(
-                color: backgroundColor,
-                borderRadius: BorderRadius.circular(16.0),
-                border: Border.all(color: borderColor, width: 2),
-                boxShadow: [
-                  BoxShadow(
-                    color: backgroundColor.withOpacity(0.3),
-                    blurRadius: 8,
-                    offset: const Offset(0, 3),
-                  ),
-                ],
-              ),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  TweenAnimationBuilder<double>(
-                    tween: Tween<double>(begin: 0, end: 1),
-                    duration: Duration(milliseconds: 800 + (index * 200)),
-                    curve: Curves.elasticOut,
-                    builder: (context, value, child) {
-                      return Transform.scale(
-                        scale: value,
-                        child: Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.2),
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: Icon(
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            curve: Curves.easeInOut,
+            padding: const EdgeInsets.all(8.0),
+            decoration: BoxDecoration(
+              color: backgroundColor,
+              borderRadius: BorderRadius.circular(16.0),
+              border: Border.all(color: borderColor, width: 2),
+              boxShadow: [
+                BoxShadow(
+                  color: backgroundColor.withOpacity(0.3),
+                  blurRadius: 8,
+                  offset: const Offset(0, 3),
+                ),
+              ],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                TweenAnimationBuilder<double>(
+                  tween: Tween<double>(begin: 0, end: 1),
+                  duration: Duration(milliseconds: 800 + (index * 200)),
+                  curve: Curves.elasticOut,
+                  builder: (context, value, child) {
+                    return Transform.scale(
+                      scale: value,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+
+                          Text(
+                                        label,
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 24,
+                                          fontWeight: FontWeight.w600,
+                                          fontFamily: 'Urbanist',
+                                        ),
+                                        textAlign: TextAlign.center,
+                                      ),
+                          Icon(
                             icon,
                             size: 24,
                             color: Colors.white,
                           ),
-                        ),
-                      );
-                    },
+                          
+                        ],
+                      ),
+                    );
+                  },
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  title,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    fontFamily: 'Urbanist',
                   ),
-                  const SizedBox(height: 8),
-                  Text(
-                    label,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      fontFamily: 'Urbanist',
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                ],
-              ),
+                  textAlign: TextAlign.center,
+                ),
+              ],
             ),
           ),
         );
@@ -445,7 +423,7 @@ class _PortalHomeState extends State<PortalHome>
               ],
             ),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 12),
           TextField(
             controller: _titleController,
             decoration: InputDecoration(
@@ -463,7 +441,7 @@ class _PortalHomeState extends State<PortalHome>
               ),
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 8),
           TextField(
             controller: _newsController,
             maxLines: 4,
@@ -490,7 +468,7 @@ class _PortalHomeState extends State<PortalHome>
               ),
             ),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 12),
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
@@ -635,7 +613,7 @@ class _PortalHomeState extends State<PortalHome>
                   return Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Admin Overview Stats Section
+                      // School Overview Section (Now with Quick Action Button Design)
                       _buildAnimatedCard(
                         index: 0,
                         child: Padding(
@@ -668,119 +646,16 @@ class _PortalHomeState extends State<PortalHome>
                                   ),
                                 ],
                               ),
-                              const SizedBox(height: 16),
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: _buildStatsCard(
-                                      title: 'Total Students',
-                                      value: provider.overview?.students
-                                              .toString() ??
-                                          '0',
-                                      subtitle: 'Active this term',
-                                      icon: Icons.people_rounded,
-                                      iconColor: AppColors.portalButton1Light,
-                                      backgroundColor: AppColors.boxColor2,
-                                      index: 1,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Expanded(
-                                    child: _buildStatsCard(
-                                      title: 'Staff Members',
-                                      value:
-                                          provider.overview?.staff.toString() ??
-                                              '0',
-                                      subtitle: 'Teaching & Admin',
-                                      icon: Icons.school_rounded,
-                                      iconColor: AppColors.attCheckColor2,
-                                      backgroundColor: AppColors.boxColor4,
-                                      index: 2,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 8),
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: _buildStatsCard(
-                                      title: 'Classes',
-                                      value: provider.overview?.classes
-                                              .toString() ??
-                                          '0',
-                                      subtitle: 'Active classes',
-                                      icon: Icons.class_rounded,
-                                      iconColor: AppColors.secondaryLight,
-                                      backgroundColor: AppColors.boxColor1,
-                                      index: 3,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Expanded(
-                                    child: _buildStatsCard(
-                                      title: 'Levels',
-                                      value: provider.overview?.levels
-                                              .toString() ??
-                                          '0',
-                                      subtitle: 'Academic levels',
-                                      icon: Icons.layers_rounded,
-                                      iconColor: AppColors.text2Light,
-                                      backgroundColor: AppColors.boxColor3,
-                                      index: 4,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 20),
-                      // Quick Actions Section
-                      _buildAnimatedCard(
-                        index: 5,
-                        child: Padding(
-                          padding: const EdgeInsets.all(16.0),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                children: [
-                                  Container(
-                                    padding: const EdgeInsets.all(8),
-                                    decoration: BoxDecoration(
-                                      color:
-                                          AppColors.text2Light.withOpacity(0.1),
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                    child: Icon(
-                                      Icons.dashboard_rounded,
-                                      color: AppColors.text2Light,
-                                      size: 24,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 12),
-                                  Text(
-                                    'Quick Actions',
-                                    style: AppTextStyles.normal600(
-                                      fontSize: 20,
-                                      color: AppColors.text2Light,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 16),
+                              const SizedBox(height: 12),
                               Row(
                                 children: [
                                   Expanded(
                                     child: _buildQuickActionButton(
-                                      label: 'Manage\nStudents',
-                                      icon: Icons.people_alt_rounded,
-                                      backgroundColor:
-                                          AppColors.portalButton1Light,
-                                      borderColor:
-                                          AppColors.portalButton1BorderLight,
+                                      label: '${provider.overview?.students.toString() ?? '0'}',
+                                      icon: Icons.people_rounded,
+                                      title: "Students",
+                                      backgroundColor: AppColors.bookText1,
+                                      borderColor: AppColors.bookText1.withOpacity(0.3),
                                       onTap: () {
                                         Navigator.push(
                                           context,
@@ -790,18 +665,17 @@ class _PortalHomeState extends State<PortalHome>
                                           ),
                                         );
                                       },
-                                      index: 0,
+                                      index: 1,
                                     ),
                                   ),
                                   const SizedBox(width: 12),
                                   Expanded(
                                     child: _buildQuickActionButton(
-                                      label: 'Staff\nDirectory',
-                                      icon: Icons.badge_rounded,
-                                      backgroundColor:
-                                          AppColors.portalButton2Light,
-                                      borderColor:
-                                          AppColors.portalButton2BorderLight,
+                                      label: '${provider.overview?.staff.toString() ?? '0'}',
+                                      title: "Staff",
+                                      icon: Icons.school_rounded,
+                                      backgroundColor: Colors.teal,
+                                      borderColor: Colors.teal.withOpacity(0.3),
                                       onTap: () {
                                         Navigator.push(
                                           context,
@@ -811,7 +685,7 @@ class _PortalHomeState extends State<PortalHome>
                                           ),
                                         );
                                       },
-                                      index: 1,
+                                      index: 2,
                                     ),
                                   ),
                                 ],
@@ -821,31 +695,11 @@ class _PortalHomeState extends State<PortalHome>
                                 children: [
                                   Expanded(
                                     child: _buildQuickActionButton(
-                                      label: 'Manage\nCourses',
-                                      icon: Icons.book_rounded,
-                                      backgroundColor: AppColors.attCheckColor2,
-                                      borderColor: AppColors.attCheckColor2
-                                          .withOpacity(0.3),
-                                      onTap: () {
-                                        Navigator.push(
-                                          context,
-                                          MaterialPageRoute(
-                                            builder: (context) =>
-                                                const CourseManagementScreen(),
-                                          ),
-                                        );
-                                      },
-                                      index: 2,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 12),
-                                  Expanded(
-                                    child: _buildQuickActionButton(
-                                      label: 'Levels &\nClasses',
-                                      icon: Icons.school_outlined,
-                                      backgroundColor: AppColors.secondaryLight,
-                                      borderColor: AppColors.secondaryLight
-                                          .withOpacity(0.3),
+                                      label: '${provider.overview?.classes.toString() ?? '0'}',
+                                      title: "Classes",
+                                      icon: Icons.class_rounded,
+                                      backgroundColor: Colors.orangeAccent,
+                                      borderColor: Colors.orangeAccent.withOpacity(0.3),
                                       onTap: () {
                                         Navigator.push(
                                           context,
@@ -858,13 +712,192 @@ class _PortalHomeState extends State<PortalHome>
                                       index: 3,
                                     ),
                                   ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: _buildQuickActionButton(
+                                      label: '${provider.overview?.levels.toString() ?? '0'}',
+                                      title: "Levels",
+                                      icon: Icons.layers_rounded,
+                                      backgroundColor: Colors.purpleAccent,
+                                      borderColor: Colors.purpleAccent.withOpacity(0.3),
+                                      onTap: () {
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (context) =>
+                                                const LevelClassManagementScreen(),
+                                          ),
+                                        );
+                                      },
+                                      index: 4,
+                                    ),
+                                  ),
                                 ],
                               ),
                             ],
                           ),
                         ),
                       ),
-                      const SizedBox(height: 44),
+                      const SizedBox(height: 8),
+                      // Quick Actions Section (Now with Stats Card Design)
+                      _buildAnimatedCard(
+                        index: 5,
+                        child: Padding(
+                          padding: const EdgeInsets.all(16.0),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                              children: [
+                                Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color:
+                                    AppColors.text2Light.withOpacity(0.1),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Icon(
+                                  Icons.dashboard_rounded,
+                                  color: AppColors.text2Light,
+                                  size: 24,
+                                ),
+                                ),
+                                const SizedBox(width: 12),
+                                Text(
+                                'Quick Actions',
+                                style: AppTextStyles.normal600(
+                                  fontSize: 20,
+                                  color: AppColors.text2Light,
+                                ),
+                                ),
+                              ],
+                              ),
+                              const SizedBox(height: 12),
+                              // Modern list view replacing the grid
+                              Builder(builder: (context) {
+                              final actions = [
+                                {
+                                'title': 'Manage Students ',
+                                'subtitle': 'View & Edit Students',
+                                'icon': Icons.people_alt_rounded,
+                                'color': AppColors.portalButton1Light,
+                                'route': const ManageStudentsScreen(),
+                                },
+                                {
+                                'title': 'Manage Staff ',
+                                'subtitle': 'Manage Staff Members',
+                                'icon': Icons.badge_rounded,
+                                'color': AppColors.portalButton2Light,
+                                'route': const ManageStaffScreen(),
+                                },
+                                {
+                                'title': 'Manage Courses',
+                                'subtitle': 'Add & Edit Courses',
+                                'icon': Icons.book_rounded,
+                                'color': AppColors.attCheckColor2,
+                                'route': const CourseManagementScreen(),
+                                },
+                                {
+                                'title': 'Levels & Classes',
+                                'subtitle': 'Manage Levels & Classes',
+                                'icon': Icons.school_outlined,
+                                'color': AppColors.secondaryLight,
+                                'route': const LevelClassManagementScreen(),
+                                },
+                              ];
+
+                              return ListView.separated(
+                                shrinkWrap: true,
+                                physics: const NeverScrollableScrollPhysics(),
+                                itemCount: actions.length,
+                                separatorBuilder: (_, __) =>
+                                  const SizedBox(height: 12),
+                                itemBuilder: (ctx, i) {
+                                final item = actions[i];
+                                return _buildAnimatedCard(
+                                  index: i + 10,
+                                  child: InkWell(
+                                    borderRadius: BorderRadius.circular(16),
+                                    onTap: () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) =>
+                                            item['route'] as Widget,
+                                        ),
+                                      );
+                                    },
+                                    child: Container(
+                                      decoration: BoxDecoration(
+                                        color: (item['color'] as Color),
+                                        borderRadius: BorderRadius.circular(16),
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: (item['color'] as Color)
+                                              .withOpacity(0.3),
+                                            spreadRadius: 1,
+                                            blurRadius: 10,
+                                            offset: const Offset(0, 2),
+                                          ),
+                                        ],
+                                      ),
+                                      child: Padding(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 20,
+                                          vertical: 16,
+                                        ),
+                                        child: Row(
+                                          children: [
+                                            Icon(
+                                              item['icon'] as IconData,
+                                              color: Colors.white,
+                                              size: 28,
+                                            ),
+                                            const SizedBox(width: 16),
+                                            Expanded(
+                                              child: Column(
+                                                crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                                children: [
+                                                  Text(
+                                                    item['title'] as String,
+                                                    style: AppTextStyles
+                                                      .normal600(
+                                                        fontSize: 16,
+                                                        color: Colors.white,
+                                                      ),
+                                                  ),
+                                                  const SizedBox(height: 4),
+                                                  Text(
+                                                    item['subtitle'] as String,
+                                                    style: AppTextStyles
+                                                      .normal400(
+                                                        fontSize: 13,
+                                                        color: Colors.white.withOpacity(0.9),
+                                                      ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                            const Icon(
+                                              Icons.arrow_forward_ios_rounded,
+                                              color: Colors.white,
+                                              size: 16,
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                );
+                                },
+                              );
+                              }),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
                       // Feeds Section Header
                       _buildAnimatedCard(
                         index: 7,
@@ -975,14 +1008,14 @@ class _PortalHomeState extends State<PortalHome>
                           ),
                         ),
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 8),
                       // Add Content Form
                       if (_showAddForm)
                         _buildAnimatedCard(
                           index: 8,
                           child: _buildAddContentForm(),
                         ),
-                      if (_showAddForm) const SizedBox(height: 16),
+                      if (_showAddForm) const SizedBox(height: 8),
                       // Feeds Content
                       _buildAnimatedCard(
                         index: 9,
@@ -1062,11 +1095,11 @@ class _PortalHomeState extends State<PortalHome>
                                                     name: feed.authorName,
                                                     newsContent: feed.content,
                                                     time: feed.createdAt,
-                                                    title: feed.title ?? '',
+                                                    title: feed.title,
                                                     CreatorId:
                                                         creatorId.toString(),
                                                     authorId:
-                                                        feed.authorId ?? 0,
+                                                        feed.authorId,
                                                     role: userRole,
                                                     edit: () => _startEditing(
                                                         feed), // Direct function call

@@ -229,7 +229,7 @@ class _PaymentReceivedScreenState extends State<PaymentReceivedScreen> {
         ),
       ),
       body: Container(
-        decoration: Constants.customBoxDecoration(context),
+        color: Colors.white,
         child: _isLoading
             ? const Center(child: CircularProgressIndicator())
             : Padding(

@@ -20,11 +20,128 @@ class AppColors {
   static const Color textFieldBorderLight = Color.fromRGBO(208, 208, 208, 1);
   static const Color textFieldLight = Color.fromRGBO(255, 255, 255, 1);
   static const Color progressBarLight = Color.fromRGBO(119, 149, 255, 1);
+  
   // Dark Theme
   static const Color primaryDark = Color.fromRGBO(4, 13, 21, 1);
   static const Color secondaryDark = Color.fromRGBO(3, 218, 198, 1);
   static const Color textDark = Color.fromARGB(255, 252, 147, 56);
   static const Color backgroundDark = Color.fromRGBO(4, 13, 21, 1);
+  static const Color text2Dark = Color.fromRGBO(100, 150, 255, 1); // Lighter blue for dark mode
+  static const Color text3Dark = Color.fromRGBO(255, 255, 255, 1);
+  static const Color text4Dark = Color.fromRGBO(230, 230, 230, 1);
+  static const Color text5Dark = Color.fromRGBO(180, 180, 180, 1);
+  static const Color text6Dark = Color.fromRGBO(50, 50, 50, 1);
+  static const Color text7Dark = Color.fromRGBO(160, 160, 160, 1);
+  static const Color text8Dark = Color.fromRGBO(80, 80, 80, 1);
+  static const Color text9Dark = Color.fromRGBO(190, 190, 190, 1);
+  static const Color text10Dark = Color.fromRGBO(170, 170, 170, 1);
+  static const Color textFieldBorderDark = Color.fromRGBO(80, 80, 80, 1);
+  static const Color textFieldDark = Color.fromRGBO(30, 30, 30, 1);
+  static const Color progressBarDark = Color.fromRGBO(80, 120, 255, 1);
+  static const Color cardDark = Color.fromRGBO(20, 25, 35, 1);
+
+  // Dynamic color getters - Use these for theme-aware colors
+  static Color primary(BuildContext context) {
+    return Theme.of(context).brightness == Brightness.dark
+        ? primaryDark
+        : primaryLight;
+  }
+
+  static Color secondary(BuildContext context) {
+    return Theme.of(context).brightness == Brightness.dark
+        ? secondaryDark
+        : secondaryLight;
+  }
+
+  static Color background(BuildContext context) {
+    return Theme.of(context).brightness == Brightness.dark
+        ? backgroundDark
+        : backgroundLight;
+  }
+
+  static Color text(BuildContext context) {
+    return Theme.of(context).brightness == Brightness.dark
+        ? text3Dark
+        : textLight;
+  }
+
+  static Color text2(BuildContext context) {
+    return Theme.of(context).brightness == Brightness.dark
+        ? text2Dark
+        : text2Light;
+  }
+
+  static Color text3(BuildContext context) {
+    return Theme.of(context).brightness == Brightness.dark
+        ? text3Dark
+        : text3Light;
+  }
+
+  static Color text4(BuildContext context) {
+    return Theme.of(context).brightness == Brightness.dark
+        ? text4Dark
+        : text4Light;
+  }
+
+  static Color text5(BuildContext context) {
+    return Theme.of(context).brightness == Brightness.dark
+        ? text5Dark
+        : text5Light;
+  }
+
+  static Color text6(BuildContext context) {
+    return Theme.of(context).brightness == Brightness.dark
+        ? text6Dark
+        : text6Light;
+  }
+
+  static Color text7(BuildContext context) {
+    return Theme.of(context).brightness == Brightness.dark
+        ? text7Dark
+        : text7Light;
+  }
+
+  static Color text8(BuildContext context) {
+    return Theme.of(context).brightness == Brightness.dark
+        ? text8Dark
+        : text8Light;
+  }
+
+  static Color text9(BuildContext context) {
+    return Theme.of(context).brightness == Brightness.dark
+        ? text9Dark
+        : text9Light;
+  }
+
+  static Color text10(BuildContext context) {
+    return Theme.of(context).brightness == Brightness.dark
+        ? text10Dark
+        : text10Light;
+  }
+
+  static Color textFieldBorder(BuildContext context) {
+    return Theme.of(context).brightness == Brightness.dark
+        ? textFieldBorderDark
+        : textFieldBorderLight;
+  }
+
+  static Color textField(BuildContext context) {
+    return Theme.of(context).brightness == Brightness.dark
+        ? textFieldDark
+        : textFieldLight;
+  }
+
+  static Color progressBar(BuildContext context) {
+    return Theme.of(context).brightness == Brightness.dark
+        ? progressBarDark
+        : progressBarLight;
+  }
+
+  static Color card(BuildContext context) {
+    return Theme.of(context).brightness == Brightness.dark
+        ? cardDark
+        : backgroundLight;
+  }
 
   // Button Colors
   static const Color exploreButton1Light = Color.fromRGBO(30, 136, 229, 1);

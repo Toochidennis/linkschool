@@ -454,7 +454,8 @@ class AmounteSettingScreenState extends State<AmountSettingScreen> {
         ),
       ),
       body: Container(
-        decoration: Constants.customBoxDecoration(context),
+        color: Colors.white,
+        //decoration: Constants.customBoxDecoration(context),
         child: Stack(
           children: [
             Column(

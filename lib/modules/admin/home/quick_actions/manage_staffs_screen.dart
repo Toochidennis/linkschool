@@ -1362,6 +1362,7 @@ class _ManageStaffScreenState extends State<ManageStaffScreen>
               'Manage Staff',
               style: TextStyle(
                 fontFamily: 'Urbanist',
+                color: Colors.white,
                 fontWeight: FontWeight.w600,
               ),
             ),

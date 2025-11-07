@@ -132,7 +132,7 @@ class Constants {
         end: Alignment.bottomCenter,
         colors: [
           Color.fromRGBO(0, 114, 255, 1).withOpacity(0.3),
-          AppColors.attBgColor1,
+          AppColors.backgroundLight.withOpacity(0.3),
         ],
         stops: [0.1, 0.3],
       ),

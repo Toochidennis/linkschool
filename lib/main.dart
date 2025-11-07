@@ -67,10 +67,11 @@ import 'package:linkschool/routes/onboardingScreen.dart';
 import 'package:linkschool/routes/app_navigation_flow.dart';
 import 'package:provider/provider.dart';
 import 'package:linkschool/modules/services/api/service_locator.dart';
-import 'modules/providers/admin/registered_terms_provider.dart';
+import 'package:linkschool/modules/providers/admin/registered_terms_provider.dart';
 import 'modules/providers/explore/game/game_provider.dart';
 import 'modules/providers/admin/grade_provider.dart';
 import 'modules/providers/student/dashboard_provider.dart';
+import 'modules/providers/app_settings_provider.dart';
 
 final RouteObserver<ModalRoute<void>> routeObserver =
     RouteObserver<ModalRoute<void>>();
@@ -90,6 +91,10 @@ Future<void> main() async {
 
   await EnvConfig.init();
   setupServiceLocator();
+  
+  // Initialize app settings
+  final appSettings = AppSettingsProvider();
+  await appSettings.initializeSettings();
 
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(
@@ -101,6 +106,9 @@ Future<void> main() async {
   runApp(
     MultiProvider(
       providers: [
+        // App Settings Provider - Must be first for global theme
+        ChangeNotifierProvider.value(value: appSettings),
+        
         // Core providers
         ChangeNotifierProvider(create: (_) => locator<AuthProvider>()),
         ChangeNotifierProvider(create: (_) => SchoolProvider()),
@@ -212,14 +220,22 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      title: 'Linkskool',
-      theme: AppThemes.lightTheme,
-      darkTheme: AppThemes.darkTheme,
-      themeMode: ThemeMode.system,
-      home: const AppInitializer(),
-      navigatorObservers: [routeObserver],
+    return Consumer<AppSettingsProvider>(
+      builder: (context, settings, _) {
+        return MediaQuery(
+          data: MediaQuery.of(context).copyWith(
+            textScaleFactor: settings.textScaleFactor,
+          ),
+          child: MaterialApp(
+            debugShowCheckedModeBanner: false,
+            title: 'Linkskool',
+            theme: settings.isDarkMode ? AppThemes.darkTheme : AppThemes.lightTheme,
+            themeMode: settings.isDarkMode ? ThemeMode.dark : ThemeMode.light,
+            home: const AppInitializer(),
+            navigatorObservers: [routeObserver],
+          ),
+        );
+      },
     );
   }
 }

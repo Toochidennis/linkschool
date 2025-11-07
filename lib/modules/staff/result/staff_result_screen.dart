@@ -526,7 +526,7 @@ class _StaffResultScreenState extends State<StaffResultScreen> {
                           Colors.purple.shade600,
                         ),
                       ),
-                      SizedBox(width: 12),
+                      SizedBox(width: 10),
                       Expanded(
                         child: _buildDialogButton(
                           'View Assessment',
@@ -576,7 +576,7 @@ class _StaffResultScreenState extends State<StaffResultScreen> {
     return GestureDetector(
       onTap: onPressed,
       child: Container(
-        padding: EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+        padding: EdgeInsets.symmetric(vertical: 10, horizontal: 10),
         decoration: BoxDecoration(
           color: bgColor,
           borderRadius: BorderRadius.circular(12),

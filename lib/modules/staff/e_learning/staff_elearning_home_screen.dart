@@ -31,7 +31,7 @@ class _StaffElearningScreenState extends State<StaffElearningScreen> {
   Timer? assessmentTimer;
   Timer? activityTimer;
   late double opacity;
-
+  String creatorName = '';
   final String courseIcon = 'assets/icons/course-icon.svg';
 
   // Remove the hardcoded courses list
@@ -196,7 +196,7 @@ class _StaffElearningScreenState extends State<StaffElearningScreen> {
         final term = settings['term']?.toString() ?? '';
         final year = settings['year']?.toString() ?? '';
         final rawCourses = data['courses'] ?? [];
-
+            creatorName = profile['name']?.toString() ?? '';
         // Build a simpler "levelsWithCourses"
         final grouped = rawCourses.map((classData) {
           return {
@@ -238,7 +238,7 @@ class _StaffElearningScreenState extends State<StaffElearningScreen> {
     return Scaffold(
       appBar: CustomStudentAppBar(
         title: 'Welcome',
-        subtitle: 'Tochukwu',
+        subtitle: creatorName,
         showNotification: true,
         onNotificationTap: () {},
       ),

@@ -89,7 +89,8 @@ class _AmountSettingSuccessScreenState extends State<AmountSettingSuccessScreen>
         backgroundColor: AppColors.backgroundLight,
       ),
       body: Container(
-        decoration: Constants.customBoxDecoration(context),
+        color: Colors.white,
+       // decoration: Constants.customBoxDecoration(context),
         child: Padding(
           padding: const EdgeInsets.all(24.0),
           child: Column(

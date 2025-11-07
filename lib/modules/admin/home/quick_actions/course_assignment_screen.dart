@@ -28,6 +28,7 @@ class _AssignCoursesScreenState extends State<AssignCoursesScreen>
   final List<Map<String, int>> _assignments = [];
   String? academicYear;
   int? academicTerm;
+  
   @override
   void initState() {
     super.initState();
@@ -49,28 +50,28 @@ class _AssignCoursesScreenState extends State<AssignCoursesScreen>
     ));
     _fadeController.forward();
     _slideController.forward();
+    
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final courseProvider =
-          Provider.of<CourseProvider>(context, listen: false);
-      final levelClassProvider =
-          Provider.of<LevelClassProvider>(context, listen: false);
+      final courseProvider = Provider.of<CourseProvider>(context, listen: false);
+      final levelClassProvider = Provider.of<LevelClassProvider>(context, listen: false);
+      final assignCourseProvider = Provider.of<AssignCourseProvider>(context, listen: false);
+      
       courseProvider.fetchCourses().then((_) {
-        print('Courses Loaded: ${courseProvider.courses.map((c) => {
-              'id': c.id,
-              'name': c.courseName,
-              'levelId': c.levelId
-            }).toList()}');
+        print('Courses Loaded: ${courseProvider.courses.length}');
       });
+      
       levelClassProvider.fetchLevels().then((_) {
-        print(
-            'LevelsWithClasses Loaded: ${levelClassProvider.levelsWithClasses.map((lwc) => {
-                  'levelId': lwc.level.id,
-                  'classes': lwc.classes.map((c) => c.className).toList()
-                }).toList()}');
+        print('LevelsWithClasses Loaded: ${levelClassProvider.levelsWithClasses.length}');
       });
-
-      final CourseAssignmentProvider =
-          Provider.of<AssignCourseProvider>(context, listen: false);
+      
+      // Load existing assignments for this staff
+      assignCourseProvider.loadCourseAssignments(
+        int.parse(widget.staffId), 
+        academicYear.toString(), 
+        academicTerm.toString(),
+      ).then((_) {
+        print('Existing assignments loaded: ${assignCourseProvider.assignments.length}');
+      });
     });
   }
 
@@ -184,8 +185,8 @@ class _AssignCoursesScreenState extends State<AssignCoursesScreen>
   }
 
   Future<void> _submitAssignments() async {
-    final CourseAssignmentProvider =
-        Provider.of<AssignCourseProvider>(context, listen: false);
+    final assignCourseProvider = Provider.of<AssignCourseProvider>(context, listen: false);
+    
     final payload = {
       'year': academicYear,
       'term': academicTerm,
@@ -197,34 +198,42 @@ class _AssignCoursesScreenState extends State<AssignCoursesScreen>
     };
 
     try {
-      final success = await CourseAssignmentProvider.AssignCourse(payload);
-      print('Payload: $payload');
+      final success = await assignCourseProvider.AssignCourse(payload);
       if (success) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Course Assignment submitted '),
-            backgroundColor: AppColors.attCheckColor2,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10),
-            ),
-          ),
+        // Reload assignments after successful save
+        await assignCourseProvider.loadCourseAssignments(
+          int.parse(widget.staffId), 
+          academicYear.toString(), 
+          academicTerm.toString()
         );
+        
+        setState(() {
+          _assignments.clear(); 
+        });
+        
         if (mounted) {
-          Navigator.pop(context);
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Text('Course assignments saved successfully'),
+              backgroundColor: AppColors.attCheckColor2,
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
+          );
         }
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error Assigning Course'),
-          backgroundColor: AppColors.attCheckColor2,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Error assigning course'),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
           ),
-        ),
-      );
+        );
+      }
     }
   }
 
@@ -232,6 +241,7 @@ class _AssignCoursesScreenState extends State<AssignCoursesScreen>
   Widget build(BuildContext context) {
     final courseProvider = Provider.of<CourseProvider>(context);
     final levelClassProvider = Provider.of<LevelClassProvider>(context);
+    final assignCourseProvider = Provider.of<AssignCourseProvider>(context);
 
     return Scaffold(
       appBar: AppBar(
@@ -246,10 +256,12 @@ class _AssignCoursesScreenState extends State<AssignCoursesScreen>
         foregroundColor: Colors.white,
         elevation: 0,
       ),
-      body: courseProvider.isLoading || levelClassProvider.isLoading
+      body: courseProvider.isLoading || 
+             levelClassProvider.isLoading || 
+             assignCourseProvider.isLoading
           ? const Center(child: CircularProgressIndicator())
           : courseProvider.courses.isEmpty ||
-                  levelClassProvider.levelsWithClasses.isEmpty
+                levelClassProvider.levelsWithClasses.isEmpty
               ? Center(
                   child: Text(
                     courseProvider.courses.isEmpty
@@ -257,262 +269,259 @@ class _AssignCoursesScreenState extends State<AssignCoursesScreen>
                         : 'No classes available',
                   ),
                 )
-              : _assignments.isEmpty
-                  ? Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            SvgPicture.asset(
-                              'assets/images/e-learning/Student stress-amico.svg',
-                              width: 220,
-                              height: 220,
-                            ),
-                            const SizedBox(height: 16),
-                            Text(
-                              'No courses and classes have been assigned',
-                              style: AppTextStyles.normal600(
-                                fontSize: 18,
-                                color: AppColors.primaryLight,
-                              ),
-                              textAlign: TextAlign.center,
-                            ),
-                            const SizedBox(height: 20),
-                            ElevatedButton.icon(
-                              onPressed: _addAssignment,
-                              icon: const Icon(Icons.add, color: Colors.white),
-                              label: const Text(
-                                "Assign Course",
-                                style: TextStyle(
-                                  fontFamily: "Urbanist",
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: 14,
-                                  color: Colors.white,
-                                ),
-                              ),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: AppColors.text2Light,
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 24, vertical: 12),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(16),
-                                ),
-                                elevation: 2,
-                              ),
-                            ),
-                          ],
+              : SingleChildScrollView(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Display existing assignments
+                      if (assignCourseProvider.assignments.isNotEmpty) ...[
+                        Text(
+                          'Current Assignments',
+                          style: AppTextStyles.normal600(
+                            fontSize: 18,
+                            color: AppColors.text2Light,
+                          ),
                         ),
-                      ),
-                    )
-                  : Container(
-                      color: Colors.white,
-                      child: SingleChildScrollView(
-                        padding: const EdgeInsets.all(16.0),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            _buildAnimatedCard(
-                              index: 0,
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  const SizedBox(height: 16),
-                                  const SizedBox(height: 16),
-                                  Text(
-                                    'Courses and Classes',
-                                    style: AppTextStyles.normal600(
-                                      fontSize: 16,
-                                      color: AppColors.text2Light,
-                                    ),
+                        const SizedBox(height: 12),
+                        ListView.builder(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          itemCount: assignCourseProvider.assignments.length,
+                          itemBuilder: (context, index) {
+                            final assignment = assignCourseProvider.assignments[index];
+                            return Card(
+                              margin: const EdgeInsets.only(bottom: 12),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16.0),
+                              ),
+                              elevation: 2,
+                              child: ListTile(
+                                leading: CircleAvatar(
+                                  backgroundColor: AppColors.text2Light.withOpacity(0.1),
+                                  child: Icon(
+                                    Icons.book,
+                                    color: AppColors.text2Light,
+                                    size: 20,
                                   ),
-                                  const SizedBox(height: 8),
-                                  ListView.builder(
-                                    shrinkWrap: true,
-                                    physics:
-                                        const NeverScrollableScrollPhysics(),
-                                    itemCount: _assignments.length,
-                                    itemBuilder: (context, index) {
-                                      return _buildAnimatedCard(
-                                        index: index + 1,
-                                        child: Card(
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius:
-                                                BorderRadius.circular(20.0),
-                                          ),
-                                          elevation: 4,
-                                          shadowColor: Colors.black12,
-                                          child: Padding(
-                                            padding: const EdgeInsets.all(16.0),
-                                            child: Column(
-                                              crossAxisAlignment:
-                                                  CrossAxisAlignment.start,
-                                              children: [
-                                                Row(
-                                                  children: [
-                                                    Expanded(
-                                                      child: Consumer<
-                                                          CourseProvider>(
-                                                        builder: (context,
-                                                            provider, _) {
-                                                          return _buildDropdown<
-                                                              int>(
-                                                            label: 'Course',
-                                                            value: _assignments[
-                                                                            index]
-                                                                        [
-                                                                        'course_id'] ==
-                                                                    0
-                                                                ? null
-                                                                : _assignments[
-                                                                        index][
-                                                                    'course_id'],
-                                                            items: provider
-                                                                .courses
-                                                                .map((course) =>
-                                                                    DropdownMenuItem<
-                                                                        int>(
-                                                                      value:
-                                                                          course
-                                                                              .id,
-                                                                      child:
-                                                                          Text(
-                                                                        '${course.courseName} (${course.courseCode})',
-                                                                        style:
-                                                                            const TextStyle(
-                                                                          fontFamily:
-                                                                              'Urbanist',
-                                                                          fontWeight:
-                                                                              FontWeight.w500,
-                                                                        ),
-                                                                      ),
-                                                                    ))
-                                                                .toList(),
-                                                            onChanged: (value) {
-                                                              setState(() {
-                                                                _assignments[
-                                                                            index]
-                                                                        [
-                                                                        'course_id'] =
-                                                                    value ?? 0;
-                                                                _assignments[
-                                                                        index][
-                                                                    'class_id'] = 0;
-                                                              });
-                                                            },
-                                                          );
-                                                        },
-                                                      ),
-                                                    ),
-                                                    IconButton(
-                                                      onPressed: () =>
-                                                          _removeAssignment(
-                                                              index),
-                                                      icon: const Icon(
-                                                          Icons.delete,
-                                                          color: Colors.red),
-                                                    ),
-                                                  ],
-                                                ),
-                                                const SizedBox(height: 12),
-                                                Divider(
-                                                    color:
-                                                        Colors.grey.shade300),
-                                                const SizedBox(height: 12),
-                                                Consumer<LevelClassProvider>(
-                                                  builder:
-                                                      (context, provider, _) {
-                                                    final allClasses = provider
-                                                        .levelsWithClasses
-                                                        .expand((lwc) =>
-                                                            lwc.classes)
-                                                        .toList();
-                                                    return _buildDropdown<int>(
-                                                      label: 'Class',
-                                                      value: _assignments[index]
-                                                                  [
-                                                                  'class_id'] ==
-                                                              0
-                                                          ? null
-                                                          : _assignments[index]
-                                                              ['class_id'],
-                                                      items: allClasses
-                                                          .map((cls) =>
-                                                              DropdownMenuItem<
-                                                                  int>(
-                                                                value: cls.id,
-                                                                child: Text(cls
-                                                                        .className
-                                                                        .isEmpty
-                                                                    ? 'Unnamed Class'
-                                                                    : cls
-                                                                        .className),
-                                                              ))
-                                                          .toList(),
-                                                      onChanged: (value) {
-                                                        setState(() {
-                                                          _assignments[index]
-                                                                  ['class_id'] =
-                                                              value ?? 0;
-                                                        });
-                                                      },
-                                                    );
+                                ),
+                                title: Text(
+                                  '${assignment.courseName} (${assignment.courseCode})',
+                                  style: AppTextStyles.normal600(
+                                    fontSize: 14,
+                                    color: AppColors.text2Light,
+                                  ),
+                                ),
+                                subtitle: Text(
+                                  '${assignment.className} • ${assignment.levelName}',
+                                  style: AppTextStyles.normal500(
+                                    fontSize: 12,
+                                    color: AppColors.text5Light,
+                                  ),
+                                ),
+                                trailing: Icon(
+                                  Icons.check_circle,
+                                  color: AppColors.attCheckColor2,
+                                  size: 20,
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                        const SizedBox(height: 24),
+                        const Divider(),
+                        const SizedBox(height: 16),
+                      ],
+                      
+                      // Add new assignments section
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            'Add New Assignments',
+                            style: AppTextStyles.normal600(
+                              fontSize: 18,
+                              color: AppColors.text2Light,
+                            ),
+                          ),
+                          if (_assignments.isEmpty)
+                            IconButton(
+                              onPressed: _addAssignment,
+                              icon: const Icon(Icons.add_circle),
+                              color: AppColors.text2Light,
+                            ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      
+                      // Editable assignments list
+                      if (_assignments.isNotEmpty) 
+                        ListView.builder(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          itemCount: _assignments.length,
+                          itemBuilder: (context, index) {
+                            return _buildAnimatedCard(
+                              index: index,
+                              child: Card(
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(20.0),
+                                ),
+                                elevation: 4,
+                                shadowColor: Colors.black12,
+                                child: Padding(
+                                  padding: const EdgeInsets.all(16.0),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Row(
+                                        children: [
+                                          Expanded(
+                                            child: Consumer<CourseProvider>(
+                                              builder: (context, provider, _) {
+                                                return _buildDropdown<int>(
+                                                  label: 'Course',
+                                                  value: _assignments[index]['course_id'] == 0
+                                                      ? null
+                                                      : _assignments[index]['course_id'],
+                                                  items: provider.courses
+                                                      .map((course) => DropdownMenuItem<int>(
+                                                            value: course.id,
+                                                            child: Text(
+                                                              '${course.courseName} (${course.courseCode})',
+                                                              style: const TextStyle(
+                                                                fontFamily: 'Urbanist',
+                                                                fontWeight: FontWeight.w500,
+                                                              ),
+                                                            ),
+                                                          ))
+                                                      .toList(),
+                                                  onChanged: (value) {
+                                                    setState(() {
+                                                      _assignments[index]['course_id'] = value ?? 0;
+                                                      _assignments[index]['class_id'] = 0;
+                                                    });
                                                   },
-                                                ),
-                                              ],
+                                                );
+                                              },
                                             ),
                                           ),
-                                        ),
-                                      );
-                                    },
-                                  ),
-                                  const SizedBox(height: 16),
-                                  SizedBox(
-                                    width: double.infinity,
-                                    child: ElevatedButton(
-                                      onPressed: _addAssignment,
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor: AppColors.text2Light,
-                                        padding: const EdgeInsets.symmetric(
-                                            vertical: 12),
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius:
-                                              BorderRadius.circular(16),
-                                        ),
-                                        elevation: 0,
+                                          IconButton(
+                                            onPressed: () => _removeAssignment(index),
+                                            icon: const Icon(Icons.delete, color: Colors.red),
+                                          ),
+                                        ],
                                       ),
-                                      child: const Text(
-                                        'Add Course Assignment',
-                                        style: TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 14,
-                                          fontWeight: FontWeight.w600,
-                                          fontFamily: 'Urbanist',
-                                        ),
+                                      const SizedBox(height: 12),
+                                      Divider(color: Colors.grey.shade300),
+                                      const SizedBox(height: 12),
+                                      Consumer<LevelClassProvider>(
+                                        builder: (context, provider, _) {
+                                          final allClasses = provider.levelsWithClasses
+                                              .expand((lwc) => lwc.classes)
+                                              .toList();
+                                          return _buildDropdown<int>(
+                                            label: 'Class',
+                                            value: _assignments[index]['class_id'] == 0
+                                                ? null
+                                                : _assignments[index]['class_id'],
+                                            items: allClasses
+                                                .map((cls) => DropdownMenuItem<int>(
+                                                      value: cls.id,
+                                                      child: Text(cls.className.isEmpty
+                                                          ? 'Unnamed Class'
+                                                          : cls.className),
+                                                    ))
+                                                .toList(),
+                                            onChanged: (value) {
+                                              setState(() {
+                                                _assignments[index]['class_id'] = value ?? 0;
+                                              });
+                                            },
+                                          );
+                                        },
                                       ),
-                                    ),
+                                    ],
                                   ),
-                                ],
+                                ),
+                              ),
+                            );
+                          },
+                        )
+                      else
+                        Center(
+                          child: Column(
+                            children: [
+                              SvgPicture.asset(
+                                'assets/images/e-learning/Student stress-amico.svg',
+                                width: 180,
+                                height: 180,
+                              ),
+                              const SizedBox(height: 16),
+                              Text(
+                                'No new assignments to add',
+                                style: AppTextStyles.normal500(
+                                  fontSize: 14,
+                                  color: AppColors.text5Light,
+                                ),
+                              ),
+                              const SizedBox(height: 12),
+                              ElevatedButton.icon(
+                                onPressed: _addAssignment,
+                                icon: const Icon(Icons.add, color: Colors.white),
+                                label: const Text('Add Assignment'),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: AppColors.text2Light,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      
+                      // Add Another Assignment button (only shown when there are assignments)
+                      if (_assignments.isNotEmpty) ...[
+                        const SizedBox(height: 16),
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton(
+                            onPressed: _addAssignment,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.text2Light,
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16),
                               ),
                             ),
-                          ],
+                            child: const Text(
+                              'Add Another Assignment',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                                fontFamily: 'Urbanist',
+                              ),
+                            ),
+                          ),
                         ),
-                      ),
-                    ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: _assignments.isEmpty ? null : _submitAssignments,
-        backgroundColor:
-            _assignments.isEmpty ? AppColors.text7Light : AppColors.text2Light,
-        icon: const Icon(Icons.save, color: Colors.white),
-        label: const Text(
-          'Save Assignments',
-          style: TextStyle(
-            fontFamily: 'Urbanist',
-            color: Colors.white,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-      ),
+                      ],
+                    ],
+                  ),
+                ),
+      floatingActionButton: _assignments.isNotEmpty
+          ? FloatingActionButton.extended(
+              onPressed: _submitAssignments,
+              backgroundColor: AppColors.text2Light,
+              icon: const Icon(Icons.save, color: Colors.white),
+              label: const Text(
+                'Save New Assignments',
+                style: TextStyle(
+                  fontFamily: 'Urbanist',
+                  color: Colors.white,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            )
+          : null,
     );
   }
 }

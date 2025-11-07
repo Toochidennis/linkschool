@@ -165,36 +165,63 @@ Widget _buildPerformanceMetrics() {
 }
 
 Widget _buildTestHistory() {
-  return Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      Constants.headingWithSeeAll600(
-        title: 'Test history',
-        titleSize: 18.0,
-        titleColor: AppColors.text4Light,
-      ),
-      SizedBox(
-        height: 100,
-        child: ListView(
-          scrollDirection: Axis.horizontal,
-          padding: const EdgeInsets.only(right: 16.0),
+  return Consumer<CBTProvider>(
+    builder: (context, provider, child) {
+      // Generate sample history based on available subjects
+      final recentSubjects = provider.currentBoardSubjects.take(3).toList();
+      
+      if (recentSubjects.isEmpty) {
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildHistoryCard(
-              courseName: 'Biology',
-              year: '2015',
-              progressValue: 0.5,
-              borderColor: AppColors.cbtColor3,
+            Constants.headingWithSeeAll600(
+              title: 'Test history',
+              titleSize: 18.0,
+              titleColor: AppColors.text4Light,
             ),
-            _buildHistoryCard(
-              courseName: 'Biology',
-              year: '2015',
-              progressValue: 0.25,
-              borderColor: AppColors.cbtColor4,
-            ),
+            const SizedBox(height: 100),
           ],
-        ),
-      ),
-    ],
+        );
+      }
+      
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Constants.headingWithSeeAll600(
+            title: 'Test history',
+            titleSize: 18.0,
+            titleColor: AppColors.text4Light,
+          ),
+          SizedBox(
+            height: 100,
+            child: ListView.builder(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.only(right: 16.0),
+              itemCount: recentSubjects.length,
+              itemBuilder: (context, index) {
+                final subject = recentSubjects[index];
+                final latestYear = subject.years?.isNotEmpty == true 
+                    ? subject.years!.last.year 
+                    : '2024';
+                final colors = [
+                  AppColors.cbtColor3,
+                  AppColors.cbtColor4,
+                  AppColors.cbtColor1,
+                ];
+                final progressValues = [0.75, 0.60, 0.45]; // Sample progress values
+                
+                return _buildHistoryCard(
+                  courseName: subject.name,
+                  year: latestYear,
+                  progressValue: progressValues[index % progressValues.length],
+                  borderColor: colors[index % colors.length],
+                );
+              },
+            ),
+          ),
+        ],
+      );
+    },
   );
 }
 
@@ -383,9 +410,8 @@ Widget _buildChooseSubjectCard({
 
             YearPickerDialog.show(
               context,
-              examTypeId: provider.selectedBoard?.id ??
-                  '', // Changed from examTypeId to id
-              title: 'Choose Year',
+              examTypeId: provider.selectedBoard?.id ?? '',
+              title: 'Choose Year for ${subject}',
               startYear: yearsList.first,
               numberOfYears: yearsList.length,
               subject: subject,
@@ -395,9 +421,10 @@ Widget _buildChooseSubjectCard({
             );
           } else {
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('No years available for this subject'),
-                duration: Duration(seconds: 2),
+              SnackBar(
+                content: Text('No years available for $subject'),
+                duration: const Duration(seconds: 2),
+                backgroundColor: AppColors.cbtColor1,
               ),
             );
           }

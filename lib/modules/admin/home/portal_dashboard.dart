@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
+import 'package:linkschool/modules/admin/admin_settings.dart';
 import 'package:linkschool/modules/admin/e_learning/e_learning_dashboard_screen.dart';
 import 'package:linkschool/modules/admin/home/portal_home.dart';
 import 'package:linkschool/modules/admin/payment/payment_dashboard_screen.dart';
@@ -44,6 +45,10 @@ class _PortalDashboardState extends State<PortalDashboard> {
     final userName =
         authProvider.user?.name ?? 'Guest'; // Use the logged-in user's name
 
+        final name = userName.trim().split(' ');
+        final firstName = name.isNotEmpty ? name.first : 'User';
+        print("First name: $firstName");
+
     return PreferredSize(
       preferredSize: const Size.fromHeight(kToolbarHeight + 18),
       child: SafeArea(
@@ -61,9 +66,10 @@ class _PortalDashboardState extends State<PortalDashboard> {
                     style: AppTextStyles.italic2Light,
                   ),
                   TextSpan(
-                    text: userName, // Use the logged-in user's name
-                    style: AppTextStyles.italic3Light,
-                  ),
+  text: userName.trim().split(' ').last,
+  style: AppTextStyles.italic3Light,
+),
+
                 ],
               ),
             ),
@@ -93,22 +99,30 @@ class _PortalDashboardState extends State<PortalDashboard> {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final userName =
         authProvider.user?.name ?? 'Guest'; // Use the logged-in user's name
+      final name = userName.trim().split(' ');
+      final firstName = name.isNotEmpty ? name.first : 'User';
+      print("First name: $firstName");
 
     switch (index) {
       case 0:
         return PortalHome(
           appBar: CustomStudentAppBar(
             title: 'Welcome',
-            subtitle: userName,
-            showNotification: true,
-            onNotificationTap: () {},
+            subtitle: firstName,
+            showSettings: true,
+            onSettingsTap: () {
+              Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => AdminSettingsScreen()),
+              );
+            },
+            
           ),
         );
       case 1:
         return ResultDashboardScreen(
           appBar: CustomStudentAppBar(
             title: 'Welcome',
-            subtitle: userName,
+            subtitle: firstName,
             showNotification: true,
             onNotificationTap: () {},
           ),
@@ -117,7 +131,7 @@ class _PortalDashboardState extends State<PortalDashboard> {
         return ELearningDashboardScreen(
           appBar: CustomStudentAppBar(
             title: 'Welcome',
-            subtitle: userName,
+            subtitle: firstName,
             showNotification: true,
             onNotificationTap: () {},
           ),

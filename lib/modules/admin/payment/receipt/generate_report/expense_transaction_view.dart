@@ -58,7 +58,7 @@ class _ExpenseTransactionViewState extends State<ExpenseTransactionView> {
     final transactions = _expenditureData?['transactions'] ?? [];
 
     return Container(
-      decoration: Constants.customBoxDecoration(context),
+      color:Colors.white,
       child: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : Column(

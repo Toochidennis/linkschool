@@ -217,7 +217,8 @@ class _ReceiptScreenState extends State<ReceiptScreen>
       body: Stack(
         children: [
           Container(
-            decoration: Constants.customBoxDecoration(context),
+            color: Colors.white,
+            //decoration: Constants.customBoxDecoration(context),
             child: _isLoading
                 ? const Center(child: CircularProgressIndicator())
                 : _report == null

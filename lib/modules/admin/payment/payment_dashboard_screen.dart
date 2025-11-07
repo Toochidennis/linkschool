@@ -87,7 +87,7 @@ class _PaymentDashboardScreenState extends State<PaymentDashboardScreen> {
       title: 'Revenue',
       showNotification: true,
       showSettings: true,
-      centerTitle: true,
+      centerTitle: false,
       onNotificationTap: () {
         // Handle notification icon press
       },
@@ -105,7 +105,7 @@ class _PaymentDashboardScreenState extends State<PaymentDashboardScreen> {
       appBar: customAppBar,
       body: SafeArea(
         child: Container(
-          decoration: Constants.customBoxDecoration(context),
+         color: Colors.white,
           child: _isLoading
               ? const Center(child: CircularProgressIndicator())
               : SingleChildScrollView(
@@ -598,7 +598,7 @@ class _PaymentDashboardScreenState extends State<PaymentDashboardScreen> {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        width: 170,
+        width: 150,
         height: 75,
         decoration: BoxDecoration(
           color: backgroundColor,

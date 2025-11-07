@@ -4,6 +4,7 @@ import 'package:linkschool/modules/common/bottom_nav_item.dart';
 import 'package:linkschool/modules/staff/e_learning/staff_elearning_home_screen.dart';
 import 'package:linkschool/modules/staff/home/staff_home_screen.dart';
 import 'package:linkschool/modules/staff/result/staff_result_screen.dart';
+import 'package:linkschool/modules/staff/staff_logout.dart';
 
 class StaffDashboard extends StatefulWidget {
   final Function(bool) onSwitch;
@@ -42,7 +43,7 @@ class _StaffDashboardState extends State<StaffDashboard> {
       case 2:
         return const StaffElearningScreen();
       case 3:
-        return _buildProfileScreen();
+        return StaffProfileScreen(logout:widget.onLogout ,);
       default:
         return Container();
     }
@@ -92,19 +93,19 @@ class _StaffDashboardState extends State<StaffDashboard> {
       createBottomNavIcon(
         imagePath: 'assets/icons/result.svg',
         text: 'Result',
-        width: 20.0,
+        width: 10.0,
         height: 20.0,
       ),
       createBottomNavIcon(
         imagePath: 'assets/icons/e-learning.svg',
-        text: 'E-Learning',
-        width: 20.0,
-        height: 20.0,
+        text: 'E- \n Learning',
+        width:10,
+        height: 10.0,
       ),
       createBottomNavIcon(
         imagePath: 'assets/icons/profile.svg',
         text: 'Profile',
-        width: 20.0,
+        width: 10.0,
         height: 20.0,
       ),
     ];

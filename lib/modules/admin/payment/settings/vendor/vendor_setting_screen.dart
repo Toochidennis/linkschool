@@ -368,7 +368,8 @@ class _VendorSettingsScreenState extends State<VendorSettingsScreen> {
         ),
       ),
       body: Container(
-        decoration: Constants.customBoxDecoration(context),
+        color: Colors.white,
+        //decoration: Constants.customBoxDecoration(context),
         child: Column(
           children: [
             Padding(

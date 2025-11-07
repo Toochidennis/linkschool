@@ -15,6 +15,7 @@ class YearPickerDialog {
     required Color cardColor,
     required List<String> subjectList,
     required String examTypeId,
+    String? subjectId,
   }) {
     final List<int> years = List.generate(
       numberOfYears,
@@ -63,18 +64,18 @@ class YearPickerDialog {
       onSubmit: (index) {
         Navigator.pop(context);
         Future.delayed(const Duration(milliseconds: 10), () {
-          print("ssss :$examTypeId");
+          print("Selected year: ${years[index]}, Subject: $subject, ExamTypeId: $examTypeId, SubjectId: $subjectId");
           Navigator.push(
             context,
             MaterialPageRoute(
               builder: (context) => CbtDetailScreen(
                 year: years[index],
                 subject: subject,
-
                 subjectIcon: subjectIcon,
                 cardColor: cardColor,
                 subjectList: subjectList,
-                examTypeId: examTypeId, // Pass examTypeId to CbtDetailScreen
+                examTypeId: examTypeId,
+                subjectId: subjectId ?? '', // Pass subjectId to CbtDetailScreen
               ),
             ),
           );

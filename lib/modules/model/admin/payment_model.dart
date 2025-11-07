@@ -173,8 +173,8 @@ class UnpaidStudent {
 
   factory UnpaidStudent.fromJson(Map<String, dynamic> json) {
     return UnpaidStudent(
-      studentId: json['student_id'] ?? '',
-      regNo: json['reg_no'] ?? '',
+      studentId: json['student_id'].toString(),
+      regNo: json['reg_no'].toString(),
       name: json['name'] ?? '',
       levelId: json['level_id'] ?? 0,
       classId: json['class_id'] ?? 0,
@@ -194,7 +194,7 @@ class UnpaidInvoice {
   final int id;
   final String? reference;
   final List<InvoiceDetail> invoiceDetails;
-  final String? amountDue;
+  final double amountDue;
   final String year;
   final int term;
 
@@ -202,7 +202,7 @@ class UnpaidInvoice {
     required this.id,
     this.reference,
     required this.invoiceDetails,
-    this.amountDue,
+    required this.amountDue,
     required this.year,
     required this.term,
   });
@@ -210,13 +210,15 @@ class UnpaidInvoice {
   factory UnpaidInvoice.fromJson(Map<String, dynamic> json) {
     return UnpaidInvoice(
       id: json['id'] ?? 0,
-      reference: json['reference'],
+      reference: json['reference']?.toString(),
       invoiceDetails: (json['invoice_details'] as List?)
               ?.map((d) => InvoiceDetail.fromJson(d))
               .toList() ??
           [],
-      amountDue: json['amount_due'],
-      year: json['year'] ?? '',
+      amountDue: (json['amount_due'] is num)
+          ? (json['amount_due'] as num).toDouble()
+          : double.tryParse(json['amount_due']?.toString() ?? '0') ?? 0.0,
+      year: json['year']?.toString() ?? '',
       term: json['term'] ?? 0,
     );
   }
@@ -256,13 +258,18 @@ class InvoiceDetail {
   });
 
   factory InvoiceDetail.fromJson(Map<String, dynamic> json) {
+    // Handle 'amount' or 'fee_amount' and both string or number values
+    final dynamic amountValue = json['amount'] ?? json['fee_amount'] ?? 0;
     return InvoiceDetail(
-      feeId: json['fee_id'] ?? '',
+      feeId: json['fee_id'].toString(),
       feeName: json['fee_name'] ?? '',
-      amount: double.tryParse(json['amount']?.toString() ?? '0') ?? 0.0,
+      amount: (amountValue is num)
+          ? (amountValue as num).toDouble()
+          : double.tryParse(amountValue.toString()) ?? 0.0,
     );
   }
 }
+
 
 class Level {
   final int id;

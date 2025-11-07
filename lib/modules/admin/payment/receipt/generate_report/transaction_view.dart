@@ -61,7 +61,7 @@ class _TransactionsViewState extends State<TransactionsView> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: Constants.customBoxDecoration(context),
+     color: Colors.white,
       child: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _report == null || _report!.transactions.isEmpty

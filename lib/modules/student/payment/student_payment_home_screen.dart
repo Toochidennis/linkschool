@@ -6,6 +6,7 @@ import 'package:linkschool/modules/common/custom_toaster.dart';
 import 'package:linkschool/modules/model/student/payment_model.dart';
 import 'package:linkschool/modules/providers/student/payment_provider.dart';
 import 'package:linkschool/modules/student/payment/see_all_payments.dart';
+import 'package:linkschool/modules/student/student_logout.dart' show StudentProfileScreen;
 import 'package:provider/provider.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
@@ -203,7 +204,7 @@ class _StudentPaymentHomeScreenState extends State<StudentPaymentHomeScreen>
     showDialog(
       context: context,
       builder: (BuildContext context) {
-        return StudentSettingDialog(logout: widget.logout);
+        return StudentProfileScreen( logout: widget.logout );
       },
     );
   }

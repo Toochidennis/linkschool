@@ -3,6 +3,7 @@ import 'package:linkschool/modules/providers/admin/home/level_class_provider.dar
 import 'package:provider/provider.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/constants.dart';
+import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/model/admin/home/level_class_model.dart';
 
 class LevelClassManagementScreen extends StatefulWidget {
@@ -278,90 +279,364 @@ class _LevelClassManagementScreenState
     return Consumer<LevelClassProvider>(
       builder: (context, provider, _) => Scaffold(
         appBar: AppBar(
-          title: const Text('Manage Levels & Classes'),
+          title: const Text(
+            'Manage Levels & Classes',
+            style: TextStyle(
+              fontWeight: FontWeight.w600,
+              color: Colors.white,
+              fontFamily: 'Urbanist',
+            ),
+          ),
           backgroundColor: AppColors.text2Light,
-          foregroundColor: Colors.white,
         ),
         body: provider.isLoading
             ? const Center(child: CircularProgressIndicator())
             : Container(
                 decoration: Constants.customBoxDecoration(context),
-                child: ListView.builder(
-                  padding: const EdgeInsets.all(16),
-                  itemCount: provider.levelsWithClasses.length,
-                  itemBuilder: (context, index) {
-                    final levelWithClasses = provider.levelsWithClasses[index];
-                    final level = levelWithClasses.level;
-                    final classes = levelWithClasses.classes;
-
-                    return Card(
-                      margin: const EdgeInsets.only(bottom: 16),
-                      child: ExpansionTile(
-                        title: Text(
-                          level.levelName,
-                          style: const TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                        subtitle: Text('${classes.length} classes'),
-                        trailing: PopupMenuButton<String>(
-                          onSelected: (value) {
-                            if (value == 'edit') {
-                              _showAddLevelDialog(levelToEdit: level);
-                            } else if (value == 'delete') {
-                              _showDeleteLevelConfirmation(level);
-                            }
-                          },
-                          itemBuilder: (context) => [
-                            const PopupMenuItem(
-                              value: 'edit',
-                              child: Text('Edit'),
+                child: provider.levelsWithClasses.isEmpty
+                    ? Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.school_outlined,
+                              size: 80,
+                              color: Colors.grey[400],
                             ),
-                            const PopupMenuItem(
-                              value: 'delete',
-                              child: Text('Delete'),
+                            const SizedBox(height: 16),
+                            Text(
+                              'No Levels Yet',
+                              style: AppTextStyles.normal600(
+                                fontSize: 18,
+                                color: Colors.grey[600]!,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              'Tap the + button to add a level',
+                              style: AppTextStyles.normal400(
+                                fontSize: 14,
+                                color: Colors.grey[500]!,
+                              ),
                             ),
                           ],
                         ),
+                      )
+                    : ListView.builder(
+                        padding: const EdgeInsets.all(16),
+                        itemCount: provider.levelsWithClasses.length,
+                        itemBuilder: (context, index) {
+                          final levelWithClasses =
+                              provider.levelsWithClasses[index];
+                          final level = levelWithClasses.level;
+                          final classes = levelWithClasses.classes;
+
+                          return _buildLevelCard(level, classes);
+                        },
+                      ),
+              ),
+        floatingActionButton: FloatingActionButton.extended(
+          onPressed: () => _showAddLevelDialog(),
+          backgroundColor: AppColors.text2Light,
+          icon: const Icon(Icons.add, color: Colors.white),
+          label: const Text(
+            'Add Level',
+            style: TextStyle(
+              fontFamily: 'Urbanist',
+              color: Colors.white,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLevelCard(Levels level, List<Class> classes) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.1),
+            spreadRadius: 1,
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          // Level Header
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: AppColors.text2Light.withOpacity(0.05),
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(16),
+                topRight: Radius.circular(16),
+              ),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: AppColors.text2Light.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(
+                    Icons.school,
+                    color: AppColors.text2Light,
+                    size: 24,
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        level.levelName,
+                        style: AppTextStyles.normal600(
+                          fontSize: 18,
+                          color: AppColors.text2Light,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Row(
                         children: [
-                          ...classes.map((classItem) => ListTile(
-                                title: Text(classItem.className),
-                                trailing: PopupMenuButton<String>(
-                                  onSelected: (value) {
-                                    if (value == 'edit') {
-                                      _showAddClassDialog(level,
-                                          classToEdit: classItem);
-                                    } else if (value == 'delete') {
-                                      _showDeleteClassConfirmation(
-                                          level, classItem);
-                                    }
-                                  },
-                                  itemBuilder: (context) => [
-                                    const PopupMenuItem(
-                                      value: 'edit',
-                                      child: Text('Edit'),
-                                    ),
-                                    const PopupMenuItem(
-                                      value: 'delete',
-                                      child: Text('Delete'),
-                                    ),
-                                  ],
-                                ),
-                              )),
-                          ListTile(
-                            leading: const Icon(Icons.add),
-                            title: const Text('Add Class'),
-                            onTap: () => _showAddClassDialog(level),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: AppColors.text2Light.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(
+                              level.schoolType.toUpperCase(),
+                              style: AppTextStyles.normal500(
+                                fontSize: 11,
+                                color: AppColors.text2Light,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            '${classes.length} ${classes.length == 1 ? 'Class' : 'Classes'}',
+                            style: AppTextStyles.normal400(
+                              fontSize: 14,
+                              color: Colors.grey[600]!,
+                            ),
                           ),
                         ],
                       ),
-                    );
+                    ],
+                  ),
+                ),
+                PopupMenuButton<String>(
+                  icon: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: AppColors.text2Light.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Icon(
+                      Icons.more_vert,
+                      color: AppColors.text2Light,
+                      size: 20,
+                    ),
+                  ),
+                  onSelected: (value) {
+                    if (value == 'edit') {
+                      _showAddLevelDialog(levelToEdit: level);
+                    } else if (value == 'delete') {
+                      _showDeleteLevelConfirmation(level);
+                    }
                   },
+                  itemBuilder: (context) => [
+                    const PopupMenuItem(
+                      value: 'edit',
+                      child: ListTile(
+                        leading: Icon(Icons.edit, size: 20),
+                        title: Text('Edit Level'),
+                        contentPadding: EdgeInsets.zero,
+                      ),
+                    ),
+                    const PopupMenuItem(
+                      value: 'delete',
+                      child: ListTile(
+                        leading: Icon(Icons.delete, color: Colors.red, size: 20),
+                        title: Text('Delete Level',
+                            style: TextStyle(color: Colors.red)),
+                        contentPadding: EdgeInsets.zero,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+
+          // Classes List
+          if (classes.isEmpty)
+            Padding(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                children: [
+                  Icon(
+                    Icons.class_outlined,
+                    size: 48,
+                    color: Colors.grey[300],
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'No classes yet',
+                    style: AppTextStyles.normal400(
+                      fontSize: 14,
+                      color: Colors.grey[500]!,
+                    ),
+                  ),
+                ],
+              ),
+            )
+          else
+            ...classes.asMap().entries.map((entry) {
+              final index = entry.key;
+              final classItem = entry.value;
+              final isLast = index == classes.length - 1;
+
+              return Column(
+                children: [
+                  _buildClassTile(level, classItem),
+                  if (!isLast)
+                    Divider(
+                      height: 1,
+                      thickness: 1,
+                      color: Colors.grey[100],
+                      indent: 72,
+                      endIndent: 20,
+                    ),
+                ],
+              );
+            }),
+
+          // Add Class Button
+          InkWell(
+            onTap: () => _showAddClassDialog(level),
+            borderRadius: const BorderRadius.only(
+              bottomLeft: Radius.circular(16),
+              bottomRight: Radius.circular(16),
+            ),
+            child: Container(
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              decoration: BoxDecoration(
+                color: AppColors.text2Light.withOpacity(0.02),
+                borderRadius: const BorderRadius.only(
+                  bottomLeft: Radius.circular(16),
+                  bottomRight: Radius.circular(16),
                 ),
               ),
-        floatingActionButton: FloatingActionButton(
-          onPressed: () => _showAddLevelDialog(),
-          backgroundColor: AppColors.text2Light,
-          child: const Icon(Icons.add, color: Colors.white),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.add_circle_outline,
+                    color: AppColors.text2Light,
+                    size: 20,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Add Class',
+                    style: AppTextStyles.normal600(
+                      fontSize: 14,
+                      color: AppColors.text2Light,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildClassTile(Levels level, Class classItem) {
+    return ListTile(
+      contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+      leading: Container(
+        padding: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: AppColors.text2Light.withOpacity(0.08),
+          borderRadius: BorderRadius.circular(8),
         ),
+        child: Icon(
+          Icons.class_,
+          color: AppColors.text2Light,
+          size: 20,
+        ),
+      ),
+      title: Text(
+        classItem.className,
+        style: AppTextStyles.normal500(
+          fontSize: 16,
+          color: AppColors.text2Light,
+        ),
+      ),
+      subtitle: classItem.formTeacherIds.isNotEmpty
+          ? Text(
+              '${classItem.formTeacherIds.length} Form Teacher${classItem.formTeacherIds.length > 1 ? 's' : ''}',
+              style: AppTextStyles.normal400(
+                fontSize: 14,
+                color: Colors.grey[600]!,
+              ),
+            )
+          : null,
+      trailing: PopupMenuButton<String>(
+        icon: Container(
+          padding: const EdgeInsets.all(6),
+          decoration: BoxDecoration(
+            color: AppColors.text2Light.withOpacity(0.05),
+            borderRadius: BorderRadius.circular(6),
+          ),
+          child: const Icon(
+            Icons.more_horiz,
+            color: AppColors.text2Light,
+            size: 18,
+          ),
+        ),
+        onSelected: (value) {
+          if (value == 'edit') {
+            _showAddClassDialog(level, classToEdit: classItem);
+          } else if (value == 'delete') {
+            _showDeleteClassConfirmation(level, classItem);
+          }
+        },
+        itemBuilder: (context) => [
+          const PopupMenuItem(
+            value: 'edit',
+            child: ListTile(
+              leading: Icon(Icons.edit, size: 18),
+              title: Text('Edit'),
+              contentPadding: EdgeInsets.zero,
+              dense: true,
+            ),
+          ),
+          const PopupMenuItem(
+            value: 'delete',
+            child: ListTile(
+              leading: Icon(Icons.delete, color: Colors.red, size: 18),
+              title: Text('Delete', style: TextStyle(color: Colors.red)),
+              contentPadding: EdgeInsets.zero,
+              dense: true,
+            ),
+          ),
+        ],
       ),
     );
   }

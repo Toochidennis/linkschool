@@ -352,7 +352,8 @@ class _ExpenditureScreenState extends State<ExpenditureScreen>
       body: Stack(
         children: [
           Container(
-            decoration: Constants.customBoxDecoration(context),
+            color: Colors.white,
+            //decoration: Constants.customBoxDecoration(context),
             child: _isDataLoading
                 ? const Center(child: CircularProgressIndicator())
                 : _expenditureData == null

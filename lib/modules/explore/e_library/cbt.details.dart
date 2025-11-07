@@ -15,6 +15,7 @@ class CbtDetailScreen extends StatefulWidget {
   final Color cardColor;
   final List<String> subjectList;
   final String examTypeId;
+  final String? subjectId;
 
   const CbtDetailScreen({
     super.key,
@@ -24,6 +25,7 @@ class CbtDetailScreen extends StatefulWidget {
     required this.cardColor,
     required this.subjectList,
     required this.examTypeId,
+    this.subjectId,
   });
 
   @override
@@ -95,6 +97,12 @@ class _CbtDetailScreenState extends State<CbtDetailScreen> {
           .toList()
         ..sort((a, b) => b.compareTo(a));
 
+      // Find the subject model to get the correct subject ID
+      final subjectModel = provider.currentBoardSubjects.firstWhere(
+        (s) => s.name == selectedSubject,
+        orElse: () => provider.currentBoardSubjects.first,
+      );
+
       YearPickerDialog.show(
         context,
         title: 'Choose Year',
@@ -105,6 +113,7 @@ class _CbtDetailScreenState extends State<CbtDetailScreen> {
         subjectIcon: provider.getSubjectIcon(selectedSubject),
         cardColor: provider.getSubjectColor(selectedSubject),
         subjectList: widget.subjectList,
+        subjectId: subjectModel.id,
       );
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -116,6 +125,42 @@ class _CbtDetailScreenState extends State<CbtDetailScreen> {
     }
   }
 
+  String _getDurationForSubject(String subject) {
+    // Dynamic duration based on subject type
+    final provider = Provider.of<CBTProvider>(context, listen: false);
+    final boardCode = provider.selectedBoard?.boardCode ?? '';
+    
+    switch (boardCode) {
+      case 'JAMB':
+        return '2hrs 30mins';
+      case 'WAEC':
+      case 'NECO':
+        return '3hrs';
+      case 'BECE':
+        return '2hrs';
+      default:
+        return '2hrs 30mins';
+    }
+  }
+
+  String _getInstructionsForSubject(String subject) {
+    // Dynamic instructions based on exam type
+    final provider = Provider.of<CBTProvider>(context, listen: false);
+    final boardCode = provider.selectedBoard?.boardCode ?? '';
+    
+    switch (boardCode) {
+      case 'JAMB':
+        return 'Answer all 60 questions';
+      case 'WAEC':
+      case 'NECO':
+        return 'Answer all questions';
+      case 'BECE':
+        return 'Answer all questions in Section A and B';
+      default:
+        return 'Answer all questions';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Consumer<CBTProvider>(
@@ -123,7 +168,7 @@ class _CbtDetailScreenState extends State<CbtDetailScreen> {
         return Scaffold(
           appBar: Constants.customAppBar(
               context: context,
-              title: 'WAEC/SSCE',
+              title: provider.selectedBoard?.boardCode ?? 'CBT',
               centerTitle: true,
               showBackButton: true),
           body: Container(
@@ -200,9 +245,11 @@ class _CbtDetailScreenState extends State<CbtDetailScreen> {
                           style: AppTextStyles.normal500(
                               fontSize: 16, color: AppColors.libtitle),
                         ),
-                        Text('2hrs 30 minutes',
-                            style: AppTextStyles.normal500(
-                                fontSize: 16, color: AppColors.text3Light)),
+                        Text(
+                          _getDurationForSubject(selectedSubject),
+                          style: AppTextStyles.normal500(
+                              fontSize: 16, color: AppColors.text3Light)
+                        ),
                       ],
                     ),
                   ),
@@ -214,9 +261,13 @@ class _CbtDetailScreenState extends State<CbtDetailScreen> {
                         Text('Instructions :',
                             style: AppTextStyles.normal500(
                                 fontSize: 16, color: AppColors.libtitle)),
-                        Text('Answer all questions',
+                        Expanded(
+                          child: Text(
+                            _getInstructionsForSubject(selectedSubject),
                             style: AppTextStyles.normal500(
-                                fontSize: 16, color: AppColors.text3Light)),
+                                fontSize: 16, color: AppColors.text3Light)
+                          ),
+                        ),
                       ],
                     ),
                   ),
@@ -230,6 +281,9 @@ class _CbtDetailScreenState extends State<CbtDetailScreen> {
                           MaterialPageRoute(
                               builder: (context) => TestScreen(
                                     examTypeId: widget.examTypeId,
+                                    subjectId: widget.subjectId ?? '',
+                                    subject: selectedSubject,
+                                    year: widget.year,
                                   ))),
                       backgroundColor: AppColors.bookText1,
                       textStyle: AppTextStyles.normal500(

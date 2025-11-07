@@ -130,9 +130,9 @@ class _StudentDashboardState extends State<StudentDashboard> {
       ),
       createBottomNavIcon(
         imagePath: 'assets/icons/e-learning.svg',
-        text: 'E-Learning',
+        text: 'E- \n Learning',
         width: 20.0,
-        height: 20.0,
+        height: 18.0,
       ),
       createBottomNavIcon(
         imagePath: 'assets/icons/payment.svg',

@@ -84,7 +84,7 @@ class _ReceiptStatisticsViewState extends State<ReceiptStatisticsView> {
     }).toList();
 
     return Container(
-      decoration: Constants.customBoxDecoration(context),
+      color: Colors.white,
       child: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : SingleChildScrollView(

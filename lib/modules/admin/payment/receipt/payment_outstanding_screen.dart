@@ -222,84 +222,88 @@ class _PaymentOutstandingScreenState extends State<PaymentOutstandingScreen> {
           ),
         ),
       ),
-      body: Container(
-        decoration: Constants.customBoxDecoration(context),
-        child: _isLoading
-            ? const Center(child: CircularProgressIndicator())
-            : Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        InkWell(
-                          onTap: _showClassSelectionOverlay,
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 16.0,
-                              vertical: 8.0,
-                            ),
-                            decoration: BoxDecoration(
-                              border: Border.all(color: Colors.grey.shade300),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Text(
-                                  selectedClass ?? 'Class',
-                                  style: AppTextStyles.normal500(
-                                    fontSize: 16.0,
+      body: RefreshIndicator(
+        onRefresh: _loadUnpaidInvoices,
+        child: Container(
+          
+         // decoration: Constants.customBoxDecoration(context),
+          child: _isLoading
+              ? const Center(child: CircularProgressIndicator())
+              : Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          InkWell(
+                            onTap: _showClassSelectionOverlay,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16.0,
+                                vertical: 8.0,
+                              ),
+                              decoration: BoxDecoration(
+                                border: Border.all(color: Colors.grey.shade300),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(
+                                    selectedClass ?? 'Class',
+                                    style: AppTextStyles.normal500(
+                                      fontSize: 16.0,
+                                      color: selectedClass != null
+                                          ? AppColors.primaryLight
+                                          : Colors.grey,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Icon(
+                                    Icons.arrow_drop_down,
                                     color: selectedClass != null
                                         ? AppColors.primaryLight
                                         : Colors.grey,
                                   ),
-                                ),
-                                const SizedBox(width: 8),
-                                Icon(
-                                  Icons.arrow_drop_down,
-                                  color: selectedClass != null
-                                      ? AppColors.primaryLight
-                                      : Colors.grey,
-                                ),
-                              ],
+                                ],
+                              ),
                             ),
                           ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    TextField(
-                      decoration: InputDecoration(
-                        hintText: 'Search...',
-                        prefixIcon: const Icon(Icons.search),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(30),
-                        ),
+                        ],
                       ),
-                      onChanged: (value) {
-                        setState(() {
-                          searchQuery = value;
-                        });
-                      },
-                    ),
-                    const SizedBox(height: 16),
-                    Expanded(
-                      child: filteredStudents.isEmpty
-                          ? const Center(
-                              child: Text('No outstanding payments found'))
-                          : ListView.builder(
-                              itemCount: filteredStudents.length,
-                              itemBuilder: (context, index) {
-                                final student = filteredStudents[index];
-                                return _buildStudentItem(context, student);
-                              },
-                            ),
-                    ),
-                  ],
+                      const SizedBox(height: 16),
+                      TextField(
+                        decoration: InputDecoration(
+                          hintText: 'Search...',
+                          prefixIcon: const Icon(Icons.search),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(30),
+                          ),
+                        ),
+                        onChanged: (value) {
+                          setState(() {
+                            searchQuery = value;
+                          });
+                        },
+                      ),
+                      const SizedBox(height: 16),
+                      Expanded(
+                        child: filteredStudents.isEmpty
+                            ? const Center(
+                                child: Text('No outstanding payments found'))
+                            : ListView.builder(
+                                itemCount: filteredStudents.length,
+                                itemBuilder: (context, index) {
+                                  final student = filteredStudents[index];
+                                  return _buildStudentItem(context, student);
+                                },
+                              ),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
+        ),
       ),
     );
   }
