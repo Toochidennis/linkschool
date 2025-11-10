@@ -47,6 +47,21 @@ class AppColors {
         : primaryLight;
   }
 
+  //  white   text color
+  static Color adaptiveTextColor(BuildContext context, Color color) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    if (!isDark) return color;
+
+    // If the provided color is pure black or otherwise very dark,
+    // return white in dark mode for proper contrast.
+    if (color == Colors.black || color.computeLuminance() < 0.15) {
+      return Colors.white;
+    }
+
+    return color;
+  }
+
+
   static Color secondary(BuildContext context) {
     return Theme.of(context).brightness == Brightness.dark
         ? secondaryDark

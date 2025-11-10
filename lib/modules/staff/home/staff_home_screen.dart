@@ -708,7 +708,7 @@ class _StaffHomeScreenState extends State<StaffHomeScreen>
       appBar: CustomStudentAppBar(
         title: 'Welcome',
         subtitle: creatorName ?? 'Staff',
-        showNotification: true,
+        showNotification: false,
         onNotificationTap: () {},
       ),
       body: Container(

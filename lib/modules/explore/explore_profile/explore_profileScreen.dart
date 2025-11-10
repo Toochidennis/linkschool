@@ -57,71 +57,71 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
                   ),
                 ),
                 _buildDivider(),
-                _buildSettingsTile(
-                  icon: Icons.language_outlined,
-                  title: 'Language',
-                  subtitle: settings.selectedLanguage,
-                  settings: settings,
-                  trailing: Icon(Icons.chevron_right, color: Colors.grey),
-                  onTap: () => _showLanguageDialog(),
-                ),
+                // _buildSettingsTile(
+                //   icon: Icons.language_outlined,
+                //   title: 'Language',
+                //   subtitle: settings.selectedLanguage,
+                //   settings: settings,
+                //   trailing: Icon(Icons.chevron_right, color: Colors.grey),
+                //   onTap: () => _showLanguageDialog(),
+                // ),
                 _buildDivider(),
-                _buildSettingsTile(
-                  icon: Icons.text_fields_outlined,
-                  title: 'Text Size',
-                  subtitle: settings.selectedTextSize,
-                  settings: settings,
-                  trailing: Icon(Icons.chevron_right, color: Colors.grey),
-                  onTap: () => _showTextSizeDialog(),
-                ),
+                // _buildSettingsTile(
+                //   icon: Icons.text_fields_outlined,
+                //   title: 'Text Size',
+                //   subtitle: settings.selectedTextSize,
+                //   settings: settings,
+                //   trailing: Icon(Icons.chevron_right, color: Colors.grey),
+                //   onTap: () => _showTextSizeDialog(),
+                // ),
               ], settings),
 
 
               const SizedBox(height: 24),
 
               // Notifications Section
-              _buildSectionHeader('Notifications', settings),
-              const SizedBox(height: 12),
-              _buildSettingsCard([
-                _buildSettingsTile(
-                  icon: Icons.notifications_outlined,
-                  title: 'Push Notifications',
-                  subtitle: 'Receive app notifications',
-                  settings: settings,
-                  trailing: Switch(
-                    value: settings.isNotificationsEnabled,
-                    onChanged: (value) {
-                      settings.setNotifications(value);
-                    },
-                    activeColor: AppColors.text2Light,
-                  ),
-                ),
-              ], settings),
+              // _buildSectionHeader('Notifications', settings),
+              // const SizedBox(height: 12),
+              // _buildSettingsCard([
+              //   _buildSettingsTile(
+              //     icon: Icons.notifications_outlined,
+              //     title: 'Push Notifications',
+              //     subtitle: 'Receive app notifications',
+              //     settings: settings,
+              //     trailing: Switch(
+              //       value: settings.isNotificationsEnabled,
+              //       onChanged: (value) {
+              //         settings.setNotifications(value);
+              //       },
+              //       activeColor: AppColors.text2Light,
+              //     ),
+              //   ),
+              // ], settings),
 
               const SizedBox(height: 24),
 
-              // Media & Downloads Section
-              _buildSectionHeader('Media & Downloads', settings),
-              const SizedBox(height: 12),
-              _buildSettingsCard([
-                _buildSettingsTile(
-                  icon: Icons.play_circle_outline,
-                  title: 'Auto-play Videos',
-                  subtitle: 'Automatically play videos in feeds',
-                  settings: settings,
-                  trailing: Switch(
-                    value: settings.isAutoPlayEnabled,
-                    onChanged: (value) {
-                      settings.setAutoPlay(value);
-                    },
-                    activeColor: AppColors.text2Light,
-                  ),
-                ),
-                _buildDivider(),
+              // // Media & Downloads Section
+              // _buildSectionHeader('Media & Downloads', settings),
+              // const SizedBox(height: 12),
+              // _buildSettingsCard([
+              //   _buildSettingsTile(
+              //     icon: Icons.play_circle_outline,
+              //     title: 'Auto-play Videos',
+              //     subtitle: 'Automatically play videos in feeds',
+              //     settings: settings,
+              //     trailing: Switch(
+              //       value: settings.isAutoPlayEnabled,
+              //       onChanged: (value) {
+              //         settings.setAutoPlay(value);
+              //       },
+              //       activeColor: AppColors.text2Light,
+              //     ),
+              //   ),
+              //   _buildDivider(),
               
-              ], settings),
+              // ], settings),
 
-              const SizedBox(height: 24),
+              // const SizedBox(height: 24),
 
               // Support & Legal Section
               _buildSectionHeader('Support & Legal', settings),
@@ -180,7 +180,7 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
                 ),
               ], settings),
 
-              const SizedBox(height: 40),
+              const SizedBox(height: 100),
             ],
           ),
         ),

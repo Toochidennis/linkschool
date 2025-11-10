@@ -85,7 +85,7 @@ class _PaymentDashboardScreenState extends State<PaymentDashboardScreen> {
 
     CustomStudentAppBar customAppBar = CustomStudentAppBar(
       title: 'Revenue',
-      showNotification: true,
+      showNotification: false,
       showSettings: true,
       centerTitle: false,
       onNotificationTap: () {

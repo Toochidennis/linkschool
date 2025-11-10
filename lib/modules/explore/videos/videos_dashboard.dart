@@ -20,10 +20,28 @@ class VideosDashboard extends StatefulWidget {
 }
 
 class _VideosDashboardState extends State<VideosDashboard> {
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
+
   @override
   void initState() {
     super.initState();
     Provider.of<SubjectProvider>(context, listen: false).fetchSubjects();
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  List<Video> _filterVideos(List<Video> videos) {
+    if (_searchQuery.isEmpty) {
+      return videos;
+    }
+    return videos.where((video) {
+      return video.title.toLowerCase().contains(_searchQuery.toLowerCase());
+    }).toList();
   }
 
   _navigateToSeeall() {
@@ -218,22 +236,81 @@ class _VideosDashboardState extends State<VideosDashboard> {
               .expand((category) => category.videos)
               .toList();
 
-          final recommendationVideos = allVideos.length > 4
-              ? allVideos.getRange(0, 6).toList()
-              : allVideos;
+          final filteredVideos = _filterVideos(allVideos);
+
+          final recommendationVideos = filteredVideos.length > 4
+              ? filteredVideos.getRange(0, filteredVideos.length > 6 ? 6 : filteredVideos.length).toList()
+              : filteredVideos;
 
           return Scaffold(
             appBar: Constants.customAppBar(
                 context: context,
                 iconPath: 'assets/icons/search.png',
                 iconSize: 20.0),
-            body: Container(
-              decoration: Constants.customBoxDecoration(context),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.start,
-                children: [
-                  Expanded(
+            body: Stack(
+              children: [
+                Container(
+                  decoration: Constants.customBoxDecoration(context),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.start,
+                    children: [
+                      // Search Bar
+                      Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: TextField(
+                          controller: _searchController,
+                          onChanged: (value) {
+                            setState(() {
+                              _searchQuery = value;
+                            });
+                          },
+                          decoration: InputDecoration(
+                            hintText: 'Search videos...',
+                            hintStyle: AppTextStyles.normal400(
+                              fontSize: 14,
+                              color: AppColors.text5Light,
+                            ),
+                            prefixIcon: Icon(
+                              Icons.search,
+                              color: AppColors.text2Light,
+                            ),
+                            suffixIcon: _searchQuery.isNotEmpty
+                                ? IconButton(
+                                    icon: const Icon(Icons.clear),
+                                    onPressed: () {
+                                      setState(() {
+                                        _searchController.clear();
+                                        _searchQuery = '';
+                                      });
+                                    },
+                                  )
+                                : null,
+                            filled: true,
+                            fillColor: AppColors.textField(context),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide(
+                                color: AppColors.textFieldBorder(context),
+                              ),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide(
+                                color: AppColors.textFieldBorder(context),
+                              ),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide(
+                                color: AppColors.text2Light,
+                                width: 2,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                      Expanded(
                     child: CustomScrollView(
                       physics: const BouncingScrollPhysics(),
                       slivers: [
@@ -267,14 +344,16 @@ class _VideosDashboardState extends State<VideosDashboard> {
                             ),
                           ),
                         ),
-                        SliverToBoxAdapter(
-                            child: Constants.heading600(
-                          title: 'Categories',
-                          titleSize: 18.0,
-                          titleColor: AppColors.primaryLight,
-                        )),
-                        const SliverToBoxAdapter(child: SizedBox(height: 10.0)),
-                        SliverToBoxAdapter(
+                        if (_searchQuery.isEmpty) ...[
+                          SliverToBoxAdapter(
+                              child: Constants.heading600(
+                            title: 'Categories',
+                            titleSize: 18.0,
+                            titleColor: AppColors.primaryLight,
+                          )),
+                          const SliverToBoxAdapter(
+                              child: SizedBox(height: 10.0)),
+                          SliverToBoxAdapter(
                           child: LayoutBuilder(builder: (context, constraints) {
                             double screenHeight =
                                 MediaQuery.of(context).size.height;
@@ -336,6 +415,7 @@ class _VideosDashboardState extends State<VideosDashboard> {
                           }),
                         ),
                         const SliverToBoxAdapter(child: SizedBox(height: 19.0)),
+                        ],
                         SliverToBoxAdapter(
                           child: Constants.heading600(
                             title: 'Recommended for you',
@@ -372,6 +452,95 @@ class _VideosDashboardState extends State<VideosDashboard> {
                   ),
                 ],
               ),
+            ),
+                // White overlay layer for search results
+                if (_searchQuery.isNotEmpty)
+                  Positioned(
+                    top: 90, // Below the search bar
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 200),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.1),
+                            blurRadius: 10,
+                            offset: const Offset(0, -2),
+                          ),
+                        ],
+                      ),
+                      child: filteredVideos.isEmpty
+                          ? Center(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    Icons.search_off,
+                                    size: 64,
+                                    color: AppColors.text5Light,
+                                  ),
+                                  const SizedBox(height: 16),
+                                  Text(
+                                    'No videos found',
+                                    style: AppTextStyles.normal600(
+                                      fontSize: 18,
+                                      color: AppColors.text5Light,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    'Try adjusting your search',
+                                    style: AppTextStyles.normal400(
+                                      fontSize: 14,
+                                      color: AppColors.text5Light,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            )
+                          : Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Padding(
+                                  padding: const EdgeInsets.all(16.0),
+                                  child: Text(
+                                    'Search Results (${filteredVideos.length})',
+                                    style: AppTextStyles.normal600(
+                                      fontSize: 18,
+                                      color: AppColors.primaryLight,
+                                    ),
+                                  ),
+                                ),
+                                Expanded(
+                                  child: ListView.builder(
+                                    padding: EdgeInsets.zero,
+                                    itemCount: filteredVideos.length,
+                                    itemBuilder: (context, index) {
+                                      return GestureDetector(
+                                        onTap: () {
+                                          Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder: (context) => E_lib_vids(
+                                                video: filteredVideos[index],
+                                              ),
+                                            ),
+                                          );
+                                        },
+                                        child: _recommendedForYouCard(
+                                            filteredVideos[index]),
+                                      );
+                                    },
+                                  ),
+                                ),
+                              ],
+                            ),
+                    ),
+                  ),
+              ],
             ),
           );
         }
@@ -443,6 +612,8 @@ class _VideosDashboardState extends State<VideosDashboard> {
                 style: AppTextStyles.normal500(
                     fontSize: 14.0, color: Colors.black),
                 textAlign: TextAlign.center,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
             )
           ],
@@ -524,6 +695,7 @@ class _VideosDashboardState extends State<VideosDashboard> {
                       width: 16,
                       height: 16.0,
                     ),
+                    const SizedBox(width: 4),
                     Text(
                       "345",
                       style: AppTextStyles.normal500(
@@ -533,6 +705,7 @@ class _VideosDashboardState extends State<VideosDashboard> {
                     ),
                     const SizedBox(width: 10.0),
                     const Icon(Icons.file_download_outlined, size: 16.0),
+                    const SizedBox(width: 4),
                     Text(
                       '12k',
                       style: AppTextStyles.normal500(

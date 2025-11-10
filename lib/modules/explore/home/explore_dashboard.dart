@@ -120,14 +120,14 @@ class _ExploreDashboardState extends State<ExploreDashboard> {
                 // Handle search action
               },
             ),
-          IconButton(
-            onPressed: () {},
-            icon: SvgPicture.asset(
-              'assets/icons/notifications.svg',
-              colorFilter:
-                  const ColorFilter.mode(Colors.white, BlendMode.srcIn),
-            ),
-          )
+          // IconButton(
+          //   onPressed: () {},
+          //   icon: SvgPicture.asset(
+          //     'assets/icons/notifications.svg',
+          //     colorFilter:
+          //         const ColorFilter.mode(Colors.white, BlendMode.srcIn),
+          //   ),
+          // )
         ],
         elevation: 0,
       ),

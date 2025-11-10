@@ -123,7 +123,7 @@ class _PortalDashboardState extends State<PortalDashboard> {
           appBar: CustomStudentAppBar(
             title: 'Welcome',
             subtitle: firstName,
-            showNotification: true,
+            showNotification: false,
             onNotificationTap: () {},
           ),
         );
@@ -132,7 +132,7 @@ class _PortalDashboardState extends State<PortalDashboard> {
           appBar: CustomStudentAppBar(
             title: 'Welcome',
             subtitle: firstName,
-            showNotification: true,
+            showNotification: false,
             onNotificationTap: () {},
           ),
         );

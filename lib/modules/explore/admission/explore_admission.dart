@@ -19,6 +19,9 @@ class ExploreAdmission extends StatefulWidget {
 }
 
 class _ExploreAdmissionState extends State<ExploreAdmission> {
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
+
   @override
   void initState() {
     super.initState();
@@ -29,11 +32,82 @@ class _ExploreAdmissionState extends State<ExploreAdmission> {
   }
 
   @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  List<School> _filterSchools(List<School> schools) {
+    if (_searchQuery.isEmpty) {
+      return schools;
+    }
+    return schools.where((school) {
+      return school.schoolName.toLowerCase().contains(_searchQuery.toLowerCase()) ||
+             school.location.toLowerCase().contains(_searchQuery.toLowerCase());
+    }).toList();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Container(
       decoration: Constants.customBoxDecoration(context),
       child: Column(
         children: [
+          // Search Bar
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: TextField(
+              controller: _searchController,
+              onChanged: (value) {
+                setState(() {
+                  _searchQuery = value;
+                });
+              },
+              decoration: InputDecoration(
+                hintText: 'Search schools...',
+                hintStyle: AppTextStyles.normal400(
+                  fontSize: 14,
+                  color: AppColors.text5Light,
+                ),
+                prefixIcon: Icon(
+                  Icons.search,
+                  color: AppColors.text2Light,
+                ),
+                suffixIcon: _searchQuery.isNotEmpty
+                    ? IconButton(
+                        icon: const Icon(Icons.clear),
+                        onPressed: () {
+                          setState(() {
+                            _searchController.clear();
+                            _searchQuery = '';
+                          });
+                        },
+                      )
+                    : null,
+                filled: true,
+                fillColor: AppColors.textField(context),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(
+                    color: AppColors.textFieldBorder(context),
+                  ),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(
+                    color: AppColors.textFieldBorder(context),
+                  ),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(
+                    color: AppColors.text2Light,
+                    width: 2,
+                  ),
+                ),
+              ),
+            ),
+          ),
           Expanded(
             child: DefaultTabController(
               length: 3,
@@ -86,11 +160,11 @@ class _ExploreAdmissionState extends State<ExploreAdmission> {
                         return TabBarView(
                           children: [
                             // Tab 1: Top
-                            _buildTopTab(provider.admissionData!.data.top),
+                            _buildTopTab(_filterSchools(provider.admissionData!.data.top)),
                             // Tab 2: Near me
-                            _buildNearMeTab(provider.admissionData!.data.nearMe),
+                            _buildNearMeTab(_filterSchools(provider.admissionData!.data.nearMe)),
                             // Tab 3: Recommended
-                            _buildRecommendedTab(provider.admissionData!.data.recommend),
+                            _buildRecommendedTab(_filterSchools(provider.admissionData!.data.recommend)),
                           ],
                         );
                       },
@@ -105,12 +179,44 @@ class _ExploreAdmissionState extends State<ExploreAdmission> {
     );
   }
 Widget _buildTopTab(List<School> schools) {
+  if (schools.isEmpty) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.search_off,
+            size: 64,
+            color: AppColors.text5Light,
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'No schools found',
+            style: AppTextStyles.normal600(
+              fontSize: 18,
+              color: AppColors.text5Light,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Try adjusting your search',
+            style: AppTextStyles.normal400(
+              fontSize: 14,
+              color: AppColors.text5Light,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   return ListView(
     children: [
       _TextIconRow(
         text: 'Top rated Schools',
         icon: Icons.arrow_forward,
       ),
+      const SizedBox(height: 8),
       CarouselSlider(
         items: schools.take(5).map((school) {
           return _SchoolCard(
@@ -127,60 +233,83 @@ Widget _buildTopTab(List<School> schools) {
           scrollDirection: Axis.horizontal,
         ),
       ),
-      // Simple approach - just remove the fixed height
-      Column(
-        children: [
-          _TextIconRow(
-            text: 'You might also like',
-            icon: Icons.arrow_forward,
-          ),
-          CarouselSlider(
-            items: schools.map((school) {
-              return GestureDetector(
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => SchoolProfileScreen(school: school),
-                    ),
-                  );
-                },
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                  child: _SearchItems(school: school, context: context),
-                ),
-              );
-            }).toList(),
-            options: CarouselOptions(
-              // Remove height property entirely
-              viewportFraction: 0.9,
-              enableInfiniteScroll: false,
-              padEnds: true,
-              autoPlay: false,
-              scrollDirection: Axis.horizontal,
-            ),
-          ),
-        ],
+      const SizedBox(height: 16),
+      _TextIconRow(
+        text: 'You might also like',
+        icon: Icons.arrow_forward,
       ),
       const SizedBox(height: 8),
-      Column(
-        children: [
-          _TextIconRow(
-            text: 'Based on your recent searches',
-            icon: Icons.arrow_forward,
-          ),
-          const SizedBox(height: 8),
-          ...schools.take(3).map((school) => Padding(
-            padding: const EdgeInsets.only(bottom: 8.0),
-            child: _BasedOnSearches(context: context, school: school),
-          )),
-        ],
+      CarouselSlider(
+        items: schools.map((school) {
+          return GestureDetector(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => SchoolProfileScreen(school: school),
+                ),
+              );
+            },
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8.0),
+              child: _SearchItems(school: school, context: context),
+            ),
+          );
+        }).toList(),
+        options: CarouselOptions(
+          viewportFraction: 0.9,
+          enableInfiniteScroll: false,
+          padEnds: true,
+          autoPlay: false,
+          scrollDirection: Axis.horizontal,
+        ),
       ),
+      const SizedBox(height: 16),
+      _TextIconRow(
+        text: 'Based on your recent searches',
+        icon: Icons.arrow_forward,
+      ),
+      const SizedBox(height: 8),
+      ...schools.take(3).map((school) => Padding(
+        padding: const EdgeInsets.only(bottom: 8.0),
+        child: _BasedOnSearches(context: context, school: school),
+      )),
     ],
   );
 }
 
   Widget _buildNearMeTab(List<School> schools) {
+    if (schools.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.search_off,
+              size: 64,
+              color: AppColors.text5Light,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'No schools found',
+              style: AppTextStyles.normal600(
+                fontSize: 18,
+                color: AppColors.text5Light,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Try adjusting your search',
+              style: AppTextStyles.normal400(
+                fontSize: 14,
+                color: AppColors.text5Light,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
     return ListView(
       children: [
         ListView.builder(
@@ -195,7 +324,6 @@ Widget _buildTopTab(List<School> schools) {
                   builder: (context) => SchoolProfileScreen(school: schools[index]),
                 ),
               ),
-
               child: Padding(
                 padding: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 8.0),
                 child: _SearchItems(school: schools[index], context: context),
@@ -203,28 +331,54 @@ Widget _buildTopTab(List<School> schools) {
             );
           },
         ),
-        const SizedBox(height: 50),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Text(
-                'Search using Google Map',
-                style: AppTextStyles.normal400(
-                  fontSize: 16,
-                  color: AppColors.admissionTitle,
-                ),
-              ),
+        const SizedBox(height: 24),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Text(
+            'Search using Google Map',
+            style: AppTextStyles.normal400(
+              fontSize: 16,
+              color: AppColors.admissionTitle,
             ),
-            const MapSection(),
-          ],
+          ),
         ),
+        const MapSection(),
       ],
     );
   }
 
   Widget _buildRecommendedTab(List<School> schools) {
+    if (schools.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.search_off,
+              size: 64,
+              color: AppColors.text5Light,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'No schools found',
+              style: AppTextStyles.normal600(
+                fontSize: 18,
+                color: AppColors.text5Light,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Try adjusting your search',
+              style: AppTextStyles.normal400(
+                fontSize: 14,
+                color: AppColors.text5Light,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
     return ListView.builder(
       padding: const EdgeInsets.all(16),
       itemCount: schools.length,
@@ -236,8 +390,6 @@ Widget _buildTopTab(List<School> schools) {
               builder: (context) => SchoolProfileScreen(school: schools[index]),
             ),
           ),
-
-
           child: Padding(
             padding: const EdgeInsets.only(bottom: 16.0),
             child: _BasedOnSearches(context: context, school: schools[index]),
@@ -294,7 +446,7 @@ Widget _SchoolCard({
 
 Widget _TopSchoolDescription({required School school}) {
   return Padding(
-    padding: const EdgeInsets.all(10.0),
+    padding: const EdgeInsets.all(8.0),
     child: Row(
       children: [
         ClipRRect(
@@ -314,7 +466,7 @@ Widget _TopSchoolDescription({required School school}) {
             },
           ),
         ),
-        const SizedBox(width: 16),
+        const SizedBox(width: 12),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -334,6 +486,8 @@ Widget _TopSchoolDescription({required School school}) {
                   fontSize: 16,
                   color: AppColors.schoolform,
                 ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
               Row(
                 children: [
@@ -356,6 +510,7 @@ Widget _TopSchoolDescription({required School school}) {
                   ),
                   const SizedBox(width: 8),
                   Icon(Icons.star, size: 16, color: Colors.amber),
+                  const SizedBox(width: 4),
                   Text(
                     school.rating.toString(),
                     style: AppTextStyles.normal400(
@@ -419,8 +574,7 @@ Widget _BasedOnSearches({
 }
 
 Widget _SearchItems({required School school, required BuildContext context}) {
-
-  return  GestureDetector (
+  return GestureDetector(
     onTap: () {
       Navigator.push(
         context,
@@ -429,7 +583,7 @@ Widget _SearchItems({required School school, required BuildContext context}) {
         ),
       );
     },
-    child: Padding(  
+    child: Padding(
       padding: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 8.0),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -451,7 +605,7 @@ Widget _SearchItems({required School school, required BuildContext context}) {
               },
             ),
           ),
-          const SizedBox(width: 16),
+          const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -472,15 +626,21 @@ Widget _SearchItems({required School school, required BuildContext context}) {
                     fontSize: 16,
                     color: AppColors.schoolform,
                   ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
                 const SizedBox(height: 4),
                 Row(
                   children: [
-                    Text(
-                      school.location,
-                      style: AppTextStyles.normal700(
-                        fontSize: 16,
-                        color: AppColors.schooltext,
+                    Flexible(
+                      child: Text(
+                        school.location,
+                        style: AppTextStyles.normal700(
+                          fontSize: 16,
+                          color: AppColors.schooltext,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
                     const SizedBox(width: 8),
@@ -504,15 +664,19 @@ Widget _SearchItems({required School school, required BuildContext context}) {
 
 Widget _TextIconRow({required String text, required IconData icon}) {
   return Padding(
-    padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
+    padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
     child: Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(
-          text,
-          style: AppTextStyles.normal400(
-            fontSize: 18,
-            color: AppColors.admissionTitle,
+        Expanded(
+          child: Text(
+            text,
+            style: AppTextStyles.normal400(
+              fontSize: 18,
+              color: AppColors.admissionTitle,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
         ),
         Icon(icon),
