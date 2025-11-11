@@ -31,41 +31,14 @@ class _LibraryEbookState extends State<LibraryEbook> {
     return Scaffold(
       body: Container(
         decoration: Constants.customBoxDecoration(context),
-        child: bookProvider.isLoading
+        child: bookProvider.isLoading || categories.isEmpty
             ? const Center(
                 child: CircularProgressIndicator(
                   color: AppColors.text2Light,
                   strokeWidth: 3.0,
                 ),
               )
-            : SingleChildScrollView(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Header + Categories
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'What do you want to\nread today?',
-                            style: AppTextStyles.normal600(
-                              fontSize: 24.0,
-                              color: Colors.black,
-                            ),
-                          ),
-                          const SizedBox(height: 16.0),
-                          _buildCategoryButtons(categories),
-                          const SizedBox(height: 16.0),
-                        ],
-                      ),
-                    ),
-                    // Tabs
-                    _buildTabController(),
-                  ],
-                ),
-              ),
+            : _buildTabController(categories),
       ),
     );
   }
@@ -109,42 +82,57 @@ class _LibraryEbookState extends State<LibraryEbook> {
   }
 
   /// *Builds the Tab Controller with Tabs*
-  Widget _buildTabController() {
+  Widget _buildTabController(List<String> categories) {
     return DefaultTabController(
       length: 2,
-      child: Padding(
-        padding: const EdgeInsets.only(bottom: 10),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            TabBar(
-              isScrollable: true,
-              tabAlignment: TabAlignment.start,
-              unselectedLabelColor: const Color.fromRGBO(90, 90, 90, 1),
-              labelColor: AppColors.text2Light,
-              labelStyle: AppTextStyles.normal600(
-                fontSize: 16.0,
-                color: AppColors.text2Light,
-              ),
-              indicatorColor: AppColors.text2Light,
-              tabs: const [
-                Tab(text: 'All'),
-                Tab(text: 'Library'),
-              ],
-            ),
-            SizedBox(
-              height: MediaQuery.of(context).size.height * 0.7,
-              child: TabBarView(
-                physics: const NeverScrollableScrollPhysics(),
-                children: [
-                  AllTab(selectedCategoryIndex: _selectedBookCategoriesIndex),
-                  Container(
-                    color: Colors.orange,
-                    child: const Center(
-                      child: Text('Tab 2'),
+      child: NestedScrollView(
+        headerSliverBuilder: (BuildContext context, bool innerBoxIsScrolled) {
+          return [
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'What do you want to\nread today?',
+                      style: AppTextStyles.normal600(
+                        fontSize: 24.0,
+                        color: Colors.black,
+                      ),
                     ),
-                  ),
+                    const SizedBox(height: 16.0),
+                    _buildCategoryButtons(categories),
+                    const SizedBox(height: 16.0),
+                  ],
+                ),
+              ),
+            ),
+            SliverToBoxAdapter(
+              child: TabBar(
+                isScrollable: true,
+                unselectedLabelColor: const Color.fromRGBO(90, 90, 90, 1),
+                labelColor: AppColors.text2Light,
+                labelStyle: AppTextStyles.normal600(
+                  fontSize: 16.0,
+                  color: AppColors.text2Light,
+                ),
+                indicatorColor: AppColors.text2Light,
+                tabs: const [
+                  Tab(text: 'All'),
+                  Tab(text: 'Library'),
                 ],
+              ),
+            ),
+          ];
+        },
+        body: TabBarView(
+          children: [
+            AllTab(selectedCategoryIndex: _selectedBookCategoriesIndex),
+            Container(
+              color: Colors.orange,
+              child: const Center(
+                child: Text('Tab 2'),
               ),
             ),
           ],

@@ -16,6 +16,10 @@ class LevelClassManagementScreen extends StatefulWidget {
 
 class _LevelClassManagementScreenState
     extends State<LevelClassManagementScreen> {
+  final TextEditingController _searchController = TextEditingController();
+  List<LevelWithClasses> _filteredLevels = [];
+  bool _isSearching = false;
+
   @override
   void initState() {
     super.initState();
@@ -32,6 +36,162 @@ class _LevelClassManagementScreenState
         }
       });
     });
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  void _filterLevels(String query, List<LevelWithClasses> allLevels) {
+    if (query.isEmpty) {
+      setState(() {
+        _filteredLevels = [];
+        _isSearching = false;
+      });
+    } else {
+      final filtered = allLevels.where((levelWithClasses) {
+        final levelName = levelWithClasses.level.levelName.toLowerCase();
+        final schoolType = levelWithClasses.level.schoolType.toLowerCase();
+        final searchLower = query.toLowerCase();
+        
+        // Search in level name and school type
+        final levelMatch = levelName.contains(searchLower) || 
+                           schoolType.contains(searchLower);
+        
+        // Search in class names
+        final classMatch = levelWithClasses.classes.any((classItem) =>
+            classItem.className.toLowerCase().contains(searchLower));
+        
+        return levelMatch || classMatch;
+      }).toList();
+      
+      setState(() {
+        _isSearching = true;
+        _filteredLevels = filtered;
+      });
+    }
+  }
+
+  Widget _buildSearchBar(List<LevelWithClasses> allLevels) {
+    return Container(
+      margin: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.1),
+            spreadRadius: 1,
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: TextField(
+        controller: _searchController,
+        onChanged: (value) => _filterLevels(value, allLevels),
+        decoration: InputDecoration(
+          hintText: 'Search levels or classes...',
+          hintStyle: TextStyle(
+            color: AppColors.text7Light,
+            fontSize: 14,
+            fontFamily: 'Urbanist',
+          ),
+          prefixIcon: Icon(
+            Icons.search,
+            color: AppColors.text2Light,
+          ),
+          suffixIcon: _searchController.text.isNotEmpty
+              ? IconButton(
+                  icon: Icon(
+                    Icons.clear,
+                    color: AppColors.text7Light,
+                  ),
+                  onPressed: () {
+                    _searchController.clear();
+                    _filterLevels('', allLevels);
+                  },
+                )
+              : null,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide: BorderSide.none,
+          ),
+          filled: true,
+          fillColor: Colors.white,
+          contentPadding: const EdgeInsets.symmetric(vertical: 16),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSearchResults(List<LevelWithClasses> levels) {
+    return Container(
+      color: Colors.white,
+      child: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  '${levels.length} result${levels.length != 1 ? 's' : ''} found',
+                  style: AppTextStyles.normal600(
+                    fontSize: 16,
+                    color: AppColors.text2Light,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const Divider(height: 1),
+          Expanded(
+            child: levels.isEmpty
+                ? Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.search_off,
+                          size: 64,
+                          color: AppColors.text7Light,
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          'No levels or classes found',
+                          style: AppTextStyles.normal500(
+                            fontSize: 16,
+                            color: AppColors.text7Light,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Try a different search term',
+                          style: AppTextStyles.normal400(
+                            fontSize: 14,
+                            color: AppColors.text9Light,
+                          ),
+                        ),
+                      ],
+                    ),
+                  )
+                : ListView.builder(
+                    padding: const EdgeInsets.all(16),
+                    itemCount: levels.length,
+                    itemBuilder: (context, index) {
+                      final levelWithClasses = levels[index];
+                      final level = levelWithClasses.level;
+                      final classes = levelWithClasses.classes;
+                      return _buildLevelCard(level, classes);
+                    },
+                  ),
+          ),
+        ],
+      ),
+    );
   }
 
   void _showAddLevelDialog({Levels? levelToEdit}) {
@@ -291,50 +451,69 @@ class _LevelClassManagementScreenState
         ),
         body: provider.isLoading
             ? const Center(child: CircularProgressIndicator())
-            : Container(
-                decoration: Constants.customBoxDecoration(context),
-                child: provider.levelsWithClasses.isEmpty
-                    ? Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.school_outlined,
-                              size: 80,
-                              color: Colors.grey[400],
-                            ),
-                            const SizedBox(height: 16),
-                            Text(
-                              'No Levels Yet',
-                              style: AppTextStyles.normal600(
-                                fontSize: 18,
-                                color: Colors.grey[600]!,
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              'Tap the + button to add a level',
-                              style: AppTextStyles.normal400(
-                                fontSize: 14,
-                                color: Colors.grey[500]!,
-                              ),
-                            ),
-                          ],
+            : _isSearching
+                ? Container(
+                    color: Colors.white,
+                    child: Column(
+                      children: [
+                        _buildSearchBar(provider.levelsWithClasses),
+                        Expanded(
+                          child: _buildSearchResults(_filteredLevels),
                         ),
-                      )
-                    : ListView.builder(
-                        padding: const EdgeInsets.all(16),
-                        itemCount: provider.levelsWithClasses.length,
-                        itemBuilder: (context, index) {
-                          final levelWithClasses =
-                              provider.levelsWithClasses[index];
-                          final level = levelWithClasses.level;
-                          final classes = levelWithClasses.classes;
+                      ],
+                    ),
+                  )
+                : Container(
+                    decoration: Constants.customBoxDecoration(context),
+                    child: Column(
+                      children: [
+                        _buildSearchBar(provider.levelsWithClasses),
+                        Expanded(
+                          child: provider.levelsWithClasses.isEmpty
+                              ? Center(
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(
+                                        Icons.school_outlined,
+                                        size: 80,
+                                        color: Colors.grey[400],
+                                      ),
+                                      const SizedBox(height: 16),
+                                      Text(
+                                        'No Levels Yet',
+                                        style: AppTextStyles.normal600(
+                                          fontSize: 18,
+                                          color: Colors.grey[600]!,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 8),
+                                      Text(
+                                        'Tap the + button to add a level',
+                                        style: AppTextStyles.normal400(
+                                          fontSize: 14,
+                                          color: Colors.grey[500]!,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                )
+                              : ListView.builder(
+                                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                                  itemCount: provider.levelsWithClasses.length,
+                                  itemBuilder: (context, index) {
+                                    final levelWithClasses =
+                                        provider.levelsWithClasses[index];
+                                    final level = levelWithClasses.level;
+                                    final classes = levelWithClasses.classes;
 
-                          return _buildLevelCard(level, classes);
-                        },
-                      ),
-              ),
+                                    return _buildLevelCard(level, classes);
+                                  },
+                                ),
+                        ),
+                      ],
+                    ),
+                  ),
         floatingActionButton: FloatingActionButton.extended(
           onPressed: () => _showAddLevelDialog(),
           backgroundColor: AppColors.text2Light,

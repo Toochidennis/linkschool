@@ -132,6 +132,15 @@ class _AppNavigationFlowState extends State<AppNavigationFlow> {
         onSchoolSelected: (String selectedSchoolCode) {
           _navigateToLogin(selectedSchoolCode); // ✅ Pass selected school code
         },
+        onBack: () {
+          // Handle back navigation - flip back to explore dashboard
+          if (_flipController.state?.isFront == false) {
+            _flipController.toggleCard();
+          }
+          setState(() {
+            _showSchoolSelection = false;
+          });
+        },
       );
     }
 

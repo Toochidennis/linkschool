@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:linkschool/modules/explore/cbt/cbt_dashboard.dart';
+import 'package:linkschool/modules/explore/e_library/e_library_ebooks/book_page.dart';
 import 'package:linkschool/modules/explore/e_library/e_library_ebooks/library_e_book.dart';
 import 'package:linkschool/modules/explore/games/games_home.dart';
-import 'package:linkschool/modules/explore/videos/videos_dashboard.dart';
+import 'package:linkschool/modules/explore/home/library_videos.dart';
 import 'package:linkschool/modules/model/explore/home/book_model.dart';
 import 'package:linkschool/modules/model/explore/home/game_model.dart';
+import 'package:linkschool/modules/model/explore/home/news/ebook_model.dart';
 import 'package:provider/provider.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
@@ -25,7 +27,10 @@ class ElibraryDashboard extends StatefulWidget {
   _ElibraryDashboardState createState() => _ElibraryDashboardState();
 }
 
-class _ElibraryDashboardState extends State<ElibraryDashboard> {
+class _ElibraryDashboardState extends State<ElibraryDashboard> with AutomaticKeepAliveClientMixin {
+  
+   @override
+  bool get wantKeepAlive => true;
   @override
   void initState() {
     super.initState();
@@ -33,8 +38,11 @@ class _ElibraryDashboardState extends State<ElibraryDashboard> {
         Provider.of<ForYouProvider>(context, listen: false).fetchForYouData());
   }
 
+  
+
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     return Container(
       decoration: Constants.customBoxDecoration(context),
       child: Column(
@@ -114,7 +122,7 @@ class _ElibraryDashboardState extends State<ElibraryDashboard> {
                                     SizedBox(height: 25),
                                     // Games section
                                     headingWithAdvert(
-                                        tag: "Game",
+                                        tag: "Games",
                                         title: 'Game Everyone is playing'),
                                     SizedBox(height: 8),
                                     SizedBox(
@@ -148,7 +156,7 @@ class _ElibraryDashboardState extends State<ElibraryDashboard> {
                                       padding: const EdgeInsets.symmetric(
                                           horizontal: 16),
                                       child: SizedBox(
-                                        height: 250,
+                                        height: 280,
                                         width: double.infinity,
                                         child: ListView.builder(
                                           scrollDirection: Axis.horizontal,
@@ -170,59 +178,15 @@ class _ElibraryDashboardState extends State<ElibraryDashboard> {
                                       ),
                                     ),
                                     // CBT section
-                                    blueHeading(
-                                        tag: 'CBT',
-                                        title: 'Continue taking tests'),
-                                    Divider(height: 20),
-                                    Column(
-                                      children: [
-                                        subjectCard(
-                                          subjectIcon: 'maths',
-                                          subjectName: 'Mathematics',
-                                          cardColor: AppColors.cbtCardColor1,
-                                          showProgressIndicator: true,
-                                        ),
-                                        Divider(),
-                                        subjectCard(
-                                          subjectIcon: 'english',
-                                          subjectName: 'English Language',
-                                          cardColor: AppColors.cbtCardColor2,
-                                          showProgressIndicator: true,
-                                        ),
-                                        Divider(),
-                                        subjectCard(
-                                          subjectIcon: 'chemistry',
-                                          subjectName: 'Chemistry',
-                                          cardColor: AppColors.cbtCardColor3,
-                                          showProgressIndicator: true,
-                                        ),
-                                        Divider(),
-                                        subjectCard(
-                                          subjectIcon: 'physics',
-                                          subjectName: 'Physics',
-                                          subjectyear: '2001-2014',
-                                          cardColor: AppColors.cbtCardColor4,
-                                        ),
-                                        Divider(),
-                                        subjectCard(
-                                          cardColor: AppColors.cbtCardColor5,
-                                          subjectIcon: 'further_maths',
-                                          subjectName: 'Further Mathematics',
-                                          subjectyear: '2001-2023',
-                                        ),
-                                      ],
-                                    ),
-                                    SizedBox(height: 150),
+                                  
+                                    SizedBox(height: 80),
                                   ],
                                 ),
                               );
                             },
                           ),
                         ),
-                        Expanded(
-                            child: CBTDashboard(
-                          showAppBar: false,
-                        )),
+                          CBTDashboard(showAppBar: false),
                         Expanded(
                           child: LibraryEbook(),
                         ),
@@ -232,7 +196,7 @@ class _ElibraryDashboardState extends State<ElibraryDashboard> {
                           ),
                         ),
                         Expanded(
-                          child: VideosDashboard(
+                          child: ElibraryVidoes(
                             showAppBar: false,
                           ),
                         ),
@@ -328,16 +292,27 @@ class _books extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      // onTap: () {
-      //   if (book.title.isNotEmpty) {
-      //     Navigator.push(
-      //       context,
-      //       MaterialPageRoute(
-      //         builder: (context) => MybookPage(suggestedbook: book),
-      //       ),
-      //     );
-      //   }
-      // },
+      onTap: () {
+        if (book.title.isNotEmpty) {
+          // Convert Book to Ebook
+          final ebook = Ebook(
+            id: book.id,
+            title: book.title,
+            author: book.author,
+            thumbnail: book.thumbnail,
+            introduction: book.introduction,
+            categories: book.categories,
+            chapters: book.chapters,
+          );
+          
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => MybookPage(suggestedbook: ebook),
+            ),
+          );
+        }
+      },
       child: Padding(
         padding: const EdgeInsets.only(right: 8.0),
         child: Container(

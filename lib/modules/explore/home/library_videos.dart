@@ -13,15 +13,15 @@ import '../../providers/explore/subject_provider.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 import '../e_library/e_lib_subject_detail.dart';
 
-class VideosDashboard extends StatefulWidget {
+class ElibraryVidoes extends StatefulWidget {
   final bool showAppBar;
-  const VideosDashboard({super.key, this.showAppBar = true});
+  const ElibraryVidoes({super.key, this.showAppBar = true});
 
   @override
-  State<VideosDashboard> createState() => _VideosDashboardState();
+  State<ElibraryVidoes> createState() => _ElibraryVidoesState();
 }
 
-class _VideosDashboardState extends State<VideosDashboard> {
+class _ElibraryVidoesState extends State<ElibraryVidoes> {
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
   List<Video> _watchHistory = [];
@@ -138,12 +138,7 @@ class _VideosDashboardState extends State<VideosDashboard> {
       builder: (context, subjectProvider, child) {
         if (subjectProvider.isLoading) {
           return Scaffold(
-            appBar: widget.showAppBar
-                ? Constants.customAppBar(
-                    context: context,
-                    
-                    iconSize: 20.0)
-                : null,
+           
             body: Skeletonizer(
               child: Container(
                 decoration: Constants.customBoxDecoration(context),
@@ -288,10 +283,7 @@ class _VideosDashboardState extends State<VideosDashboard> {
               : filteredVideos;
 
           return Scaffold(
-            appBar: Constants.customAppBar(
-                context: context,
-                iconPath: 'assets/icons/search.png',
-                iconSize: 20.0),
+            
             body: Stack(
               children: [
                 Container(
@@ -611,7 +603,6 @@ class _VideosDashboardState extends State<VideosDashboard> {
           fit: BoxFit.cover,
           height: 92,
           width: 150,
-
         ),
         const SizedBox(height: 4.0),
         Padding(
@@ -699,20 +690,6 @@ class _VideosDashboardState extends State<VideosDashboard> {
                   fit: BoxFit.cover,
                   height: 80,
                   width: 108,
-
-                  errorBuilder: (context, error, stackTrace) {
-                    return Container(
-                      height: 80,
-                      width: 108,
-                      color: AppColors.videoColor9.withAlpha(50),
-                      alignment: Alignment.center,
-                      child: Icon(
-                        Icons.broken_image,
-                        color: Colors.white.withOpacity(0.7),
-                        size: 40,
-                      ),
-                    );
-                  },
                 ),
               ),
               Positioned(

@@ -202,7 +202,20 @@ class _E_CBTDashboardState extends State<E_CBTDashboard> {
                   final item = subjectItems[index];
                   return GestureDetector(
                     onTap: () {
-                      _yearDialog(context);
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => CbtDetailScreen(
+                            examId: '',
+                            examTypeId: examCategories[selectedexamCategoriesIndex!],
+                            year: 2024,
+                            subject: item.subject,
+                            subjectIcon: item.subjectIcon,
+                            cardColor: item.cardColor,
+                            subjectList: subjectItems.map((e) => e.subject).toList(),
+                          ),
+                        ),
+                      );
                     },
                     child: _buildChooseSubjectCard(
                       subject: item.subject,
@@ -424,6 +437,7 @@ void _yearDialog(BuildContext context) {
                             MaterialPageRoute(
                                 builder: (context) => CbtDetailScreen(
                                       examTypeId: "",
+                                      examId: "",
                                       year: selectedYear!,
                                       subject: 'Mathematics',
                                       subjectIcon: 'maths',

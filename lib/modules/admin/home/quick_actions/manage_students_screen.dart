@@ -70,13 +70,14 @@ class _ManageStudentsScreenState extends State<ManageStudentsScreen> {
 
     return Scaffold(
       appBar: AppBar(
+
         title: const Text('Manage Students',style: TextStyle(
           fontFamily: 'Urbanist',
           color: Colors.white,
           fontWeight: FontWeight.w600,
         ),),
         backgroundColor: AppColors.text2Light,
-       // foregroundColor: Colors.white,
+        foregroundColor: Colors.white,
         actions: [
           if (_showAddForm)
             IconButton(
@@ -88,7 +89,7 @@ class _ManageStudentsScreenState extends State<ManageStudentsScreen> {
       body: studentProvider.isLoading || levelClassProvider.isLoading
           ? const Center(child: CircularProgressIndicator())
           : Container(
-              decoration: Constants.customBoxDecoration(context),
+             // decoration: Constants.customBoxDecoration(context),
               child: SingleChildScrollView(
                 child: Column(
                   children: [
@@ -804,10 +805,7 @@ class _StudentFormWidgetState extends State<StudentFormWidget> {
                   color: AppColors.text2Light,
                 ),
               ),
-              IconButton(
-                onPressed: widget.onCancel,
-                icon: const Icon(Icons.close, color: AppColors.text5Light),
-              ),
+             
             ],
           ),
           const SizedBox(height: 16),

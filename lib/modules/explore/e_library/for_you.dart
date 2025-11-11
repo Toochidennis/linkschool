@@ -6,8 +6,10 @@ import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/explore/e_library/cbt.dart';
 import 'package:linkschool/modules/explore/e_library/e_games/gamesTab.dart';
 import 'package:linkschool/modules/explore/e_library/e_lib_vids.dart';
+import 'package:linkschool/modules/explore/e_library/e_library_ebooks/book_page.dart';
 import 'package:linkschool/modules/explore/e_library/e_library_ebooks/library_e_book.dart';
 import 'package:linkschool/modules/explore/videos/videos_dashboard.dart';
+import 'package:linkschool/modules/model/explore/home/news/ebook_model.dart';
 import 'package:provider/provider.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 import '../../model/explore/home/book_model.dart';
@@ -71,7 +73,7 @@ class _ForYouScreenState extends State<ForYouScreen> {
                       child: FittedBox(
                           child: Text('For you',
                               style: AppTextStyles.normal600(
-                                  fontSize: 14, color: AppColors.text2Light)))),
+                                  fontSize: 11, color: AppColors.text2Light)))),
                   Tab(
                       child: FittedBox(
                           child: Text('CBT',
@@ -309,16 +311,17 @@ class _books extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      // onTap: () {
-      //   if (book.title.isNotEmpty) {
-      //     Navigator.push(
-      //       context,
-      //       MaterialPageRoute(
-      //         builder: (context) => MybookPage(suggestedbook: book),
-      //       ),
-      //     );
-      //   }
-      // },
+      onTap: () {
+        print('Book title: ${book.title}');
+        if (book.title.isNotEmpty) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => MybookPage(suggestedbook: book as Ebook),
+            ),
+          );
+        }
+      },
       child: Padding(
         padding: const EdgeInsets.only(right: 8.0),
         child: Container(

@@ -1,20 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
-import '../../model/explore/home/cbt_board_model.dart';
+import '../../model/explore/home/cbt_board_model.dart' as cbt_board_model;
 import '../../model/explore/home/subject_model.dart';
 import '../../services/explore/cbt_service.dart';
 
 class CBTProvider extends ChangeNotifier {
   final CBTService _cbtService;
-  List<CBTBoardModel> _boards = [];
-  CBTBoardModel? _selectedBoard;
+  List<cbt_board_model.CBTBoardModel> _boards = [];
+  cbt_board_model.CBTBoardModel? _selectedBoard;
   bool _isLoading = false;
   String? _error;
 
   CBTProvider(this._cbtService);
 
-  List<CBTBoardModel> get boards => _boards;
-  CBTBoardModel? get selectedBoard => _selectedBoard;
+  List<cbt_board_model.CBTBoardModel> get boards => _boards;
+  cbt_board_model.CBTBoardModel? get selectedBoard => _selectedBoard;
   bool get isLoading => _isLoading;
   String? get error => _error;
 
@@ -113,6 +113,45 @@ class CBTProvider extends ChangeNotifier {
     );
     return subject.years?.map((year) => year.year).toList() ?? [];
   }
+
+  // Get all YearModel objects for a subject (includes both year and exam_id)
+  List<YearModel> getYearModelsForSubject(String subjectName) {
+    final subject = currentBoardSubjects.firstWhere(
+      (subject) => subject.name == subjectName,
+      orElse: () => SubjectModel(
+        id: '',
+        name: subjectName,
+        years: [],
+      ),
+    );
+    debugPrint('Year models for $subjectName: ${subject.years?.map((y) => y.year).join(', ')}');
+    return subject.years ?? [];
+  }
+
+  // Get the specific exam_id for a subject and year combination
+  String? getExamIdForYear(String subjectName, String year) {
+    final subject = currentBoardSubjects.firstWhere(
+      (subject) => subject.name == subjectName,
+      orElse: () => SubjectModel(
+        id: '',
+        name: subjectName,
+        years: [],
+      ),
+    );
+
+    print('Finding exam ID for Subject: $subjectName, Year: $year');
+    print('Available years for $subjectName: ${subject.years?.map((y) => y.id).join(', ')}');
+    
+    final yearModel = subject.years?.firstWhere(
+      (y) => y.year == year,
+      orElse: () => YearModel(id: '', year: ''),
+    );
+
+  
+    
+    return yearModel?.id.isNotEmpty == true ? yearModel!.id : null;
+  }
+  
 
   List<String> getOtherSubjects(String currentSubject) {
     return currentBoardSubjects

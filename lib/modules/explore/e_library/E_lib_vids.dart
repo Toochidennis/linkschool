@@ -449,7 +449,7 @@ class _E_lib_vidsState extends State<E_lib_vids> {
     final isYouTube = isYouTubeUrl(video.url);
 
     return Container(
-      height: 121,
+      height: 150,
       padding: const EdgeInsets.only(
         left: 16.0,
         top: 16.0,

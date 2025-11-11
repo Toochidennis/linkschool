@@ -55,63 +55,57 @@ class _PortalHomeState extends State<PortalHome>
   String? creatorName;
   int? academicTerm;
   String? userRole;
-  @override
-  void initState() {
-    super.initState();
-    _loadUserData();
-    _fadeController = AnimationController(
-      duration: const Duration(milliseconds: 800),
-      vsync: this,
-    );
+ @override
+void initState() {
+  super.initState();
+  _loadUserData();
 
-    _slideController = AnimationController(
-      duration: const Duration(milliseconds: 600),
-      vsync: this,
-    );
+  _fadeController = AnimationController(
+    duration: const Duration(milliseconds: 800),
+    vsync: this,
+  );
+  _slideController = AnimationController(
+    duration: const Duration(milliseconds: 600),
+    vsync: this,
+  );
+  _bounceController = AnimationController(
+    duration: const Duration(milliseconds: 1200),
+    vsync: this,
+  );
 
-    _bounceController = AnimationController(
-      duration: const Duration(milliseconds: 1200),
-      vsync: this,
-    );
+  _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+    CurvedAnimation(parent: _fadeController, curve: Curves.easeInOut),
+  );
 
-    _fadeAnimation = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
-    ).animate(CurvedAnimation(
-      parent: _fadeController,
-      curve: Curves.easeInOut,
-    ));
+  _slideAnimation = Tween<Offset>(
+    begin: const Offset(0, 0.3),
+    end: Offset.zero,
+  ).animate(
+    CurvedAnimation(parent: _slideController, curve: Curves.elasticOut),
+  );
 
-    _slideAnimation = Tween<Offset>(
-      begin: const Offset(0, 0.3),
-      end: Offset.zero,
-    ).animate(CurvedAnimation(
-      parent: _slideController,
-      curve: Curves.elasticOut,
-    ));
+  _bounceAnimation = Tween<double>(begin: 0.8, end: 1.0).animate(
+    CurvedAnimation(parent: _bounceController, curve: Curves.elasticOut),
+  );
 
-    _bounceAnimation = Tween<double>(
-      begin: 0.8,
-      end: 1.0,
-    ).animate(CurvedAnimation(
-      parent: _bounceController,
-      curve: Curves.elasticOut,
-    ));
+  // 👇 Add mounted checks
+  _fadeController.forward();
 
-    _fadeController.forward();
-    Future.delayed(const Duration(milliseconds: 200), () {
-      _slideController.forward();
-    });
-    Future.delayed(const Duration(milliseconds: 400), () {
-      _bounceController.forward();
-    });
+  Future.delayed(const Duration(milliseconds: 200), () {
+    if (mounted) _slideController.forward();
+  });
 
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      // Fetch dashboard data (includes overview + feeds)
+  Future.delayed(const Duration(milliseconds: 400), () {
+    if (mounted) _bounceController.forward();
+  });
+
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    if (mounted) {
       Provider.of<DashboardFeedProvider>(context, listen: false)
           .fetchDashboardData();
-    });
-  }
+    }
+  });
+}
 
   @override
   void didPopNext() {
@@ -180,34 +174,38 @@ class _PortalHomeState extends State<PortalHome>
     }
   }
 
-  Widget _buildAnimatedCard({
-    required Widget child,
-    required int index,
-  }) {
-    return AnimatedBuilder(
-      animation: _fadeAnimation,
-      builder: (context, child) {
-        return FadeTransition(
-          opacity: _fadeAnimation,
-          child: SlideTransition(
-            position: Tween<Offset>(
-              begin: Offset(0, 0.3 + (index * 0.1)),
-              end: Offset.zero,
-            ).animate(CurvedAnimation(
-              parent: _slideController,
-              curve: Interval(
-                index * 0.1,
-                1.0,
-                curve: Curves.elasticOut,
-              ),
-            )),
-            child: child,
-          ),
-        );
-      },
-      child: child,
-    );
-  }
+ Widget _buildAnimatedCard({
+  required Widget child,
+  required int index,
+}) {
+  // Calculate interval with proper bounds
+  final double intervalStart = (index * 0.05).clamp(0.0, 0.8);
+  final double intervalEnd = (intervalStart + 0.2).clamp(0.2, 1.0);
+  
+  return AnimatedBuilder(
+    animation: _fadeAnimation,
+    builder: (context, child) {
+      return FadeTransition(
+        opacity: _fadeAnimation,
+        child: SlideTransition(
+          position: Tween<Offset>(
+            begin: Offset(0, 0.3 + (index * 0.05).clamp(0.0, 0.5)),
+            end: Offset.zero,
+          ).animate(CurvedAnimation(
+            parent: _slideController,
+            curve: Interval(
+              intervalStart,
+              intervalEnd,
+              curve: Curves.elasticOut,
+            ),
+          )),
+          child: child,
+        ),
+      );
+    },
+    child: child,
+  );
+}
 
   Widget _buildStatsCard({
     required String title,

@@ -9,8 +9,9 @@ import 'package:provider/provider.dart';
 
 class SelectSchool extends StatefulWidget {
   final void Function(String schoolCode)? onSchoolSelected;
+  final VoidCallback? onBack;
 
-  const SelectSchool({super.key, this.onSchoolSelected});
+  const SelectSchool({super.key, this.onSchoolSelected, this.onBack});
 
   @override
   State<SelectSchool> createState() => _SelectSchoolState();
@@ -31,26 +32,57 @@ class _SelectSchoolState extends State<SelectSchool> {
     final schoolProvider = Provider.of<SchoolProvider>(context);
     final filteredSchools = schoolProvider.searchSchools(query);
 
-    return Scaffold(
+    return PopScope(
+      canPop: false, // Disable physical back button
+      onPopInvoked: (didPop) {
+        if (!didPop && widget.onBack != null) {
+          // If back was attempted but prevented, call the callback
+          widget.onBack!();
+        }
+      },
+      child: Scaffold(
+       
       body: Container(
         decoration: Constants.customScreenDec0ration(),
         width: double.infinity,
         height: double.infinity,
         child: Padding(
-          padding: const EdgeInsets.only(top: 92, left: 16, right: 16),
+          padding: const EdgeInsets.only(top: 48, left: 16, right: 16),
           child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                "Select Your Institution",
-                style: AppTextStyles.normal700(
-                    fontSize: 20, color: AppColors.aboutTitle),
-                textAlign: TextAlign.center,
+              // Back button - left aligned
+              IconButton(
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(),
+                icon: const Icon(Icons.arrow_back, color: Colors.black, size: 24),
+                onPressed: () {
+                  // Check if there's a route to pop before attempting
+                  if (Navigator.canPop(context)) {
+                    Navigator.of(context).pop();
+                  } else if (widget.onBack != null) {
+                    // If no route to pop but callback exists, use it
+                    widget.onBack!();
+                  }
+                },
               ),
-              Text(
-                "Please select your School/Institution below",
-                style: AppTextStyles.normal500(
-                    fontSize: 12, color: AppColors.admissionTitle),
-                textAlign: TextAlign.center,
+              const SizedBox(height: 24),
+              // Title and subtitle - centered
+              Center(
+                child: Text(
+                  "Select Your Institution",
+                  style: AppTextStyles.normal700(
+                      fontSize: 20, color: AppColors.aboutTitle),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+              Center(
+                child: Text(
+                  "Please select your School/Institution below",
+                  style: AppTextStyles.normal500(
+                      fontSize: 12, color: AppColors.admissionTitle),
+                  textAlign: TextAlign.center,
+                ),
               ),
               const SizedBox(height: 8),
               TextField(
@@ -109,6 +141,7 @@ class _SelectSchoolState extends State<SelectSchool> {
           ),
         ),
       ),
+    ),
     );
   }
 }

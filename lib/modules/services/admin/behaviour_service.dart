@@ -6,7 +6,7 @@ class SkillService {
   final ApiService _apiService;
   final String _db;
 
-  SkillService(this._apiService) : _db = 'aalmgzmy_linkskoo_practice';
+  SkillService(this._apiService) : _db = Hive.box('userData').get("_db");
 
   Future<List<Skills>> getSkills() async {
     final response = await _apiService.get<List<Skills>>(

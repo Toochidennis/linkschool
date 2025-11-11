@@ -51,7 +51,22 @@ class ExamProvider extends ChangeNotifier {
           print('❓ Questions data: $questionsData');
 
           if (questionsData is List && questionsData.isNotEmpty) {
-            questions = questionsData
+            // Handle nested array structure: questions can be [[{...}]] or [{...}]
+            List<dynamic> flatQuestions = [];
+            
+            for (var item in questionsData) {
+              if (item is List) {
+                // If it's a nested array, flatten it
+                flatQuestions.addAll(item);
+              } else if (item is Map) {
+                // If it's already a map, add it directly
+                flatQuestions.add(item);
+              }
+            }
+            
+            print('📝 Flattened questions count: ${flatQuestions.length}');
+
+            questions = flatQuestions
                 .whereType<Map>()
                 .map((q) {
                   try {

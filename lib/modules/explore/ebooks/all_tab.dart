@@ -19,6 +19,14 @@ class AllTab extends StatelessWidget {
     final bookProvider = Provider.of<EbookProvider>(context);
     final books = bookProvider.ebooks;
     final categories = bookProvider.categories;
+    
+    // Safety check: Ensure selectedCategoryIndex is valid
+    if (categories.isEmpty || selectedCategoryIndex >= categories.length) {
+      return const Center(
+        child: Text('No categories available'),
+      );
+    }
+    
     final selectedCategory = categories[selectedCategoryIndex];
 
     // Filter books based on the selected category
@@ -43,12 +51,13 @@ class AllTab extends StatelessWidget {
       );
     }).toList();
 
-    return CustomScrollView(
-      physics: const BouncingScrollPhysics(),
-      slivers: [
-        SliverPadding(
-          padding: const EdgeInsets.only(left: 16.0, top: 16.0),
-          sliver: SliverToBoxAdapter(
+    return SingleChildScrollView(
+      physics: const NeverScrollableScrollPhysics(),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(left: 16.0, top: 16.0),
             child: Text(
               'Continue reading',
               style: AppTextStyles.normal500(
@@ -57,9 +66,7 @@ class AllTab extends StatelessWidget {
               ),
             ),
           ),
-        ),
-        SliverToBoxAdapter(
-          child: Container(
+          Container(
             height: 260,
             margin: const EdgeInsets.only(right: 16.0),
             decoration: const BoxDecoration(
@@ -69,7 +76,7 @@ class AllTab extends StatelessWidget {
                 itemCount: readingItems.length,
                 scrollDirection: Axis.horizontal,
                 itemBuilder: (context, index) {
-                  final continueReading = bookProvider.ebooks[index];
+                  final continueReading = filteredBooks[index];
                   return GestureDetector(
                     onTap: () => Navigator.push(
                       context,
@@ -81,17 +88,13 @@ class AllTab extends StatelessWidget {
                   );
                 }),
           ),
-        ),
-        const SliverToBoxAdapter(child: SizedBox(height: 10.0)),
-        SliverToBoxAdapter(
-          child: Constants.headingWithSeeAll600(
+          const SizedBox(height: 10.0),
+          Constants.headingWithSeeAll600(
             title: 'Suggested for you',
             titleSize: 18.0,
             titleColor: AppColors.text2Light,
           ),
-        ),
-        SliverToBoxAdapter(
-          child: Container(
+          Container(
             height: 250,
             margin: const EdgeInsets.only(right: 16.0),
             decoration: const BoxDecoration(
@@ -101,7 +104,7 @@ class AllTab extends StatelessWidget {
                 itemCount: suggestedItems.length,
                 scrollDirection: Axis.horizontal,
                 itemBuilder: (context, index) {
-                  final suggestbook = bookProvider.ebooks[index];
+                  final suggestbook = filteredBooks[index];
                   return GestureDetector(
                     onTap: () => Navigator.push(
                       context,
@@ -113,17 +116,13 @@ class AllTab extends StatelessWidget {
                   );
                 }),
           ),
-        ),
-        const SliverToBoxAdapter(child: SizedBox(height: 10.0)),
-        SliverToBoxAdapter(
-          child: Constants.headingWithSeeAll600(
+          const SizedBox(height: 10.0),
+          Constants.headingWithSeeAll600(
             title: 'You might also like',
             titleSize: 18.0,
             titleColor: AppColors.text2Light,
           ),
-        ),
-        SliverToBoxAdapter(
-          child: Container(
+          Container(
             height: 250,
             margin: const EdgeInsets.only(right: 16.0),
             decoration: const BoxDecoration(
@@ -133,7 +132,7 @@ class AllTab extends StatelessWidget {
                 itemCount: suggestedItems.length,
                 scrollDirection: Axis.horizontal,
                 itemBuilder: (context, index) {
-                  final suggestedBook = bookProvider.ebooks[index];
+                  final suggestedBook = filteredBooks[index];
                   return GestureDetector(
                     onTap: () => (Navigator.push(
                         context,
@@ -144,8 +143,9 @@ class AllTab extends StatelessWidget {
                   );
                 }),
           ),
-        ),
-      ],
+          const SizedBox(height: 80.0),
+        ],
+      ),
     );
   }
 

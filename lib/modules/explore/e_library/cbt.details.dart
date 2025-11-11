@@ -3,6 +3,7 @@ import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/buttons/custom_long_elevated_button.dart';
 import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
+import 'package:linkschool/modules/explore/cbt/cbt_dashboard.dart';
 import 'package:linkschool/modules/explore/components/year_picker_dialog.dart';
 import 'package:linkschool/modules/explore/e_library/test_screen.dart';
 import 'package:linkschool/modules/providers/explore/cbt_provider.dart';
@@ -16,6 +17,8 @@ class CbtDetailScreen extends StatefulWidget {
   final List<String> subjectList;
   final String examTypeId;
   final String? subjectId;
+  final bool fromELibrary;
+   final String examId;
 
   const CbtDetailScreen({
     super.key,
@@ -26,6 +29,8 @@ class CbtDetailScreen extends StatefulWidget {
     required this.subjectList,
     required this.examTypeId,
     this.subjectId,
+    this.fromELibrary = false,
+    required this.examId,
   });
 
   @override
@@ -34,12 +39,29 @@ class CbtDetailScreen extends StatefulWidget {
 
 class _CbtDetailScreenState extends State<CbtDetailScreen> {
   late String selectedSubject;
+  late int selectedYear;
 
   @override
   void initState() {
     super.initState();
     selectedSubject = widget.subject;
+     selectedYear = widget.year; 
   }
+
+
+    @override
+  void dispose() {
+    // Clean up any resources
+    super.dispose();
+  }
+
+void _updateYear(int newYear) {
+    setState(() {
+      selectedYear = newYear;
+    });
+  }
+
+
 
   void _showSubjectList(BuildContext context) {
     final provider = Provider.of<CBTProvider>(context, listen: false);
@@ -103,18 +125,20 @@ class _CbtDetailScreenState extends State<CbtDetailScreen> {
         orElse: () => provider.currentBoardSubjects.first,
       );
 
-      YearPickerDialog.show(
-        context,
-        title: 'Choose Year',
-        examTypeId: widget.examTypeId,
-        startYear: yearsList.first,
-        numberOfYears: yearsList.length,
-        subject: selectedSubject,
-        subjectIcon: provider.getSubjectIcon(selectedSubject),
-        cardColor: provider.getSubjectColor(selectedSubject),
-        subjectList: widget.subjectList,
-        subjectId: subjectModel.id,
-      );
+      // YearPickerDialog.show(
+      //   context,
+      //   title: 'Choose Year',
+      //   examTypeId: widget.examId,
+      //   startYear: yearsList.first,
+      //   yearModels: provider.getYearModelsForSubject(selectedSubject),
+      //   numberOfYears: yearsList.length,
+      //   subject: selectedSubject,
+      //   subjectIcon: provider.getSubjectIcon(selectedSubject),
+      //   cardColor: provider.getSubjectColor(selectedSubject),
+      //   subjectList: widget.subjectList,
+      //   subjectId: subjectModel.id,
+        
+      // );
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -163,14 +187,49 @@ class _CbtDetailScreenState extends State<CbtDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
+    
     return Consumer<CBTProvider>(
       builder: (context, provider, child) {
         return Scaffold(
-          appBar: Constants.customAppBar(
-              context: context,
-              title: provider.selectedBoard?.boardCode ?? 'CBT',
-              centerTitle: true,
-              showBackButton: true),
+          appBar: AppBar(
+            backgroundColor: Colors.white,
+            automaticallyImplyLeading: false,
+            elevation: 0.0,
+            title: Text(
+              provider.selectedBoard?.boardCode ?? 'CBT',
+              style: AppTextStyles.normal600(
+                fontSize: 18.0,
+                color: AppColors.primaryLight,
+              ),
+            ),
+            centerTitle: true,
+            flexibleSpace: FlexibleSpaceBar(
+              background: Stack(
+                children: [
+                  Positioned.fill(
+                    child: Opacity(
+                      opacity: 0.1,
+                      child: Image.asset(
+                        'assets/images/background.png',
+                        fit: BoxFit.cover,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            leading: IconButton(
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              icon: Image.asset(
+                'assets/icons/arrow_back.png',
+                color: AppColors.primaryLight,
+                width: 34.0,
+                height: 34.0,
+              ),
+            ),
+          ),
           body: Container(
             decoration: Constants.customBoxDecoration(context),
             child: Padding(

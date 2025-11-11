@@ -11,14 +11,18 @@ import '../ebooks/books_button_item.dart';
 class CBTDashboard extends StatefulWidget {
   /// Whether to show the AppBar. Defaults to true.
   final bool showAppBar;
+  final bool fromELibrary;
 
-  const CBTDashboard({super.key, this.showAppBar = true});
+  const CBTDashboard({super.key, this.showAppBar = true, this.fromELibrary = false});
 
   @override
   State<CBTDashboard> createState() => _CBTDashboardState();
 }
 
-class _CBTDashboardState extends State<CBTDashboard> {
+class _CBTDashboardState extends State<CBTDashboard> with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
+
   @override
   void initState() {
     super.initState();
@@ -30,6 +34,7 @@ class _CBTDashboardState extends State<CBTDashboard> {
 
   @override
   Widget build(BuildContext context) {
+    super.build(context); // Required for AutomaticKeepAliveClientMixin
     return Scaffold(
       appBar: widget.showAppBar
           ? Constants.customAppBar(context: context, showBackButton: true)
@@ -40,44 +45,43 @@ class _CBTDashboardState extends State<CBTDashboard> {
             enabled: provider.isLoading,
             child: Container(
               decoration: Constants.customBoxDecoration(context),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const SizedBox(height: 30),
-                  _buildCBTCategories(provider),
-                  Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Text(
-                      provider.selectedBoard?.title ?? 'Board Title',
-                      style: AppTextStyles.normal600(
-                        fontSize: 22.0,
-                        color: AppColors.text4Light,
+              child: CustomScrollView(
+                physics: const BouncingScrollPhysics(),
+                slivers: [
+                  const SliverToBoxAdapter(child: SizedBox(height: 30)),
+                  SliverToBoxAdapter(
+                    child: _buildCBTCategories(provider),
+                  ),
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Text(
+                        provider.selectedBoard?.title ?? 'Board Title',
+                        style: AppTextStyles.normal600(
+                          fontSize: 22.0,
+                          color: AppColors.text4Light,
+                        ),
                       ),
                     ),
                   ),
-                  Expanded(
-                    child: CustomScrollView(
-                      physics: const BouncingScrollPhysics(),
-                      slivers: [
-                        SliverToBoxAdapter(
-                          child: _buildPerformanceMetrics(),
-                        ),
-                        const SliverToBoxAdapter(child: SizedBox(height: 16.0)),
-                        SliverToBoxAdapter(
-                          child: _buildTestHistory(),
-                        ),
-                        const SliverToBoxAdapter(child: SizedBox(height: 16.0)),
-                        SliverToBoxAdapter(
-                          child: Constants.headingWithSeeAll600(
-                            title: 'Choose subject',
-                            titleSize: 18.0,
-                            titleColor: AppColors.text4Light,
-                          ),
-                        ),
-                        _buildSubjectList(provider),
-                      ],
+                  SliverToBoxAdapter(
+                    child: _buildPerformanceMetrics(),
+                  ),
+                  const SliverToBoxAdapter(child: SizedBox(height: 16.0)),
+                  SliverToBoxAdapter(
+                    child: _buildTestHistory(),
+                  ),
+                  const SliverToBoxAdapter(child: SizedBox(height: 16.0)),
+                  SliverToBoxAdapter(
+                    child: Constants.headingWithSeeAll600(
+                      title: 'Choose subject',
+                      titleSize: 18.0,
+                      titleColor: AppColors.text4Light,
                     ),
                   ),
+                  _buildSubjectList(provider),
+                  // Add some bottom padding
+                  const SliverToBoxAdapter(child: SizedBox(height: 100.0)),
                 ],
               ),
             ),
@@ -193,7 +197,7 @@ Widget _buildTestHistory() {
             titleColor: AppColors.text4Light,
           ),
           SizedBox(
-            height: 100,
+            height: 120,
             child: ListView.builder(
               scrollDirection: Axis.horizontal,
               padding: const EdgeInsets.only(right: 16.0),

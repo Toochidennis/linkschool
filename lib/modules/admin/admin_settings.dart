@@ -18,30 +18,39 @@ class AdminSettingsScreen extends StatefulWidget {
 class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFF5F5F5),
-      appBar: AppBar(
-        backgroundColor: const Color(0xFF4A4FBC), // Blue color from image
-        elevation: 0,
-        leading: IconButton(
-          onPressed: () => Navigator.of(context).pop(),
-          icon: const Icon(
-            Icons.arrow_back,
-            color: Colors.white,
-            size: 24,
+    return PopScope(
+      canPop: false, // Disable physical back button
+      onPopInvoked: (didPop) {
+        // Physical back button does nothing
+      },
+      child: Scaffold(
+        backgroundColor: const Color(0xFFF5F5F5),
+        appBar: AppBar(
+          backgroundColor: const Color(0xFF4A4FBC), // Blue color from image
+          elevation: 0,
+          leading: IconButton(
+            onPressed: () {
+              if (Navigator.canPop(context)) {
+                Navigator.of(context).pop();
+              }
+            },
+            icon: const Icon(
+              Icons.arrow_back,
+              color: Colors.white,
+              size: 24,
+            ),
           ),
-        ),
-        title: const Text(
-          'Settings',
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 20,
-            fontWeight: FontWeight.w600,
-            fontFamily: 'Urbanist',
+          title: const Text(
+            'Settings',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 20,
+              fontWeight: FontWeight.w600,
+              fontFamily: 'Urbanist',
+            ),
           ),
+          centerTitle: false,
         ),
-        centerTitle: false,
-      ),
       body: SingleChildScrollView(
         child: Column(
           children: [
@@ -121,14 +130,17 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                     widget.onLogout!(); // This triggers the flip to explore dashboard
                   }
                   
-                  // Navigate back to the navigation flow (explore dashboard)
-                  Navigator.of(context).popUntil((route) => route.isFirst);
+                  // Navigate back safely - only pop if there are routes to pop
+                  if (Navigator.canPop(context)) {
+                    Navigator.of(context).popUntil((route) => route.isFirst);
+                  }
                 },
               isLogout: true,
             ),
           ],
         ),
       ),
+    ),
     );
   }
 
