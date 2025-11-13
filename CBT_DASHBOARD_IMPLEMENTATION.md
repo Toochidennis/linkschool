@@ -16,7 +16,7 @@ return GestureDetector(
 
       YearPickerDialog.show(
         context,
-        examTypeId: provider.selectedBoard?.id ?? '',
+      //  examTypeId: provider.selectedBoard?.id ?? '',
         title: 'Choose Year for $subject',
         startYear: yearsList.first,        // ❌ Old parameter
         numberOfYears: yearsList.length,   // ❌ Old parameter

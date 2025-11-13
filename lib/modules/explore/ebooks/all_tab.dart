@@ -172,6 +172,19 @@ class AllTab extends StatelessWidget {
                     fit: BoxFit.cover,
                     height: 180,
                     width: 130,
+                     errorBuilder: (context, error, stackTrace) {
+                      return Container(
+                        height: 173,
+                        width: 114,
+                        color: AppColors.videoColor9.withAlpha(50),
+                        alignment: Alignment.center,
+                        child: Icon(
+                          Icons.broken_image,
+                          color: Colors.white.withOpacity(0.7),
+                          size: 40,
+                        ),
+                      );
+                    },
                   ),
                 ),
                 const SizedBox(height: 4.0),
@@ -230,6 +243,19 @@ class AllTab extends StatelessWidget {
                     fit: BoxFit.cover,
                     height: 180,
                     width: 130,
+                     errorBuilder: (context, error, stackTrace) {
+                      return Container(
+                        height: 173,
+                        width: 114,
+                        color: AppColors.videoColor9.withAlpha(50),
+                        alignment: Alignment.center,
+                        child: Icon(
+                          Icons.broken_image,
+                          color: Colors.white.withOpacity(0.7),
+                          size: 40,
+                        ),
+                      );
+                    },
                   ),
                 ),
                 const SizedBox(height: 4.0),

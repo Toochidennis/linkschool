@@ -14,6 +14,7 @@ class TestScreen extends StatefulWidget {
   final String? subjectId;
   final String? subject;
   final int? year;
+  final String calledFrom; // Track where screen is called from
   
   const TestScreen({
     super.key, 
@@ -21,6 +22,7 @@ class TestScreen extends StatefulWidget {
     this.subjectId,
     this.subject,
     this.year,
+    this.calledFrom = 'details', // Default to details screen
   });
 
   @override
@@ -80,6 +82,17 @@ class _TestScreenState extends State<TestScreen> {
               ),
             ),
             elevation: 0,
+            actions: [
+              Padding(
+                padding: const EdgeInsets.only(right: 16.0),
+                child: Center(
+                  child: TimerWidget(
+                    initialSeconds: 3600, // Default to 1 hour
+                    onTimeUp: () => _submitQuiz(examProvider, isFullyCompleted: false),
+                  ),
+                ),
+              ),
+            ],
           ),
           body: examProvider.isLoading
               ? const Center(
@@ -96,7 +109,7 @@ class _TestScreenState extends State<TestScreen> {
                   ),
                 )  
               : Padding(
-                  padding: const EdgeInsets.all(16.0),
+                  padding: const EdgeInsets.symmetric( horizontal: 16.0),
                   child: Column(
                     children: [
                       _buildTimerRow(examProvider),
@@ -115,20 +128,8 @@ class _TestScreenState extends State<TestScreen> {
   }
 
   Widget _buildTimerRow(ExamProvider provider) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Row(
-          children: [
-            const SizedBox(width: 8),
-            TimerWidget(
-              initialSeconds: 3600, // Default to 1 hour
-              onTimeUp: () => _submitQuiz(provider),
-            ),
-          ],
-        ),
-      ],
-    );
+    // Timer is now in AppBar, navigation buttons handle submission
+    return const SizedBox.shrink();
   }
 
   Widget _buildProgressSection(ExamProvider provider) {
@@ -138,29 +139,15 @@ class _TestScreenState extends State<TestScreen> {
 
     return Container(
       width: 400,
-      height: 65,
+      
       padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
         color: AppColors.eLearningContColor1,
         borderRadius: BorderRadius.circular(8),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Stack(
         children: [
-          Row(
-            children: [
-              Text(
-                '$answeredQuestions of $total',
-                style: const TextStyle(color: Colors.white, fontSize: 16),
-              ),
-              const SizedBox(width: 8),
-              const Text(
-                'Completed',
-                style: TextStyle(color: Colors.white, fontSize: 12),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
+          // Progress bar background
           ClipRRect(
             borderRadius: BorderRadius.circular(64),
             child: LinearProgressIndicator(
@@ -169,7 +156,21 @@ class _TestScreenState extends State<TestScreen> {
               valueColor: const AlwaysStoppedAnimation<Color>(
                 AppColors.eLearningContColor3,
               ),
-              minHeight: 8,
+              minHeight: 18,
+            ),
+          ),
+          // Text overlay inside progress bar
+          Center(
+            child: Positioned(
+              
+              child: Text(
+                '$answeredQuestions of $total Completed',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
             ),
           ),
         ],
@@ -215,29 +216,133 @@ class _TestScreenState extends State<TestScreen> {
     }
 
     return SingleChildScrollView(
-      child: Container(
-        width: 400,
-        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 16.0),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const SizedBox(height: 8),
-            Text(
-              question.content.isNotEmpty
-                  ? question.content[0].toUpperCase() +
-                      question.content.substring(1)
-                  : "Question",
-              style: const TextStyle(fontSize: 23),
+      child: Column(
+        children: [
+          // Question Card
+          Container(
+            width: 400,
+            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 16.0),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(8),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.1),
+                  blurRadius: 4,
+                  offset: const Offset(0, 2),
+                ),
+              ],
             ),
-            const SizedBox(height: 16),
-            _buildOptions(provider, question),
-          ],
-        ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: AppColors.eLearningBtnColor1,
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        'Question ${provider.currentQuestionIndex + 1}',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  question.content.isNotEmpty
+                      ? question.content[0].toUpperCase() +
+                          question.content.substring(1)
+                      : "Question",
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w500,
+                    height: 1.5,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+          
+          // Options/Input Card
+          _buildOptionsOrInputCard(provider, question),
+        ],
       ),
+    );
+  }
+
+  Widget _buildOptionsOrInputCard(ExamProvider provider, QuestionModel question) {
+    final options = question.getOptions();
+    
+    return Container(
+      width: 400,
+      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 16.0),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(8),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: options.isEmpty 
+          ? _buildTextInput(provider)
+          : _buildOptions(provider, question),
+    );
+  }
+
+  Widget _buildTextInput(ExamProvider provider) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Your Answer:',
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+            color: AppColors.text4Light,
+          ),
+        ),
+        const SizedBox(height: 12),
+        TextField(
+          controller: _textController,
+          maxLines: 4,
+          decoration: InputDecoration(
+            hintText: 'Type your answer here...',
+            hintStyle: TextStyle(color: Colors.grey.shade400),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: BorderSide(color: Colors.grey.shade300),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: BorderSide(color: Colors.grey.shade300),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: const BorderSide(color: AppColors.eLearningBtnColor1, width: 2),
+            ),
+            filled: true,
+            fillColor: Colors.grey.shade50,
+            contentPadding: const EdgeInsets.all(16),
+          ),
+          onChanged: (value) {
+            // Store text answer - you may need to update provider to handle text answers
+            // For now, we'll just update the text in the controller
+          },
+        ),
+      ],
     );
   }
 
@@ -289,6 +394,7 @@ class _TestScreenState extends State<TestScreen> {
     
     return Row(
       children: [
+        // Previous Button
         Expanded(
           child: OutlinedButton(
             onPressed: provider.currentQuestionIndex > 0
@@ -300,25 +406,47 @@ class _TestScreenState extends State<TestScreen> {
                 borderRadius: BorderRadius.circular(4),
               ),
             ),
-            child:
-                const Text('Previous', style: TextStyle(color: Colors.white)),
+            child: const Text('Previous', style: TextStyle(color: Colors.white)),
           ),
         ),
-        const SizedBox(width: 16),
+        const SizedBox(width: 12),
+        
+        // Submit Button (Center)
         Expanded(
           child: ElevatedButton(
-            onPressed: isLastQuestion 
-                ? () => _submitQuiz(provider)
-                : () => provider.nextQuestion(),
+            onPressed: () => _submitQuiz(
+              provider, 
+              isFullyCompleted: isLastQuestion, // Completed if on last question, incomplete otherwise
+            ),
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.eLearningBtnColor5,
+              backgroundColor: AppColors.eLearningContColor3,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(4),
               ),
             ),
-            child: Text(
-              isLastQuestion ? 'Submit' : 'Next',
-              style: const TextStyle(color: Colors.white),
+            child: const Text(
+              'Submit',
+              style: TextStyle(color: Colors.white),
+            ),
+          ),
+        ),
+        const SizedBox(width: 12),
+        
+        // Next Button
+        Expanded(
+          child: ElevatedButton(
+            onPressed: !isLastQuestion 
+                ? () => provider.nextQuestion()
+                : null,
+            style: OutlinedButton.styleFrom(
+              side:  BorderSide(color:!isLastQuestion ? Colors.white : const Color.fromARGB(255, 169, 168, 168)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(4),
+              ),
+            ),
+            child:  Text(
+              'Next',
+              style: TextStyle(color:!isLastQuestion ? Color.fromARGB(255, 34, 2, 215) : const Color.fromARGB(255, 169, 168, 168)),
             ),
           ),
         ),
@@ -326,13 +454,17 @@ class _TestScreenState extends State<TestScreen> {
     );
   }
 
-  void _submitQuiz(ExamProvider provider) {
+  void _submitQuiz(ExamProvider provider, {required bool isFullyCompleted}) {
     // Show a dialog to confirm submission
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Submit Test'),
-        content: const Text('Are you sure you want to submit your answers?'),
+        content: Text(
+          isFullyCompleted
+              ? 'You have reached the last question. Are you sure you want to submit?'
+              : 'You are submitting early. Not all questions have been seen. Continue?',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
@@ -343,6 +475,7 @@ class _TestScreenState extends State<TestScreen> {
               Navigator.of(context).pop(); // Close dialog
               
               // Navigate to result screen
+              print(" questions: ${provider.questions}, userAnswers: ${provider.userAnswers}, isFullyCompleted: $isFullyCompleted");
               Navigator.pushReplacement(
                 context,
                 MaterialPageRoute(
@@ -352,6 +485,9 @@ class _TestScreenState extends State<TestScreen> {
                     subject: widget.subject ?? provider.examInfo?.courseName ?? 'CBT Test',
                     year: widget.year ?? DateTime.now().year,
                     examType: provider.examInfo?.title ?? 'Test',
+                    examId: widget.examTypeId,
+                    calledFrom: widget.calledFrom, // Pass the source
+                    isFullyCompleted: isFullyCompleted, // Pass completion status
                   ),
                 ),
               );

@@ -52,7 +52,7 @@ class GameCard extends StatelessWidget {
                     game.thumbnail,
                     fit: BoxFit.contain,
                     errorBuilder: (context, error, stackTrace) {
-                      return Icon(Icons.error, color: Colors.red);
+                      return Icon(Icons.error, color: Colors.white);
                     },
                   ),
           ),

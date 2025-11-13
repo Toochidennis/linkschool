@@ -1,27 +1,79 @@
-// ignore_for_file: must_be_immutable
-
 import 'package:flutter/material.dart';
 import 'package:linkschool/modules/model/explore/home/exam_model.dart';
+import 'package:linkschool/modules/model/explore/cbt_history_model.dart';
+import 'package:linkschool/modules/services/cbt_history_service.dart';
+import 'package:linkschool/modules/providers/explore/cbt_provider.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
+import 'package:provider/provider.dart';
 
-class CbtResultScreen extends StatelessWidget {
-  late double opacity;
+class CbtResultScreen extends StatefulWidget {
   final List<QuestionModel> questions;
   final Map<int, int> userAnswers;
   final String subject;
   final int year;
   final String examType;
+  final String? examId;
+  final String calledFrom; // Track where screen was called from
+  final bool isFullyCompleted; // Track if all questions were answered
 
-  CbtResultScreen({
+  const CbtResultScreen({
     super.key,
     required this.questions,
     required this.userAnswers,
     required this.subject,
     required this.year,
     required this.examType,
+    this.examId,
+    this.calledFrom = 'details', // Default to details screen
+    this.isFullyCompleted = false, // Default to false
   });
+
+  @override
+  State<CbtResultScreen> createState() => _CbtResultScreenState();
+}
+
+class _CbtResultScreenState extends State<CbtResultScreen> {
+  late double opacity;
+  final CbtHistoryService _historyService = CbtHistoryService();
+  bool _isSaved = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _saveTestResult();
+  }
+
+  // Save test result to shared preferences
+  Future<void> _saveTestResult() async {
+    if (_isSaved) return; // Prevent duplicate saves
+    
+    try {
+      final score = _calculateScore();
+      final totalQuestions = widget.questions.length;
+      
+      final historyModel = CbtHistoryModel(
+        subject: widget.subject,
+        year: widget.year,
+        examId: widget.examId ?? '',
+        examType: widget.examType,
+        score: score,
+        totalQuestions: totalQuestions,
+        timestamp: DateTime.now(),
+        isFullyCompleted: widget.isFullyCompleted, // Save completion status
+      );
+      
+      await _historyService.saveTestResult(historyModel);
+      setState(() {
+        _isSaved = true;
+      });
+      
+      print('Test result saved: ${historyModel.subject} - ${historyModel.percentage}% (Completed: ${historyModel.isFullyCompleted})');
+    } catch (e) {
+      print('Error saving test result: $e');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -32,9 +84,18 @@ class CbtResultScreen extends StatelessWidget {
       appBar: AppBar(
         leading: IconButton(
           onPressed: () {
-            // Pop twice to go back to CBT dashboard
-            Navigator.of(context).pop();
-            Navigator.of(context).pop();
+            // Refresh the CBT provider statistics before going back
+            context.read<CBTProvider>().refreshStats();
+            
+            // Handle navigation based on where we came from
+            if (widget.calledFrom == 'dashboard') {
+              // From dashboard -> pop once to go back to dashboard
+              Navigator.of(context).pop();
+            } else {
+              // From details screen -> pop twice (result + test screen) to go back to details
+              Navigator.of(context).pop();
+              Navigator.of(context).pop();
+            }
           },
           icon: Image.asset(
             'assets/icons/arrow_back.png',
@@ -70,7 +131,7 @@ class CbtResultScreen extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                '$examType - $subject ($year)',
+                '${widget.examType} - ${widget.subject} (${widget.year})',
                 style: AppTextStyles.normal600(
                   fontSize: 18,
                   color: AppColors.eLearningContColor2,
@@ -80,7 +141,7 @@ class CbtResultScreen extends StatelessWidget {
               _buildScoreCard(),
               const SizedBox(height: 16),
               // Dynamic question list
-              ...List.generate(questions.length, (index) {
+              ...List.generate(widget.questions.length, (index) {
                 return Padding(
                   padding: const EdgeInsets.only(bottom: 16.0),
                   child: _buildQuestionCard(index),
@@ -95,7 +156,7 @@ class CbtResultScreen extends StatelessWidget {
 
   Widget _buildScoreCard() {
     final score = _calculateScore();
-    final totalQuestions = questions.length;
+    final totalQuestions = widget.questions.length;
     final percentage = totalQuestions > 0 ? (score / totalQuestions * 100).toStringAsFixed(1) : '0.0';
     final correctAnswers = _getCorrectAnswersCount();
     final wrongAnswers = _getWrongAnswersCount();
@@ -210,8 +271,8 @@ class CbtResultScreen extends StatelessWidget {
   }
 
   Widget _buildQuestionCard(int index) {
-    final question = questions[index];
-    final userAnswerIndex = userAnswers[index];
+    final question = widget.questions[index];
+    final userAnswerIndex = widget.userAnswers[index];
     final correctAnswerIndex = question.getCorrectAnswerIndex();
     final options = question.getOptions();
     
@@ -402,9 +463,9 @@ class CbtResultScreen extends StatelessWidget {
 
   int _calculateScore() {
     int score = 0;
-    for (int i = 0; i < questions.length; i++) {
-      final userAnswerIndex = userAnswers[i];
-      final correctAnswerIndex = questions[i].getCorrectAnswerIndex();
+    for (int i = 0; i < widget.questions.length; i++) {
+      final userAnswerIndex = widget.userAnswers[i];
+      final correctAnswerIndex = widget.questions[i].getCorrectAnswerIndex();
       
       if (userAnswerIndex != null && userAnswerIndex == correctAnswerIndex) {
         score++;
@@ -419,9 +480,9 @@ class CbtResultScreen extends StatelessWidget {
 
   int _getWrongAnswersCount() {
     int wrongCount = 0;
-    for (int i = 0; i < questions.length; i++) {
-      final userAnswerIndex = userAnswers[i];
-      final correctAnswerIndex = questions[i].getCorrectAnswerIndex();
+    for (int i = 0; i < widget.questions.length; i++) {
+      final userAnswerIndex = widget.userAnswers[i];
+      final correctAnswerIndex = widget.questions[i].getCorrectAnswerIndex();
       
       if (userAnswerIndex != null && userAnswerIndex != correctAnswerIndex) {
         wrongCount++;

@@ -690,6 +690,19 @@ class _ElibraryVidoesState extends State<ElibraryVidoes> {
                   fit: BoxFit.cover,
                   height: 80,
                   width: 108,
+                    errorBuilder: (context, error, stackTrace) {
+                    return Container(
+                      height: 80,
+                      width: 108,
+                      color: AppColors.videoColor9.withAlpha(50),
+                      alignment: Alignment.center,
+                      child: Icon(
+                        Icons.broken_image,
+                        color: Colors.white.withOpacity(0.7),
+                        size: 40,
+                      ),
+                    );
+                  },
                 ),
               ),
               Positioned(

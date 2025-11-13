@@ -2,14 +2,23 @@ import 'package:flutter/material.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import '../../model/explore/home/cbt_board_model.dart' as cbt_board_model;
 import '../../model/explore/home/subject_model.dart';
+import '../../model/explore/cbt_history_model.dart';
 import '../../services/explore/cbt_service.dart';
+import '../../services/cbt_history_service.dart';
 
 class CBTProvider extends ChangeNotifier {
   final CBTService _cbtService;
+  final CbtHistoryService _historyService = CbtHistoryService();
   List<cbt_board_model.CBTBoardModel> _boards = [];
   cbt_board_model.CBTBoardModel? _selectedBoard;
   bool _isLoading = false;
   String? _error;
+  
+  // Dashboard statistics
+  int _totalTests = 0;
+  int _successCount = 0;
+  double _averageScore = 0.0;
+  List<CbtHistoryModel> _recentHistory = [];
 
   CBTProvider(this._cbtService);
 
@@ -17,6 +26,12 @@ class CBTProvider extends ChangeNotifier {
   cbt_board_model.CBTBoardModel? get selectedBoard => _selectedBoard;
   bool get isLoading => _isLoading;
   String? get error => _error;
+  
+  // Dashboard statistics getters
+  int get totalTests => _totalTests;
+  int get successCount => _successCount;
+  double get averageScore => _averageScore;
+  List<CbtHistoryModel> get recentHistory => _recentHistory;
 
   Future<void> loadBoards() async {
     _isLoading = true;
@@ -28,6 +43,9 @@ class CBTProvider extends ChangeNotifier {
       if (_boards.isNotEmpty && _selectedBoard == null) {
         _selectedBoard = _boards.first;
       }
+      
+      // Load dashboard statistics
+      await loadDashboardStats();
     } catch (e) {
       _error = e.toString();
       print('Error in CBTProvider: $_error');
@@ -35,6 +53,31 @@ class CBTProvider extends ChangeNotifier {
 
     _isLoading = false;
     notifyListeners();
+  }
+  
+  // Load dashboard statistics from shared preferences
+  Future<void> loadDashboardStats() async {
+    try {
+      final stats = await _historyService.getDashboardStats();
+      _totalTests = stats['totalTests'] ?? 0;
+      _successCount = stats['successCount'] ?? 0;
+      _averageScore = stats['averageScore'] ?? 0.0;
+      _recentHistory = stats['recentHistory'] ?? [];
+      
+      print('🔄 CBTProvider - Stats loaded:');
+      print('   Total Tests: $_totalTests');
+      print('   Success Count: $_successCount');
+      print('   Average Score: ${_averageScore.toStringAsFixed(1)}%');
+      
+      notifyListeners();
+    } catch (e) {
+      print('Error loading dashboard stats: $e');
+    }
+  }
+  
+  // Refresh statistics (call this after completing a test)
+  Future<void> refreshStats() async {
+    await loadDashboardStats();
   }
 
   void selectBoard(String code) {
@@ -46,7 +89,6 @@ class CBTProvider extends ChangeNotifier {
   }
 
   List<String> get boardCodes => _boards
-      .where((board) => board.boardCode != null)
       .map((board) => board.boardCode)
       .toList();
 
@@ -56,34 +98,46 @@ class CBTProvider extends ChangeNotifier {
     final subjectIcons = {
       'MATHEMATICS': 'maths',
       'ENGLISH LANGUAGE': 'english',
-      'CHEMISTRY': 'chemistry',
+      'ENGLISH': 'english',
+     
       'PHYSICS': 'physics',
       'BIOLOGY': 'biology',
-      'GOVERNMENT': 'government',
-      'ECONOMICS': 'economics',
-      'LITERATURE IN ENGLISH': 'literature',
-      'GEOGRAPHY': 'geography',
-      'ACCOUNTING': 'accounting',
-      'C. R. S': 'crs',
-      'COMMERCE': 'commerce',
-      'AGRICULTURAL SCIENCE': 'agriculture',
-      'CHRISTIAN RELIGIOUS STUDIES (CRS)': 'crs',
-      'FINANCIAL ACCOUNTING': 'accounting',
-      'BUSINESS EDUCATION': 'business',
+    
+    
+      'LITERATURE IN ENGLISH': 'english',
+      'LITERATURE-I -ENGLISH 1': 'english',
+      'LITERATURE': 'english',
+      //'GEOGRAPHY': 'geography',
+  
+    
+     
+      
       'CIVIC EDUCATION': 'civic',
-      'HOME ECONOMICS': 'home_economics',
-      'SOCIAL STUDIES': 'social_studies',
-      'VERBAL APTITUDE': 'verbal_aptitude',
-      'QUANTITATIVE REASONING': 'quantitative_reasoning',
-      'GENERAL': 'general',
-      'COMPUTER': 'computer',
-      'BIBLE QUIZ': 'bible_quiz',
-      'HISTORY': 'history',
-      'MUSIC': 'music',
-      'ANIMALS': 'animals',
-      'SPORTS': 'sports',
-      'BASIC SCRATCH': 'scratch',
+     
+     
+      
+      // 'GENERAL': 'general',
+      // 'COMPUTER': 'computer',
+      // 'BIBLE QUIZ': 'bible_quiz',
+      // 'HISTORY': 'history',
+      // 'MUSIC': 'music',
+      // 'ANIMALS': 'animals',
+      // 'SPORTS': 'sports',
+      // 'BASIC SCRATCH': 'scratch',
     };
+
+    // Fallback icons for subjects without specific icons
+    final fallbackIcons = [
+      'physics',
+      'biology',
+      'english',
+      'maths',
+     // "civic",
+      // 'sports',
+      // 'animals',
+      // 'bible_quiz',
+      // 'scratch',
+    ];
 
     final colors = [
       AppColors.cbtCardColor1,
@@ -94,8 +148,16 @@ class CBTProvider extends ChangeNotifier {
     ];
 
     return _selectedBoard!.subjects.map((subject) {
-      subject.subjectIcon =
-          subjectIcons[subject.name.toUpperCase()] ?? 'default';
+      // Check if subject has a specific icon
+      if (subjectIcons.containsKey(subject.name.toUpperCase())) {
+        subject.subjectIcon = subjectIcons[subject.name.toUpperCase()];
+      } else {
+        // Use a hash-based approach to consistently assign a random icon
+        // This ensures the same subject always gets the same icon
+        final hash = subject.name.hashCode.abs();
+        subject.subjectIcon = fallbackIcons[hash % fallbackIcons.length];
+      }
+      
       subject.cardColor =
           colors[_selectedBoard!.subjects.indexOf(subject) % colors.length];
       return subject;

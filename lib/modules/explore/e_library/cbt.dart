@@ -207,7 +207,8 @@ class _E_CBTDashboardState extends State<E_CBTDashboard> {
                         MaterialPageRoute(
                           builder: (context) => CbtDetailScreen(
                             examId: '',
-                            examTypeId: examCategories[selectedexamCategoriesIndex!],
+                           // examId: '',
+                          //  examTypeId: examCategories[selectedexamCategoriesIndex!],
                             year: 2024,
                             subject: item.subject,
                             subjectIcon: item.subjectIcon,
@@ -436,8 +437,8 @@ void _yearDialog(BuildContext context) {
                             context,
                             MaterialPageRoute(
                                 builder: (context) => CbtDetailScreen(
-                                      examTypeId: "",
-                                      examId: "",
+                                     // examTypeId: "",
+                                     examId: "",
                                       year: selectedYear!,
                                       subject: 'Mathematics',
                                       subjectIcon: 'maths',

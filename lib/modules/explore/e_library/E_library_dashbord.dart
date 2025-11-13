@@ -7,6 +7,7 @@ import 'package:linkschool/modules/explore/home/library_videos.dart';
 import 'package:linkschool/modules/model/explore/home/book_model.dart';
 import 'package:linkschool/modules/model/explore/home/game_model.dart';
 import 'package:linkschool/modules/model/explore/home/news/ebook_model.dart';
+import 'package:linkschool/modules/services/explore/watch_history_service.dart';
 import 'package:provider/provider.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
@@ -29,16 +30,45 @@ class ElibraryDashboard extends StatefulWidget {
 
 class _ElibraryDashboardState extends State<ElibraryDashboard> with AutomaticKeepAliveClientMixin {
   
-   @override
+  @override
   bool get wantKeepAlive => true;
+  
+  List<Video> _watchHistory = [];
+  bool _isLoadingHistory = false;
+  
   @override
   void initState() {
     super.initState();
     Future.microtask(() =>
         Provider.of<ForYouProvider>(context, listen: false).fetchForYouData());
+    _loadWatchHistory();
   }
 
-  
+  Future<void> _loadWatchHistory() async {
+    setState(() => _isLoadingHistory = true);
+    final history = await WatchHistoryService.getWatchHistory(limit: 10);
+    setState(() {
+      _watchHistory = history;
+      _isLoadingHistory = false;
+    });
+  }
+
+  Future<void> _onVideoTap(Video video) async {
+    // Add to watch history before navigating
+    await WatchHistoryService.addToWatchHistory(video);
+    
+    if (!mounted) return;
+    
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => E_lib_vids(video: video),
+      ),
+    ).then((_) {
+      // Reload watch history when returning
+      _loadWatchHistory();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -103,22 +133,49 @@ class _ElibraryDashboardState extends State<ElibraryDashboard> with AutomaticKee
                                         tag: 'Video',
                                         title: 'Continue watching'),
                                     SizedBox(height: 8),
-                                    SizedBox(
-                                      height: 180,
-                                      child: ListView.builder(
-                                        scrollDirection: Axis.horizontal,
-                                        itemCount: forYouProvider.videos.isEmpty
-                                            ? 3
-                                            : forYouProvider.videos.length,
-                                        itemBuilder: (context, index) =>
-                                            _ContinueWatching(
-                                          video: forYouProvider.videos.isEmpty
-                                              ? Video.empty()
-                                              : forYouProvider.videos[index],
-                                          context: context,
-                                        ),
-                                      ),
-                                    ),
+                                    _isLoadingHistory
+                                        ? SizedBox(
+                                            height: 180,
+                                            child: Center(
+                                              child: CircularProgressIndicator(),
+                                            ),
+                                          )
+                                        : _watchHistory.isEmpty
+                                            ? Container(
+                                                height: 180,
+                                                alignment: Alignment.center,
+                                                child: Column(
+                                                  mainAxisAlignment: MainAxisAlignment.center,
+                                                  children: [
+                                                    Icon(
+                                                      Icons.history,
+                                                      size: 48,
+                                                      color: Colors.grey[400],
+                                                    ),
+                                                    const SizedBox(height: 8),
+                                                    Text(
+                                                      'No watch history yet',
+                                                      style: AppTextStyles.normal400(
+                                                        fontSize: 14,
+                                                        color: Colors.grey[600]!,
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              )
+                                            : SizedBox(
+                                                height: 180,
+                                                child: ListView.builder(
+                                                  scrollDirection: Axis.horizontal,
+                                                  itemCount: _watchHistory.length,
+                                                  itemBuilder: (context, index) =>
+                                                      _ContinueWatching(
+                                                    video: _watchHistory[index],
+                                                    context: context,
+                                                    onTap: () => _onVideoTap(_watchHistory[index]),
+                                                  ),
+                                                ),
+                                              ),
                                     SizedBox(height: 25),
                                     // Games section
                                     headingWithAdvert(
@@ -324,9 +381,26 @@ class _books extends StatelessWidget {
                 height: 173,
                 width: 114,
                 decoration: BoxDecoration(
-                  image: DecorationImage(
-                    image: NetworkImage(book.thumbnail),
+                  borderRadius: BorderRadius.circular(4.0),
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(4.0),
+                  child: Image.network(
+                    book.thumbnail,
                     fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) {
+                      return Container(
+                        height: 173,
+                        width: 114,
+                        color: AppColors.videoColor9.withAlpha(50),
+                        alignment: Alignment.center,
+                        child: Icon(
+                          Icons.broken_image,
+                          color: Colors.white.withOpacity(0.7),
+                          size: 40,
+                        ),
+                      );
+                    },
                   ),
                 ),
               ),
@@ -430,10 +504,13 @@ class blueHeading extends StatelessWidget {
   }
 }
 
-Widget _ContinueWatching(
-    {required Video video, required BuildContext context}) {
+Widget _ContinueWatching({
+  required Video video,
+  required BuildContext context,
+  VoidCallback? onTap,
+}) {
   return GestureDetector(
-    onTap: () {
+    onTap: onTap ?? () {
       if (video.title.isNotEmpty) {
         Navigator.push(
           context,
@@ -449,11 +526,27 @@ Widget _ContinueWatching(
       margin: const EdgeInsets.only(left: 16.0),
       child: Column(
         children: [
-          Image.network(
-            video.thumbnail,
-            fit: BoxFit.cover,
-            height: 90,
-            width: 150,
+          ClipRRect(
+            borderRadius: BorderRadius.circular(4.0),
+            child: Image.network(
+              video.thumbnail,
+              fit: BoxFit.cover,
+              height: 90,
+              width: 150,
+              errorBuilder: (context, error, stackTrace) {
+                return Container(
+                  height: 90,
+                  width: 150,
+                  color: AppColors.videoColor9.withAlpha(50),
+                  alignment: Alignment.center,
+                  child: Icon(
+                    Icons.broken_image,
+                    color: Colors.white.withOpacity(0.7),
+                    size: 40,
+                  ),
+                );
+              },
+            ),
           ),
           const SizedBox(height: 4.0),
           Padding(
