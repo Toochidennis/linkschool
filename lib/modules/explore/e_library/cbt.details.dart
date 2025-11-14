@@ -223,130 +223,132 @@ class _CbtDetailScreenState extends State<CbtDetailScreen> {
             decoration: Constants.customBoxDecoration(context),
             child: Padding(
               padding: const EdgeInsets.all(16.0),
-              child: Column(
-                children: [
-                  // Subject Selection Row
-                  Material(
-                    color: Colors.transparent,
-                    child: InkWell(
-                      onTap: () => _showSubjectList(context),
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 8.0),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            subjects(
-                              subjectName: selectedSubject,
-                              subjectIcon: provider.getSubjectIcon(selectedSubject),
-                              subjectColor: provider.getSubjectColor(selectedSubject),
-                            ),
-                            const Icon(Icons.arrow_drop_down_circle_outlined)
-                          ],
+              child: SingleChildScrollView(
+                child: Column(
+                  children: [
+                    // Subject Selection Row
+                    Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        onTap: () => _showSubjectList(context),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 8.0),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              subjects(
+                                subjectName: selectedSubject,
+                                subjectIcon: provider.getSubjectIcon(selectedSubject),
+                                subjectColor: provider.getSubjectColor(selectedSubject),
+                              ),
+                              const Icon(Icons.arrow_drop_down_circle_outlined)
+                            ],
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                  const Divider(),
-                  // Year Selection Row
-                  Material(
-                    color: Colors.transparent,
-                    child: InkWell(
-                      onTap: () => _showYearPicker(context),
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 8.0),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Row(
-                              children: [
-                                Text(
-                                  'Year: ',
-                                  style: AppTextStyles.normal500(
-                                    fontSize: 16,
-                                    color: AppColors.libtitle,
+                    const Divider(),
+                    // Year Selection Row
+                    Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        onTap: () => _showYearPicker(context),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 8.0),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Row(
+                                children: [
+                                  Text(
+                                    'Year: ',
+                                    style: AppTextStyles.normal500(
+                                      fontSize: 16,
+                                      color: AppColors.libtitle,
+                                    ),
                                   ),
-                                ),
-                                Text(
-                                  selectedYear.toString(),
-                                  style: AppTextStyles.normal500(
-                                    fontSize: 16,
-                                    color: AppColors.text3Light,
+                                  Text(
+                                    selectedYear.toString(),
+                                    style: AppTextStyles.normal500(
+                                      fontSize: 16,
+                                      color: AppColors.text3Light,
+                                    ),
                                   ),
-                                ),
-                              ],
-                            ),
-                            const Icon(Icons.arrow_drop_down_circle_outlined),
-                          ],
+                                ],
+                              ),
+                              const Icon(Icons.arrow_drop_down_circle_outlined),
+                            ],
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                  const Divider(),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 16.0),
-                    child: Row(
-                      children: [
-                        Text(
-                          'Duration :',
-                          style: AppTextStyles.normal500(
-                              fontSize: 16, color: AppColors.libtitle),
-                        ),
-                        Text(
-                          _getDurationForSubject(selectedSubject),
-                          style: AppTextStyles.normal500(
-                              fontSize: 16, color: AppColors.text3Light)
-                        ),
-                      ],
-                    ),
-                  ),
-                  const Divider(),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 16.0),
-                    child: Row(
-                      children: [
-                        Text('Instructions :',
+                    const Divider(),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 16.0),
+                      child: Row(
+                        children: [
+                          Text(
+                            'Duration :',
                             style: AppTextStyles.normal500(
-                                fontSize: 16, color: AppColors.libtitle)),
-                        Expanded(
-                          child: Text(
-                            _getInstructionsForSubject(selectedSubject),
+                                fontSize: 16, color: AppColors.libtitle),
+                          ),
+                          Text(
+                            _getDurationForSubject(selectedSubject),
                             style: AppTextStyles.normal500(
                                 fontSize: 16, color: AppColors.text3Light)
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
-                  const Divider(),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 8.0),
-                    child: CustomLongElevatedButton(
-                      text: 'Start Exam',
-                      onPressed: () {
-                        print("🚀 Starting exam with:");
-                        print("  - Exam ID: $selectedExamId");
-                        print("  - Subject: $selectedSubject");
-                        print("  - Year: $selectedYear");
-                        
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => TestScreen(
-                              examTypeId: selectedExamId, // Pass the exam_id
-                              subjectId: widget.subjectId ?? '',
-                              subject: selectedSubject,
-                              year: selectedYear,
-                              calledFrom: 'details', // Indicate it's called from details screen
+                    const Divider(),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 16.0),
+                      child: Row(
+                        children: [
+                          Text('Instructions :',
+                              style: AppTextStyles.normal500(
+                                  fontSize: 16, color: AppColors.libtitle)),
+                          Expanded(
+                            child: Text(
+                              _getInstructionsForSubject(selectedSubject),
+                              style: AppTextStyles.normal500(
+                                  fontSize: 16, color: AppColors.text3Light)
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const Divider(),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 8.0),
+                      child: CustomLongElevatedButton(
+                        text: 'Start Exam',
+                        onPressed: () {
+                          print("🚀 Starting exam with:");
+                          print("  - Exam ID: $selectedExamId");
+                          print("  - Subject: $selectedSubject");
+                          print("  - Year: $selectedYear");
+                          
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => TestScreen(
+                                examTypeId: selectedExamId, // Pass the exam_id
+                                subjectId: widget.subjectId ?? '',
+                                subject: selectedSubject,
+                                year: selectedYear,
+                                calledFrom: 'details', // Indicate it's called from details screen
+                              )
                             )
-                          )
-                        );
-                      },
-                      backgroundColor: AppColors.bookText1,
-                      textStyle: AppTextStyles.normal500(
-                          fontSize: 18.0, color: AppColors.bookText2),
-                    ),
-                  )
-                ],
+                          );
+                        },
+                        backgroundColor: AppColors.bookText1,
+                        textStyle: AppTextStyles.normal500(
+                            fontSize: 18.0, color: AppColors.bookText2),
+                      ),
+                    )
+                  ],
+                ),
               ),
             ),
           ),

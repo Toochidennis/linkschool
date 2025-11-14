@@ -22,7 +22,9 @@ class _ManageStaffScreenState extends State<ManageStaffScreen>
   late Animation<double> _fadeAnimation;
   String? _editingStaffId;
   final TextEditingController _searchController = TextEditingController();
-  final TextEditingController _fullNameController = TextEditingController();
+  final TextEditingController _surnameController = TextEditingController();
+
+  final TextEditingController _firstNameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _phoneController = TextEditingController();
   final TextEditingController _addressController = TextEditingController();
@@ -119,7 +121,8 @@ class _ManageStaffScreenState extends State<ManageStaffScreen>
     _fadeController.dispose();
     _slideController.dispose();
     _searchController.dispose();
-    _fullNameController.dispose();
+    _surnameController.dispose();
+    _firstNameController.dispose();
     _emailController.dispose();
     _phoneController.dispose();
     _addressController.dispose();
@@ -569,10 +572,17 @@ class _ManageStaffScreenState extends State<ManageStaffScreen>
           ),
           const SizedBox(height: 16),
           _buildTextField(
-            controller: _fullNameController,
-            label: 'Full Name * (Surname First)',
+            controller: _firstNameController,
+            label: 'First Name ',
             icon: Icons.person,
-            hintText: 'e.g., Smith John',
+            hintText: 'e.g.,  John',
+          ),
+          const SizedBox(height: 12),
+           _buildTextField(
+            controller: _surnameController,
+            label: 'Surname',
+            icon: Icons.person,
+            hintText: 'e.g., Smith ',
           ),
           const SizedBox(height: 12),
           _buildTextField(
@@ -1028,7 +1038,9 @@ class _ManageStaffScreenState extends State<ManageStaffScreen>
     _phoneController.clear();
     _addressController.clear();
     _salaryController.clear();
-    _fullNameController.clear();
+    _surnameController.clear();
+    _firstNameController.clear();
+
 
     _middleNameController.clear();
     _birthDateController.clear();
@@ -1068,8 +1080,10 @@ class _ManageStaffScreenState extends State<ManageStaffScreen>
 
   void _handleSubmit() async {
     // Form validation
+    final firstName = _firstNameController.text.trim();
+    final surname = _surnameController.text.trim();
     final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
-    if (_fullNameController.text.trim().isEmpty) {
+    if (firstName.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Please enter Full Name'),
@@ -1081,7 +1095,20 @@ class _ManageStaffScreenState extends State<ManageStaffScreen>
         ),
       );
       return;
+    }else if (surname.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Please enter Surname'),
+          backgroundColor: Colors.red,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+        ),
+      );
+      return;
     }
+
     if (_selectedGender.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -1148,18 +1175,7 @@ class _ManageStaffScreenState extends State<ManageStaffScreen>
       );
       return;
     }
-    final fullName = _fullNameController.text.trim();
-    final nameParts = fullName.split(' ');
 
-    String surname = '';
-    String firstName = '';
-
-    if (nameParts.isNotEmpty) {
-      surname = nameParts[0]; // First part is surname
-      if (nameParts.length > 1) {
-        firstName = nameParts.sublist(1).join(' '); // Rest is first name
-      }
-    }
 
     final newStaff = {
       'surname': surname,
@@ -1259,7 +1275,8 @@ class _ManageStaffScreenState extends State<ManageStaffScreen>
       _isEditing = true;
       _showAddForm = true;
       _editingStaffId = staff.staffNo;
-      _fullNameController.text = fullName;
+      _firstNameController.text = staff.firstName ?? '';
+      _surnameController.text = staff.lastName ?? '';
 
       _middleNameController.text = staff.middleName ?? '';
       _emailController.text = staff.emailAddress ?? '';

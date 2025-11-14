@@ -50,6 +50,14 @@ class _CBTDashboardState extends State<CBTDashboard> with AutomaticKeepAliveClie
               child: CustomScrollView(
                 physics: const BouncingScrollPhysics(),
                 slivers: [
+
+                   SliverToBoxAdapter(
+                    child: _buildPerformanceMetrics(),
+                  ),
+                  const SliverToBoxAdapter(child: SizedBox(height: 16.0)),
+                  SliverToBoxAdapter(
+                    child: _buildTestHistory(),
+                  ),
                   const SliverToBoxAdapter(child: SizedBox(height: 30)),
                   SliverToBoxAdapter(
                     child: _buildCBTCategories(provider),
@@ -66,13 +74,7 @@ class _CBTDashboardState extends State<CBTDashboard> with AutomaticKeepAliveClie
                       ),
                     ),
                   ),
-                  SliverToBoxAdapter(
-                    child: _buildPerformanceMetrics(),
-                  ),
-                  const SliverToBoxAdapter(child: SizedBox(height: 16.0)),
-                  SliverToBoxAdapter(
-                    child: _buildTestHistory(),
-                  ),
+                 
                   const SliverToBoxAdapter(child: SizedBox(height: 16.0)),
                   SliverToBoxAdapter(
                     child: Constants.headingWithSeeAll600(

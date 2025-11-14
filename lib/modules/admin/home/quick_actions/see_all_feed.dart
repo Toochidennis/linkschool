@@ -38,6 +38,9 @@ class _AllFeedsScreenState extends State<AllFeedsScreen> {
     _editTitleController = TextEditingController();
     _editContentController = TextEditingController();
 
+    // Load user data first
+    _loadUserData();
+
     // Fetch initial feeds
     WidgetsBinding.instance.addPostFrameCallback((_) {
       Provider.of<FeedsPaginationProvider>(context, listen: false)
@@ -133,8 +136,7 @@ class _AllFeedsScreenState extends State<AllFeedsScreen> {
         "author_id": feed.authorId,
         'author_name': feed.authorName,
         'type': feed.type,
-        'term':
-            3, // You might want to get this from user data like in PortalHome
+        'term':3, // You might want to get this from user data like in PortalHome
       };
 
       print('Updated Feed Data: $updatedFeed');
@@ -460,13 +462,16 @@ class _AllFeedsScreenState extends State<AllFeedsScreen> {
                                     name: feed.authorName,
                                     newsContent: feed.content,
                                     time: feed.createdAt,
-                                    title: feed.title ?? '',
+                                    title: feed.title,
+
                                     edit: () => _startEditing(feed),
                                     delete: () => _confirmDelete(feed),
+
+                                    key: ValueKey('feed_${feed.id}_$index'),
                                     comments: feed.replies.length,
-                                    CreatorId: creatorId.toString(),
+                                    CreatorId: creatorId?.toString() ?? '0',
                                     authorId: feed.authorId,
-                                    role: userRole,
+                                    role: userRole ?? 'guest',
                                   ),
                                 ],
                               ),

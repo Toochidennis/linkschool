@@ -23,6 +23,8 @@ class ManageStudentsScreen extends StatefulWidget {
 class _ManageStudentsScreenState extends State<ManageStudentsScreen> {
   int? selectedLevelId;
   int? selectedClassId;
+  bool showLevelFilterCard = false;
+  bool showClassFilterCard = false;
 
   @override
   void initState() {
@@ -61,6 +63,33 @@ class _ManageStudentsScreenState extends State<ManageStudentsScreen> {
       _showAddForm = false;
       _editingStudent = null;
     });
+  }
+
+  Widget _buildFilterChipItem({
+    required String label,
+    required bool isSelected,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? AppColors.text2Light.withOpacity(0.1)
+              : Colors.white,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Text(
+          label,
+          style: AppTextStyles.normal500(
+            fontSize: 15,
+            color: isSelected ? AppColors.text2Light : Colors.grey[800]!,
+          ),
+        ),
+      ),
+    );
   }
 
   @override
@@ -102,76 +131,251 @@ class _ManageStudentsScreenState extends State<ManageStudentsScreen> {
                     else ...[
                       Container(
                         padding: const EdgeInsets.all(16),
-                        child: Row(
+                        decoration: BoxDecoration(
+                          color: Colors.grey[50],
+                        ),
+                        child: Column(
                           children: [
-                            Expanded(
-                              child: DropdownButtonFormField<int>(
-                                value: selectedLevelId,
-                                decoration: const InputDecoration(
-                                  labelText: 'Filter by Level',
-                                  border: OutlineInputBorder(),
-                                ),
-                                items: [
-                                  const DropdownMenuItem(
-                                    value: null,
-                                    child: Text('All Levels'),
+                            Row(
+                              children: [
+                                // Level Filter Button
+                                Expanded(
+                                  child: GestureDetector(
+                                    onTap: () {
+                                      setState(() {
+                                        showLevelFilterCard = !showLevelFilterCard;
+                                        showClassFilterCard = false;
+                                      });
+                                    },
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 16, vertical: 16),
+                                      decoration: BoxDecoration(
+                                        color: Colors.grey[100],
+                                        borderRadius: BorderRadius.circular(12),
+                                        border: Border.all(
+                                            color: Colors.grey[300]!),
+                                      ),
+                                      child: Row(
+                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          Expanded(
+                                            child: Text(
+                                              selectedLevelId == null
+                                                  ? 'All Levels'
+                                                  : levelClassProvider.levelsWithClasses
+                                                      .firstWhere(
+                                                        (lwc) => lwc.level.id == selectedLevelId,
+                                                        orElse: () => LevelWithClasses(
+                                                          level: Levels(
+                                                            id: 0,
+                                                            levelName: 'All Levels',
+                                                            schoolType: '',
+                                                            rank: 0,
+                                                            admit: 0,
+                                                          ),
+                                                          classes: [],
+                                                        ),
+                                                      )
+                                                      .level
+                                                      .levelName,
+                                              style: AppTextStyles.normal500(
+                                                fontSize: 14,
+                                                color: Colors.grey[700]!,
+                                              ),
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                          ),
+                                          Icon(
+                                            showLevelFilterCard 
+                                                ? Icons.arrow_drop_up 
+                                                : Icons.arrow_drop_down,
+                                            color: Colors.grey[600],
+                                          ),
+                                        ],
+                                      ),
+                                    ),
                                   ),
-                                  ...levelClassProvider.levelsWithClasses
-                                      .map((levelWithClasses) {
-                                    return DropdownMenuItem(
-                                      value: levelWithClasses.level.id,
-                                      child: Text(
-                                          levelWithClasses.level.levelName),
-                                    );
-                                  }),
-                                ],
-                                onChanged: (value) {
-                                  setState(() {
-                                    selectedLevelId = value;
-                                    selectedClassId = null;
-                                  });
-                                },
-                              ),
+                                ),
+                                const SizedBox(width: 12),
+                                // Class Filter Button
+                                Expanded(
+                                  child: GestureDetector(
+                                    onTap: () {
+                                      setState(() {
+                                        showClassFilterCard = !showClassFilterCard;
+                                        showLevelFilterCard = false;
+                                      });
+                                    },
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 16, vertical: 16),
+                                      decoration: BoxDecoration(
+                                        color: AppColors.text2Light.withOpacity(0.1),
+                                        borderRadius: BorderRadius.circular(12),
+                                        border: Border.all(
+                                            color: AppColors.text2Light.withOpacity(0.3)),
+                                      ),
+                                      child: Row(
+                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          Expanded(
+                                            child: Text(
+                                              selectedClassId == null
+                                                  ? 'All Classes'
+                                                  : (selectedLevelId != null
+                                                      ? levelClassProvider.levelsWithClasses
+                                                          .firstWhere(
+                                                            (lwc) => lwc.level.id == selectedLevelId,
+                                                          )
+                                                          .classes
+                                                          .firstWhere(
+                                                            (cls) => cls.id == selectedClassId,
+                                                            orElse: () => Class(
+                                                              id: 0,
+                                                              className: 'All Classes',
+                                                              levelId: 0,
+                                                              formTeacherIds: [],
+                                                            ),
+                                                          )
+                                                          .className
+                                                      : 'All Classes'),
+                                              style: AppTextStyles.normal500(
+                                                fontSize: 14,
+                                                color: AppColors.text2Light,
+                                              ),
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                          ),
+                                          Icon(
+                                            showClassFilterCard 
+                                                ? Icons.arrow_drop_down 
+                                                : Icons.arrow_drop_up,
+                                            color: AppColors.text2Light,
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
-                            const SizedBox(width: 16),
-                            Expanded(
-                              child: DropdownButtonFormField<int>(
-                                value: (selectedClassId != null &&
-                                        selectedLevelId != null &&
-                                        levelClassProvider.levelsWithClasses
-                                            .any((lwc) =>
-                                                lwc.level.id ==
-                                                    selectedLevelId &&
-                                                lwc.classes.any((c) =>
-                                                    c.id == selectedClassId)))
-                                    ? selectedClassId
-                                    : null,
-                                decoration: const InputDecoration(
-                                  labelText: 'Filter by Class',
-                                  border: OutlineInputBorder(),
+                            
+                            // Level Filter Card
+                            if (showLevelFilterCard) ...[
+                              const SizedBox(height: 16),
+                              Container(
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(16),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.grey.withOpacity(0.1),
+                                      spreadRadius: 1,
+                                      blurRadius: 10,
+                                      offset: const Offset(0, 2),
+                                    ),
+                                  ],
                                 ),
-                                items: [
-                                  const DropdownMenuItem(
-                                    value: null,
-                                    child: Text('All Classes'),
-                                  ),
-                                  if (selectedLevelId != null)
+                                child: Column(
+                                  children: [
+                                    // All Levels Chip
+                                    _buildFilterChipItem(
+                                      label: 'All Levels',
+                                      isSelected: selectedLevelId == null,
+                                      onTap: () {
+                                        setState(() {
+                                          selectedLevelId = null;
+                                          selectedClassId = null;
+                                          showLevelFilterCard = false;
+                                        });
+                                      },
+                                    ),
+                                    // Level Chips
                                     ...levelClassProvider.levelsWithClasses
-                                        .firstWhere((lwc) =>
-                                            lwc.level.id == selectedLevelId)
-                                        .classes
-                                        .map((cls) => DropdownMenuItem(
-                                              value: cls.id,
-                                              child: Text(cls.className),
-                                            )),
-                                ],
-                                onChanged: (value) {
-                                  setState(() {
-                                    selectedClassId = value;
-                                  });
-                                },
+                                        .map((levelWithClasses) {
+                                      final isSelected = selectedLevelId == levelWithClasses.level.id;
+                                      return _buildFilterChipItem(
+                                        label: levelWithClasses.level.levelName,
+                                        isSelected: isSelected,
+                                        onTap: () {
+                                          setState(() {
+                                            selectedLevelId = levelWithClasses.level.id;
+                                            selectedClassId = null;
+                                            showLevelFilterCard = false;
+                                          });
+                                        },
+                                      );
+                                    }).toList(),
+                                  ],
+                                ),
                               ),
-                            ),
+                            ],
+                            
+                            // Class Filter Card
+                            if (showClassFilterCard) ...[
+                              const SizedBox(height: 16),
+                              Container(
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(16),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.grey.withOpacity(0.1),
+                                      spreadRadius: 1,
+                                      blurRadius: 10,
+                                      offset: const Offset(0, 2),
+                                    ),
+                                  ],
+                                ),
+                                child: selectedLevelId == null
+                                    ? Padding(
+                                        padding: const EdgeInsets.all(20),
+                                        child: Text(
+                                          'Please select a level first',
+                                          style: AppTextStyles.normal400(
+                                            fontSize: 14,
+                                            color: Colors.grey[600]!,
+                                          ),
+                                          textAlign: TextAlign.center,
+                                        ),
+                                      )
+                                    : Column(
+                                        children: [
+                                          // All Classes Chip
+                                          _buildFilterChipItem(
+                                            label: 'All Classes',
+                                            isSelected: selectedClassId == null,
+                                            onTap: () {
+                                              setState(() {
+                                                selectedClassId = null;
+                                                showClassFilterCard = false;
+                                              });
+                                            },
+                                          ),
+                                          // Class Chips
+                                          ...levelClassProvider.levelsWithClasses
+                                              .firstWhere(
+                                                (lwc) => lwc.level.id == selectedLevelId,
+                                              )
+                                              .classes
+                                              .map((cls) {
+                                            final isSelected = selectedClassId == cls.id;
+                                            return _buildFilterChipItem(
+                                              label: cls.className,
+                                              isSelected: isSelected,
+                                              onTap: () {
+                                                setState(() {
+                                                  selectedClassId = cls.id;
+                                                  showClassFilterCard = false;
+                                                });
+                                              },
+                                            );
+                                          }).toList(),
+                                        ],
+                                      ),
+                              ),
+                            ],
                           ],
                         ),
                       ),
@@ -477,7 +681,8 @@ class StudentFormWidget extends StatefulWidget {
 }
 
 class _StudentFormWidgetState extends State<StudentFormWidget> {
-  late final TextEditingController _fullNameController;
+ late final TextEditingController _firstNameController;
+  late final TextEditingController _surnameController;
   late final TextEditingController middleNameController;
   late final TextEditingController birthDateController;
   late final TextEditingController addressController;
@@ -512,10 +717,10 @@ class _StudentFormWidgetState extends State<StudentFormWidget> {
 
     final student = widget.student;
 
-    final fullName =
-        '${student?.surname ?? ''} ${student?.firstName ?? ''}'.trim();
-    _fullNameController = TextEditingController(text: fullName);
-
+   
+    // Initialize all name controllers with their own values
+    _firstNameController = TextEditingController(text: student?.firstName ?? '');
+    _surnameController = TextEditingController(text: student?.surname ?? '');
     middleNameController = TextEditingController(text: student?.middle ?? '');
     birthDateController = TextEditingController(text: student?.birthDate ?? '');
     addressController = TextEditingController(text: student?.address ?? '');
@@ -566,7 +771,8 @@ class _StudentFormWidgetState extends State<StudentFormWidget> {
 
   @override
   void dispose() {
-    _fullNameController.dispose();
+        _firstNameController.dispose();
+    _surnameController.dispose();
     middleNameController.dispose();
     birthDateController.dispose();
     addressController.dispose();
@@ -613,14 +819,24 @@ class _StudentFormWidgetState extends State<StudentFormWidget> {
   }
 
   Future<void> _saveStudent() async {
-    final fullName = _fullNameController.text.trim();
-
+       final firstName = _firstNameController.text.trim();
+    final surname = _surnameController.text.trim();
     // Validate full name first
-    if (fullName.isEmpty) {
+    if (firstName.isEmpty) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Please enter full name'),
+            content: Text('Please enter first name'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+      return;
+    }else if (surname.isEmpty) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Please enter surname'),
             backgroundColor: Colors.red,
           ),
         );
@@ -628,18 +844,22 @@ class _StudentFormWidgetState extends State<StudentFormWidget> {
       return;
     }
 
-    // Parse name
-    final nameParts =
-        fullName.split(' ').where((part) => part.isNotEmpty).toList();
-    String surname = '';
-    String firstName = '';
-
-    if (nameParts.length < 2) {
+    // validate level and class
+    if (dialogLevelId == null) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text(
-                'Please enter both surname and first name (e.g., Smith John)'),
+            content: Text('Please select Level'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+      return;
+    }else if (dialogClassId == null) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Please select Class'),
             backgroundColor: Colors.red,
           ),
         );
@@ -647,9 +867,7 @@ class _StudentFormWidgetState extends State<StudentFormWidget> {
       return;
     }
 
-    surname = nameParts[0]; // First part is surname
-    firstName = nameParts.sublist(1).join(' '); // Rest is first name
-
+  
     // Validate gender
     if (gender == null) {
       if (mounted) {
@@ -723,13 +941,13 @@ class _StudentFormWidgetState extends State<StudentFormWidget> {
       studentData['photo'] = {
         "file": base64Image,
         "file_name": newFileName,
-        "old_file_name": oldFileName.isNotEmpty ? oldFileName : "",
+        "old_file_name": oldFileName.isNotEmpty ? widget.student?.photoPath : "",
       };
     } else if (isEditing) {
       // Editing without new image - send existing path in proper structure
       studentData['photo'] = {
         "file": widget.student?.photoPath ?? "",
-        "file_name": oldFileName.isNotEmpty ? oldFileName : "",
+        "file_name": oldFileName.isNotEmpty ? widget.student?.photoPath : "",
         "old_file_name": "",
       };
     } else {
@@ -838,12 +1056,18 @@ class _StudentFormWidgetState extends State<StudentFormWidget> {
 
           // Form fields
           _buildTextField(
-            controller: _fullNameController,
-            label: 'Full Name * (Surname First)',
+            controller: _firstNameController,
+            label: "Surname First",
             icon: Icons.person,
-            hintText: 'e.g., Smith John David',
+            hintText: 'e.g., Smith ',
           ),
           const SizedBox(height: 12),
+           _buildTextField(
+            controller: _surnameController,
+            label: 'Surename',
+            icon: Icons.person,
+            hintText: 'e.g.,  David',
+          ),
           const SizedBox(height: 12),
           _buildTextField(
               controller: middleNameController,
