@@ -112,11 +112,14 @@ class _PortalDashboardState extends State<PortalDashboard> {
             showSettings: true,
             onSettingsTap: () {
               Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => AdminSettingsScreen()),
+              MaterialPageRoute(
+                builder: (_) => AdminSettingsScreen(onLogout: widget.onLogout),
+              ),
               );
             },
             
           ),
+          onLogout: widget.onLogout,
         );
       case 1:
         return ResultDashboardScreen(

@@ -390,7 +390,7 @@ class _GamesDashboardState extends State<GamesDashboard> {
         children: [
           Container(
             padding: const EdgeInsets.all(16.0),
-            width: 90.0,
+            width: 89.0,
             height: 95.0,
             decoration: BoxDecoration(
               gradient: LinearGradient(
@@ -411,13 +411,13 @@ class _GamesDashboardState extends State<GamesDashboard> {
               // },
             ),
           ),
-          const SizedBox(width: 10.0),
+          const SizedBox(width: 8.0),
           Expanded(
             child: Container(
               decoration: const BoxDecoration(
                 border: Border(
                   bottom: BorderSide(
-                    width: .5,
+                  //  width: .5,
                     color: AppColors.gamesColor9,
                   ),
                 ),
@@ -432,7 +432,8 @@ class _GamesDashboardState extends State<GamesDashboard> {
                       Text(
                         game.title,
                         maxLines: 2,
-                        style: AppTextStyles.normal500(
+                        overflow: TextOverflow.ellipsis,
+                        style: AppTextStyles.normal400(
                           fontSize: 16.0,
                           color: Colors.black,
                         ),

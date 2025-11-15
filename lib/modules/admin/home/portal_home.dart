@@ -9,6 +9,7 @@ import 'package:linkschool/modules/admin/home/quick_actions/manage_level_class_s
 import 'package:linkschool/modules/admin/home/quick_actions/manage_staffs_screen.dart';
 import 'package:linkschool/modules/admin/home/quick_actions/manage_students_screen.dart';
 import 'package:linkschool/modules/admin/home/quick_actions/see_all_feed.dart';
+import 'package:linkschool/modules/admin/home/quick_actions/student_statistics_screen.dart';
 import 'package:linkschool/modules/common/custom_toaster.dart';
 
 import 'package:linkschool/modules/providers/admin/home/dashboard_feed_provider.dart';
@@ -22,10 +23,12 @@ import '../../common/text_styles.dart';
 
 class PortalHome extends StatefulWidget {
   final PreferredSizeWidget appBar;
+  final VoidCallback? onLogout;
 
   const PortalHome({
     super.key,
     required this.appBar,
+    this.onLogout,
   });
 
   @override
@@ -52,7 +55,7 @@ class _PortalHomeState extends State<PortalHome>
   bool _showAddForm = false;
   final String _selectedType = 'question';
   int? creatorId;
-  String? creatorName;
+  String creatorName = "pass Admin";
   int? academicTerm;
   String? userRole;
  @override
@@ -154,7 +157,10 @@ void initState() {
 
           userRole = profile['role']?.toString() ?? 'admin';
 
-          creatorName = profile['name']?.toString() ?? '';
+           final String? rawName = profile['name']?.toString();
+        creatorName = (rawName == null || rawName.isEmpty) 
+            ? 'pass Admin' 
+            : rawName;
 
           academicTerm = settings['term'] is int
               ? settings['term']
@@ -165,6 +171,9 @@ void initState() {
             '✅ User loaded: ID=$creatorId, Name=$creatorName, Term=$academicTerm');
       } else {
         debugPrint('⚠️ No stored user data found.');
+        setState(() {
+        
+      });
       }
     } catch (e, stack) {
       debugPrint(stack.toString());
@@ -535,7 +544,9 @@ void initState() {
 
       // Ensure user data is loaded
       if (creatorId == null || creatorName == null) {
+
         await _loadUserData();
+      creatorName = creatorName.isEmpty ? 'pass Admin' : creatorName;
         if (creatorId == null || creatorName == null) {
           throw Exception('User data not available');
         }
@@ -546,7 +557,8 @@ void initState() {
         'type': 'news',
         'parent_id': 0,
         'content': content,
-        'author_name': creatorName,
+        'author_name': creatorName.isEmpty ? 'pass Admin' : creatorName,
+      //  'author_name': creatorName ?? 'pass Admin',
         'author_id': creatorId,
         'term': academicTerm,
         'files': <Map<String, dynamic>>[],
@@ -779,8 +791,15 @@ void initState() {
                                 'subtitle': 'View & Edit Students',
                                 'icon': Icons.people_alt_rounded,
                                 'color': AppColors.portalButton1Light,
-                                'route': const ManageStudentsScreen(),
+                                'route': const StudentStatisticsScreen(),
                                 },
+                                // {
+                                // 'title': 'Manage Students ',
+                                // 'subtitle': 'View & Edit Students',
+                                // 'icon': Icons.people_alt_rounded,
+                                // 'color': AppColors.portalButton1Light,
+                                // 'route': const ManageStudentsScreen(),
+                                // },
                                 {
                                 'title': 'Manage Staff ',
                                 'subtitle': 'Manage Staff Members',

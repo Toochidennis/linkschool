@@ -19,9 +19,12 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
   @override
   Widget build(BuildContext context) {
     return PopScope(
-      canPop: false, // Disable physical back button
-      onPopInvoked: (didPop) {
-        // Physical back button does nothing
+      canPop: true, // Allow programmatic pop
+      onPopInvokedWithResult: (didPop, result) {
+        // Only prevent physical back button, allow programmatic navigation
+        if (didPop) {
+          return; // Already popped, do nothing
+        }
       },
       child: Scaffold(
         backgroundColor: const Color(0xFFF5F5F5),
@@ -129,11 +132,7 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                   if (widget.onLogout != null) {
                     widget.onLogout!(); // This triggers the flip to explore dashboard
                   }
-                  
-                  // Navigate back safely - only pop if there are routes to pop
-                  if (Navigator.canPop(context)) {
-                    Navigator.of(context).popUntil((route) => route.isFirst);
-                  }
+                  Navigator.of(context).pop(); // Pop the settings screen
                 },
               isLogout: true,
             ),

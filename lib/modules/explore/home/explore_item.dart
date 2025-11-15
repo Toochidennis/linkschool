@@ -7,13 +7,15 @@ class ExploreItem {
   final Color? textColor;
   final String iconPath;
   final Widget destination;
+   final String subtitle;
 
-  ExploreItem({
+  ExploreItem( {
     required this.backgroundColor,
     required this.borderColor,
     this.textColor,
     required this.label,
     required this.iconPath,
     required this.destination,
+    required this.subtitle,
   });
 }

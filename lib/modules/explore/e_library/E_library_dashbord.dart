@@ -128,55 +128,34 @@ class _ElibraryDashboardState extends State<ElibraryDashboard> with AutomaticKee
                                 enabled: forYouProvider.isLoading,
                                 child: Column(
                                   children: [
-                                    // Continue watching section
-                                    headingWithAdvert(
-                                        tag: 'Video',
-                                        title: 'Continue watching'),
-                                    SizedBox(height: 8),
-                                    _isLoadingHistory
-                                        ? SizedBox(
-                                            height: 180,
-                                            child: Center(
-                                              child: CircularProgressIndicator(),
-                                            ),
-                                          )
-                                        : _watchHistory.isEmpty
-                                            ? Container(
-                                                height: 180,
-                                                alignment: Alignment.center,
-                                                child: Column(
-                                                  mainAxisAlignment: MainAxisAlignment.center,
-                                                  children: [
-                                                    Icon(
-                                                      Icons.history,
-                                                      size: 48,
-                                                      color: Colors.grey[400],
-                                                    ),
-                                                    const SizedBox(height: 8),
-                                                    Text(
-                                                      'No watch history yet',
-                                                      style: AppTextStyles.normal400(
-                                                        fontSize: 14,
-                                                        color: Colors.grey[600]!,
-                                                      ),
-                                                    ),
-                                                  ],
-                                                ),
-                                              )
-                                            : SizedBox(
-                                                height: 180,
-                                                child: ListView.builder(
-                                                  scrollDirection: Axis.horizontal,
-                                                  itemCount: _watchHistory.length,
-                                                  itemBuilder: (context, index) =>
-                                                      _ContinueWatching(
-                                                    video: _watchHistory[index],
-                                                    context: context,
-                                                    onTap: () => _onVideoTap(_watchHistory[index]),
-                                                  ),
+                                    // Continue watching section - only show if there's history
+                                    if (_watchHistory.isNotEmpty) ...[
+                                      headingWithAdvert(
+                                          tag: 'Video',
+                                          title: 'Continue watching'),
+                                      SizedBox(height: 8),
+                                      _isLoadingHistory
+                                          ? SizedBox(
+                                              height: 180,
+                                              child: Center(
+                                                child: CircularProgressIndicator(),
+                                              ),
+                                            )
+                                          : SizedBox(
+                                              height: 180,
+                                              child: ListView.builder(
+                                                scrollDirection: Axis.horizontal,
+                                                itemCount: _watchHistory.length,
+                                                itemBuilder: (context, index) =>
+                                                    _ContinueWatching(
+                                                  video: _watchHistory[index],
+                                                  context: context,
+                                                  onTap: () => _onVideoTap(_watchHistory[index]),
                                                 ),
                                               ),
-                                    SizedBox(height: 25),
+                                            ),
+                                      SizedBox(height: 25),
+                                    ],
                                     // Games section
                                     headingWithAdvert(
                                         tag: "Games",

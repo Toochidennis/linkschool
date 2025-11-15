@@ -592,45 +592,275 @@ class _TestScreenState extends State<TestScreen> {
   }
 
   void _submitQuiz(ExamProvider provider, {required bool isFullyCompleted}) {
+    final answeredCount = provider.userAnswers.length;
+    final unansweredCount = provider.questions.length - answeredCount;
+    
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Submit Test'),
-        content: Text(
-          isFullyCompleted
-              ? 'You have reached the last question. Are you sure you want to submit?'
-              : 'You are submitting early. Not all questions have been seen. Continue?',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel'),
+      barrierDismissible: false,
+      builder: (context) {
+        final isLandscape = MediaQuery.of(context).orientation == Orientation.landscape;
+        final screenWidth = MediaQuery.of(context).size.width;
+        final dialogWidth = isLandscape 
+            ? screenWidth * 0.7 // 60% of screen width in landscape
+            : screenWidth * 0.85; // 85% of screen width in portrait
+        
+        return Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
           ),
-          TextButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-              
-              print("questions: ${provider.questions}, userAnswers: ${provider.userAnswers}, isFullyCompleted: $isFullyCompleted");
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => CbtResultScreen(
-                    questions: provider.questions,
-                    userAnswers: provider.userAnswers,
-                    subject: widget.subject ?? provider.examInfo?.courseName ?? 'CBT Test',
-                    year: widget.year ?? DateTime.now().year,
-                    examType: provider.examInfo?.title ?? 'Test',
-                    examId: widget.examTypeId,
-                    calledFrom: widget.calledFrom,
-                    isFullyCompleted: isFullyCompleted,
-                  ),
+          child: SingleChildScrollView(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                maxWidth: isLandscape ? 600 : 400,
+                maxHeight: MediaQuery.of(context).size.height * 100,
+              ),
+              child: Container(
+                width: dialogWidth,
+                padding: EdgeInsets.all(isLandscape ? 20 : 24),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
                 ),
-              );
-            },
-            child: const Text('Submit'),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Warning Icon
+                    Container(
+                      padding: EdgeInsets.all(isLandscape ? 12 : 16),
+                      decoration: BoxDecoration(
+                        color: Colors.orange.shade100,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        Icons.warning_rounded,
+                        color: Colors.orange.shade700,
+                        size: isLandscape ? 28 : 40,
+                      ),
+                    ),
+                    SizedBox(height: isLandscape ? 12 : 20),
+                    
+                    // Title
+                    Text(
+                      'Submit Exam?',
+                      style: TextStyle(
+                        fontSize: isLandscape ? 18 : 20,
+                        fontWeight: FontWeight.w700,
+                        fontFamily: 'Urbanist',
+                      ),
+                    ),
+                    SizedBox(height: isLandscape ? 4 : 8),
+                    
+                    // Description
+                    Text(
+                      'Please review your answers before submitting',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: isLandscape ? 12 : 14,
+                        color: Colors.grey.shade600,
+                        fontFamily: 'Urbanist',
+                      ),
+                    ),
+                    SizedBox(height: isLandscape ? 10 : 24),
+                    
+                    // Stats Row
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        // Answered
+                        Column(
+                          children: [
+                            Container(
+                              padding: EdgeInsets.all(isLandscape ? 6 : 8),
+                              decoration: BoxDecoration(
+                                color: Colors.green.shade100,
+                                shape: BoxShape.circle,
+                              ),
+                              child: Icon(
+                                Icons.check_circle,
+                                color: Colors.green.shade700,
+                                size: isLandscape ? 20 : 24,
+                              ),
+                            ),
+                            SizedBox(height: isLandscape ? 6 : 8),
+                            Text(
+                              '$answeredCount',
+                              style: TextStyle(
+                                fontSize: isLandscape ? 20 : 24,
+                                fontWeight: FontWeight.w700,
+                                fontFamily: 'Urbanist',
+                              ),
+                            ),
+                            Text(
+                              'Answered',
+                              style: TextStyle(
+                                fontSize: isLandscape ? 10 : 12,
+                                color: Colors.grey,
+                                fontFamily: 'Urbanist',
+                              ),
+                            ),
+                          ],
+                        ),
+                        
+                        SizedBox(width: isLandscape ? 40 : 60),
+                        
+                        // Unanswered
+                        Column(
+                          children: [
+                            Container(
+                              padding: EdgeInsets.all(isLandscape ? 6 : 8),
+                              decoration: BoxDecoration(
+                                color: Colors.red.shade100,
+                                shape: BoxShape.circle,
+                              ),
+                              child: Icon(
+                                Icons.cancel,
+                                color: Colors.red.shade700,
+                                size: isLandscape ? 20 : 24,
+                              ),
+                            ),
+                            SizedBox(height: isLandscape ? 6 : 8),
+                            Text(
+                              '$unansweredCount',
+                              style: TextStyle(
+                                fontSize: isLandscape ? 20 : 24,
+                                fontWeight: FontWeight.w700,
+                                fontFamily: 'Urbanist',
+                              ),
+                            ),
+                            Text(
+                              'Unanswered',
+                              style: TextStyle(
+                                fontSize: isLandscape ? 10 : 12,
+                                color: Colors.grey,
+                                fontFamily: 'Urbanist',
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                    
+                    // Warning message if unanswered
+                    if (unansweredCount > 0) ...[
+                      SizedBox(height: isLandscape ? 16 : 20),
+                      Container(
+                        padding: EdgeInsets.all(isLandscape ? 8 : 12),
+                        decoration: BoxDecoration(
+                          color: Colors.orange.shade50,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
+                            color: Colors.orange.shade200,
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.info_outline,
+                              color: Colors.orange.shade700,
+                              size: isLandscape ? 18 : 20,
+                            ),
+
+                            SizedBox(width: isLandscape ? 8 : 12),
+                           
+                            Expanded(
+                              child: Text(
+                                'You have $unansweredCount unanswered question${unansweredCount > 1 ? 's' : ''}. Are you sure you want to submit?',
+                                style: TextStyle(
+                                  fontSize: isLandscape ? 11 : 12,
+                                  color: Colors.orange.shade900,
+                                  fontFamily: 'Urbanist',
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                    
+                    SizedBox(height: isLandscape ? 16 : 24),
+                    
+                    // Action Buttons
+                    Row(
+                      children: [
+                        Expanded(
+                          child: OutlinedButton(
+                            onPressed: () => Navigator.of(context).pop(),
+                            style: OutlinedButton.styleFrom(
+                              padding: EdgeInsets.symmetric(vertical: isLandscape ? 12 : 14),
+                              side: BorderSide(color: AppColors.eLearningBtnColor1),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                            ),
+                            child: Text(
+                              'Review Answers',
+                              style: TextStyle(
+                                color: AppColors.eLearningBtnColor1,
+                                fontSize: isLandscape ? 12 : 14,
+                                fontWeight: FontWeight.w600,
+                                fontFamily: 'Urbanist',
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: AppColors.eLearningBtnColor1,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: ElevatedButton(
+                              onPressed: () {
+                                Navigator.of(context).pop();
+                                
+                                print("questions: ${provider.questions}, userAnswers: ${provider.userAnswers}, isFullyCompleted: $isFullyCompleted");
+                                Navigator.pushReplacement(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => CbtResultScreen(
+                                      questions: provider.questions,
+                                      userAnswers: provider.userAnswers,
+                                      subject: widget.subject ?? provider.examInfo?.courseName ?? 'CBT Test',
+                                      year: widget.year ?? DateTime.now().year,
+                                      examType: provider.examInfo?.title ?? 'Test',
+                                      examId: widget.examTypeId,
+                                      calledFrom: widget.calledFrom,
+                                      isFullyCompleted: isFullyCompleted,
+                                    ),
+                                  ),
+                                );
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.transparent,
+                                shadowColor: Colors.transparent,
+                                padding: EdgeInsets.symmetric(vertical: isLandscape ? 12 : 14),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                              ),
+                              child: Text(
+                                'Submit Now',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: isLandscape ? 12 : 14,
+                                  fontWeight: FontWeight.w600,
+                                  fontFamily: 'Urbanist',
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 }

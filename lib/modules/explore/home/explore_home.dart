@@ -2,6 +2,7 @@
 
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/svg.dart';
 import 'package:linkschool/modules/explore/home/news/all_news_screen.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:linkschool/modules/explore/home/explore_item.dart';
@@ -97,68 +98,78 @@ ${imageUrl.isNotEmpty ? '🖼️ Image: $imageUrl' : ''}
     // String formattedDate = DateFormat('MMMM d, y')
     //     .format(DateTime.parse(newsProvider.newsmode.datePosted));
 
-    List<ExploreItem> exploreItemsList = [
-      ExploreItem(
-        backgroundColor: AppColors.exploreButton1Light,
-        borderColor: AppColors.exploreButton1BorderLight,
-        label: 'CBT',
-        textColor: AppColors.backgroundLight,
-        iconPath: 'assets/icons/cbt.svg',
-        destination: const CBTDashboard(),
-      ),
-      ExploreItem(
-        backgroundColor: AppColors.exploreButton3Light,
-        borderColor: AppColors.exploreButton3BorderLight,
-        label: 'E-Books',
-        iconPath: 'assets/icons/e-books.svg',
-        destination: const EbooksDashboard(),
-      ),
-      ExploreItem(
-        backgroundColor: AppColors.exploreButton2Light,
-        borderColor: AppColors.exploreButton2BorderLight,
-        label: 'Videos',
-        iconPath: 'assets/icons/video.svg',
-        destination: const VideosDashboard(),
-      ),
-      ExploreItem(
-        backgroundColor: AppColors.exploreButton4Light,
-        borderColor: AppColors.exploreButton4BorderLight,
-        label: 'Games',
-        iconPath: 'assets/icons/games.svg',
-        destination: const GamesDashboard(),
-      ),
-    ];
+   List<ExploreItem> exploreItemsList = [
+  ExploreItem(
+    backgroundColor: AppColors.exploreButton1Light,
+    borderColor: AppColors.exploreButton1BorderLight,
+    label: 'CBT',
+    textColor: AppColors.backgroundLight,
+    iconPath: 'assets/icons/cbt.svg',
+    destination: const CBTDashboard(),
+    subtitle: 'Practice tests',
+  ),
+  ExploreItem(
+    backgroundColor: AppColors.exploreButton3Light,
+    borderColor: AppColors.exploreButton3BorderLight,
+    label: 'E-Books',
+    iconPath: 'assets/icons/e-books.svg',
+    destination: const EbooksDashboard(),
+    subtitle: 'Read & learn',
+  ),
+  ExploreItem(
+    backgroundColor: AppColors.exploreButton2Light,
+    borderColor: AppColors.exploreButton2BorderLight,
+    label: 'Videos',
+    iconPath: 'assets/icons/video.svg',
+    destination: const VideosDashboard(),
+    subtitle: 'Watch tutorials',
+  ),
+  ExploreItem(
+    backgroundColor: AppColors.exploreButton4Light,
+    borderColor: AppColors.exploreButton4BorderLight,
+    label: 'Games',
+    iconPath: 'assets/icons/games.svg',
+    destination: const GamesDashboard(),
+    subtitle: 'Fun learning',
+  ),
+];
 
     return Container(
       decoration: Constants.customBoxDecoration(context),
-      padding: const EdgeInsets.only(bottom: 90.0, top: 20),
+    padding: const EdgeInsets.only(bottom: 90.0, ),
       child: CustomScrollView(
         physics: const BouncingScrollPhysics(),
         controller: _controller,
         slivers: [
-          SliverToBoxAdapter(
-            child: CarouselSlider(
-              items: [
-                _buildSuggestedGameCard(leftPadding: 16.0),
-                _buildSuggestedGameCard(),
-                _buildSuggestedGameCard(rightPadding: 16.0),
-              ],
-              options: CarouselOptions(
-                height: 280.0,
-                padEnds: false,
-                viewportFraction: 0.95,
-                autoPlay: true,
-                enableInfiniteScroll: false,
-                scrollDirection: Axis.horizontal,
-              ),
-            ),
-          ),
+        
           const SliverToBoxAdapter(child: SizedBox(height: 16.0)),
           SliverToBoxAdapter(
-            child: Constants.heading600(
-              title: 'Explore',
-              titleSize: 20.0,
-              titleColor: AppColors.text2Light,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: AppColors.text2Light.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Icon(
+                      Icons.explore_rounded,
+                      color: AppColors.text2Light,
+                      size: 20,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Explore',
+                    style: AppTextStyles.normal600(
+                      fontSize: 20,
+                      color: AppColors.text2Light,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
           SliverPadding(
@@ -178,6 +189,7 @@ ${imageUrl.isNotEmpty ? '🖼️ Image: $imageUrl' : ''}
                     borderColor: item.backgroundColor,
                     label: item.label,
                     iconPath: item.iconPath,
+                    subtitle: item.subtitle,
                     destination: item.destination,
                   );
                 },
@@ -186,17 +198,107 @@ ${imageUrl.isNotEmpty ? '🖼️ Image: $imageUrl' : ''}
             ),
           ),
           SliverToBoxAdapter(
-            child: Constants.headingWithSeeAll600(
-              title: 'News',
-              titleSize: 20.0,
-              titleColor: AppColors.text2Light,
-              onPressed: _navigatorAllNews,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: AppColors.text2Light.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Icon(
+                      Icons.gamepad_rounded,
+                      color: AppColors.text2Light,
+                      size: 20,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Recommendations',
+                    style: AppTextStyles.normal600(
+                      fontSize: 20,
+                      color: AppColors.text2Light,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          SliverToBoxAdapter(child: const SizedBox(height: 10.0)),
+
+
+            SliverToBoxAdapter(
+            child: CarouselSlider(
+              items: [
+                _buildSuggestedGameCard(leftPadding: 16.0),
+                _buildSuggestedGameCard(),
+                _buildSuggestedGameCard(rightPadding: 16.0),
+              ],
+              options: CarouselOptions(
+                height: 265.0,
+                padEnds: false,
+                viewportFraction: 0.95,
+                autoPlay: true,
+                enableInfiniteScroll: false,
+                scrollDirection: Axis.horizontal,
+              ),
+            ),
+          ),
+          SliverToBoxAdapter(
+            child: Container(
+              padding: const EdgeInsets.symmetric(
+                horizontal: 16.0,
+                vertical: 8.0,
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: AppColors.text2Light.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Icon(
+                          Icons.article_rounded,
+                          color: AppColors.text2Light,
+                          size: 20,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        'News',
+                        style: AppTextStyles.normal600(
+                          fontSize: 20,
+                          color: AppColors.text2Light,
+                        ),
+                      ),
+                    ],
+                  ),
+                  TextButton(
+                    onPressed: _navigatorAllNews,
+                    child: const Text(
+                      'See all',
+                      style: TextStyle(
+                        decoration: TextDecoration.underline,
+                        color: AppColors.text2Light,
+                        fontFamily: 'Urbanist',
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
           SliverList(
             delegate: SliverChildBuilderDelegate(
               (context, index) {
-                final news = newsProvider.newsmodel[index];
+                final news = newsProvider.latestNews[index];
                 // final dop = news.date_posted;
 
                 Duration difference = detemethods(news.date_posted);
@@ -216,9 +318,10 @@ ${imageUrl.isNotEmpty ? '🖼️ Image: $imageUrl' : ''}
                       imageUrl: news.image_url,
                       userLikeCounts: news.user_like,
                       likesCounts: news.likes,
+                      category: news.category,
                     ));
               },
-              childCount: newsProvider.newsmodel.length,
+              childCount: newsProvider.latestNews.length,
             ),
           ),
         ],
@@ -269,9 +372,8 @@ ${imageUrl.isNotEmpty ? '🖼️ Image: $imageUrl' : ''}
           _buildGameImage(),
           const SizedBox(height: 12.0),
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              _buildGameInfo(),
+              Expanded(child: _buildGameInfo()),
               _buildPlayButton(),
             ],
           ),
@@ -287,32 +389,43 @@ ${imageUrl.isNotEmpty ? '🖼️ Image: $imageUrl' : ''}
       child: Image.asset(
         'assets/images/millionaire.png',
         fit: BoxFit.cover,
-        height: 200,
+        height: 180,
       ),
     );
   }
 
 // Widget for the game title and developer information
   Widget _buildGameInfo() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Millionaire Game',
-          style: Theme.of(context).textTheme.titleLarge,
-        ),
-        Text(
-          'By Digital Dreams',
-          style: Theme.of(context).textTheme.titleSmall,
-        ),
-      ],
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(8, 0, 8.0, 0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Millionaire Game',
+            style:TextStyle(
+              fontSize: 17,
+              fontWeight: FontWeight.w300,
+              color: Colors.black,
+              fontFamily: 'Urbanist',
+          ),),
+          Text(
+            'By Digital Dreams',
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w400,
+              color: Colors.grey[600],
+              fontFamily: 'Urbanist',
+          ),)
+        ],
+      ),
     );
   }
 
 // Widget for the play button
   Widget _buildPlayButton() {
     return Container(
-      height: 45.0,
+      height: 30.0,
       decoration: BoxDecoration(
         gradient: const LinearGradient(
           begin: Alignment.topLeft,
@@ -333,11 +446,12 @@ ${imageUrl.isNotEmpty ? '🖼️ Image: $imageUrl' : ''}
           style: OutlinedButton.styleFrom(
             backgroundColor: AppColors.buttonColor1,
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10.0),
+
+              borderRadius: BorderRadius.circular(5.0),
             ),
           ),
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+            padding: const EdgeInsets.symmetric(horizontal: 0),
             child: Text(
               'Play',
               style:
@@ -350,23 +464,77 @@ ${imageUrl.isNotEmpty ? '🖼️ Image: $imageUrl' : ''}
   }
 
   Widget exploreButtonItem({
-    required Color backgroundColor,
-    required Color borderColor,
-    required String label,
-    required String iconPath,
-    required Widget destination,
-    Color? textColor, // Make textColor optional and nullable
-  }) {
-    return CustomButtonItem(
-      backgroundColor: backgroundColor,
-      borderColor: borderColor,
-      label: label,
-      textColor: textColor ??
-          AppColors.backgroundLight, // Provide a default color if null
-      iconPath: iconPath,
-      destination: destination,
-    );
-  }
+  required Color backgroundColor,
+  required Color borderColor,
+  required String subtitle,
+  required String label,
+  required String iconPath,
+  required Widget destination,
+  Color? textColor,
+}) {
+  return GestureDetector(
+    onTap: () {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => destination),
+      );
+    },
+    child: Container(
+      padding: const EdgeInsets.all(8.0),
+      decoration: BoxDecoration(
+        color: backgroundColor,
+        borderRadius: BorderRadius.circular(16.0),
+        border: Border.all(color: borderColor, width: 2),
+        boxShadow: [
+          BoxShadow(
+            color: backgroundColor.withOpacity(0.3),
+            blurRadius: 8,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                label,
+                style: TextStyle(
+                  color: textColor ?? Colors.white,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                  fontFamily: 'Urbanist',
+                ),
+                textAlign: TextAlign.center,
+              ),
+              SvgPicture.asset(
+                iconPath,
+                width: 20,
+                height: 20,
+                colorFilter: ColorFilter.mode(
+                  textColor ?? Colors.white,
+                  BlendMode.srcIn,
+                ),
+              ),
+            ],
+          ),
+         
+          Text(
+            subtitle,
+            style: TextStyle(
+               fontSize: 12,
+               color:  Colors.white,
+                    fontWeight: FontWeight.w600,
+                    fontFamily: 'Urbanist',
+            ),
+          ),
+        ],
+      ),
+    ),
+  );
+}
 
   Widget _buildNewsItem({
     required String title,
@@ -375,216 +543,140 @@ ${imageUrl.isNotEmpty ? '🖼️ Image: $imageUrl' : ''}
     required String imageUrl,
     required dynamic userLikeCounts,
     required dynamic likesCounts,
+    required String category,
   }) {
-    return Consumer<NewsProvider>(
-      builder: (context, newsProvider, child) {
-        if (newsProvider.isLoading) {
-          return const Center(child: CircularProgressIndicator());
-        }
-
-        // if (newsProvider.errorMessage.isEmpty) {
-        //   return Center(child: Text('Error: ${newsProvider.errorMessage}'));
-        // }
-
-        if (newsProvider.newsmodel.isEmpty) {
-          return const Center(child: Text('No news available'));
-        }
-
-        final news =
-            newsProvider.newsmodel[0]; // Use the first news item for example
-        return Card(
-          child: newsProvider.isLoading
-              ? Skeletonizer(
-                  enabled: true,
-                  child: Wrap(children: [
-                    Padding(
-                      padding: const EdgeInsets.only(
-                          left: 16, top: 4, right: 16, bottom: 0),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  title,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: AppTextStyles.normal500(
-                                    fontSize: 16.0,
-                                    color: AppColors.text2Light,
-                                  ),
-                                ),
-                                const SizedBox(height: 8.0),
-                                Text(
-                                  newsContent,
-                                  maxLines: 2,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: AppTextStyles.normal500(
-                                    fontSize: 14.0,
-                                    color: AppColors.text4Light,
-                                  ),
-                                ),
-                                const SizedBox(height: 8.0),
-                                Text(
-                                  time,
-                                  style: AppTextStyles.normal500(
-                                    fontSize: 12.0,
-                                    color: AppColors.text4Light,
-                                  ),
-                                ),
-                                _buildActionButtons(
-                                  title: title,
-                                  content: newsContent,
-                                  time: time,
-                                  imageUrl: imageUrl,
-                                ),
-                                SizedBox(
-                                  height: 8,
-                                )
-                              ],
-                            ),
-                          ),
-                          const SizedBox(width: 16.0),
-                          _buildNewsImage(imageUrl),
-                        ],
+    // Map category to colors
+    Color categoryColor;
+    switch (category) {
+      case 'WAEC':
+        categoryColor = Colors.orange;
+        break;
+      case 'JAMB':
+        categoryColor = Colors.blue;
+        break;
+      case 'Admission':
+        categoryColor = Colors.purple;
+        break;
+      case 'Scholarships':
+        categoryColor = Colors.green;
+        break;
+      case 'General':
+      default:
+        categoryColor = Colors.grey;
+        break;
+    }
+    
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+      padding: const EdgeInsets.all(12.0),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Image thumbnail on the left
+          ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: Image.network(
+              imageUrl,
+              width: 80,
+              height: 100,
+              fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) {
+                return Container(
+                  width: 80,
+                  height: 80,
+                  color: Colors.grey.shade200,
+                  child: Icon(
+                    Icons.image,
+                    size: 30,
+                    color: Colors.grey.shade400,
+                  ),
+                );
+              },
+            ),
+          ),
+          const SizedBox(width: 12),
+          
+          // Content on the right
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Title
+                Text(
+                  title,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppTextStyles.normal600(
+                    fontSize: 16.0,
+                    color: AppColors.text2Light,
+                  ),
+                ),
+                const SizedBox(height: 4.0),
+                
+                // Description
+                Text(
+                  newsContent,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppTextStyles.normal400(
+                    fontSize: 13.0,
+                    color: AppColors.text4Light,
+                  ),
+                ),
+                const SizedBox(height: 8.0),
+                
+                // Category badge and time
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: categoryColor,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        category,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 10,
+                          fontWeight: FontWeight.w600,
+                          fontFamily: 'Urbanist',
+                        ),
                       ),
                     ),
-                  ]),
-                )
-              : Wrap(children: [
-                  Padding(
-                    padding: const EdgeInsets.only(
-                        left: 16, top: 4, right: 16, bottom: 0),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Expanded(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.start,
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                title,
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                                style: AppTextStyles.normal500(
-                                  fontSize: 16.0,
-                                  color: AppColors.text2Light,
-                                ),
-                              ),
-                              Text(time,
-                                  style: AppTextStyles.normal500(
-                                    fontSize: 12.0,
-                                    color: AppColors.text4Light,
-                                  )),
-                              const SizedBox(height: 8.0),
-                              Text(
-                                newsContent,
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                                style: AppTextStyles.normal500(
-                                  fontSize: 14.0,
-                                  color: AppColors.text4Light,
-                                ),
-                              ),
-                              const SizedBox(height: 10.0),
-                              // _buildActionButtons(userLikeCounts.toString(),
-                              //     likesCounts.toString())
-                            ],
-                          ),
-                        ),
-                        const SizedBox(width: 16.0),
-                        _buildNewsImage(imageUrl),
-                      ],
+                    const SizedBox(width: 8),
+                    Icon(
+                      Icons.access_time,
+                      size: 12,
+                      color: AppColors.text4Light,
                     ),
-                  ),
-                  _buildActionButtons(
-                    title: title,
-                    content: newsContent,
-                    time: time,
-                    imageUrl: imageUrl,
-                  ),
-                ]),
-        );
-      },
-    );
-  }
-
-// Widget for action buttons (like, comment, share)
-  Widget _buildActionButtons({
-    String? title,
-    String? content,
-    String? time,
-    String? imageUrl,
-  }) {
-    // final newsProvider = Provider.of<NewsProvider>(context);
-    return Wrap(
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.start,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            // IconButton(
-            //   icon: const Icon(
-            //     Icons.favorite_outline,
-            //     size: 15,
-            //   ),
-            //   onPressed: () {}, // Add your onPressed logic here
-            // ),
-            // Text(
-            //   userLikeCounts,
-            //   style: AppTextStyles.normal400L(
-            //       fontSize: 10, color: AppColors.admissionTitle),
-            // ),
-            // // const SizedBox(width: 4.0),
-            // IconButton(
-            //   icon: SvgPicture.asset(
-            //     'assets/icons/comment.svg',
-            //     height: 15.0,
-            //     width: 15.0,
-            //   ),
-            //   onPressed: () {},
-            // ),
-            // Text(
-            //   likesCounts,
-            //   style: AppTextStyles.normal400L(
-            //       fontSize: 10, color: AppColors.admissionTitle),
-            // ),
-            // const
-            IconButton(
-                icon: Icon(Icons.share),
-                // SvgPicture.asset(
-                //   'assets/icons/share.svg',
-                //   height: 20.0,
-                //   width: 20.0,
-                // ),
-                onPressed: () => _shareNews(
-                  title ?? 'News',
-                  content ?? 'No content available',
-                  time ?? 'Unknown time',
-                  imageUrl ?? '',
-                ) // Add your onPressed logic here
+                    const SizedBox(width: 4),
+                    Text(
+                      time,
+                      style: AppTextStyles.normal400(
+                        fontSize: 11.0,
+                        color: AppColors.text4Light,
+                      ),
+                    ),
+                  ],
                 ),
-          ],
-        ),
-      ],
-    );
-  }
-
-// Widget for the news image
-  Widget _buildNewsImage(String imageUrl) {
-    return SizedBox(
-      width: 80.0,
-      height: 85.0,
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(8.0),
-        child: Image.network(
-          imageUrl,
-          fit: BoxFit.cover,
-        ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
+
 }

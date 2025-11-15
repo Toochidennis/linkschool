@@ -131,10 +131,35 @@ class _CbtResultScreenState extends State<CbtResultScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                '${widget.examType} - ${widget.subject} (${widget.year})',
-                style: AppTextStyles.normal600(
+                widget.examType,
+                 overflow: TextOverflow.ellipsis,
+                style:TextStyle(
                   fontSize: 18,
-                  color: AppColors.eLearningContColor2,
+                  fontWeight: FontWeight.w700,
+                  color:const Color.fromARGB(255, 74, 72, 72),
+                ),
+                
+                // style: AppTextStyles.normal400(
+                //   fontSize: 18,
+                //   color: Colors.grey,
+                // ),
+              ),
+              Text(
+                ' ${widget.subject}',
+                overflow: TextOverflow.ellipsis,
+               style:TextStyle(
+                  fontSize: 14,
+                  
+                  fontWeight: FontWeight.w700,
+                  color:const Color.fromARGB(255, 115, 114, 114),
+                ),
+              ),
+              Text(
+                widget.year.toString(),
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                  color: Colors.grey,
                 ),
               ),
               const SizedBox(height: 16),
@@ -165,14 +190,7 @@ class _CbtResultScreenState extends State<CbtResultScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            AppColors.eLearningBtnColor1,
-            AppColors.eLearningBtnColor5,
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
+        color: AppColors.eLearningBtnColor1,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
@@ -194,23 +212,33 @@ class _CbtResultScreenState extends State<CbtResultScreen> {
                   color: Colors.white,
                 ),
               ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(20),
+           
+            ],
+          ),
+
+         Stack(
+              alignment: Alignment.center,
+              children: [
+                SizedBox(
+                  height: 90.0,
+                  width: 90.0,
+                  child: CircularProgressIndicator(
+                    backgroundColor:  AppColors.eLearningContColor1,
+                    color: Colors.white,
+                    value: percentage != 'NaN' ? (score / totalQuestions) : 0,
+                    strokeWidth: 16,
+                  ),
                 ),
-                child: Text(
-                  '$percentage%',
-                  style: AppTextStyles.normal700(
-                    fontSize: 16,
+                Text(
+                  '$percentage %',
+                  style: AppTextStyles.normal600(
+                    fontSize: 16.0,
                     color: Colors.white,
                   ),
                 ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
+              ],
+            ),
+          const SizedBox(height: 35),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
@@ -219,7 +247,7 @@ class _CbtResultScreenState extends State<CbtResultScreen> {
               _buildScoreItem('Unanswered', unanswered, AppColors.text5Light),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 8),
           ClipRRect(
             borderRadius: BorderRadius.circular(10),
             child: LinearProgressIndicator(
@@ -238,7 +266,7 @@ class _CbtResultScreenState extends State<CbtResultScreen> {
     return Column(
       children: [
         Container(
-          padding: const EdgeInsets.all(12),
+          padding: const EdgeInsets.all(10),
           decoration: BoxDecoration(
             color: Colors.white,
             shape: BoxShape.circle,
@@ -258,7 +286,7 @@ class _CbtResultScreenState extends State<CbtResultScreen> {
             ),
           ),
         ),
-        const SizedBox(height: 8),
+        //const SizedBox(height: ),
         Text(
           label,
           style: AppTextStyles.normal500(

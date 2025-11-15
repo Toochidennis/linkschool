@@ -25,12 +25,56 @@ class NewsDetails extends StatefulWidget {
 }
 
 class _NewsDetailsState extends State<NewsDetails> {
+  late NewsModel currentNews;
+  List<NewsModel> allNewsList = [];
+  int currentIndex = 0;
+  String selectedCategory = 'All';
+  List<String> categories = ['All', 'WAEC', 'JAMB', 'Admission', 'Scholarships', 'General'];
+
   @override
   void initState() {
     super.initState();
+    currentNews = widget.news;
     Future.microtask(() {
-      Provider.of<NewsProvider>(context, listen: false).fetchNews();
+      final provider = Provider.of<NewsProvider>(context, listen: false);
+      if (provider.newsmodel.isEmpty) {
+        provider.fetchNews();
+      }
+      setState(() {
+        allNewsList = provider.newsmodel;
+        currentIndex = allNewsList.indexWhere((news) => news.id == currentNews.id);
+      });
     });
+  }
+
+  void navigateToNews(NewsModel news) {
+    setState(() {
+      currentNews = news;
+      currentIndex = allNewsList.indexWhere((n) => n.id == news.id);
+    });
+  }
+
+  List<NewsModel> getFilteredNews() {
+    if (selectedCategory == 'All') {
+      return allNewsList;
+    }
+    return allNewsList.where((news) => news.category == selectedCategory).toList();
+  }
+
+  Color getCategoryColor(String category) {
+    switch (category) {
+      case 'WAEC':
+        return Colors.orange;
+      case 'JAMB':
+        return Colors.blue;
+      case 'Admission':
+        return Colors.purple;
+      case 'Scholarships':
+        return Colors.green;
+      case 'General':
+      default:
+        return Colors.grey;
+    }
   }
 
   _navigatorAllNews() {
@@ -59,174 +103,561 @@ ${imageUrl.isNotEmpty ? '🖼️ Image: $imageUrl' : ''}
   @override
   Widget build(BuildContext context) {
     final newsProvider = Provider.of<NewsProvider>(context);
-    final recommendedNews = newsProvider.newsmodel.take(6).toList();
+    String category = currentNews.category;
+    Color categoryColor = getCategoryColor(category);
+    
+    List<NewsModel> recommendedNews = newsProvider.recommendedNews
+        .where((news) => news.id != currentNews.id)
+       
+        .toList();
+    
+    List<NewsModel> relatedNews = newsProvider.relatedNews
+        .where((news) => news.id != currentNews.id)
+     
+        .toList();
 
-    final relatedNews =
-        newsProvider.newsmodel.take(6).toList(); // Fetch 6 items
     return Scaffold(
-      appBar: Constants.customAppBar(
-        context: context,
-        title: 'News',
-        centerTitle: true,
+      body: CustomScrollView(
+        slivers: [
+          // Hero Image with Overlay Content
+          SliverAppBar(
+            expandedHeight: 300,
+            pinned: true,
+            backgroundColor: AppColors.text2Light,
+            leading: IconButton(
+              icon: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.9),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.arrow_back,
+                  color: Colors.black,
+                  size: 20,
+                ),
+              ),
+              onPressed: () => Navigator.pop(context),
+            ),
+            actions: [
+              IconButton(
+                icon: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.9),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.share,
+                    color: Colors.black,
+                    size: 20,
+                  ),
+                ),
+                onPressed: () => _shareNews(
+                  widget.news.title,
+                  widget.news.content,
+                  widget.time.toString(),
+                  widget.news.image_url,
+                ),
+              ),
+              const SizedBox(width: 8),
+            ],
+            flexibleSpace: FlexibleSpaceBar(
+              background: Stack(
+                fit: StackFit.expand,
+                children: [
+                  // Hero Image
+                  Image.network(
+                    widget.news.image_url,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) {
+                      return Container(
+                        color: Colors.grey.shade300,
+                        child: Icon(
+                          Icons.image,
+                          size: 80,
+                          color: Colors.grey.shade500,
+                        ),
+                      );
+                    },
+                  ),
+                  
+                  // Gradient Overlay
+                  Container(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          Colors.transparent,
+                          Colors.black.withOpacity(0.3),
+                          Colors.black.withOpacity(0.8),
+                        ],
+                        stops: const [0.0, 0.5, 1.0],
+                      ),
+                    ),
+                  ),
+                  
+                  // Content Overlay
+                  Positioned(
+                    bottom: 0,
+                    left: 0,
+                    right: 0,
+                    child: Padding(
+                      padding: const EdgeInsets.all(20.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            widget.news.title,
+                            style: const TextStyle(
+                              fontSize: 24.0,
+                              fontWeight: FontWeight.w700,
+                              color: Colors.white,
+                              fontFamily: 'Urbanist',
+                              height: 1.3,
+                            ),
+                          ),
+                          // Category badge and time
+                          SizedBox(height: 12),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 14, vertical: 6),
+                                decoration: BoxDecoration(
+                                  color: categoryColor,
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                                child: Text(
+                                  category,
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600,
+                                    fontFamily: 'Urbanist',
+                                  ),
+                                ),
+                              ),
+                              Row(
+                                children: [
+                                  const Icon(
+                                    Icons.access_time,
+                                    size: 16,
+                                    color: Colors.white,
+                                  ),
+                                  const SizedBox(width: 6),
+                                  Text(
+                                    widget.time.toString(),
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w500,
+                                      fontFamily: 'Urbanist',
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                          
+                          
+                          
+                          // Title
+                          
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          
+          // Category Filter Section
+          // SliverToBoxAdapter(
+          //   child: Container(
+          //     color: Colors.white,
+          //     padding: const EdgeInsets.symmetric(vertical: 16.0),
+          //     child: Column(
+          //       crossAxisAlignment: CrossAxisAlignment.start,
+          //       children: [
+          //         Padding(
+          //           padding: const EdgeInsets.symmetric(horizontal: 20.0),
+          //           child: Text(
+          //             'Filter by Category',
+          //             style: AppTextStyles.normal600(
+          //               fontSize: 16.0,
+          //               color: AppColors.text2Light,
+          //             ),
+          //           ),
+          //         ),
+          //         const SizedBox(height: 12),
+          //         SizedBox(
+          //           height: 40,
+          //           child: ListView.builder(
+          //             scrollDirection: Axis.horizontal,
+          //             padding: const EdgeInsets.symmetric(horizontal: 16.0),
+          //             itemCount: categories.length,
+          //             itemBuilder: (context, index) {
+          //               final cat = categories[index];
+          //               final isSelected = selectedCategory == cat;
+          //               return Padding(
+          //                 padding: const EdgeInsets.only(right: 8.0),
+          //                 child: FilterChip(
+          //                   label: Text(cat),
+          //                   selected: isSelected,
+          //                   onSelected: (selected) {
+          //                     setState(() {
+          //                       selectedCategory = cat;
+          //                     });
+          //                   },
+          //                   backgroundColor: Colors.grey.shade100,
+          //                   selectedColor: getCategoryColor(cat).withOpacity(0.2),
+          //                   labelStyle: TextStyle(
+          //                     color: isSelected ? getCategoryColor(cat) : Colors.black87,
+          //                     fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+          //                     fontFamily: 'Urbanist',
+          //                     fontSize: 13,
+          //                   ),
+          //                   side: BorderSide(
+          //                     color: isSelected ? getCategoryColor(cat) : Colors.grey.shade300,
+          //                     width: isSelected ? 2 : 1,
+          //                   ),
+          //                 ),
+          //               );
+          //             },
+          //           ),
+          //         ),
+          //       ],
+          //     ),
+          //   ),
+          // ),
+          
+          // Content Section
+          SliverToBoxAdapter(
+            child: Container(
+              color: Colors.white,
+              child: Padding(
+                padding: const EdgeInsets.all(20.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Content text
+                    Text(
+                      currentNews.content,
+                      style: AppTextStyles.normal400(
+                        fontSize: 16.0,
+                        color: Colors.black,
+                      ).copyWith(height: 1.7),
+                    ),
+                    
+                    const SizedBox(height: 40),
+                    
+                    // Recommended News Section
+                    if (recommendedNews.isNotEmpty) ...[
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: AppColors.text2Light.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Icon(
+                              Icons.star_rounded,
+                              color: AppColors.text2Light,
+                              size: 20,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            'Recommended for You',
+                            style: AppTextStyles.normal600(
+                              fontSize: 18.0,
+                              color: AppColors.text2Light,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      ...recommendedNews.map((news) => _buildNewsCard(news, context)),
+                      const SizedBox(height: 32),
+                    ],
+                    
+                    // Related News Section
+                    if (relatedNews.isNotEmpty) ...[
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: AppColors.text2Light.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Icon(
+                              Icons.article_rounded,
+                              color: AppColors.text2Light,
+                              size: 20,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            'Related News',
+                            style: AppTextStyles.normal600(
+                              fontSize: 18.0,
+                              color: AppColors.text2Light,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      ...relatedNews.map((news) => relatedCard(news, context)),
+                    ],
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            // News Title & Info
-            Container(
+    );
+  }
+
+
+  Widget relatedCard(NewsModel news, BuildContext context) {
+  final categoryColor = getCategoryColor(news.category);
+  DateTime dop = DateTime.parse(news.date_posted);
+  DateTime nowDateTime = DateTime.now();
+  Duration difference = nowDateTime.difference(dop);
+  String timeAgo = formatDuration(difference);
+
+  return GestureDetector(
+    onTap: () {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (context) => NewsDetails(
+            news: news,
+            time: timeAgo,
+          ),
+        ),
+      );
+    },
+    child: Container(
+      margin: const EdgeInsets.only(bottom: 16.0),
+      padding: const EdgeInsets.all(12.0),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey.shade200),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          /// ---------------- IMAGE ----------------
+          ClipRRect(
+            borderRadius: BorderRadius.circular(10),
+            child: Image.network(
+              news.image_url,
               width: double.infinity,
-              padding: EdgeInsets.all(16),
-              decoration: BoxDecoration(color: AppColors.text2Light),
+              height: 160,
+              fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) {
+                return Container(
+                  width: double.infinity,
+                  height: 160,
+                  color: Colors.grey.shade200,
+                  child: Icon(
+                    Icons.image,
+                    size: 40,
+                    color: Colors.grey.shade400,
+                  ),
+                );
+              },
+            ),
+          ),
+
+          const SizedBox(height: 12),
+
+          /// ---------------- TITLE ----------------
+          Text(
+            news.title,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: AppTextStyles.normal600(
+              fontSize: 15.0,
+              color: AppColors.text2Light,
+            ),
+          ),
+
+          const SizedBox(height: 10),
+
+          /// ---------------- CATEGORY + TIME ----------------
+          Row(
+            children: [
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: categoryColor,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  news.category,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w600,
+                    fontFamily: 'Urbanist',
+                  ),
+                ),
+              ),
+
+              const SizedBox(width: 8),
+
+              Icon(
+                Icons.access_time,
+                size: 12,
+                color: AppColors.text4Light,
+              ),
+
+              const SizedBox(width: 4),
+
+              Text(
+                timeAgo,
+                style: AppTextStyles.normal400(
+                  fontSize: 11.0,
+                  color: AppColors.text4Light,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    ),
+  );
+}
+
+
+  Widget _buildNewsCard(NewsModel news, BuildContext context) {
+    final categoryColor = getCategoryColor(news.category);
+    DateTime dop = DateTime.parse(news.date_posted);
+    DateTime nowDateTime = DateTime.now();
+    Duration difference = nowDateTime.difference(dop);
+    String timeAgo = formatDuration(difference);
+    
+    return GestureDetector(
+      onTap: () {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => NewsDetails(
+              news: news,
+              time: timeAgo,
+            ),
+          ),
+        );
+      },
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 16.0),
+        padding: const EdgeInsets.all(12.0),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.grey.shade200),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: Image.network(
+                news.image_url,
+                width: 80,
+                height: 80,
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) {
+                  return Container(
+                    width: 80,
+                    height: 80,
+                    color: Colors.grey.shade200,
+                    child: Icon(
+                      Icons.image,
+                      size: 30,
+                      color: Colors.grey.shade400,
+                    ),
+                  );
+                },
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    widget.news.title,
-                    style: AppTextStyles.normal700(
-                        fontSize: 24.0, color: AppColors.assessmentColor1),
-                    maxLines: 3,
+                    news.title,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppTextStyles.normal600(
+                      fontSize: 14.0,
+                      color: AppColors.text2Light,
+                    ),
                   ),
-                  SizedBox(height: 10),
+                  const SizedBox(height: 8.0),
                   Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Wrap(
-                        crossAxisAlignment: WrapCrossAlignment.start,
-                        children: [
-                          Text(widget.time,
-                              style: AppTextStyles.normal700(
-                                  fontSize: 12.0,
-                                  color: AppColors.assessmentColor1)),
-                          SizedBox(width: 4),
-                          Text("|",
-                              style: AppTextStyles.normal700(
-                                  fontSize: 12.0,
-                                  color: AppColors.assessmentColor1)),
-                          SizedBox(width: 8),
-                          Text(widget.news.title,
-                              style: AppTextStyles.normal700(
-                                  fontSize: 12.0,
-                                  color: AppColors.assessmentColor1)),
-                          SizedBox(width: 4)
-                        ],
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: categoryColor,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Text(
+                          news.category,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 10,
+                            fontWeight: FontWeight.w600,
+                            fontFamily: 'Urbanist',
+                          ),
+                        ),
                       ),
-                      TextButton(
-                          onPressed: () => _shareNews(
-                            widget.news.title,
-                            widget.news.content,
-                            widget.time.toString(),
-                            widget.news.image_url,
-                          ),
-                          style: TextButton.styleFrom(
-                            backgroundColor:
-                                Colors.white, // Button background color
-                            // foregroundColor: Colors.blueAccent, // Text color
-                            // padding: EdgeInsets.symmetric(
-                            //     horizontal: 2, vertical: 2),
-                            textStyle: TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.bold,
-                                color: AppColors.aicircle),
-                            elevation: 5, // Shadow depth
-                            alignment: Alignment(0, 0),
-                            shape: RoundedRectangleBorder(
-                              borderRadius:
-                                  BorderRadius.circular(10), // Rounded corners
-                            ),
-                          ),
-                          child: Icon(Icons.share))
+                      const SizedBox(width: 8),
+                      Icon(
+                        Icons.access_time,
+                        size: 12,
+                        color: AppColors.text4Light,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        timeAgo,
+                        style: AppTextStyles.normal400(
+                          fontSize: 11.0,
+                          color: AppColors.text4Light,
+                        ),
+                      ),
                     ],
                   ),
                 ],
-              ),
-            ),
-
-            // News Image
-            Container(
-              width: double.infinity,
-              height: 220,
-              decoration: BoxDecoration(
-                image: DecorationImage(
-                  image: NetworkImage(widget.news.image_url),
-                  fit: BoxFit.cover,
-                ),
-              ),
-            ),
-
-            // News Content
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                children: [
-                  textSection(widget.news.content),
-                  // SizedBox(height: 25),
-                  // _buildLikesButton(widget.news.user_like, widget.news.likes),
-                  // SizedBox(height: 25),
-                  // Divider(color: AppColors.admissionclosed),
-                  SizedBox(height: 20),
-                ],
-              ),
-            ),
-
-            // Recommended Section
-            Constants.headingWithSeeAll600(
-              title: "Recommended",
-              titleColor: AppColors.aboutTitle,
-              titleSize: 16,
-              onPressed: _navigatorAllNews,
-            ),
-
-            ListView.builder(
-              shrinkWrap: true,
-              physics:
-                  NeverScrollableScrollPhysics(), // Prevents nested scrolling issues
-              itemCount: recommendedNews.length,
-              itemBuilder: (context, index) {
-                final news = recommendedNews[index];
-                return GestureDetector(
-                  onTap: () {
-                    Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => NewsDetails(
-                          news: news,
-                          time: widget.time,
-                        ),
-                      ),
-                    );
-                  },
-                  child: recommendationSection(
-                      news.title, news.content, widget.time, news.image_url),
-                );
-              },
-            ),
-
-            SizedBox(height: 8),
-
-            // Related Headlines Section
-            Constants.headingWithSeeAll600(
-                title: "Related headlines",
-                titleColor: AppColors.aboutTitle,
-                titleSize: 16),
-            SizedBox(height: 4),
-
-            SizedBox(
-              height: 395,
-              child: ListView.builder(
-                // shrinkWrap: true,
-                // physics: NeverScrollableScrollPhysics(),
-                scrollDirection: Axis.horizontal,
-                itemCount: relatedNews.length,
-                itemBuilder: (context, index) {
-                  final newsheadlines = relatedNews[index];
-                  return relatedHeadlines(
-                      newsheadlines.title,
-                      newsheadlines.content,
-                      widget.time,
-                      newsheadlines.image_url);
-                  //   return recommendationSection(
-                  //     news.title, news.content, news.date_posted, news.image_url);
-                },
               ),
             ),
           ],
@@ -234,191 +665,22 @@ ${imageUrl.isNotEmpty ? '🖼️ Image: $imageUrl' : ''}
       ),
     );
   }
-}
 
-// ====================== Helper Widgets ======================
+  String formatDuration(Duration duration) {
+    if (duration.isNegative) return 'just now';
 
-void _shareNewsContent(String title, String content, String time, String imageUrl) {
-  // Format the complete news content for sharing
-  String shareText = '''
-📰 $title
+    final seconds = duration.inSeconds;
+    if (seconds < 60) return '$seconds seconds ago';
 
-📅 Published: $time
+    final minutes = duration.inMinutes;
+    if (minutes < 60) return '$minutes minutes ago';
 
-📝 Content:
-$content
+    final hours = duration.inHours;
+    if (hours < 24) return '$hours hours ago';
 
-${imageUrl.isNotEmpty ? '🖼️ Image: $imageUrl' : ''}
+    final days = duration.inDays;
+    if (days < 7) return '$days days ago';
 
-#LinkSchool #News
-''';
-  
-  Share.share(shareText);
-}
-
-Widget relatedHeadlines(
-    String title, String content, String time, String imageUrl) {
-  return Container(
-    width: 220,
-    padding: EdgeInsets.all(8),
-    decoration: BoxDecoration(
-      color: AppColors.bgColor1,
-      borderRadius: BorderRadius.circular(3),
-    ),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Card(
-          color: AppColors.assessmentColor1,
-          elevation: 5,
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Image.asset(
-              //   'assets/images/news-images/related_headline_image.png',
-              //   width: 220,
-              //   height: 92,
-              // ),
-              ClipRRect(
-                borderRadius: BorderRadius.only(
-                    topLeft: Radius.circular(10),
-                    topRight: Radius.circular(10)),
-                child: Image.network(
-                  imageUrl,
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.all(10),
-                child: Text(
-                  // "Aston Villa avoid relegation on final day" +
-                  title,
-                  style: AppTextStyles.normal700(
-                      fontSize: 16.0, color: AppColors.backgroundDark),
-                ),
-              ),
-
-              Padding(
-                padding: const EdgeInsets.all(10),
-                child: Text(
-                  // "Aston Villa avoid relegation on final day" +
-                  content,
-                  style: AppTextStyles.normal700(
-                      fontSize: 14.0, color: AppColors.backgroundDark),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-
-              Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  IconButton(
-                      onPressed: () => _shareNewsContent(title, content, time, imageUrl),
-                      icon: Icon(Icons.share)
-                      // SvgPicture.asset(
-                      //   'assets/icons/share.svg',
-                      //   height: 20.0,
-                      //   width: 20.0,
-                      // )
-                      )
-                ],
-              )
-            ],
-          ),
-        ),
-      ],
-    ),
-  );
-}
-
-Widget recommendationSection(
-    String title, String content, String time, String imageUrl) {
-  return Container(
-    margin: EdgeInsets.only(bottom: 8),
-    child: Card(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 5),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.start,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: AppTextStyles.normal500(
-                      fontSize: 16.0,
-                      color: AppColors.text2Light,
-                    ),
-                  ),
-                  const SizedBox(height: 4.0),
-                  Text(time,
-                      style: AppTextStyles.normal500(
-                        fontSize: 12.0,
-                        color: AppColors.text4Light,
-                      )),
-                  const SizedBox(height: 8.0),
-                  Text(
-                    content,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: AppTextStyles.normal500(
-                      fontSize: 14.0,
-                      color: AppColors.text4Light,
-                    ),
-                  ),
-                  Column(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      IconButton(
-                        icon: Icon(Icons.share),
-                        //  SvgPicture.asset(
-                        //   'assets/icons/share.svg',
-                        //   height: 20.0,
-                        //   width: 20.0,
-                        // ),
-                        onPressed: () => _shareNewsContent(title, content, time, imageUrl),
-                      ),
-                    ],
-                  )
-                ],
-              ),
-            ),
-            const SizedBox(width: 16.0),
-            SizedBox(
-              width: 100.0,
-              height: 120.0,
-              child: Column(
-                children: [
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(8.0),
-                    child: Image.network(
-                      imageUrl,
-                      fit: BoxFit.cover,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    ),
-  );
-}
-
-
-
-Widget textSection(paraBody) {
-  return Text(
-    paraBody,
-    style: AppTextStyles.normal400(
-        fontSize: 14.0, color: AppColors.backgroundDark),
-  );
+    return '${days ~/ 7} weeks ago';
+  }
 }

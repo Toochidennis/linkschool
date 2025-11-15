@@ -8,6 +8,9 @@ class NewsProvider with ChangeNotifier {
   String _errorMessage = '';
 
   List<NewsModel> get newsmodel => _newsmodel;
+  List<NewsModel> get latestNews => _newsmodel.where((news) => news.group == 'latest').toList();
+  List<NewsModel> get relatedNews => _newsmodel.where((news) => news.group == 'related').toList();
+  List<NewsModel> get recommendedNews => _newsmodel.where((news) => news.group == 'recommended').toList();
   bool get isLoading => _isLoading;
   String get errorMessage => _errorMessage;
 

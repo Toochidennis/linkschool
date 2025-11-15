@@ -39,7 +39,7 @@ class _CBTDashboardState extends State<CBTDashboard> with AutomaticKeepAliveClie
      super.build(context); 
     return Scaffold(
       appBar: widget.showAppBar 
-          ? Constants.customAppBar(context: context, showBackButton: true)
+          ? Constants.customAppBar(context: context, showBackButton: true,title: 'CBT Dashboard',)
           : null,
       body: Consumer<CBTProvider>(
         builder: (context, provider, child) {
@@ -50,7 +50,7 @@ class _CBTDashboardState extends State<CBTDashboard> with AutomaticKeepAliveClie
               child: CustomScrollView(
                 physics: const BouncingScrollPhysics(),
                 slivers: [
-
+                  const SliverToBoxAdapter(child: SizedBox(height: 30)),
                    SliverToBoxAdapter(
                     child: _buildPerformanceMetrics(),
                   ),
@@ -147,6 +147,11 @@ class _CBTDashboardState extends State<CBTDashboard> with AutomaticKeepAliveClie
   Widget _buildPerformanceMetrics() {
     return Consumer<CBTProvider>(
       builder: (context, provider, child) {
+        // Don't show performance metrics if there's no history
+        if (provider.recentHistory.isEmpty) {
+          return const SizedBox.shrink();
+        }
+        
         // Debug logging
         print('📊 Dashboard Display - Performance Metrics:');
         print('   Total Tests: ${provider.totalTests}');
@@ -192,41 +197,9 @@ class _CBTDashboardState extends State<CBTDashboard> with AutomaticKeepAliveClie
   Widget _buildTestHistory() {
     return Consumer<CBTProvider>(
       builder: (context, provider, child) {
+        // Don't show test history section if there's no data
         if (provider.recentHistory.isEmpty) {
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Constants.headingWithSeeAll600(
-                title: 'Test history',
-                titleSize: 18.0,
-                titleColor: AppColors.text4Light,
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const AllTestHistoryScreen(),
-                    ),
-                  ).then((_) {
-                    // Refresh stats when coming back
-                    provider.refreshStats();
-                  });
-                },
-              ),
-              const SizedBox(height: 16),
-              Center(
-                child: Padding(
-                  padding: const EdgeInsets.all(20.0),
-                  child: Text(
-                    'No test history available',
-                    style: AppTextStyles.normal500(
-                      fontSize: 14.0,
-                      color: AppColors.text7Light,
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          );
+          return const SizedBox.shrink();
         }
 
         return Column(

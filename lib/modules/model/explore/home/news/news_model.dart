@@ -4,6 +4,8 @@ class NewsModel {
   final String content;
   final String date_posted;
   final String image_url;
+    final String category;  // ✅ Add this
+  final String group;  
   final dynamic user_like;
   final dynamic likes;
   final List<Comment> comments;
@@ -13,6 +15,8 @@ class NewsModel {
     required this.title,
     required this.content,
     required this.date_posted,
+        required this.category,  // ✅ Add this
+    required this.group,
     required this.image_url,
     required this.user_like,
     required this.likes,
@@ -30,6 +34,8 @@ class NewsModel {
       title: json['title'] ?? "",
       content: json['content'] ?? "",
       date_posted: json['date_posted'] ?? "no date",
+        category: json['category'] ?? "General",  // ✅ Add this
+      group: json['group'] ?? "latest",    
       image_url: json['image_url'] ?? "",
       user_like: json['user_like'] ?? 0,
       likes: json['likes'] ?? 0,

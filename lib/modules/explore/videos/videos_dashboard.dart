@@ -359,61 +359,41 @@ class _VideosDashboardState extends State<VideosDashboard> {
                     child: CustomScrollView(
                       physics: const BouncingScrollPhysics(),
                       slivers: [
-                        SliverToBoxAdapter(
-                          child: Constants.headingWithSeeAll600(
-                            title: 'Watch history',
-                            titleSize: 18.0,
-                            titleColor: AppColors.primaryLight,
-                            onPressed: _navigateToWatchHistory,
+                        // Only show watch history section if there's data
+                        if (_watchHistory.isNotEmpty) ...[
+                          SliverToBoxAdapter(
+                            child: Constants.headingWithSeeAll600(
+                              title: 'Watch history',
+                              titleSize: 18.0,
+                              titleColor: AppColors.primaryLight,
+                              onPressed: _navigateToWatchHistory,
+                            ),
                           ),
-                        ),
-                        SliverToBoxAdapter(
-                          child: _isLoadingHistory
-                              ? const SizedBox(
-                                  height: 150.0,
-                                  child: Center(
-                                    child: CircularProgressIndicator(),
-                                  ),
-                                )
-                              : _watchHistory.isEmpty
-                                  ? Container(
-                                      height: 150.0,
-                                      alignment: Alignment.center,
-                                      child: Column(
-                                        mainAxisAlignment: MainAxisAlignment.center,
-                                        children: [
-                                          Icon(
-                                            Icons.history,
-                                            size: 48,
-                                            color: Colors.grey[400],
-                                          ),
-                                          const SizedBox(height: 8),
-                                          Text(
-                                            'No watch history yet',
-                                            style: AppTextStyles.normal400(
-                                              fontSize: 14,
-                                              color: Colors.grey[600]!,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    )
-                                  : SizedBox(
-                                      height: 150.0,
-                                      child: ListView.builder(
-                                        itemCount: _watchHistory.length,
-                                        scrollDirection: Axis.horizontal,
-                                        itemBuilder: (context, index) {
-                                          return GestureDetector(
-                                            onTap: () => _onVideoTap(_watchHistory[index]),
-                                            child: _buildWatchHistoryCard(
-                                              _watchHistory[index],
-                                            ),
-                                          );
-                                        },
-                                      ),
+                          SliverToBoxAdapter(
+                            child: _isLoadingHistory
+                                ? const SizedBox(
+                                    height: 150.0,
+                                    child: Center(
+                                      child: CircularProgressIndicator(),
                                     ),
-                        ),
+                                  )
+                                : SizedBox(
+                                    height: 150.0,
+                                    child: ListView.builder(
+                                      itemCount: _watchHistory.length,
+                                      scrollDirection: Axis.horizontal,
+                                      itemBuilder: (context, index) {
+                                        return GestureDetector(
+                                          onTap: () => _onVideoTap(_watchHistory[index]),
+                                          child: _buildWatchHistoryCard(
+                                            _watchHistory[index],
+                                          ),
+                                        );
+                                      },
+                                    ),
+                                  ),
+                          ),
+                        ],
                         if (_searchQuery.isEmpty) ...[
                           SliverToBoxAdapter(
                               child: Constants.heading600(
