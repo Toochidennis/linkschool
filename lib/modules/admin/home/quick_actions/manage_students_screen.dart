@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:linkschool/modules/admin/home/quick_actions/student_details.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
-import 'package:linkschool/modules/common/constants.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/model/admin/home/level_class_model.dart';
 import 'package:linkschool/modules/model/admin/home/manage_student_model.dart';
@@ -23,8 +22,6 @@ class ManageStudentsScreen extends StatefulWidget {
 class _ManageStudentsScreenState extends State<ManageStudentsScreen> {
   int? selectedLevelId;
   int? selectedClassId;
-  bool showLevelFilterCard = false;
-  bool showClassFilterCard = false;
 
   @override
   void initState() {
@@ -65,7 +62,144 @@ class _ManageStudentsScreenState extends State<ManageStudentsScreen> {
     });
   }
 
-  Widget _buildFilterChipItem({
+  void _showLevelFilterModal(BuildContext context, LevelClassProvider levelClassProvider) {
+    showModalBottomSheet(
+      isScrollControlled: true,
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return Container(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Select Level',
+                style: AppTextStyles.normal600(
+                  fontSize: 18,
+                  color: AppColors.text3Light,
+                ),
+              ),
+              const SizedBox(height: 16),
+              Container(
+                constraints: BoxConstraints(
+                  maxHeight: MediaQuery.of(context).size.height * 0.6,
+                ),
+                child: ListView(
+                  shrinkWrap: true,
+                  children: [
+                    _buildModalFilterItem(
+                      label: 'All Levels',
+                      isSelected: selectedLevelId == null,
+                      onTap: () {
+                        setState(() {
+                          selectedLevelId = null;
+                          selectedClassId = null;
+                        });
+                        Navigator.pop(context);
+                      },
+                    ),
+                    ...levelClassProvider.levelsWithClasses.map((levelWithClasses) {
+                      final isSelected = selectedLevelId == levelWithClasses.level.id;
+                      return _buildModalFilterItem(
+                        label: levelWithClasses.level.levelName,
+                        isSelected: isSelected,
+                        onTap: () {
+                          setState(() {
+                            selectedLevelId = levelWithClasses.level.id;
+                            selectedClassId = null;
+                          });
+                          Navigator.pop(context);
+                        },
+                      );
+                    }).toList(),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  void _showClassFilterModal(BuildContext context, LevelClassProvider levelClassProvider) {
+    if (selectedLevelId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please select a level first')),
+      );
+      return;
+    }
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        final classes = levelClassProvider.levelsWithClasses
+            .firstWhere((lwc) => lwc.level.id == selectedLevelId)
+            .classes;
+
+        return Container(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Select Class',
+                style: AppTextStyles.normal600(
+                  fontSize: 18,
+                  color: AppColors.text3Light,
+                ),
+              ),
+              const SizedBox(height: 16),
+              Container(
+                constraints: BoxConstraints(
+                  maxHeight: MediaQuery.of(context).size.height * 0.6,
+                ),
+                child: ListView(
+                  shrinkWrap: true,
+                  children: [
+                    _buildModalFilterItem(
+                      label: 'All Classes',
+                      isSelected: selectedClassId == null,
+                      onTap: () {
+                        setState(() {
+                          selectedClassId = null;
+                        });
+                        Navigator.pop(context);
+                      },
+                    ),
+                    ...classes.map((cls) {
+                      final isSelected = selectedClassId == cls.id;
+                      return _buildModalFilterItem(
+                        label: cls.className,
+                        isSelected: isSelected,
+                        onTap: () {
+                          setState(() {
+                            selectedClassId = cls.id;
+                          });
+                          Navigator.pop(context);
+                        },
+                      );
+                    }).toList(),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildModalFilterItem({
     required String label,
     required bool isSelected,
     required VoidCallback onTap,
@@ -74,19 +208,28 @@ class _ManageStudentsScreenState extends State<ManageStudentsScreen> {
       onTap: onTap,
       child: Container(
         width: double.infinity,
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
         decoration: BoxDecoration(
-          color: isSelected
-              ? AppColors.text2Light.withOpacity(0.1)
-              : Colors.white,
+          color: isSelected ? AppColors.text2Light.withOpacity(0.1) : Colors.transparent,
           borderRadius: BorderRadius.circular(12),
         ),
-        child: Text(
-          label,
-          style: AppTextStyles.normal500(
-            fontSize: 15,
-            color: isSelected ? AppColors.text2Light : Colors.grey[800]!,
-          ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              label,
+              style: AppTextStyles.normal500(
+                fontSize: 15,
+                color: isSelected ? AppColors.text2Light : Colors.grey[800]!,
+              ),
+            ),
+            if (isSelected)
+              Icon(
+                Icons.check_circle,
+                color: AppColors.text2Light,
+                size: 20,
+              ),
+          ],
         ),
       ),
     );
@@ -141,12 +284,7 @@ class _ManageStudentsScreenState extends State<ManageStudentsScreen> {
                                 // Level Filter Button
                                 Expanded(
                                   child: GestureDetector(
-                                    onTap: () {
-                                      setState(() {
-                                        showLevelFilterCard = !showLevelFilterCard;
-                                        showClassFilterCard = false;
-                                      });
-                                    },
+                                    onTap: () => _showLevelFilterModal(context, levelClassProvider),
                                     child: Container(
                                       padding: const EdgeInsets.symmetric(
                                           horizontal: 16, vertical: 16),
@@ -187,9 +325,7 @@ class _ManageStudentsScreenState extends State<ManageStudentsScreen> {
                                             ),
                                           ),
                                           Icon(
-                                            showLevelFilterCard 
-                                                ? Icons.arrow_drop_up 
-                                                : Icons.arrow_drop_down,
+                                            Icons.arrow_drop_down,
                                             color: Colors.grey[600],
                                           ),
                                         ],
@@ -201,12 +337,7 @@ class _ManageStudentsScreenState extends State<ManageStudentsScreen> {
                                 // Class Filter Button
                                 Expanded(
                                   child: GestureDetector(
-                                    onTap: () {
-                                      setState(() {
-                                        showClassFilterCard = !showClassFilterCard;
-                                        showLevelFilterCard = false;
-                                      });
-                                    },
+                                    onTap: () => _showClassFilterModal(context, levelClassProvider),
                                     child: Container(
                                       padding: const EdgeInsets.symmetric(
                                           horizontal: 16, vertical: 16),
@@ -248,9 +379,7 @@ class _ManageStudentsScreenState extends State<ManageStudentsScreen> {
                                             ),
                                           ),
                                           Icon(
-                                            showClassFilterCard 
-                                                ? Icons.arrow_drop_down 
-                                                : Icons.arrow_drop_up,
+                                            Icons.arrow_drop_down,
                                             color: AppColors.text2Light,
                                           ),
                                         ],
@@ -260,122 +389,6 @@ class _ManageStudentsScreenState extends State<ManageStudentsScreen> {
                                 ),
                               ],
                             ),
-                            
-                            // Level Filter Card
-                            if (showLevelFilterCard) ...[
-                              const SizedBox(height: 16),
-                              Container(
-                                decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  borderRadius: BorderRadius.circular(16),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Colors.grey.withOpacity(0.1),
-                                      spreadRadius: 1,
-                                      blurRadius: 10,
-                                      offset: const Offset(0, 2),
-                                    ),
-                                  ],
-                                ),
-                                child: Column(
-                                  children: [
-                                    // All Levels Chip
-                                    _buildFilterChipItem(
-                                      label: 'All Levels',
-                                      isSelected: selectedLevelId == null,
-                                      onTap: () {
-                                        setState(() {
-                                          selectedLevelId = null;
-                                          selectedClassId = null;
-                                          showLevelFilterCard = false;
-                                        });
-                                      },
-                                    ),
-                                    // Level Chips
-                                    ...levelClassProvider.levelsWithClasses
-                                        .map((levelWithClasses) {
-                                      final isSelected = selectedLevelId == levelWithClasses.level.id;
-                                      return _buildFilterChipItem(
-                                        label: levelWithClasses.level.levelName,
-                                        isSelected: isSelected,
-                                        onTap: () {
-                                          setState(() {
-                                            selectedLevelId = levelWithClasses.level.id;
-                                            selectedClassId = null;
-                                            showLevelFilterCard = false;
-                                          });
-                                        },
-                                      );
-                                    }).toList(),
-                                  ],
-                                ),
-                              ),
-                            ],
-                            
-                            // Class Filter Card
-                            if (showClassFilterCard) ...[
-                              const SizedBox(height: 16),
-                              Container(
-                                decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  borderRadius: BorderRadius.circular(16),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Colors.grey.withOpacity(0.1),
-                                      spreadRadius: 1,
-                                      blurRadius: 10,
-                                      offset: const Offset(0, 2),
-                                    ),
-                                  ],
-                                ),
-                                child: selectedLevelId == null
-                                    ? Padding(
-                                        padding: const EdgeInsets.all(20),
-                                        child: Text(
-                                          'Please select a level first',
-                                          style: AppTextStyles.normal400(
-                                            fontSize: 14,
-                                            color: Colors.grey[600]!,
-                                          ),
-                                          textAlign: TextAlign.center,
-                                        ),
-                                      )
-                                    : Column(
-                                        children: [
-                                          // All Classes Chip
-                                          _buildFilterChipItem(
-                                            label: 'All Classes',
-                                            isSelected: selectedClassId == null,
-                                            onTap: () {
-                                              setState(() {
-                                                selectedClassId = null;
-                                                showClassFilterCard = false;
-                                              });
-                                            },
-                                          ),
-                                          // Class Chips
-                                          ...levelClassProvider.levelsWithClasses
-                                              .firstWhere(
-                                                (lwc) => lwc.level.id == selectedLevelId,
-                                              )
-                                              .classes
-                                              .map((cls) {
-                                            final isSelected = selectedClassId == cls.id;
-                                            return _buildFilterChipItem(
-                                              label: cls.className,
-                                              isSelected: isSelected,
-                                              onTap: () {
-                                                setState(() {
-                                                  selectedClassId = cls.id;
-                                                  showClassFilterCard = false;
-                                                });
-                                              },
-                                            );
-                                          }).toList(),
-                                        ],
-                                      ),
-                              ),
-                            ],
                           ],
                         ),
                       ),

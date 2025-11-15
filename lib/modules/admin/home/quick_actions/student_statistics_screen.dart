@@ -1,5 +1,6 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
+import 'package:linkschool/modules/admin/home/quick_actions/manage_students_screen.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 
@@ -138,7 +139,7 @@ class _StudentStatisticsScreenState extends State<StudentStatisticsScreen> {
 
                 // Bar Chart
                 SizedBox(
-                  height: 300,
+                  height:250,
                   child: _buildBarChart(),
                 ),
                 const SizedBox(height: 40),
@@ -466,11 +467,23 @@ class _StudentStatisticsScreenState extends State<StudentStatisticsScreen> {
                  
                 child: Padding(
                   padding: const EdgeInsets.all(8.0),
-                  child: _buildClassRow(
-                    letter: letter,
-                    className: className,
-                    count: count,
-                    maxCount: 40, // Max for progress bar scale
+                  child: GestureDetector(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => ManageStudentsScreen(
+                           
+                          ),
+                        ),
+                      );
+                    },
+                    child: _buildClassRow(
+                      letter: letter,
+                      className: className,
+                      count: count,
+                      maxCount: 40, // Max for progress bar scale
+                    ),
                   ),
                 ),
               ),

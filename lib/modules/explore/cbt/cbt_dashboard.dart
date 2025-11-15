@@ -174,7 +174,7 @@ class _CBTDashboardState extends State<CBTDashboard> with AutomaticKeepAliveClie
               const SizedBox(width: 16.0),
               _buildPerformanceCard(
                 imagePath: 'assets/icons/success.png',
-                title: 'Success',
+                title: 'Completed',
                 completionRate: provider.successCount.toString(),
                 backgroundColor: AppColors.cbtColor2,
                 borderColor: AppColors.cbtBorderColor2,
