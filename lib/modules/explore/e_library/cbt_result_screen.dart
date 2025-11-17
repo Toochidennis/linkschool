@@ -17,6 +17,7 @@ class CbtResultScreen extends StatefulWidget {
   final String? examId;
   final String calledFrom; // Track where screen was called from
   final bool isFullyCompleted; // Track if all questions were answered
+  final List<Map<String, dynamic>>? allSubjectsData; // For multi-subject results
 
   const CbtResultScreen({
     super.key,
@@ -28,6 +29,7 @@ class CbtResultScreen extends StatefulWidget {
     this.examId,
     this.calledFrom = 'details', // Default to details screen
     this.isFullyCompleted = false, // Default to false
+    this.allSubjectsData,
   });
 
   @override
@@ -38,11 +40,20 @@ class _CbtResultScreenState extends State<CbtResultScreen> {
   late double opacity;
   final CbtHistoryService _historyService = CbtHistoryService();
   bool _isSaved = false;
+  late PageController _pageController;
+  int _currentSubjectIndex = 0;
 
   @override
   void initState() {
     super.initState();
+    _pageController = PageController();
     _saveTestResult();
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
   }
 
   // Save test result to shared preferences
@@ -50,7 +61,7 @@ class _CbtResultScreenState extends State<CbtResultScreen> {
     if (_isSaved) return; // Prevent duplicate saves
     
     try {
-      final score = _calculateScore();
+      final score = _calculateScore(widget.questions, widget.userAnswers);
       final totalQuestions = widget.questions.length;
       
       final historyModel = CbtHistoryModel(
@@ -80,6 +91,8 @@ class _CbtResultScreenState extends State<CbtResultScreen> {
     final Brightness brightness = Theme.of(context).brightness;
     opacity = brightness == Brightness.light ? 0.1 : 0.15;
     
+    final bool isMultiSubject = widget.allSubjectsData != null && widget.allSubjectsData!.isNotEmpty;
+    
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
@@ -88,9 +101,11 @@ class _CbtResultScreenState extends State<CbtResultScreen> {
             context.read<CBTProvider>().refreshStats();
             
             // Handle navigation based on where we came from
-            if (widget.calledFrom == 'dashboard') {
-              // From dashboard -> pop once to go back to dashboard
-              Navigator.of(context).pop();
+            if (widget.calledFrom == 'dashboard' || widget.calledFrom == 'multi-subject') {
+              // From dashboard or multi-subject -> pop to first screen
+                Navigator.of(context).pop();
+                Navigator.of(context).pop();
+             // Navigator.of(context).popUntil((route) => route.isFirst);
             } else {
               // From details screen -> pop twice (result + test screen) to go back to details
               Navigator.of(context).pop();
@@ -104,7 +119,7 @@ class _CbtResultScreenState extends State<CbtResultScreen> {
             height: 34.0,
           ),
         ),
-        title: const Text('Test Summary'),
+        title: Text(isMultiSubject ? 'Multi-Subject Results' : 'Test Summary'),
         centerTitle: true,
         backgroundColor: AppColors.backgroundLight,
         flexibleSpace: FlexibleSpaceBar(
@@ -125,70 +140,195 @@ class _CbtResultScreenState extends State<CbtResultScreen> {
       ),
       body: Container(
         decoration: Constants.customBoxDecoration(context),
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                widget.examType,
-                 overflow: TextOverflow.ellipsis,
-                style:TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w700,
-                  color:const Color.fromARGB(255, 74, 72, 72),
-                ),
-                
-                // style: AppTextStyles.normal400(
-                //   fontSize: 18,
-                //   color: Colors.grey,
-                // ),
-              ),
-              Text(
-                ' ${widget.subject}',
-                overflow: TextOverflow.ellipsis,
-               style:TextStyle(
-                  fontSize: 14,
-                  
-                  fontWeight: FontWeight.w700,
-                  color:const Color.fromARGB(255, 115, 114, 114),
-                ),
-              ),
-              Text(
-                widget.year.toString(),
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w700,
-                  color: Colors.grey,
-                ),
-              ),
-              const SizedBox(height: 16),
-              _buildScoreCard(),
-              const SizedBox(height: 16),
-              // Dynamic question list
-              ...List.generate(widget.questions.length, (index) {
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 16.0),
-                  child: _buildQuestionCard(index),
-                );
-              }),
-            ],
+        child: isMultiSubject ? _buildMultiSubjectView() : _buildSingleSubjectView(),
+      ),
+    );
+  }
+
+  Widget _buildSingleSubjectView() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            widget.examType,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w700,
+              color: Color.fromARGB(255, 74, 72, 72),
+            ),
           ),
+          Text(
+            ' ${widget.subject}',
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w700,
+              color: Color.fromARGB(255, 115, 114, 114),
+            ),
+          ),
+          Text(
+            widget.year.toString(),
+            style: const TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w700,
+              color: Colors.grey,
+            ),
+          ),
+          const SizedBox(height: 16),
+          _buildScoreCard(widget.questions, widget.userAnswers),
+          const SizedBox(height: 16),
+          // Dynamic question list
+          ...List.generate(widget.questions.length, (index) {
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 16.0),
+              child: _buildQuestionCard(index, widget.questions, widget.userAnswers),
+            );
+          }),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMultiSubjectView() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Swipeable score cards
+          SizedBox(
+            height: 380,
+            child: PageView.builder(
+              controller: _pageController,
+              itemCount: widget.allSubjectsData!.length,
+              onPageChanged: (index) {
+                setState(() {
+                  _currentSubjectIndex = index;
+                });
+              },
+              itemBuilder: (context, index) {
+                final subjectData = widget.allSubjectsData![index];
+                final questions = subjectData['questions'] as List<QuestionModel>;
+                final userAnswers = subjectData['userAnswers'] as Map<int, int>;
+                final subject = subjectData['subject'] as String;
+                final year = subjectData['year'] as int;
+
+                return Padding(
+                  padding: const EdgeInsets.only(right: 8.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  subject,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: AppTextStyles.normal600(
+                                    fontSize: 18,
+                                    color: AppColors.text3Light,
+                                  ),
+                                ),
+                                Text(
+                                  'Year: $year',
+                                  style: AppTextStyles.normal500(
+                                    fontSize: 14,
+                                    color: AppColors.text7Light,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          // Page indicator
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                            decoration: BoxDecoration(
+                              color: AppColors.eLearningBtnColor1,
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Text(
+                              '${index + 1} / ${widget.allSubjectsData!.length}',
+                              style: AppTextStyles.normal600(
+                                fontSize: 12,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      Expanded(
+                        child: SingleChildScrollView(
+                          child: _buildScoreCard(questions, userAnswers),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
+          ),
+          // Swipe indicator
+          if (widget.allSubjectsData!.length > 1)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8.0),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.swipe, size: 16, color: Colors.grey),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Swipe to see other subjects',
+                    style: AppTextStyles.normal500(
+                      fontSize: 12,
+                      color: Colors.grey,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          const SizedBox(height: 16),
+          // Question details for current subject
+          _buildQuestionsListForSubject(_currentSubjectIndex),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildQuestionsListForSubject(int subjectIndex) {
+    final subjectData = widget.allSubjectsData![subjectIndex];
+    final questions = subjectData['questions'] as List<QuestionModel>;
+    final userAnswers = subjectData['userAnswers'] as Map<int, int>;
+
+    return Column(
+      children: List.generate(
+        questions.length,
+        (index) => Padding(
+          padding: const EdgeInsets.only(bottom: 16.0),
+          child: _buildQuestionCard(index, questions, userAnswers),
         ),
       ),
     );
   }
 
-  Widget _buildScoreCard() {
-    final score = _calculateScore();
-    final totalQuestions = widget.questions.length;
+  Widget _buildScoreCard(List<QuestionModel> questions, Map<int, int> userAnswers) {
+    final score = _calculateScore(questions, userAnswers);
+    final totalQuestions = questions.length;
     final percentage = totalQuestions > 0 ? (score / totalQuestions * 100).toStringAsFixed(1) : '0.0';
-    final correctAnswers = _getCorrectAnswersCount();
-    final wrongAnswers = _getWrongAnswersCount();
+    final correctAnswers = _getCorrectAnswersCount(questions, userAnswers);
+    final wrongAnswers = _getWrongAnswersCount(questions, userAnswers);
     final unanswered = totalQuestions - (correctAnswers + wrongAnswers);
 
     return Container(
       padding: const EdgeInsets.all(16),
+     
       decoration: BoxDecoration(
         color: AppColors.eLearningBtnColor1,
         borderRadius: BorderRadius.circular(12),
@@ -238,7 +378,7 @@ class _CbtResultScreenState extends State<CbtResultScreen> {
                 ),
               ],
             ),
-          const SizedBox(height: 35),
+          const SizedBox(height: 28),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
@@ -298,9 +438,9 @@ class _CbtResultScreenState extends State<CbtResultScreen> {
     );
   }
 
-  Widget _buildQuestionCard(int index) {
-    final question = widget.questions[index];
-    final userAnswerIndex = widget.userAnswers[index];
+  Widget _buildQuestionCard(int index, List<QuestionModel> questions, Map<int, int> userAnswers) {
+    final question = questions[index];
+    final userAnswerIndex = userAnswers[index];
     final correctAnswerIndex = question.getCorrectAnswerIndex();
     final options = question.getOptions();
     
@@ -489,11 +629,11 @@ class _CbtResultScreenState extends State<CbtResultScreen> {
     );
   }
 
-  int _calculateScore() {
+  int _calculateScore(List<QuestionModel> questions, Map<int, int> userAnswers) {
     int score = 0;
-    for (int i = 0; i < widget.questions.length; i++) {
-      final userAnswerIndex = widget.userAnswers[i];
-      final correctAnswerIndex = widget.questions[i].getCorrectAnswerIndex();
+    for (int i = 0; i < questions.length; i++) {
+      final userAnswerIndex = userAnswers[i];
+      final correctAnswerIndex = questions[i].getCorrectAnswerIndex();
       
       if (userAnswerIndex != null && userAnswerIndex == correctAnswerIndex) {
         score++;
@@ -502,15 +642,15 @@ class _CbtResultScreenState extends State<CbtResultScreen> {
     return score;
   }
 
-  int _getCorrectAnswersCount() {
-    return _calculateScore();
+  int _getCorrectAnswersCount(List<QuestionModel> questions, Map<int, int> userAnswers) {
+    return _calculateScore(questions, userAnswers);
   }
 
-  int _getWrongAnswersCount() {
+  int _getWrongAnswersCount(List<QuestionModel> questions, Map<int, int> userAnswers) {
     int wrongCount = 0;
-    for (int i = 0; i < widget.questions.length; i++) {
-      final userAnswerIndex = widget.userAnswers[i];
-      final correctAnswerIndex = widget.questions[i].getCorrectAnswerIndex();
+    for (int i = 0; i < questions.length; i++) {
+      final userAnswerIndex = userAnswers[i];
+      final correctAnswerIndex = questions[i].getCorrectAnswerIndex();
       
       if (userAnswerIndex != null && userAnswerIndex != correctAnswerIndex) {
         wrongCount++;

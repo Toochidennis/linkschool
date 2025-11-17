@@ -13,7 +13,10 @@ import 'package:path/path.dart' as path;
 import 'package:provider/provider.dart';
 
 class ManageStudentsScreen extends StatefulWidget {
-  const ManageStudentsScreen({super.key});
+  final int? levelId;
+  final int? classId;
+  
+  const ManageStudentsScreen({super.key, this.levelId, this.classId});
 
   @override
   State<ManageStudentsScreen> createState() => _ManageStudentsScreenState();
@@ -22,27 +25,90 @@ class ManageStudentsScreen extends StatefulWidget {
 class _ManageStudentsScreenState extends State<ManageStudentsScreen> {
   int? selectedLevelId;
   int? selectedClassId;
+  final ScrollController _scrollController = ScrollController();
+  final TextEditingController _searchController = TextEditingController();
+  bool _isSearching = false;
+  String _searchQuery = '';
 
   @override
   void initState() {
     super.initState();
+    _scrollController.addListener(_onScroll);
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      Provider.of<ManageStudentProvider>(context, listen: false)
-          .fetchStudents();
+      final studentProvider = Provider.of<ManageStudentProvider>(context, listen: false);
+      
+      if (widget.classId != null) {
+        // Fetch students by class with pagination
+        studentProvider.fetchStudentsByClass(classId: widget.classId!);
+        selectedClassId = widget.classId;
+      } else if (widget.levelId != null) {
+        // Fetch students by level with pagination
+        studentProvider.fetchStudentsByLevel(levelId: widget.levelId!);
+        selectedLevelId = widget.levelId;
+      } else {
+        // Fetch all students (old behavior)
+        studentProvider.fetchStudents();
+      }
+      
       Provider.of<LevelClassProvider>(context, listen: false).fetchLevels();
     });
+    print("Init ManageStudentsScreen with levelId: ${widget.levelId}, classId: ${widget.classId}");
+  }
+
+  void _onScroll() {
+    if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 200) {
+      final studentProvider = Provider.of<ManageStudentProvider>(context, listen: false);
+      if (!studentProvider.isLoadingMore && studentProvider.hasMore) {
+        studentProvider.loadMoreStudents();
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    _searchController.dispose();
+    super.dispose();
   }
 
   List<Students> get filteredStudents {
     final provider = Provider.of<ManageStudentProvider>(context);
-    return provider.students.where((student) {
-      bool levelMatch =
-          selectedLevelId == null || student.levelId == selectedLevelId;
-      bool classMatch =
-          selectedClassId == null || student.classId == selectedClassId;
-      return levelMatch && classMatch;
-    }).toList();
+    
+    // Get the base list of students
+    List<Students> baseList;
+    
+    // If using level-based pagination, return students directly
+    if (widget.levelId != null) {
+      // Only filter by class if selected
+      if (selectedClassId != null) {
+        baseList = provider.students.where((student) => student.classId == selectedClassId).toList();
+      } else {
+        baseList = provider.students;
+      }
+    } else {
+      // Original filtering for all students view
+      baseList = provider.students.where((student) {
+        bool levelMatch =
+            selectedLevelId == null || student.levelId == selectedLevelId;
+        bool classMatch =
+            selectedClassId == null || student.classId == selectedClassId;
+        return levelMatch && classMatch;
+      }).toList();
+    }
+    
+    // Apply search filter if there's a search query
+    if (_searchQuery.isNotEmpty) {
+      baseList = baseList.where((student) {
+        final fullName = '${student.firstName} ${student.surname} ${student.middle}'.toLowerCase();
+        final registrationNo = (student.registrationNo ?? student.id.toString()).toLowerCase();
+        final query = _searchQuery.toLowerCase();
+        
+        return fullName.contains(query) || registrationNo.contains(query);
+      }).toList();
+    }
+    
+    return baseList;
   }
 
   bool _showAddForm = false;
@@ -54,6 +120,10 @@ class _ManageStudentsScreenState extends State<ManageStudentsScreen> {
       _editingStudent = student;
     });
   }
+
+  // Get the pre-selected level and class IDs for new student form
+  int? get preSelectedLevelId => selectedLevelId;
+  int? get preSelectedClassId => selectedClassId;
 
   void _hideForm() {
     setState(() {
@@ -92,13 +162,16 @@ class _ManageStudentsScreenState extends State<ManageStudentsScreen> {
                   shrinkWrap: true,
                   children: [
                     _buildModalFilterItem(
-                      label: 'All Levels',
+                      label: '',
                       isSelected: selectedLevelId == null,
                       onTap: () {
                         setState(() {
                           selectedLevelId = null;
                           selectedClassId = null;
                         });
+                        // Fetch all students when "All Levels" is selected
+                        Provider.of<ManageStudentProvider>(context, listen: false)
+                            .fetchStudents();
                         Navigator.pop(context);
                       },
                     ),
@@ -112,6 +185,9 @@ class _ManageStudentsScreenState extends State<ManageStudentsScreen> {
                             selectedLevelId = levelWithClasses.level.id;
                             selectedClassId = null;
                           });
+                          // Fetch students by the selected level with pagination
+                          Provider.of<ManageStudentProvider>(context, listen: false)
+                              .fetchStudentsByLevel(levelId: levelWithClasses.level.id);
                           Navigator.pop(context);
                         },
                       );
@@ -172,6 +248,7 @@ class _ManageStudentsScreenState extends State<ManageStudentsScreen> {
                       onTap: () {
                         setState(() {
                           selectedClassId = null;
+                          // Keep the level selected when showing all classes
                         });
                         Navigator.pop(context);
                       },
@@ -184,6 +261,10 @@ class _ManageStudentsScreenState extends State<ManageStudentsScreen> {
                         onTap: () {
                           setState(() {
                             selectedClassId = cls.id;
+                            // Ensure the level is set to the class's level
+                            if (selectedLevelId == null) {
+                              selectedLevelId = cls.levelId;
+                            }
                           });
                           Navigator.pop(context);
                         },
@@ -242,7 +323,8 @@ class _ManageStudentsScreenState extends State<ManageStudentsScreen> {
 
     return Scaffold(
       appBar: AppBar(
-
+        leading: _showAddForm ? null : null,
+        automaticallyImplyLeading: !_showAddForm,
         title: const Text('Manage Students',style: TextStyle(
           fontFamily: 'Urbanist',
           color: Colors.white,
@@ -258,360 +340,732 @@ class _ManageStudentsScreenState extends State<ManageStudentsScreen> {
             ),
         ],
       ),
-      body: studentProvider.isLoading || levelClassProvider.isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : Container(
-             // decoration: Constants.customBoxDecoration(context),
-              child: SingleChildScrollView(
-                child: Column(
-                  children: [
-                    if (_showAddForm)
-                      StudentFormWidget(
-                        student: _editingStudent,
-                        onCancel: _hideForm,
-                        onSaved: _hideForm,
-                      )
-                    else ...[
-                      Container(
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: Colors.grey[50],
-                        ),
-                        child: Column(
-                          children: [
-                            Row(
+      body: Stack(
+        children: [
+          studentProvider.isLoading || levelClassProvider.isLoading
+              ? const Center(child: CircularProgressIndicator())
+              : Container(
+                 // decoration: Constants.customBoxDecoration(context),
+                  child: SingleChildScrollView(
+                    controller: _scrollController,
+                    child: Column(
+                      children: [
+                        if (_showAddForm)
+                          StudentFormWidget(
+                            student: _editingStudent,
+                            onCancel: _hideForm,
+                            onSaved: _hideForm,
+                            preSelectedLevelId: preSelectedLevelId,
+                            preSelectedClassId: preSelectedClassId,
+                          )
+                        else ...[
+                          Container(
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: Colors.grey[50],
+                            ),
+                            child: Column(
                               children: [
-                                // Level Filter Button
-                                Expanded(
-                                  child: GestureDetector(
-                                    onTap: () => _showLevelFilterModal(context, levelClassProvider),
-                                    child: Container(
-                                      padding: const EdgeInsets.symmetric(
-                                          horizontal: 16, vertical: 16),
-                                      decoration: BoxDecoration(
-                                        color: Colors.grey[100],
-                                        borderRadius: BorderRadius.circular(12),
-                                        border: Border.all(
-                                            color: Colors.grey[300]!),
+                                // Search Bar
+                                Container(
+                                  margin: const EdgeInsets.only(bottom: 12),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(color: Colors.grey[300]!),
+                                  ),
+                                  child: TextField(
+                                    controller: _searchController,
+                                    onChanged: (value) {
+                                      setState(() {
+                                        _searchQuery = value;
+                                        _isSearching = value.isNotEmpty;
+                                      });
+                                    },
+                                    decoration: InputDecoration(
+                                      hintText: 'Search by name or registration number...',
+                                      hintStyle: TextStyle(
+                                        color: Colors.grey[400],
+                                        fontSize: 14,
                                       ),
-                                      child: Row(
-                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                        children: [
-                                          Expanded(
-                                            child: Text(
-                                              selectedLevelId == null
-                                                  ? 'All Levels'
-                                                  : levelClassProvider.levelsWithClasses
-                                                      .firstWhere(
-                                                        (lwc) => lwc.level.id == selectedLevelId,
-                                                        orElse: () => LevelWithClasses(
-                                                          level: Levels(
-                                                            id: 0,
-                                                            levelName: 'All Levels',
-                                                            schoolType: '',
-                                                            rank: 0,
-                                                            admit: 0,
-                                                          ),
-                                                          classes: [],
-                                                        ),
-                                                      )
-                                                      .level
-                                                      .levelName,
-                                              style: AppTextStyles.normal500(
-                                                fontSize: 14,
-                                                color: Colors.grey[700]!,
+                                      prefixIcon: Icon(
+                                        Icons.search,
+                                        color: AppColors.text2Light,
+                                      ),
+                                      suffixIcon: _searchQuery.isNotEmpty
+                                          ? IconButton(
+                                              icon: Icon(
+                                                Icons.clear,
+                                                color: Colors.grey[600],
                                               ),
-                                              overflow: TextOverflow.ellipsis,
-                                            ),
-                                          ),
-                                          Icon(
-                                            Icons.arrow_drop_down,
-                                            color: Colors.grey[600],
-                                          ),
-                                        ],
+                                              onPressed: () {
+                                                setState(() {
+                                                  _searchController.clear();
+                                                  _searchQuery = '';
+                                                  _isSearching = false;
+                                                });
+                                              },
+                                            )
+                                          : null,
+                                      border: InputBorder.none,
+                                      contentPadding: const EdgeInsets.symmetric(
+                                        horizontal: 16,
+                                        vertical: 14,
                                       ),
                                     ),
                                   ),
                                 ),
-                                const SizedBox(width: 12),
-                                // Class Filter Button
-                                Expanded(
-                                  child: GestureDetector(
-                                    onTap: () => _showClassFilterModal(context, levelClassProvider),
-                                    child: Container(
-                                      padding: const EdgeInsets.symmetric(
-                                          horizontal: 16, vertical: 16),
-                                      decoration: BoxDecoration(
-                                        color: AppColors.text2Light.withOpacity(0.1),
-                                        borderRadius: BorderRadius.circular(12),
-                                        border: Border.all(
-                                            color: AppColors.text2Light.withOpacity(0.3)),
-                                      ),
-                                      child: Row(
-                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                        children: [
-                                          Expanded(
-                                            child: Text(
-                                              selectedClassId == null
-                                                  ? 'All Classes'
-                                                  : (selectedLevelId != null
-                                                      ? levelClassProvider.levelsWithClasses
+                                Row(
+                                  children: [
+                                    // Level Filter Button
+                                    Expanded(
+                                      child: GestureDetector(
+                                        onTap: () => _showLevelFilterModal(context, levelClassProvider),
+                                        child: Container(
+                                          padding: const EdgeInsets.symmetric(
+                                              horizontal: 16, vertical: 16),
+                                          decoration: BoxDecoration(
+                                            color: Colors.grey[100],
+                                            borderRadius: BorderRadius.circular(12),
+                                            border: Border.all(
+                                                color: Colors.grey[300]!),
+                                          ),
+                                          child: Row(
+                                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                            children: [
+                                              Expanded(
+                                                child: Text(
+                                                  selectedLevelId == null
+                                                      ? 'All Levels'
+                                                      : levelClassProvider.levelsWithClasses
                                                           .firstWhere(
                                                             (lwc) => lwc.level.id == selectedLevelId,
-                                                          )
-                                                          .classes
-                                                          .firstWhere(
-                                                            (cls) => cls.id == selectedClassId,
-                                                            orElse: () => Class(
-                                                              id: 0,
-                                                              className: 'All Classes',
-                                                              levelId: 0,
-                                                              formTeacherIds: [],
+                                                            orElse: () => LevelWithClasses(
+                                                              level: Levels(
+                                                                id: 0,
+                                                                levelName: 'All Levels',
+                                                                schoolType: '',
+                                                                rank: 0,
+                                                                admit: 0,
+                                                              ),
+                                                              classes: [],
                                                             ),
                                                           )
-                                                          .className
-                                                      : 'All Classes'),
-                                              style: AppTextStyles.normal500(
-                                                fontSize: 14,
-                                                color: AppColors.text2Light,
+                                                          .level
+                                                          .levelName,
+                                                  style: AppTextStyles.normal500(
+                                                    fontSize: 14,
+                                                    color: Colors.grey[700]!,
+                                                  ),
+                                                  overflow: TextOverflow.ellipsis,
+                                                ),
                                               ),
-                                              overflow: TextOverflow.ellipsis,
-                                            ),
+                                              Icon(
+                                                Icons.arrow_drop_down,
+                                                color: Colors.grey[600],
+                                              ),
+                                            ],
                                           ),
-                                          Icon(
-                                            Icons.arrow_drop_down,
-                                            color: AppColors.text2Light,
-                                          ),
-                                        ],
+                                        ),
                                       ),
                                     ),
+                                    const SizedBox(width: 12),
+                                    // Class Filter Button
+                                    Expanded(
+                                      child: GestureDetector(
+                                        onTap: () => _showClassFilterModal(context, levelClassProvider),
+                                        child: Container(
+                                          padding: const EdgeInsets.symmetric(
+                                              horizontal: 16, vertical: 16),
+                                          decoration: BoxDecoration(
+                                            color: AppColors.text2Light.withOpacity(0.1),
+                                            borderRadius: BorderRadius.circular(12),
+                                            border: Border.all(
+                                                color: AppColors.text2Light.withOpacity(0.3)),
+                                          ),
+                                          child: Row(
+                                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                            children: [
+                                              Expanded(
+                                                child: Text(
+                                                  selectedClassId == null
+                                                      ? 'All Classes'
+                                                      : (selectedLevelId != null
+                                                          ? levelClassProvider.levelsWithClasses
+                                                              .firstWhere(
+                                                                (lwc) => lwc.level.id == selectedLevelId,
+                                                              )
+                                                              .classes
+                                                              .firstWhere(
+                                                                (cls) => cls.id == selectedClassId,
+                                                                orElse: () => Class(
+                                                                  id: 0,
+                                                                  className: 'All Classes',
+                                                                  levelId: 0,
+                                                                  formTeacherIds: [],
+                                                                ),
+                                                              )
+                                                              .className
+                                                          : 'All Classes'),
+                                                  style: AppTextStyles.normal500(
+                                                    fontSize: 14,
+                                                    color: AppColors.text2Light,
+                                                  ),
+                                                  overflow: TextOverflow.ellipsis,
+                                                ),
+                                              ),
+                                              Icon(
+                                                Icons.arrow_drop_down,
+                                                color: AppColors.text2Light,
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  child: _buildStatCard(
+                                    label: 'Male\nStudents',
+                                    icon: Icons.male,
+                                    iconColor: const Color.fromRGBO(45, 99, 255, 1),
+                                    count: studentProvider.maleStudents.toString(),
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: _buildStatCard(
+                                    icon: Icons.female,
+                                    iconColor: Colors.pink,
+                                    count: studentProvider.femaleStudents.toString(),
+                                    label: 'Female\nStudents',
                                   ),
                                 ),
                               ],
                             ),
-                          ],
-                        ),
-                      ),
-                      filteredStudents.isEmpty
-                          ? const Center(
-                              child: Padding(
-                              padding: EdgeInsets.all(32.0),
-                              child: Text('No students found'),
-                            ))
-                          : ListView.builder(
-                              shrinkWrap: true,
-                              physics: const NeverScrollableScrollPhysics(),
-                              padding: const EdgeInsets.all(16),
-                              itemCount: filteredStudents.length,
-                              itemBuilder: (context, index) {
-                                final student = filteredStudents[index];
-                                final levelName =
-                                    levelClassProvider.levelsWithClasses
-                                        .firstWhere(
-                                          (lwc) =>
-                                              lwc.level.id == student.levelId,
-                                          orElse: () => LevelWithClasses(
-                                            level: Levels(
-                                              id: 0,
-                                              levelName: 'Unknown',
-                                              schoolType: '',
-                                              rank: 0,
-                                              admit: 0,
-                                            ),
-                                            classes: [],
-                                          ),
-                                        )
-                                        .level
-                                        .levelName;
-                                final className =
-                                    levelClassProvider.levelsWithClasses
-                                        .firstWhere(
-                                          (lwc) =>
-                                              lwc.level.id == student.levelId,
-                                          orElse: () => LevelWithClasses(
-                                            level: Levels(
-                                              id: 0,
-                                              levelName: 'Unknown',
-                                              schoolType: '',
-                                              rank: 0,
-                                              admit: 0,
-                                            ),
-                                            classes: [],
-                                          ),
-                                        )
-                                        .classes
-                                        .firstWhere(
-                                          (cls) => cls.id == student.classId,
-                                          orElse: () => Class(
-                                            id: 0,
-                                            className: 'Unknown',
-                                            levelId: 0,
-                                            formTeacherIds: [],
-                                          ),
-                                        )
-                                        .className;
+                          ),
+                          filteredStudents.isEmpty
+                              ? Center(
+                                  child: Padding(
+                                  padding: const EdgeInsets.all(32.0),
+                                  child: Text(_searchQuery.isNotEmpty 
+                                    ? 'No students found matching "$_searchQuery"'
+                                    : 'No students found'),
+                                ))
+                              : ListView.builder(
+                                  shrinkWrap: true,
+                                  physics: const NeverScrollableScrollPhysics(),
+                                  padding: const EdgeInsets.all(16),
+                                  itemCount: filteredStudents.length,
+                                  itemBuilder: (context, index) {
+                                    final student = filteredStudents[index];
+                                    final levelName =
+                                        levelClassProvider.levelsWithClasses
+                                            .firstWhere(
+                                              (lwc) =>
+                                                  lwc.level.id == student.levelId,
+                                              orElse: () => LevelWithClasses(
+                                                level: Levels(
+                                                  id: 0,
+                                                  levelName: 'Unknown',
+                                                  schoolType: '',
+                                                  rank: 0,
+                                                  admit: 0,
+                                                ),
+                                                classes: [],
+                                              ),
+                                            )
+                                            .level
+                                            .levelName;
+                                    final className =
+                                        levelClassProvider.levelsWithClasses
+                                            .firstWhere(
+                                              (lwc) =>
+                                                  lwc.level.id == student.levelId,
+                                              orElse: () => LevelWithClasses(
+                                                level: Levels(
+                                                  id: 0,
+                                                  levelName: 'Unknown',
+                                                  schoolType: '',
+                                                  rank: 0,
+                                                  admit: 0,
+                                                ),
+                                                classes: [],
+                                              ),
+                                            )
+                                            .classes
+                                            .firstWhere(
+                                              (cls) => cls.id == student.classId,
+                                              orElse: () => Class(
+                                                id: 0,
+                                                className: 'Unknown',
+                                                levelId: 0,
+                                                formTeacherIds: [],
+                                              ),
+                                            )
+                                            .className;
 
-                                return GestureDetector(
-                                  onTap: () {
-                                    final fullName =
-                                        '${student.firstName} ${student.surname}';
-                                    print(fullName);
-                                    print(student.levelId);
-                                    print(className);
-                                    print(student.classId);
+                                    return GestureDetector(
+                                      onTap: () {
+                                        final fullName =
+                                            '${student.firstName} ${student.surname}';
+                                        print(fullName);
+                                        print(student.levelId);
+                                        print(className);
+                                        print(student.classId);
 
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (context) =>
-                                            StudentProfileScreen(
-                                          student: student,
-                                          classId: student.classId.toString(),
-                                          levelId: student.levelId,
-                                          className: className,
-                                          studentName: fullName,
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (context) =>
+                                                StudentProfileScreen(
+                                              student: student,
+                                              classId: student.classId.toString(),
+                                              levelId: student.levelId,
+                                              className: className,
+                                              studentName: fullName,
+                                            ),
+                                          ),
+                                        );
+                                      },
+                                      child: Container(
+                                        margin: const EdgeInsets.only(bottom: 12),
+                                        decoration: BoxDecoration(
+                                          color: Colors.white,
+                                          borderRadius: BorderRadius.circular(16),
+                                          boxShadow: [
+                                            BoxShadow(
+                                              color: Colors.grey.withOpacity(0.1),
+                                              spreadRadius: 1,
+                                              blurRadius: 10,
+                                              offset: const Offset(0, 2),
+                                            ),
+                                          ],
+                                        ),
+                                        child: ListTile(
+                                          contentPadding: const EdgeInsets.symmetric(
+                                              horizontal: 20, vertical: 12),
+                                          leading: Container(
+                                            padding: const EdgeInsets.all(2),
+                                            decoration: BoxDecoration(
+                                              color: AppColors.text2Light.withOpacity(0.1),
+                                              borderRadius: BorderRadius.circular(12),
+                                            ),
+                                            child: CircleAvatar(
+                                              radius: 24,
+                                              backgroundColor: AppColors.text2Light,
+                                              child: student.photoPath != null &&
+                                                      student.photoPath!.isNotEmpty
+                                                  ? ClipOval(
+                                                      child: Image.network(
+                                                        "https://linkskool.net/${student.photoPath}",
+                                                        fit: BoxFit.cover,
+                                                        width: 48,
+                                                        height: 48,
+                                                        errorBuilder: (context, error,
+                                                            stackTrace) {
+                                                          return Text(
+                                                            student.getInitials(),
+                                                            style: AppTextStyles.normal600(
+                                                              fontSize: 16,
+                                                              color: Colors.white,
+                                                            ),
+                                                          );
+                                                        },
+                                                        loadingBuilder: (context,
+                                                            child, loadingProgress) {
+                                                          if (loadingProgress == null)
+                                                            return child;
+                                                          return const SizedBox(
+                                                            width: 20,
+                                                            height: 20,
+                                                            child: CircularProgressIndicator(
+                                                              strokeWidth: 2,
+                                                              color: Colors.white,
+                                                            ),
+                                                          );
+                                                        },
+                                                      ),
+                                                    )
+                                                  : Text(
+                                                      student.getInitials(),
+                                                      style: AppTextStyles.normal600(
+                                                        fontSize: 16,
+                                                        color: Colors.white,
+                                                      ),
+                                                    ),
+                                            ),
+                                          ),
+                                          title: Text(
+                                            '${student.firstName} ${student.surname}',
+                                            style: AppTextStyles.normal500(
+                                              fontSize: 16,
+                                              color: AppColors.text2Light,
+                                            ),
+                                          ),
+                                          subtitle: Padding(
+                                            padding: const EdgeInsets.only(top: 4.0),
+                                            child: Text(
+                                              '$levelName - $className | ID: ${student.registrationNo ?? student.id}',
+                                              style: AppTextStyles.normal400(
+                                                fontSize: 14,
+                                                color: Colors.grey[600]!,
+                                              ),
+                                            ),
+                                          ),
+                                          trailing: PopupMenuButton<String>(
+                                            icon: Container(
+                                              padding: const EdgeInsets.all(8),
+                                              decoration: BoxDecoration(
+                                                color: AppColors.text2Light.withOpacity(0.1),
+                                                borderRadius: BorderRadius.circular(8),
+                                              ),
+                                              child: const Icon(
+                                                Icons.more_vert,
+                                                color: AppColors.text2Light,
+                                                size: 20,
+                                              ),
+                                            ),
+                                            onSelected: (value) {
+                                              if (value == 'edit') {
+                                                _showAddEditStudentForm(
+                                                    student: student);
+                                              } else if (value == 'delete') {
+                                                _showDeleteDialog(context, student);
+                                              }
+                                            },
+                                            itemBuilder: (context) => [
+                                              const PopupMenuItem(
+                                                value: 'edit',
+                                                child: ListTile(
+                                                  leading: Icon(Icons.edit),
+                                                  title: Text('Edit'),
+                                                  contentPadding: EdgeInsets.zero,
+                                                ),
+                                              ),
+                                              const PopupMenuItem(
+                                                value: 'delete',
+                                                child: ListTile(
+                                                  leading: Icon(Icons.delete,
+                                                      color: Colors.red),
+                                                  title: Text('Delete',
+                                                      style: TextStyle(
+                                                          color: Colors.red)),
+                                                  contentPadding: EdgeInsets.zero,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
                                         ),
                                       ),
                                     );
                                   },
-                                  child: Container(
-                                    margin: const EdgeInsets.only(bottom: 12),
-                                    decoration: BoxDecoration(
-                                      color: Colors.white,
-                                      borderRadius: BorderRadius.circular(16),
-                                      boxShadow: [
-                                        BoxShadow(
-                                          color: Colors.grey.withOpacity(0.1),
-                                          spreadRadius: 1,
-                                          blurRadius: 10,
-                                          offset: const Offset(0, 2),
-                                        ),
-                                      ],
+                                ),
+                          // Loading more indicator
+                          if (studentProvider.isLoadingMore)
+                            const Padding(
+                              padding: EdgeInsets.all(16.0),
+                              child: Center(
+                                child: CircularProgressIndicator(),
+                              ),
+                            ),
+                          // Show pagination info if using level-based pagination
+                          if (widget.levelId != null && studentProvider.students.isNotEmpty)
+                            Padding(
+                              padding: const EdgeInsets.all(16.0),
+                              child: Center(
+                                child: Text(
+                                  'Showing ${studentProvider.students.length} students | Page ${studentProvider.currentPage} of ${studentProvider.totalPages}',
+                                  style: AppTextStyles.normal400(
+                                    fontSize: 12,
+                                    color: Colors.grey[600]!,
+                                  ),
+                                ),
+                              ),
+                            ),
+                        ],
+                      ],
+                    ),
+                  ),
+                ),
+          // White overlay when searching
+          if (_isSearching && _searchQuery.isNotEmpty)
+            Positioned.fill(
+              child: GestureDetector(
+                onTap: () {
+                  // Dismiss overlay when tapping outside
+                  setState(() {
+                    _searchController.clear();
+                    _searchQuery = '';
+                    _isSearching = false;
+                  });
+                },
+                child: Container(
+                  color: Colors.white.withOpacity(0.95),
+                  child: Column(
+                    children: [
+                      // Search bar replica for the overlay
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Colors.grey[50],
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.grey.withOpacity(0.1),
+                              spreadRadius: 1,
+                              blurRadius: 5,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: Colors.grey[300]!),
+                          ),
+                          child: TextField(
+                            controller: _searchController,
+                            onChanged: (value) {
+                              setState(() {
+                                _searchQuery = value;
+                                _isSearching = value.isNotEmpty;
+                              });
+                            },
+                            decoration: InputDecoration(
+                              hintText: 'Search by name or registration number...',
+                              hintStyle: TextStyle(
+                                color: Colors.grey[400],
+                                fontSize: 14,
+                              ),
+                              prefixIcon: Icon(
+                                Icons.search,
+                                color: AppColors.text2Light,
+                              ),
+                              suffixIcon: IconButton(
+                                icon: Icon(
+                                  Icons.clear,
+                                  color: Colors.grey[600],
+                                ),
+                                onPressed: () {
+                                  setState(() {
+                                    _searchController.clear();
+                                    _searchQuery = '';
+                                    _isSearching = false;
+                                  });
+                                },
+                              ),
+                              border: InputBorder.none,
+                              contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 14,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                      // Search results
+                      Expanded(
+                        child: filteredStudents.isEmpty
+                            ? Center(
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(
+                                      Icons.search_off,
+                                      size: 64,
+                                      color: Colors.grey[400],
                                     ),
-                                    child: ListTile(
-                                      contentPadding: const EdgeInsets.symmetric(
-                                          horizontal: 20, vertical: 12),
-                                      leading: Container(
-                                        padding: const EdgeInsets.all(2),
-                                        decoration: BoxDecoration(
-                                          color: AppColors.text2Light.withOpacity(0.1),
-                                          borderRadius: BorderRadius.circular(12),
-                                        ),
-                                        child: CircleAvatar(
-                                          radius: 24,
-                                          backgroundColor: AppColors.text2Light,
-                                          child: student.photoPath != null &&
-                                                  student.photoPath!.isNotEmpty
-                                              ? ClipOval(
-                                                  child: Image.network(
-                                                    "https://linkskool.net/${student.photoPath}",
-                                                    fit: BoxFit.cover,
-                                                    width: 48,
-                                                    height: 48,
-                                                    errorBuilder: (context, error,
-                                                        stackTrace) {
-                                                      return Text(
-                                                        student.getInitials(),
-                                                        style: AppTextStyles.normal600(
-                                                          fontSize: 16,
-                                                          color: Colors.white,
-                                                        ),
-                                                      );
-                                                    },
-                                                    loadingBuilder: (context,
-                                                        child, loadingProgress) {
-                                                      if (loadingProgress == null)
-                                                        return child;
-                                                      return const SizedBox(
-                                                        width: 20,
-                                                        height: 20,
-                                                        child: CircularProgressIndicator(
-                                                          strokeWidth: 2,
-                                                          color: Colors.white,
-                                                        ),
-                                                      );
-                                                    },
-                                                  ),
-                                                )
-                                              : Text(
-                                                  student.getInitials(),
-                                                  style: AppTextStyles.normal600(
-                                                    fontSize: 16,
-                                                    color: Colors.white,
-                                                  ),
-                                                ),
-                                        ),
+                                    const SizedBox(height: 16),
+                                    Text(
+                                      'No students found matching "$_searchQuery"',
+                                      style: AppTextStyles.normal400(
+                                        fontSize: 14,
+                                        color: Colors.grey[600]!,
                                       ),
-                                      title: Text(
-                                        '${student.firstName} ${student.surname}',
-                                        style: AppTextStyles.normal500(
-                                          fontSize: 16,
-                                          color: AppColors.text2Light,
+                                      textAlign: TextAlign.center,
+                                    ),
+                                  ],
+                                ),
+                              )
+                            : ListView.builder(
+                                padding: const EdgeInsets.all(16),
+                                itemCount: filteredStudents.length,
+                                itemBuilder: (context, index) {
+                                  final student = filteredStudents[index];
+                                  final levelName = levelClassProvider.levelsWithClasses
+                                      .firstWhere(
+                                        (lwc) => lwc.level.id == student.levelId,
+                                        orElse: () => LevelWithClasses(
+                                          level: Levels(
+                                            id: 0,
+                                            levelName: 'Unknown',
+                                            schoolType: '',
+                                            rank: 0,
+                                            admit: 0,
+                                          ),
+                                          classes: [],
                                         ),
-                                      ),
-                                      subtitle: Padding(
-                                        padding: const EdgeInsets.only(top: 4.0),
-                                        child: Text(
-                                          '$levelName - $className | ID: ${student.registrationNo ?? student.id}',
-                                          style: AppTextStyles.normal400(
-                                            fontSize: 14,
-                                            color: Colors.grey[600]!,
+                                      )
+                                      .level
+                                      .levelName;
+                                  final className = levelClassProvider.levelsWithClasses
+                                      .firstWhere(
+                                        (lwc) => lwc.level.id == student.levelId,
+                                        orElse: () => LevelWithClasses(
+                                          level: Levels(
+                                            id: 0,
+                                            levelName: 'Unknown',
+                                            schoolType: '',
+                                            rank: 0,
+                                            admit: 0,
+                                          ),
+                                          classes: [],
+                                        ),
+                                      )
+                                      .classes
+                                      .firstWhere(
+                                        (cls) => cls.id == student.classId,
+                                        orElse: () => Class(
+                                          id: 0,
+                                          className: 'Unknown',
+                                          levelId: 0,
+                                          formTeacherIds: [],
+                                        ),
+                                      )
+                                      .className;
+
+                                  return GestureDetector(
+                                    onTap: () {
+                                      final fullName = '${student.firstName} ${student.surname}';
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) => StudentProfileScreen(
+                                            student: student,
+                                            classId: student.classId.toString(),
+                                            levelId: student.levelId,
+                                            className: className,
+                                            studentName: fullName,
                                           ),
                                         ),
-                                      ),
-                                      trailing: PopupMenuButton<String>(
-                                        icon: Container(
-                                          padding: const EdgeInsets.all(8),
-                                          decoration: BoxDecoration(
-                                            color: AppColors.text2Light.withOpacity(0.1),
-                                            borderRadius: BorderRadius.circular(8),
-                                          ),
-                                          child: const Icon(
-                                            Icons.more_vert,
-                                            color: AppColors.text2Light,
-                                            size: 20,
-                                          ),
+                                      );
+                                    },
+                                    child: Container(
+                                      margin: const EdgeInsets.only(bottom: 12),
+                                      decoration: BoxDecoration(
+                                        color: Colors.white,
+                                        borderRadius: BorderRadius.circular(16),
+                                        border: Border.all(
+                                          color: AppColors.text2Light.withOpacity(0.2),
                                         ),
-                                        onSelected: (value) {
-                                          if (value == 'edit') {
-                                            _showAddEditStudentForm(
-                                                student: student);
-                                          } else if (value == 'delete') {
-                                            _showDeleteDialog(context, student);
-                                          }
-                                        },
-                                        itemBuilder: (context) => [
-                                          const PopupMenuItem(
-                                            value: 'edit',
-                                            child: ListTile(
-                                              leading: Icon(Icons.edit),
-                                              title: Text('Edit'),
-                                              contentPadding: EdgeInsets.zero,
-                                            ),
-                                          ),
-                                          const PopupMenuItem(
-                                            value: 'delete',
-                                            child: ListTile(
-                                              leading: Icon(Icons.delete,
-                                                  color: Colors.red),
-                                              title: Text('Delete',
-                                                  style: TextStyle(
-                                                      color: Colors.red)),
-                                              contentPadding: EdgeInsets.zero,
-                                            ),
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: Colors.grey.withOpacity(0.1),
+                                            spreadRadius: 1,
+                                            blurRadius: 10,
+                                            offset: const Offset(0, 2),
                                           ),
                                         ],
                                       ),
+                                      child: ListTile(
+                                        contentPadding: const EdgeInsets.symmetric(
+                                            horizontal: 20, vertical: 12),
+                                        leading: Container(
+                                          padding: const EdgeInsets.all(2),
+                                          decoration: BoxDecoration(
+                                            color: AppColors.text2Light.withOpacity(0.1),
+                                            borderRadius: BorderRadius.circular(12),
+                                          ),
+                                          child: CircleAvatar(
+                                            radius: 24,
+                                            backgroundColor: AppColors.text2Light,
+                                            child: student.photoPath != null &&
+                                                    student.photoPath!.isNotEmpty
+                                                ? ClipOval(
+                                                    child: Image.network(
+                                                      "https://linkskool.net/${student.photoPath}",
+                                                      fit: BoxFit.cover,
+                                                      width: 48,
+                                                      height: 48,
+                                                      errorBuilder:
+                                                          (context, error, stackTrace) {
+                                                        return Text(
+                                                          student.getInitials(),
+                                                          style: AppTextStyles.normal600(
+                                                            fontSize: 16,
+                                                            color: Colors.white,
+                                                          ),
+                                                        );
+                                                      },
+                                                      loadingBuilder:
+                                                          (context, child, loadingProgress) {
+                                                        if (loadingProgress == null)
+                                                          return child;
+                                                        return const SizedBox(
+                                                          width: 20,
+                                                          height: 20,
+                                                          child: CircularProgressIndicator(
+                                                            strokeWidth: 2,
+                                                            color: Colors.white,
+                                                          ),
+                                                        );
+                                                      },
+                                                    ),
+                                                  )
+                                                : Text(
+                                                    student.getInitials(),
+                                                    style: AppTextStyles.normal600(
+                                                      fontSize: 16,
+                                                      color: Colors.white,
+                                                    ),
+                                                  ),
+                                          ),
+                                        ),
+                                        title: Text(
+                                          '${student.firstName} ${student.surname}',
+                                          style: AppTextStyles.normal500(
+                                            fontSize: 16,
+                                            color: AppColors.text2Light,
+                                          ),
+                                        ),
+                                        subtitle: Padding(
+                                          padding: const EdgeInsets.only(top: 4.0),
+                                          child: Text(
+                                            '$levelName - $className | ID: ${student.registrationNo ?? student.id}',
+                                            style: AppTextStyles.normal400(
+                                              fontSize: 14,
+                                              color: Colors.grey[600]!,
+                                            ),
+                                          ),
+                                        ),
+                                        trailing: Icon(
+                                          Icons.arrow_forward_ios,
+                                          size: 16,
+                                          color: Colors.grey[400],
+                                        ),
+                                      ),
                                     ),
-                                  ),
-                                );
-                              },
-                            ),
+                                  );
+                                },
+                              ),
+                      ),
                     ],
-                  ],
+                  ),
                 ),
               ),
             ),
+        ],
+      ),
       floatingActionButton: !_showAddForm
           ? FloatingActionButton.extended(
               onPressed: _showAddEditStudentForm,
@@ -681,12 +1135,16 @@ class StudentFormWidget extends StatefulWidget {
   final Students? student;
   final VoidCallback onCancel;
   final VoidCallback onSaved;
+  final int? preSelectedLevelId;
+  final int? preSelectedClassId;
 
   const StudentFormWidget({
     super.key,
     this.student,
     required this.onCancel,
     required this.onSaved,
+    this.preSelectedLevelId,
+    this.preSelectedClassId,
   });
 
   @override
@@ -771,8 +1229,9 @@ class _StudentFormWidgetState extends State<StudentFormWidget> {
         ? (student!.gender.toLowerCase() == 'f' ? 'female' : 'male')
         : 'male';
 
-    dialogLevelId = student?.levelId;
-    dialogClassId = student?.classId;
+    // Use pre-selected values for new students, or student's values when editing
+    dialogLevelId = student?.levelId ?? widget.preSelectedLevelId;
+    dialogClassId = student?.classId ?? widget.preSelectedClassId;
 
     if (isEditing &&
         student?.photo != null &&
@@ -1308,6 +1767,69 @@ class _StudentFormWidgetState extends State<StudentFormWidget> {
     );
   }
 }
+
+  Widget _buildStatCard({
+    required IconData icon,
+    required Color iconColor,
+    required String count,
+    required String label,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey[200]!),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.05),
+            spreadRadius: 1,
+            blurRadius: 5,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          // Icon Circle
+          Container(
+            width: 30,
+            height: 30,
+            decoration: BoxDecoration(
+              color: iconColor.withOpacity(0.1),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              icon,
+              color: iconColor,
+              size: 24,
+            ),
+          ),
+          const SizedBox(height: 12),
+
+          // Count
+          Text(
+            count,
+            style: AppTextStyles.normal600(
+              fontSize: 24,
+              color: AppColors.text3Light,
+            ),
+          ),
+          const SizedBox(height: 4),
+
+          // Label
+          Text(
+            label,
+            textAlign: TextAlign.center,
+            style: AppTextStyles.normal400(
+              fontSize: 12,
+              color: Colors.grey[600]!,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
 extension StringExtension on String {
   String capitalize() {

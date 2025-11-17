@@ -6,11 +6,13 @@ import 'package:flutter_svg/svg.dart';
 class TimerWidget extends StatefulWidget {
   final int initialSeconds;
   final VoidCallback onTimeUp;
+  final Function(int remainingSeconds)? onTick;
 
   const TimerWidget({
     super.key,
     required this.initialSeconds,
     required this.onTimeUp,
+    this.onTick,
   });
 
   @override
@@ -29,12 +31,23 @@ class _TimerWidgetState extends State<TimerWidget> {
     _startTimer();
   }
 
+  @override
+  void didUpdateWidget(TimerWidget oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.initialSeconds != widget.initialSeconds) {
+      setState(() {
+        _remainingTimeInSeconds = widget.initialSeconds;
+      });
+    }
+  }
+
   void _startTimer() {
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (_remainingTimeInSeconds > 0 && !_isTimerStopped) {
         setState(() {
           _remainingTimeInSeconds--;
         });
+        widget.onTick?.call(_remainingTimeInSeconds);
       } else {
         timer.cancel();
         if (_remainingTimeInSeconds <= 0) {

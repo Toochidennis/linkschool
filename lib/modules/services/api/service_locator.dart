@@ -25,6 +25,7 @@ import 'package:linkschool/modules/providers/admin/home/assign_course_provider.d
 import 'package:linkschool/modules/providers/admin/home/dashboard_feed_provider.dart';
 import 'package:linkschool/modules/providers/admin/home/level_class_provider.dart';
 import 'package:linkschool/modules/providers/admin/home/manage_student_provider.dart';
+import 'package:linkschool/modules/providers/admin/home/students_metrica.dart';
 import 'package:linkschool/modules/providers/admin/payment/account_provider.dart';
 import 'package:linkschool/modules/providers/admin/payment/fee_provider.dart';
 import 'package:linkschool/modules/providers/admin/skills_behavior_table_provider.dart';
@@ -61,6 +62,7 @@ import 'package:linkschool/modules/services/admin/home/assign_course_service.dar
 import 'package:linkschool/modules/services/admin/home/dashboard_feed_service.dart';
 import 'package:linkschool/modules/services/admin/home/level_class_service.dart';
 import 'package:linkschool/modules/services/admin/home/manage_student_service.dart';
+import 'package:linkschool/modules/services/admin/home/student_metrics.dart';
 import 'package:linkschool/modules/services/admin/payment/account_service.dart';
 import 'package:linkschool/modules/services/admin/payment/expenditure_service.dart';
 import 'package:linkschool/modules/services/admin/payment/fee_service.dart';
@@ -116,6 +118,12 @@ void setupServiceLocator() {
       () => BookProvider(ebookService: locator<BookService>()));
 
 // ______________admin home screen_____________________________
+
+// Student metrics
+  locator.registerLazySingleton<StudentMetricsService>(
+      () => StudentMetricsService(locator<ApiService>()));
+  locator.registerLazySingleton<StudentMetricsProvider>(
+      () => StudentMetricsProvider(metricsService: locator<StudentMetricsService>()));
 
   locator.registerSingleton<AssignCourseService>(
       AssignCourseService(locator<ApiService>()));

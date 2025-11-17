@@ -32,6 +32,17 @@ class CBTProvider extends ChangeNotifier {
   int get successCount => _successCount;
   double get averageScore => _averageScore;
   List<CbtHistoryModel> get recentHistory => _recentHistory;
+  
+  // Get the most recent incomplete test
+  CbtHistoryModel? get incompleteTest {
+    try {
+      return _recentHistory.firstWhere(
+        (test) => !test.isFullyCompleted,
+      );
+    } catch (e) {
+      return null;
+    }
+  }
 
   Future<void> loadBoards() async {
     _isLoading = true;

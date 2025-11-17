@@ -26,6 +26,81 @@ class StudentPhoto {
   }
 }
 
+class PaginationMeta {
+  final int total;
+  final int perPage;
+  final int currentPage;
+  final int lastPage;
+  final bool hasNext;
+  final bool hasPrev;
+
+  PaginationMeta({
+    required this.total,
+    required this.perPage,
+    required this.currentPage,
+    required this.lastPage,
+    required this.hasNext,
+    required this.hasPrev,
+  });
+
+  factory PaginationMeta.fromJson(Map<String, dynamic> json) {
+    return PaginationMeta(
+      total: json['total'] as int,
+      perPage: json['per_page'] as int,
+      currentPage: json['current_page'] as int,
+      lastPage: json['last_page'] as int,
+      hasNext: json['has_next'] as bool,
+      hasPrev: json['has_prev'] as bool,
+    );
+  }
+}
+
+class StudentListData {
+  final List<Students> data;
+  final PaginationMeta meta;
+
+  StudentListData({
+    required this.data,
+    required this.meta,
+  });
+
+  factory StudentListData.fromJson(Map<String, dynamic> json) {
+    return StudentListData(
+      data: (json['data'] as List)
+          .map((e) => Students.fromJson(e as Map<String, dynamic>))
+          .toList(),
+      meta: PaginationMeta.fromJson(json['meta'] as Map<String, dynamic>),
+    );
+  }
+}
+
+class StudentListResponse {
+  final int statusCode;
+  final bool success;
+  final int maleStudents;
+  final int femaleStudents;
+  final StudentListData students;
+
+  StudentListResponse({
+    required this.statusCode,
+    required this.success,
+    required this.maleStudents,
+    required this.femaleStudents,
+    required this.students,
+  });
+
+  factory StudentListResponse.fromJson(Map<String, dynamic> json) {
+    final response = json['response'] as Map<String, dynamic>;
+    return StudentListResponse(
+      statusCode: json['statusCode'] as int,
+      success: json['success'] as bool,
+      maleStudents: response['male_students'] as int,
+      femaleStudents: response['female_students'] as int,
+      students: StudentListData.fromJson(response['students'] as Map<String, dynamic>),
+    );
+  }
+}
+
 class Students {
   final int id;
   final StudentPhoto? photo;

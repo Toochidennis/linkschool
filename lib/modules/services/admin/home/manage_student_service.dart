@@ -30,8 +30,7 @@ class ManageStudentService {
       if (!response.success) {
         print("Failed to create student");
         print("Error: ${response.message ?? 'No error message provided'}");
-        // Remove usage of GlobalKey<NavigatorState>().currentContext!
-        // Instead, just throw the error and let the UI layer handle SnackBars
+       
         throw Exception("Failed to create student: ${response.message}");
       } else {
         print('Student created successfully.');
@@ -141,6 +140,99 @@ class ManageStudentService {
         print("Unexpected response format");
         throw Exception("Unexpected response format");
       }
+    } catch (e) {
+      print("Error fetching students: $e");
+      throw Exception("Failed to fetch students: $e");
+    }
+  }
+
+  Future<StudentListResponse> fetchStudentsByLevel({
+    required int levelId,
+    int page = 1,
+    int limit = 15,
+  }) async {
+    final userBox = Hive.box('userData');
+    final loginData = userBox.get('userData') ?? userBox.get('loginResponse');
+    final dbName = userBox.get('_db') ?? '';
+
+    if (loginData == null || loginData['token'] == null) {
+      throw Exception("No valid login data or token found");
+    }
+    final token = loginData['token'] as String;
+
+    _apiService.setAuthToken(token);
+    
+    final queryParams = {
+      '_db': dbName,
+      'page': page.toString(),
+      'limit': limit.toString(),
+      'level_id': levelId.toString(),
+    };
+    
+    print("Query Params for fetchStudentsByLevel: $queryParams");
+    
+    try {
+          print("Query Params for fetchStudentsByLevel: $queryParams");
+      final response = await _apiService.get<Map<String, dynamic>>(
+        
+        endpoint: 'portal/students',
+        queryParams: queryParams,
+      );
+      print("Fetch Students Response Status Code: ${response.statusCode}");
+      print("Query Params: $queryParams");
+      if (!response.success) {
+        print("Failed to fetch students");
+        print("Error: ${response.message ?? 'No error message provided'}");
+        throw Exception("Failed to fetch students: ${response.message}");
+      }
+
+      print('Students fetched successfully for level $levelId');
+      return StudentListResponse.fromJson(response.rawData!);
+    } catch (e) {
+      print("Error fetching students: $e");
+      throw Exception("Failed to fetch students: $e");
+    }
+  }
+
+  Future<StudentListResponse> fetchStudentsByClass({
+    required int classId,
+    int page = 1,
+    int limit = 15,
+  }) async {
+    final userBox = Hive.box('userData');
+    final loginData = userBox.get('userData') ?? userBox.get('loginResponse');
+    final dbName = userBox.get('_db') ?? '';
+
+    if (loginData == null || loginData['token'] == null) {
+      throw Exception("No valid login data or token found");
+    }
+    final token = loginData['token'] as String;
+
+    _apiService.setAuthToken(token);
+    
+    final queryParams = {
+      '_db': dbName,
+      'page': page.toString(),
+      'limit': limit.toString(),
+      'class_id': classId.toString(),
+    };
+    
+    print("Query Params for fetchStudentsByClass: $queryParams");
+    
+    try {
+      final response = await _apiService.get<Map<String, dynamic>>(
+        endpoint: 'portal/students',
+        queryParams: queryParams,
+      );
+      print("Fetch Students Response Status Code: ${response.statusCode}");
+      if (!response.success) {
+        print("Failed to fetch students");
+        print("Error: ${response.message ?? 'No error message provided'}");
+        throw Exception("Failed to fetch students: ${response.message}");
+      }
+
+      print('Students fetched successfully for class $classId');
+      return StudentListResponse.fromJson(response.rawData!);
     } catch (e) {
       print("Error fetching students: $e");
       throw Exception("Failed to fetch students: $e");

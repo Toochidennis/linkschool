@@ -6,9 +6,19 @@ class ManageStudentProvider with ChangeNotifier {
   final ManageStudentService _studentService;
 
   bool isLoading = false;
+  bool isLoadingMore = false;
   String? message;
   String? error;
   List<Students> students = [];
+  
+  // Pagination fields
+  int currentPage = 1;
+  int totalPages = 1;
+  bool hasMore = false;
+  int? currentLevelId;
+  int? currentClassId;
+  int maleStudents = 0;
+  int femaleStudents = 0;
 
   ManageStudentProvider(this._studentService);
 
@@ -85,5 +95,133 @@ class ManageStudentProvider with ChangeNotifier {
       isLoading = false;
       notifyListeners();
     }
+  }
+
+  Future<void> fetchStudentsByLevel({
+    required int levelId,
+    int page = 1,
+    bool append = false,
+  }) async {
+    if (append) {
+      isLoadingMore = true;
+    } else {
+      isLoading = true;
+      students = [];
+      currentPage = 1;
+    }
+    error = null;
+    currentLevelId = levelId;
+    currentClassId = null;
+    notifyListeners();
+
+    try {
+      final response = await _studentService.fetchStudentsByLevel(
+        levelId: levelId,
+        page: page,
+        limit: 15,
+      );
+      
+      maleStudents = response.maleStudents;
+      femaleStudents = response.femaleStudents;
+      
+      if (append) {
+        students.addAll(response.students.data);
+      } else {
+        students = response.students.data;
+      }
+      
+      currentPage = response.students.meta.currentPage;
+      totalPages = response.students.meta.lastPage;
+      hasMore = response.students.meta.hasNext;
+      
+      print("Fetched ${response.students.data.length} students for level $levelId, page $page");
+      print("Total students: ${response.students.meta.total}, Has more: $hasMore");
+    } catch (e) {
+      error = "Failed to fetch students by level: $e";
+      print("Error in provider: $e");
+    } finally {
+      isLoading = false;
+      isLoadingMore = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> loadMoreStudents() async {
+    if (isLoadingMore || !hasMore) return;
+    
+    if (currentClassId != null) {
+      await fetchStudentsByClass(
+        classId: currentClassId!,
+        page: currentPage + 1,
+        append: true,
+      );
+    } else if (currentLevelId != null) {
+      await fetchStudentsByLevel(
+        levelId: currentLevelId!,
+        page: currentPage + 1,
+        append: true,
+      );
+    }
+  }
+
+  Future<void> fetchStudentsByClass({
+    required int classId,
+    int page = 1,
+    bool append = false,
+  }) async {
+    if (append) {
+      isLoadingMore = true;
+    } else {
+      isLoading = true;
+      students = [];
+      currentPage = 1;
+    }
+    error = null;
+    currentClassId = classId;
+    currentLevelId = null;
+    notifyListeners();
+
+    try {
+      final response = await _studentService.fetchStudentsByClass(
+        classId: classId,
+        page: page,
+        limit: 15,
+      );
+      
+      maleStudents = response.maleStudents;
+      femaleStudents = response.femaleStudents;
+      
+      if (append) {
+        students.addAll(response.students.data);
+      } else {
+        students = response.students.data;
+      }
+      
+      currentPage = response.students.meta.currentPage;
+      totalPages = response.students.meta.lastPage;
+      hasMore = response.students.meta.hasNext;
+      
+      print("Fetched ${response.students.data.length} students for class $classId, page $page");
+      print("Total students: ${response.students.meta.total}, Has more: $hasMore");
+    } catch (e) {
+      error = "Failed to fetch students by class: $e";
+      print("Error in provider: $e");
+    } finally {
+      isLoading = false;
+      isLoadingMore = false;
+      notifyListeners();
+    }
+  }
+
+  void resetPagination() {
+    currentPage = 1;
+    totalPages = 1;
+    hasMore = false;
+    currentLevelId = null;
+    currentClassId = null;
+    maleStudents = 0;
+    femaleStudents = 0;
+    students = [];
+    notifyListeners();
   }
 }

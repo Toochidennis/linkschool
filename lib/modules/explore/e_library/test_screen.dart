@@ -16,6 +16,13 @@ class TestScreen extends StatefulWidget {
   final String? subject;
   final int? year;
   final String calledFrom;
+  final int? totalDurationInSeconds;
+  final Function(Map<int, int> userAnswers, int remainingTime)? onExamComplete;
+  final bool isLastInMultiSubject;
+  final int? currentExamIndex;
+  final int? totalExams;
+  final Map<String, Map<int, int>>? allAnswers;
+  final Map<String, List<QuestionModel>>? allQuestions;
   
   const TestScreen({
     super.key, 
@@ -24,6 +31,13 @@ class TestScreen extends StatefulWidget {
     this.subject,
     this.year,
     this.calledFrom = 'details',
+    this.totalDurationInSeconds,
+    this.onExamComplete,
+    this.isLastInMultiSubject = false,
+    this.currentExamIndex,
+    this.totalExams,
+    this.allAnswers,
+    this.allQuestions,
   });
 
   @override
@@ -33,15 +47,20 @@ class TestScreen extends StatefulWidget {
 class _TestScreenState extends State<TestScreen> {
   late double opacity;
   final TextEditingController _textController = TextEditingController();
+  int? remainingSeconds;
 
   @override
   void initState() {
     super.initState();
+    remainingSeconds = widget.totalDurationInSeconds;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final provider = Provider.of<ExamProvider>(context, listen: false);
       provider.fetchExamData(widget.examTypeId);
       print("Fetching exam data for examTypeId: ${widget.examTypeId}");
       print("SubjectId: ${widget.subjectId}, Subject: ${widget.subject}, Year: ${widget.year}");
+      if (widget.totalDurationInSeconds != null) {
+        print("⏱️ Total Duration: ${widget.totalDurationInSeconds! ~/ 60} minutes");
+      }
     });
   }
 
@@ -124,8 +143,11 @@ class _TestScreenState extends State<TestScreen> {
           padding: const EdgeInsets.only(right: 16.0),
           child: Center(
             child: TimerWidget(
-              initialSeconds: 3600,
+              initialSeconds: remainingSeconds ?? widget.totalDurationInSeconds ?? 3600,
               onTimeUp: () => _submitQuiz(examProvider, isFullyCompleted: false),
+              onTick: (remaining) {
+                remainingSeconds = remaining;
+              },
             ),
           ),
         ),
@@ -525,6 +547,37 @@ class _TestScreenState extends State<TestScreen> {
 
   Widget _buildNavigationButtons(ExamProvider provider) {
     bool isLastQuestion = provider.currentQuestionIndex == provider.questions.length - 1;
+    bool isLastSubject = widget.isLastInMultiSubject;
+    bool hasQuestions = provider.questions.isNotEmpty;
+    
+    // If no questions, show skip button
+    if (!hasQuestions) {
+      return Row(
+        children: [
+          Expanded(
+            child: ElevatedButton(
+              onPressed: () {
+                if (widget.onExamComplete != null) {
+                  widget.onExamComplete!({}, remainingSeconds ?? 0);
+                } else {
+                  Navigator.of(context).pop();
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.orange,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(4),
+                ),
+              ),
+              child: const Text(
+                'Skip Test',
+                style: TextStyle(color: Colors.white),
+              ),
+            ),
+          ),
+        ],
+      );
+    }
     
     return Row(
       children: [
@@ -547,7 +600,7 @@ class _TestScreenState extends State<TestScreen> {
           child: ElevatedButton(
             onPressed: () => _submitQuiz(
               provider, 
-              isFullyCompleted: isLastQuestion,
+              isFullyCompleted: isLastQuestion && isLastSubject,
             ),
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.eLearningContColor3,
@@ -565,11 +618,18 @@ class _TestScreenState extends State<TestScreen> {
         Expanded(
           child: OutlinedButton(
             onPressed: !isLastQuestion 
-                ? () => provider.nextQuestion()
-                : null,
+                ? () {
+                    provider.nextQuestion();
+                  }
+                : (widget.onExamComplete != null && !isLastSubject)
+                    ? () {
+                        // Auto-proceed to next exam without dialog
+                        _proceedToNextExam(provider);
+                      }
+                    : null,
             style: OutlinedButton.styleFrom(
               side: BorderSide(
-                color: !isLastQuestion 
+                color: (!isLastQuestion || (widget.onExamComplete != null && !isLastSubject))
                     ? Colors.white 
                     : const Color.fromARGB(255, 169, 168, 168)
               ),
@@ -578,9 +638,9 @@ class _TestScreenState extends State<TestScreen> {
               ),
             ),
             child: Text(
-              'Next',
+              (isLastQuestion && widget.onExamComplete != null && !isLastSubject) ? 'Next Subject' : 'Next',
               style: TextStyle(
-                color: !isLastQuestion 
+                color: (!isLastQuestion || (widget.onExamComplete != null && !isLastSubject))
                     ? Colors.white 
                     : const Color.fromARGB(255, 169, 168, 168)
               ),
@@ -591,9 +651,47 @@ class _TestScreenState extends State<TestScreen> {
     );
   }
 
+  void _proceedToNextExam(ExamProvider provider) {
+    // Silently proceed to next exam without showing dialog
+    if (widget.onExamComplete != null) {
+      widget.onExamComplete!(
+        provider.userAnswers,
+        remainingSeconds ?? 0,
+      );
+    }
+  }
+
   void _submitQuiz(ExamProvider provider, {required bool isFullyCompleted}) {
+    // In multi-subject mode, only show dialog for the last subject
+    if (widget.onExamComplete != null && !widget.isLastInMultiSubject) {
+      _proceedToNextExam(provider);
+      return;
+    }
+    
+    // Calculate stats for current subject
     final answeredCount = provider.userAnswers.length;
     final unansweredCount = provider.questions.length - answeredCount;
+    
+    // Calculate total stats if this is multi-subject test
+    int totalAnswered = answeredCount;
+    int totalQuestions = provider.questions.length;
+    
+    if (widget.isLastInMultiSubject && widget.allAnswers != null && widget.allQuestions != null) {
+      totalAnswered = 0;
+      totalQuestions = 0;
+      
+      // Count from all previous subjects
+      for (var entry in widget.allAnswers!.entries) {
+        final examAnswers = entry.value;
+        final examQuestions = widget.allQuestions![entry.key] ?? [];
+        totalAnswered += examAnswers.length;
+        totalQuestions += examQuestions.length;
+      }
+      
+      // Add current subject
+      totalAnswered += answeredCount;
+      totalQuestions += provider.questions.length;
+    }
     
     showDialog(
       context: context,
@@ -642,7 +740,7 @@ class _TestScreenState extends State<TestScreen> {
                     
                     // Title
                     Text(
-                      'Submit Exam?',
+                      widget.isLastInMultiSubject ? 'Submit All Tests?' : 'Submit Exam?',
                       style: TextStyle(
                         fontSize: isLandscape ? 18 : 20,
                         fontWeight: FontWeight.w700,
@@ -653,7 +751,9 @@ class _TestScreenState extends State<TestScreen> {
                     
                     // Description
                     Text(
-                      'Please review your answers before submitting',
+                      widget.isLastInMultiSubject 
+                          ? 'You are about to submit all ${widget.totalExams ?? 1} subject${(widget.totalExams ?? 1) > 1 ? 's' : ''}'
+                          : 'Please review your answers before submitting',
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         fontSize: isLandscape ? 12 : 14,
@@ -684,7 +784,7 @@ class _TestScreenState extends State<TestScreen> {
                             ),
                             SizedBox(height: isLandscape ? 6 : 8),
                             Text(
-                              '$answeredCount',
+                              '$totalAnswered',
                               style: TextStyle(
                                 fontSize: isLandscape ? 20 : 24,
                                 fontWeight: FontWeight.w700,
@@ -721,7 +821,7 @@ class _TestScreenState extends State<TestScreen> {
                             ),
                             SizedBox(height: isLandscape ? 6 : 8),
                             Text(
-                              '$unansweredCount',
+                              '${totalQuestions - totalAnswered}',
                               style: TextStyle(
                                 fontSize: isLandscape ? 20 : 24,
                                 fontWeight: FontWeight.w700,
@@ -742,7 +842,7 @@ class _TestScreenState extends State<TestScreen> {
                     ),
                     
                     // Warning message if unanswered
-                    if (unansweredCount > 0) ...[
+                    if (totalQuestions - totalAnswered > 0) ...[
                       SizedBox(height: isLandscape ? 16 : 20),
                       Container(
                         padding: EdgeInsets.all(isLandscape ? 8 : 12),
@@ -765,7 +865,7 @@ class _TestScreenState extends State<TestScreen> {
                            
                             Expanded(
                               child: Text(
-                                'You have $unansweredCount unanswered question${unansweredCount > 1 ? 's' : ''}. Are you sure you want to submit?',
+                                'You have ${totalQuestions - totalAnswered} unanswered question${(totalQuestions - totalAnswered) > 1 ? 's' : ''}. Are you sure you want to submit?',
                                 style: TextStyle(
                                   fontSize: isLandscape ? 11 : 12,
                                   color: Colors.orange.shade900,
@@ -816,21 +916,32 @@ class _TestScreenState extends State<TestScreen> {
                                 Navigator.of(context).pop();
                                 
                                 print("questions: ${provider.questions}, userAnswers: ${provider.userAnswers}, isFullyCompleted: $isFullyCompleted");
-                                Navigator.pushReplacement(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => CbtResultScreen(
-                                      questions: provider.questions,
-                                      userAnswers: provider.userAnswers,
-                                      subject: widget.subject ?? provider.examInfo?.courseName ?? 'CBT Test',
-                                      year: widget.year ?? DateTime.now().year,
-                                      examType: provider.examInfo?.title ?? 'Test',
-                                      examId: widget.examTypeId,
-                                      calledFrom: widget.calledFrom,
-                                      isFullyCompleted: isFullyCompleted,
+                                
+                                // Check if this is part of a multi-subject test
+                                if (widget.onExamComplete != null) {
+                                  // Multi-subject mode: call callback and let parent handle navigation
+                                  widget.onExamComplete!(
+                                    provider.userAnswers,
+                                    remainingSeconds ?? 0,
+                                  );
+                                } else {
+                                  // Single subject mode: navigate to result screen
+                                  Navigator.pushReplacement(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => CbtResultScreen(
+                                        questions: provider.questions,
+                                        userAnswers: provider.userAnswers,
+                                        subject: widget.subject ?? provider.examInfo?.courseName ?? 'CBT Test',
+                                        year: widget.year ?? DateTime.now().year,
+                                        examType: provider.examInfo?.title ?? 'Test',
+                                        examId: widget.examTypeId,
+                                        calledFrom: widget.calledFrom,
+                                        isFullyCompleted: isFullyCompleted,
+                                      ),
                                     ),
-                                  ),
-                                );
+                                  );
+                                }
                               },
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: Colors.transparent,
