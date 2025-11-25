@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/services/firebase_auth_service.dart';
 import 'package:linkschool/modules/explore/e_library/widgets/paystack_cbt_webview.dart';
 import 'package:linkschool/modules/providers/cbt_user_provider.dart';
+import 'package:paystack_for_flutter/paystack_for_flutter.dart';
 import 'package:provider/provider.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
@@ -436,108 +438,101 @@ class _SubscriptionEnforcementDialogState
   // =========================================================================
 // ⚡ OPTIMIZED SUBSCRIPTION HANDLER - NO NESTED DIALOGS
 // =========================================================================
-  Future<void> _handleSubscribe() async {
-    if (!mounted || _isProcessing) return;
+ Future<void> _handleSubscribe() async {
+  if (!mounted || _isProcessing) return;
 
-    final userProvider = Provider.of<CbtUserProvider>(context, listen: false);
-    // Prevent payment flow if user is already paid
-    if (userProvider.hasPaid) {
-      if (mounted) {
-        widget.onSubscribed();
-        Navigator.of(context).pop();
-      }
-      return;
-    }
+  setState(() => _isProcessing = true);
 
-    setState(() => _isProcessing = true);
+  final userProvider = Provider.of<CbtUserProvider>(context, listen: false);
 
-    try {
-      // Step 1: Ensure user is signed in
-      if (!_isUserSignedIn) {
-        print('🔐 User not signed in, initiating Google sign-in...');
-        final userCredential = await _authService.signInWithGoogle();
-        if (userCredential == null) {
-          _showError('Sign-in was cancelled');
-          return;
-        }
-        final user = userCredential.user;
-        if (user == null) {
-          throw Exception('No user data received from Firebase');
-        }
-        print('✅ Google Sign-in successful: {user.email}');
-        print('📡 Sending user data to backend API...');
-        await userProvider.handleFirebaseSignUp(
-          email: user.email ?? '',
-          name: user.displayName ?? '',
-          profilePicture: user.photoURL ?? '',
-        );
-        print('✅ User data sent to backend successfully');
-        if (mounted) {
-          setState(() => _isUserSignedIn = true);
-        }
+  try {
+    // Step 1: Ensure user is signed in
+    if (!_isUserSignedIn) {
+      final userCredential = await _authService.signInWithGoogle();
+      if (userCredential == null || userCredential.user == null) {
+        _showError('Sign-in was cancelled or failed');
+        return;
       }
-
-      // Step 2: Initialize payment
-      final userEmail = _authService.getCurrentUserEmail();
-      if (userEmail == null || userEmail.isEmpty) {
-        throw Exception('Unable to retrieve user email');
-      }
-      final paymentData = await _initializePayment(userEmail);
-      // Update user immediately with reference
-      try {
-        await userProvider.updateUserAfterPayment(reference: paymentData['reference']!);
-        print('✅ User updated with payment reference immediately after initialization');
-      } catch (e) {
-        print('⚠️ Error updating user immediately: $e');
-        // Continue anyway
-      }
-      if (!mounted) return;
-      // Step 3: Navigate to WebView
-      setState(() => _isProcessing = false);
-      await Navigator.of(context).push(
-        MaterialPageRoute(
-          builder: (context) => PaystackCbtWebView(
-            checkoutUrl: paymentData['authorizationUrl']!,
-            reference: paymentData['reference']!,
-            onPaymentSuccess: () async {
-              print('🎊 Payment success callback triggered in dialog');
-              // CRITICAL: Update user with payment reference
-              try {
-                final userProvider = Provider.of<CbtUserProvider>(context, listen: false);
-                await userProvider.updateUserAfterPayment(reference: paymentData['reference']!);
-                print('✅ User updated with payment reference in dialog');
-              } catch (e) {
-                print('⚠️ Error updating user in dialog: $e');
-                // Continue anyway - payment was successful
-              }
-              widget.onSubscribed();
-              if (mounted) {
-                Navigator.of(context).pop(); // Close enforcement dialog
-              }
-            },
-            onPaymentFailed: () {
-              print('❌ Payment failed callback triggered in dialog');
-              if (widget.isHardBlock) {
-                print('❌ Payment failed on hard block - keeping dialog open');
-                // Don't close dialog - keep user blocked
-              } else {
-                if (mounted) {
-                  Navigator.of(context).pop();
-                }
-              }
-            },
-          ),
-        ),
+      final user = userCredential.user!;
+      await userProvider.handleFirebaseSignUp(
+        email: user.email ?? '',
+        name: user.displayName ?? '',
+        profilePicture: user.photoURL ?? '',
       );
-    } catch (e) {
-      print('❌ Subscription error: $e');
-      _showError(e.toString());
-    } finally {
-      if (mounted) {
-        setState(() => _isProcessing = false);
-      }
+      setState(() => _isUserSignedIn = true);
     }
+
+    // Step 2: Get email & generate reference
+    final email = await _authService.getCurrentUserEmail();
+    if (email == null || email.isEmpty) {
+      throw Exception('Unable to retrieve user email');
+    }
+    final reference = 'CBT_${DateTime.now().millisecondsSinceEpoch}';
+    final amountInKobo = widget.amount * 100;
+
+    print('💳 Initiating PaystackFlutter payment...');
+    print(' Amount: ₦${widget.amount}');
+    print(' Email: $email');
+    print(' Reference: $reference');
+final paystackSecretKey = dotenv.env['PAYSTACK_SECRET_KEY'] ?? '';
+    // Step 3: Call PaystackFlutter payment
+    PaystackFlutter().pay(
+      context: context,
+      secretKey: paystackSecretKey,
+     // secretKey: 'sk_test_96d9c3448796ac0b090dfc18a818c67a292faeea', // Your secret key
+      amount: amountInKobo.toDouble(),
+      email: email,
+    
+      callbackUrl: 'https://callback.com',
+      showProgressBar: true,
+      paymentOptions: [
+        PaymentOption.card,
+        PaymentOption.bankTransfer,
+        PaymentOption.mobileMoney,
+      ],
+      currency: Currency.NGN,
+      metaData: {
+        'subscription_type': 'CBT Premium Access',
+        'price': widget.amount,
+      },
+      onSuccess: (callback) async {
+        print('✅ Payment successful: ${callback.reference}');
+
+        // Update user after payment
+        await userProvider.updateUserAfterPayment(reference: callback.reference);
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('✅ Payment Successful! Subscription activated.'),
+              backgroundColor: Colors.green,
+              duration: Duration(seconds: 2),
+            ),
+          );
+
+          widget.onSubscribed();
+         // Navigator.of(context).pop();
+        }
+      },
+      onCancelled: (callback) {
+        print('❌ Payment cancelled or failed: ${callback.reference}');
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Payment cancelled'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      },
+    );
+  } catch (e) {
+    print('❌ Subscription payment error: $e');
+    _showError(e.toString());
+  } finally {
+    if (mounted) setState(() => _isProcessing = false);
   }
+}
 
   // =========================================================================
   // 💳 PAYMENT INITIALIZATION (NON-BLOCKING)

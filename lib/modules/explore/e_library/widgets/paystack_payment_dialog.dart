@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
-import 'package:linkschool/modules/services/cbt_subscription_service.dart';
 import 'package:linkschool/modules/services/firebase_auth_service.dart';
 import 'package:linkschool/modules/providers/cbt_user_provider.dart';
 import 'package:provider/provider.dart';
+import 'package:paystack_for_flutter/paystack_for_flutter.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'package:linkschool/modules/explore/e_library/widgets/paystack_cbt_webview.dart';
 
 /// Dialog to show subscription plans and handle Paystack payment
 class PaystackPaymentDialog extends StatefulWidget {
@@ -27,15 +27,13 @@ class PaystackPaymentDialog extends StatefulWidget {
 }
 
 class _PaystackPaymentDialogState extends State<PaystackPaymentDialog> {
-  final _subscriptionService = CbtSubscriptionService();
   final _authService = FirebaseAuthService();
+  
   bool _isProcessing = false;
   
-  // Paystack secret key
-  static const String _paystackSecretKey = 'sk_test_96d9c3448796ac0b090dfc18a818c67a292faeea';
-  
-  // Single subscription price
-  static const int _subscriptionPrice = 400; // ₦400 to continue using service
+  static const String _paystackPublicKey = 'pk_test_YOUR_PUBLIC_KEY_HERE'; // Replace with your public key
+
+  static const int _subscriptionPrice = 400; // ₦400
 
   @override
   void initState() {
@@ -44,7 +42,6 @@ class _PaystackPaymentDialogState extends State<PaystackPaymentDialog> {
   }
 
   void _setupPaymentReferenceListener() {
-    // Listen to payment reference changes from the provider
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final userProvider = Provider.of<CbtUserProvider>(context, listen: false);
       userProvider.paymentReferenceNotifier.addListener(() {
@@ -52,7 +49,6 @@ class _PaystackPaymentDialogState extends State<PaystackPaymentDialog> {
         if (reference != null && reference.isNotEmpty && mounted) {
           print('💳 Payment reference detected: $reference');
           print('✅ Auto-dismissing payment dialog...');
-          // Dismiss the dialog automatically when reference is saved
           Navigator.of(context).pop();
         }
       });
@@ -60,15 +56,9 @@ class _PaystackPaymentDialogState extends State<PaystackPaymentDialog> {
   }
 
   @override
-  void dispose() {
-    // Clean up listener if needed
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
     return WillPopScope(
-      onWillPop: () async => widget.canDismiss,
+      onWillPop: () async => widget.canDismiss && !_isProcessing,
       child: Dialog(
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(20),
@@ -80,7 +70,7 @@ class _PaystackPaymentDialogState extends State<PaystackPaymentDialog> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              if (widget.canDismiss)
+              if (widget.canDismiss && !_isProcessing)
                 Align(
                   alignment: Alignment.topRight,
                   child: IconButton(
@@ -96,7 +86,7 @@ class _PaystackPaymentDialogState extends State<PaystackPaymentDialog> {
               const SizedBox(height: 8),
               _buildHeader(),
               const SizedBox(height: 24),
-             // _buildFeaturesList(),
+              _buildFeaturesList(),
               const SizedBox(height: 24),
               _buildPayButton(),
             ],
@@ -132,7 +122,7 @@ class _PaystackPaymentDialogState extends State<PaystackPaymentDialog> {
         ),
         const SizedBox(height: 8),
         Text(
-          'Pay ₦400 to unlock unlimited CBT access',
+          'Pay ₦$_subscriptionPrice to unlock unlimited CBT access',
           style: AppTextStyles.normal400(
             fontSize: 14,
             color: AppColors.text7Light,
@@ -279,7 +269,7 @@ class _PaystackPaymentDialogState extends State<PaystackPaymentDialog> {
         return;
       }
 
-      // Get user email for Paystack
+      // Get user email
       final userEmail = await _authService.getCurrentUserEmail();
       if (userEmail == null || userEmail.isEmpty) {
         if (!mounted) return;
@@ -295,76 +285,17 @@ class _PaystackPaymentDialogState extends State<PaystackPaymentDialog> {
         return;
       }
 
-      final amountInKobo = _subscriptionPrice * 100; // Convert to kobo
-      final reference = _generateReference();
+      print('\n💳 Initiating Paystack Payment:');
+      print(' Amount: ₦$_subscriptionPrice');
+      print(' Email: $userEmail');
 
-      print('\n💳 Initializing Paystack Payment:');
-      print('   Amount: ₦$_subscriptionPrice');
-      print('   Email: $userEmail');
-      print('   Reference: $reference');
+      // Charge with Paystack
+      await _chargeWithPaystack(userEmail);
 
-      // Initialize Paystack transaction
-      final response = await http.post(
-        Uri.parse('https://api.paystack.co/transaction/initialize'),
-        headers: {
-          'Authorization': 'Bearer $_paystackSecretKey',
-          'Content-Type': 'application/json',
-        },
-        body: json.encode({
-          'email': userEmail,
-          'amount': amountInKobo,
-          'reference': reference,
-          'metadata': {
-            'subscription_type': 'CBT Premium Access',
-            'amount_naira': _subscriptionPrice,
-          },
-        }),
-      );
-
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        
-        if (data['status'] == true) {
-          final String authorizationUrl = data['data']['authorization_url'];
-          final String paystackReference = data['data']['reference'];
-
-          print('✅ Payment initialization successful');
-          print('   Authorization URL: $authorizationUrl');
-          print('   Reference: $paystackReference');
-
-          if (!mounted) return;
-
-          // Navigate to Paystack webview
-          Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (context) => PaystackCbtWebView(
-                checkoutUrl: authorizationUrl,
-                reference: paystackReference,
-                onPaymentSuccess: () {
-                  // Payment success callback
-                  // Dialog will be dismissed automatically by the notifier
-                  print('✅ Payment successful - waiting for reference notification');
-                  widget.onPaymentSuccess();
-                },
-                onPaymentFailed: () {
-                  // Handle payment failure
-                  print('❌ Payment failed in webview');
-                },
-              ),
-            ),
-          );
-          // Note: Dialog dismissal is now handled by the paymentReferenceNotifier
-        } else {
-          throw Exception(data['message'] ?? 'Payment initialization failed');
-        }
-      } else {
-        final errorData = json.decode(response.body);
-        throw Exception(errorData['message'] ?? 'Payment initialization failed');
-      }
     } catch (e) {
       print('❌ Payment error: $e');
       if (!mounted) return;
-      
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Payment failed: ${e.toString()}'),
@@ -380,8 +311,104 @@ class _PaystackPaymentDialogState extends State<PaystackPaymentDialog> {
     }
   }
 
+ Future<void> _chargeWithPaystack(String email) async {
+  try {
+    final amountInKobo = _subscriptionPrice * 100;
+    final reference = _generateReference();
+   final  paystackSecretKey = dotenv.env['PAYSTACK_SECRET_KEY'] ?? '';
+
+    print('💳 Charging with Paystack using PaystackFlutter...');
+    print(' Reference: $reference');
+
+    PaystackFlutter().pay(
+      context: context,
+      secretKey: paystackSecretKey, // ❗ Not safe, but required by the package
+      amount: amountInKobo.toDouble(),
+      email: email,
+   
+      callbackUrl: "https://callback.com",
+      showProgressBar: true,
+      paymentOptions: [
+        PaymentOption.card,
+        PaymentOption.bankTransfer,
+        PaymentOption.mobileMoney,
+      ],
+      currency: Currency.NGN,
+      metaData: {
+        "subscription": "CBT Access",
+        "price": _subscriptionPrice,
+      },
+      onSuccess: (paystackCallback) async {
+        print('✅ Payment successful: ${paystackCallback.reference}');
+        await _verifyAndUpdatePayment(reference);
+      },
+      onCancelled: (paystackCallback) {
+        print('❌ Payment cancelled or failed: ${paystackCallback.reference}');
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Payment cancelled'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      },
+    );
+  } catch (e) {
+    print('❌ Paystack error: $e');
+    throw Exception("Payment failed: $e");
+  }
+}
+
+
+  Future<void> _verifyAndUpdatePayment(String reference) async {
+    try {
+      final paystackSecretKey = dotenv.env['PAYSTACK_SECRET_KEY'] ?? '';
+      print('🔍 Verifying payment with Paystack...');
+      
+      final response = await http.get(
+        Uri.parse('https://api.paystack.co/transaction/verify/$reference'),
+        headers: {
+          'Authorization': 'Bearer $paystackSecretKey',
+          'Content-Type': 'application/json',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        
+        if (data['status'] == true && data['data']['status'] == 'success') {
+          print('✅ Payment verified successfully');
+          
+          // Update user with payment reference via PUT request
+          final userProvider = Provider.of<CbtUserProvider>(context, listen: false);
+          await userProvider.updateUserAfterPayment(reference: reference);
+          
+          print('✅ User updated with payment reference');
+          
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('✅ Payment Successful! Subscription activated.'),
+                backgroundColor: Colors.green,
+                duration: Duration(seconds: 2),
+              ),
+            );
+            
+            widget.onPaymentSuccess();
+            // Dialog will be dismissed automatically by the notifier
+          }
+        } else {
+          throw Exception('Payment verification failed');
+        }
+      } else {
+        throw Exception('Verification request failed');
+      }
+    } catch (e) {
+      print('❌ Verification error: $e');
+      throw Exception('Payment verification failed: $e');
+    }
+  }
+
   String _generateReference() {
-    // Generate unique payment reference
     return 'CBT_${DateTime.now().millisecondsSinceEpoch}';
   }
 }

@@ -162,7 +162,8 @@ class _CBTDashboardState extends State<CBTDashboard>
           return Skeletonizer(
             enabled: provider.isLoading,
             child: Container(
-              decoration: Constants.customBoxDecoration(context),
+              color: AppColors.backgroundLight,
+             // decoration: Constants.customBoxDecoration(context),
               child: CustomScrollView(
                 physics: const BouncingScrollPhysics(),
                 slivers: [
@@ -192,180 +193,232 @@ class _CBTDashboardState extends State<CBTDashboard>
     );
   }
 
-  Widget _buildCBTCategories(CBTProvider provider) {
-    if (provider.isLoading) {
-      return Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16.0),
-        child: Column(
-          children: List.generate(3, (index) {
-            return Container(
-              margin: const EdgeInsets.only(bottom: 16.0),
-              height: 140,
-              decoration: BoxDecoration(
-                color: Colors.grey[300],
-                borderRadius: BorderRadius.circular(12),
-              ),
-            );
-          }),
-        ),
-      );
-    }
-
-    if (provider.boards.isEmpty) {
-      return _buildEmptyBoardsState(provider);
-    }
-
-    final List<Color> backgroundColors = [
-      AppColors.eLearningBtnColor1,
-      const Color.fromARGB(255, 6, 216, 76),
-      const Color.fromARGB(255, 19, 140, 221),
-      const Color.fromARGB(255, 120, 26, 188),
-      const Color(0xFFE74C3C),
-      const Color.fromARGB(255, 242, 152, 6),
-    ];
-
+ Widget _buildCBTCategories(CBTProvider provider) {
+  if (provider.isLoading) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.only(bottom: 16.0),
-            child: Text(
-              'Exam Boards',
-              style: AppTextStyles.normal600(
-                fontSize: 22.0,
-                color: AppColors.text4Light,
-              ),
+        children: List.generate(3, (index) {
+          return Container(
+            margin: const EdgeInsets.only(bottom: 16.0),
+            height: 145,
+            decoration: BoxDecoration(
+              color: Colors.grey[300],
+              borderRadius: BorderRadius.circular(12),
             ),
-          ),
-          ...provider.boards.asMap().entries.map((entry) {
-            final index = entry.key;
-            final board = entry.value;
-            final backgroundColor = 
-                backgroundColors[index % backgroundColors.length];
-            
-            return _buildBoardCard(
-              board: board,
-              backgroundColor: backgroundColor,
-              provider: provider,
-            );
-          }).toList(),
-        ],
+          );
+        }),
       ),
     );
   }
 
-  Widget _buildBoardCard({
-    required dynamic board,
-    required Color backgroundColor,
-    required CBTProvider provider,
-  }) {
-    return GestureDetector(
-      onTap: () => _handleBoardTap(board, provider),
-      child: Padding(
-        padding: const EdgeInsets.only(bottom: 16.0),
-        child: Container(
-          height: 145,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(12),
-            color: Colors.transparent,
+  if (provider.boards.isEmpty) {
+    return _buildEmptyBoardsState(provider);
+  }
+
+  return Padding(
+    padding: const EdgeInsets.symmetric(horizontal: 16.0),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(bottom: 16.0),
+          child: Text(
+            'Exam Boards',
+            style: AppTextStyles.normal600(
+              fontSize: 22.0,
+              color: AppColors.text4Light,
+            ),
           ),
-          clipBehavior: Clip.antiAlias,
-          child: Stack(
-            children: [
-              Container(
-                width: double.infinity,
-                height: double.infinity,
+        ),
+        ...provider.boards.map((board) {
+          return _buildBoardCard(
+            board: board,
+            backgroundColor: Colors.transparent, // Not used anymore
+            provider: provider,
+          );
+        }).toList(),
+      ],
+    ),
+  );
+}
+Widget _buildBoardCard({
+  required dynamic board,
+  required Color backgroundColor,
+  required CBTProvider provider,
+}) {
+  // Get unique color for this board based on its code
+  final boardColor = _getBoardColor(board.boardCode);
+  final shortName = board.shortName ?? board.boardCode;
+  
+  return GestureDetector(
+    onTap: () => _handleBoardTap(board, provider),
+    child: Padding(
+      padding: const EdgeInsets.only(bottom: 12.0),
+      child: Container(
+        height: 150,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(12),
+          color: Colors.transparent,
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: Stack(
+          children: [
+            Container(
+              width: double.infinity,
+              height: double.infinity,
                 decoration: BoxDecoration(
-                  color: backgroundColor.withOpacity(0.9),
-                ),
+                color: boardColor.withOpacity(0.15),
+                boxShadow: [
+                  BoxShadow(
+                  color: boardColor.withOpacity(0.18),
+                  blurRadius: 18,
+                  spreadRadius: 2,
+                  offset: const Offset(0, 8),
+                  ),
+                ],
               ),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 10),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                        color: backgroundColor,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Icon(
-                        Icons.school,
-                        size: 24,
-                        color: AppColors.backgroundLight,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      board.title,
-                      style: AppTextStyles.normal700P(
-                        fontSize: 16.0,
-                        color: AppColors.backgroundLight,
-                        height: 1.04,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        Container(
-                          width: 100,
-                          height: 32,
-                          decoration: BoxDecoration(
-                            border: Border.all(
-                              color: AppColors.backgroundLight,
-                              width: 1,
-                            ),
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                          child: TextButton(
-                            onPressed: () => _handleBoardTap(board, provider),
-                            style: TextButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 8,
-                                vertical: 8,
-                              ),
-                              minimumSize: Size.zero,
-                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                            ),
-                            child: Text(
-                              'Start',
-                              style: AppTextStyles.normal700P(
-                                fontSize: 12,
-                                color: AppColors.backgroundLight,
-                                height: 1.2,
-                              ),
-                            ),
-                          ),
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            
+                children: [
+                  // Icon and Badge Row
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: boardColor,
+                          borderRadius: BorderRadius.circular(8),
                         ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-              
-              // 🔄 Loading overlay when checking subscription
-              if (_isCheckingSubscription)
-                Positioned.fill(
-                  child: Container(
-                    color: Colors.black.withOpacity(0.3),
-                    child: const Center(
-                      child: CircularProgressIndicator(
-                        color: Colors.white,
+                        child: Icon(
+                          Icons.school,
+                          size: 24,
+                          color: Colors.white,
+                        ),
                       ),
+                      const SizedBox(width: 12),
+                      // Short name badge
+                      Text(
+                        shortName,
+                        style: AppTextStyles.normal700P(
+                          fontSize: 16.0,
+                          color: boardColor,
+                          height: 1.0,
+                        ),
+                      ),
+                    ],
+                  ),
+                  
+                  // Title and Start Button
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        board.title,
+                        style: AppTextStyles.normal700P(
+                          fontSize: 16.0,
+                          color: AppColors.text4Light,
+                          height: 1.3,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 10),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          Container(
+                            height: 30,
+                            decoration: BoxDecoration(
+                              color: boardColor,
+                              borderRadius: BorderRadius.circular(8),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: boardColor.withOpacity(0.3),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
+                            ),
+                            child: TextButton(
+                              onPressed: () => _handleBoardTap(board, provider),
+                              style: TextButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 20,
+                                  vertical: 8,
+                                ),
+                                minimumSize: Size.zero,
+                                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(
+                                    'Start',
+                                    style: AppTextStyles.normal700P(
+                                      fontSize: 14,
+                                      color: Colors.white,
+                                      height: 1.2,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 6),
+                                  const Icon(
+                                    Icons.arrow_forward_rounded,
+                                    size: 16,
+                                    color: Colors.white,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            
+            // Loading overlay when checking subscription
+            if (_isCheckingSubscription)
+              Positioned.fill(
+                child: Container(
+                  color: Colors.black.withOpacity(0.3),
+                  child: const Center(
+                    child: CircularProgressIndicator(
+                      color: Colors.white,
                     ),
                   ),
                 ),
-            ],
-          ),
+              ),
+          ],
         ),
       ),
-    );
-  }
+    ),
+  );
+}
+
+
+Color _getBoardColor(String boardCode) {
+  final Map<String, Color> boardColors = {
+    'JAMB': const Color(0xFF6366F1),      // Indigo
+    'WAEC': const Color(0xFF10B981),      // Emerald
+    'BECE': const Color(0xFFEC4899),      // Pink
+    'Million': const Color(0xFFF59E0B),   // Amber
+    'PSTE': const Color(0xFF8B5CF6),      // Violet
+    'ESUT': const Color(0xFF06B6D4),      // Cyan
+    'PSLC': const Color(0xFFEF4444),      // Red
+    'SCE': const Color(0xFF14B8A6),       // Teal
+    'NCEE': const Color(0xFFF97316),      // Orange
+  };
+  
+  return boardColors[boardCode] ?? const Color(0xFF6366F1);
+}
 
   /// ⚡ OPTIMIZED: Non-blocking board tap handler
   Future<void> _handleBoardTap(dynamic board, CBTProvider provider) async {

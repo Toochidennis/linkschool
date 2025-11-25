@@ -284,6 +284,9 @@ class _AppInitializerState extends State<AppInitializer> {
 
       // Get AuthProvider from Provider context
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      // Get CbtUserProvider from Provider context and initialize persistent login
+      final cbtUserProvider = Provider.of<CbtUserProvider>(context, listen: false);
+      await cbtUserProvider.initialize();
 
       // Check login status
       await authProvider.checkLoginStatus();

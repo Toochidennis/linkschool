@@ -795,7 +795,7 @@ class _StaffHomeScreenState extends State<StaffHomeScreen>
                             ),
                           ),
                         ),
-                        const SizedBox(height: 24),
+                        const SizedBox(height: 18),
                         Text(
                           'You can...',
                           style: AppTextStyles.normal600(
@@ -803,36 +803,32 @@ class _StaffHomeScreenState extends State<StaffHomeScreen>
                         ),
                         const SizedBox(height: 12),
                         Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                           children: [
-                            const Expanded(
-                              child: CustomButtonItem(
-                                backgroundColor: AppColors.studentCtnColor3,
-                                borderColor: AppColors.portalButton1BorderLight,
-                                textColor: AppColors.staffTxtColor1,
-                                label: 'Form Classes',
-                                number: 5,
+                            CustomButtonItem(
+                              backgroundColor: AppColors.studentCtnColor3,
+                              borderColor: AppColors.portalButton1BorderLight,
+                              textColor: AppColors.staffTxtColor1,
+                              label: 'Form Classes',
+                              number: 5,
+                              iconPath:
+                                  'assets/icons/student/knowledge_icon.svg',
+                              iconHeight: 40.0,
+                              iconWidth: 28.0,
+                              destination: FormClassesScreen(),
+                            ),
+                            const SizedBox(width: 8.0),
+                            CustomButtonItem(
+                                backgroundColor: AppColors.staffCtnColor1,
+                                borderColor: AppColors.secondaryLight,
+                                textColor: AppColors.staffTxtColor2,
+                                label: 'Courses',
+                                number: 3,
                                 iconPath:
-                                    'assets/icons/student/knowledge_icon.svg',
+                                    'assets/icons/student/study_icon.svg',
                                 iconHeight: 40.0,
                                 iconWidth: 36.0,
-                                destination: FormClassesScreen(),
-                              ),
-                            ),
-                            const SizedBox(width: 14.0),
-                            Expanded(
-                              child: CustomButtonItem(
-                                  backgroundColor: AppColors.staffCtnColor1,
-                                  borderColor: AppColors.secondaryLight,
-                                  textColor: AppColors.staffTxtColor2,
-                                  label: 'Courses',
-                                  number: 3,
-                                  iconPath:
-                                      'assets/icons/student/study_icon.svg',
-                                  iconHeight: 40.0,
-                                  iconWidth: 36.0,
-                                  destination: StaffResultScreen()),
-                            ),
+                                destination: StaffResultScreen()),
                           ],
                         ),
                         const SizedBox(height: 24),
@@ -840,7 +836,7 @@ class _StaffHomeScreenState extends State<StaffHomeScreen>
                           index: 7,
                           child: Padding(
                             padding:
-                                const EdgeInsets.symmetric(horizontal: 16.0),
+                                const EdgeInsets.symmetric(horizontal: 10.0),
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [

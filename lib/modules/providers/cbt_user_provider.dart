@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:linkschool/modules/model/cbt_user_model.dart';
 import 'package:linkschool/modules/services/cbt_subscription_service.dart';
 import 'package:linkschool/modules/services/cbt_user_service.dart';
+import 'package:linkschool/modules/services/firebase_auth_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:linkschool/modules/services/cbt_history_service.dart';
 import 'dart:convert';
@@ -204,6 +205,27 @@ Future<void> syncSubscriptionService() async {
         notifyListeners();
         return existingUser;
       }
+
+
+      void loadUserOnStartup() {
+  final user = FirebaseAuthService().getCurrentUser();
+  if (user != null) {
+    // Set user as logged in, load profile info, etc.
+    _currentUser = CbtUserModel(
+      id: null, // or assign an appropriate id if available
+      name: user.displayName ?? '',
+      email: user.email ?? '',
+      profilePicture: user.photoURL,
+      attempt: 0,
+      subscribed: 0,
+      reference: null,
+    );
+    notifyListeners();
+  } else {
+    _currentUser = null;
+    notifyListeners();
+  }
+}
 
       // =======================================================================
       // User DOESN'T EXIST → Create new user (POST) → GET again → Save

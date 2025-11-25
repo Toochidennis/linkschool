@@ -586,7 +586,7 @@ class _StaffViewQuestionScreenState extends State<StaffViewQuestionScreen> {
                         'file_name': optionFile['file_name'] ?? '',
                         'old_file_name': '',
                         'type': 'image',
-                        'file': optionFile['base64'] ?? '',
+                        'file': optionFile['base64'] ?? optionFile['file_name'],
                       }
                     ]
                   : [],
