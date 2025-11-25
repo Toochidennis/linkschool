@@ -6,6 +6,7 @@ import 'package:linkschool/modules/model/explore/home/exam_model.dart';
 import 'package:linkschool/modules/providers/explore/exam_provider.dart';
 import 'package:linkschool/modules/explore/e_library/cbt_result_screen.dart';
 import 'package:linkschool/modules/explore/e_library/backward_slash_clipper.dart';
+import 'package:linkschool/modules/services/cbt_subscription_service.dart';
 import 'package:provider/provider.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
@@ -17,6 +18,7 @@ class TestScreen extends StatefulWidget {
   final int? year;
   final String calledFrom;
   final int? totalDurationInSeconds;
+  final int? questionLimit;
   final Function(Map<int, int> userAnswers, int remainingTime)? onExamComplete;
   final bool isLastInMultiSubject;
   final int? currentExamIndex;
@@ -32,6 +34,7 @@ class TestScreen extends StatefulWidget {
     this.year,
     this.calledFrom = 'details',
     this.totalDurationInSeconds,
+    this.questionLimit,
     this.onExamComplete,
     this.isLastInMultiSubject = false,
     this.currentExamIndex,
@@ -47,19 +50,36 @@ class TestScreen extends StatefulWidget {
 class _TestScreenState extends State<TestScreen> {
   late double opacity;
   final TextEditingController _textController = TextEditingController();
+  final _subscriptionService = CbtSubscriptionService();
   int? remainingSeconds;
 
   @override
   void initState() {
     super.initState();
     remainingSeconds = widget.totalDurationInSeconds;
+    
+    // Increment test count when test starts (only for single subject or first exam in multi-subject)
+    if (widget.calledFrom != 'multi-subject' || widget.currentExamIndex == 0) {
+      _subscriptionService.incrementTestCount();
+    }
+    
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final provider = Provider.of<ExamProvider>(context, listen: false);
-      provider.fetchExamData(widget.examTypeId);
-      print("Fetching exam data for examTypeId: ${widget.examTypeId}");
-      print("SubjectId: ${widget.subjectId}, Subject: ${widget.subject}, Year: ${widget.year}");
-      if (widget.totalDurationInSeconds != null) {
-        print("⏱️ Total Duration: ${widget.totalDurationInSeconds! ~/ 60} minutes");
+      // Show countdown dialog before fetching data (only for single subject or first exam in multi-subject)
+      if (widget.calledFrom != 'multi-subject' || widget.currentExamIndex == 0) {
+        _showLoadingCountdown();
+      } else {
+        // For subsequent exams in multi-subject, fetch directly
+        final provider = Provider.of<ExamProvider>(context, listen: false);
+        provider.fetchExamData(
+          widget.examTypeId,
+          limit: widget.questionLimit,
+        );
+        print("Fetching exam data for examTypeId: ${widget.examTypeId}");
+        print("SubjectId: ${widget.subjectId}, Subject: ${widget.subject}, Year: ${widget.year}");
+        print("Question Limit: ${widget.questionLimit ?? 'All'}");
+        if (widget.totalDurationInSeconds != null) {
+          print("⏱️ Total Duration: ${widget.totalDurationInSeconds! ~/ 60} minutes");
+        }
       }
     });
   }
@@ -68,6 +88,31 @@ class _TestScreenState extends State<TestScreen> {
   void dispose() {
     _textController.dispose();
     super.dispose();
+  }
+
+  void _showLoadingCountdown() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => _LoadingCountdownDialog(
+        onComplete: () {
+          Navigator.of(context).pop();
+        },
+      ),
+    );
+    
+    // Start fetching data immediately when countdown begins
+    final provider = Provider.of<ExamProvider>(context, listen: false);
+    provider.fetchExamData(
+      widget.examTypeId,
+      limit: widget.questionLimit,
+    );
+    print("Fetching exam data for examTypeId: ${widget.examTypeId}");
+    print("SubjectId: ${widget.subjectId}, Subject: ${widget.subject}, Year: ${widget.year}");
+    print("Question Limit: ${widget.questionLimit ?? 'All'}");
+    if (widget.totalDurationInSeconds != null) {
+      print("⏱️ Total Duration: ${widget.totalDurationInSeconds! ~/ 60} minutes");
+    }
   }
 
   @override
@@ -652,13 +697,35 @@ class _TestScreenState extends State<TestScreen> {
   }
 
   void _proceedToNextExam(ExamProvider provider) {
-    // Silently proceed to next exam without showing dialog
+
     if (widget.onExamComplete != null) {
-      widget.onExamComplete!(
-        provider.userAnswers,
-        remainingSeconds ?? 0,
-      );
-    }
+    widget.onExamComplete!(
+      provider.userAnswers,
+      remainingSeconds ?? 0,
+    );
+  }
+
+    _showNextSubjectCountdown(provider);
+  }
+
+  void _showNextSubjectCountdown(ExamProvider provider) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => _CountdownDialog(
+        currentIndex: widget.currentExamIndex ?? 0,
+        totalExams: widget.totalExams ?? 1,
+        onComplete: () {
+          Navigator.of(context).pop();
+          // if (widget.onExamComplete != null) {
+          //   widget.onExamComplete!(
+          //     provider.userAnswers,
+          //     remainingSeconds ?? 0,
+        //   //   );
+        //   }
+         },
+      ),
+    );
   }
 
   void _submitQuiz(ExamProvider provider, {required bool isFullyCompleted}) {
@@ -972,6 +1039,372 @@ class _TestScreenState extends State<TestScreen> {
           ),
         );
       },
+    );
+  }
+}
+
+class _CountdownDialog extends StatefulWidget {
+  final int currentIndex;
+  final int totalExams;
+  final VoidCallback onComplete;
+
+  const _CountdownDialog({
+    required this.currentIndex,
+    required this.totalExams,
+    required this.onComplete,
+  });
+
+  @override
+  State<_CountdownDialog> createState() => _CountdownDialogState();
+}
+
+class _CountdownDialogState extends State<_CountdownDialog>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _scaleAnimation;
+  late Animation<double> _fadeAnimation;
+  int _countdown = 3;
+
+  @override
+  void initState() {
+    super.initState();
+    
+    _controller = AnimationController(
+      duration: const Duration(milliseconds: 600),
+      vsync: this,
+    );
+
+    _scaleAnimation = Tween<double>(begin: 0.5, end: 1.0).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.elasticOut),
+    );
+
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeIn),
+    );
+
+    _controller.forward();
+    _startCountdown();
+  }
+
+  void _startCountdown() {
+    Future.delayed(const Duration(seconds: 1), () {
+      if (mounted) {
+        if (_countdown > 1) {
+          setState(() {
+            _countdown--;
+          });
+          _controller.reset();
+          _controller.forward();
+          _startCountdown();
+        } else {
+          widget.onComplete();
+        }
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final nextSubjectNumber = widget.currentIndex + 2;
+    
+    return Dialog(
+      backgroundColor: Colors.transparent,
+      child: Container(
+        padding: const EdgeInsets.all(32),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              AppColors.eLearningBtnColor1,
+              AppColors.eLearningBtnColor1.withOpacity(0.8),
+            ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.3),
+              blurRadius: 20,
+              offset: const Offset(0, 10),
+            ),
+          ],
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Icon
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.2),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.arrow_forward_rounded,
+                size: 48,
+                color: Colors.white,
+              ),
+            ),
+            const SizedBox(height: 24),
+            
+            // Title
+            const Text(
+              'Great Progress!',
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.w700,
+                color: Colors.white,
+                fontFamily: 'Urbanist',
+              ),
+            ),
+            const SizedBox(height: 12),
+            
+            // Message
+            Text(
+              'Moving to Subject $nextSubjectNumber of ${widget.totalExams}',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 16,
+                color: Colors.white.withOpacity(0.9),
+                fontFamily: 'Urbanist',
+              ),
+            ),
+            const SizedBox(height: 32),
+            
+            // Countdown container (static)
+            Container(
+              width: 100,
+              height: 100,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.2),
+                    blurRadius: 15,
+                    offset: const Offset(0, 5),
+                  ),
+                ],
+              ),
+              child: Center(
+                child: ScaleTransition(
+                  scale: _scaleAnimation,
+                  child: FadeTransition(
+                    opacity: _fadeAnimation,
+                    child: Text(
+                      '$_countdown',
+                      style: const TextStyle(
+                        fontSize: 56,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.eLearningBtnColor1,
+                        fontFamily: 'Urbanist',
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 24),
+            
+            // Progress indicator
+            Text(
+              'Get ready...',
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.white.withOpacity(0.8),
+                fontFamily: 'Urbanist',
+                fontStyle: FontStyle.italic,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _LoadingCountdownDialog extends StatefulWidget {
+  final VoidCallback onComplete;
+
+  const _LoadingCountdownDialog({
+    required this.onComplete,
+  });
+
+  @override
+  State<_LoadingCountdownDialog> createState() => _LoadingCountdownDialogState();
+}
+
+class _LoadingCountdownDialogState extends State<_LoadingCountdownDialog>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _scaleAnimation;
+  late Animation<double> _fadeAnimation;
+  int _countdown = 3;
+
+  @override
+  void initState() {
+    super.initState();
+    
+    _controller = AnimationController(
+      duration: const Duration(milliseconds: 600),
+      vsync: this,
+    );
+
+    _scaleAnimation = Tween<double>(begin: 0.5, end: 1.0).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.elasticOut),
+    );
+
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeIn),
+    );
+
+    _controller.forward();
+    _startCountdown();
+  }
+
+  void _startCountdown() {
+    Future.delayed(const Duration(seconds: 1), () {
+      if (mounted) {
+        if (_countdown > 1) {
+          setState(() {
+            _countdown--;
+          });
+          _controller.reset();
+          _controller.forward();
+          _startCountdown();
+        } else {
+          widget.onComplete();
+        }
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      backgroundColor: Colors.transparent,
+      child: Container(
+        padding: const EdgeInsets.all(32),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              AppColors.eLearningBtnColor1,
+              AppColors.eLearningBtnColor1.withOpacity(0.8),
+            ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.3),
+              blurRadius: 20,
+              offset: const Offset(0, 10),
+            ),
+          ],
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Icon
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.2),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.play_arrow_rounded,
+                size: 48,
+                color: Colors.white,
+              ),
+            ),
+            const SizedBox(height: 24),
+            
+            // Title
+            const Text(
+              'Starting Test',
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.w700,
+                color: Colors.white,
+                fontFamily: 'Urbanist',
+              ),
+            ),
+            const SizedBox(height: 12),
+            
+            // Message
+            const Text(
+              'Loading questions...',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 16,
+                color: Colors.white,
+                fontFamily: 'Urbanist',
+              ),
+            ),
+            const SizedBox(height: 32),
+            
+            // Countdown container
+            Container(
+              width: 100,
+              height: 100,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.2),
+                    blurRadius: 15,
+                    offset: const Offset(0, 5),
+                  ),
+                ],
+              ),
+              child: Center(
+                child: ScaleTransition(
+                  scale: _scaleAnimation,
+                  child: FadeTransition(
+                    opacity: _fadeAnimation,
+                    child: Text(
+                      '$_countdown',
+                      style: const TextStyle(
+                        fontSize: 56,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.eLearningBtnColor1,
+                        fontFamily: 'Urbanist',
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 24),
+            
+            // Progress indicator
+            Text(
+              'Get ready...',
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.white.withOpacity(0.8),
+                fontFamily: 'Urbanist',
+                fontStyle: FontStyle.italic,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

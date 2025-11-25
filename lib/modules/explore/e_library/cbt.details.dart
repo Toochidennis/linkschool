@@ -226,7 +226,7 @@ class _CbtDetailScreenState extends State<CbtDetailScreen> {
               child: SingleChildScrollView(
                 child: Column(
                   children: [
-                    // Subject Selection Row
+                    // Subject || Selection Row
                     Material(
                       color: Colors.transparent,
                       child: InkWell(

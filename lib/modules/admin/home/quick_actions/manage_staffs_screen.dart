@@ -340,8 +340,10 @@ class _ManageStaffScreenState extends State<ManageStaffScreen>
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Header Row with Avatar, Name, ID, and Menu
             Row(
               children: [
+                // Avatar
                 Container(
                   width: 50,
                   height: 50,
@@ -350,8 +352,7 @@ class _ManageStaffScreenState extends State<ManageStaffScreen>
                     borderRadius: BorderRadius.circular(25),
                   ),
                   child: Icon(
-                    (staff['gender']?.toString().toLowerCase() ?? 'male') ==
-                            'male'
+                    (staff['gender']?.toString().toLowerCase() ?? 'male') == 'male'
                         ? Icons.man
                         : Icons.woman,
                     color: AppColors.text2Light,
@@ -359,6 +360,7 @@ class _ManageStaffScreenState extends State<ManageStaffScreen>
                   ),
                 ),
                 const SizedBox(width: 12),
+                // Name and ID
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -369,8 +371,10 @@ class _ManageStaffScreenState extends State<ManageStaffScreen>
                           fontSize: 16,
                           color: AppColors.text2Light,
                         ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                      const SizedBox(height: 2),
+                      const SizedBox(height: 4),
                       Text(
                         staff['id'],
                         style: AppTextStyles.normal400(
@@ -378,30 +382,36 @@ class _ManageStaffScreenState extends State<ManageStaffScreen>
                           color: AppColors.text7Light,
                         ),
                       ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 8, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: staff['status'] == 'Active'
-                              ? AppColors.attCheckColor2.withOpacity(0.1)
-                              : Colors.red.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Text(
-                          staff['status'],
-                          style: TextStyle(
-                            color: staff['status'] == 'Active'
-                                ? AppColors.attCheckColor2
-                                : Colors.red,
-                            fontSize: 10,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
                     ],
                   ),
                 ),
+                const SizedBox(width: 8),
+                // Status Badge
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: staff['status'] == 'Active'
+                        ? AppColors.attCheckColor2.withOpacity(0.1)
+                        : Colors.red.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    staff['status'],
+                    style: TextStyle(
+                      color: staff['status'] == 'Active'
+                          ? AppColors.attCheckColor2
+                          : Colors.red,
+                      fontSize: 10,
+                      fontWeight: FontWeight.w600,
+                      fontFamily: 'Urbanist',
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 4),
+                // Menu Button
                 PopupMenuButton<String>(
+                  padding: EdgeInsets.zero,
+                  icon: Icon(Icons.more_vert, color: AppColors.text7Light, size: 20),
                   onSelected: (value) {
                     if (value == 'edit') {
                       _editStaff(index);
@@ -422,8 +432,7 @@ class _ManageStaffScreenState extends State<ManageStaffScreen>
                       value: 'edit',
                       child: Row(
                         children: [
-                          Icon(Icons.edit,
-                              size: 16, color: AppColors.text2Light),
+                          Icon(Icons.edit, size: 16, color: AppColors.text2Light),
                           SizedBox(width: 8),
                           Text('Edit'),
                         ],
@@ -433,8 +442,7 @@ class _ManageStaffScreenState extends State<ManageStaffScreen>
                       value: 'assign_courses',
                       child: Row(
                         children: [
-                          Icon(Icons.book,
-                              size: 16, color: AppColors.text2Light),
+                          Icon(Icons.book, size: 16, color: AppColors.text2Light),
                           SizedBox(width: 8),
                           Text('Assign Courses'),
                         ],
@@ -455,26 +463,50 @@ class _ManageStaffScreenState extends State<ManageStaffScreen>
               ],
             ),
             const SizedBox(height: 12),
+            // Role
             Row(
               children: [
-                Icon(Icons.email, size: 14, color: AppColors.text7Light),
-                const SizedBox(width: 4),
-                Expanded(
-                  child: Text(
-                    staff['email'],
-                    style: AppTextStyles.normal400(
-                      fontSize: 12,
-                      color: AppColors.text7Light,
-                    ),
+                Icon(Icons.work_outline, size: 16, color: AppColors.text2Light),
+                const SizedBox(width: 8),
+                Text(
+                  staff['role'],
+                  style: AppTextStyles.normal600(
+                    fontSize: 13,
+                    color: AppColors.text2Light,
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: 10),
+            // Contact Info in a clean grid
             Row(
               children: [
-                Icon(Icons.phone, size: 14, color: AppColors.text7Light),
-                const SizedBox(width: 4),
+                Expanded(
+                  child: Row(
+                    children: [
+                      Icon(Icons.email_outlined, size: 14, color: AppColors.text7Light),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          staff['email'],
+                          style: AppTextStyles.normal400(
+                            fontSize: 12,
+                            color: AppColors.text7Light,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Icon(Icons.phone_outlined, size: 14, color: AppColors.text7Light),
+                const SizedBox(width: 6),
                 Text(
                   staff['phone'],
                   style: AppTextStyles.normal400(
@@ -484,40 +516,47 @@ class _ManageStaffScreenState extends State<ManageStaffScreen>
                 ),
               ],
             ),
-            const SizedBox(height: 4),
-            Row(
-              children: [
-                Icon(Icons.work, size: 14, color: AppColors.text7Light),
-                const SizedBox(width: 4),
-                Text(
-                  staff['role'],
-                  style: AppTextStyles.normal500(
-                    fontSize: 12,
-                    color: AppColors.text2Light,
+            // Courses and Classes
+            if (staff['courses'].isNotEmpty || staff['class'].isNotEmpty) ...[
+              const SizedBox(height: 10),
+              const Divider(height: 1, color: AppColors.text6Light),
+              const SizedBox(height: 10),
+            ],
+            if (staff['courses'].isNotEmpty)
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(Icons.school_outlined, size: 14, color: AppColors.attCheckColor2),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      staff['courses'].join(', '),
+                      style: AppTextStyles.normal400(
+                        fontSize: 11,
+                        color: AppColors.attCheckColor2,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ),
-                ),
-              ],
-            ),
-            if (staff['courses'].isNotEmpty) ...[
-              const SizedBox(height: 8),
-              Text(
-                'Courses: ${staff['courses'].join(', ')}',
-                style: AppTextStyles.normal400(
-                  fontSize: 11,
-                  color: AppColors.attCheckColor2,
-                ),
+                ],
               ),
-            ],
-            if (staff['class'].isNotEmpty) ...[
-              const SizedBox(height: 4),
-              Text(
-                'Class: ${staff['class']} (${staff['level']})',
-                style: AppTextStyles.normal400(
-                  fontSize: 11,
-                  color: AppColors.secondaryLight,
-                ),
+            if (staff['courses'].isNotEmpty && staff['class'].isNotEmpty)
+              const SizedBox(height: 6),
+            if (staff['class'].isNotEmpty)
+              Row(
+                children: [
+                  Icon(Icons.class_outlined, size: 14, color: AppColors.secondaryLight),
+                  const SizedBox(width: 6),
+                  Text(
+                    '${staff['class']} (${staff['level']})',
+                    style: AppTextStyles.normal400(
+                      fontSize: 11,
+                      color: AppColors.secondaryLight,
+                    ),
+                  ),
+                ],
               ),
-            ],
           ],
         ),
       ),

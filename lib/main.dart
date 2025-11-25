@@ -1,3 +1,4 @@
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:hive_flutter/hive_flutter.dart';
@@ -39,6 +40,7 @@ import 'package:linkschool/modules/providers/admin/skills_behavior_table_provide
 import 'package:linkschool/modules/providers/admin/student_provider.dart';
 import 'package:linkschool/modules/providers/admin/term_provider.dart';
 import 'package:linkschool/modules/providers/admin/view_course_result_provider.dart';
+import 'package:linkschool/modules/providers/cbt_user_provider.dart';
 import 'package:linkschool/modules/providers/explore/cbt_provider.dart';
 import 'package:linkschool/modules/providers/explore/ebook_provider.dart';
 import 'package:linkschool/modules/providers/explore/exam_provider.dart';
@@ -79,7 +81,9 @@ final RouteObserver<ModalRoute<void>> routeObserver =
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
+    await Firebase.initializeApp();
+  print('Firebase initialized successfully');
+  
   try {
     await Hive.initFlutter();
     await Hive.openBox('userData');
@@ -118,6 +122,7 @@ Future<void> main() async {
         ChangeNotifierProvider<NewsProvider>(create: (_) => NewsProvider()),
 
         ChangeNotifierProvider(create: (_) => SubjectProvider()),
+        ChangeNotifierProvider(create: (_) => CbtUserProvider()),
         ChangeNotifierProvider(create: (_) => CBTProvider(CBTService())),
         ChangeNotifierProvider(create: (_) => GameProvider()),
         ChangeNotifierProvider(create: (_) => ExamProvider()),

@@ -7,6 +7,7 @@ class ExamService {
 
   Future<Map<String, dynamic>> fetchExamData({
     required String examType,
+    int? limit,
   }) async {
     try {
       final apiKey = dotenv.env['API_KEY'];
@@ -14,9 +15,13 @@ class ExamService {
         throw Exception("❌ API key not found in .env file");
       }
 
-      final url =
-          "https://linkskool.net/api/v3/public/cbt/exams/$examType/questions";
+      // Build URL with optional limit parameter
+      var url = "https://linkskool.net/api/v3/public/cbt/exams/$examType/questions";
+      if (limit != null) {
+        url += "?limit=$limit";
+      }
       print('🌐 Making request to: $url');
+      print('🔢 Question limit: ${limit ?? "All"}');
 
       final response = await http.get(
         Uri.parse(url),

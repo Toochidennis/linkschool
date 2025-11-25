@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:linkschool/modules/providers/cbt_user_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/providers/app_settings_provider.dart';
+import 'package:linkschool/modules/services/firebase_auth_service.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen(
@@ -24,21 +27,134 @@ class AppSettingsScreen extends StatefulWidget {
 }
 
 class _AppSettingsScreenState extends State<AppSettingsScreen> {
+  final FirebaseAuthService _authService = FirebaseAuthService();
+  User? _currentUser;
+  bool _isSignedIn = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserData();
+  }
+
+  Future<void> _loadUserData() async {
+    final user = _authService.getCurrentUser();
+    setState(() {
+      _currentUser = user;
+      _isSignedIn = user != null;
+    });
+  }
+
+  Future<void> _handleSignIn() async {
+    if (!mounted) return;
+    try {
+      final userCredential = await _authService.signInWithGoogle();
+      final user = userCredential?.user;
+      if (user != null) {
+        // Register user in backend via CbtUserProvider
+        final userProvider = Provider.of<CbtUserProvider>(context, listen: false);
+        await userProvider.handleFirebaseSignUp(
+          email: user.email ?? '',
+          name: user.displayName ?? '',
+          profilePicture: user.photoURL ?? '',
+        );
+        setState(() {
+          _currentUser = user;
+          _isSignedIn = true;
+        });
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Signed in successfully')),
+          );
+        }
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Sign-in was cancelled')),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error signing in: $e'), backgroundColor: Colors.red),
+        );
+      }
+    }
+  }
+
+  Future<void> _handleLogout() async {
+    try {
+      await _authService.signOut();
+      setState(() {
+        _currentUser = null;
+        _isSignedIn = false;
+      });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Logged out successfully'),
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error logging out: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final settings = Provider.of<AppSettingsProvider>(context);
     
+    final cbtUserProvider = Provider.of<CbtUserProvider>(context);
+    final subscriptionStatus = cbtUserProvider.subscriptionStatus;
     return MediaQuery(
       data: MediaQuery.of(context).copyWith(textScaleFactor: settings.textScaleFactor),
       child: Scaffold(
         backgroundColor: settings.backgroundColor,
-     
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(20.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
+        body: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.all(20.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Banner if not signed in
+                if (!_isSignedIn)
+                  Card(
+                    color: Colors.orange[100],
+                    elevation: 0,
+                    child: Padding(
+                      padding: const EdgeInsets.all(12.0),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.info_outline, color: Colors.orange),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Text(
+                              'Sign in to access your profile and subscription features.',
+                              style: AppTextStyles.normal600(fontSize: 15, color: Colors.orange[900]),
+                            ),
+                          ),
+                          TextButton(
+                            onPressed: _handleSignIn,
+                            child: const Text('Sign In'),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                // Profile Header Section
+                if (_isSignedIn) _buildProfileHeader(settings, subscriptionStatus),
+                if (_isSignedIn) const SizedBox(height: 24),
+              
               // App Preferences Section
               _buildSectionHeader('App Preferences', settings),
               const SizedBox(height: 12),
@@ -180,11 +296,122 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
                 ),
               ], settings),
 
+              const SizedBox(height: 24),
+
+              // Logout Section (only if signed in)
+              if (_isSignedIn) ...[
+                _buildSectionHeader('Account', settings),
+                const SizedBox(height: 12),
+                _buildSettingsCard([
+                  _buildSettingsTile(
+                    icon: Icons.logout,
+                    title: 'Logout',
+                    subtitle: 'Sign out of your account',
+                    settings: settings,
+                    trailing: Icon(Icons.chevron_right, color: Colors.grey),
+                    onTap: _handleLogout,
+                  ),
+                ], settings),
+                const SizedBox(height: 24),
+              ],
+
               const SizedBox(height: 100),
             ],
           ),
         ),
       ),
+      ),
+    );
+  }
+
+  Widget _buildProfileHeader(AppSettingsProvider settings, Map<String, dynamic> subscriptionStatus) {
+    final user = _currentUser;
+    if (user == null) return const SizedBox.shrink();
+
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: settings.isDarkMode ? Colors.grey[800] : Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: settings.isDarkMode 
+                ? Colors.black.withOpacity(0.3) 
+                : Colors.grey.withOpacity(0.1),
+            spreadRadius: 1,
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          // Profile Picture
+          Container(
+            height: 50,
+            child: CircleAvatar(
+              radius: 40,
+              backgroundColor: AppColors.text2Light.withOpacity(0.2),
+              backgroundImage: user.photoURL != null 
+                  ? NetworkImage(user.photoURL!) 
+                  : null,
+              child: user.photoURL == null 
+                  ? Icon(
+                      Icons.person,
+                      size: 40,
+                      color: AppColors.text2Light,
+                    )
+                  : null,
+            ),
+          ),
+          const SizedBox(width: 16),
+          // User Info
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  user.displayName ?? 'User',
+                  style: AppTextStyles.normal600(
+                    fontSize: 18,
+                    color: settings.isDarkMode ? Colors.white : AppColors.text2Light,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  user.email ?? '',
+                  style: AppTextStyles.normal400(
+                    fontSize: 14,
+                    color: settings.isDarkMode 
+                        ? Colors.grey[300]! 
+                        : Colors.grey[600]!,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    Icon(
+                      subscriptionStatus['hasPaid'] == true ? Icons.verified : Icons.warning,
+                      color: subscriptionStatus['hasPaid'] == true ? Colors.green : Colors.red,
+                      size: 20,
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      subscriptionStatus['hasPaid'] == true
+                          ? 'Subscribed'
+                          : 'Not Subscribed',
+                      style: AppTextStyles.normal500(
+                        fontSize: 14,
+                        color: subscriptionStatus['hasPaid'] == true ? Colors.green : Colors.red,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -269,88 +496,6 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
       endIndent: 20,
     );
   }
-
-  void _showLanguageDialog() {
-    final settings = Provider.of<AppSettingsProvider>(context, listen: false);
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text('Select Language'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              _buildLanguageOption('English', settings),
-              _buildLanguageOption('Spanish', settings),
-              _buildLanguageOption('French', settings),
-              _buildLanguageOption('Portuguese', settings),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildLanguageOption(String language, AppSettingsProvider settings) {
-    return ListTile(
-      title: Text(language),
-      trailing: settings.selectedLanguage == language ? Icon(Icons.check, color: AppColors.text2Light) : null,
-      onTap: () {
-        settings.setLanguage(language);
-        Navigator.pop(context);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Language changed to $language'),
-            duration: Duration(seconds: 2),
-          ),
-        );
-      },
-    );
-  }
-
-  void _showTextSizeDialog() {
-    final settings = Provider.of<AppSettingsProvider>(context, listen: false);
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text('Select Text Size'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              _buildTextSizeOption('Small', settings),
-              _buildTextSizeOption('Medium', settings),
-              _buildTextSizeOption('Large', settings),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildTextSizeOption(String size, AppSettingsProvider settings) {
-    double textScale = size == 'Small' ? 0.85 : size == 'Large' ? 1.15 : 1.0;
-    
-    return ListTile(
-      title: Text(
-        size,
-        style: TextStyle(fontSize: 16 * textScale),
-      ),
-      trailing: settings.selectedTextSize == size ? Icon(Icons.check, color: AppColors.text2Light) : null,
-      onTap: () {
-        settings.setTextSize(size);
-        Navigator.pop(context);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Text size changed to $size'),
-            duration: Duration(seconds: 2),
-          ),
-        );
-      },
-    );
-  }
-
-
 
   void _showHelpDialog() {
     showDialog(

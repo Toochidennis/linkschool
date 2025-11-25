@@ -5,7 +5,10 @@ import 'package:linkschool/modules/model/explore/home/subject_model.dart';
 import 'package:linkschool/modules/model/explore/home/exam_model.dart';
 import 'package:linkschool/modules/explore/e_library/test_screen.dart';
 import 'package:linkschool/modules/explore/e_library/cbt_result_screen.dart';
+import 'package:linkschool/modules/providers/cbt_user_provider.dart';
 import 'package:linkschool/modules/providers/explore/exam_provider.dart';
+import 'package:linkschool/modules/services/cbt_subscription_service.dart';
+import 'package:linkschool/modules/explore/e_library/widgets/subscription_enforcement_dialog.dart';
 import 'package:provider/provider.dart';
 import 'package:linkschool/modules/providers/explore/cbt_provider.dart';
 
@@ -17,8 +20,15 @@ class SubjectSelectionScreen extends StatefulWidget {
 }
 
 class _SubjectSelectionScreenState extends State<SubjectSelectionScreen> {
+  final _subscriptionService = CbtSubscriptionService();
   List<SelectedSubject> selectedSubjects = [];
   int totalDurationInSeconds = 3600; // Default 1 hour per subject
+  int timeInMinutes = 60; // Default 60 minutes
+  int? questionLimit = 40; // Default 40 questions
+
+  // Dropdown options
+  final List<int> timeOptions = [90, 60, 40, 30, 20,10]; // minutes (biggest to lowest)
+  final List<int> questionOptions = [60, 50, 45, 40]; // questions (biggest to lowest)
 
   @override
   void initState() {
@@ -27,6 +37,11 @@ class _SubjectSelectionScreenState extends State<SubjectSelectionScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _showSubjectSelectionModal();
     });
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
   }
 
   @override
@@ -75,9 +90,16 @@ class _SubjectSelectionScreenState extends State<SubjectSelectionScreen> {
         decoration: BoxDecoration(
           color: Colors.grey[50],
         ),
-        child: selectedSubjects.isEmpty
-            ? _buildEmptyState()
-            : _buildSubjectList(),
+        child: Column(
+          children: [
+            _buildInputSection(),
+            Expanded(
+              child: selectedSubjects.isEmpty
+                  ? _buildEmptyState()
+                  : _buildSubjectList(),
+            ),
+          ],
+        ),
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _showSubjectSelectionModal(),
@@ -90,6 +112,109 @@ class _SubjectSelectionScreenState extends State<SubjectSelectionScreen> {
             fontWeight: FontWeight.w600,
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildInputSection() {
+    return Container(
+      padding: const EdgeInsets.all(16.0),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          // Time Dropdown
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Time (minutes):',
+                  style: AppTextStyles.normal600(
+                    fontSize: 14,
+                    color: AppColors.text3Light,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Container(
+                  decoration: BoxDecoration(
+                    border: Border.all(color: Colors.grey.shade300),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: DropdownButton<int>(
+                    value: timeInMinutes,
+                    isExpanded: true,
+                    underline: const SizedBox(),
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    items: timeOptions.map((time) {
+                      return DropdownMenuItem(
+                        value: time,
+                        child: Text('${time}mins'),
+                      );
+                    }).toList(),
+                    onChanged: (value) {
+                      if (value != null) {
+                        setState(() {
+                          timeInMinutes = value;
+                        });
+                      }
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 16),
+          // Number of Questions Dropdown
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Number of Questions:',
+                  style: AppTextStyles.normal600(
+                    fontSize: 14,
+                    color: AppColors.text3Light,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Container(
+                  decoration: BoxDecoration(
+                    border: Border.all(color: Colors.grey.shade300),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: DropdownButton<int>(
+                    value: questionLimit ?? 40,
+                    isExpanded: true,
+                    underline: const SizedBox(),
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    items: questionOptions.map((questions) {
+                      return DropdownMenuItem(
+                        value: questions,
+                        child: Text('$questions'),
+                      );
+                    }).toList(),
+                    onChanged: (value) {
+                      if (value != null) {
+                        setState(() {
+                          questionLimit = value;
+                        });
+                      }
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -267,7 +392,7 @@ class _SubjectSelectionScreenState extends State<SubjectSelectionScreen> {
                       ),
                       const SizedBox(width: 4),
                       Text(
-                        '1 Hour',
+                        '$timeInMinutes Minutes',
                         style: AppTextStyles.normal600(
                           fontSize: 14,
                           color: Colors.white,
@@ -360,11 +485,61 @@ class _SubjectSelectionScreenState extends State<SubjectSelectionScreen> {
     );
   }
 
-  void _startTest() {
+ Future<void> _startTest() async {
+  final userProvider = Provider.of<CbtUserProvider>(context, listen: false);
   
+  // ✨ PRIMARY CHECK: Use CbtUserProvider's payment status (from backend)
+  final hasUserPaid = userProvider.hasPaid;
+  
+  // ✨ SECONDARY CHECK: Use subscription service (local storage)
+  final canTakeTest = await _subscriptionService.canTakeTest();
+  final remainingTests = await _subscriptionService.getRemainingFreeTests();
+  
+  print('\n💳 Payment Check:');
+  print('   - Backend says paid: $hasUserPaid');
+  print('   - Local says can take test: $canTakeTest');
+  print('   - Remaining free tests: $remainingTests');
+  
+  // If backend confirms payment, allow test
+  if (hasUserPaid) {
+    print('✅ User has paid (verified from backend) - starting test');
+    _proceedWithTest();
+    return;
+  }
+  
+  // If not paid and can't take test (exceeded free limit)
+  if (!canTakeTest) {
+    print('❌ User must pay - showing enforcement dialog');
+    if (!mounted) return;
+    
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => SubscriptionEnforcementDialog(
+        isHardBlock: true,
+        remainingTests: remainingTests,
+        amount: 400,
+        onSubscribed: () async {
+          print('✅ User subscribed from Subject Selection');
+          // Refresh user data from backend
+          await userProvider.refreshCurrentUser();
+          if (mounted) {
+            setState(() {});
+          }
+        },
+      ),
+    );
+    return;
+  }
+  
+  // User can take test (within free limit)
+  print('✅ User can take test (within free limit) - starting test');
+  _proceedWithTest();
+}
 
-    // Calculate total duration (1 hour per subject)
-    final totalSeconds = selectedSubjects.length * 3600;
+void _proceedWithTest() {
+    // Calculate total duration: time per subject × number of subjects
+    final totalSeconds = timeInMinutes * 60 * selectedSubjects.length;
 
     // Extract exam IDs in order
     final examIds = selectedSubjects.map((s) => s.examId).toList();
@@ -373,12 +548,11 @@ class _SubjectSelectionScreenState extends State<SubjectSelectionScreen> {
 
     print('\n🚀 Starting Test Session:');
     print('   Total Subjects: ${selectedSubjects.length}');
+    print('   Time per Subject: $timeInMinutes minutes');
     print('   Total Duration: ${totalSeconds ~/ 60} minutes');
-    print('   Exam IDs: $examIds');
-    print('   Subjects: $subjectNames');
-    print('─' * 50);
+    print('   Question Limit: ${questionLimit ?? "All"}');
 
-    // Navigate to multi-subject test screen
+    // Directly navigate to multi-subject test screen (countdown will be shown in TestScreen)
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -387,7 +561,35 @@ class _SubjectSelectionScreenState extends State<SubjectSelectionScreen> {
           subjects: subjectNames,
           years: years,
           totalDurationInSeconds: totalSeconds,
+          questionLimit: questionLimit,
         ),
+      ),
+    );
+}
+
+  void _showStartTestCountdown(List<String> examIds, List<String> subjectNames, List<String> years, int totalSeconds) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => _StartTestCountdownDialog(
+        totalSubjects: selectedSubjects.length,
+        onComplete: () {
+          Navigator.of(context).pop(); // Close dialog
+          
+          // Navigate to multi-subject test screen
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => MultiSubjectTestScreen(
+                examIds: examIds,
+                subjects: subjectNames,
+                years: years,
+                totalDurationInSeconds: totalSeconds,
+                questionLimit: questionLimit,
+              ),
+            ),
+          );
+        },
       ),
     );
   }
@@ -398,6 +600,7 @@ class MultiSubjectTestScreen extends StatefulWidget {
   final List<String> subjects;
   final List<String> years;
   final int totalDurationInSeconds;
+  final int? questionLimit;
 
   const MultiSubjectTestScreen({
     super.key,
@@ -405,6 +608,7 @@ class MultiSubjectTestScreen extends StatefulWidget {
     required this.subjects,
     required this.years,
     required this.totalDurationInSeconds,
+    this.questionLimit,
   });
 
   @override
@@ -433,6 +637,7 @@ class _MultiSubjectTestScreenState extends State<MultiSubjectTestScreen> {
     print('\n🎯 Multi-Subject Test Session Started:');
     print('   Total Subjects: ${widget.examIds.length}');
     print('   Total Duration: ${widget.totalDurationInSeconds ~/ 60} minutes');
+    print('   Question Limit: ${widget.questionLimit ?? "All"}');
     print('   Subjects: ${widget.subjects.join(", ")}');
     print('─' * 50);
   }
@@ -513,6 +718,7 @@ class _MultiSubjectTestScreenState extends State<MultiSubjectTestScreen> {
       year: int.tryParse(widget.years[currentExamIndex]),
       calledFrom: 'multi-subject',
       totalDurationInSeconds: remainingSeconds,
+      questionLimit: widget.questionLimit,
       isLastInMultiSubject: isLastSubject,
       currentExamIndex: currentExamIndex,
       totalExams: widget.examIds.length,
@@ -785,6 +991,190 @@ class _SubjectYearSelectionModalState extends State<SubjectYearSelectionModal>
       showYears = true;
     });
     _animationController.forward(from: 0.0);
+  }
+}
+
+class _StartTestCountdownDialog extends StatefulWidget {
+  final int totalSubjects;
+  final VoidCallback onComplete;
+
+  const _StartTestCountdownDialog({
+    required this.totalSubjects,
+    required this.onComplete,
+  });
+
+  @override
+  State<_StartTestCountdownDialog> createState() => _StartTestCountdownDialogState();
+}
+
+class _StartTestCountdownDialogState extends State<_StartTestCountdownDialog>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _scaleAnimation;
+  late Animation<double> _fadeAnimation;
+  int _countdown = 3;
+
+  @override
+  void initState() {
+    super.initState();
+    
+    _controller = AnimationController(
+      duration: const Duration(milliseconds: 600),
+      vsync: this,
+    );
+
+    _scaleAnimation = Tween<double>(begin: 0.5, end: 1.0).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.elasticOut),
+    );
+
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeIn),
+    );
+
+    _controller.forward();
+    _startCountdown();
+  }
+
+  void _startCountdown() {
+    Future.delayed(const Duration(seconds: 1), () {
+      if (mounted) {
+        if (_countdown > 1) {
+          setState(() {
+            _countdown--;
+          });
+          _controller.reset();
+          _controller.forward();
+          _startCountdown();
+        } else {
+          widget.onComplete();
+        }
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      backgroundColor: Colors.transparent,
+      child: Container(
+        padding: const EdgeInsets.all(32),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              AppColors.eLearningBtnColor1,
+              AppColors.eLearningBtnColor1.withOpacity(0.8),
+            ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.3),
+              blurRadius: 20,
+              offset: const Offset(0, 10),
+            ),
+          ],
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Icon
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.2),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.play_circle_outline,
+                size: 48,
+                color: Colors.white,
+              ),
+            ),
+            const SizedBox(height: 24),
+            
+            // Title
+            const Text(
+              'Starting Test!',
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.w700,
+                color: Colors.white,
+                fontFamily: 'Urbanist',
+              ),
+            ),
+            const SizedBox(height: 12),
+            
+            // Message
+            Text(
+              widget.totalSubjects == 1
+                  ? 'Preparing your test...'
+                  : 'Starting ${widget.totalSubjects} subjects test',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 16,
+                color: Colors.white.withOpacity(0.9),
+                fontFamily: 'Urbanist',
+              ),
+            ),
+            const SizedBox(height: 32),
+            
+            // Countdown container
+            Container(
+              width: 100,
+              height: 100,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.2),
+                    blurRadius: 15,
+                    offset: const Offset(0, 5),
+                  ),
+                ],
+              ),
+              child: Center(
+                child: ScaleTransition(
+                  scale: _scaleAnimation,
+                  child: FadeTransition(
+                    opacity: _fadeAnimation,
+                    child: Text(
+                      '$_countdown',
+                      style: const TextStyle(
+                        fontSize: 56,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.eLearningBtnColor1,
+                        fontFamily: 'Urbanist',
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 24),
+            
+            // Progress indicator
+            Text(
+              'Get ready...',
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.white.withOpacity(0.8),
+                fontFamily: 'Urbanist',
+                fontStyle: FontStyle.italic,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
 

@@ -18,15 +18,19 @@ class ExamProvider extends ChangeNotifier {
   bool get isLoading => _isLoading;
   String? get error => _error;
 
-  Future<void> fetchExamData(String examType) async {
+  Future<void> fetchExamData(String examType, {int? limit}) async {
     try {
       _isLoading = true;
       _error = null;
       notifyListeners();
 
       print('🔄 Fetching exam data for type: $examType');
+      print('🔢 Question limit: ${limit ?? "All"}');
 
-      final data = await _examService.fetchExamData(examType: examType);
+      final data = await _examService.fetchExamData(
+        examType: examType,
+        limit: limit,
+      );
 
       // Debug: Print the response structure
       print('📦 API Response: $data');
@@ -34,8 +38,8 @@ class ExamProvider extends ChangeNotifier {
       // Check if the API call was successful
       if (data['success'] == true) {
         // Parse exam info from the new structure
-        if (data.containsKey('exam')) {
-          final examData = data['exam'];
+        if (data['data'] != null && data['data']['exam'] != null) {
+          final examData = data['data']['exam'];
           print('📊 Exam data: $examData');
 
           examInfo = ExamModel.fromJson(examData);
@@ -45,52 +49,67 @@ class ExamProvider extends ChangeNotifier {
         }
 
         // Parse questions from the new structure
-        if (data.containsKey('questions')) {
-          final questionsData = data['questions'];
+        if (data['data'] != null && data['data']['questions'] != null) {
+          final questionsData = data['data']['questions'];
           print('❓ Questions data type: ${questionsData.runtimeType}');
           print('❓ Questions data: $questionsData');
 
-          if (questionsData is List && questionsData.isNotEmpty) {
-            // Handle nested array structure: questions can be [[{...}]] or [{...}]
-            List<dynamic> flatQuestions = [];
-            
+          List<dynamic> flatQuestions = [];
+
+          if (questionsData is Map) {
+            // Handle Map structure: {"0": [{...}, {...}]}
+            print('🔄 Handling Map structure for questions');
+            questionsData.forEach((key, value) {
+              if (value is List) {
+                flatQuestions.addAll(value);
+              } else if (value is Map) {
+                flatQuestions.add(value);
+              }
+            });
+          } else if (questionsData is List && questionsData.isNotEmpty) {
+            // Handle nested array structure
+            print('🔄 Handling List structure for questions');
             for (var item in questionsData) {
               if (item is List) {
-                // If it's a nested array, flatten it
                 flatQuestions.addAll(item);
               } else if (item is Map) {
-                // If it's already a map, add it directly
                 flatQuestions.add(item);
               }
             }
-            
-            print('📝 Flattened questions count: ${flatQuestions.length}');
-
-            questions = flatQuestions
-                .whereType<Map>()
-                .map((q) {
-                  try {
-                    return QuestionModel.fromJson(Map<String, dynamic>.from(q));
-                  } catch (e) {
-                    print('⚠️ Error parsing question: $e');
-                    print('⚠️ Question data that failed: $q');
-                    return null;
-                  }
-                })
-                .whereType<QuestionModel>() // Remove null values
-                .toList();
-
-            print('✅ Successfully loaded ${questions.length} questions');
-
-            // Reset navigation state
-            currentQuestionIndex = 0;
-            userAnswers.clear();
-          } else {
-            print('ℹ️ No questions available or questions list is empty');
-            questions = [];
           }
+          
+          print('📝 Flattened questions count: ${flatQuestions.length}');
+
+          questions = flatQuestions
+              .whereType<Map>()
+              .map((q) {
+                try {
+                  return QuestionModel.fromJson(Map<String, dynamic>.from(q));
+                } catch (e) {
+                  print('⚠️ Error parsing question: $e');
+                  print('⚠️ Question data that failed: $q');
+                  return null;
+                }
+              })
+              .whereType<QuestionModel>()
+              .toList();
+
+          print('✅ Successfully loaded ${questions.length} questions');
+
+          // Debug: Print first question details
+          if (questions.isNotEmpty) {
+            print('🔍 First question details:');
+            print('  ID: ${questions.first.id}');
+            print('  Content: ${questions.first.content}');
+            print('  Options: ${questions.first.getOptions()}');
+            print('  Correct: ${questions.first.correct}');
+          }
+
+          // Reset navigation state
+          currentQuestionIndex = 0;
+          userAnswers.clear();
         } else {
-          print('ℹ️ No questions key in response - this exam has no questions');
+          print('ℹ️ No questions available or questions list is empty');
           questions = [];
         }
       } else {

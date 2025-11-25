@@ -200,107 +200,124 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
   }
 
 // Helper method to process question images
-  String? _processQuestionImage(dynamic questionFiles) {
-    if (questionFiles is List && questionFiles.isNotEmpty) {
-      final file = questionFiles.first;
-      if (file is Map && file['file'] != null) {
-        final String fileContent = file['file'].toString();
-        if (fileContent.isNotEmpty) {
-          // Handle different image formats
-          if (fileContent.startsWith('data:')) {
-            return fileContent;
-          } else if (_isBase64(fileContent)) {
-            return 'data:image/jpeg;base64,$fileContent';
-          } else {
-            // Assume it's a file path - return as is for network loading
-            return fileContent;
-          }
+ String? _processQuestionImage(dynamic questionFiles) {
+  if (questionFiles is List && questionFiles.isNotEmpty) {
+    final file = questionFiles.first;
+    if (file is Map) {
+      // Try to get file content first
+      String? fileContent = file['file']?.toString();
+      
+      // If file is empty, use file_name instead
+      if (fileContent == null || fileContent.isEmpty) {
+        fileContent = file['file_name']?.toString();
+      }
+      
+      if (fileContent != null && fileContent.isNotEmpty) {
+        // Handle different image formats
+        if (fileContent.startsWith('data:')) {
+          return fileContent;
+        } else if (_isBase64(fileContent)) {
+          return 'data:image/jpeg;base64,$fileContent';
+        } else {
+          // It's a file path - return as is for network loading
+          return fileContent;
         }
       }
     }
-    return null;
   }
+  return null;
+}
 
 // Helper method to create multiple choice question
-  TextQuestion _createMultipleChoiceQuestion(Map<String, dynamic> q,
-      String topic, String questionText, int questionGrade, String? imagePath) {
-    final List<dynamic> optionsData = q['options'] as List<dynamic>? ?? [];
-    print('    Processing ${optionsData.length} options');
+TextQuestion _createMultipleChoiceQuestion(Map<String, dynamic> q,
+    String topic, String questionText, int questionGrade, String? imagePath) {
+  final List<dynamic> optionsData = q['options'] as List<dynamic>? ?? [];
+  print('    Processing ${optionsData.length} options');
 
-    final List<Map<String, dynamic>> options = optionsData.map((opt) {
-      final optMap = opt as Map<String, dynamic>;
+  final List<Map<String, dynamic>> options = optionsData.map((opt) {
+    final optMap = opt as Map<String, dynamic>;
 
-      // Handle option image
-      String? optionImageUrl;
-      final List<dynamic> optionFiles =
-          optMap['option_files'] as List<dynamic>? ?? [];
-      if (optionFiles.isNotEmpty) {
-        final optFile = optionFiles.first as Map<String, dynamic>?;
-        if (optFile != null && optFile['file'] != null) {
-          final String fileContent = optFile['file'].toString();
-          if (fileContent.isNotEmpty) {
-            if (fileContent.startsWith('data:')) {
-              optionImageUrl = fileContent;
-            } else if (_isBase64(fileContent)) {
-              optionImageUrl = 'data:image/jpeg;base64,$fileContent';
-            } else {
-              // For network images, keep the file path as is
-              optionImageUrl = fileContent;
-            }
+    // Handle option image
+    String? optionImageUrl;
+    final List<dynamic> optionFiles =
+        optMap['option_files'] as List<dynamic>? ?? [];
+    if (optionFiles.isNotEmpty) {
+      final optFile = optionFiles.first as Map<String, dynamic>?;
+      if (optFile != null) {
+        // Try to get file content first
+        String? fileContent = optFile['file']?.toString();
+        
+        // If file is empty, use file_name instead
+        if (fileContent == null || fileContent.isEmpty) {
+          fileContent = optFile['file_name']?.toString();
+        }
+        
+        if (fileContent != null && fileContent.isNotEmpty) {
+          if (fileContent.startsWith('data:')) {
+            optionImageUrl = fileContent;
+          } else if (_isBase64(fileContent)) {
+            optionImageUrl = 'data:image/jpeg;base64,$fileContent';
+          } else {
+            // For network images, keep the file path as is
+            optionImageUrl = fileContent;
           }
         }
       }
-
-      return {
-        'text': optMap['text']?.toString() ?? '',
-        'imageUrl': optionImageUrl,
-        'order': optMap['order']?.toString() ?? '0',
-      };
-    }).toList();
-
-    // Handle correct answer
-    final dynamic correctData = q['correct'];
-    List<String> correctAnswers = [];
-    if (correctData is Map && correctData['text'] != null) {
-      correctAnswers.add(correctData['text'].toString());
-    } else if (correctData is List && correctData.isNotEmpty) {
-      correctAnswers.add(correctData.first['text']?.toString() ?? '');
     }
 
-    print('Correct answers: $correctAnswers');
+    print('    Option: ${optMap['text']}, Image: $optionImageUrl'); // Debug log
 
-    return TextQuestion(
-      topic: topic,
-      questionGrade: questionGrade,
-      questionText: questionText,
-      imageUrl: imagePath,
-      options: options,
-      correctAnswers: correctAnswers,
-    );
+    return {
+      'text': optMap['text']?.toString() ?? '',
+      'imageUrl': optionImageUrl,
+      'order': optMap['order']?.toString() ?? '0',
+    };
+  }).toList();
+
+  // Handle correct answer
+  final dynamic correctData = q['correct'];
+  List<String> correctAnswers = [];
+  if (correctData is Map && correctData['text'] != null) {
+    correctAnswers.add(correctData['text'].toString());
+  } else if (correctData is List && correctData.isNotEmpty) {
+    correctAnswers.add(correctData.first['text']?.toString() ?? '');
   }
+
+  print('Correct answers: $correctAnswers');
+
+  return TextQuestion(
+    topic: topic,
+    questionGrade: questionGrade,
+    questionText: questionText,
+    imageUrl: imagePath,
+    options: options,
+    correctAnswers: correctAnswers,
+  );
+}
 
 // Helper method to create short answer question
-  TypedAnswerQuestion _createShortAnswerQuestion(Map<String, dynamic> q,
-      String topic, String questionText, int questionGrade, String? imagePath) {
-    final dynamic correctData = q['correct'];
-    String? correctAnswer;
+ TypedAnswerQuestion _createShortAnswerQuestion(Map<String, dynamic> q,
+    String topic, String questionText, int questionGrade, String? imagePath) {
+  final dynamic correctData = q['correct'];
+  String? correctAnswer;
 
-    if (correctData is Map && correctData['text'] != null) {
-      correctAnswer = correctData['text'].toString();
-    } else if (correctData is List && correctData.isNotEmpty) {
-      correctAnswer = correctData.first['text']?.toString();
-    }
-
-    print('    Correct answer: $correctAnswer');
-
-    return TypedAnswerQuestion(
-      topic: topic,
-      questionGrade: questionGrade,
-      questionText: questionText,
-      imageUrl: imagePath,
-      correctAnswer: correctAnswer,
-    );
+  if (correctData is Map && correctData['text'] != null) {
+    correctAnswer = correctData['text'].toString();
+  } else if (correctData is List && correctData.isNotEmpty) {
+    correctAnswer = correctData.first['text']?.toString();
   }
+
+  print('    Correct answer: $correctAnswer');
+  print('    Image path: $imagePath'); // Add debug log
+
+  return TypedAnswerQuestion(
+    topic: topic,
+    questionGrade: questionGrade,
+    questionText: questionText,
+    imageUrl: imagePath, // This should now have the image path
+    correctAnswer: correctAnswer,
+  );
+}
 
 // Helper method to create fallback question when processing fails
   QuizQuestion _createFallbackQuestion(int index) {

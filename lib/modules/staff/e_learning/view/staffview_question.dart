@@ -172,6 +172,46 @@ class _StaffViewQuestionScreenState extends State<StaffViewQuestionScreen> {
     return invalidQuestions;
   }
 
+  String? _processQuestionImage(dynamic questionFiles) {
+    if (questionFiles is List && questionFiles.isNotEmpty) {
+      final file = questionFiles.first;
+      if (file is Map) {
+        // Try to get file content first
+        String? fileContent = file['file']?.toString();
+        
+        // If file is empty, use file_name instead
+        if (fileContent == null || fileContent.isEmpty) {
+          fileContent = file['file_name']?.toString();
+        }
+        
+        if (fileContent != null && fileContent.isNotEmpty) {
+          // Handle different image formats
+          if (fileContent.startsWith('data:')) {
+            return fileContent;
+          } else if (_isBase64(fileContent)) {
+            return 'data:image/jpeg;base64,$fileContent';
+          } else {
+            // It's a file path - return as is for network loading
+            return fileContent;
+          }
+        }
+      }
+    }
+    return null;
+  }
+
+  bool _isBase64(String str) {
+    try {
+      // Remove any whitespace
+      str = str.replaceAll(RegExp(r'\s+'), '');
+      // Check if it's valid base64
+      base64Decode(str);
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
   void _initializeQuestions() {
     if (widget.questions == null || widget.questions!.isEmpty) return;
 
@@ -253,9 +293,11 @@ class _StaffViewQuestionScreenState extends State<StaffViewQuestionScreen> {
           (q['question_files'] is List) ? q['question_files'] as List : [];
       String? imagePath;
       String? imageName;
-      if (questionFiles.isNotEmpty && questionFiles.first is Map) {
-        imagePath = questionFiles.first['file']?.toString();
-        imageName = questionFiles.first['file_name']?.toString();
+      if (questionFiles.isNotEmpty) {
+        imagePath = _processQuestionImage(questionFiles);
+        if (questionFiles.first is Map) {
+          imageName = questionFiles.first['file_name']?.toString();
+        }
       }
 
       // Build the question card widget
@@ -324,12 +366,7 @@ class _StaffViewQuestionScreenState extends State<StaffViewQuestionScreen> {
       appBar: AppBar(
         leading: IconButton(
           onPressed: () {
-            if (widget.source == "staff_empty_subject") {
-              Navigator.of(context)
-                  .popUntil(ModalRoute.withName('/staff_empty_subject'));
-            } else {
-              Navigator.of(context).pop();
-            }
+            Navigator.of(context).pop();
           },
           icon: Image.asset(
             'assets/icons/arrow_back.png',
@@ -671,6 +708,7 @@ class _StaffViewQuestionScreenState extends State<StaffViewQuestionScreen> {
         print('Updated assessment: ${jsonEncode(Updatedassessment)}');
 
         await quizProvider.updateTest(Updatedassessment);
+        Navigator.of(context).pop();
         CustomToaster.toastSuccess(
             context, "Success", "Questions updated successfully");
       } else {
@@ -687,10 +725,12 @@ class _StaffViewQuestionScreenState extends State<StaffViewQuestionScreen> {
         widget.onCreation?.call();
 
         if (widget.source == "staff_empty_subject") {
-          Navigator.of(context)
-              .popUntil(ModalRoute.withName('/staff_empty_subject'));
+
+             Navigator.of(context).pop();
+             
         } else {
           Navigator.of(context).pop();
+          
         }
       }
     } catch (e) {
@@ -1555,18 +1595,7 @@ class _StaffViewQuestionScreenState extends State<StaffViewQuestionScreen> {
                             child: Container(
                               constraints: const BoxConstraints(
                                   maxHeight: 100, maxWidth: 200),
-                              child: Image.memory(
-                                base64Decode(imagePath),
-                                fit: BoxFit.contain,
-                                key: ValueKey(imagePath),
-                                errorBuilder: (context, error, stackTrace) {
-                                  return Text(
-                                    'Error loading image: $imageName',
-                                    style: AppTextStyles.normal400(
-                                        fontSize: 14, color: Colors.red),
-                                  );
-                                },
-                              ),
+                              child: _buildQuestionImage(imagePath),
                             ),
                           ),
                           TextButton(
@@ -1932,7 +1961,7 @@ class _StaffViewQuestionScreenState extends State<StaffViewQuestionScreen> {
 
       // Navigate back if no questions remain
       if (createdQuestions.isEmpty) {
-        Navigator.of(context).popUntil(ModalRoute.withName('/empty_subject'));
+        Navigator.of(context).pop();
       }
     } catch (e) {
       CustomToaster.toastError(
@@ -2337,6 +2366,50 @@ class _StaffViewQuestionScreenState extends State<StaffViewQuestionScreen> {
       return '${hours}h ${minutes}min';
     }
   }
+
+  Widget _buildQuestionImage(String imageUrl) {
+    // Check if it's base64 data
+    if (imageUrl.startsWith('data:')) {
+      final base64String = imageUrl.split(',').last;
+      return Image.memory(
+        base64Decode(base64String),
+        fit: BoxFit.contain,
+        errorBuilder: (context, error, stackTrace) {
+          return Text(
+            'Error loading image',
+            style: TextStyle(fontSize: 14, color: Colors.red),
+          );
+        },
+      );
+    } 
+    // Check if it's plain base64 (without data: prefix)
+    else if (_isBase64(imageUrl)) {
+      return Image.memory(
+        base64Decode(imageUrl),
+        fit: BoxFit.contain,
+        errorBuilder: (context, error, stackTrace) {
+          return Text(
+            'Error loading image',
+            style: TextStyle(fontSize: 14, color: Colors.red),
+          );
+        },
+      );
+    }
+    // Otherwise treat as network URL
+    else {
+      return Image.network(
+        'https://linkskool.net/$imageUrl',
+        fit: BoxFit.contain,
+        errorBuilder: (context, error, stackTrace) {
+          return Text(
+            'Error loading image',
+            style: TextStyle(fontSize: 14, color: Colors.red),
+          );
+        },
+      );
+    }
+  }
+
 }
 
 class AttachmentItem {

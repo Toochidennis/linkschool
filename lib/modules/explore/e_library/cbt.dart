@@ -7,6 +7,8 @@ import 'package:linkschool/modules/explore/e_library/cbt.details.dart';
 import 'package:linkschool/modules/explore/e_library/new_cbt.dart';
 
 import 'package:linkschool/modules/explore/ebooks/subject_item.dart';
+import 'package:provider/provider.dart';
+import 'package:linkschool/modules/providers/cbt_user_provider.dart';
 
 class E_CBTDashboard extends StatefulWidget {
   const E_CBTDashboard({super.key});
@@ -66,6 +68,11 @@ class _E_CBTDashboardState extends State<E_CBTDashboard> {
 
   @override
   Widget build(BuildContext context) {
+    // Access CbtUserProvider
+    final cbtUserProvider = Provider.of<CbtUserProvider>(context);
+    final currentUser = cbtUserProvider.currentUser;
+    final subscriptionStatus = cbtUserProvider.subscriptionStatus;
+
     final metrics = [
       Expanded(
         child: _buildPerformanceCard(
@@ -105,6 +112,86 @@ class _E_CBTDashboardState extends State<E_CBTDashboard> {
         child: CustomScrollView(
           physics: const BouncingScrollPhysics(),
           slivers: [
+            // =================== USER BANNER / PROFILE ===================
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+                child: currentUser == null
+                    ? Card(
+                        color: Colors.orange[100],
+                        elevation: 0,
+                        child: Padding(
+                          padding: const EdgeInsets.all(12.0),
+                          child: Row(
+                            children: [
+                              const Icon(Icons.info_outline, color: Colors.orange),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Text(
+                                  'Sign in to access your CBT profile and subscription.',
+                                  style: AppTextStyles.normal600(fontSize: 15, color: Colors.orange[900]),
+                                ),
+                              ),
+                              TextButton(
+                                onPressed: () {
+                                  // TODO: Trigger sign-in flow
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(content: Text('Sign-in flow not implemented here.')),
+                                  );
+                                },
+                                child: const Text('Sign In'),
+                              ),
+                            ],
+                          ),
+                        ),
+                      )
+                    : Card(
+                        color: Colors.green[50],
+                        elevation: 0,
+                        child: Padding(
+                          padding: const EdgeInsets.all(12.0),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  const Icon(Icons.account_circle, color: Colors.green, size: 32),
+                                  const SizedBox(width: 10),
+                                  Expanded(
+                                    child: Text(
+                                      currentUser.email,
+                                      style: AppTextStyles.normal600(fontSize: 16, color: Colors.green[900]),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 8),
+                              Row(
+                                children: [
+                                  Icon(
+                                    subscriptionStatus['hasPaid'] == true ? Icons.verified : Icons.warning,
+                                    color: subscriptionStatus['hasPaid'] == true ? Colors.green : Colors.red,
+                                    size: 20,
+                                  ),
+                                  const SizedBox(width: 6),
+                                  Text(
+                                    subscriptionStatus['hasPaid'] == true
+                                        ? 'Subscribed'
+                                        : 'Not Subscribed',
+                                    style: AppTextStyles.normal500(
+                                      fontSize: 14,
+                                      color: subscriptionStatus['hasPaid'] == true ? Colors.green : Colors.red,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+              ),
+            ),
+            // =================== END USER BANNER / PROFILE ===================
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.symmetric(vertical: 8.0),

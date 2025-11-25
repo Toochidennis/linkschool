@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:linkschool/modules/admin/e_learning/View/question/assessment_screen.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
@@ -176,6 +178,47 @@ class _StaffRecentQuizState extends State<StaffRecentQuiz> {
             })
         .toList();
   }
+
+
+  String? _processQuestionImage(dynamic questionFiles) {
+  if (questionFiles is List && questionFiles.isNotEmpty) {
+    final file = questionFiles.first;
+    if (file is Map) {
+      // Try to get file content first
+      String? fileContent = file['file']?.toString();
+      
+      // If file is empty, use file_name instead
+      if (fileContent == null || fileContent.isEmpty) {
+        fileContent = file['file_name']?.toString();
+      }
+      
+      if (fileContent != null && fileContent.isNotEmpty) {
+        // Handle different image formats
+        if (fileContent.startsWith('data:')) {
+          return fileContent;
+        } else if (_isBase64(fileContent)) {
+          return 'data:image/jpeg;base64,$fileContent';
+        } else {
+          // It's a file path - return as is for network loading
+          return fileContent;
+        }
+      }
+    }
+  }
+  return null;
+}
+
+bool _isBase64(String str) {
+  try {
+    // Remove any whitespace
+    str = str.replaceAll(RegExp(r'\s+'), '');
+    // Check if it's valid base64
+    base64Decode(str);
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
 
   @override
   Widget build(BuildContext context) {

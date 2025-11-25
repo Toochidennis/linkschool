@@ -43,6 +43,11 @@ class CBTProvider extends ChangeNotifier {
       return null;
     }
   }
+  
+  // Get ALL incomplete tests (useful for multi-subject scenarios)
+  List<CbtHistoryModel> get incompleteTests {
+    return _recentHistory.where((test) => !test.isFullyCompleted).toList();
+  }
 
   Future<void> loadBoards() async {
     _isLoading = true;
@@ -74,6 +79,19 @@ class CBTProvider extends ChangeNotifier {
       _successCount = stats['successCount'] ?? 0;
       _averageScore = stats['averageScore'] ?? 0.0;
       _recentHistory = stats['recentHistory'] ?? [];
+      
+      // Include all incomplete tests in recent history for multi-subject support
+      final allIncompleteTests = stats['allIncompleteTests'] as List<CbtHistoryModel>? ?? [];
+      if (allIncompleteTests.isNotEmpty) {
+        // Add incomplete tests to recent history for visibility
+        _recentHistory.insertAll(0, allIncompleteTests);
+        // Remove duplicates while preserving order
+        final seen = <String>{};
+        _recentHistory = _recentHistory.where((test) {
+          final key = '${test.subject}_${test.year}_${test.examId}';
+          return seen.add(key);
+        }).toList();
+      }
       
       print('🔄 CBTProvider - Stats loaded:');
       print('   Total Tests: $_totalTests');

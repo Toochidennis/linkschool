@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "135953550144",
+    "project_id": "linkschool-8b3c5",
+    "storage_bucket": "linkschool-8b3c5.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:135953550144:android:48de94967dd26a6cfac8a5",
+        "android_client_info": {
+          "package_name": "com.digitaldream.linkskool.linkschool"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCaUotF7ZHjh-ybtJlyWWlFdRNVbXx4nrY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

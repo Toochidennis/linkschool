@@ -13,32 +13,48 @@ class CbtHistoryService {
       // Get existing history
       final List<CbtHistoryModel> historyList = await getTestHistory();
       
+      // Create a unique key for this test combination
+      final uniqueKey = '${history.subject}_${history.year}_${history.examId}_${history.examType}';
+      
       // Check if this is a retake (same subject, year, examId, examType)
-      final existingIndex = historyList.indexWhere((h) =>
-        h.subject == history.subject &&
-        h.year == history.year &&
-        h.examId == history.examId &&
-        h.examType == history.examType
-      );
+      final existingIndex = historyList.indexWhere((h) {
+        final key = '${h.subject}_${h.year}_${h.examId}_${h.examType}';
+        return key == uniqueKey;
+      });
       
       if (existingIndex != -1) {
-        // Update existing test
-        historyList[existingIndex] = history;
-        print('Updated existing test result');
+        // Update existing test (keep the better score)
+        if (history.percentage > historyList[existingIndex].percentage) {
+          historyList[existingIndex] = history;
+          print('📝 Updated test result for $uniqueKey with higher score');
+        } else {
+          print('📝 Keeping existing test result for $uniqueKey (previous score was higher)');
+        }
       } else {
         // Add new result
         historyList.add(history);
-        print('Added new test result');
+        print('✅ Added new test result: $uniqueKey');
       }
       
       // Convert to JSON and save
       final jsonList = historyList.map((h) => h.toJson()).toList();
       await prefs.setString(_historyKey, jsonEncode(jsonList));
       
-      print('Test result saved successfully');
+      print('💾 Test history saved. Total tests: ${historyList.length}');
+      _printAllHistory(historyList);
     } catch (e) {
-      print('Error saving test result: $e');
+      print('❌ Error saving test result: $e');
     }
+  }
+  
+  // Debug helper to print all history
+  void _printAllHistory(List<CbtHistoryModel> history) {
+    print('\n📚 Current Test History:');
+    for (int i = 0; i < history.length; i++) {
+      final h = history[i];
+      print('   ${i + 1}. ${h.subject} (${h.year}) - ExamID: ${h.examId} - Score: ${h.percentage.toStringAsFixed(1)}%');
+    }
+    print('─' * 60);
   }
   
   // Find existing test by parameters
@@ -155,6 +171,22 @@ class CbtHistoryService {
     // Return limited results
     return history.take(limit).toList();
   }
+  
+  // Get ALL incomplete tests (not limited by time)
+  Future<List<CbtHistoryModel>> getAllIncompleteTests() async {
+    final history = await getTestHistory();
+    
+    // Filter incomplete tests and sort by timestamp (most recent first)
+    final incompleteTests = history.where((h) => !h.isFullyCompleted).toList();
+    incompleteTests.sort((a, b) => b.timestamp.compareTo(a.timestamp));
+    
+    print('\n📋 Incomplete Tests Found: ${incompleteTests.length}');
+    for (var test in incompleteTests) {
+      print('   ⊘ ${test.subject} (${test.year}): ${test.percentage.toStringAsFixed(1)}% - ExamID: ${test.examId}');
+    }
+    
+    return incompleteTests;
+  }
 
   // Get history for a specific subject
   Future<List<CbtHistoryModel>> getHistoryBySubject(String subject) async {
@@ -184,19 +216,22 @@ class CbtHistoryService {
     final totalTests = await getTotalTests();
     final successCount = await getSuccessCount();
     final averageScore = await getAverageScore();
-    final recentHistory = await getRecentHistory(limit: 3);
+    final recentHistory = await getRecentHistory(limit: 5);
+    final allIncompleteTests = await getAllIncompleteTests();
     
-    print('📊 Dashboard Stats:');
+    print('\n📊 Dashboard Stats:');
     print('   Total Tests: $totalTests');
     print('   Success Count: $successCount');
     print('   Average Score: ${averageScore.toStringAsFixed(1)}%');
     print('   Recent History: ${recentHistory.length} items');
+    print('   Incomplete Tests: ${allIncompleteTests.length}');
     
     return {
       'totalTests': totalTests,
       'successCount': successCount,
       'averageScore': averageScore,
       'recentHistory': recentHistory,
+      'allIncompleteTests': allIncompleteTests,
     };
   }
 }

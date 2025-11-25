@@ -103,124 +103,145 @@ class _ViewQuestionScreenState extends State<ViewQuestionScreen> {
     }
   }
 
-  void _initializeQuestions() {
-    if (widget.questions == null || widget.questions!.isEmpty) return;
+ void _initializeQuestions() {
+  if (widget.questions == null || widget.questions!.isEmpty) return;
 
-    // Print the IDs of each question
+  createdQuestions = widget.questions!.map((q) {
+    final questionType = q['question_type'] ?? q['type'] ?? 'short_answer';
+    final questionText = q['question_text'] ?? q['title'] ?? '';
+    final id = q['question_id']?.toString() ?? '';
+    print('SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS$id');
+    final grade =
+        q['question_grade']?.toString() ?? q['grade']?.toString() ?? '1';
 
-    createdQuestions = widget.questions!.map((q) {
-      final questionType = q['question_type'] ?? q['type'] ?? 'short_answer';
-      final questionText = q['question_text'] ?? q['title'] ?? '';
-      final id = q['question_id']?.toString() ?? '';
-      print('SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS$id');
-      final grade =
-          q['question_grade']?.toString() ?? q['grade']?.toString() ?? '1';
+    // Initialize controllers
+    final questionController = TextEditingController(text: questionText);
+    final marksController = TextEditingController(text: grade);
 
-      // Initialize controllers
-      final questionController = TextEditingController(text: questionText);
-      final marksController = TextEditingController(text: grade);
+    // Handle options for multiple choice
+    List<TextEditingController> optionControllers = [];
+    List<int> correctOptions = [];
+    TextEditingController? correctAnswerController;
+    List<Map<String, dynamic>> optionsData = [];
 
-      // Handle options for multiple choice
-      List<TextEditingController> optionControllers = [];
-      List<int> correctOptions = [];
-      TextEditingController? correctAnswerController;
-      List<Map<String, dynamic>> optionsData = [];
+    if (questionType == 'multiple_choice') {
+      final options = (q['options'] is List) ? q['options'] as List : [];
 
-      if (questionType == 'multiple_choice') {
-        final options = (q['options'] is List) ? q['options'] as List : [];
+      // Initialize options data and controllers
+      for (int i = 0; i < options.length; i++) {
+        final opt = options[i];
+        final optText =
+            (opt is Map && opt['text'] != null) ? opt['text'].toString() : '';
 
-        // Initialize options data and controllers
-        for (int i = 0; i < options.length; i++) {
-          final opt = options[i];
-          final optText =
-              (opt is Map && opt['text'] != null) ? opt['text'].toString() : '';
+        optionControllers.add(TextEditingController(text: optText));
 
-          optionControllers.add(TextEditingController(text: optText));
-
-          // Handle option files
-          Map<String, dynamic>? optionFile;
-          if (opt is Map &&
-              opt['option_files'] is List &&
-              (opt['option_files'] as List).isNotEmpty) {
-            final file = (opt['option_files'] as List).first;
-            if (file is Map) {
+        // Handle option files - FIXED
+        Map<String, dynamic>? optionFile;
+        if (opt is Map &&
+            opt['option_files'] is List &&
+            (opt['option_files'] as List).isNotEmpty) {
+          final file = (opt['option_files'] as List).first;
+          if (file is Map) {
+            // Try to get file content first
+            String? fileContent = file['file']?.toString();
+            
+            // If file is empty, use file_name instead
+            if (fileContent == null || fileContent.isEmpty) {
+              fileContent = file['file_name']?.toString();
+            }
+            
+            if (fileContent != null && fileContent.isNotEmpty) {
               optionFile = {
                 'file_name': file['file_name']?.toString() ?? '',
-                'base64': file['file']?.toString() ?? '',
+                'base64': fileContent, // This now contains either base64 or file path
               };
             }
           }
-
-          optionsData.add({
-            'order': i,
-            'text': optText,
-            'options_file': optionFile,
-          });
         }
 
-        // Handle correct answer for multiple choice
-        final correct = q['correct'];
-        if (correct is Map && correct['order'] != null) {
-          final correctOrder = correct['order'] is int
-              ? correct['order']
-              : int.tryParse(correct['order'].toString()) ?? -1;
-          if (correctOrder >= 0 && correctOrder < optionControllers.length) {
-            correctOptions.add(correctOrder);
-          }
+        optionsData.add({
+          'order': i,
+          'text': optText,
+          'options_file': optionFile,
+        });
+      }
+
+      // Handle correct answer for multiple choice
+      final correct = q['correct'];
+      if (correct is Map && correct['order'] != null) {
+        final correctOrder = correct['order'] is int
+            ? correct['order']
+            : int.tryParse(correct['order'].toString()) ?? -1;
+        if (correctOrder >= 0 && correctOrder < optionControllers.length) {
+          correctOptions.add(correctOrder);
         }
+      }
+    } else {
+      // Handle correct answer for short answer
+      final correct = q['correct'];
+      if (correct is Map && correct['text'] != null) {
+        correctAnswerController =
+            TextEditingController(text: correct['text'].toString());
       } else {
-        // Handle correct answer for short answer
-        final correct = q['correct'];
-        if (correct is Map && correct['text'] != null) {
-          correctAnswerController =
-              TextEditingController(text: correct['text'].toString());
-        } else {
-          correctAnswerController = TextEditingController();
-        }
+        correctAnswerController = TextEditingController();
       }
+    }
 
-      // Handle question files
-      final questionFiles =
-          (q['question_files'] is List) ? q['question_files'] as List : [];
-      String? imagePath;
-      String? imageName;
-      if (questionFiles.isNotEmpty && questionFiles.first is Map) {
-        imagePath = questionFiles.first['file']?.toString();
-        imageName = questionFiles.first['file_name']?.toString();
+    // Handle question files - FIXED
+    final questionFiles =
+        (q['question_files'] is List) ? q['question_files'] as List : [];
+    String? imagePath;
+    String? imageName;
+    if (questionFiles.isNotEmpty && questionFiles.first is Map) {
+      final file = questionFiles.first;
+      
+      // Try to get file content first
+      String? fileContent = file['file']?.toString();
+      
+      // If file is empty, use file_name instead
+      if (fileContent == null || fileContent.isEmpty) {
+        fileContent = file['file_name']?.toString();
       }
+      
+      if (fileContent != null && fileContent.isNotEmpty) {
+        imagePath = fileContent;
+        imageName = file['file_name']?.toString() ?? 'question_image.jpg';
+      }
+    }
 
-      // Build the question card widget
-      final questionCardWidget = _buildQuestionCard(
-        questionType,
-        questionController,
-        marksController,
-        optionControllers,
-        correctOptions,
-        correctAnswerController,
-        false,
-      );
-      print('Questions ID: $id, Type: $questionType, Text: $questionText');
+    // Build the question card widget
+    final questionCardWidget = _buildQuestionCard(
+      questionType,
+      questionController,
+      marksController,
+      optionControllers,
+      correctOptions,
+      correctAnswerController,
+      false,
+    );
+    print('Questions ID: $id, Type: $questionType, Text: $questionText');
+    print('Question image path: $imagePath'); // Debug log
 
-      return {
-        'type': questionType,
-        'title': questionText,
-        'grade': grade,
-        'topic': q['topic'] ?? currentQuestion.topic,
-        'options': optionsData, // Fixed: Use properly structured options data
-        'correct': q['correct'] ?? [],
-        'imagePath': imagePath,
-        'imageName': imageName,
-        'question_id': id,
-        'questionController': questionController,
-        'marksController': marksController,
-        'optionControllers': optionControllers,
-        'correctOptions': correctOptions,
-        'correctAnswerController': correctAnswerController,
-        'isExpanded': false,
-        'widget': questionCardWidget,
-      };
-    }).toList();
-  }
+    return {
+      'type': questionType,
+      'title': questionText,
+      'grade': grade,
+      'topic': q['topic'] ?? currentQuestion.topic,
+      'options': optionsData,
+      'correct': q['correct'] ?? [],
+      'imagePath': imagePath,
+      'imageName': imageName,
+      'question_id': id,
+      'questionController': questionController,
+      'marksController': marksController,
+      'optionControllers': optionControllers,
+      'correctOptions': correctOptions,
+      'correctAnswerController': correctAnswerController,
+      'isExpanded': false,
+      'widget': questionCardWidget,
+    };
+  }).toList();
+}
 
   @override
   void dispose() {
@@ -1487,43 +1508,32 @@ class _ViewQuestionScreenState extends State<ViewQuestionScreen> {
                         });
                       },
                     ),
-                    if (imagePath != null && imagePath.isNotEmpty) ...[
-                      const SizedBox(height: 8),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Flexible(
-                            child: Container(
-                              constraints: const BoxConstraints(
-                                  maxHeight: 100, maxWidth: 200),
-                              child: Image.memory(
-                                base64Decode(imagePath),
-                                fit: BoxFit.contain,
-                                key: ValueKey(imagePath),
-                                errorBuilder: (context, error, stackTrace) {
-                                  return Text(
-                                    'Error loading image: $imageName',
-                                    style: AppTextStyles.normal400(
-                                        fontSize: 14, color: Colors.red),
-                                  );
-                                },
-                              ),
-                            ),
-                          ),
-                          TextButton(
-                            onPressed: () {
-                              if (index != -1) {
-                                setState(() {
-                                  createdQuestions[index]['imagePath'] = null;
-                                  createdQuestions[index]['imageName'] = null;
-                                });
-                              }
-                            },
-                            child: const Icon(Icons.delete, color: Colors.red),
-                          ),
-                        ],
-                      ),
-                    ],
+                  if (imagePath != null && imagePath.isNotEmpty) ...[
+  const SizedBox(height: 8),
+  Row(
+    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    children: [
+      Flexible(
+        child: Container(
+          constraints: const BoxConstraints(
+              maxHeight: 100, maxWidth: 200),
+          child: _buildQuestionImageWidget(imagePath),
+        ),
+      ),
+      TextButton(
+        onPressed: () {
+          if (index != -1) {
+            setState(() {
+              createdQuestions[index]['imagePath'] = null;
+              createdQuestions[index]['imageName'] = null;
+            });
+          }
+        },
+        child: const Icon(Icons.delete, color: Colors.red),
+      ),
+    ],
+  ),
+],
                     if (questionType == 'short_answer' &&
                         correctAnswerController != null) ...[
                       TextField(
@@ -1706,6 +1716,49 @@ class _ViewQuestionScreenState extends State<ViewQuestionScreen> {
     );
   }
 
+  Widget _buildQuestionImageWidget(String imagePath) {
+  // Check if it's base64 data
+  if (imagePath.startsWith('data:')) {
+    final base64String = imagePath.split(',').last;
+    return Image.memory(
+      base64Decode(base64String),
+      fit: BoxFit.contain,
+      errorBuilder: (context, error, stackTrace) {
+        return const Text(
+          'Error loading image',
+          style: TextStyle(fontSize: 14, color: Colors.red),
+        );
+      },
+    );
+  } 
+  // Check if it's plain base64 (without data: prefix)
+  else if (_isBase64String(imagePath)) {
+    return Image.memory(
+      base64Decode(imagePath),
+      fit: BoxFit.contain,
+      errorBuilder: (context, error, stackTrace) {
+        return const Text(
+          'Error loading image',
+          style: TextStyle(fontSize: 14, color: Colors.red),
+        );
+      },
+    );
+  }
+  // Otherwise treat as network URL
+  else {
+    return Image.network(
+      'https://linkskool.net/$imagePath',
+      fit: BoxFit.contain,
+      errorBuilder: (context, error, stackTrace) {
+        return const Text(
+          'Error loading image',
+          style: TextStyle(fontSize: 14, color: Colors.red),
+        );
+      },
+    );
+  }
+}
+
   void _duplicateQuestion(int questionIndex) {
     if (questionIndex < 0 || questionIndex >= createdQuestions.length) return;
 
@@ -1882,42 +1935,42 @@ class _ViewQuestionScreenState extends State<ViewQuestionScreen> {
     }
   }
 
-  Widget _buildOptionRow(
-      int index,
-      TextEditingController controller,
-      Function setState,
-      VoidCallback onImagePick,
-      VoidCallback onSelectCorrect,
-      bool isCorrect,
-      bool hasImage) {
-    return Row(
-      children: [
-        Radio<bool>(
-          value: true,
-          groupValue: isCorrect,
-          onChanged: (value) => onSelectCorrect(),
-        ),
-        Expanded(
-          child: TextField(
-            controller: controller,
-            enabled: !hasImage,
-            decoration: InputDecoration(
-              hintText: hasImage ? 'Image uploaded' : 'Option',
-              border: const UnderlineInputBorder(),
-              hintStyle: TextStyle(
-                color: hasImage ? Colors.grey : null,
+ Widget _buildOptionRow(
+  int index,
+  TextEditingController controller,
+  Function setState,
+  VoidCallback onImagePick,
+  VoidCallback onSelectCorrect,
+  bool isCorrect,
+  bool hasImage,
+) {
+  return StatefulBuilder(
+    builder: (context, localSetState) {
+      return Row(
+        children: [
+          Radio<bool>(
+            value: true,
+            groupValue: isCorrect,
+            onChanged: (value) => onSelectCorrect(),
+          ),
+          Expanded(
+            child: TextField(
+              controller: controller,
+              enabled: !hasImage,
+              decoration: InputDecoration(
+                hintText: hasImage ? 'Image uploaded' : 'Option',
+                border: const UnderlineInputBorder(),
+                hintStyle: TextStyle(
+                  color: hasImage ? Colors.grey : null,
+                ),
               ),
-            ),
-            onChanged: (value) {
-              setState(() {
+              onChanged: (value) {
+                // Only update the specific option, don't rebuild the entire card
                 int qIndex = createdQuestions.indexWhere(
                     (q) => q['optionControllers'].contains(controller));
                 if (qIndex != -1) {
-                  // Ensure the option exists in the array
                   if (createdQuestions[qIndex]['options'].length <= index) {
-                    // Expand the options array if needed
-                    while (
-                        createdQuestions[qIndex]['options'].length <= index) {
+                    while (createdQuestions[qIndex]['options'].length <= index) {
                       createdQuestions[qIndex]['options'].add({
                         'order': createdQuestions[qIndex]['options'].length,
                         'text': '',
@@ -1927,19 +1980,20 @@ class _ViewQuestionScreenState extends State<ViewQuestionScreen> {
                   }
                   createdQuestions[qIndex]['options'][index]['text'] = value;
                 }
-              });
-            },
+              },
+            ),
           ),
-        ),
-        _buildOptionKebabButton(
+          _buildOptionKebabButton(
             context,
-            createdQuestions
-                .indexWhere((q) => q['optionControllers'].contains(controller)),
+            createdQuestions.indexWhere((q) => q['optionControllers'].contains(controller)),
             index,
-            setState),
-      ],
-    );
-  }
+            localSetState, // Use localSetState instead of the parent setState
+          ),
+        ],
+      );
+    },
+  );
+}
 
   Widget _buildOptionKebabButton(BuildContext context, int questionIndex,
       int optionIndex, Function setState) {

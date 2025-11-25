@@ -104,12 +104,126 @@ class _SelectSchoolState extends State<SelectSchool> {
               ),
               const SizedBox(height: 10),
               if (schoolProvider.isLoading)
-                const Center(child: CircularProgressIndicator())
+                const Expanded(
+                  child: Center(child: CircularProgressIndicator()),
+                )
               else if (schoolProvider.error != null)
-                Center(child: Text("Error: ${schoolProvider.error}"))
+                Expanded(
+                  child: Center(
+                    child: Container(
+                      margin: const EdgeInsets.symmetric(horizontal: 16),
+                      padding: const EdgeInsets.all(32),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: Colors.red.withOpacity(0.2),
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.05),
+                            blurRadius: 10,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(20),
+                            decoration: BoxDecoration(
+                              color: Colors.red.withOpacity(0.1),
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(
+                              Icons.error_outline,
+                              size: 56,
+                              color: Colors.red.shade400,
+                            ),
+                          ),
+                          const SizedBox(height: 24),
+                          Text(
+                            'Unable to Load Schools',
+                            style: AppTextStyles.normal600(
+                              fontSize: 18,
+                              color: AppColors.text2Light,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                          const SizedBox(height: 12),
+                          Text(
+                            'There was a problem loading the list of schools.\nPlease check your internet connection.',
+                            textAlign: TextAlign.center,
+                            style: AppTextStyles.normal400(
+                              fontSize: 14,
+                              color: AppColors.text7Light,
+                            ),
+                          ),
+                          const SizedBox(height: 24),
+                          ElevatedButton.icon(
+                            onPressed: () {
+                              schoolProvider.fetchSchools();
+                            },
+                            icon: const Icon(Icons.refresh, size: 18),
+                            label: Text(
+                              'Try Again',
+                              style: AppTextStyles.normal600(
+                                fontSize: 14,
+                                color: Colors.white,
+                              ),
+                            ),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.eLearningBtnColor1,
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 32,
+                                vertical: 14,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              elevation: 0,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                )
+              else if (filteredSchools.isEmpty)
+                Expanded(
+                  child: Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.search_off,
+                          size: 64,
+                          color: AppColors.text7Light,
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          'No schools found',
+                          style: AppTextStyles.normal600(
+                            fontSize: 18,
+                            color: AppColors.text2Light,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Try a different search term',
+                          style: AppTextStyles.normal400(
+                            fontSize: 14,
+                            color: AppColors.text7Light,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                )
               else
                 Expanded(
-                  // ✅ Only change: Use Expanded instead of SizedBox
                   child: ListView.builder(
                     itemCount: filteredSchools.length,
                     itemBuilder: (context, index) {
