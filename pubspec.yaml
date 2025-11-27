@@ -81,6 +81,7 @@ dependencies:
   paystack_for_flutter: ^1.0.0
   
   http: any
+  flutter_gif: ^0.0.4
 dev_dependencies:
   flutter_test:
     sdk: flutter

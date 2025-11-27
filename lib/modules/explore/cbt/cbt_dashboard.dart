@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:linkschool/modules/explore/cbt/cbt_games/cbt_games_dashboard.dart';
+import 'package:linkschool/modules/explore/cbt/studys_subject_modal.dart';
 import 'package:linkschool/modules/providers/explore/cbt_provider.dart';
 import 'package:linkschool/modules/model/explore/cbt_history_model.dart';
 import 'package:linkschool/modules/explore/e_library/test_screen.dart';
@@ -422,18 +424,58 @@ Color _getBoardColor(String boardCode) {
 
   /// ⚡ OPTIMIZED: Non-blocking board tap handler
   Future<void> _handleBoardTap(dynamic board, CBTProvider provider) async {
-    // Check subscription asynchronously
-    final canProceed = await _checkSubscriptionBeforeTest();
-    if (!canProceed || !mounted) return;
-    
-    provider.selectBoard(board.boardCode);
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => const SubjectSelectionScreen(),
-      ),
-    );
-  }
+  // Check subscription asynchronously
+  final canProceed = await _checkSubscriptionBeforeTest();
+  if (!canProceed || !mounted) return;
+  
+  provider.selectBoard(board.boardCode);
+  
+  // Show board options modal
+  showModalBottomSheet(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: Colors.transparent,
+    builder: (context) => _BoardOptionsModal(
+      boardName: board.title,
+      onPractice: () {
+        Navigator.pop(context);
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => const SubjectSelectionScreen(),
+          ),
+        );
+      },
+      onStudy: () {
+        Navigator.pop(context);
+        // Show study subject selection modal
+        showModalBottomSheet(
+          context: context,
+          isScrollControlled: true,
+          backgroundColor: Colors.transparent,
+          builder: (context) => const StudySubjectSelectionModal(),
+        );
+      },
+      onGamify: () {
+        Navigator.pop(context);
+       Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => const GameDashboardScreen(),
+          ),
+        );
+
+      },
+      onChallenge: () {
+        Navigator.pop(context);
+        // TODO: Implement Challenge mode
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Challenge mode coming soon!')),
+        );
+      },
+    ),
+  );
+}
 
   Widget _buildEmptyBoardsState(CBTProvider provider) {
     return Padding(
@@ -916,6 +958,187 @@ Color _getBoardColor(String boardCode) {
                 ],
               ),
             )
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Modal for board options
+class _BoardOptionsModal extends StatelessWidget {
+  final String boardName;
+  final VoidCallback onPractice;
+  final VoidCallback onStudy;
+  final VoidCallback onGamify;
+  final VoidCallback onChallenge;
+  
+  const _BoardOptionsModal({
+    required this.boardName,
+    required this.onPractice,
+    required this.onStudy,
+    required this.onGamify,
+    required this.onChallenge,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      child: SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Handle bar
+            Container(
+              margin: const EdgeInsets.only(top: 12),
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Colors.grey.shade300,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            
+            // Header
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                children: [
+                  Text(
+                    'Choose Learning Mode',
+                    style: AppTextStyles.normal700(
+                      fontSize: 20,
+                      color: AppColors.text4Light,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    boardName,
+                    style: AppTextStyles.normal500(
+                      fontSize: 14,
+                      color: AppColors.text7Light,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            // Options
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Column(
+                children: [
+                  _OptionTile(
+                    icon: Icons.school,
+                    title: 'Practice',
+                    subtitle: 'Take practice tests',
+                    color: const Color(0xFF6366F1),
+                    onTap: onPractice,
+                  ),
+                  const SizedBox(height: 12),
+                  _OptionTile(
+                    icon: Icons.menu_book,
+                    title: 'Study',
+                    subtitle: 'Learn with explanations',
+                    color: const Color(0xFF10B981),
+                    onTap: onStudy,
+                  ),
+                  const SizedBox(height: 12),
+                  _OptionTile(
+                    icon: Icons.videogame_asset,
+                    title: 'Gamify',
+                    subtitle: 'Make learning fun',
+                    color: const Color(0xFFF59E0B),
+                    onTap: onGamify,
+                  ),
+                  const SizedBox(height: 12),
+                  _OptionTile(
+                    icon: Icons.emoji_events,
+                    title: 'Challenge',
+                    subtitle: 'Compete with others',
+                    color: const Color(0xFFEC4899),
+                    onTap: onChallenge,
+                  ),
+                ],
+              ),
+            ),
+            
+            const SizedBox(height: 32),
+          ],
+        ),
+      ),
+    );
+  }
+}
+class _OptionTile extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final Color color;
+  final VoidCallback onTap;
+  
+  const _OptionTile({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.color,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: color.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(16),
+          
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: color,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(icon, size: 28, color: Colors.white),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: AppTextStyles.normal600(
+                      fontSize: 16,
+                      color: AppColors.text4Light,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    subtitle,
+                    style: AppTextStyles.normal400(
+                      fontSize: 13,
+                      color: AppColors.text7Light,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(
+              Icons.arrow_forward_ios,
+              color: color,
+              size: 18,
+            ),
           ],
         ),
       ),
