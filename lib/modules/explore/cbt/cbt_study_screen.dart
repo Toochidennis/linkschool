@@ -75,7 +75,6 @@ class _CBTStudyScreenState extends State<CBTStudyScreen> {
 
   late List<StudyQuestion> _questions;
   int _currentIndex = 0;
-  int? _selectedIndex;
   
   // Cache for AI-generated explanations
   Map<int, String> _explanationCache = {};
@@ -88,18 +87,10 @@ class _CBTStudyScreenState extends State<CBTStudyScreen> {
     _questions = _questions.take(5).toList();
   }
 
-  void _onAnswer(int index) {
-    setState(() {
-      _selectedIndex = index;
-    });
-  }
-
-  Future<void> _onNextPressed() async {
-    if (_selectedIndex == null) return;
-
+  void _onAnswer(int index) async {
     final question = _questions[_currentIndex];
-    final isCorrect = _selectedIndex == question.correctIndex;
-    final selectedAnswer = question.options[_selectedIndex!];
+    final isCorrect = index == question.correctIndex;
+    final selectedAnswer = question.options[index];
     final correctAnswer = question.options[question.correctIndex];
 
     // Check if we already have explanation for this question
@@ -148,7 +139,6 @@ class _CBTStudyScreenState extends State<CBTStudyScreen> {
 
   void _moveToNextQuestion() {
     setState(() {
-      _selectedIndex = null;
       if (_currentIndex < _questions.length - 1) {
         _currentIndex++;
       } else {
@@ -276,9 +266,8 @@ class _CBTStudyScreenState extends State<CBTStudyScreen> {
                 child: ListView.builder(
                   itemCount: question.options.length,
                   itemBuilder: (context, i) {
-                    final selected = _selectedIndex == i;
                     return GestureDetector(
-                      onTap: _selectedIndex == null ? () => _onAnswer(i) : null,
+                      onTap: () => _onAnswer(i),
                       child: Container(
                         margin: const EdgeInsets.only(bottom: 12),
                         padding: const EdgeInsets.symmetric(
@@ -286,47 +275,21 @@ class _CBTStudyScreenState extends State<CBTStudyScreen> {
                           vertical: 18,
                         ),
                         decoration: BoxDecoration(
-                          color: selected
-                              ? AppColors.eLearningBtnColor1.withOpacity(0.1)
-                              : Colors.white,
+                          color: Colors.white,
                           border: Border.all(
-                            color: selected
-                                ? AppColors.eLearningBtnColor1
-                                : Colors.grey.shade300,
-                            width: selected ? 2 : 1,
+                            color: Colors.grey.shade300,
+                            width: 1,
                           ),
                           borderRadius: BorderRadius.circular(12),
-                          boxShadow: selected
-                              ? [
-                                  BoxShadow(
-                                    color: AppColors.eLearningBtnColor1
-                                        .withOpacity(0.2),
-                                    blurRadius: 8,
-                                    offset: const Offset(0, 2),
-                                  ),
-                                ]
-                              : [],
                         ),
                         child: Row(
                           children: [
-                            Icon(
-                              selected
-                                  ? Icons.radio_button_checked
-                                  : Icons.radio_button_off,
-                              color: selected
-                                  ? AppColors.eLearningBtnColor1
-                                  : Colors.grey,
-                              size: 24,
-                            ),
-                            const SizedBox(width: 16),
                             Expanded(
                               child: Text(
                                 question.options[i],
                                 style: AppTextStyles.normal500(
                                   fontSize: 15,
-                                  color: selected
-                                      ? AppColors.eLearningBtnColor1
-                                      : AppColors.text4Light,
+                                  color: AppColors.text4Light,
                                 ),
                               ),
                             ),
@@ -336,45 +299,6 @@ class _CBTStudyScreenState extends State<CBTStudyScreen> {
                     );
                   },
                 ),
-              ),
-
-              // Navigation buttons
-              const SizedBox(height: 16),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  TextButton(
-                    onPressed: () => Navigator.pop(context),
-                    child: Text(
-                      'Exit',
-                      style: AppTextStyles.normal600(
-                        fontSize: 16,
-                        color: AppColors.text7Light,
-                      ),
-                    ),
-                  ),
-                  ElevatedButton(
-                    onPressed: _selectedIndex != null ? _onNextPressed : null,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.eLearningBtnColor1,
-                      disabledBackgroundColor: Colors.grey.shade300,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 32,
-                        vertical: 12,
-                      ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                    child: Text(
-                      'Next',
-                      style: AppTextStyles.normal600(
-                        fontSize: 16,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ),
-                ],
               ),
             ],
           ),
@@ -671,20 +595,30 @@ class _ExplanationModalState extends State<ExplanationModal> {
                         )
                       else if (_explanation != null)
                         Container(
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: Colors.blue.shade50,
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Text(
-                            _explanation!,
-                            style: AppTextStyles.normal400(
-                              fontSize: 15,
-                              color: AppColors.text4Light,
-                             // height: 1.5,
-                            ),
-                          ),
-                        ),
+  padding: const EdgeInsets.all(16),
+  decoration: BoxDecoration(
+    color: Colors.blue.shade50,
+    borderRadius: BorderRadius.circular(12),
+  ),
+  child: RichText(
+    text: TextSpan(
+      style: AppTextStyles.normal400(
+        fontSize: 15,
+        color: AppColors.text4Light,
+      ),
+      children: [
+        TextSpan(text: _explanation ?? ""),
+
+        // Example of bold part
+        // TextSpan(text: " important ", style: TextStyle(fontWeight: FontWeight.bold)),
+
+        // Example of colored part
+        // TextSpan(text: "highlight", style: TextStyle(color: Colors.blue)),
+      ],
+    ),
+  ),
+)
+
                     ],
                   ),
                 ],
@@ -694,7 +628,7 @@ class _ExplanationModalState extends State<ExplanationModal> {
 
           // Continue button
           Container(
-            padding: const EdgeInsets.all(24),
+            padding: const EdgeInsets.all(23),
             decoration: BoxDecoration(
               color: Colors.white,
               boxShadow: [

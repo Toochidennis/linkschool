@@ -1,6 +1,8 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
+import 'package:gif_view/gif_view.dart';
 import 'package:linkschool/modules/explore/cbt/cbt_games/game_Leaderboard.dart';
+import 'package:linkschool/modules/explore/cbt/cbt_games/game_subject_modal.dart';
 
 class GameDashboardScreen extends StatefulWidget {
   const GameDashboardScreen({super.key});
@@ -216,10 +218,17 @@ Widget _buildStartBanner() {
         children: [
 
           /// --- GIF BACKGROUND ---
-          Image.asset(
-            "assets/images/Gaming.gif",
-            fit: BoxFit.cover,
-          ),
+          GifView.asset(
+    'assets/images/Gaming.gif',
+  fit: BoxFit.cover,
+   imageRepeat: ImageRepeat.noRepeat,
+    frameRate: 30, 
+    loop: false,
+  ),
+          // Image.asset(
+          //   "assets/images/Gaming.gif",
+          //   fit: BoxFit.cover,
+          // ),
 
           /// --- DARK OVERLAY (optional for readability) ---
           Container(
@@ -230,53 +239,50 @@ Widget _buildStartBanner() {
       
           Padding(
             padding: const EdgeInsets.all(18),
-            child: Row(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Spacer(),
-                      const Text(
-                        "Start Your Daily Game!",
-                        style: TextStyle(
-                          fontSize: 22,
-                          fontWeight: FontWeight.w800,
-                          color: Colors.white,
+                const Text(
+                  "Start Your Daily Game!",
+                  style: TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.w800,
+                    color: Colors.white,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Row(
+                  children: [
+                    Spacer(),
+                    ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.white,
+                        foregroundColor: Colors.deepPurple,
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 20, vertical: 8),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
                         ),
                       ),
-                      const SizedBox(height: 10),
-
-                      ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.white,
-                          foregroundColor: Colors.deepPurple,
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 20, vertical: 8),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(14),
-                          ),
+                      onPressed: () {
+                        showModalBottomSheet(
+                          context: context,
+                          isScrollControlled: true,
+                          backgroundColor: Colors.transparent,
+                          builder: (context) => const GameSubjectModal(),
+                        );
+                      },
+                      child: const Text(
+                        " Start",
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                           color: Colors.blue,
+                          fontSize: 16,
                         ),
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const LeaderboardScreen(),
-                            ),
-                          );
-                        },
-                        child: const Text(
-                          " Start",
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                             color: Colors.blue,
-                            fontSize: 16,
-                          ),
-                        ),
-                      )
-                    ],
-                  ),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),

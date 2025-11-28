@@ -82,6 +82,7 @@ dependencies:
   
   http: any
   flutter_gif: ^0.0.4
+  gif_view: ^1.0.3
 dev_dependencies:
   flutter_test:
     sdk: flutter

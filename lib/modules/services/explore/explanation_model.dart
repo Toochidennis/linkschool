@@ -3,7 +3,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 
 class DeepSeekService {
- static String get _apiKey => dotenv.env['_deepSeekApiKey'] ?? "sk-958c40e31ad941e4a31cf13ea3583f80";
+ static String get _apiKey => dotenv.env['_deepSeekApiKey'] ?? "";
   static const String _baseUrl = "https://api.deepseek.com/v1/chat/completions";
 
   /// Get explanation from DeepSeek API
