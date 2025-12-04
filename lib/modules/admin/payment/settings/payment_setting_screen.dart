@@ -65,7 +65,7 @@ class _PaymentSettingScreenState extends State<PaymentSettingScreen> {
         ),
       ),
       body: Container(
-        decoration: Constants.customBoxDecoration(context),
+       // decoration: Constants.customBoxDecoration(context),
         child: Padding(
           padding: const EdgeInsets.all(16.0),
           child: Column(
@@ -101,18 +101,18 @@ class _PaymentSettingScreenState extends State<PaymentSettingScreen> {
                       builder: (context) => VendorSettingsScreen()),
                 ),
               ),
-              _buildSettingsRow(
-                icon: 'assets/icons/profile/logout.svg',
-                title: 'Logout',
-                onTap: () async {
-                  final authProvider =
-                      Provider.of<AuthProvider>(context, listen: false);
-                  await authProvider.logout(); // Clear user data from Hive
-                  widget.onLogout();
-                  Navigator.of(context).pop();
-                  // Trigger the logout callback
-                },
-              ),
+              // _buildSettingsRow(
+              //   icon: 'assets/icons/profile/logout.svg',
+              //   title: 'Logout',
+              //   onTap: () async {
+              //     final authProvider =
+              //         Provider.of<AuthProvider>(context, listen: false);
+              //     await authProvider.logout(); // Clear user data from Hive
+              //     widget.onLogout();
+              //     Navigator.of(context).pop();
+              //     // Trigger the logout callback
+              //   },
+              // ),
             ],
           ),
         ),

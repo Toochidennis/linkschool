@@ -576,7 +576,7 @@ class _StaffResultScreenState extends State<StaffResultScreen> {
     return GestureDetector(
       onTap: onPressed,
       child: Container(
-        padding: EdgeInsets.symmetric(vertical: 10, horizontal: 10),
+        padding: EdgeInsets.symmetric(vertical: 10, horizontal: 6),
         decoration: BoxDecoration(
           color: bgColor,
           borderRadius: BorderRadius.circular(12),
@@ -598,7 +598,7 @@ class _StaffResultScreenState extends State<StaffResultScreen> {
               width: 20,
               height: 20,
             ),
-            SizedBox(width: 8),
+            SizedBox(width: 4),
             Text(
               text,
               style: AppTextStyles.normal600(

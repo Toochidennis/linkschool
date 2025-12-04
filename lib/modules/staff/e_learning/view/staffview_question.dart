@@ -172,45 +172,9 @@ class _StaffViewQuestionScreenState extends State<StaffViewQuestionScreen> {
     return invalidQuestions;
   }
 
-  String? _processQuestionImage(dynamic questionFiles) {
-    if (questionFiles is List && questionFiles.isNotEmpty) {
-      final file = questionFiles.first;
-      if (file is Map) {
-        // Try to get file content first
-        String? fileContent = file['file']?.toString();
-        
-        // If file is empty, use file_name instead
-        if (fileContent == null || fileContent.isEmpty) {
-          fileContent = file['file_name']?.toString();
-        }
-        
-        if (fileContent != null && fileContent.isNotEmpty) {
-          // Handle different image formats
-          if (fileContent.startsWith('data:')) {
-            return fileContent;
-          } else if (_isBase64(fileContent)) {
-            return 'data:image/jpeg;base64,$fileContent';
-          } else {
-            // It's a file path - return as is for network loading
-            return fileContent;
-          }
-        }
-      }
-    }
-    return null;
-  }
+  // Removed _processQuestionImage - now storing raw data like admin version
 
-  bool _isBase64(String str) {
-    try {
-      // Remove any whitespace
-      str = str.replaceAll(RegExp(r'\s+'), '');
-      // Check if it's valid base64
-      base64Decode(str);
-      return true;
-    } catch (e) {
-      return false;
-    }
-  }
+
 
   void _initializeQuestions() {
     if (widget.questions == null || widget.questions!.isEmpty) return;
@@ -235,6 +199,11 @@ class _StaffViewQuestionScreenState extends State<StaffViewQuestionScreen> {
       TextEditingController? correctAnswerController;
       List<Map<String, dynamic>> optionsData = [];
 
+
+
+
+      
+
       if (questionType == 'multiple_choice') {
         final options = (q['options'] is List) ? q['options'] as List : [];
 
@@ -246,17 +215,27 @@ class _StaffViewQuestionScreenState extends State<StaffViewQuestionScreen> {
 
           optionControllers.add(TextEditingController(text: optText));
 
-          // Handle option files
+          // Handle option files - FIXED
           Map<String, dynamic>? optionFile;
           if (opt is Map &&
               opt['option_files'] is List &&
               (opt['option_files'] as List).isNotEmpty) {
             final file = (opt['option_files'] as List).first;
             if (file is Map) {
-              optionFile = {
-                'file_name': file['file_name']?.toString() ?? '',
-                'base64': file['file']?.toString() ?? '',
-              };
+              // Try to get file content first
+              String? fileContent = file['file']?.toString();
+              
+              // If file is empty, use file_name instead
+              if (fileContent == null || fileContent.isEmpty) {
+                fileContent = file['file_name']?.toString();
+              }
+              
+              if (fileContent != null && fileContent.isNotEmpty) {
+                optionFile = {
+                  'file_name': file['file_name']?.toString() ?? '',
+                  'base64': fileContent, // This now contains either base64 or file path
+                };
+              }
             }
           }
 
@@ -288,15 +267,27 @@ class _StaffViewQuestionScreenState extends State<StaffViewQuestionScreen> {
         }
       }
 
-      // Handle question files
+      // Handle question files - FIXED to match admin version
       final questionFiles =
           (q['question_files'] is List) ? q['question_files'] as List : [];
       String? imagePath;
       String? imageName;
-      if (questionFiles.isNotEmpty) {
-        imagePath = _processQuestionImage(questionFiles);
-        if (questionFiles.first is Map) {
-          imageName = questionFiles.first['file_name']?.toString();
+      String? originalImagePath; // Track original for change detection
+      if (questionFiles.isNotEmpty && questionFiles.first is Map) {
+        final file = questionFiles.first;
+        
+        // Try to get file content first
+        String? fileContent = file['file']?.toString();
+        
+        // If file is empty, use file_name instead
+        if (fileContent == null || fileContent.isEmpty) {
+          fileContent = file['file_name']?.toString();
+        }
+        
+        if (fileContent != null && fileContent.isNotEmpty) {
+          imagePath = fileContent;
+          imageName = file['file_name']?.toString() ?? 'question_image.jpg';
+          originalImagePath = fileContent; // Store original path
         }
       }
 
@@ -321,6 +312,7 @@ class _StaffViewQuestionScreenState extends State<StaffViewQuestionScreen> {
         'correct': q['correct'] ?? [],
         'imagePath': imagePath,
         'imageName': imageName,
+        'originalImagePath': originalImagePath, // Track original for change detection
         'question_id': id,
         'questionController': questionController,
         'marksController': marksController,
@@ -512,6 +504,7 @@ class _StaffViewQuestionScreenState extends State<StaffViewQuestionScreen> {
                 ],
           'imagePath': imagePath,
           'imageName': question['imageName'],
+          'originalImagePath': question['originalImagePath'], // Preserve original path
           'questionController': questionController,
           'marksController': marksController,
           'optionControllers': optionControllers,
@@ -586,7 +579,7 @@ class _StaffViewQuestionScreenState extends State<StaffViewQuestionScreen> {
                         'file_name': optionFile['file_name'] ?? '',
                         'old_file_name': '',
                         'type': 'image',
-                        'file': optionFile['base64'] ?? optionFile['file_name'],
+                        'file': optionFile['base64'] ?? '',
                       }
                     ]
                   : [],
@@ -602,20 +595,59 @@ class _StaffViewQuestionScreenState extends State<StaffViewQuestionScreen> {
           correct = q['correct'];
         }
 
+        // Handle question image file structure based on scenarios
+        List<Map<String, dynamic>> questionFiles = [];
+        if (q['imagePath'] != null) {
+          final currentImagePath = q['imagePath'];
+          final originalImagePath = q['originalImagePath'];
+          final imageName = q['imageName'] ?? '';
+          
+          // Scenario 1: Creating new question (no originalImagePath)
+          if (originalImagePath == null || originalImagePath.isEmpty) {
+            questionFiles = [
+              {
+                'file_name': imageName,
+                'old_file_name': '',
+                'type': 'image',
+                'file': currentImagePath,
+              }
+            ];
+          }
+          // Scenario 2: Editing - Image unchanged
+          else if (currentImagePath == originalImagePath) {
+            questionFiles = [
+              {
+                'file_name': imageName,
+                'old_file_name': imageName,
+                'type': 'image',
+                'file': '', // Empty file means no change
+              }
+            ];
+          }
+          // Scenario 3: Editing - Image changed
+          else {
+            // Extract filename from original path (handle both URL paths and filenames)
+            String oldFileName = originalImagePath;
+            if (originalImagePath.contains('/')) {
+              oldFileName = originalImagePath.split('/').last;
+            }
+            
+            questionFiles = [
+              {
+                'file_name': imageName,
+                'old_file_name': oldFileName,
+                'type': 'image',
+                'file': currentImagePath,
+              }
+            ];
+          }
+        }
+
         return {
           'question_text': q['title'] ?? '',
           'question_grade': q['grade'] ?? '1',
           'question_type': q['type'],
-          'question_files': q['imagePath'] != null
-              ? [
-                  {
-                    'file_name': q['imageName'] ?? '',
-                    'old_file_name': "",
-                    'type': 'image',
-                    'file': q['imagePath'],
-                  }
-                ]
-              : [],
+          'question_files': questionFiles,
           'options': options,
           'correct': correct,
         };
@@ -672,23 +704,60 @@ class _StaffViewQuestionScreenState extends State<StaffViewQuestionScreen> {
           correct = q['correct'];
         }
 
-        // Debug print to verify question_id exists
+        // Handle question image file structure based on scenarios
+        List<Map<String, dynamic>> questionFiles = [];
+        if (q['imagePath'] != null) {
+          final currentImagePath = q['imagePath'];
+          final originalImagePath = q['originalImagePath'];
+          final imageName = q['imageName'] ?? '';
+          
+          // Scenario 1: Creating new question (no originalImagePath)
+          if (originalImagePath == null || originalImagePath.isEmpty) {
+            questionFiles = [
+              {
+                'file_name': imageName,
+                'old_file_name': '',
+                'type': 'image',
+                'file': currentImagePath,
+              }
+            ];
+          }
+          // Scenario 2: Editing - Image unchanged
+          else if (currentImagePath == originalImagePath) {
+            questionFiles = [
+              {
+                'file_name': imageName,
+                'old_file_name': imageName,
+                'type': 'image',
+                'file': '', // Empty file means no change
+              }
+            ];
+          }
+          // Scenario 3: Editing - Image changed
+          else {
+            // Extract filename from original path (handle both URL paths and filenames)
+            String oldFileName = originalImagePath;
+            if (originalImagePath.contains('/')) {
+              oldFileName = originalImagePath.split('/').last;
+            }
+            
+            questionFiles = [
+              {
+                'file_name': imageName,
+                'old_file_name': oldFileName,
+                'type': 'image',
+                'file': currentImagePath,
+              }
+            ];
+          }
+        }
 
         return {
           'question_id': q['question_id'], // Ensure this is included
           'question_text': q['title'] ?? '',
           'question_grade': q['grade'] ?? '1',
           'question_type': q['type'],
-          'question_files': q['imagePath'] != null
-              ? [
-                  {
-                    'file_name': q['imageName'] ?? '',
-                    'old_file_name': "",
-                    'type': 'image',
-                    'file': q['imagePath'],
-                  }
-                ]
-              : [],
+          'question_files': questionFiles,
           'options': options,
           'correct': correct,
         };
@@ -708,7 +777,6 @@ class _StaffViewQuestionScreenState extends State<StaffViewQuestionScreen> {
         print('Updated assessment: ${jsonEncode(Updatedassessment)}');
 
         await quizProvider.updateTest(Updatedassessment);
-        Navigator.of(context).pop();
         CustomToaster.toastSuccess(
             context, "Success", "Questions updated successfully");
       } else {
@@ -724,14 +792,8 @@ class _StaffViewQuestionScreenState extends State<StaffViewQuestionScreen> {
         widget.onSaveFlag?.call();
         widget.onCreation?.call();
 
-        if (widget.source == "staff_empty_subject") {
-
-             Navigator.of(context).pop();
-             
-        } else {
-          Navigator.of(context).pop();
-          
-        }
+        // Navigate back once to the previous screen
+        Navigator.of(context).pop();
       }
     } catch (e) {
       print('Error posting quiz: $e');
@@ -1349,6 +1411,7 @@ class _StaffViewQuestionScreenState extends State<StaffViewQuestionScreen> {
         'correct': [],
         'imagePath': null,
         'imageName': null,
+        'originalImagePath': null, // New question, no original
         'questionController': questionController,
         'marksController': marksController,
         'optionControllers': optionControllers,
@@ -1595,7 +1658,7 @@ class _StaffViewQuestionScreenState extends State<StaffViewQuestionScreen> {
                             child: Container(
                               constraints: const BoxConstraints(
                                   maxHeight: 100, maxWidth: 200),
-                              child: _buildQuestionImage(imagePath),
+                              child: _buildQuestionImageWidget(imagePath),
                             ),
                           ),
                           TextButton(
@@ -1821,6 +1884,7 @@ class _StaffViewQuestionScreenState extends State<StaffViewQuestionScreen> {
     // Copy image data if exists
     final imagePath = originalQuestion['imagePath'];
     final imageName = originalQuestion['imageName'];
+    final originalImagePath = originalQuestion['originalImagePath'];
 
     // Copy options data
     final options = (originalQuestion['options'] as List).map((opt) {
@@ -1843,6 +1907,7 @@ class _StaffViewQuestionScreenState extends State<StaffViewQuestionScreen> {
         'correct': List<Map<String, dynamic>>.from(originalQuestion['correct']),
         'imagePath': imagePath,
         'imageName': imageName,
+        'originalImagePath': originalImagePath, // Preserve original tracking
         'questionController': questionController,
         'marksController': marksController,
         'optionControllers': optionControllers,
@@ -2367,15 +2432,15 @@ class _StaffViewQuestionScreenState extends State<StaffViewQuestionScreen> {
     }
   }
 
-  Widget _buildQuestionImage(String imageUrl) {
+  Widget _buildQuestionImageWidget(String imagePath) {
     // Check if it's base64 data
-    if (imageUrl.startsWith('data:')) {
-      final base64String = imageUrl.split(',').last;
+    if (imagePath.startsWith('data:')) {
+      final base64String = imagePath.split(',').last;
       return Image.memory(
         base64Decode(base64String),
         fit: BoxFit.contain,
         errorBuilder: (context, error, stackTrace) {
-          return Text(
+          return const Text(
             'Error loading image',
             style: TextStyle(fontSize: 14, color: Colors.red),
           );
@@ -2383,12 +2448,12 @@ class _StaffViewQuestionScreenState extends State<StaffViewQuestionScreen> {
       );
     } 
     // Check if it's plain base64 (without data: prefix)
-    else if (_isBase64(imageUrl)) {
+    else if (_isBase64String(imagePath)) {
       return Image.memory(
-        base64Decode(imageUrl),
+        base64Decode(imagePath),
         fit: BoxFit.contain,
         errorBuilder: (context, error, stackTrace) {
-          return Text(
+          return const Text(
             'Error loading image',
             style: TextStyle(fontSize: 14, color: Colors.red),
           );
@@ -2398,10 +2463,10 @@ class _StaffViewQuestionScreenState extends State<StaffViewQuestionScreen> {
     // Otherwise treat as network URL
     else {
       return Image.network(
-        'https://linkskool.net/$imageUrl',
+        'https://linkskool.net/$imagePath',
         fit: BoxFit.contain,
         errorBuilder: (context, error, stackTrace) {
-          return Text(
+          return const Text(
             'Error loading image',
             style: TextStyle(fontSize: 14, color: Colors.red),
           );
@@ -2410,7 +2475,21 @@ class _StaffViewQuestionScreenState extends State<StaffViewQuestionScreen> {
     }
   }
 
+  // Helper method to check if string is valid base64
+  bool _isBase64String(String str) {
+    try {
+      // Remove any whitespace
+      str = str.replaceAll(RegExp(r'\s+'), '');
+      // Check if it's valid base64
+      base64Decode(str);
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
 }
+
 
 class AttachmentItem {
   final String content;

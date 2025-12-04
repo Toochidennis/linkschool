@@ -115,7 +115,7 @@ class _TopContainerState extends State<TopContainer> {
                   Container(
                     height: 42,
                     padding:
-                        const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                     decoration: BoxDecoration(
                       color: AppColors.regBtnColor1,
                       borderRadius: BorderRadius.circular(24),
@@ -125,6 +125,7 @@ class _TopContainerState extends State<TopContainer> {
                       children: [
                         Text(
                           _academicSession,
+                          overflow: TextOverflow.ellipsis,
                           style: AppTextStyles.normal600(
                               fontSize: 12, color: AppColors.backgroundDark),
                         ),

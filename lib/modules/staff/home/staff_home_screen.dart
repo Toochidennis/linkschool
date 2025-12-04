@@ -778,23 +778,7 @@ class _StaffHomeScreenState extends State<StaffHomeScreen>
                           ),
                         ),
                         const SizedBox(height: 8),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: List.generate(
-                            provider.recentActivities.length,
-                            (index) => Container(
-                              margin: const EdgeInsets.symmetric(horizontal: 4),
-                              width: 8,
-                              height: 8,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: _currentPage == index
-                                    ? AppColors.eLearningBtnColor1
-                                    : Colors.grey.shade300,
-                              ),
-                            ),
-                          ),
-                        ),
+                       
                         const SizedBox(height: 18),
                         Text(
                           'You can...',

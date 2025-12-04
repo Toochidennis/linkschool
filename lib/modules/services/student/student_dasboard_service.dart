@@ -45,17 +45,21 @@ class DashboardService {
       );
 
       final data = response;
-      print(
-          "it is gott ${DashboardData.fromJson(data.rawData?['data']).recentActivities[0].title}");
+      print("Dashboard data received successfully");
+      
+      // Parse the dashboard data
+      final dashboardData = DashboardData.fromJson(data.rawData?['data']);
+      
+      // Store syllabus ID if available from recent quizzes
       int? syllabusid = userBox.get('syllabusid');
-
-      if (syllabusid == null) {
-        syllabusid = DashboardData.fromJson(data.rawData?['data'])
-            .recentActivities[0]
-            .syllabusId;
-        await userBox.put('syllabusid', syllabusid);
+      if (syllabusid == null && dashboardData.recentQuizzes.isNotEmpty) {
+        syllabusid = dashboardData.recentQuizzes[0].syllabusId;
+        if (syllabusid != null) {
+          await userBox.put('syllabusid', syllabusid);
+        }
       }
-      return DashboardData.fromJson(data.rawData?['data']);
+      
+      return dashboardData;
     } catch (e) {
       // You can log this or use a crash reporting service like Sentry
       throw Exception('Failed to fetch dashboard data: $e');

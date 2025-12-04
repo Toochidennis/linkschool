@@ -421,37 +421,40 @@ class _EmptySubjectScreenState extends State<EmptySubjectScreen>
   }
 
   Widget _buildCourseworkScreen() {
-    return Container(
-      width: double.infinity,
-      height: double.infinity,
-      decoration: Constants.customBoxDecoration(context),
-      child: Consumer<SyllabusContentProvider>(
-        builder: (context, provider, child) {
-          if (provider.isLoading) {
-            return const Center(child: CircularProgressIndicator());
-          }
-
-          if (provider.error.isNotEmpty) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text('Error: ${provider.error}'),
-                  ElevatedButton(
-                    onPressed: _loadSyllabusContents,
-                    child: const Text('Retry'),
-                  ),
-                ],
-              ),
-            );
-          }
-
-          if (_topics.isEmpty && _noTopicItems.isEmpty) {
-            return _buildEmptyState();
-          }
-
-          return _buildSyllabusDetails();
-        },
+    return RefreshIndicator(
+      onRefresh: _loadSyllabusContents,
+      child: Container(
+        width: double.infinity,
+        height: double.infinity,
+        decoration: Constants.customBoxDecoration(context),
+        child: Consumer<SyllabusContentProvider>(
+          builder: (context, provider, child) {
+            if (provider.isLoading) {
+              return const Center(child: CircularProgressIndicator());
+            }
+      
+            if (provider.error.isNotEmpty) {
+              return Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text('Error: ${provider.error}'),
+                    ElevatedButton(
+                      onPressed: _loadSyllabusContents,
+                      child: const Text('Retry'),
+                    ),
+                  ],
+                ),
+              );
+            }
+      
+            if (_topics.isEmpty && _noTopicItems.isEmpty) {
+              return _buildEmptyState();
+            }
+      
+            return _buildSyllabusDetails();
+          },
+        ),
       ),
     );
   }

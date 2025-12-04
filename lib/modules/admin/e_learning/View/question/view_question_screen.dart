@@ -192,6 +192,7 @@ class _ViewQuestionScreenState extends State<ViewQuestionScreen> {
         (q['question_files'] is List) ? q['question_files'] as List : [];
     String? imagePath;
     String? imageName;
+    String? originalImagePath; // Track original for change detection
     if (questionFiles.isNotEmpty && questionFiles.first is Map) {
       final file = questionFiles.first;
       
@@ -206,6 +207,7 @@ class _ViewQuestionScreenState extends State<ViewQuestionScreen> {
       if (fileContent != null && fileContent.isNotEmpty) {
         imagePath = fileContent;
         imageName = file['file_name']?.toString() ?? 'question_image.jpg';
+        originalImagePath = fileContent; // Store original path
       }
     }
 
@@ -231,6 +233,7 @@ class _ViewQuestionScreenState extends State<ViewQuestionScreen> {
       'correct': q['correct'] ?? [],
       'imagePath': imagePath,
       'imageName': imageName,
+      'originalImagePath': originalImagePath, // Track original for change detection
       'question_id': id,
       'questionController': questionController,
       'marksController': marksController,
@@ -276,14 +279,8 @@ class _ViewQuestionScreenState extends State<ViewQuestionScreen> {
       appBar: AppBar(
         leading: IconButton(
           onPressed: () {
-            if (widget.source == 'empty_subject') {
-              Navigator.of(context)
-                  .popUntil(ModalRoute.withName('/empty_subject'));
-            } else {
-              Navigator.of(context).pop();
-            }
-            // Navigator.of(context)
-            //     .popUntil(ModalRoute.withName('/empty_subject'));
+            // Simply pop - let the navigation stack handle it naturally
+            Navigator.of(context).pop();
           },
           icon: Image.asset(
             'assets/icons/arrow_back.png',
@@ -431,6 +428,7 @@ class _ViewQuestionScreenState extends State<ViewQuestionScreen> {
                 ],
           'imagePath': imagePath,
           'imageName': question['imageName'],
+          'originalImagePath': question['originalImagePath'], // Preserve original path
           'questionController': questionController,
           'marksController': marksController,
           'optionControllers': optionControllers,
@@ -521,20 +519,59 @@ class _ViewQuestionScreenState extends State<ViewQuestionScreen> {
           correct = q['correct'];
         }
 
+        // Handle question image file structure based on scenarios
+        List<Map<String, dynamic>> questionFiles = [];
+        if (q['imagePath'] != null) {
+          final currentImagePath = q['imagePath'];
+          final originalImagePath = q['originalImagePath'];
+          final imageName = q['imageName'] ?? '';
+          
+          // Scenario 1: Creating new question (no originalImagePath)
+          if (originalImagePath == null || originalImagePath.isEmpty) {
+            questionFiles = [
+              {
+                'file_name': imageName,
+                'old_file_name': '', // Empty for new questions
+                'type': 'image',
+                'file': currentImagePath, // Base64 data
+              }
+            ];
+          }
+          // Scenario 2: Editing - Image unchanged
+          else if (currentImagePath == originalImagePath) {
+            questionFiles = [
+              {
+                'file_name': imageName,
+                'old_file_name': imageName, // Same as file_name
+                'type': 'image',
+                'file': '', // Empty - no upload needed
+              }
+            ];
+          }
+          // Scenario 3: Editing - Image changed
+          else {
+            // Extract filename from original path (handle both URL paths and filenames)
+            String oldFileName = originalImagePath;
+            if (originalImagePath.contains('/')) {
+              oldFileName = originalImagePath.split('/').last;
+            }
+            
+            questionFiles = [
+              {
+                'file_name': imageName, // New file name
+                'old_file_name': oldFileName, // Original file name
+                'type': 'image',
+                'file': currentImagePath, // New base64 data
+              }
+            ];
+          }
+        }
+
         return {
           'question_text': q['title'] ?? '',
           'question_grade': q['grade'] ?? '1',
           'question_type': q['type'],
-          'question_files': q['imagePath'] != null
-              ? [
-                  {
-                    'file_name': q['imageName'] ?? '',
-                    'old_file_name': "",
-                    'type': 'image',
-                    'file': q['imagePath'],
-                  }
-                ]
-              : [],
+          'question_files': questionFiles,
           'options': options,
           'correct': correct,
         };
@@ -591,21 +628,60 @@ class _ViewQuestionScreenState extends State<ViewQuestionScreen> {
           correct = q['correct'];
         }
 
+        // Handle question image file structure based on scenarios
+        List<Map<String, dynamic>> questionFiles = [];
+        if (q['imagePath'] != null) {
+          final currentImagePath = q['imagePath'];
+          final originalImagePath = q['originalImagePath'];
+          final imageName = q['imageName'] ?? '';
+          
+          // Scenario 1: Creating new question (no originalImagePath)
+          if (originalImagePath == null || originalImagePath.isEmpty) {
+            questionFiles = [
+              {
+                'file_name': imageName,
+                'old_file_name': '', // Empty for new questions
+                'type': 'image',
+                'file': currentImagePath, // Base64 data
+              }
+            ];
+          }
+          // Scenario 2: Editing - Image unchanged
+          else if (currentImagePath == originalImagePath) {
+            questionFiles = [
+              {
+                'file_name': imageName,
+                'old_file_name': imageName, // Same as file_name
+                'type': 'image',
+                'file': '', // Empty - no upload needed
+              }
+            ];
+          }
+          // Scenario 3: Editing - Image changed
+          else {
+            // Extract filename from original path (handle both URL paths and filenames)
+            String oldFileName = originalImagePath;
+            if (originalImagePath.contains('/')) {
+              oldFileName = originalImagePath.split('/').last;
+            }
+            
+            questionFiles = [
+              {
+                'file_name': imageName, // New file name
+                'old_file_name': oldFileName, // Original file name
+                'type': 'image',
+                'file': currentImagePath, // New base64 data
+              }
+            ];
+          }
+        }
+
         return {
           'question_id': q['question_id'] ?? "0", // Ensure this is included
           'question_text': q['title'] ?? '',
           'question_grade': q['grade'] ?? '',
           'question_type': q['type'],
-          'question_files': q['imagePath'] != null
-              ? [
-                  {
-                    'file_name': q['imageName'] ?? '',
-                    'old_file_name': "",
-                    'type': 'image',
-                    'file': q['imagePath'],
-                  }
-                ]
-              : [],
+          'question_files': questionFiles,
           'options': options,
           'correct': correct,
         };
@@ -642,12 +718,20 @@ class _ViewQuestionScreenState extends State<ViewQuestionScreen> {
         widget.onSaveFlag?.call();
         widget.onCreation?.call();
 
+        // Navigate back based on source
         if (widget.source == 'empty_subject') {
-          Navigator.of(context).popUntil(ModalRoute.withName('/empty_subject'));
-        } else if (widget.source == 'elearning_dashboard') {
-          Navigator.of(context).popUntil(ModalRoute.withName('/recent_quiz'));
-        } else {
+          // Pop all screens until we're back at empty_subject
+          // Since we can't use named routes, pop until we hit the right screen
+          // or just pop back one level as the caller will refresh
           Navigator.of(context).pop();
+        } else if (widget.source == 'quiz_screen') {
+          // Coming from quiz_screen with pushReplacement, just pop once
+          Navigator.of(context).pop();
+        } else if (widget.source == 'elearning_dashboard') {
+          // Pop back one level
+          Navigator.of(context).pop();
+        } else {
+          // Default: pop once
           Navigator.of(context).pop();
         }
       }
@@ -1271,6 +1355,7 @@ class _ViewQuestionScreenState extends State<ViewQuestionScreen> {
         'correct': [],
         'imagePath': null,
         'imageName': null,
+        'originalImagePath': null, // New question, no original
         'questionController': questionController,
         'marksController': marksController,
         'optionControllers': optionControllers,
@@ -1789,6 +1874,7 @@ class _ViewQuestionScreenState extends State<ViewQuestionScreen> {
     // Copy image data if exists
     final imagePath = originalQuestion['imagePath'];
     final imageName = originalQuestion['imageName'];
+    final originalImagePath = originalQuestion['originalImagePath'];
 
     // Copy options data
     final options = (originalQuestion['options'] as List).map((opt) {
@@ -1811,6 +1897,7 @@ class _ViewQuestionScreenState extends State<ViewQuestionScreen> {
         'correct': List<Map<String, dynamic>>.from(originalQuestion['correct']),
         'imagePath': imagePath,
         'imageName': imageName,
+        'originalImagePath': originalImagePath, // Preserve original tracking
         'questionController': questionController,
         'marksController': marksController,
         'optionControllers': optionControllers,
@@ -2062,6 +2149,11 @@ class _ViewQuestionScreenState extends State<ViewQuestionScreen> {
                         true,
                       );
                       if (isQuestion) {
+                        // Keep originalImagePath to track change (if it was set)
+                        // If originalImagePath is null, this is the first image
+                        if (createdQuestions[index]['originalImagePath'] == null) {
+                          createdQuestions[index]['originalImagePath'] = null;
+                        }
                         createdQuestions[index]['imagePath'] =
                             imageData['base64'];
                         createdQuestions[index]['imageName'] =

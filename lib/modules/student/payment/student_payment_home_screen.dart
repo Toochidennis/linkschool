@@ -155,7 +155,7 @@ class _StudentPaymentHomeScreenState extends State<StudentPaymentHomeScreen>
 
   Widget _buildEmptyStateCard() {
     return Padding(
-      padding: const EdgeInsets.all(20.0),
+      padding: const EdgeInsets.all(16.0),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
@@ -304,8 +304,9 @@ class _StudentPaymentHomeScreenState extends State<StudentPaymentHomeScreen>
 
                         return Padding(
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 8.0, vertical: 16.0),
+                              horizontal: 8.0, vertical: 10.0),
                           child: Container(
+                           
                             width: double.infinity,
                             decoration: BoxDecoration(
                               color: isEmptyState

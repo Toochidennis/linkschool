@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 
 class LeaderboardScreen extends StatelessWidget {
-  const LeaderboardScreen({Key? key}) : super(key: key);
+  final bool? fromChallenge;
+  final bool? fromGameDashboard;
+  const LeaderboardScreen({Key? key, this.fromChallenge, this.fromGameDashboard}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -13,9 +15,16 @@ class LeaderboardScreen extends StatelessWidget {
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.black),
           onPressed: () {
-            Navigator.of(context).pop();
-            // Navigator.of(context).pop();
+           if(fromChallenge == true){
+              Navigator.of(context).pop();
+           } else if(fromGameDashboard == true){
              Navigator.of(context).pop();
+           }
+           else {
+             Navigator.of(context).pop();
+              Navigator.of(context).pop();
+           
+           }
 
           },
         ),

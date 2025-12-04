@@ -83,6 +83,8 @@ dependencies:
   http: any
   flutter_gif: ^0.0.4
   gif_view: ^1.0.3
+  audioplayers: ^6.5.1
+  vibration: ^3.1.4
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -102,6 +104,7 @@ flutter:
     - .env
     - assets/icons/
     - assets/images/
+    - assets/sounds/
     - assets/icons/e_learning/
     - assets/icons/result/
     - assets/icons/student/

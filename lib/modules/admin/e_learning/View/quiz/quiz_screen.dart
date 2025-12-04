@@ -67,11 +67,11 @@ class _QuizScreenState extends State<QuizScreen> {
               onSelected: (String result) {
                 switch (result) {
                   case 'edit':
-                    Navigator.push(
+                    Navigator.pushReplacement(
                       context,
                       MaterialPageRoute(
                         builder: (context) => ViewQuestionScreen(
-                          source: 'elearning_dashboard',
+                          source: 'quiz_screen',
                           question: Question(
                             id: widget.question.id, // Pass the quiz ID
                             title: widget.question.title,

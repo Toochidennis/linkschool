@@ -181,7 +181,7 @@ class _HistorySectionState extends State<HistorySection> with RouteAware {
         }
 
         return Container(
-          margin: const EdgeInsets.symmetric(horizontal: 16),
+          margin: const EdgeInsets.symmetric(horizontal: 12),
           padding: const EdgeInsets.all(10),
           decoration: BoxDecoration(
             borderRadius: const BorderRadius.only(

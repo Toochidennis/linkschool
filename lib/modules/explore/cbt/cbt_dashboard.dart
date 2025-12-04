@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:linkschool/modules/explore/cbt/cbt_games/cbt_games_dashboard.dart';
-import 'package:linkschool/modules/explore/cbt/cbt_games/join_challange.dart';
+import 'package:linkschool/modules/explore/cbt/cbt_challange/join_challange.dart';
 import 'package:linkschool/modules/explore/cbt/studys_subject_modal.dart';
 import 'package:linkschool/modules/providers/explore/cbt_provider.dart';
 import 'package:linkschool/modules/model/explore/cbt_history_model.dart';

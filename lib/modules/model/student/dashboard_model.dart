@@ -10,15 +10,42 @@ class DashboardData {
   });
 
   factory DashboardData.fromJson(Map<String, dynamic> json) {
+    // Combine recent_quizzes with feeds (news and questions) as recent activities
+    List<RecentActivity> activities = [];
+    
+    // Add recent_quizzes as activities
+    if (json['recent_quizzes'] is List) {
+      activities.addAll(
+        (json['recent_quizzes'] as List)
+            .map((e) => RecentActivity.fromJson(e))
+            .toList(),
+      );
+    }
+    
+    // Add feeds.news as activities
+    if (json['feeds'] is Map && json['feeds']['news'] is List) {
+      activities.addAll(
+        (json['feeds']['news'] as List)
+            .map((e) => RecentActivity.fromFeedJson(e))
+            .toList(),
+      );
+    }
+    
+    // Add feeds.questions as activities
+    if (json['feeds'] is Map && json['feeds']['questions'] is List) {
+      activities.addAll(
+        (json['feeds']['questions'] as List)
+            .map((e) => RecentActivity.fromFeedJson(e))
+            .toList(),
+      );
+    }
+    
     return DashboardData(
       recentQuizzes: (json['recent_quizzes'] as List<dynamic>?)
               ?.map((e) => RecentQuiz.fromJson(e))
               .toList() ??
           [],
-      recentActivities: (json['recent_activities'] as List<dynamic>?)
-              ?.map((e) => RecentActivity.fromJson(e))
-              .toList() ??
-          [],
+      recentActivities: activities,
       availableCourses: (json['available_courses'] as List<dynamic>?)
               ?.map((e) => AvailableCourse.fromJson(e))
               .toList() ??
@@ -111,6 +138,21 @@ class RecentActivity {
       courseName: json['course_name'] ?? '',
       createdBy: json['created_by'] ?? '',
       datePosted: json['date_posted'] ?? '',
+    );
+  }
+
+  // Factory for parsing feed data (news and questions)
+  factory RecentActivity.fromFeedJson(Map<String, dynamic> json) {
+    return RecentActivity(
+      id: json['id'],
+      syllabusId: null, // Feeds don't have syllabus_id
+      courseId: 0, // Feeds don't have course_id
+      levelId: '', // Feeds don't have level_id
+      title: json['title'] ?? '',
+      type: json['type'] ?? 'feed',
+      courseName: '', // Feeds don't have course_name
+      createdBy: json['author_name'] ?? '',
+      datePosted: json['created_at'] ?? '',
     );
   }
 
