@@ -5,6 +5,7 @@ import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/services/firebase_auth_service.dart';
 import 'package:linkschool/modules/explore/e_library/widgets/paystack_cbt_webview.dart';
 import 'package:linkschool/modules/providers/cbt_user_provider.dart';
+import 'package:linkschool/modules/common/widgets/portal/profile/naira_icon.dart';
 import 'package:paystack_for_flutter/paystack_for_flutter.dart';
 import 'package:provider/provider.dart';
 import 'package:http/http.dart' as http;
@@ -107,72 +108,86 @@ class _SubscriptionEnforcementDialogState
   Widget build(BuildContext context) {
     return PopScope(
       canPop: !_isProcessing, // ⚡ Prevent dismissal during processing
-      child: Dialog(
-        backgroundColor: Colors.transparent,
-        child: ScaleTransition(
-          scale: _scaleAnimation,
-          child: FadeTransition(
-            opacity: _fadeAnimation,
-            child: Container(
-              constraints: const BoxConstraints(maxWidth: 400),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(24),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.2),
-                    blurRadius: 20,
-                    offset: const Offset(0, 10),
-                  ),
-                ],
-              ),
-              child: Stack(
-                children: [
-                  Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      if (!_isProcessing)
-                        Align(
-                          alignment: Alignment.topRight,
-                          child: IconButton(
-                            icon: const Icon(Icons.close),
-                            onPressed: () => Navigator.of(context).pop(),
-                          ),
-                        ),
-                      _buildContent(),
+      child: OrientationBuilder(
+        builder: (context, orientation) {
+          final isLandscape = orientation == Orientation.landscape;
+          final screenWidth = MediaQuery.of(context).size.width;
+         final dialogWidth = isLandscape
+            ? screenWidth * 0.50  // 50% width in landscape
+            : screenWidth * 0.85; // 85% width in portrait
+
+
+
+          return Dialog(
+            backgroundColor: Colors.transparent,
+            child: ScaleTransition(
+              scale: _scaleAnimation,
+              child: FadeTransition(
+                opacity: _fadeAnimation,
+                child: Container(
+                  width: 400,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(24),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.2),
+                        blurRadius: 20,
+                        offset: const Offset(0, 10),
+                      ),
                     ],
                   ),
-                  // ⏳ Processing overlay
-                  if (_isProcessing)
-                    Positioned.fill(
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.95),
-                          borderRadius: BorderRadius.circular(24),
-                        ),
-                        child: Center(
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              const CircularProgressIndicator(),
-                              const SizedBox(height: 16),
-                              Text(
-                                'Processing...',
-                                style: AppTextStyles.normal600(
-                                  fontSize: 16,
-                                  color: AppColors.text4Light,
+                  child: Stack(
+                    children: [
+                      SingleChildScrollView(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            if (!_isProcessing)
+                              Align(
+                                alignment: Alignment.topRight,
+                                child: IconButton(
+                                  icon: const Icon(Icons.close),
+                                  onPressed: () => Navigator.of(context).pop(),
                                 ),
                               ),
-                            ],
-                          ),
+                            _buildContent(),
+                          ],
                         ),
                       ),
-                    ),
-                ],
+                      // ⏳ Processing overlay
+                      if (_isProcessing)
+                        Positioned.fill(
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.95),
+                              borderRadius: BorderRadius.circular(24),
+                            ),
+                            child: Center(
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const CircularProgressIndicator(),
+                                  const SizedBox(height: 16),
+                                  Text(
+                                    'Processing...',
+                                    style: AppTextStyles.normal600(
+                                      fontSize: 16,
+                                      color: AppColors.text4Light,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
               ),
             ),
-          ),
-        ),
+          );
+        },
       ),
     );
   }
@@ -187,12 +202,12 @@ class _SubscriptionEnforcementDialogState
 
   Widget _buildHardBlockContent() {
     return Padding(
-      padding: const EdgeInsets.all(32),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           Container(
-            padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
               color: AppColors.eLearningRedBtnColor.withOpacity(0.1),
               shape: BoxShape.circle,
@@ -213,14 +228,48 @@ class _SubscriptionEnforcementDialogState
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 12),
-          Text(
-            'You\'ve used all ${widget.remainingTests + 3} free tests. Pay ₦${widget.amount} to continue your learning journey with unlimited access.',
+            Text.rich(
+            TextSpan(
+              children: [
+              const TextSpan(
+                text: "You've used all ",
+              ),
+              TextSpan(
+                text: '${widget.remainingTests + 3}',
+                style: AppTextStyles.normal700(
+                fontSize: 15,
+                color: AppColors.text4Light,
+                ),
+              ),
+              const TextSpan(
+                text: ' free tests. Pay ',
+              ),
+              WidgetSpan(
+                alignment: PlaceholderAlignment.middle,
+                child: NairaSvgIcon(
+                  color:Colors.black,
+                width: 15,
+                height: 15,
+                ),
+              ),
+              TextSpan(
+                text: '${widget.amount}',
+                style: AppTextStyles.normal700(
+                fontSize: 15,
+                color:Colors.black
+                ),
+              ),
+              const TextSpan(
+                text: ' to continue your learning journey with unlimited access.',
+              ),
+              ],
+            ),
             style: AppTextStyles.normal400(
               fontSize: 15,
               color: AppColors.text7Light,
             ),
             textAlign: TextAlign.center,
-          ),
+            ),
           const SizedBox(height: 10),
           _buildPriceDisplay(36),
           const SizedBox(height: 10),
@@ -334,12 +383,23 @@ class _SubscriptionEnforcementDialogState
                         color: Colors.white,
                       ),
                     )
-                  : Text(
-                      _isUserSignedIn ? 'Pay ₦${widget.amount}' : 'Sign Up & Pay ₦${widget.amount}',
-                      style: AppTextStyles.normal600(
-                        fontSize: 15,
-                        color: Colors.white,
-                      ),
+                  : Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        NairaSvgIcon(
+                          color: Colors.white,
+                          width: 14,
+                          height: 14,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          _isUserSignedIn ? 'Pay ${widget.amount}' : 'Sign Up & Pay ${widget.amount}',
+                          style: AppTextStyles.normal600(
+                            fontSize: 15,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ],
                     ),
             ),
           ),
@@ -361,7 +421,7 @@ class _SubscriptionEnforcementDialogState
 
   Widget _buildPriceDisplay(double fontSize) {
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 24),
+      padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 24),
       decoration: BoxDecoration(
         color: AppColors.eLearningBtnColor1.withOpacity(0.1),
         borderRadius: BorderRadius.circular(8),
@@ -370,12 +430,10 @@ class _SubscriptionEnforcementDialogState
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            '₦',
-            style: AppTextStyles.normal600(
-              fontSize: fontSize / 2,
-              color: AppColors.eLearningBtnColor1,
-            ),
+          NairaSvgIcon(
+            color: AppColors.eLearningBtnColor1,
+            width: fontSize,
+            height: fontSize ,
           ),
           Text(
             '${widget.amount}',

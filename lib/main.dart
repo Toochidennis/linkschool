@@ -42,6 +42,7 @@ import 'package:linkschool/modules/providers/admin/term_provider.dart';
 import 'package:linkschool/modules/providers/admin/view_course_result_provider.dart';
 import 'package:linkschool/modules/providers/cbt_user_provider.dart';
 import 'package:linkschool/modules/providers/explore/cbt_provider.dart';
+import 'package:linkschool/modules/providers/explore/challange/challange_provider.dart';
 import 'package:linkschool/modules/providers/explore/ebook_provider.dart';
 import 'package:linkschool/modules/providers/explore/exam_provider.dart';
 import 'package:linkschool/modules/providers/explore/for_you_provider.dart';
@@ -120,6 +121,7 @@ Future<void> main() async {
         // Explore
         ChangeNotifierProvider(create: (_) => AdmissionProvider()),
         ChangeNotifierProvider<NewsProvider>(create: (_) => NewsProvider()),
+        ChangeNotifierProvider(create: (_) => ChallengeProvider()),
 
         ChangeNotifierProvider(create: (_) => SubjectProvider()),
         ChangeNotifierProvider(create: (_) => CbtUserProvider()),

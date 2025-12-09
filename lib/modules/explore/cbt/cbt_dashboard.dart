@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:linkschool/modules/explore/cbt/cbt_games/cbt_games_dashboard.dart';
@@ -169,31 +171,55 @@ class _CBTDashboardState extends State<CBTDashboard>
              // decoration: Constants.customBoxDecoration(context),
               child: CustomScrollView(
                 physics: const BouncingScrollPhysics(),
-                slivers: [
-                  const SliverToBoxAdapter(child: SizedBox(height: 30)),
-                  SliverToBoxAdapter(
-                    child: _buildPerformanceMetrics(),
-                  ),
-                  const SliverToBoxAdapter(child: SizedBox(height: 16.0)),
-                  SliverToBoxAdapter(
-                    child: _buildResumeTestBanner(),
-                  ),
-                  const SliverToBoxAdapter(child: SizedBox(height: 16.0)),
-                  SliverToBoxAdapter(
-                    child: _buildTestHistory(),
-                  ),
-                  const SliverToBoxAdapter(child: SizedBox(height: 30)),
-                  SliverToBoxAdapter(
-                    child: _buildCBTCategories(provider),
-                  ),
-                  const SliverToBoxAdapter(child: SizedBox(height: 20.0)),
-                ],
+                slivers: _buildSlivers(provider),
               ),
             ),
           );
         },
       ),
     );
+  }
+
+  /// Build slivers conditionally based on data availability
+  /// Eliminates empty heights when sections have no content
+  List<Widget> _buildSlivers(CBTProvider provider) {
+    final slivers = <Widget>[
+      const SliverToBoxAdapter(child: SizedBox(height: 8)),
+    ];
+
+    // Add performance metrics section only if history is not empty
+    if (provider.recentHistory.isNotEmpty) {
+      slivers.addAll([
+        SliverToBoxAdapter(child: _buildPerformanceMetrics()),
+        const SliverToBoxAdapter(child: SizedBox(height: 16.0)),
+      ]);
+    }
+
+    // Add resume test banner only if there are incomplete tests
+    if (provider.incompleteTest != null) {
+      slivers.addAll([
+        SliverToBoxAdapter(child: _buildResumeTestBanner()),
+        const SliverToBoxAdapter(child: SizedBox(height: 16.0)),
+      ]);
+    }
+
+    // Add test history only if history is not empty
+    if (provider.recentHistory.isNotEmpty) {
+      slivers.addAll([
+        SliverToBoxAdapter(child: _buildTestHistory()),
+        const SliverToBoxAdapter(child: SizedBox(height: 30)),
+      ]);
+    }
+
+    // Add CBT categories (boards)
+    slivers.add(SliverToBoxAdapter(child: _buildCBTCategories(provider)));
+
+    // Add bottom padding only if boards exist
+    if (provider.boards.isNotEmpty) {
+      slivers.add(const SliverToBoxAdapter(child: SizedBox(height: 20.0)));
+    }
+
+    return slivers;
   }
 
  Widget _buildCBTCategories(CBTProvider provider) {
@@ -407,20 +433,40 @@ Widget _buildBoardCard({
 }
 
 
+
 Color _getBoardColor(String boardCode) {
   final Map<String, Color> boardColors = {
-    'JAMB': const Color(0xFF6366F1),      // Indigo
-    'WAEC': const Color(0xFF10B981),      // Emerald
-    'BECE': const Color(0xFFEC4899),      // Pink
-    'Million': const Color(0xFFF59E0B),   // Amber
-    'PSTE': const Color(0xFF8B5CF6),      // Violet
-    'ESUT': const Color(0xFF06B6D4),      // Cyan
-    'PSLC': const Color(0xFFEF4444),      // Red
-    'SCE': const Color(0xFF14B8A6),       // Teal
-    'NCEE': const Color(0xFFF97316),      // Orange
+    // 'JAMB': const Color(0xFF6366F1),      // Indigo
+    // 'WAEC': const Color(0xFF10B981),      // Emerald
+    // 'BECE': const Color(0xFFEC4899),      // Pink
+    // 'Million': const Color(0xFFF59E0B),   // Amber
+    // 'PSTE': const Color(0xFF8B5CF6),      // Violet
+    // 'ESUT': const Color(0xFF06B6D4),      // Cyan
+    // 'PSLC': const Color(0xFFEF4444),      // Red
+    // 'SCE': const Color(0xFF14B8A6),       // Teal
+    // 'NCEE': const Color(0xFFF97316),      // Orange
   };
-  
-  return boardColors[boardCode] ?? const Color(0xFF6366F1);
+
+  // List of random fallback colors
+  final List<Color> fallbackColors = [
+    const Color(0xFF6366F1), // Indigo
+    const Color(0xFF10B981), // Emerald
+    const Color(0xFFF59E0B), // Amber
+    const Color(0xFF8B5CF6), // Violet
+    const Color(0xFF06B6D4), // Cyan
+    const Color(0xFFEC4899), // Pink
+    const Color(0xFFEF4444), // Red
+    const Color(0xFF14B8A6), // Teal
+    const Color(0xFFF97316), // Orange
+  ];
+
+  if (boardColors.containsKey(boardCode)) {
+    return boardColors[boardCode]!;
+  } else {
+    // Pick a random color from the fallback list
+    final random = Random(boardCode.hashCode);
+    return fallbackColors[random.nextInt(fallbackColors.length)];
+  }
 }
 
   /// ⚡ OPTIMIZED: Non-blocking board tap handler
@@ -449,12 +495,14 @@ Color _getBoardColor(String boardCode) {
       },
       onStudy: () {
         Navigator.pop(context);
-        // Show study subject selection modal
+        // Show study subject selection modal using current board subjects
         showModalBottomSheet(
           context: context,
           isScrollControlled: true,
           backgroundColor: Colors.transparent,
-          builder: (context) => const StudySubjectSelectionModal(),
+          builder: (context) => StudySubjectSelectionModal(
+            subjects: provider.currentBoardSubjects,
+          ),
         );
       },
       onGamify: () {
@@ -937,6 +985,7 @@ Color _getBoardColor(String boardCode) {
                 children: [
                   Text(
                     courseName,
+                    overflow: TextOverflow.ellipsis,
                     style: AppTextStyles.normal600(
                       fontSize: 14.0,
                       color: AppColors.text4Light,

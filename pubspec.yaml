@@ -85,6 +85,8 @@ dependencies:
   gif_view: ^1.0.3
   audioplayers: ^6.5.1
   vibration: ^3.1.4
+  flutter_html: ^3.0.0
+  markdown: ^7.3.0
 dev_dependencies:
   flutter_test:
     sdk: flutter

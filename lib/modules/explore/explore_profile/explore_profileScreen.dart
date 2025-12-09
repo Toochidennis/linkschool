@@ -8,6 +8,7 @@ import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/providers/app_settings_provider.dart';
 import 'package:linkschool/modules/services/firebase_auth_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 // Add this import for the payment dialog
 import 'package:linkschool/modules/explore/e_library/widgets/paystack_payment_dialog.dart';
 
@@ -108,6 +109,20 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
     if (confirm == true) {
       try {
         await _authService.signOut();
+
+        // Clear app-specific user data immediately
+        final cbtUserProvider = Provider.of<CbtUserProvider>(context, listen: false);
+        try {
+          // Clear provider state and persisted CBT user data
+          await cbtUserProvider.logout();
+        } catch (e) {
+          // Non-fatal: log and continue
+          print('Warning: Error while logging out CbtUserProvider: $e');
+        }
+
+        // Also clear commonly used auth/shared keys immediately
+        await _clearAllUserSharedPrefs();
+
         setState(() {
           _currentUser = null;
           _isSignedIn = false;
@@ -130,6 +145,29 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
           );
         }
       }
+    }
+  }
+
+  /// Remove common user-related keys from SharedPreferences immediately.
+  /// This complements `CbtUserProvider.logout()` which also clears CBT-specific data.
+  Future<void> _clearAllUserSharedPrefs() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+
+      // Keys set by AuthProvider
+      final authKeys = ['role', 'isLoggedIn', 'token', 'sessionValid'];
+
+      // Keys used by CbtUserProvider
+      final cbtKeys = ['cbt_current_user', 'cbt_payment_reference'];
+
+      for (final k in [...authKeys, ...cbtKeys]) {
+        if (prefs.containsKey(k)) await prefs.remove(k);
+      }
+
+      // Optionally clear any other known flags
+      print('✅ Cleared user-related SharedPreferences keys');
+    } catch (e) {
+      print('❌ Error clearing SharedPreferences on logout: $e');
     }
   }
 

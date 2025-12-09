@@ -10,6 +10,8 @@ import 'package:linkschool/modules/services/cbt_subscription_service.dart';
 import 'package:provider/provider.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
+import 'package:flutter_html/flutter_html.dart';
+import 'dart:convert';
 
 class TestScreen extends StatefulWidget {
   final String examTypeId;
@@ -52,6 +54,8 @@ class _TestScreenState extends State<TestScreen> {
   final TextEditingController _textController = TextEditingController();
   final _subscriptionService = CbtSubscriptionService();
   int? remainingSeconds;
+  int _lastDisplayedQuestionIndex = -1; // Track which question's instruction/passage was shown
+  bool _isCountdownActive = false;
 
   @override
   void initState() {
@@ -91,12 +95,26 @@ class _TestScreenState extends State<TestScreen> {
   }
 
   void _showLoadingCountdown() {
+    setState(() {
+      _isCountdownActive = true;
+    });
+
     showDialog(
       context: context,
       barrierDismissible: false,
       builder: (context) => _LoadingCountdownDialog(
         onComplete: () {
+          if (!mounted) return;
           Navigator.of(context).pop();
+          setState(() {
+            _isCountdownActive = false;
+          });
+
+          // small delay to ensure dialog is popped
+          Future.delayed(const Duration(milliseconds: 50), () {
+            if (!mounted) return;
+            _maybeShowInstructionForCurrentQuestion();
+          });
         },
       ),
     );
@@ -115,6 +133,32 @@ class _TestScreenState extends State<TestScreen> {
     }
   }
 
+  void _maybeShowInstructionForCurrentQuestion() {
+    final provider = Provider.of<ExamProvider>(context, listen: false);
+    final currentIndex = provider.currentQuestionIndex;
+    final q = provider.currentQuestion;
+    if (q == null) return;
+
+    if (_isCountdownActive) return;
+
+    if (currentIndex != _lastDisplayedQuestionIndex) {
+      final instr = (q.instruction ?? '').trim();
+      final pass = (q.passage ?? '').trim();
+      
+      if (instr.isNotEmpty && pass.isNotEmpty) {
+        // Show both instruction and passage together
+        _showInstructionOrPassageModal('Instruction & Passage', '$instr\n\n$pass');
+        _lastDisplayedQuestionIndex = currentIndex;
+      } else if (instr.isNotEmpty) {
+        _showInstructionOrPassageModal('Instruction', instr);
+        _lastDisplayedQuestionIndex = currentIndex;
+      } else if (pass.isNotEmpty) {
+        _showInstructionOrPassageModal('Passage', pass);
+        _lastDisplayedQuestionIndex = currentIndex;
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final Brightness brightness = Theme.of(context).brightness;
@@ -123,6 +167,42 @@ class _TestScreenState extends State<TestScreen> {
     
     return Consumer<ExamProvider>(
       builder: (context, examProvider, child) {
+        // Show instruction/passage modal when question changes (skip while countdown active)
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (examProvider.questions.isNotEmpty && examProvider.currentQuestionIndex != _lastDisplayedQuestionIndex) {
+            final question = examProvider.currentQuestion;
+            if (question == null) return;
+            if (_isCountdownActive) return;
+
+            final instr = question.instruction.trim();
+            final pass = question.passage.trim();
+            
+            if (instr.isNotEmpty && pass.isNotEmpty) {
+              // Show both instruction and passage together
+              _lastDisplayedQuestionIndex = examProvider.currentQuestionIndex;
+              Future.delayed(const Duration(milliseconds: 300), () {
+                if (mounted) {
+                  _showInstructionOrPassageModal('Instruction & Passage', '$instr\n\n$pass');
+                }
+              });
+            } else if (instr.isNotEmpty) {
+              _lastDisplayedQuestionIndex = examProvider.currentQuestionIndex;
+              Future.delayed(const Duration(milliseconds: 300), () {
+                if (mounted) {
+                  _showInstructionOrPassageModal('Instruction', instr);
+                }
+              });
+            } else if (pass.isNotEmpty) {
+              _lastDisplayedQuestionIndex = examProvider.currentQuestionIndex;
+              Future.delayed(const Duration(milliseconds: 300), () {
+                if (mounted) {
+                  _showInstructionOrPassageModal('Passage', pass);
+                }
+              });
+            }
+          }
+        });
+
         return Scaffold(
           backgroundColor: AppColors.eLearningBtnColor1,
           appBar: _buildAppBar(context, examProvider, isLandscape),
@@ -359,6 +439,7 @@ class _TestScreenState extends State<TestScreen> {
           Stack(
                      clipBehavior: Clip.none,
             children: [
+              
                Positioned(
                 top: -26,
                 left: 0,
@@ -408,21 +489,114 @@ class _TestScreenState extends State<TestScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const SizedBox(height: 40),
-                      Text(
-                        question.content.isNotEmpty
-                            ? question.content[0].toUpperCase() +
-                                question.content.substring(1)
-                            : "Question",
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w500,
-                          height: 1.5,
-                        ),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Expanded(
+                            child: Html(
+                              data: question.content.isNotEmpty
+                                  ? question.content[0].toUpperCase() + question.content.substring(1)
+                                  : 'Question',
+                              style: {
+                                "body": Style(
+                                  fontSize: FontSize(18),
+                                   
+                                    margin: Margins.zero,
+                                    padding: HtmlPaddings.zero,
+                                    lineHeight: LineHeight(1.6),
+                                    fontWeight: FontWeight.w600,
+                                    
+                                    color: AppColors.text3Light,
+                                ),
+                              },
+                            ),
+                          ),
+                          
+                        ],
                       ),
+                      const SizedBox(height: 12),
+                      if (question.questionImage != null && question.questionImage.isNotEmpty)
+                        GestureDetector(
+                          onTap: () => _showFullScreenImage(question.questionImage),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(8),
+                            child: _getImageWidget(question.questionImage, width: double.infinity, height: 220),
+                          ),
+                        ),
                     ],
                   ),
                 ),
               ),
+              if (question.instruction.isNotEmpty || question.passage.isNotEmpty)
+  Positioned(
+    top: 8,
+    right: 8,
+    child: GestureDetector(
+      onTap: () {
+              // If both instruction and passage exist, show them together.
+              final hasInstruction = question.instruction.isNotEmpty;
+              final hasPassage = question.passage.isNotEmpty;
+              String title = '';
+              String content = '';
+
+              if (hasInstruction && hasPassage) {
+                title = 'Instruction & Passage';
+                content = '${question.instruction}\n\n${question.passage}';
+              } else if (hasInstruction) {
+                title = 'Instruction';
+                content = question.instruction;
+              } else if (hasPassage) {
+                title = 'Passage';
+                content = question.passage;
+              }
+
+              if (content.isNotEmpty) _showInstructionOrPassageModal(title, content);
+            },
+      child: Row(
+        children: [
+          Text(
+            question.instruction.isNotEmpty 
+              ? ' View Instruction' 
+              : ' View Passage',
+            style: const TextStyle(
+              color: Colors.grey,
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          IconButton(
+            icon: const Icon(
+              Icons.info_outline,
+              color: AppColors.eLearningBtnColor1,
+              size: 24,
+            ),
+            onPressed: () {
+              final hasInstruction = question.instruction.isNotEmpty;
+              final hasPassage = question.passage.isNotEmpty;
+              String title = '';
+              String content = '';
+
+              if (hasInstruction && hasPassage) {
+                title = 'Instruction & Passage';
+                content = '${question.instruction}\n\n${question.passage}';
+              } else if (hasInstruction) {
+                title = 'Instruction';
+                content = question.instruction;
+              } else if (hasPassage) {
+                title = 'Passage';
+                content = question.passage;
+              }
+
+              if (content.isNotEmpty) _showInstructionOrPassageModal(title, content);
+            },
+            tooltip: (question.instruction.isNotEmpty && question.passage.isNotEmpty)
+              ? 'View Instruction & Passage'
+              : (question.instruction.isNotEmpty ? 'View Instruction' : 'View Passage'),
+          ),
+        ],
+      ),
+    ),
+  ),
              
             ],
           ),
@@ -496,11 +670,55 @@ class _TestScreenState extends State<TestScreen> {
   }
 
   Widget _buildOptions(ExamProvider provider, QuestionModel question, bool isLandscape) {
-    final options = question.getOptions();
+    // If `question.options` is provided as structured maps, use that (supports option_files)
+    final structuredOptions = question.options;
     final selectedAnswer = provider.userAnswers[provider.currentQuestionIndex];
 
+    Widget buildItem(dynamic optionData, int index) {
+      String optionText = '';
+      String? optionImageUrl;
+
+      if (optionData is Map) {
+        optionText = (optionData['text'] ?? '').toString();
+        // Use imageUrl directly from the processed options (already handled in model)
+        optionImageUrl = optionData['imageUrl']?.toString();
+      } else if (optionData is String) {
+        optionText = optionData;
+      }
+
+      return _buildOptionTile(
+        provider, 
+        optionText, 
+        index, 
+        selectedAnswer,
+        optionImageUrl: optionImageUrl,
+      );
+    }
+
+    if (structuredOptions != null && structuredOptions.isNotEmpty) {
+      if (isLandscape) {
+        return GridView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 2,
+            childAspectRatio: 4,
+            crossAxisSpacing: 8,
+            mainAxisSpacing: 8,
+          ),
+          itemCount: structuredOptions.length,
+          itemBuilder: (context, index) => buildItem(structuredOptions[index], index),
+        );
+      }
+
+      return Column(
+        children: structuredOptions.asMap().entries.map((entry) => buildItem(entry.value, entry.key)).toList(),
+      );
+    }
+
+    // Fallback to plain text options returned by getOptions()
+    final options = question.getOptions();
     if (isLandscape) {
-      // Grid layout for landscape: 2 columns
       return GridView.builder(
         shrinkWrap: true,
         physics: const NeverScrollableScrollPhysics(),
@@ -516,7 +734,6 @@ class _TestScreenState extends State<TestScreen> {
         },
       );
     } else {
-      // List layout for portrait
       return Column(
         children: options.asMap().entries.map((entry) {
           final index = entry.key;
@@ -527,8 +744,37 @@ class _TestScreenState extends State<TestScreen> {
     }
   }
 
-  Widget _buildOptionTile(ExamProvider provider, String option, int index, int? selectedAnswer) {
+  Widget _buildOptionTile(ExamProvider provider, String option, int index, int? selectedAnswer, {String? optionImageUrl}) {
     final isSelected = selectedAnswer == index;
+
+    Widget optionContent = Html(
+      data: option,
+      style: {
+        "body": Style(
+          fontSize: FontSize(16),
+        
+                                    margin: Margins.zero,
+                                    padding: HtmlPaddings.zero,
+                                    lineHeight: LineHeight(1.6),
+                                 
+          color: isSelected ? Colors.white : Colors.black87,
+        ),
+      },
+    );
+
+    // If there's an option image URL, show it alongside the text
+    if (optionImageUrl != null && optionImageUrl.isNotEmpty) {
+      optionContent = Row(
+        children: [
+          Expanded(child: optionContent),
+          const SizedBox(width: 8),
+          GestureDetector(
+            onTap: () => _showFullScreenImage(optionImageUrl),
+            child: _getImageWidget(optionImageUrl, width: 80, height: 50),
+          ),
+        ],
+      );
+    }
 
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 8.0),
@@ -573,18 +819,248 @@ class _TestScreenState extends State<TestScreen> {
                       : null,
                 ),
                 const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    option,
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: isSelected ? Colors.white : Colors.black87,
-                    ),
-                  ),
-                ),
+                Expanded(child: optionContent),
               ],
             ),
           ),
+        ),
+      ),
+    );
+  }
+
+  // Extract first file url/string from option_files structure
+  String? _extractFirstFileUrl(dynamic files) {
+    // Use the model's image processing logic for consistency with assessment_screen
+    try {
+      if (files == null) return null;
+      if (files is List && files.isNotEmpty) {
+        final file = files.first;
+        if (file is Map) {
+          // Try to get file content first
+          String? fileContent = file['file']?.toString();
+          
+          // If file is empty, use file_name instead
+          if (fileContent == null || fileContent.isEmpty) {
+            fileContent = file['file_name']?.toString();
+          }
+          
+          if (fileContent != null && fileContent.isNotEmpty) {
+            // Handle different image formats
+            if (fileContent.startsWith('data:')) {
+              return fileContent;
+            } else if (_isBase64(fileContent)) {
+              return 'data:image/jpeg;base64,$fileContent';
+            } else {
+              // It's a file path - return as is for network loading
+              return fileContent;
+            }
+          }
+        } else if (file is String) {
+          return file;
+        }
+      }
+      return null;
+    } catch (e) {
+      print('Error extracting file URL: $e');
+      return null;
+    }
+  }
+
+  Widget _getImageWidget(String url, {double? width, double? height}) {
+    if (_isBase64(url)) {
+      try {
+        final bytes = base64.decode(url.split(',').last);
+        return Image.memory(bytes, width: width, height: height, fit: BoxFit.cover);
+      } catch (e) {
+        return Container(width: width, height: height, color: Colors.grey.shade200);
+      }
+    }
+
+    // Prepend base URL if it's a relative path
+    String imageUrl = url;
+    if (!url.startsWith('http') && !url.startsWith('data:')) {
+      imageUrl = 'https://linkskool.net/$url';
+    }
+
+    return Image.network(
+      imageUrl,
+      width: width,
+      height: height,
+      fit: BoxFit.cover,
+      errorBuilder: (context, error, stackTrace) => Container(width: width, height: height, color: Colors.grey.shade200),
+      loadingBuilder: (context, child, progress) {
+        if (progress == null) return child;
+        return SizedBox(width: width, height: height, child: Center(child: CircularProgressIndicator(strokeWidth: 2)));
+      },
+    );
+  }
+
+  bool _isBase64(String s) {
+    return s.startsWith('data:image') || (s.length > 100 && s.contains('base64'));
+  }
+
+  void _showFullScreenImage(String imageUrl) {
+    if (!mounted) return;
+    Navigator.push(context, MaterialPageRoute(builder: (_) {
+      return Scaffold(
+        backgroundColor: Colors.black,
+        appBar: AppBar(backgroundColor: Colors.transparent, elevation: 0),
+        body: Center(
+          child: _getImageWidget(imageUrl, width: MediaQuery.of(context).size.width, height: MediaQuery.of(context).size.height),
+        ),
+      );
+    }));
+  }
+
+  void _showInstructionOrPassageModal(String title, String content) {
+    if (!mounted || content.isEmpty) return;
+    
+    // Parse if both instruction and passage are combined (separated by \n\n)
+    bool hasBothSections = title == 'Instruction & Passage';
+    List<String> sections = [];
+    List<String> sectionTitles = [];
+    
+    if (hasBothSections && content.contains('\n\n')) {
+      final parts = content.split('\n\n');
+      if (parts.length >= 2) {
+        sections = [parts[0], parts.sublist(1).join('\n\n')];
+        sectionTitles = ['Instruction', 'Passage'];
+      } else {
+        sections = [content];
+        sectionTitles = [title];
+      }
+    } else {
+      sections = [content];
+      sectionTitles = [title];
+    }
+    
+    showDialog(
+      context: context,
+      barrierDismissible: true,
+      builder: (context) => Dialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 400),
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Scrollable content
+                Flexible(
+                  child: SingleChildScrollView(
+                    child: Container(
+                    padding: const EdgeInsets.all(24),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Show question number at top
+                        Builder(builder: (context) {
+                          final provider = Provider.of<ExamProvider>(context, listen: false);
+                          final qIndex = (provider.questions.isNotEmpty) ? provider.currentQuestionIndex : -1;
+                          if (qIndex >= 0) {
+                            return Padding(
+                              padding: const EdgeInsets.only(bottom: 16.0),
+                              child: Text(
+                                'Question ${qIndex + 1}',
+                                style: const TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w700,
+                                  color: Colors.black87,
+                                  fontFamily: 'Urbanist',
+                                ),
+                              ),
+                            );
+                          }
+                          return const SizedBox.shrink();
+                        }),
+                        
+                        // Render sections
+                        ...sections.asMap().entries.map((entry) {
+                          final index = entry.key;
+                          final sectionContent = entry.value.trim();
+                          final sectionTitle = sectionTitles[index];
+                          
+                          return Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              // Section title
+                              Text(
+                                sectionTitle,
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w700,
+                                  color: AppColors.eLearningBtnColor1,
+                                  fontFamily: 'Urbanist',
+                                ),
+                              ),
+                              const SizedBox(height: 12),
+                              
+                              // Section content (HTML)
+                              Html(
+                                data: sectionContent,
+                                style: {
+                                  "body": Style(
+                                    fontSize: FontSize(19),
+                                    margin: Margins.zero,
+                                    padding: HtmlPaddings.zero,
+                                    lineHeight: LineHeight(1.6),
+                                    color: AppColors.text3Light,
+                                  ),
+                                },
+                              ),
+                              
+                              // Add spacing between sections
+                              if (index < sections.length - 1)
+                                const SizedBox(height: 24),
+                            ],
+                          );
+                        }).toList(),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              
+              // Fixed "Got it" button at bottom
+              Container(
+                padding: const EdgeInsets.all(24),
+                decoration: BoxDecoration(
+                  border: Border(
+                    top: BorderSide(color: Colors.grey.shade200),
+                  ),
+                ),
+                child: SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.eLearningBtnColor1,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    child: const Text(
+                      'Got it',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w600,
+                        fontFamily: 'Urbanist',
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
         ),
       ),
     );

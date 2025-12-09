@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/services/explore/explanation_model.dart';
+import 'package:flutter_html/flutter_html.dart';
+import 'package:markdown/markdown.dart' as md;
 //import 'package:linkschool/services/deepseek_service.dart';
 
 class CBTStudyScreen extends StatefulWidget {
@@ -148,6 +150,46 @@ class _CBTStudyScreenState extends State<CBTStudyScreen> {
     });
   }
 
+  /// Convert HTML/span text to TextSpan list for RichText
+  List<TextSpan> _parseHtmlToTextSpans(String text) {
+    if (!text.contains('<span') && !text.contains('<b') && !text.contains('<i')) {
+      return [TextSpan(text: text)];
+    }
+
+    final spans = <TextSpan>[];
+    final regExp = RegExp(
+        r'<span[^>]*>([^<]*)</span>|<b>([^<]*)</b>|<i>([^<]*)</i>|([^<]+)');
+    final matches = regExp.allMatches(text);
+
+    for (final match in matches) {
+      if (match.group(1) != null) {
+        // <span> content - bold and colored
+        spans.add(TextSpan(
+          text: match.group(1),
+          style: TextStyle(
+              fontWeight: FontWeight.bold, color: Colors.blue.shade700),
+        ));
+      } else if (match.group(2) != null) {
+        // <b> content
+        spans.add(TextSpan(
+          text: match.group(2),
+          style: const TextStyle(fontWeight: FontWeight.bold),
+        ));
+      } else if (match.group(3) != null) {
+        // <i> content
+        spans.add(TextSpan(
+          text: match.group(3),
+          style: const TextStyle(fontStyle: FontStyle.italic),
+        ));
+      } else if (match.group(4) != null) {
+        // Plain text
+        spans.add(TextSpan(text: match.group(4)));
+      }
+    }
+
+    return spans.isEmpty ? [TextSpan(text: text)] : spans;
+  }
+
   @override
   Widget build(BuildContext context) {
     final question = _questions[_currentIndex];
@@ -248,12 +290,17 @@ class _CBTStudyScreenState extends State<CBTStudyScreen> {
                     ),
                     const SizedBox(width: 16),
                     Expanded(
-                      child: Text(
-                        question.question,
-                        style: AppTextStyles.normal600(
-                          fontSize: 16,
-                          color: AppColors.text4Light,
-                        ),
+                      child: Html(
+                        data: question.question,
+                        style: {
+                          "body": Style(
+                           margin: Margins.zero,
+                                    padding: HtmlPaddings.zero,
+                            fontSize: FontSize(16),
+                            color: AppColors.text4Light,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        },
                       ),
                     ),
                   ],
@@ -285,12 +332,16 @@ class _CBTStudyScreenState extends State<CBTStudyScreen> {
                         child: Row(
                           children: [
                             Expanded(
-                              child: Text(
-                                question.options[i],
-                                style: AppTextStyles.normal500(
-                                  fontSize: 15,
-                                  color: AppColors.text4Light,
-                                ),
+                              child: Html(
+                                data: question.options[i],
+                                style: {
+                                  "body": Style(
+                                   margin: Margins.zero,
+                                    padding: HtmlPaddings.zero,
+                                    fontSize: FontSize(15),
+                                    color: AppColors.text4Light,
+                                  ),
+                                },
                               ),
                             ),
                           ],
@@ -389,6 +440,46 @@ class _ExplanationModalState extends State<ExplanationModal> {
         });
       }
     }
+  }
+
+  /// Convert HTML/span text to TextSpan list for explanations
+  List<TextSpan> _parseExplanationHtml(String text) {
+    if (!text.contains('<span') && !text.contains('<b') && !text.contains('<i') && !text.contains('<strong')) {
+      return [TextSpan(text: text)];
+    }
+
+    final spans = <TextSpan>[];
+    final regExp = RegExp(
+        r'<span[^>]*>([^<]*)</span>|<b>([^<]*)</b>|<strong>([^<]*)</strong>|<i>([^<]*)</i>|([^<]+)');
+    final matches = regExp.allMatches(text);
+
+    for (final match in matches) {
+      if (match.group(1) != null) {
+        // <span> content - bold and colored
+        spans.add(TextSpan(
+          text: match.group(1),
+          style: TextStyle(
+              fontWeight: FontWeight.bold, color: Colors.blue.shade700),
+        ));
+      } else if (match.group(2) != null || match.group(3) != null) {
+        // <b> or <strong> content
+        spans.add(TextSpan(
+          text: match.group(2) ?? match.group(3),
+          style: const TextStyle(fontWeight: FontWeight.bold),
+        ));
+      } else if (match.group(4) != null) {
+        // <i> content
+        spans.add(TextSpan(
+          text: match.group(4),
+          style: const TextStyle(fontStyle: FontStyle.italic),
+        ));
+      } else if (match.group(5) != null) {
+        // Plain text
+        spans.add(TextSpan(text: match.group(5)));
+      }
+    }
+
+    return spans.isEmpty ? [TextSpan(text: text)] : spans;
   }
 
   @override
@@ -593,31 +684,30 @@ class _ExplanationModalState extends State<ExplanationModal> {
                             ],
                           ),
                         )
-                      else if (_explanation != null)
-                        Container(
-  padding: const EdgeInsets.all(16),
-  decoration: BoxDecoration(
-    color: Colors.blue.shade50,
-    borderRadius: BorderRadius.circular(12),
-  ),
-  child: RichText(
-    text: TextSpan(
-      style: AppTextStyles.normal400(
-        fontSize: 15,
-        color: AppColors.text4Light,
+                     else if (_explanation != null)
+  () {
+    final htmlData = md.markdownToHtml(_explanation ?? "");
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.blue.shade50,
+        borderRadius: BorderRadius.circular(12),
       ),
-      children: [
-        TextSpan(text: _explanation ?? ""),
+      child: Html(
+        data: htmlData,
+        style: {
+          "body": Style(
+            margin: Margins.zero,
+            padding: HtmlPaddings.zero,
+            fontSize: FontSize(15),
+            color: AppColors.text4Light,
+          ),
+        },
+      ),
+    );
+  }()
 
-        // Example of bold part
-        // TextSpan(text: " important ", style: TextStyle(fontWeight: FontWeight.bold)),
-
-        // Example of colored part
-        // TextSpan(text: "highlight", style: TextStyle(color: Colors.blue)),
-      ],
-    ),
-  ),
-)
 
                     ],
                   ),

@@ -4,6 +4,7 @@ import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/services/firebase_auth_service.dart';
 import 'package:linkschool/modules/providers/cbt_user_provider.dart';
+import 'package:linkschool/modules/common/widgets/portal/profile/naira_icon.dart';
 import 'package:provider/provider.dart';
 import 'package:paystack_for_flutter/paystack_for_flutter.dart';
 import 'package:http/http.dart' as http;
@@ -59,39 +60,50 @@ class _PaystackPaymentDialogState extends State<PaystackPaymentDialog> {
   Widget build(BuildContext context) {
     return WillPopScope(
       onWillPop: () async => widget.canDismiss && !_isProcessing,
-      child: Dialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-        ),
-        child: Container(
-          constraints: const BoxConstraints(maxWidth: 400, maxHeight: 600),
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              if (widget.canDismiss && !_isProcessing)
-                Align(
-                  alignment: Alignment.topRight,
-                  child: IconButton(
-                    icon: const Icon(Icons.close),
-                    onPressed: () {
-                      if (widget.onCancel != null) {
-                        widget.onCancel!();
-                      }
-                      Navigator.of(context).pop();
-                    },
-                  ),
+      child: OrientationBuilder(
+        builder: (context, orientation) {
+          final isLandscape = orientation == Orientation.landscape;
+          final maxWidth = isLandscape
+              ? MediaQuery.of(context).size.width * 0.7
+              : MediaQuery.of(context).size.width * 0.85;
+
+          return Dialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Container(
+              constraints: BoxConstraints(maxWidth: maxWidth),
+              padding: const EdgeInsets.all(24),
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    if (widget.canDismiss && !_isProcessing)
+                      Align(
+                        alignment: Alignment.topRight,
+                        child: IconButton(
+                          icon: const Icon(Icons.close),
+                          onPressed: () {
+                            if (widget.onCancel != null) {
+                              widget.onCancel!();
+                            }
+                            Navigator.of(context).pop();
+                          },
+                        ),
+                      ),
+                    const SizedBox(height: 8),
+                    _buildHeader(),
+                    const SizedBox(height: 24),
+                    _buildFeaturesList(),
+                    const SizedBox(height: 24),
+                    _buildPayButton(),
+                  ],
                 ),
-              const SizedBox(height: 8),
-              _buildHeader(),
-              const SizedBox(height: 24),
-              _buildFeaturesList(),
-              const SizedBox(height: 24),
-              _buildPayButton(),
-            ],
-          ),
-        ),
+              ),
+            ),
+          );
+        },
       ),
     );
   }
@@ -159,12 +171,10 @@ class _PaystackPaymentDialogState extends State<PaystackPaymentDialog> {
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                '₦',
-                style: AppTextStyles.normal600(
-                  fontSize: 20,
-                  color: AppColors.eLearningBtnColor1,
-                ),
+              NairaSvgIcon(
+                color: AppColors.eLearningBtnColor1,
+                width: 20,
+                height: 20,
               ),
               Text(
                 '$_subscriptionPrice',
@@ -237,12 +247,29 @@ class _PaystackPaymentDialogState extends State<PaystackPaymentDialog> {
                 color: Colors.white,
               ),
             )
-          : Text(
-              'Pay ₦$_subscriptionPrice',
-              style: AppTextStyles.normal600(
-                fontSize: 16,
-                color: Colors.white,
-              ),
+          : Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  'Pay ',
+                  style: AppTextStyles.normal600(
+                    fontSize: 16,
+                    color: Colors.white,
+                  ),
+                ),
+                NairaSvgIcon(
+                  color: Colors.white,
+                  width: 16,
+                  height: 16,
+                ),
+                Text(
+                  '$_subscriptionPrice',
+                  style: AppTextStyles.normal600(
+                    fontSize: 16,
+                    color: Colors.white,
+                  ),
+                ),
+              ],
             ),
     );
   }

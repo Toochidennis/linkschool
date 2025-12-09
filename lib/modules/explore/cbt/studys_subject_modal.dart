@@ -2,9 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/explore/cbt/cbt_study_screen.dart';
+import 'package:linkschool/modules/model/explore/home/subject_model.dart';
 
 class StudySubjectSelectionModal extends StatefulWidget {
-  const StudySubjectSelectionModal({Key? key}) : super(key: key);
+  final List<SubjectModel> subjects;
+
+  const StudySubjectSelectionModal({Key? key, required this.subjects}) : super(key: key);
 
   @override
   State<StudySubjectSelectionModal> createState() =>
@@ -18,97 +21,51 @@ class _StudySubjectSelectionModalState
   bool _showTopics = false;
   bool _isTransitioning = false;
 
-  // Static subjects for study mode
-  final List<Map<String, dynamic>> _subjects = [
-    {
-      'id': 'chemistry',
-      'name': 'Chemistry',
-      'icon': Icons.science,
-      'color': Color(0xFF6366F1),
-    },
-    {
-      'id': 'physics',
-      'name': 'Physics',
-      'icon': Icons.bolt,
-      'color': Color(0xFF10B981),
-    },
-    {
-      'id': 'biology',
-      'name': 'Biology',
-      'icon': Icons.biotech,
-      'color': Color(0xFFEC4899),
-    },
-    {
-      'id': 'mathematics',
-      'name': 'Mathematics',
-      'icon': Icons.calculate,
-      'color': Color(0xFFF59E0B),
-    },
-    {
-      'id': 'english',
-      'name': 'English',
-      'icon': Icons.menu_book,
-      'color': Color(0xFF8B5CF6),
-    },
-    {
-      'id': 'geography',
-      'name': 'Geography',
-      'icon': Icons.public,
-      'color': Color(0xFF06B6D4),
-    },
-  ];
 
-  // Topics for each subject
-  final Map<String, List<String>> _topicsBySubject = {
-    'chemistry': [
-      'Organic Chemistry',
-      'Inorganic Chemistry',
-      'Physical Chemistry',
-      'Chemical Bonding',
-      'Acids and Bases',
-      'Redox Reactions',
-    ],
-    'physics': [
-      'Mechanics',
-      'Electricity',
-      'Magnetism',
-      'Optics',
-      'Thermodynamics',
-      'Waves',
-    ],
-    'biology': [
-      'Cell Biology',
-      'Genetics',
-      'Ecology',
-      'Human Anatomy',
-      'Evolution',
-      'Plant Biology',
-    ],
-    'mathematics': [
-      'Algebra',
-      'Calculus',
-      'Geometry',
-      'Trigonometry',
-      'Statistics',
-      'Probability',
-    ],
-    'english': [
-      'Grammar',
-      'Literature',
-      'Comprehension',
-      'Essay Writing',
-      'Poetry',
-      'Drama',
-    ],
-    'geography': [
-      'Physical Geography',
-      'Human Geography',
-      'Map Reading',
-      'Climate',
-      'Resources',
-      'Population',
-    ],
-  };
+// Remove the map and just use a single list
+final List<String> _staticTopics = [
+  'Organic Chemistry',
+  'Inorganic Chemistry',
+  'Physical Chemistry',
+  'Chemical Bonding',
+  'Acids and Bases',
+  'Redox Reactions',
+  'Mechanics',
+  'Electricity',
+  'Magnetism',
+  'Optics',
+  'Thermodynamics',
+  'Waves',
+  'Cell Biology',
+  'Genetics',
+  'Ecology',
+  'Human Anatomy',
+  'Evolution',
+  'Plant Biology',
+  'Algebra',
+  'Calculus',
+  'Geometry',
+  'Trigonometry',
+  'Statistics',
+  'Probability',
+];
+  // Deterministic color selection for subject ids
+  Color _colorForId(String id) {
+    final List<Color> fallbackColors = [
+      const Color(0xFF6366F1), // Indigo
+      const Color(0xFF10B981), // Emerald
+      const Color(0xFFF59E0B), // Amber
+      const Color(0xFF8B5CF6), // Violet
+      const Color(0xFF06B6D4), // Cyan
+      const Color(0xFFEC4899), // Pink
+      const Color(0xFFEF4444), // Red
+      const Color(0xFF14B8A6), // Teal
+      const Color(0xFFF97316), // Orange
+    ];
+
+    final rand = id.hashCode.abs();
+    return fallbackColors[rand % fallbackColors.length];
+  }
 
   void _onSubjectSelected(String subjectId) {
     setState(() {
@@ -127,6 +84,13 @@ class _StudySubjectSelectionModalState
     });
   }
 
+  // Convert a string to sentence case: all lowercase then first letter uppercase
+  String _sentenceCase(String input) {
+    if (input.isEmpty) return input;
+    final lower = input.toLowerCase();
+    return lower[0].toUpperCase() + (lower.length > 1 ? lower.substring(1) : '');
+  }
+
   void _onTopicSelected(String topic) {
     setState(() {
       if (_selectedTopics.contains(topic)) {
@@ -139,14 +103,18 @@ class _StudySubjectSelectionModalState
 
   void _onContinue() {
     if (_selectedTopics.isNotEmpty) {
+      final subject = widget.subjects.firstWhere(
+        (s) => s.id == _selectedSubject,
+        orElse: () => SubjectModel(id: _selectedSubject ?? '', name: _selectedSubject ?? '', years: []),
+      );
+
       Navigator.pop(context);
       // Navigate to study screen
       Navigator.push(
         context,
         MaterialPageRoute(
           builder: (context) => CBTStudyScreen(
-            subject: _subjects.firstWhere(
-                (s) => s['id'] == _selectedSubject)['name'],
+            subject: subject.name,
             topics: _selectedTopics,
           ),
         ),
@@ -244,42 +212,48 @@ class _StudySubjectSelectionModalState
   }
 
   Widget _buildSubjectsList() {
+    // Create a sorted copy of the provided subjects (A -> Z) and display sentence-case names
+    final sortedSubjects = List<SubjectModel>.from(widget.subjects)
+      ..sort((a, b) => _sentenceCase(a.name).compareTo(_sentenceCase(b.name)));
+
     return ListView.builder(
       padding: const EdgeInsets.all(16),
-      itemCount: _subjects.length,
+      itemCount: sortedSubjects.length,
       itemBuilder: (context, index) {
-        final subject = _subjects[index];
+        final subject = sortedSubjects[index];
+        final color = _colorForId(subject.id);
+        final displayName = _sentenceCase(subject.name);
+
         return GestureDetector(
-          onTap: () => _onSubjectSelected(subject['id']),
+          onTap: () => _onSubjectSelected(subject.id),
           child: Container(
             margin: const EdgeInsets.only(bottom: 16),
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: (subject['color'] as Color).withOpacity(0.1),
+              color: color.withOpacity(0.08),
               borderRadius: BorderRadius.circular(16),
-              // border: Border.all(
-              //   color: subject['color'] as Color,
-              //   width: 1.5,
-              // ),
             ),
             child: Row(
               children: [
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: subject['color'] as Color,
+                    color: color,
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: Icon(
-                    subject['icon'] as IconData,
-                    color: Colors.white,
-                    size: 28,
+                  child: CircleAvatar(
+                    backgroundColor: Colors.transparent,
+                    child: Text(
+                      displayName.isNotEmpty ? displayName[0] : '?',
+                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                    ),
+                    radius: 12,
                   ),
                 ),
                 const SizedBox(width: 16),
                 Expanded(
                   child: Text(
-                    subject['name'],
+                    displayName,
                     style: AppTextStyles.normal600(
                       fontSize: 18,
                       color: AppColors.text4Light,
@@ -288,7 +262,7 @@ class _StudySubjectSelectionModalState
                 ),
                 Icon(
                   Icons.arrow_forward_ios,
-                  color: subject['color'] as Color,
+                  color: color,
                   size: 20,
                 ),
               ],
@@ -300,9 +274,9 @@ class _StudySubjectSelectionModalState
   }
 
   Widget _buildTopicsList() {
-    final topics = _topicsBySubject[_selectedSubject] ?? [];
-    final subject = _subjects.firstWhere((s) => s['id'] == _selectedSubject);
-    final subjectColor = subject['color'] as Color;
+    final topics = _staticTopics;
+    final subject = widget.subjects.firstWhere((s) => s.id == _selectedSubject, orElse: () => SubjectModel(id: _selectedSubject ?? '', name: _selectedSubject ?? '', years: []));
+    final subjectColor = _colorForId(subject.id);
 
     return Container(
       color: subjectColor.withOpacity(0.05),

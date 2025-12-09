@@ -67,7 +67,7 @@ class _CustomNavigationBarState extends State<CustomNavigationBar>
                   widget.onSwitch(value);
                 },
                 activeIcon: Container(
-                  padding: const EdgeInsets.all(24.0),
+                  padding: const EdgeInsets.all(20.0),
                   decoration: BoxDecoration(
                     color: AppColors.paymentTxtColor1,
                     shape: BoxShape.circle,

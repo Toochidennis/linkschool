@@ -12,6 +12,13 @@ import 'package:linkschool/modules/explore/e_library/widgets/subscription_enforc
 import 'package:provider/provider.dart';
 import 'package:linkschool/modules/providers/explore/cbt_provider.dart';
 
+// Convert a string to sentence case: all lowercase then first letter uppercase
+String _sentenceCase(String input) {
+  if (input.isEmpty) return input;
+  final lower = input.toLowerCase();
+  return lower[0].toUpperCase() + (lower.length > 1 ? lower.substring(1) : '');
+}
+
 class SubjectSelectionScreen extends StatefulWidget {
   const SubjectSelectionScreen({super.key});
 
@@ -367,7 +374,8 @@ class _SubjectSelectionScreenState extends State<SubjectSelectionScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    subject.subjectName,
+                    // Display subject name in sentence case
+                    _sentenceCase(subject.subjectName),
                     style: AppTextStyles.normal600(
                       fontSize: 18,
                       color: Colors.white,
@@ -434,26 +442,28 @@ class _SubjectSelectionScreenState extends State<SubjectSelectionScreen> {
         return SubjectYearSelectionModal(
           subjects: subjects,
           onSubjectYearSelected: (subject, subjectId, year, examId, icon) {
+            final formattedSubject = _sentenceCase(subject);
+
             // Check if this subject with the same year already exists
             final isDuplicate = selectedSubjects.any(
-              (s) => s.subjectName == subject && s.year == year,
+              (s) => s.subjectName == formattedSubject && s.year == year,
             );
-            
+
             if (isDuplicate) {
               Navigator.of(context).pop();
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
-                  content: Text('$subject ($year) is already added'),
+                  content: Text('$formattedSubject ($year) is already added'),
                   backgroundColor: Colors.orange,
                 ),
               );
               return;
             }
-            
+
             setState(() {
               selectedSubjects.add(
                 SelectedSubject(
-                  subjectName: subject,
+                  subjectName: formattedSubject,
                   subjectId: subjectId,
                   year: year,
                   examId: examId,
@@ -823,7 +833,8 @@ class _SubjectYearSelectionModalState extends State<SubjectYearSelectionModal>
               Padding(
                 padding: const EdgeInsets.only(top: 8.0),
                 child: Text(
-                  selectedSubject!.name,
+                  // Header should show sentence-cased subject name
+                  _sentenceCase(selectedSubject!.name),
                   style: AppTextStyles.normal500(
                     fontSize: 16,
                     color: AppColors.text7Light,
@@ -846,11 +857,15 @@ class _SubjectYearSelectionModalState extends State<SubjectYearSelectionModal>
   }
 
   Widget _buildSubjectList() {
+    // Create a sorted copy of the subjects (A -> Z) and display sentence-case names
+    final sortedSubjects = List<SubjectModel>.from(widget.subjects)
+      ..sort((a, b) => _sentenceCase(a.name).compareTo(_sentenceCase(b.name)));
+
     return ListView.builder(
       padding: const EdgeInsets.symmetric(horizontal: 16),
-      itemCount: widget.subjects.length,
+      itemCount: sortedSubjects.length,
       itemBuilder: (context, index) {
-        final subject = widget.subjects[index];
+        final subject = sortedSubjects[index];
         return Padding(
           padding: const EdgeInsets.only(bottom: 12.0),
           child: Material(
@@ -894,7 +909,8 @@ class _SubjectYearSelectionModalState extends State<SubjectYearSelectionModal>
                     const SizedBox(width: 16),
                     Expanded(
                       child: Text(
-                        subject.name,
+                        // Display subject name in sentence case
+                        _sentenceCase(subject.name),
                         style: AppTextStyles.normal600(
                           fontSize: 16,
                           color: AppColors.text3Light,
@@ -937,13 +953,7 @@ class _SubjectYearSelectionModalState extends State<SubjectYearSelectionModal>
             color: Colors.transparent,
             child: InkWell(
               onTap: () {
-                widget.onSubjectYearSelected(
-                  selectedSubject!.name,
-                  selectedSubject!.id,
-                  year.year,
-                  year.id,
-                  selectedSubject!.subjectIcon ?? 'default',
-                );
+                _onYearSelected(year.id, year.year);
               },
               borderRadius: BorderRadius.circular(8),
               child: Container(
@@ -991,6 +1001,19 @@ class _SubjectYearSelectionModalState extends State<SubjectYearSelectionModal>
       showYears = true;
     });
     _animationController.forward(from: 0.0);
+  }
+
+  // When a year is tapped, the modal calls this callback and we should pass a
+  // sentence-cased subject name to the parent callback.
+  void _onYearSelected(String yearId, String yearValue) {
+    if (selectedSubject == null) return;
+    widget.onSubjectYearSelected(
+      _sentenceCase(selectedSubject!.name),
+      selectedSubject!.id,
+      yearValue,
+      yearId,
+      selectedSubject!.subjectIcon ?? 'default',
+    );
   }
 }
 

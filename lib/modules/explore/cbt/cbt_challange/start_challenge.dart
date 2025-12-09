@@ -1,4 +1,7 @@
 // ignore_for_file: deprecated_member_use
+
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
@@ -37,6 +40,7 @@ class _StartChallengeState extends State<StartChallenge>
     with TickerProviderStateMixin {
   late AnimationController _slideController;
   late AnimationController _scaleController;
+  int _lastDisplayedQuestionIndex = -1; 
 
   Timer? _timer;
   int? _remainingSeconds;
@@ -344,6 +348,46 @@ class _StartChallengeState extends State<StartChallenge>
     return '${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
   }
 
+  /// Convert HTML/span text to TextSpan list for RichText
+  List<TextSpan> _parseHtmlToTextSpans(String text) {
+    if (!text.contains('<span') && !text.contains('<b') && !text.contains('<i')) {
+      return [TextSpan(text: text)];
+    }
+
+    final spans = <TextSpan>[];
+    final regExp = RegExp(
+        r'<span[^>]*>([^<]*)</span>|<b>([^<]*)</b>|<i>([^<]*)</i>|([^<]+)');
+    final matches = regExp.allMatches(text);
+
+    for (final match in matches) {
+      if (match.group(1) != null) {
+        // <span> content - bold and colored
+        spans.add(TextSpan(
+          text: match.group(1),
+          style: TextStyle(
+              fontWeight: FontWeight.bold, color: Colors.blue.shade700),
+        ));
+      } else if (match.group(2) != null) {
+        // <b> content
+        spans.add(TextSpan(
+          text: match.group(2),
+          style: const TextStyle(fontWeight: FontWeight.bold),
+        ));
+      } else if (match.group(3) != null) {
+        // <i> content
+        spans.add(TextSpan(
+          text: match.group(3),
+          style: const TextStyle(fontStyle: FontStyle.italic),
+        ));
+      } else if (match.group(4) != null) {
+        // Plain text
+        spans.add(TextSpan(text: match.group(4)));
+      }
+    }
+
+    return spans.isEmpty ? [TextSpan(text: text)] : spans;
+  }
+
   @override
   void dispose() {
     _timer?.cancel();
@@ -381,6 +425,38 @@ class _StartChallengeState extends State<StartChallenge>
         totalQuestions += provider.questions.length;
         
         final progress = totalQuestions > 0 ? totalQuestionsAnswered / totalQuestions : 0;
+
+        // Show instruction/passage modal when question changes (like TestScreen)
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (provider.questions.isNotEmpty && provider.currentQuestionIndex != _lastDisplayedQuestionIndex) {
+            final q = provider.currentQuestion;
+            if (q != null) {
+              final instr = q.instruction.trim();
+              final pass = q.passage.trim();
+              
+              if (instr.isNotEmpty && pass.isNotEmpty) {
+                // Show both instruction and passage together
+                _lastDisplayedQuestionIndex = provider.currentQuestionIndex;
+                Future.delayed(const Duration(milliseconds: 300), () {
+                  if (!mounted) return;
+                  _showInstructionOrPassageModal('Instruction & Passage', '$instr\n\n$pass');
+                });
+              } else if (instr.isNotEmpty) {
+                _lastDisplayedQuestionIndex = provider.currentQuestionIndex;
+                Future.delayed(const Duration(milliseconds: 300), () {
+                  if (!mounted) return;
+                  _showInstructionOrPassageModal('Instruction', instr);
+                });
+              } else if (pass.isNotEmpty) {
+                _lastDisplayedQuestionIndex = provider.currentQuestionIndex;
+                Future.delayed(const Duration(milliseconds: 300), () {
+                  if (!mounted) return;
+                  _showInstructionOrPassageModal('Passage', pass);
+                });
+              }
+            }
+          }
+        });
 
         return Scaffold(
           backgroundColor: Colors.white,
@@ -526,109 +602,384 @@ class _StartChallengeState extends State<StartChallenge>
     );
   }
 
-  Widget _buildQuestionCard(QuestionModel q) {
-    return Container(
-      width: double.infinity,
-      padding: EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.grey.shade200),
-        boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 12, offset: Offset(0, 6))],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-          padding: EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-          decoration: BoxDecoration(
-            gradient: LinearGradient(colors: [Colors.amber.shade400, Colors.orange.shade600]),
-            borderRadius: BorderRadius.circular(20),
-          ),
-          child: Text("10 pts", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13)),
+    Widget _buildQuestionCard(QuestionModel q) {
+ 
+  return Stack(
+    clipBehavior: Clip.none,
+    children: [
+      Container(
+        width: double.infinity,
+        padding: EdgeInsets.all(24),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: Colors.grey.shade200),
+          boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 12, offset: Offset(0, 6))],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(colors: [Colors.amber.shade400, Colors.orange.shade600]),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text("10 pts", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13)),
+                ),
+                Spacer(),
+                Icon(Icons.lightbulb_outline, color: Colors.amber, size: 26),
+              ],
+            ),
+            SizedBox(height: 16),
+
+            // If there's a question image (either base64/data url or network path), show it
+            if (q.questionImage.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 12.0),
+                child: GestureDetector(
+                  onTap: () => _showFullScreenImage(q.questionImage),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    child: _getImageWidget(q.questionImage, height: 180),
+                  ),
+                ),
               ),
-              Spacer(),
-              Icon(Icons.lightbulb_outline, color: Colors.amber, size: 26),
-            ],
-          ),
-          SizedBox(height: 24),
-          RichText(
-            text: TextSpan(
-              text: q.content.isNotEmpty ? q.content[0].toUpperCase() + q.content.substring(1) : "Question",
-              style: AppTextStyles.normal600(fontSize: 19, color: Colors.black87),
+
+            RichText(
+              text: TextSpan(
+                text: q.content.isNotEmpty ? q.content[0].toUpperCase() + q.content.substring(1) : "Question",
+                style: AppTextStyles.normal600(fontSize: 19, color: Colors.black87),
+              ),
+            ),
+          ],
+        ),
+      ),
+      
+      // Positioned instruction/passage icon at top-right
+      if ((q.instruction?.isNotEmpty ?? false) || (q.passage?.isNotEmpty ?? false))
+        Positioned(
+          top: 12,
+          right: 12,
+          child: IconButton(
+            icon: const Icon(
+              Icons.info_outline,
+              color: AppColors.eLearningBtnColor1,
+              size: 24,
+            ),
+            onPressed: () {
+              // Determine which content to show
+              String title = '';
+              String content = '';
+              
+              if (q.instruction?.isNotEmpty ?? false) {
+                title = 'Instruction';
+                content = q.instruction ?? '';
+
+              } else if (q.passage?.isNotEmpty ?? false) {
+                title = 'Passage';
+                content = q.passage ?? '';
+              }
+              
+              // Show the modal immediately
+              if (content.isNotEmpty) {
+                _showInstructionOrPassageModal(title, content);
+              }
+            },
+            tooltip: (q.instruction?.isNotEmpty ?? false) 
+              ? 'View Instruction' 
+              : 'View Passage',
+            style: IconButton.styleFrom(
+              backgroundColor: Colors.white,
+              elevation: 2,
+              shadowColor: Colors.black26,
             ),
           ),
-        ],
-      ),
+        ),
+    ],
+  );
+}
+
+  Widget _buildOptions(QuestionModel question, int? selectedAnswer) {
+    // Support structured options (with optional imageUrl) and fallback to plain text options
+    final structuredOptions = question.options;
+    final options = question.getOptions();
+
+    List<Widget> optionWidgets = [];
+
+    for (int index = 0; index < (structuredOptions != null && structuredOptions.isNotEmpty ? structuredOptions.length : options.length); index++) {
+      final isSelected = selectedAnswer == index;
+      String optionText = '';
+      String? optionImageUrl;
+
+      if (structuredOptions != null && structuredOptions.isNotEmpty && index < structuredOptions.length) {
+        final opt = structuredOptions[index];
+        optionText = opt['text']?.toString() ?? '';
+        optionImageUrl = opt['imageUrl']?.toString();
+      } else if (index < options.length) {
+        optionText = options[index];
+        optionImageUrl = question.getOptionWithImage(index)?['imageUrl']?.toString();
+      }
+
+      final child = GestureDetector(
+        onTap: () => _selectAnswer(index),
+        child: AnimatedContainer(
+          duration: Duration(milliseconds: 300),
+          curve: Curves.easeOut,
+          margin: EdgeInsets.only(bottom: 16),
+          padding: EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            gradient: isSelected
+                ? LinearGradient(colors: [AppColors.eLearningBtnColor1, AppColors.eLearningBtnColor1.withOpacity(0.8)])
+                : null,
+            color: isSelected ? null : Colors.white,
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: isSelected ? Colors.transparent : Colors.grey.shade300, width: 1.5),
+            boxShadow: isSelected
+                ? [BoxShadow(color: AppColors.eLearningBtnColor1.withOpacity(0.3), blurRadius: 12, offset: Offset(0, 4))]
+                : [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 6)],
+          ),
+          child: Row(
+            children: [
+              CircleAvatar(
+                radius: 18,
+                backgroundColor: isSelected ? Colors.white : Colors.grey.shade100,
+                child: Text(
+                  String.fromCharCode(65 + index),
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: isSelected ? AppColors.eLearningBtnColor1 : Colors.grey.shade700),
+                ),
+              ),
+              SizedBox(width: 12),
+              if (optionImageUrl != null && optionImageUrl.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(right: 12.0),
+                  child: GestureDetector(
+                    onTap: () => _showFullScreenImage(optionImageUrl!),
+                    child: ClipRRect(borderRadius: BorderRadius.circular(8), child: _getImageWidget(optionImageUrl!, width: 72, height: 56)),
+                  ),
+                ),
+              Expanded(
+                child: Text(
+                  optionText,
+                  style: TextStyle(fontSize: 16.2, color: isSelected ? Colors.white : Colors.black87, fontWeight: FontWeight.w500),
+                ),
+              ),
+              if (isSelected)
+                ScaleTransition(
+                  scale: CurvedAnimation(parent: _scaleController, curve: Curves.elasticOut),
+                  child: Icon(Icons.check_circle, color: Colors.white, size: 28),
+                ),
+            ],
+          ),
+        ),
+      );
+
+      optionWidgets.add(TweenAnimationBuilder<double>(
+        duration: Duration(milliseconds: 360 + index * 80),
+        tween: Tween(begin: 0.0, end: 1.0),
+        builder: (context, value, child) => Transform.translate(offset: Offset(30 * (1 - value), 0), child: Opacity(opacity: value, child: child)),
+        child: child,
+      ));
+    }
+
+    return Column(children: optionWidgets);
+  }
+
+  // Show an image (handles data: base64 or network paths)
+  Widget _getImageWidget(String url, {double? width, double? height}) {
+    if (_isBase64(url)) {
+      try {
+        final bytes = base64.decode(url.split(',').last);
+        return Image.memory(bytes, width: width, height: height, fit: BoxFit.cover);
+      } catch (e) {
+        return Container(width: width, height: height, color: Colors.grey.shade200);
+      }
+    }
+
+    // Prepend base URL if it's a relative path
+    String imageUrl = url;
+    if (!url.startsWith('http') && !url.startsWith('data:')) {
+      imageUrl = 'https://linkskool.net/$url';
+    }
+
+    return Image.network(
+      imageUrl,
+      width: width,
+      height: height,
+      fit: BoxFit.cover,
+      errorBuilder: (context, error, stackTrace) => Container(width: width, height: height, color: Colors.grey.shade200),
+      loadingBuilder: (context, child, progress) {
+        if (progress == null) return child;
+        return SizedBox(width: width, height: height, child: Center(child: CircularProgressIndicator(strokeWidth: 2)));
+      },
     );
   }
 
-  Widget _buildOptions(QuestionModel question, int? selectedAnswer) {
-    final options = question.getOptions();
+  bool _isBase64(String s) {
+    return s.startsWith('data:image') || (s.length > 100 && s.contains('base64'));
+  }
 
-    return Column(
-      children: options.asMap().entries.map((e) {
-        final index = e.key;
-        final option = e.value;
-        final isSelected = selectedAnswer == index;
+  void _showFullScreenImage(String imageUrl) {
+    if (!mounted) return;
+    Navigator.push(context, MaterialPageRoute(builder: (_) {
+      return Scaffold(
+        backgroundColor: Colors.black,
+        appBar: AppBar(backgroundColor: Colors.transparent, elevation: 0),
+        body: Center(child: InteractiveViewer(child: _getImageWidget(imageUrl))),
+      );
+    }));
+  }
 
-        return TweenAnimationBuilder<double>(
-          duration: Duration(milliseconds: 400 + index * 100),
-          tween: Tween(begin: 0.0, end: 1.0),
-          builder: (context, value, child) {
-            return Transform.translate(
-              offset: Offset(40 * (1 - value), 0),
-              child: Opacity(opacity: value, child: child),
-            );
-          },
-          child: GestureDetector(
-            onTap: () => _selectAnswer(index),
-            child: AnimatedContainer(
-              duration: Duration(milliseconds: 300),
-              curve: Curves.easeOut,
-              margin: EdgeInsets.only(bottom: 16),
-              padding: EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                gradient: isSelected
-                    ? LinearGradient(colors: [AppColors.eLearningBtnColor1, AppColors.eLearningBtnColor1.withOpacity(0.8)])
-                    : null,
-                color: isSelected ? null : Colors.white,
-                borderRadius: BorderRadius.circular(18),
-                border: Border.all(color: isSelected ? Colors.transparent : Colors.grey.shade300, width: 1.8),
-                boxShadow: isSelected
-                    ? [BoxShadow(color: AppColors.eLearningBtnColor1.withOpacity(0.4), blurRadius: 12, offset: Offset(0, 4))]
-                    : [BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 6)],
-              ),
-              child: Row(
-                children: [
-                  CircleAvatar(
-                    radius: 20,
-                    backgroundColor: isSelected ? Colors.white : Colors.grey.shade100,
-                    child: Text(
-                      String.fromCharCode(65 + index),
-                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: isSelected ? AppColors.eLearningBtnColor1 : Colors.grey.shade700),
-                    ),
-                  ),
-                  SizedBox(width: 18),
-                  Expanded(
-                    child: Text(
-                      option,
-                      style: TextStyle(fontSize: 16.5, color: isSelected ? Colors.white : Colors.black87, fontWeight: FontWeight.w500),
-                    ),
-                  ),
-                  if (isSelected)
-                    ScaleTransition(
-                      scale: CurvedAnimation(parent: _scaleController, curve: Curves.elasticOut),
-                      child: Icon(Icons.check_circle, color: Colors.white, size: 28),
-                    ),
-                ],
-              ),
+  void _showInstructionOrPassageModal(String title, String content) {
+    if (!mounted || content.trim().isEmpty) return;
+
+    // Parse if both instruction and passage are combined (separated by \n\n)
+    bool hasBothSections = title == 'Instruction & Passage';
+    List<String> sections = [];
+    List<String> sectionTitles = [];
+    
+    if (hasBothSections && content.contains('\n\n')) {
+      final parts = content.split('\n\n');
+      if (parts.length >= 2) {
+        sections = [parts[0], parts.sublist(1).join('\n\n')];
+        sectionTitles = ['Instruction', 'Passage'];
+      } else {
+        sections = [content];
+        sectionTitles = [title];
+      }
+    } else {
+      sections = [content];
+      sectionTitles = [title];
+    }
+
+    showDialog(
+      context: context,
+      barrierDismissible: true,
+      builder: (context) => Dialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 400),
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
             ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Scrollable content
+                Flexible(
+                  child: SingleChildScrollView(
+                    child: Container(
+                    padding: const EdgeInsets.all(24),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Show question number at top
+                        Builder(builder: (context) {
+                          final provider = Provider.of<ExamProvider>(context, listen: false);
+                          final qIndex = (provider.questions.isNotEmpty) ? provider.currentQuestionIndex : -1;
+                          if (qIndex >= 0) {
+                            return Padding(
+                              padding: const EdgeInsets.only(bottom: 16.0),
+                              child: Text(
+                                'Question ${qIndex + 1}',
+                                style: const TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w700,
+                                  color: Colors.black87,
+                                  fontFamily: 'Urbanist',
+                                ),
+                              ),
+                            );
+                          }
+                          return const SizedBox.shrink();
+                        }),
+                        
+                        // Render sections
+                        ...sections.asMap().entries.map((entry) {
+                          final index = entry.key;
+                          final sectionContent = entry.value.trim();
+                          final sectionTitle = sectionTitles[index];
+                          
+                          return Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              // Section title
+                              Text(
+                                sectionTitle,
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w700,
+                                  color: AppColors.eLearningBtnColor1,
+                                  fontFamily: 'Urbanist',
+                                ),
+                              ),
+                              const SizedBox(height: 12),
+                              
+                              // Section content
+                              Text(
+                                sectionContent,
+                                style: const TextStyle(
+                                  fontSize: 14,
+                                  height: 1.6,
+                                  color: AppColors.text3Light,
+                                  fontFamily: 'Urbanist',
+                                ),
+                              ),
+                              
+                              // Add spacing between sections
+                              if (index < sections.length - 1)
+                                const SizedBox(height: 24),
+                            ],
+                          );
+                        }).toList(),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              
+              // Fixed "Got it" button at bottom
+              Container(
+                padding: const EdgeInsets.all(24),
+                decoration: BoxDecoration(
+                  border: Border(
+                    top: BorderSide(color: Colors.grey.shade200),
+                  ),
+                ),
+                child: SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.eLearningBtnColor1,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    child: const Text(
+                      'Got it',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w600,
+                        fontFamily: 'Urbanist',
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
-        );
-      }).toList(),
+        ),
+        ),
+      ),
     );
   }
 }

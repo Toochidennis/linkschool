@@ -4,7 +4,11 @@ import 'package:linkschool/modules/common/app_colors.dart';
 import 'package:linkschool/modules/common/text_styles.dart';
 import 'package:linkschool/modules/model/explore/home/subject_model.dart';
 import 'package:linkschool/modules/providers/explore/cbt_provider.dart';
+import 'package:linkschool/modules/providers/explore/challange/challange_provider.dart';
 import 'package:linkschool/modules/services/explore/manage_storage.dart';
+import 'package:linkschool/modules/explore/cbt/cbt_challange/challange_modal.dart';
+import 'package:linkschool/modules/explore/cbt/cbt_challange/challange_instruction.dart';
+import 'package:linkschool/modules/explore/cbt/cbt_challange/start_challenge.dart';
 import 'package:provider/provider.dart';
 
 class CreateChallengeScreen extends StatefulWidget {
@@ -24,6 +28,7 @@ class _CreateChallengeScreenState extends State<CreateChallengeScreen>
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _descriptionController = TextEditingController();
   final TextEditingController _pointsController = TextEditingController();
+  String _challengeStatus = 'draft';
   
   DateTime? _startDate;
   DateTime? _endDate;
@@ -325,9 +330,10 @@ class _CreateChallengeScreenState extends State<CreateChallengeScreen>
     print('   Exam ID: ${removedSubject.examId}');
     print('\n📋 Remaining Subjects: ${_selectedSubjects.length}');
   }
-void _submitChallenge() {
-  // Only validate if details section is visible
- 
+void _submitChallenge() async {
+  final provider = Provider.of<ChallengeProvider>(context, listen: false);
+  
+  // Validation checks
   if (_startDate == null) {
     _showErrorSnackBar('Please select a start date');
     return;
@@ -345,7 +351,22 @@ void _submitChallenge() {
     return;
   }
 
-  // Create challenge data
+  // Create API payload
+  final apiPayload = {
+    'title': _titleController.text,
+    'description': _descriptionController.text,
+    'points': int.tryParse(_pointsController.text) ?? 0,
+    'start_date': _startDate!.toIso8601String(),
+    'end_date': _endDate!.toIso8601String(),
+    'time_limit': timeInMinutes,
+    'question_limit': questionLimit,
+    'exam_ids': _selectedSubjects.map((subject) => subject.examId).toList(),
+    'course_names': _selectedSubjects.map((subject) => subject.subjectName).toList(),
+    'course_ids': _selectedSubjects.map((subject) => subject.subjectId).toList(),
+      'status': _challengeStatus,
+  };
+
+  // Create local storage data
   final challengeData = {
     'id': 'challenge_${DateTime.now().millisecondsSinceEpoch}',
     'title': _titleController.text,
@@ -364,28 +385,120 @@ void _submitChallenge() {
     }).toList(),
     'createdAt': DateTime.now().toIso8601String(),
     'participants': 0,
-    'difficulty': 'Medium', // You can calculate this based on subjects
+    'difficulty': 'Medium',
     'status': 'active',
+    'synced': false,
+      'status': _challengeStatus,
   };
 
-  // Save to SharedPreferences
-  ChallengeService.saveChallenge(challengeData);
-
-  // Show success dialog with challenge details
+  // Show loading dialog
   showDialog(
     context: context,
     barrierDismissible: false,
-    builder: (context) => _CreationSuccessDialog(
-      title: _titleController.text,
-      description: _descriptionController.text,
-      subjects: _selectedSubjects,
-      points: int.tryParse(_pointsController.text) ?? 0,
-      startDate: _startDate,
-      endDate: _endDate,
-    //  challengeData: challengeData, // Pass the data for potential immediate use
+    builder: (context) => AlertDialog(
+      content: Row(
+        children: [
+          CircularProgressIndicator(),
+          SizedBox(width: 20),
+          Text('Creating challenge...'),
+        ],
+      ),
     ),
   );
+
+  try {
+    // First: Call API endpoint
+    await provider.createChallenge(apiPayload);
+    
+    // Check if there's an error from the provider
+    if (provider.error != null && provider.error!.isNotEmpty) {
+      // API call failed
+      Navigator.of(context).pop(); // Close loading dialog
+      _showErrorSnackBar('Failed to create challenge: ${provider.error}');
+      return;
+    }
+    
+    // Second: If API call succeeds, save to SharedPreferences
+    await ChallengeService.saveChallenge(challengeData);
+    
+    // Close loading dialog
+    Navigator.of(context).pop();
+    
+    // Show success dialog with challenge details
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => _CreationSuccessDialog(
+        title: _titleController.text,
+        description: _descriptionController.text,
+        subjects: _selectedSubjects,
+        points: int.tryParse(_pointsController.text) ?? 0,
+        startDate: _startDate,
+        endDate: _endDate,
+      ),
+    );
+  } catch (e) {
+    // Close loading dialog
+    Navigator.of(context).pop();
+    _showErrorSnackBar('Error creating challenge: ${e.toString()}');
+    print('Error: $e');
+  }
 }
+
+  void _previewChallenge() {
+    // Create a temporary challenge model for preview
+    final previewChallenge = ChallengeModel(
+      title: _titleController.text.isNotEmpty ? _titleController.text : 'Preview Challenge',
+      description: _descriptionController.text,
+      icon: Icons.preview,
+      xp: int.tryParse(_pointsController.text) ?? 0,
+      gradient: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
+      participants: 0,
+      difficulty: 'Medium',
+      startDate: _startDate ?? DateTime.now(),
+      endDate: _endDate ?? DateTime.now().add(Duration(days: 1)),
+      subjects: _selectedSubjects,
+      isCustomChallenge: true,
+      timeInMinutes: timeInMinutes,
+      questionLimit: questionLimit,
+    );
+
+    // Extract exam IDs, subject names, and years from selected subjects
+    final examIds = _selectedSubjects.map((subject) => subject.examId).toList();
+    final subjectNames = _selectedSubjects.map((subject) => subject.subjectName).toList();
+    final years = _selectedSubjects.map((subject) => subject.year).toList();
+
+    print('\n👁️ Previewing Challenge:');
+    print('   Title: ${previewChallenge.title}');
+    print('   Subjects: ${subjectNames.length}');
+    print('   Exam IDs: $examIds');
+
+    // Navigate to instructions screen (same as join challenge flow)
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ChallengeInstructionsScreen(
+          challenge: previewChallenge,
+          onContinue: () {
+            // Navigate to StartChallenge with exam data
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => StartChallenge(
+                  challenge: previewChallenge,
+                  examIds: examIds,
+                  subjectNames: subjectNames,
+                  years: years,
+                  totalDurationInSeconds: timeInMinutes * 60,
+                  questionLimit: questionLimit,
+                ),
+              ),
+            );
+          },
+        ),
+      ),
+    );
+  }
 
   void _showErrorSnackBar(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
@@ -542,6 +655,317 @@ void _submitChallenge() {
       ),
     );
   }
+
+  Widget _buildStatusDropdown() {
+  return Container(
+    padding: const EdgeInsets.all(16.0),
+    decoration: BoxDecoration(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(12),
+      boxShadow: [
+        BoxShadow(
+          color: Colors.black.withOpacity(0.05),
+          blurRadius: 4,
+          offset: const Offset(0, 2),
+        ),
+      ],
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Icon(
+              _challengeStatus == 'published' 
+                ? Icons.public 
+                : Icons.save,
+              color: const Color(0xFF6366F1),
+              size: 20,
+            ),
+            const SizedBox(width: 8),
+            Text(
+              'Challenge Status',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: Colors.black87,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Container(
+          decoration: BoxDecoration(
+            border: Border.all(color: Colors.grey.shade300),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: () {
+                _showStatusSelectionModal();
+              },
+              borderRadius: BorderRadius.circular(10),
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          width: 36,
+                          height: 36,
+                          decoration: BoxDecoration(
+                            color: _challengeStatus == 'published'
+                                ? Colors.green.withOpacity(0.1)
+                                : Colors.blue.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Icon(
+                            _challengeStatus == 'published' 
+                              ? Icons.public 
+                              : Icons.drafts,
+                            color: _challengeStatus == 'published'
+                                ? Colors.green
+                                : Colors.blue,
+                            size: 20,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              _challengeStatus == 'published' 
+                                ? 'Publish Now' 
+                                : 'Save as Draft',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.black87,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              _challengeStatus == 'published'
+                                ? 'Challenge will be visible to others'
+                                : 'Only you can see this challenge',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey.shade600,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                    Icon(
+                      Icons.arrow_drop_down,
+                      color: Colors.grey.shade500,
+                      size: 24,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
+    ),
+  );
+}
+
+void _showStatusSelectionModal() {
+  showModalBottomSheet(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: Colors.white,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+    ),
+    builder: (BuildContext context) {
+      return Container(
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(context).viewInsets.bottom,
+          left: 16,
+          right: 16,
+          top: 24,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              'Select Status',
+              style: TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.w700,
+                color: Colors.black87,
+              ),
+            ),
+            const SizedBox(height: 24),
+            
+            // Draft Option
+            Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: () {
+                  setState(() {
+                    _challengeStatus = 'draft';
+                  });
+                  Navigator.pop(context);
+                },
+                borderRadius: BorderRadius.circular(12),
+                child: Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: _challengeStatus == 'draft'
+                        ? Colors.blue.withOpacity(0.05)
+                        : Colors.transparent,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: _challengeStatus == 'draft'
+                          ? Colors.blue
+                          : Colors.grey.shade300,
+                      width: _challengeStatus == 'draft' ? 2 : 1,
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 50,
+                        height: 50,
+                        decoration: BoxDecoration(
+                          color: Colors.blue.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Icon(
+                          Icons.drafts,
+                          color: Colors.blue,
+                          size: 24,
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Save as Draft',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.black87,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'Only you can see and edit this challenge',
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: Colors.grey.shade600,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      if (_challengeStatus == 'draft')
+                        Icon(
+                          Icons.check_circle,
+                          color: Colors.blue,
+                          size: 24,
+                        ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            
+            const SizedBox(height: 12),
+            
+            // Publish Option
+            Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: () {
+                  setState(() {
+                    _challengeStatus = 'published';
+                  });
+                  Navigator.pop(context);
+                },
+                borderRadius: BorderRadius.circular(12),
+                child: Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: _challengeStatus == 'published'
+                        ? Colors.green.withOpacity(0.05)
+                        : Colors.transparent,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: _challengeStatus == 'published'
+                          ? Colors.green
+                          : Colors.grey.shade300,
+                      width: _challengeStatus == 'published' ? 2 : 1,
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 50,
+                        height: 50,
+                        decoration: BoxDecoration(
+                          color: Colors.green.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Icon(
+                          Icons.public,
+                          color: Colors.green,
+                          size: 24,
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Publish Now',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.black87,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'Make challenge visible to other users',
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: Colors.grey.shade600,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      if (_challengeStatus == 'published')
+                        Icon(
+                          Icons.check_circle,
+                          color: Colors.green,
+                          size: 24,
+                        ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            
+            const SizedBox(height: 24),
+          ],
+        ),
+      );
+    },
+  );
+}
 
   @override
   Widget build(BuildContext context) {
@@ -886,104 +1310,155 @@ void _submitChallenge() {
     );
   }
 
-  Widget _buildSubjectSection() {
-    return SingleChildScrollView(
-      key: const ValueKey('subject'),
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildInputSection(), // Time + Questions dropdown
-          const SizedBox(height: 24),
+ Widget _buildSubjectSection() {
+  return SingleChildScrollView(
+    key: const ValueKey('subject'),
+    padding: const EdgeInsets.all(16),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildInputSection(), // Time + Questions dropdown
+        const SizedBox(height: 24),
+         _buildStatusDropdown(),
+        const SizedBox(height: 24),
 
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              _buildSectionLabel('Subjects', Icons.category),
-              ElevatedButton.icon(
-                onPressed: _showSubjectSelectionModal,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF6366F1),
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            _buildSectionLabel('Subjects', Icons.category),
+            ElevatedButton.icon(
+              onPressed: _showSubjectSelectionModal,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF6366F1),
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
                 ),
-                icon: const Icon(Icons.add, size: 16),
-                label: const Text(
-                  'Add Subjects',
-                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          _buildSelectedSubjectsList(),
-          const SizedBox(height: 32),
-
-          // Create Challenge Button
-          Container(
-            width: double.infinity,
-            height: 56,
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
+              icon: const Icon(Icons.add, size: 16),
+              label: const Text(
+                'Add Subjects',
+                style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
               ),
-              borderRadius: BorderRadius.circular(16),
-              boxShadow: [
-                BoxShadow(
-                  color: const Color(0xFF6366F1).withOpacity(0.4),
-                  blurRadius: 15,
-                  offset: const Offset(0, 8),
-                ),
-              ],
             ),
-            child: Material(
-              color: Colors.transparent,
-              child: InkWell(
-                onTap: _submitChallenge,
-                borderRadius: BorderRadius.circular(16),
-                child: const Center(
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.check_circle, color: Colors.white, size: 22),
-                      SizedBox(width: 10),
-                      Text(
-                        'Create Challenge',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w700,
-                          color: Colors.white,
-                        ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        _buildSelectedSubjectsList(),
+        
+        const SizedBox(height: 30),
+        Row(
+          children: [
+            // Preview Button (Expanded to take half width)
+            Expanded(
+              child: Container(
+                height: 56,
+                decoration: BoxDecoration(
+                  border: Border.all(color: const Color(0xFF6366F1), width: 2),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    onTap: _selectedSubjects.isNotEmpty ? _previewChallenge : null,
+                    borderRadius: BorderRadius.circular(16),
+                    child: Center(
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.preview,
+                            color: _selectedSubjects.isNotEmpty
+                                ? const Color(0xFF6366F1)
+                                : Colors.grey,
+                            size: 22,
+                          ),
+                          const SizedBox(width: 10),
+                          Text(
+                            'Preview',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w700,
+                              color: _selectedSubjects.isNotEmpty
+                                  ? const Color(0xFF6366F1)
+                                  : Colors.grey,
+                            ),
+                          ),
+                        ],
                       ),
-                    ],
+                    ),
                   ),
                 ),
               ),
             ),
-          ),
-          const SizedBox(height: 20),
-
-          // Back Button
-          Center(
-            child: TextButton(
-              onPressed: () {
-                _pageController.previousPage(
-                  duration: Duration(milliseconds: 400),
-                  curve: Curves.easeInOut,
-                );
-              },
-              child: const Text('Back', style: TextStyle(color: Color(0xFF6366F1))),
+            
+            const SizedBox(width: 16), // Spacing between buttons
+            
+            // Create Challenge Button (Expanded to take half width)
+            Expanded(
+              child: Container(
+                height: 56,
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
+                  ),
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFF6366F1).withOpacity(0.4),
+                      blurRadius: 15,
+                      offset: const Offset(0, 8),
+                    ),
+                  ],
+                ),
+                child: Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    onTap: _submitChallenge,
+                    borderRadius: BorderRadius.circular(16),
+                    child: const Center(
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.check_circle, color: Colors.white, size: 22),
+                          SizedBox(width: 10),
+                          Text(
+                            'Create',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w700,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
             ),
-          ),
-          const SizedBox(height: 40), // Extra bottom padding for scroll
-        ],
-      ),
-    );
-  }
+          ],
+        ),
+        const SizedBox(height: 20),
 
+        // Back Button
+        Center(
+          child: TextButton(
+            onPressed: () {
+              _pageController.previousPage(
+                duration: Duration(milliseconds: 400),
+                curve: Curves.easeInOut,
+              );
+            },
+            child: const Text('Back', style: TextStyle(color: Color(0xFF6366F1))),
+          ),
+        ),
+        const SizedBox(height: 40), // Extra bottom padding for scroll
+      ],
+    ),
+  );
+}
   Widget _buildSectionLabel(String label, IconData icon) {
     return Row(
       children: [
